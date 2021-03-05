@@ -1090,6 +1090,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    The above constants are only available on Windows.
 
+.. data:: O_EVTONLY
+          O_FSYNC
+          O_SYMLINK
+          O_NOFOLLOW_ANY
+
+   The above constants are only available on macOS.
+
+   .. versionchanged:: 3.10
+      Add :data:`O_EVTONLY`, :data:`O_FSYNC`, :data:`O_SYMLINK`
+      and :data:`O_NOFOLLOW_ANY` constants.
 
 .. data:: O_ASYNC
           O_DIRECT

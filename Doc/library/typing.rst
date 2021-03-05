@@ -695,10 +695,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Any, Concatenate, ParamSpec
+      from typing import Any, Concatenate, ParamSpec, TypeVar
 
       P = ParamSpec('P')
-      R = ParamSpec('R')
+      R = TypeVar('R')
 
       # Use this lock to ensure that only one thread is executing a function
       # at any time.
@@ -707,7 +707,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
           global my_lock
-          def inner(*args: P.args, **kwargs: P.kwargs) -> T:
+          def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
               return f(my_lock, *args, **kwargs)
           return inner
@@ -1247,26 +1247,28 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``
-   and ``Point2D.__total__``.  To allow using this feature with older versions
-   of Python that do not support :pep:`526`, ``TypedDict`` supports two additional
-   equivalent syntactic forms::
+   The type info for introspection can be accessed via ``Point2D.__annotations__``,
+   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
+   ``Point2D.__optional_keys__``.
+   To allow using this feature with older versions of Python that do not
+   support :pep:`526`, ``TypedDict`` supports two additional equivalent
+   syntactic forms::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   By default, all keys must be present in a TypedDict. It is possible
-   to override this by specifying totality.
+   By default, all keys must be present in a ``TypedDict``. It is possible to
+   override this by specifying totality.
    Usage::
 
-      class point2D(TypedDict, total=False):
+      class Point2D(TypedDict, total=False):
           x: int
           y: int
 
-   This means that a point2D TypedDict can have any of the keys omitted. A type
-   checker is only expected to support a literal False or True as the value of
-   the total argument. True is the default, and makes all items defined in the
-   class body be required.
+   This means that a ``Point2D`` ``TypedDict`` can have any of the keys
+   omitted. A type checker is only expected to support a literal ``False`` or
+   ``True`` as the value of the ``total`` argument. ``True`` is the default,
+   and makes all items defined in the class body required.
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -1950,6 +1952,8 @@ Introspection helpers
    ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
+   .. versionadded:: 3.7.4
+
 Constant
 --------
 
@@ -1978,4 +1982,3 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
-

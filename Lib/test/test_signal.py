@@ -6,6 +6,7 @@ import socket
 import statistics
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from test import support
@@ -1250,6 +1251,55 @@ class StressTest(unittest.TestCase):
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
+
+    @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
+                         "test needs SIGUSR1")
+    def test_stress_modifying_handlers(self):
+        # bpo-43406: race condition between trip_signal() and signal.signal
+        signum = signal.SIGUSR1
+        num_sent_signals = 0
+        num_received_signals = 0
+        do_stop = False
+
+        def custom_handler(signum, frame):
+            nonlocal num_received_signals
+            num_received_signals += 1
+
+        def set_interrupts():
+            nonlocal num_sent_signals
+            while not do_stop:
+                signal.raise_signal(signum)
+                num_sent_signals += 1
+
+        def cycle_handlers():
+            while num_sent_signals < 100:
+                for i in range(20000):
+                    # Cycle between a Python-defined and a non-Python handler
+                    for handler in [custom_handler, signal.SIG_IGN]:
+                        signal.signal(signum, handler)
+
+        old_handler = signal.signal(signum, custom_handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+        t = threading.Thread(target=set_interrupts)
+        t.start()
+        try:
+            with support.catch_unraisable_exception() as cm:
+                cycle_handlers()
+                if cm.unraisable is not None:
+                    # An unraisable exception may be printed out when
+                    # a signal is ignored due to the aforementioned
+                    # race condition, check it.
+                    self.assertIsInstance(cm.unraisable.exc_value, OSError)
+                    self.assertIn(
+                        f"Signal {signum} ignored due to race condition",
+                        str(cm.unraisable.exc_value))
+            # Sanity check that some signals were received, but not all
+            self.assertGreater(num_received_signals, 0)
+            self.assertLess(num_received_signals, num_sent_signals)
+        finally:
+            do_stop = True
+            t.join()
+
 
 class RaiseSignalTest(unittest.TestCase):
 

@@ -51,22 +51,6 @@ except ImportError:
     pass
 
 
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3, "
-                      "and in 3.10 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
-
 ################################################################################
 ### OrderedDict
 ################################################################################
@@ -423,7 +407,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     namespace = {
         '_tuple_new': tuple_new,
-        '__builtins__': None,
+        '__builtins__': {},
         '__name__': f'namedtuple_{typename}',
     }
     code = f'lambda _cls, {arg_list}: _tuple_new(_cls, ({arg_list}))'
@@ -488,6 +472,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__repr__': __repr__,
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
+        '__match_args__': field_names,
     }
     for index, name in enumerate(field_names):
         doc = _sys.intern(f'Alias for field number {index}')

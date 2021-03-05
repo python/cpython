@@ -655,14 +655,14 @@ static const char *
 convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
               char *msgbuf, size_t bufsize, freelist_t *freelist)
 {
+#define RETURN_ERR_OCCURRED return msgbuf
     /* For # codes */
 #define REQUIRE_PY_SSIZE_T_CLEAN \
     if (!(flags & FLAG_SIZE_T)) { \
         PyErr_SetString(PyExc_SystemError, \
                         "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
-        return NULL; \
+        RETURN_ERR_OCCURRED; \
     }
-#define RETURN_ERR_OCCURRED return msgbuf
 
     const char *format = *p_format;
     char c = *format++;
@@ -1014,7 +1014,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'u': /* raw unicode buffer (Py_UNICODE *) */
     case 'Z': /* raw unicode buffer or None */
     {
-        // TODO: Raise DeprecationWarning
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "getargs: The '%c' format is deprecated. Use 'U' instead.", c)) {
+            return NULL;
+        }
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);

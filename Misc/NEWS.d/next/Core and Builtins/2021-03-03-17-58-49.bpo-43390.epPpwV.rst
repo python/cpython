@@ -1,0 +1,6 @@
+CPython now sets the ``SA_ONSTACK`` flag in ``PyOS_setsig`` for the VM's
+default signal handlers.  This is friendlier to other in-process code that
+an extension module or embedding use could pull in (such as Golang's cgo)
+where tiny thread stacks are the norm and ``sigaltstack()`` has been used to
+provide for signal handlers.  This is a no-op change for the vast majority
+of processes that don't use sigaltstack.

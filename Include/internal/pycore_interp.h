@@ -253,6 +253,10 @@ struct _is {
     // importlib module
     PyObject *importlib;
 
+    // Kept handy for pattern matching:
+    PyObject *map_abc;  // _collections_abc.Mapping
+    PyObject *seq_abc;  // _collections_abc.Sequence
+
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
@@ -347,4 +351,3 @@ PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 }
 #endif
 #endif /* !Py_INTERNAL_INTERP_H */
-

@@ -101,29 +101,29 @@ The :keyword:`try` statement works as follows.
 * If no exception occurs, the *except clause* is skipped and execution of the
   :keyword:`try` statement is finished.
 
-* If an exception occurs during execution of the try clause, the rest of the
-  clause is skipped.  Then if its type matches the exception named after the
-  :keyword:`except` keyword, the except clause is executed, and then execution
-  continues after the :keyword:`try` statement.
+* If an exception occurs during execution of the :keyword:`try` clause, the rest of the
+  clause is skipped.  Then, if its type matches the exception named after the
+  :keyword:`except` keyword, the *except clause* is executed, and then execution
+  continues after the try/except block.
 
-* If an exception occurs which does not match the exception named in the except
-  clause, it is passed on to outer :keyword:`try` statements; if no handler is
+* If an exception occurs which does not match the exception named in the *except
+  clause*, it is passed on to outer :keyword:`try` statements; if no handler is
   found, it is an *unhandled exception* and execution stops with a message as
   shown above.
 
-A :keyword:`try` statement may have more than one except clause, to specify
+A :keyword:`try` statement may have more than one *except clause*, to specify
 handlers for different exceptions.  At most one handler will be executed.
-Handlers only handle exceptions that occur in the corresponding try clause, not
-in other handlers of the same :keyword:`!try` statement.  An except clause may
-name multiple exceptions as a parenthesized tuple, for example::
+Handlers only handle exceptions that occur in the corresponding *try clause*,
+not in other handlers of the same :keyword:`!try` statement.  An *except clause*
+may name multiple exceptions as a parenthesized tuple, for example::
 
    ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
 A class in an :keyword:`except` clause is compatible with an exception if it is
 the same class or a base class thereof (but not the other way around --- an
-except clause listing a derived class is not compatible with a base class).  For
-example, the following code will print B, C, D in that order::
+*except clause* listing a derived class is not compatible with a base class).
+For example, the following code will print B, C, D in that order::
 
    class B(Exception):
        pass
@@ -144,10 +144,10 @@ example, the following code will print B, C, D in that order::
        except B:
            print("B")
 
-Note that if the except clauses were reversed (with ``except B`` first), it
-would have printed B, B, B --- the first matching except clause is triggered.
+Note that if the *except clauses* were reversed (with ``except B`` first), it
+would have printed B, B, B --- the first matching *except clause* is triggered.
 
-The last except clause may omit the exception name(s), to serve as a wildcard.
+The last *except clause* may omit the exception name(s), to serve as a wildcard.
 Use this with extreme caution, since it is easy to mask a real programming error
 in this way!  It can also be used to print an error message and then re-raise
 the exception (allowing a caller to handle the exception as well)::
@@ -167,9 +167,9 @@ the exception (allowing a caller to handle the exception as well)::
        raise
 
 The :keyword:`try` ... :keyword:`except` statement has an optional *else
-clause*, which, when present, must follow all except clauses.  It is useful for
-code that must be executed if the try clause does not raise an exception.  For
-example::
+clause*, which, when present, must follow all *except clauses*.  It is useful
+for code that must be executed if the *try clause* does not raise an exception.
+For example::
 
    for arg in sys.argv[1:]:
        try:
@@ -189,7 +189,7 @@ When an exception occurs, it may have an associated value, also known as the
 exception's *argument*. The presence and type of the argument depend on the
 exception type.
 
-The except clause may specify a variable after the exception name.  The
+The *except clause* may specify a variable after the exception name.  The
 variable is bound to an exception instance with the arguments stored in
 ``instance.args``.  For convenience, the exception instance defines
 :meth:`__str__` so the arguments can be printed directly without having to
@@ -217,8 +217,8 @@ If an exception has arguments, they are printed as the last part ('detail') of
 the message for unhandled exceptions.
 
 Exception handlers don't just handle exceptions if they occur immediately in the
-try clause, but also if they occur inside functions that are called (even
-indirectly) in the try clause. For example::
+*try clause*, but also if they occur inside functions that are called (even
+indirectly) in the *try clause*. For example::
 
    >>> def this_fails():
    ...     x = 1/0

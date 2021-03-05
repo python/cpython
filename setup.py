@@ -46,6 +46,9 @@ TEST_EXTENSIONS = (sysconfig.get_config_var('TEST_MODULES') == 'yes')
 # This global variable is used to hold the list of modules to be disabled.
 DISABLED_MODULE_LIST = []
 
+# --list-module-names option used by Tools/scripts/generate_module_names.py
+LIST_MODULE_NAMES = False
+
 
 def get_platform():
     # Cross compiling
@@ -447,11 +450,19 @@ class PyBuildExt(build_ext):
         # Detect which modules should be compiled
         self.detect_modules()
 
-        self.remove_disabled()
+        if not LIST_MODULE_NAMES:
+            self.remove_disabled()
 
         self.update_sources_depends()
         mods_built, mods_disabled = self.remove_configured_extensions()
         self.set_compiler_executables()
+
+        if LIST_MODULE_NAMES:
+            for ext in self.extensions:
+                print(ext.name)
+            for name in self.missing:
+                print(name)
+            return
 
         build_ext.build_extensions(self)
 
@@ -671,6 +682,51 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
+    def add_wrcc_search_dirs(self):
+        # add library search path by wr-cc, the compiler wrapper
+
+        def convert_mixed_path(path):
+            # convert path like C:\folder1\folder2/folder3/folder4
+            # to msys style /c/folder1/folder2/folder3/folder4
+            drive = path[0].lower()
+            left = path[2:].replace("\\", "/")
+            return "/" + drive + left
+
+        def add_search_path(line):
+            # On Windows building machine, VxWorks does
+            # cross builds under msys2 environment.
+            pathsep = (";" if sys.platform == "msys" else ":")
+            for d in line.strip().split("=")[1].split(pathsep):
+                d = d.strip()
+                if sys.platform == "msys":
+                    # On Windows building machine, compiler
+                    # returns mixed style path like:
+                    # C:\folder1\folder2/folder3/folder4
+                    d = convert_mixed_path(d)
+                d = os.path.normpath(d)
+                add_dir_to_list(self.compiler.library_dirs, d)
+
+        cc = sysconfig.get_config_var('CC')
+        tmpfile = os.path.join(self.build_temp, 'wrccpaths')
+        os.makedirs(self.build_temp, exist_ok=True)
+        try:
+            ret = run_command('%s --print-search-dirs >%s' % (cc, tmpfile))
+            if ret:
+                return
+            with open(tmpfile) as fp:
+                # Parse paths in libraries line. The line is like:
+                # On Linux, "libraries: = path1:path2:path3"
+                # On Windows, "libraries: = path1;path2;path3"
+                for line in fp:
+                    if not line.startswith("libraries"):
+                        continue
+                    add_search_path(line)
+        finally:
+            try:
+                os.unlink(tmpfile)
+            except OSError:
+                pass
+
     def add_cross_compiling_paths(self):
         cc = sysconfig.get_config_var('CC')
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
@@ -703,6 +759,9 @@ class PyBuildExt(build_ext):
                                             line.strip())
         finally:
             os.unlink(tmpfile)
+
+        if VXWORKS:
+            self.add_wrcc_search_dirs()
 
     def add_ldflags_cppflags(self):
         # Add paths specified in the environment variables LDFLAGS and
@@ -963,7 +1022,6 @@ class PyBuildExt(build_ext):
 
     def detect_readline_curses(self):
         # readline
-        do_readline = self.compiler.find_library_file(self.lib_dirs, 'readline')
         readline_termcap_library = ""
         curses_library = ""
         # Cannot use os.popen here in py3k.
@@ -971,7 +1029,13 @@ class PyBuildExt(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         # Determine if readline is already linked against curses or tinfo.
-        if do_readline:
+        if sysconfig.get_config_var('HAVE_LIBREADLINE'):
+            if sysconfig.get_config_var('WITH_EDITLINE'):
+                readline_lib = 'edit'
+            else:
+                readline_lib = 'readline'
+            do_readline = self.compiler.find_library_file(self.lib_dirs,
+                readline_lib)
             if CROSS_COMPILING:
                 ret = run_command("%s -d %s | grep '(NEEDED)' > %s"
                                 % (sysconfig.get_config_var('READELF'),
@@ -994,6 +1058,8 @@ class PyBuildExt(build_ext):
                             break
             if os.path.exists(tmpfile):
                 os.unlink(tmpfile)
+        else:
+            do_readline = False
         # Issue 7384: If readline is already linked against curses,
         # use the same library for the readline and curses modules.
         if 'curses' in readline_termcap_library:
@@ -1013,7 +1079,7 @@ class PyBuildExt(build_ext):
             os_release = int(os.uname()[2].split('.')[0])
             dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
             if (dep_target and
-                    (tuple(int(n) for n in str(dep_target).split('.')[0:2])
+                    (tuple(int(n) for n in dep_target.split('.')[0:2])
                         < (10, 5) ) ):
                 os_release = 8
             if os_release < 9:
@@ -1033,7 +1099,7 @@ class PyBuildExt(build_ext):
             else:
                 readline_extra_link_args = ()
 
-            readline_libs = ['readline']
+            readline_libs = [readline_lib]
             if readline_termcap_library:
                 pass # Issue 7384: Already linked against curses or tinfo.
             elif curses_library:
@@ -1118,6 +1184,7 @@ class PyBuildExt(build_ext):
             # bpo-31904: crypt() function is not provided by VxWorks.
             # DES_crypt() OpenSSL provides is too weak to implement
             # the encryption.
+            self.missing.append('_crypt')
             return
 
         if self.compiler.find_library_file(self.lib_dirs, 'crypt'):
@@ -1125,8 +1192,7 @@ class PyBuildExt(build_ext):
         else:
             libs = []
 
-        self.add(Extension('_crypt', ['_cryptmodule.c'],
-                               libraries=libs))
+        self.add(Extension('_crypt', ['_cryptmodule.c'], libraries=libs))
 
     def detect_socket(self):
         # socket(2)
@@ -1735,26 +1801,28 @@ class PyBuildExt(build_ext):
         if MS_WINDOWS:
             multiprocessing_srcs = ['_multiprocessing/multiprocessing.c',
                                     '_multiprocessing/semaphore.c']
-
         else:
             multiprocessing_srcs = ['_multiprocessing/multiprocessing.c']
             if (sysconfig.get_config_var('HAVE_SEM_OPEN') and not
                 sysconfig.get_config_var('POSIX_SEMAPHORES_NOT_ENABLED')):
                 multiprocessing_srcs.append('_multiprocessing/semaphore.c')
-            if (sysconfig.get_config_var('HAVE_SHM_OPEN') and
-                sysconfig.get_config_var('HAVE_SHM_UNLINK')):
-                posixshmem_srcs = ['_multiprocessing/posixshmem.c']
-                libs = []
-                if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
-                    # need to link with librt to get shm_open()
-                    libs.append('rt')
-                self.add(Extension('_posixshmem', posixshmem_srcs,
-                                   define_macros={},
-                                   libraries=libs,
-                                   include_dirs=["Modules/_multiprocessing"]))
-
         self.add(Extension('_multiprocessing', multiprocessing_srcs,
                            include_dirs=["Modules/_multiprocessing"]))
+
+        if (not MS_WINDOWS and
+           sysconfig.get_config_var('HAVE_SHM_OPEN') and
+           sysconfig.get_config_var('HAVE_SHM_UNLINK')):
+            posixshmem_srcs = ['_multiprocessing/posixshmem.c']
+            libs = []
+            if sysconfig.get_config_var('SHM_NEEDS_LIBRT'):
+                # need to link with librt to get shm_open()
+                libs.append('rt')
+            self.add(Extension('_posixshmem', posixshmem_srcs,
+                               define_macros={},
+                               libraries=libs,
+                               include_dirs=["Modules/_multiprocessing"]))
+        else:
+            self.missing.append('_posixshmem')
 
     def detect_uuid(self):
         # Build the _uuid module if possible
@@ -1811,18 +1879,34 @@ class PyBuildExt(build_ext):
             self.add(Extension('xxlimited', ['xxlimited.c']))
             self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
-    def detect_tkinter_explicitly(self):
-        # Build _tkinter using explicit locations for Tcl/Tk.
+    def detect_tkinter_fromenv(self):
+        # Build _tkinter using the Tcl/Tk locations specified by
+        # the _TCLTK_INCLUDES and _TCLTK_LIBS environment variables.
+        # This method is meant to be invoked by detect_tkinter().
         #
-        # This is enabled when both arguments are given to ./configure:
+        # The variables can be set via one of the following ways.
         #
+        # - Automatically, at configuration time, by using pkg-config.
+        #   The tool is called by the configure script.
+        #   Additional pkg-config configuration paths can be set via the
+        #   PKG_CONFIG_PATH environment variable.
+        #
+        #     PKG_CONFIG_PATH=".../lib/pkgconfig" ./configure ...
+        #
+        # - Explicitly, at configuration time by setting both
+        #   --with-tcltk-includes and --with-tcltk-libs.
+        #
+        #     ./configure ... \
         #     --with-tcltk-includes="-I/path/to/tclincludes \
         #                            -I/path/to/tkincludes"
         #     --with-tcltk-libs="-L/path/to/tcllibs -ltclm.n \
         #                        -L/path/to/tklibs -ltkm.n"
         #
-        # These values can also be specified or overridden via make:
-        #    make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
+        #  - Explicitly, at compile time, by passing TCLTK_INCLUDES and
+        #    TCLTK_LIBS to the make target.
+        #    This will override any configuration-time option.
+        #
+        #      make TCLTK_INCLUDES="..." TCLTK_LIBS="..."
         #
         # This can be useful for building and testing tkinter with multiple
         # versions of Tcl/Tk.  Note that a build of Tk depends on a particular
@@ -1846,6 +1930,7 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter_darwin(self):
         # Build default _tkinter on macOS using Tcl and Tk frameworks.
+        # This method is meant to be invoked by detect_tkinter().
         #
         # The macOS native Tk (AKA Aqua Tk) and Tcl are most commonly
         # built and installed as macOS framework bundles.  However,
@@ -1864,16 +1949,20 @@ class PyBuildExt(build_ext):
         #    search only the SDK's /Library/Frameworks (normally empty)
         #    and /System/Library/Frameworks.
         #
-        # Any other use case should be able to be handled explicitly by
-        # using the options described above in detect_tkinter_explicitly().
-        # In particular it would be good to handle here the case where
+        # Any other use cases are handled either by detect_tkinter_fromenv(),
+        # or detect_tkinter(). The former handles non-standard locations of
+        # Tcl/Tk, defined via the _TCLTK_INCLUDES and _TCLTK_LIBS environment
+        # variables. The latter handles any Tcl/Tk versions installed in
+        # standard Unix directories.
+        #
+        # It would be desirable to also handle here the case where
         # you want to build and link with a framework build of Tcl and Tk
         # that is not in /Library/Frameworks, say, in your private
         # $HOME/Library/Frameworks directory or elsewhere. It turns
         # out to be difficult to make that work automatically here
         # without bringing into play more tools and magic. That case
         # can be handled using a recipe with the right arguments
-        # to detect_tkinter_explicitly().
+        # to detect_tkinter_fromenv().
         #
         # Note also that the fallback case here is to try to use the
         # Apple-supplied Tcl and Tk frameworks in /System/Library but
@@ -1973,12 +2062,17 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter(self):
         # The _tkinter module.
+        #
+        # Detection of Tcl/Tk is attempted in the following order:
+        #   - Through environment variables.
+        #   - Platform specific detection of Tcl/Tk (currently only macOS).
+        #   - Search of various standard Unix header/library paths.
+        #
+        # Detection stops at the first successful method.
 
-        # Check whether --with-tcltk-includes and --with-tcltk-libs were
-        # configured or passed into the make target.  If so, use these values
-        # to build tkinter and bypass the searches for Tcl and TK in standard
-        # locations.
-        if self.detect_tkinter_explicitly():
+        # Check for Tcl and Tk at the locations indicated by _TCLTK_INCLUDES
+        # and _TCLTK_LIBS environment variables.
+        if self.detect_tkinter_fromenv():
             return True
 
         # Rather than complicate the code below, detecting and building
@@ -2549,6 +2643,12 @@ class PyBuildScripts(build_scripts):
 
 
 def main():
+    global LIST_MODULE_NAMES
+
+    if "--list-module-names" in sys.argv:
+        LIST_MODULE_NAMES = True
+        sys.argv.remove("--list-module-names")
+
     set_compiler_flags('CFLAGS', 'PY_CFLAGS_NODIST')
     set_compiler_flags('LDFLAGS', 'PY_LDFLAGS_NODIST')
 

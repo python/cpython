@@ -330,7 +330,9 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`.
+   Test discovery supports :term:`namespace packages <namespace package>`
+   for start directory. Note that you need to the top level directory too.
+   (e.g. ``python -m unittest discover -s root/namespace -t root``).
 
 
 .. _organizing-tests:
@@ -1498,11 +1500,11 @@ Test cases
       after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
 
       It is responsible for calling all the cleanup functions added by
-      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      :meth:`addClassCleanup`. If you need cleanup functions to be called
       *prior* to :meth:`tearDownClass` then you can call
-      :meth:`doCleanupsClass` yourself.
+      :meth:`doClassCleanups` yourself.
 
-      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      :meth:`doClassCleanups` pops methods off the stack of cleanup
       functions one at a time, so it can be called at any time.
 
       .. versionadded:: 3.8
@@ -1870,11 +1872,15 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
-           not errors.
-         Discovery works for :term:`namespace packages <namespace package>`.
-         Paths are sorted before being imported so that execution order is
-           the same even if the underlying file system's ordering is not
-           dependent on file name.
+         not errors.
+
+      .. versionchanged:: 3.4
+         *start_dir* can be a :term:`namespace packages <namespace package>`.
+
+      .. versionchanged:: 3.4
+         Paths are sorted before being imported so that execution order is the
+         same even if the underlying file system's ordering is not dependent
+         on file name.
 
       .. versionchanged:: 3.5
          Found packages are now checked for ``load_tests`` regardless of

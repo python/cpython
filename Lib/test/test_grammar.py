@@ -260,7 +260,7 @@ the \'lazy\' dog.\n\
         for s in samples:
             with self.assertRaises(SyntaxError) as cm:
                 compile(s, "<test>", "exec")
-            self.assertIn("unexpected EOF", str(cm.exception))
+            self.assertIn("was never closed", str(cm.exception))
 
 var_annot_global: int # a global annotated is necessary for test_var_annot
 

@@ -408,6 +408,9 @@ static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOp
 static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
         return 0;
@@ -590,6 +593,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Constant_kind:
         // Already a constant, nothing further to do
         break;
+    case MatchAs_kind:
+    case MatchOr_kind:
+        // These can't occur outside of patterns.
+        Py_UNREACHABLE();
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
@@ -709,6 +716,10 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Expr_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expr.value);
         break;
+    case Match_kind:
+        CALL(astfold_expr, expr_ty, node_->v.Match.subject);
+        CALL_SEQ(astfold_match_case, match_case, node_->v.Match.cases);
+        break;
     // The following statements don't contain any subexpressions to be folded
     case Import_kind:
     case ImportFrom_kind:
@@ -743,6 +754,125 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     CALL(astfold_expr, expr_ty, node_->context_expr);
     CALL_OPT(astfold_expr, expr_ty, node_->optional_vars);
+    return 1;
+}
+
+static int
+astfold_pattern_negative(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    assert(node_->kind == UnaryOp_kind);
+    assert(node_->v.UnaryOp.op == USub);
+    assert(node_->v.UnaryOp.operand->kind == Constant_kind);
+    PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
+    assert(PyComplex_CheckExact(value) ||
+           PyFloat_CheckExact(value) ||
+           PyLong_CheckExact(value));
+    PyObject *negated = PyNumber_Negative(value);
+    if (negated == NULL) {
+        return 0;
+    }
+    assert(PyComplex_CheckExact(negated) ||
+           PyFloat_CheckExact(negated) ||
+           PyLong_CheckExact(negated));
+    return make_const(node_, negated, ctx_);
+}
+
+static int
+astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    expr_ty left = node_->v.BinOp.left;
+    expr_ty right = node_->v.BinOp.right;
+    if (left->kind == UnaryOp_kind) {
+        CALL(astfold_pattern_negative, expr_ty, left);
+    }
+    assert(left->kind = Constant_kind);
+    assert(right->kind = Constant_kind);
+    // LHS must be real, RHS must be imaginary:
+    if (!(PyFloat_CheckExact(left->v.Constant.value) ||
+          PyLong_CheckExact(left->v.Constant.value)) ||
+        !PyComplex_CheckExact(right->v.Constant.value))
+    {
+        // Not actually valid, but it's the compiler's job to complain:
+        return 1;
+    }
+    PyObject *new;
+    if (node_->v.BinOp.op == Add) {
+        new = PyNumber_Add(left->v.Constant.value, right->v.Constant.value);
+    }
+    else {
+        assert(node_->v.BinOp.op == Sub);
+        new = PyNumber_Subtract(left->v.Constant.value, right->v.Constant.value);
+    }
+    if (new == NULL) {
+        return 0;
+    }
+    assert(PyComplex_CheckExact(new));
+    return make_const(node_, new, ctx_);
+}
+
+static int
+astfold_pattern_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    CALL(astfold_pattern, expr_ty, node_->value);
+    return 1;
+}
+
+static int
+astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    // Don't blindly optimize the pattern as an expr; it plays by its own rules!
+    // Currently, this is only used to form complex/negative numeric constants.
+    switch (node_->kind) {
+        case Attribute_kind:
+            break;
+        case BinOp_kind:
+            CALL(astfold_pattern_complex, expr_ty, node_);
+            break;
+        case Call_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.Call.args);
+            CALL_SEQ(astfold_pattern_keyword, keyword, node_->v.Call.keywords);
+            break;
+        case Constant_kind:
+            break;
+        case Dict_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.keys);
+            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.values);
+            break;
+        // Not actually valid, but it's the compiler's job to complain:
+        case JoinedStr_kind:
+            break;
+        case List_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.List.elts);
+            break;
+        case MatchAs_kind:
+            CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
+            break;
+        case MatchOr_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.MatchOr.patterns);
+            break;
+        case Name_kind:
+            break;
+        case Starred_kind:
+            CALL(astfold_pattern, expr_ty, node_->v.Starred.value);
+            break;
+        case Tuple_kind:
+            CALL_SEQ(astfold_pattern, expr, node_->v.Tuple.elts);
+            break;
+        case UnaryOp_kind:
+            CALL(astfold_pattern_negative, expr_ty, node_);
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return 1;
+}
+
+static int
+astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    CALL(astfold_pattern, expr_ty, node_->pattern);
+    CALL_OPT(astfold_expr, expr_ty, node_->guard);
+    CALL_SEQ(astfold_stmt, stmt, node_->body);
     return 1;
 }
 
