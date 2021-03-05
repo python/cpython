@@ -1259,6 +1259,10 @@ class _NamespaceLoader:
         # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
+    def get_resource_reader(self, module):
+        from importlib.readers import NamespaceReader
+        return NamespaceReader(self._path)
+
 
 # Finders #####################################################################
 

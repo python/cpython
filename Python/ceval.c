@@ -7,6 +7,7 @@
    */
 
 /* enable more aggressive intra-module optimizations, where available */
+/* affects both release and debug builds - see bpo-43271 */
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"

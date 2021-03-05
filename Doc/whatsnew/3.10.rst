@@ -125,105 +125,48 @@ Check :pep:`617` for more details.
 in :issue:`12782` and :issue:`40334`.)
 
 
-PEP 563: Postponed Evaluation of Annotations Becomes Default
-------------------------------------------------------------
+Better error messages in the parser
+-----------------------------------
 
-In Python 3.7, postponed evaluation of annotations was added,
-to be enabled with a ``from __future__ import annotations``
-directive.  In 3.10 this became the default behavior, even
-without that future directive.  With this being default, all
-annotations stored in :attr:`__annotations__` will be strings.
-If needed, annotations can be resolved at runtime using
-:func:`typing.get_type_hints`.  See :pep:`563` for a full
-description.  Also, the :func:`inspect.signature` will try to
-resolve types from now on, and when it fails it will fall back to
-showing the string annotations.  (Contributed by Batuhan Taskaya
-in :issue:`38605`.)
+When parsing code that contains unclosed parentheses or brackets the interpreter
+now includes the location of the unclosed bracket of parentheses instead of displaying
+*SyntaxError: unexpected EOF while parsing* or pointing to some incorrect location.
+For instance, consider the following code (notice the unclosed '{'):
 
-* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
-  number of ones in the binary expansion of a given integer, also known
-  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
+.. code-block:: python
 
-* The views returned by :meth:`dict.keys`, :meth:`dict.values` and
-  :meth:`dict.items` now all have a ``mapping`` attribute that gives a
-  :class:`types.MappingProxyType` object wrapping the original
-  dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
+    expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
+                38: 4, 39: 4, 45: 5, 46: 5, 47: 5, 48: 5, 49: 5, 54: 6,
+    some_other_code = foo()
 
-* :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
-  to require that all the iterables have an equal length.
+previous versions of the interpreter reported confusing places as the location of
+the syntax error:
 
-PEP 613: TypeAlias Annotation
------------------------------
+.. code-block:: text
 
-:pep:`484` introduced the concept of type aliases, only requiring them to be
-top-level unannotated assignments. This simplicity sometimes made it difficult
-for type checkers to distinguish between type aliases and ordinary assignments,
-especially when forward references or invalid types were involved. Compare::
+   File "example.py", line 3
+       some_other_code = foo()
+                       ^
+   SyntaxError: invalid syntax
 
-   StrCache = 'Cache[str]'  # a type alias
-   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+but in Python3.10 a more informative error is emitted:
 
-Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
-declare type aliases more explicitly::
+.. code-block:: text
 
-   StrCache: TypeAlias = 'Cache[str]'  # a type alias
-   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
-
-See :pep:`613` for more details.
-
-(Contributed by Mikhail Golubev in :issue:`41923`.)
-
-PEP 604: New Type Union Operator
---------------------------------
-
-A new type union operator was introduced which enables the syntax ``X | Y``.
-This provides a cleaner way of expressing 'either type X or type Y' instead of
-using :data:`typing.Union`, especially in type hints (annotations).
-
-In previous versions of Python, to apply a type hint for functions accepting
-arguments of multiple types, :data:`typing.Union` was used::
-
-   def square(number: Union[int, float]) -> Union[int, float]:
-       return number ** 2
+    File "example.py", line 1
+        expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
+                   ^
+    SyntaxError: '{' was never closed
 
 
-Type hints can now be written in a more succinct manner::
+In a similar way, errors involving unclosed string literals (single and triple
+quoted) now point to the start of the string instead of reporting EOF/EOL.
 
-   def square(number: int | float) -> int | float:
-       return number ** 2
+These improvements are inspired by previous work in the PyPy interpreter.
 
+(Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
+:issue:`40176`.)
 
-This new syntax is also accepted as the second argument to :func:`isinstance`
-and :func:`issubclass`::
-
-   >>> isinstance(1, int | str)
-   True
-
-See :ref:`types-union` and :pep:`604` for more details.
-
-(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
-
-PEP 612: Parameter Specification Variables
-------------------------------------------
-
-Two new options to improve the information provided to static type checkers for
-:pep:`484`\ 's ``Callable`` have been added to the :mod:`typing` module.
-
-The first is the parameter specification variable.  They are used to forward the
-parameter types of one callable to another callable -- a pattern commonly
-found in higher order functions and decorators.  Examples of usage can be found
-in :class:`typing.ParamSpec`. Previously, there was no easy way to type annotate
-dependency of parameter types in such a precise manner.
-
-The second option is the new ``Concatenate`` operator. It's used in conjunction
-with parameter specification variables to type annotate a higher order callable
-which adds or removes parameters of another callable.  Examples of usage can
-be found in :class:`typing.Concatenate`.
-
-See :class:`typing.Callable`, :class:`typing.ParamSpec`,
-:class:`typing.Concatenate` and :pep:`612` for more details.
-
-(Contributed by Ken Jin in :issue:`41559`.)
 
 PEP 634: Structural Pattern Matching
 ------------------------------------
@@ -337,8 +280,8 @@ Without the use of ``_`` in a case statement, a match may not exist. If no
 match exists, the behavior is a no-op. For example, if ``status`` of 500 is
 passed, a no-op occurs.
 
-Pattterns with a literal and variable
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Patterns with a literal and variable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Patterns can look like unpacking assignments, and a pattern may be used to bind
 variables. In this example, a data point can be unpacked to its x-coordinate
@@ -500,50 +443,120 @@ Several other key features:
 For the full specification see :pep:`634`.  Motivation and rationale
 are in :pep:`635`, and a longer tutorial is in :pep:`636`.
 
-Better error messages in the parser
------------------------------------
 
-When parsing code that contains unclosed parentheses or brackets the interpreter
-now includes the location of the unclosed bracket of parentheses instead of displaying
-*SyntaxError: unexpected EOF while parsing* or pointing to some incorrect location.
-For instance, consider the following code (notice the unclosed '{'):
+New Features Related to Type Annotations
+========================================
 
-.. code-block:: python
-
-    expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
-                38: 4, 39: 4, 45: 5, 46: 5, 47: 5, 48: 5, 49: 5, 54: 6,
-    some_other_code = foo()
-
-previous versions of the interpreter reported confusing places as the location of
-the syntax error:
-
-.. code-block:: text
-
-   File "example.py", line 3
-       some_other_code = foo()
-                       ^
-   SyntaxError: invalid syntax
-
-but in Python3.10 a more informative error is emitted:
-
-.. code-block:: text
-
-    File "example.py", line 1
-        expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
-                   ^
-    SyntaxError: '{' was never closed
+This section covers major changes affecting :pep:`484` type annotations and
+the :mod:`typing` module.
 
 
-In a similar way, errors involving unclosed string literals (single and triple
-quoted) now point to the start of the string instead of reporting EOF/EOL.
+PEP 563: Postponed Evaluation of Annotations Becomes Default
+------------------------------------------------------------
 
-These improvements are inspired by previous work in the PyPy interpreter.
+In Python 3.7, postponed evaluation of annotations was added,
+to be enabled with a ``from __future__ import annotations``
+directive.  In 3.10 this became the default behavior, even
+without that future directive.  With this being default, all
+annotations stored in :attr:`__annotations__` will be strings.
+If needed, annotations can be resolved at runtime using
+:func:`typing.get_type_hints`.  See :pep:`563` for a full
+description.  Also, the :func:`inspect.signature` will try to
+resolve types from now on, and when it fails it will fall back to
+showing the string annotations.  (Contributed by Batuhan Taskaya
+in :issue:`38605`.)
 
-(Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
-:issue:`40176`.)
+
+PEP 604: New Type Union Operator
+--------------------------------
+
+A new type union operator was introduced which enables the syntax ``X | Y``.
+This provides a cleaner way of expressing 'either type X or type Y' instead of
+using :data:`typing.Union`, especially in type hints (annotations).
+
+In previous versions of Python, to apply a type hint for functions accepting
+arguments of multiple types, :data:`typing.Union` was used::
+
+   def square(number: Union[int, float]) -> Union[int, float]:
+       return number ** 2
+
+
+Type hints can now be written in a more succinct manner::
+
+   def square(number: int | float) -> int | float:
+       return number ** 2
+
+
+This new syntax is also accepted as the second argument to :func:`isinstance`
+and :func:`issubclass`::
+
+   >>> isinstance(1, int | str)
+   True
+
+See :ref:`types-union` and :pep:`604` for more details.
+
+(Contributed by Maggie Moss and Philippe Prados in :issue:`41428`.)
+
+
+PEP 612: Parameter Specification Variables
+------------------------------------------
+
+Two new options to improve the information provided to static type checkers for
+:pep:`484`\ 's ``Callable`` have been added to the :mod:`typing` module.
+
+The first is the parameter specification variable.  They are used to forward the
+parameter types of one callable to another callable -- a pattern commonly
+found in higher order functions and decorators.  Examples of usage can be found
+in :class:`typing.ParamSpec`. Previously, there was no easy way to type annotate
+dependency of parameter types in such a precise manner.
+
+The second option is the new ``Concatenate`` operator. It's used in conjunction
+with parameter specification variables to type annotate a higher order callable
+which adds or removes parameters of another callable.  Examples of usage can
+be found in :class:`typing.Concatenate`.
+
+See :class:`typing.Callable`, :class:`typing.ParamSpec`,
+:class:`typing.Concatenate` and :pep:`612` for more details.
+
+(Contributed by Ken Jin in :issue:`41559`.)
+
+
+PEP 613: TypeAlias Annotation
+-----------------------------
+
+:pep:`484` introduced the concept of type aliases, only requiring them to be
+top-level unannotated assignments. This simplicity sometimes made it difficult
+for type checkers to distinguish between type aliases and ordinary assignments,
+especially when forward references or invalid types were involved. Compare::
+
+   StrCache = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
+declare type aliases more explicitly::
+
+   StrCache: TypeAlias = 'Cache[str]'  # a type alias
+   LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
+
+See :pep:`613` for more details.
+
+(Contributed by Mikhail Golubev in :issue:`41923`.)
+
 
 Other Language Changes
 ======================
+
+* The :class:`int` type has a new method :meth:`int.bit_count`, returning the
+  number of ones in the binary expansion of a given integer, also known
+  as the population count. (Contributed by Niklas Fiekas in :issue:`29882`.)
+
+* The views returned by :meth:`dict.keys`, :meth:`dict.values` and
+  :meth:`dict.items` now all have a ``mapping`` attribute that gives a
+  :class:`types.MappingProxyType` object wrapping the original
+  dictionary. (Contributed by Dennis Sweeney in :issue:`40890`.)
+
+* :pep:`618`: The :func:`zip` function now has an optional ``strict`` flag, used
+  to require that all the iterables have an equal length.
 
 * Builtin and extension functions that take integer arguments no longer accept
   :class:`~decimal.Decimal`\ s, :class:`~fractions.Fraction`\ s and other
@@ -551,6 +564,7 @@ Other Language Changes
   the :meth:`~object.__int__` method but do not have the
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
+
 * If :func:`object.__ipow__` returns :const:`NotImplemented`, the operator will
   correctly fall back to :func:`object.__pow__` and :func:`object.__rpow__` as expected.
   (Contributed by Alex Shkop in :issue:`38302`.)
@@ -800,6 +814,8 @@ of types readily interpretable by type checkers.
 typing
 ------
 
+For major changes, see `New Features Related to Type Annotations`_.
+
 The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
 and to match the behavior of static type checkers specified in the PEP.
 
@@ -887,8 +903,9 @@ Optimizations
 
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
-  bytecode level.  It is now around 100% faster to create a function with parameter
-  annotations.  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
+  bytecode level. It is now around 2 times faster to create a function with
+  parameter annotations.  (Contributed by Yurii Karabas and Inada Naoki
+  in :issue:`42202`)
 
 * Substring search functions such as ``str1 in str2`` and ``str2.find(str1)``
   now sometimes use Crochemore & Perrin's "Two-Way" string searching

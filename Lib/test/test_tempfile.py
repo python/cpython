@@ -667,6 +667,37 @@ class TestMkstemp(BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    def test_for_tempdir_is_bytes_issue40701_api_warts(self):
+        orig_tempdir = tempfile.tempdir
+        self.assertIsInstance(tempfile.tempdir, (str, type(None)))
+        try:
+            fd, path = tempfile.mkstemp()
+            os.close(fd)
+            os.unlink(path)
+            self.assertIsInstance(path, str)
+            tempfile.tempdir = tempfile.gettempdirb()
+            self.assertIsInstance(tempfile.tempdir, bytes)
+            self.assertIsInstance(tempfile.gettempdir(), str)
+            self.assertIsInstance(tempfile.gettempdirb(), bytes)
+            fd, path = tempfile.mkstemp()
+            os.close(fd)
+            os.unlink(path)
+            self.assertIsInstance(path, bytes)
+            fd, path = tempfile.mkstemp(suffix='.txt')
+            os.close(fd)
+            os.unlink(path)
+            self.assertIsInstance(path, str)
+            fd, path = tempfile.mkstemp(prefix='test-temp-')
+            os.close(fd)
+            os.unlink(path)
+            self.assertIsInstance(path, str)
+            fd, path = tempfile.mkstemp(dir=tempfile.gettempdir())
+            os.close(fd)
+            os.unlink(path)
+            self.assertIsInstance(path, str)
+        finally:
+            tempfile.tempdir = orig_tempdir
+
 
 class TestMkdtemp(TestBadTempdir, BaseTestCase):
     """Test mkdtemp()."""
@@ -774,6 +805,32 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             self.assertTrue(dir1.endswith('aaa'))
             dir2 = tempfile.mkdtemp()
             self.assertTrue(dir2.endswith('bbb'))
+
+    def test_for_tempdir_is_bytes_issue40701_api_warts(self):
+        orig_tempdir = tempfile.tempdir
+        self.assertIsInstance(tempfile.tempdir, (str, type(None)))
+        try:
+            path = tempfile.mkdtemp()
+            os.rmdir(path)
+            self.assertIsInstance(path, str)
+            tempfile.tempdir = tempfile.gettempdirb()
+            self.assertIsInstance(tempfile.tempdir, bytes)
+            self.assertIsInstance(tempfile.gettempdir(), str)
+            self.assertIsInstance(tempfile.gettempdirb(), bytes)
+            path = tempfile.mkdtemp()
+            os.rmdir(path)
+            self.assertIsInstance(path, bytes)
+            path = tempfile.mkdtemp(suffix='-dir')
+            os.rmdir(path)
+            self.assertIsInstance(path, str)
+            path = tempfile.mkdtemp(prefix='test-mkdtemp-')
+            os.rmdir(path)
+            self.assertIsInstance(path, str)
+            path = tempfile.mkdtemp(dir=tempfile.gettempdir())
+            os.rmdir(path)
+            self.assertIsInstance(path, str)
+        finally:
+            tempfile.tempdir = orig_tempdir
 
 
 class TestMktemp(BaseTestCase):

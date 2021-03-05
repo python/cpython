@@ -6664,12 +6664,12 @@ assemble(struct compiler *c, int addNone)
 
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
         if (normalize_basic_block(b)) {
-            goto error;
+            return NULL;
         }
     }
 
     if (ensure_exits_have_lineno(c)) {
-        goto error;
+        return NULL;
     }
 
     nblocks = 0;
