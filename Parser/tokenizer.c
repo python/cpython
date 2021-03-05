@@ -56,6 +56,9 @@ tok_new(void)
     if (tok == NULL)
         return NULL;
     tok->buf = tok->cur = tok->inp = NULL;
+    tok->fp_interactive = 0;
+    tok->interactive_src_start = NULL;
+    tok->interactive_src_end = NULL;
     tok->start = NULL;
     tok->end = NULL;
     tok->done = E_OK;
@@ -80,8 +83,6 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
     tok->type_comments = 0;
-    tok->stdin_content = NULL;
-
     tok->async_hacks = 0;
     tok->async_def = 0;
     tok->async_def_indent = 0;
@@ -323,6 +324,35 @@ check_bom(int get_char(struct tok_state *),
     return 1;
 }
 
+static int tok_concatenate_interactive_new_line(struct tok_state* tok, char* line) {
+    assert(tok->fp_interactive);
+
+    if (!line) {
+        return 0;
+    }
+
+    Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
+    Py_ssize_t line_size = strlen(line);
+    char* new_str = tok->interactive_src_start;
+
+    new_str = PyMem_Realloc(new_str, current_size + line_size + 1);
+    if (!new_str) {
+        if (tok->interactive_src_start) {
+            PyMem_Free(tok->interactive_src_start);
+        }
+        tok->interactive_src_start = NULL;
+        tok->interactive_src_end = NULL;
+        tok->done = E_NOMEM;
+        return -1;
+    }
+    strcpy(new_str + current_size, line);
+
+    tok->interactive_src_start = new_str;
+    tok->interactive_src_end = new_str + current_size + line_size;
+    return 0;
+}
+
+
 /* Read a line of text from TOK into S, using the stream in TOK.
    Return NULL on failure, else S.
 
@@ -552,6 +582,12 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
                 badchar, tok->filename, tok->lineno + 1);
         return error_ret(tok);
     }
+
+    if (tok->fp_interactive &&
+        tok_concatenate_interactive_new_line(tok, line) == -1) {
+        return NULL;
+    }
+
     return line;
 }
 
@@ -807,17 +843,21 @@ PyTokenizer_FromFile(FILE *fp, const char* enc,
 void
 PyTokenizer_Free(struct tok_state *tok)
 {
-    if (tok->encoding != NULL)
+    if (tok->encoding != NULL) {
         PyMem_Free(tok->encoding);
+    }
     Py_XDECREF(tok->decoding_readline);
     Py_XDECREF(tok->decoding_buffer);
     Py_XDECREF(tok->filename);
-    if (tok->fp != NULL && tok->buf != NULL)
+    if (tok->fp != NULL && tok->buf != NULL) {
         PyMem_Free(tok->buf);
-    if (tok->input)
+    }
+    if (tok->input) {
         PyMem_Free(tok->input);
-    if (tok->stdin_content)
-        PyMem_Free(tok->stdin_content);
+    }
+    if (tok->interactive_src_start != NULL) {
+        PyMem_Free(tok->interactive_src_start);
+    }
     PyMem_Free(tok);
 }
 
@@ -858,24 +898,6 @@ tok_nextc(struct tok_state *tok)
                 if (translated == NULL)
                     return EOF;
                 newtok = translated;
-                if (tok->stdin_content == NULL) {
-                    tok->stdin_content = PyMem_Malloc(strlen(translated) + 1);
-                    if (tok->stdin_content == NULL) {
-                        tok->done = E_NOMEM;
-                        return EOF;
-                    }
-                    sprintf(tok->stdin_content, "%s", translated);
-                }
-                else {
-                    char *new_str = PyMem_Malloc(strlen(tok->stdin_content) + strlen(translated) + 1);
-                    if (new_str == NULL) {
-                        tok->done = E_NOMEM;
-                        return EOF;
-                    }
-                    sprintf(new_str, "%s%s", tok->stdin_content, translated);
-                    PyMem_Free(tok->stdin_content);
-                    tok->stdin_content = new_str;
-                }
             }
             if (tok->encoding && newtok && *newtok) {
                 /* Recode to UTF-8 */
@@ -897,6 +919,10 @@ tok_nextc(struct tok_state *tok)
                 }
                 strcpy(newtok, buf);
                 Py_DECREF(u);
+            }
+            if (tok->fp_interactive &&
+                tok_concatenate_interactive_new_line(tok, newtok) == -1) {
+                return EOF;
             }
             if (tok->nextprompt != NULL)
                 tok->prompt = tok->nextprompt;
@@ -958,7 +984,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 if (decoding_fgets(tok->buf, (int)(tok->end - tok->buf),
                           tok) == NULL) {
-                    if (!tok->decoding_erred)
+                    if (!tok->decoding_erred && !(tok->done == E_NOMEM))
                         tok->done = E_EOF;
                     done = 1;
                 }

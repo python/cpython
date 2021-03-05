@@ -816,9 +816,16 @@ class IgnoreEnvironmentTest(unittest.TestCase):
             PYTHONVERBOSE="1",
         )
 
+class SyntaxErrorTests(unittest.TestCase):
+    def test_tokenizer_error_with_stdin(self):
+        proc = subprocess.run([sys.executable, "-"], input = b"(1+2+3",
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertNotEqual(proc.stderr, None)
+        self.assertIn(b"\nSyntaxError", proc.stderr)
 
 def test_main():
-    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
+    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest, SyntaxErrorTests)
     support.reap_children()
 
 if __name__ == "__main__":
