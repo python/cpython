@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
-#include "asdl.h"
+#include "Python.h"
 
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 

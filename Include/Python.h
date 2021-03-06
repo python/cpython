@@ -160,5 +160,6 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "tracemalloc.h"
+#include "cpython/asdl.h"
 
 #endif /* !Py_PYTHON_H */

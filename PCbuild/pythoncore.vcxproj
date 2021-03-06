@@ -113,7 +113,6 @@
     <ClInclude Include="..\Include\Python-ast.h" />
     <ClInclude Include="..\Include\Python.h" />
     <ClInclude Include="..\Include\abstract.h" />
-    <ClInclude Include="..\Include\asdl.h" />
     <ClInclude Include="..\Include\ast.h" />
     <ClInclude Include="..\Include\boolobject.h" />
     <ClInclude Include="..\Include\bytearrayobject.h" />
@@ -127,6 +126,7 @@
     <ClInclude Include="..\Include\complexobject.h" />
     <ClInclude Include="..\Include\context.h" />
     <ClInclude Include="..\Include\cpython\abstract.h" />
+    <ClInclude Include="..\Include\cpython\asdl.h" />
     <ClInclude Include="..\Include\cpython\bytearrayobject.h" />
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
     <ClInclude Include="..\Include\cpython\ceval.h" />
