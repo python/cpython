@@ -147,7 +147,7 @@ to read the pickle produced.
   earlier versions of Python.
 
 * Protocol version 2 was introduced in Python 2.3.  It provides much more
-  efficient pickling of :term:`new-style class`\es.  Refer to :pep:`307` for
+  efficient pickling of :term:`new-style classes <new-style class>`.  Refer to :pep:`307` for
   information about improvements brought by protocol 2.
 
 * Protocol version 3 was added in Python 3.0.  It has explicit support for
