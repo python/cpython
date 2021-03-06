@@ -1675,23 +1675,47 @@ _PyErr_CheckSignals(void)
         f = Py_None;
 
     for (i = 1; i < NSIG; i++) {
-        if (_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
-            PyObject *result = NULL;
-            PyObject *arglist = Py_BuildValue("(iO)", i, f);
-            _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
-
-            if (arglist) {
-                result = PyEval_CallObject(Handlers[i].func,
-                                           arglist);
-                Py_DECREF(arglist);
-            }
-            if (!result) {
-                _Py_atomic_store(&is_tripped, 1);
-                return -1;
-            }
-
-            Py_DECREF(result);
+        if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
+            continue;
         }
+        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
+
+        /* Signal handlers can be modified while a signal is received,
+         * and therefore the fact that trip_signal() or PyErr_SetInterrupt()
+         * was called doesn't guarantee that there is still a Python
+         * signal handler for it by the time PyErr_CheckSignals() is called
+         * (see bpo-43406).
+         */
+        PyObject *func = Handlers[i].func;
+        if (func == NULL || func == Py_None || func == IgnoreHandler ||
+            func == DefaultHandler) {
+            /* No Python signal handler due to aforementioned race condition.
+             * We can't call raise() as it would break the assumption
+             * that PyErr_SetInterrupt() only *simulates* an incoming
+             * signal (i.e. it will never kill the process).
+             * We also don't want to interrupt user code with a cryptic
+             * asynchronous exception, so instead just write out an
+             * unraisable error.
+             */
+            PyErr_Format(PyExc_OSError,
+                         "Signal %i ignored due to race condition",
+                         i);
+            PyErr_WriteUnraisable(Py_None);
+            continue;
+        }
+
+        PyObject *result = NULL;
+        PyObject *arglist = Py_BuildValue("(iO)", i, f);
+        if (arglist) {
+            result = PyEval_CallObject(func, arglist);
+            Py_DECREF(arglist);
+        }
+        if (!result) {
+            /* On error, re-schedule a call to PyErr_CheckSignals() */
+            _Py_atomic_store(&is_tripped, 1);
+            return -1;
+        }
+        Py_DECREF(result);
     }
 
     return 0;
