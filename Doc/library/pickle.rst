@@ -261,7 +261,7 @@ process more convenient:
    protocol argument is needed.  Bytes past the pickled representation
    of the object are ignored.
 
-   Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
+   Arguments *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in the :class:`Unpickler` constructor.
 
    .. versionchanged:: 3.8
