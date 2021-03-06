@@ -506,7 +506,22 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi2.archive, TEMP_ZIP)
         self.assertEqual(zi2.prefix, TESTPACK + os.sep)
 
-        # Test invalidate_caches() method
+    def testInvalidateCaches(self):
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        files = {packdir + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
+                 "spam" + pyc_ext: (NOW, test_pyc)}
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w") as z:
+            for name, (mtime, data) in files.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
+                z.writestr(zinfo, data)
+
+        zi = zipimport.zipimporter(TEMP_ZIP)
         self.assertEqual(zi._files.keys(), files.keys())
         # Check that the file information remains accurate after reloading
         zi.invalidate_caches()
