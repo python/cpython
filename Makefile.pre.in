@@ -1082,7 +1082,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/sysmodule.h \
 		$(srcdir)/Include/traceback.h \
-		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
@@ -1126,6 +1125,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/token.h \
 		$(srcdir)/Include/cpython/traceback.h \
+		$(srcdir)/Include/cpython/tracemalloc.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
 		\

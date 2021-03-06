@@ -160,7 +160,7 @@
 #include "cpython/pystrhex.h"
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
-#include "tracemalloc.h"
+#include "cpython/tracemalloc.h"
 #include "cpython/asdl.h"
 #include "cpython/symtable.h"
 
