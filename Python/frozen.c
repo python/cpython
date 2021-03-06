@@ -11,12 +11,11 @@
    some famous words... */
 
 /* Run "make regen-frozen" to regen the file below (e.g. after a bytecode
- * format change).  The file is created by Tools/frozen/regen_frozen.py.  The
- * include file defines M___hello__ as an array of bytes.
+ * format change).  The include file defines _Py_M__hello as an array of bytes.
  */
 #include "frozen_hello.h"
 
-#define SIZE (int)sizeof(M___hello__)
+#define SIZE (int)sizeof(_Py_M__hello)
 
 static const struct _frozen _PyImport_FrozenModules[] = {
     /* importlib */
@@ -27,10 +26,10 @@ static const struct _frozen _PyImport_FrozenModules[] = {
     {"zipimport", _Py_M__zipimport,
         (int)sizeof(_Py_M__zipimport)},
     /* Test module */
-    {"__hello__", M___hello__, SIZE},
+    {"__hello__", _Py_M__hello, SIZE},
     /* Test package (negative size indicates package-ness) */
-    {"__phello__", M___hello__, -SIZE},
-    {"__phello__.spam", M___hello__, SIZE},
+    {"__phello__", _Py_M__hello, -SIZE},
+    {"__phello__.spam", _Py_M__hello, SIZE},
     {0, 0, 0} /* sentinel */
 };
 
