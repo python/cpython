@@ -7,8 +7,9 @@ import sys
 import threading
 import types
 import warnings
+import contextvars
 
-from . import futures
+from . import futures, iscoroutinefunction
 
 
 class AsyncIOInteractiveConsole(code.InteractiveConsole):
@@ -25,12 +26,17 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
         def callback():
             global repl_future
             global repl_future_interrupted
+            global repl_context
 
             repl_future = None
             repl_future_interrupted = False
 
             func = types.FunctionType(code, self.locals)
             try:
+                if not iscoroutinefunction(func):
+                    code_ = self.compile("repl_ctx.run(repl_f)", self.filename)
+                    new_locals = dict(repl_ctx=repl_context, repl_f=func, **self.locals)
+                    func = types.FunctionType(code_, new_locals)
                 coro = func()
             except SystemExit:
                 raise
@@ -52,7 +58,7 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        loop.call_soon_threadsafe(callback, context=repl_context.copy())
 
         try:
             return future.result()
@@ -103,6 +109,7 @@ if __name__ == '__main__':
 
     repl_future = None
     repl_future_interrupted = False
+    repl_context = contextvars.Context()
 
     try:
         import readline  # NoQA
