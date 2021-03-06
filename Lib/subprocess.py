@@ -1535,9 +1535,9 @@ class Popen(object):
                 self.stderr.close()
 
             # All data exchanged.  Translate lists into strings.
-            if stdout is not None:
+            if stdout:
                 stdout = stdout[0]
-            if stderr is not None:
+            if stderr:
                 stderr = stderr[0]
 
             return (stdout, stderr)
