@@ -271,7 +271,7 @@ Functions
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
    The reference point of the returned value is undefined, so that only the
-   difference between the results of consecutive calls is valid.
+   difference between the results of two calls is valid.
 
    .. versionadded:: 3.3
    .. versionchanged:: 3.5
@@ -293,7 +293,7 @@ Functions
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep and is system-wide.  The reference
    point of the returned value is undefined, so that only the difference between
-   the results of consecutive calls is valid.
+   the results of two calls is valid.
 
    .. versionadded:: 3.3
 
@@ -315,7 +315,7 @@ Functions
    CPU time of the current process.  It does not include time elapsed during
    sleep.  It is process-wide by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
-   of consecutive calls is valid.
+   of two calls is valid.
 
    .. versionadded:: 3.3
 
@@ -593,7 +593,7 @@ Functions
    CPU time of the current thread.  It does not include time elapsed during
    sleep.  It is thread-specific by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
-   of consecutive calls in the same thread is valid.
+   of two calls in the same thread is valid.
 
    .. availability::  Windows, Linux, Unix systems supporting
       ``CLOCK_THREAD_CPUTIME_ID``.
