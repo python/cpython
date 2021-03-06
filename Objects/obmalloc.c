@@ -1391,8 +1391,8 @@ typedef struct arena_map_top {
 #ifdef USE_INTERIOR_NODES
 static arena_map_top_t arena_map_root;
 /* accounting for number of used interior nodes */
-static int arena_map_top_count;
 static int arena_map_mid_count;
+static int arena_map_bot_count;
 #else
 static arena_map_bot_t arena_map_root;
 #endif
@@ -1415,7 +1415,7 @@ arena_map_get(block *p, int create)
             return NULL;
         }
         arena_map_root.ptrs[i1] = n;
-        arena_map_top_count++;
+        arena_map_mid_count++;
     }
     int i2 = MAP_MID_INDEX(p);
     if (arena_map_root.ptrs[i1]->ptrs[i2] == NULL) {
@@ -1427,7 +1427,7 @@ arena_map_get(block *p, int create)
             return NULL;
         }
         arena_map_root.ptrs[i1]->ptrs[i2] = n;
-        arena_map_mid_count++;
+        arena_map_bot_count++;
     }
     return arena_map_root.ptrs[i1]->ptrs[i2];
 #else
@@ -3028,8 +3028,8 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "# arenas highwater mark", narenas_highwater);
     (void)printone(out, "# arenas allocated current", narenas);
 #ifdef USE_INTERIOR_NODES
-    (void)printone(out, "# arena map top nodes", arena_map_top_count);
     (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
+    (void)printone(out, "# arena map bot nodes", arena_map_bot_count);
     fputc('\n', out);
 #endif
 
@@ -3051,6 +3051,15 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, "# bytes lost to pool headers", pool_header_bytes);
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
+#ifdef WITH_PYMALLOC_RADIX_TREE
+    total += printone(out, "# bytes lost to arena map root", sizeof(arena_map_root));
+#endif
+#ifdef USE_INTERIOR_NODES
+    total += printone(out, "# bytes lost to arena map mid",
+                      sizeof(arena_map_mid_t) * arena_map_mid_count);
+    total += printone(out, "# bytes lost to arena map bot",
+                      sizeof(arena_map_bot_t) * arena_map_bot_count);
+#endif
     (void)printone(out, "Total", total);
     return 1;
 }
