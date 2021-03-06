@@ -1498,7 +1498,7 @@ def write_header(mod, f):
     f.write('#endif\n')
     f.write('\n')
     f.write('#ifndef Py_LIMITED_API\n')
-    f.write('#include "Python.h"\n')
+    f.write('#include "cpython/asdl.h"\n')
     f.write('\n')
     f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
     f.write('\n')
