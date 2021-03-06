@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "Python-ast.h"
-#include "token.h"
+#include "cpython/token.h"
 #include "code.h"
 #include "ast.h"
 

@@ -8,7 +8,7 @@ extern "C" {
 
 /* Tokenizer interface */
 
-#include "token.h"      /* For token types */
+#include "cpython/token.h"  /* For token types */
 
 #define MAXINDENT 100   /* Max indentation level */
 #define MAXLEVEL 200    /* Max parentheses level */

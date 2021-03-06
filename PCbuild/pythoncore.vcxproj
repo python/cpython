@@ -158,6 +158,7 @@
     <ClInclude Include="..\Include\cpython\pytime.h" />
     <ClInclude Include="..\Include\cpython\symtable.h" />
     <ClInclude Include="..\Include\cpython\sysmodule.h" />
+    <ClInclude Include="..\Include\cpython\token.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
@@ -253,7 +254,6 @@
     <ClInclude Include="..\Include\structmember.h" />
     <ClInclude Include="..\Include\structseq.h" />
     <ClInclude Include="..\Include\sysmodule.h" />
-    <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />
     <ClInclude Include="..\Include\tracemalloc.h" />
     <ClInclude Include="..\Include\tupleobject.h" />

@@ -3,7 +3,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <token.h>
+#include <cpython/token.h>
 #include <Python-ast.h>
 
 #if 0

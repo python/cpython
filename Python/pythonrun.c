@@ -20,7 +20,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 
-#include "token.h"                // INDENT
+#include "cpython/token.h"        // INDENT
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()

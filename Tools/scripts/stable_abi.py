@@ -24,7 +24,6 @@ EXCLUDED_HEADERS = {
     "parsetok.h",
     "pyatomic.h",
     "pytime.h",
-    "token.h",
     "ucnhash.h",
 }
 

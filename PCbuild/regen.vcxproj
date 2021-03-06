@@ -133,7 +133,7 @@
     </None>
     <None Include="..\Grammar\Tokens">
     </None>
-    <None Include="..\Include\token.h">
+    <None Include="..\Include\cpython\token.h">
     </None>
     <None Include="..\Include\opcode.h">
     </None>
@@ -187,8 +187,8 @@
   <Target Name="_RegenTokens" AfterTargets="_RegenOpcodes">
     <!-- Regenerate Doc/library/token-list.inc from Grammar/Tokens using Tools/scripts/generate_token.py-->
     <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py rst &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Doc\library\token-list.inc&quot;" />
-    <!-- Regenerate Include/token.h from Grammar/Tokens using Tools/scripts/generate_token.py-->
-    <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py h &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Include\token.h&quot;" />
+    <!-- Regenerate Include/cpython/token.h from Grammar/Tokens using Tools/scripts/generate_token.py-->
+    <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py h &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Include\cpython\token.h&quot;" />
     <!-- Regenerate Parser/token.c from Grammar/Tokens using Tools/scripts/generate_token.py-->
     <Exec Command="&quot;$(PythonExe)&quot; $(PySourcePath)Tools\scripts\generate_token.py c &quot;$(PySourcePath)Grammar\Tokens&quot; &quot;$(PySourcePath)Parser\token.c&quot;" />
     <!-- Regenerate Lib/token.py from Grammar/Tokens using Tools/scripts/generate_token.py -->
