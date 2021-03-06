@@ -10,7 +10,6 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 
-#include "pystrhex.h"
 #include <stddef.h>
 
 /*[clinic input]

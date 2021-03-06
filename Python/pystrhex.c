@@ -2,8 +2,6 @@
 
 #include "Python.h"
 
-#include "pystrhex.h"
-
 static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
                                  const PyObject* sep, int bytes_per_sep_group,
                                  const int return_bytes)

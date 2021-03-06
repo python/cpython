@@ -157,6 +157,7 @@
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
+#include "cpython/pystrhex.h"
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "tracemalloc.h"

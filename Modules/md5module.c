@@ -18,7 +18,6 @@
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pystrhex.h"
 
 /*[clinic input]
 module _md5

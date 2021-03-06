@@ -15,7 +15,6 @@
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pystrhex.h"
 
 
 /* EVP is the preferred interface to hashing in OpenSSL */

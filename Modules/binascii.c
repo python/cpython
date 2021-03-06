@@ -56,7 +56,6 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pystrhex.h"
 #ifdef USE_ZLIB_CRC32
 #include "zlib.h"
 #endif

@@ -6,7 +6,6 @@
 #include "pycore_bytes_methods.h"
 #include "pycore_object.h"
 #include "bytesobject.h"
-#include "pystrhex.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"

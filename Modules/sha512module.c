@@ -20,7 +20,6 @@
 #include "pycore_bitutils.h"      // _Py_bswap64()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
-#include "pystrhex.h"
 
 /*[clinic input]
 module _sha512
