@@ -494,20 +494,18 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``
+* ``None``, ``True``, and ``False``;
 
-* integers, floating point numbers, complex numbers
+* integers, floating-point numbers, complex numbers;
 
-* strings, bytes, bytearrays
+* strings, bytes, bytearrays;
 
-* tuples, lists, sets, and dictionaries containing only picklable objects
+* tuples, lists, sets, and dictionaries containing only picklable objects;
 
-* functions defined at the top level of a module (using :keyword:`def`, not
-  :keyword:`lambda`)
+* built-in and user-defined functions defined at the top level of a module
+  (using :keyword:`def`, not :keyword:`lambda`);
 
-* built-in functions defined at the top level of a module
-
-* classes that are defined at the top level of a module
+* classes defined at the top level of a module;
 
 * instances of such classes whose :attr:`~object.__dict__` or the result of
   calling :meth:`__getstate__` is picklable  (see section :ref:`pickle-inst` for
@@ -520,14 +518,14 @@ structure may exceed the maximum recursion depth, a :exc:`RecursionError` will b
 raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 
-Note that functions (built-in and user-defined) are pickled by "fully qualified"
-name reference, not by value. [#]_  This means that only the function name is
+Note that functions (built-in and user-defined) are pickled by fully qualified
+name, not by value. [#]_  This means that only the function name is
 pickled, along with the name of the module the function is defined in.  Neither
 the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
 
-Similarly, classes are pickled by named reference, so the same restrictions in
+Similarly, classes are pickled by fully qualified name, so the same restrictions in
 the unpickling environment apply.  Note that none of the class's code or data is
 pickled, so in the following example the class attribute ``attr`` is not
 restored in the unpickling environment::
@@ -537,7 +535,7 @@ restored in the unpickling environment::
 
    picklestring = pickle.dumps(Foo)
 
-These restrictions are why picklable functions and classes must be defined in
+These restrictions are why picklable functions and classes must be defined at
 the top level of a module.
 
 Similarly, when class instances are pickled, their class's code and data are not
