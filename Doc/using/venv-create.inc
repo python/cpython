@@ -67,7 +67,7 @@ The command, if run with ``-h``, will show the available options::
     Once an environment has been created, you may wish to activate it, e.g. by
     sourcing an activate script in its bin directory.
 
-.. versionchanged:: 3.8
+.. versionchanged:: 3.9
    Add ``--upgrade-deps`` option to upgrade pip + setuptools to the latest on PyPI
 
 .. versionchanged:: 3.4
@@ -82,6 +82,17 @@ The command, if run with ``-h``, will show the available options::
    While symlinks are supported on Windows, they are not recommended. Of
    particular note is that double-clicking ``python.exe`` in File Explorer
    will resolve the symlink eagerly and ignore the virtual environment.
+
+.. note::
+   On Microsoft Windows, it may be required to enable the ``Activate.ps1``
+   script by setting the execution policy for the user. You can do this by
+   issuing the following PowerShell command:
+
+   PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+   See `About Execution Policies
+   <https://go.microsoft.com/fwlink/?LinkID=135170>`_
+   for more information.
 
 The created ``pyvenv.cfg`` file also includes the
 ``include-system-site-packages`` key, set to ``true`` if ``venv`` is
@@ -104,7 +115,7 @@ directory containing the virtual environment):
 +=============+=================+=========================================+
 | POSIX       | bash/zsh        | $ source <venv>/bin/activate            |
 +-------------+-----------------+-----------------------------------------+
-|             | fish            | $ . <venv>/bin/activate.fish            |
+|             | fish            | $ source <venv>/bin/activate.fish       |
 +-------------+-----------------+-----------------------------------------+
 |             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
 +-------------+-----------------+-----------------------------------------+
@@ -114,6 +125,10 @@ directory containing the virtual environment):
 +-------------+-----------------+-----------------------------------------+
 |             | PowerShell      | PS C:\\> <venv>\\Scripts\\Activate.ps1  |
 +-------------+-----------------+-----------------------------------------+
+
+When a virtual environment is active, the :envvar:`VIRTUAL_ENV` environment
+variable is set to the path of the virtual environment. This can be used to
+check if one is running inside a virtual environment.
 
 You don't specifically *need* to activate an environment; activation just
 prepends the virtual environment's binary directory to your path, so that

@@ -1,20 +1,18 @@
-import unittest.mock
+import unittest
 from test import support
+from test.support import import_helper
 import builtins
 import contextlib
 import copy
 import io
 import os
 import pickle
-import shutil
-import subprocess
 import sys
 import weakref
 from unittest import mock
 
-py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
-c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-
+py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
+c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
 
 def importable(name):
     try:
@@ -22,6 +20,12 @@ def importable(name):
         return True
     except:
         return False
+
+
+def mock_get_command_stdout(data):
+    def get_command_stdout(command, args):
+        return io.BytesIO(data.encode())
+    return get_command_stdout
 
 
 class BaseTestUUID:
@@ -459,7 +463,7 @@ class BaseTestUUID:
         # uuid.getnode to fall back on uuid._random_getnode, which will
         # generate a valid value.
         too_large_getter = lambda: 1 << 48
-        with unittest.mock.patch.multiple(
+        with mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
             _GETTERS=[too_large_getter],
@@ -472,7 +476,7 @@ class BaseTestUUID:
         # the value from too_large_getter above.
         try:
             self.uuid.uuid1(node=node)
-        except ValueError as e:
+        except ValueError:
             self.fail('uuid1 was given an invalid node ID')
 
     def test_uuid1(self):
@@ -538,8 +542,8 @@ class BaseTestUUID:
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], safe_value)):
+        with mock.patch.object(self.uuid, '_generate_time_safe',
+                               lambda: (f()[0], safe_value)):
             yield
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
@@ -635,7 +639,7 @@ class BaseTestUUID:
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
         # the same sequence of UUIDs in the parent and any
@@ -652,7 +656,7 @@ class BaseTestUUID:
             os.close(fds[1])
             self.addCleanup(os.close, fds[0])
             parent_value = self.uuid.uuid4().hex
-            os.waitpid(pid, 0)
+            support.wait_process(pid, exitcode=0)
             child_value = os.read(fds[0], 100).decode('latin-1')
 
             self.assertNotEqual(parent_value, child_value)
@@ -674,27 +678,139 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     _uuid = py_uuid
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_find_mac(self):
+    def check_parse_mac(self, aix):
+        if not aix:
+            patch = mock.patch.multiple(self.uuid,
+                                        _MAC_DELIM=b':',
+                                        _MAC_OMITS_LEADING_ZEROES=False)
+        else:
+            patch = mock.patch.multiple(self.uuid,
+                                        _MAC_DELIM=b'.',
+                                        _MAC_OMITS_LEADING_ZEROES=True)
+
+        with patch:
+            # Valid MAC addresses
+            if not aix:
+                tests = (
+                    (b'52:54:00:9d:0e:67', 0x5254009d0e67),
+                    (b'12:34:56:78:90:ab', 0x1234567890ab),
+                )
+            else:
+                # AIX format
+                tests = (
+                    (b'fe.ad.c.1.23.4', 0xfead0c012304),
+                )
+            for mac, expected in tests:
+                self.assertEqual(self.uuid._parse_mac(mac), expected)
+
+            # Invalid MAC addresses
+            for mac in (
+                b'',
+                # IPv6 addresses with same length than valid MAC address
+                # (17 characters)
+                b'fe80::5054:ff:fe9',
+                b'123:2:3:4:5:6:7:8',
+                # empty 5rd field
+                b'52:54:00:9d::67',
+                # only 5 fields instead of 6
+                b'52:54:00:9d:0e'
+                # invalid character 'x'
+                b'52:54:00:9d:0e:6x'
+                # dash separator
+                b'52-54-00-9d-0e-67',
+            ):
+                if aix:
+                    mac = mac.replace(b':', b'.')
+                with self.subTest(mac=mac):
+                    self.assertIsNone(self.uuid._parse_mac(mac))
+
+    def test_parse_mac(self):
+        self.check_parse_mac(False)
+
+    def test_parse_mac_aix(self):
+        self.check_parse_mac(True)
+
+    def test_find_under_heading(self):
+        data = '''\
+Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
+en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
+                        01:00:5e:00:00:01
+en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+'''
+
+        # The above data is from AIX - with '.' as _MAC_DELIM and strings
+        # shorter than 17 bytes (no leading 0). (_MAC_OMITS_LEADING_ZEROES=True)
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b'.',
+                                 _MAC_OMITS_LEADING_ZEROES=True,
+                                 _get_command_stdout=mock_get_command_stdout(data)):
+            mac = self.uuid._find_mac_under_heading(
+                command='netstat',
+                args='-ian',
+                heading=b'Address',
+            )
+
+        self.assertEqual(mac, 0xfead0c012304)
+
+    def test_find_under_heading_ipv6(self):
+        # bpo-39991: IPv6 address "fe80::5054:ff:fe9" looks like a MAC address
+        # (same string length) but must be skipped
+        data = '''\
+Name    Mtu Network       Address              Ipkts Ierrs Idrop    Opkts Oerrs  Coll
+vtnet  1500 <Link#1>      52:54:00:9d:0e:67    10017     0     0     8174     0     0
+vtnet     - fe80::%vtnet0 fe80::5054:ff:fe9        0     -     -        4     -     -
+vtnet     - 192.168.122.0 192.168.122.45        8844     -     -     8171     -     -
+lo0   16384 <Link#2>      lo0                 260148     0     0   260148     0     0
+lo0       - ::1/128       ::1                    193     -     -      193     -     -
+                          ff01::1%lo0
+                          ff02::2:2eb7:74fa
+                          ff02::2:ff2e:b774
+                          ff02::1%lo0
+                          ff02::1:ff00:1%lo
+lo0       - fe80::%lo0/64 fe80::1%lo0              0     -     -        0     -     -
+                          ff01::1%lo0
+                          ff02::2:2eb7:74fa
+                          ff02::2:ff2e:b774
+                          ff02::1%lo0
+                          ff02::1:ff00:1%lo
+lo0       - 127.0.0.0/8   127.0.0.1           259955     -     -   259955     -     -
+                          224.0.0.1
+'''
+
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout(data)):
+            mac = self.uuid._find_mac_under_heading(
+                command='netstat',
+                args='-ian',
+                heading=b'Address',
+            )
+
+        self.assertEqual(mac, 0x5254009d0e67)
+
+    def test_find_mac_near_keyword(self):
+        # key and value are on the same line
         data = '''
-fake hwaddr
+fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
 
-        popen = unittest.mock.MagicMock()
-        popen.stdout = io.BytesIO(data.encode())
-
-        with unittest.mock.patch.object(shutil, 'which',
-                                        return_value='/sbin/ifconfig'):
-            with unittest.mock.patch.object(subprocess, 'Popen',
-                                            return_value=popen):
-                mac = self.uuid._find_mac(
-                    command='ifconfig',
-                    args='',
-                    hw_identifiers=[b'hwaddr'],
-                    get_index=lambda x: x + 1,
-                )
+        # The above data will only be parsed properly on non-AIX unixes.
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout(data)):
+            mac = self.uuid._find_mac_near_keyword(
+                command='ifconfig',
+                args='',
+                keywords=[b'hwaddr'],
+                get_word_index=lambda x: x + 1,
+            )
 
         self.assertEqual(mac, 0x1234567890ab)
 
@@ -737,17 +853,6 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_ipconfig_getnode(self):
-        node = self.uuid._ipconfig_getnode()
-        self.check_node(node, 'ipconfig')
-
-    @unittest.skipUnless(importable('win32wnet'), 'requires win32wnet')
-    @unittest.skipUnless(importable('netbios'), 'requires netbios')
-    def test_netbios_getnode(self):
-        node = self.uuid._netbios_getnode()
-        self.check_node(node)
-
     def test_random_getnode(self):
         node = self.uuid._random_getnode()
         # The multicast bit, i.e. the least significant bit of first octet,
@@ -758,6 +863,13 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 
         node2 = self.uuid._random_getnode()
         self.assertNotEqual(node2, node, '%012x' % node)
+
+class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = py_uuid
+
+@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
+class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
+    uuid = c_uuid
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_unix_getnode(self):
@@ -770,18 +882,9 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.check_node(node, 'unix')
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_windll_getnode(self):
         node = self.uuid._windll_getnode()
         self.check_node(node)
-
-
-class TestInternalsWithoutExtModule(BaseTestInternals, unittest.TestCase):
-    uuid = py_uuid
-
-@unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
-    uuid = c_uuid
 
 
 if __name__ == '__main__':

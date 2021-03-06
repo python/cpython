@@ -1,0 +1,2 @@
+Fixed stacklevel of ``DeprecationWarning`` emitted from ``import
+distutils``.

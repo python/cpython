@@ -16,6 +16,7 @@ import _thread as thread
 import threading
 import warnings
 
+import idlelib  # testing
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
@@ -387,30 +388,42 @@ class MyRPCServer(rpc.RPCServer):
             thread.interrupt_main()
         except:
             erf = sys.__stderr__
-            print('\n' + '-'*40, file=erf)
-            print('Unhandled server exception!', file=erf)
-            print('Thread: %s' % threading.current_thread().name, file=erf)
-            print('Client Address: ', client_address, file=erf)
-            print('Request: ', repr(request), file=erf)
-            traceback.print_exc(file=erf)
-            print('\n*** Unrecoverable, server exiting!', file=erf)
-            print('-'*40, file=erf)
+            print(textwrap.dedent(f"""
+            {'-'*40}
+            Unhandled exception in user code execution server!'
+            Thread: {threading.current_thread().name}
+            IDLE Client Address: {client_address}
+            Request: {request!r}
+            """), file=erf)
+            traceback.print_exc(limit=-20, file=erf)
+            print(textwrap.dedent(f"""
+            *** Unrecoverable, server exiting!
+
+            Users should never see this message; it is likely transient.
+            If this recurs, report this with a copy of the message
+            and an explanation of how to make it repeat.
+            {'-'*40}"""), file=erf)
             quitting = True
             thread.interrupt_main()
 
 
 # Pseudofiles for shell-remote communication (also used in pyshell)
 
-class PseudoFile(io.TextIOBase):
+class StdioFile(io.TextIOBase):
 
-    def __init__(self, shell, tags, encoding=None):
+    def __init__(self, shell, tags, encoding='utf-8', errors='strict'):
         self.shell = shell
         self.tags = tags
         self._encoding = encoding
+        self._errors = errors
 
     @property
     def encoding(self):
         return self._encoding
+
+    @property
+    def errors(self):
+        return self._errors
 
     @property
     def name(self):
@@ -420,7 +433,7 @@ class PseudoFile(io.TextIOBase):
         return True
 
 
-class PseudoOutputFile(PseudoFile):
+class StdOutputFile(StdioFile):
 
     def writable(self):
         return True
@@ -428,19 +441,12 @@ class PseudoOutputFile(PseudoFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if type(s) is not str:
-            if not isinstance(s, str):
-                raise TypeError('must be str, not ' + type(s).__name__)
-            # See issue #19481
-            s = str.__str__(s)
+        s = str.encode(s, self.encoding, self.errors).decode(self.encoding, self.errors)
         return self.shell.write(s, self.tags)
 
 
-class PseudoInputFile(PseudoFile):
-
-    def __init__(self, shell, tags, encoding=None):
-        PseudoFile.__init__(self, shell, tags, encoding)
-        self._line_buffer = ''
+class StdInputFile(StdioFile):
+    _line_buffer = ''
 
     def readable(self):
         return True
@@ -495,12 +501,12 @@ class MyHandler(rpc.RPCHandler):
         executive = Executive(self)
         self.register("exec", executive)
         self.console = self.get_remote_proxy("console")
-        sys.stdin = PseudoInputFile(self.console, "stdin",
-                iomenu.encoding)
-        sys.stdout = PseudoOutputFile(self.console, "stdout",
-                iomenu.encoding)
-        sys.stderr = PseudoOutputFile(self.console, "stderr",
-                iomenu.encoding)
+        sys.stdin = StdInputFile(self.console, "stdin",
+                                 iomenu.encoding, iomenu.errors)
+        sys.stdout = StdOutputFile(self.console, "stdout",
+                                   iomenu.encoding, iomenu.errors)
+        sys.stderr = StdOutputFile(self.console, "stderr",
+                                   iomenu.encoding, "backslashreplace")
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
@@ -533,18 +539,21 @@ class MyHandler(rpc.RPCHandler):
         thread.interrupt_main()
 
 
-class Executive(object):
+class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
-        self.locals = __main__.__dict__
-        self.calltip = calltip.Calltip()
-        self.autocomplete = autocomplete.AutoComplete()
+        if idlelib.testing is False:
+            self.locals = __main__.__dict__
+            self.calltip = calltip.Calltip()
+            self.autocomplete = autocomplete.AutoComplete()
+        else:
+            self.locals = {}
 
     def runcode(self, code):
         global interruptable
         try:
-            self.usr_exc_info = None
+            self.user_exc_info = None
             interruptable = True
             try:
                 exec(code, self.locals)
@@ -557,10 +566,17 @@ class Executive(object):
                     print('SystemExit: ' + str(ob), file=sys.stderr)
             # Return to the interactive prompt.
         except:
-            self.usr_exc_info = sys.exc_info()
+            self.user_exc_info = sys.exc_info()  # For testing, hook, viewer.
             if quitting:
                 exit()
-            print_exception()
+            if sys.excepthook is sys.__excepthook__:
+                print_exception()
+            else:
+                try:
+                    sys.excepthook(*self.user_exc_info)
+                except:
+                    self.user_exc_info = sys.exc_info()  # For testing.
+                    print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
                 self.rpchandler.interp.open_remote_stack_viewer()
@@ -585,8 +601,8 @@ class Executive(object):
         return self.autocomplete.fetch_completions(what, mode)
 
     def stackviewer(self, flist_oid=None):
-        if self.usr_exc_info:
-            typ, val, tb = self.usr_exc_info
+        if self.user_exc_info:
+            typ, val, tb = self.user_exc_info
         else:
             return None
         flist = None

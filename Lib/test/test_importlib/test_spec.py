@@ -6,7 +6,7 @@ util = test_util.import_importlib('importlib.util')
 
 import os.path
 import pathlib
-from test.support import CleanImport
+from test.support.import_helper import CleanImport
 import unittest
 import sys
 import warnings
@@ -303,32 +303,38 @@ class ModuleSpecMethodsTests:
             self.assertNotIn(self.spec.name, sys.modules)
 
     def test_load_legacy(self):
-        self.spec.loader = LegacyLoader()
-        with CleanImport(self.spec.name):
-            loaded = self.bootstrap._load(self.spec)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            self.spec.loader = LegacyLoader()
+            with CleanImport(self.spec.name):
+                loaded = self.bootstrap._load(self.spec)
 
-        self.assertEqual(loaded.ham, -1)
+            self.assertEqual(loaded.ham, -1)
 
     def test_load_legacy_attributes(self):
-        self.spec.loader = LegacyLoader()
-        with CleanImport(self.spec.name):
-            loaded = self.bootstrap._load(self.spec)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            self.spec.loader = LegacyLoader()
+            with CleanImport(self.spec.name):
+                loaded = self.bootstrap._load(self.spec)
 
-        self.assertIs(loaded.__loader__, self.spec.loader)
-        self.assertEqual(loaded.__package__, self.spec.parent)
-        self.assertIs(loaded.__spec__, self.spec)
+            self.assertIs(loaded.__loader__, self.spec.loader)
+            self.assertEqual(loaded.__package__, self.spec.parent)
+            self.assertIs(loaded.__spec__, self.spec)
 
     def test_load_legacy_attributes_immutable(self):
         module = object()
-        class ImmutableLoader(TestLoader):
-            def load_module(self, name):
-                sys.modules[name] = module
-                return module
-        self.spec.loader = ImmutableLoader()
-        with CleanImport(self.spec.name):
-            loaded = self.bootstrap._load(self.spec)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            class ImmutableLoader(TestLoader):
+                def load_module(self, name):
+                    sys.modules[name] = module
+                    return module
+            self.spec.loader = ImmutableLoader()
+            with CleanImport(self.spec.name):
+                loaded = self.bootstrap._load(self.spec)
 
-            self.assertIs(sys.modules[self.spec.name], module)
+                self.assertIs(sys.modules[self.spec.name], module)
 
     # reload()
 
@@ -382,11 +388,13 @@ class ModuleSpecMethodsTests:
         self.assertFalse(hasattr(loaded, '__cached__'))
 
     def test_reload_legacy(self):
-        self.spec.loader = LegacyLoader()
-        with CleanImport(self.spec.name):
-            loaded = self.bootstrap._load(self.spec)
-            reloaded = self.bootstrap._exec(self.spec, loaded)
-            installed = sys.modules[self.spec.name]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ImportWarning)
+            self.spec.loader = LegacyLoader()
+            with CleanImport(self.spec.name):
+                loaded = self.bootstrap._load(self.spec)
+                reloaded = self.bootstrap._exec(self.spec, loaded)
+                installed = sys.modules[self.spec.name]
 
         self.assertEqual(loaded.ham, -1)
         self.assertIs(reloaded, loaded)
@@ -650,8 +658,8 @@ class FactoryTests:
         # Need to use a circuitous route to get at importlib.machinery to make
         # sure the same class object is used in the isinstance() check as
         # would have been used to create the loader.
-        self.assertIsInstance(spec.loader,
-                              self.util.abc.machinery.SourceFileLoader)
+        SourceFileLoader = self.util.spec_from_file_location.__globals__['SourceFileLoader']
+        self.assertIsInstance(spec.loader, SourceFileLoader)
         self.assertEqual(spec.loader.name, self.name)
         self.assertEqual(spec.loader.path, self.path)
         self.assertEqual(spec.origin, self.path)

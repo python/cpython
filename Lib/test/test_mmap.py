@@ -1,5 +1,6 @@
-from test.support import (TESTFN, import_module, unlink,
-                          requires, _2G, _4G, gc_collect, cpython_only)
+from test.support import (requires, _2G, _4G, gc_collect, cpython_only)
+from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
 import unittest
 import os
 import re
@@ -739,6 +740,42 @@ class MmapTests(unittest.TestCase):
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
+
+    def test_repr(self):
+        open_mmap_repr_pat = re.compile(
+            r"<mmap.mmap closed=False, "
+            r"access=(?P<access>\S+), "
+            r"length=(?P<length>\d+), "
+            r"pos=(?P<pos>\d+), "
+            r"offset=(?P<offset>\d+)>")
+        closed_mmap_repr_pat = re.compile(r"<mmap.mmap closed=True>")
+        mapsizes = (50, 100, 1_000, 1_000_000, 10_000_000)
+        offsets = tuple((mapsize // 2 // mmap.ALLOCATIONGRANULARITY)
+                        * mmap.ALLOCATIONGRANULARITY for mapsize in mapsizes)
+        for offset, mapsize in zip(offsets, mapsizes):
+            data = b'a' * mapsize
+            length = mapsize - offset
+            accesses = ('ACCESS_DEFAULT', 'ACCESS_READ',
+                        'ACCESS_COPY', 'ACCESS_WRITE')
+            positions = (0, length//10, length//5, length//4)
+            with open(TESTFN, "wb+") as fp:
+                fp.write(data)
+                fp.flush()
+                for access, pos in itertools.product(accesses, positions):
+                    accint = getattr(mmap, access)
+                    with mmap.mmap(fp.fileno(),
+                                   length,
+                                   access=accint,
+                                   offset=offset) as mm:
+                        mm.seek(pos)
+                        match = open_mmap_repr_pat.match(repr(mm))
+                        self.assertIsNotNone(match)
+                        self.assertEqual(match.group('access'), access)
+                        self.assertEqual(match.group('length'), str(length))
+                        self.assertEqual(match.group('pos'), str(pos))
+                        self.assertEqual(match.group('offset'), str(offset))
+                    match = closed_mmap_repr_pat.match(repr(mm))
+                    self.assertIsNotNone(match)
 
     @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
     def test_madvise(self):

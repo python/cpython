@@ -1,2 +1,0 @@
-http.client now enables TLS 1.3 post-handshake authentication for default
-context or if a cert_file is passed to HTTPSConnection.

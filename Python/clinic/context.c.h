@@ -115,7 +115,7 @@ _contextvars_Context_copy(PyContext *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
-"get($self, default=None, /)\n"
+"get($self, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a value for the context variable for the current context.\n"
@@ -177,4 +177,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=a86b66e1516c25d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f2e42f34e358e179 input=a9049054013a1b77]*/

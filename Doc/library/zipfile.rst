@@ -483,18 +483,28 @@ Path Objects
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
-Path objects are traversable using the ``/`` operator.
+Path objects are traversable using the ``/`` operator or ``joinpath``.
 
 .. attribute:: Path.name
 
    The final path component.
 
-.. method:: Path.open(*, **)
+.. method:: Path.open(mode='r', *, pwd, **)
 
-   Invoke :meth:`ZipFile.open` on the current path. Accepts
-   the same arguments as :meth:`ZipFile.open`.
+   Invoke :meth:`ZipFile.open` on the current path.
+   Allows opening for read or write, text or binary
+   through supported modes: 'r', 'w', 'rb', 'wb'.
+   Positional and keyword arguments are passed through to
+   :class:`io.TextIOWrapper` when opened as text and
+   ignored otherwise.
+   ``pwd`` is the ``pwd`` parameter to
+   :meth:`ZipFile.open`.
 
-.. method:: Path.listdir()
+   .. versionchanged:: 3.9
+      Added support for text and binary modes for open. Default
+      mode is now text.
+
+.. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
 
@@ -521,6 +531,19 @@ Path objects are traversable using the ``/`` operator.
 .. method:: Path.read_bytes()
 
    Read the current file as bytes.
+
+.. method:: Path.joinpath(*other)
+
+   Return a new Path object with each of the *other* arguments
+   joined. The following are equivalent::
+
+   >>> Path(...).joinpath('child').joinpath('grandchild')
+   >>> Path(...).joinpath('child', 'grandchild')
+   >>> Path(...) / 'child' / 'grandchild'
+
+   .. versionchanged:: 3.10
+      Prior to 3.10, ``joinpath`` was undocumented and accepted
+      exactly one parameter.
 
 
 .. _pyzipfile-objects:
@@ -816,5 +839,45 @@ Command-line options
 
    Test whether the zipfile is valid or not.
 
+Decompression pitfalls
+----------------------
 
+The extraction in zipfile module might fail due to some pitfalls listed below.
+
+From file itself
+~~~~~~~~~~~~~~~~
+
+Decompression may fail due to incorrect password / CRC checksum / ZIP format or
+unsupported compression method / decryption.
+
+File System limitations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Exceeding limitations on different file systems can cause decompression failed.
+Such as allowable characters in the directory entries, length of the file name,
+length of the pathname, size of a single file, and number of files, etc.
+
+Resources limitations
+~~~~~~~~~~~~~~~~~~~~~
+
+The lack of memory or disk volume would lead to decompression
+failed. For example, decompression bombs (aka `ZIP bomb`_)
+apply to zipfile library that can cause disk volume exhaustion.
+
+Interruption
+~~~~~~~~~~~~
+
+Interruption during the decompression, such as pressing control-C or killing the
+decompression process may result in incomplete decompression of the archive.
+
+Default behaviors of extraction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not knowing the default extraction behaviors
+can cause unexpected decompression results.
+For example, when extracting the same archive twice,
+it overwrites files without asking.
+
+
+.. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _PKZIP Application Note: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT

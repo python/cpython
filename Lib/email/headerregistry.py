@@ -2,10 +2,6 @@
 
 This module provides an implementation of the HeaderRegistry API.
 The implementation is designed to flexibly follow RFC5322 rules.
-
-Eventually HeaderRegistry will be a public API, but it isn't yet,
-and will probably change some before that happens.
-
 """
 from types import MappingProxyType
 
@@ -31,6 +27,11 @@ class Address:
         without any Content Transfer Encoding.
 
         """
+
+        inputs = ''.join(filter(None, (display_name, username, domain, addr_spec)))
+        if '\r' in inputs or '\n' in inputs:
+            raise ValueError("invalid arguments; address parts cannot contain CR or LF")
+
         # This clause with its potential 'raise' may only happen when an
         # application program creates an Address object using an addr_spec
         # keyword.  The email library code itself must always supply username
@@ -69,11 +70,9 @@ class Address:
         """The addr_spec (username@domain) portion of the address, quoted
         according to RFC 5322 rules, but with no Content Transfer Encoding.
         """
-        nameset = set(self.username)
-        if len(nameset) > len(nameset-parser.DOT_ATOM_ENDS):
-            lp = parser.quote_string(self.username)
-        else:
-            lp = self.username
+        lp = self.username
+        if not parser.DOT_ATOM_ENDS.isdisjoint(lp):
+            lp = parser.quote_string(lp)
         if self.domain:
             return lp + '@' + self.domain
         if not lp:
@@ -86,11 +85,9 @@ class Address:
                         self.display_name, self.username, self.domain)
 
     def __str__(self):
-        nameset = set(self.display_name)
-        if len(nameset) > len(nameset-parser.SPECIALS):
-            disp = parser.quote_string(self.display_name)
-        else:
-            disp = self.display_name
+        disp = self.display_name
+        if not parser.SPECIALS.isdisjoint(disp):
+            disp = parser.quote_string(disp)
         if disp:
             addr_spec = '' if self.addr_spec=='<>' else self.addr_spec
             return "{} <{}>".format(disp, addr_spec)
@@ -141,10 +138,8 @@ class Group:
         if self.display_name is None and len(self.addresses)==1:
             return str(self.addresses[0])
         disp = self.display_name
-        if disp is not None:
-            nameset = set(disp)
-            if len(nameset) > len(nameset-parser.SPECIALS):
-                disp = parser.quote_string(disp)
+        if disp is not None and not parser.SPECIALS.isdisjoint(disp):
+            disp = parser.quote_string(disp)
         adrstr = ", ".join(str(x) for x in self.addresses)
         adrstr = ' ' + adrstr if adrstr else adrstr
         return "{}:{};".format(disp, adrstr)
@@ -303,7 +298,14 @@ class DateHeader:
             kwds['parse_tree'] = parser.TokenList()
             return
         if isinstance(value, str):
-            value = utils.parsedate_to_datetime(value)
+            kwds['decoded'] = value
+            try:
+                value = utils.parsedate_to_datetime(value)
+            except ValueError:
+                kwds['defects'].append(errors.InvalidDateDefect('Invalid date value or format'))
+                kwds['datetime'] = None
+                kwds['parse_tree'] = parser.TokenList()
+                return
         kwds['datetime'] = value
         kwds['decoded'] = utils.format_datetime(kwds['datetime'])
         kwds['parse_tree'] = cls.value_parser(kwds['decoded'])

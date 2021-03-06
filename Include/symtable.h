@@ -33,6 +33,7 @@ struct symtable {
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
+    int in_pattern;                 /* whether we are currently in a pattern */
 };
 
 typedef struct _symtable_entry {
@@ -69,7 +70,7 @@ typedef struct _symtable_entry {
 
 PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
-#define PySTEntry_Check(op) (Py_TYPE(op) == &PySTEntry_Type)
+#define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
 
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 

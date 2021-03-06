@@ -2,6 +2,7 @@
 
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
+import io
 import itertools
 import bisect
 import copy
@@ -61,6 +62,12 @@ class TestModule(unittest.TestCase):
         datetime = datetime_module
         self.assertEqual(datetime.MINYEAR, 1)
         self.assertEqual(datetime.MAXYEAR, 9999)
+
+    def test_all(self):
+        """Test that __all__ only points to valid attributes."""
+        all_attrs = dir(datetime_module)
+        for attr in datetime_module.__all__:
+            self.assertIn(attr, all_attrs)
 
     def test_name_cleanup(self):
         if '_Pure' in self.__class__.__name__:
@@ -1349,19 +1356,43 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_isocalendar(self):
         # Check examples from
         # http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
-        for i in range(7):
-            d = self.theclass(2003, 12, 22+i)
-            self.assertEqual(d.isocalendar(), (2003, 52, i+1))
-            d = self.theclass(2003, 12, 29) + timedelta(i)
-            self.assertEqual(d.isocalendar(), (2004, 1, i+1))
-            d = self.theclass(2004, 1, 5+i)
-            self.assertEqual(d.isocalendar(), (2004, 2, i+1))
-            d = self.theclass(2009, 12, 21+i)
-            self.assertEqual(d.isocalendar(), (2009, 52, i+1))
-            d = self.theclass(2009, 12, 28) + timedelta(i)
-            self.assertEqual(d.isocalendar(), (2009, 53, i+1))
-            d = self.theclass(2010, 1, 4+i)
-            self.assertEqual(d.isocalendar(), (2010, 1, i+1))
+        week_mondays = [
+                ((2003, 12, 22), (2003, 52, 1)),
+                ((2003, 12, 29), (2004, 1, 1)),
+                ((2004, 1, 5), (2004, 2, 1)),
+                ((2009, 12, 21), (2009, 52, 1)),
+                ((2009, 12, 28), (2009, 53, 1)),
+                ((2010, 1, 4), (2010, 1, 1)),
+        ]
+
+        test_cases = []
+        for cal_date, iso_date in week_mondays:
+            base_date = self.theclass(*cal_date)
+            # Adds one test case for every day of the specified weeks
+            for i in range(7):
+                new_date = base_date + timedelta(i)
+                new_iso = iso_date[0:2] + (iso_date[2] + i,)
+                test_cases.append((new_date, new_iso))
+
+        for d, exp_iso in test_cases:
+            with self.subTest(d=d, comparison="tuple"):
+                self.assertEqual(d.isocalendar(), exp_iso)
+
+            # Check that the tuple contents are accessible by field name
+            with self.subTest(d=d, comparison="fields"):
+                t = d.isocalendar()
+                self.assertEqual((t.year, t.week, t.weekday), exp_iso)
+
+    def test_isocalendar_pickling(self):
+        """Test that the result of datetime.isocalendar() can be pickled.
+
+        The result of a round trip should be a plain tuple.
+        """
+        d = self.theclass(2019, 1, 1)
+        p = pickle.dumps(d.isocalendar())
+        res = pickle.loads(p)
+        self.assertEqual(type(res), tuple)
+        self.assertEqual(res, (2019, 1, 2))
 
     def test_iso_long_years(self):
         # Calculate long ISO years and compare to table from
@@ -1449,15 +1480,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         t.strftime("%f")
 
     def test_strftime_trailing_percent(self):
-        # bpo-35066: make sure trailing '%' doesn't cause
-        # datetime's strftime to complain
+        # bpo-35066: Make sure trailing '%' doesn't cause datetime's strftime to
+        # complain. Different libcs have different handling of trailing
+        # percents, so we simply check datetime's strftime acts the same as
+        # time.strftime.
         t = self.theclass(2005, 3, 2)
         try:
             _time.strftime('%')
         except ValueError:
             self.skipTest('time module does not support trailing %')
-        self.assertEqual(t.strftime('%'), '%')
-        self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")
+        self.assertEqual(t.strftime('%'), _time.strftime('%', t.timetuple()))
+        self.assertEqual(
+            t.strftime("m:%m d:%d y:%y %"),
+            _time.strftime("m:03 d:02 y:05 %", t.timetuple()),
+        )
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)
@@ -1745,6 +1781,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassDate))
 
     def test_backdoor_resistance(self):
         # For fast unpickling, the constructor accepts a pickle byte string.
@@ -2272,6 +2309,7 @@ class TestDateTime(TestDate):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassDatetime))
 
     def test_compat_unpickle(self):
         tests = [
@@ -2571,6 +2609,7 @@ class TestDateTime(TestDate):
 
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
+        with self.assertRaises(ValueError): strptime("z", "%z")
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
@@ -3321,6 +3360,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassTime))
 
     def test_compat_unpickle(self):
         tests = [
@@ -5071,43 +5111,21 @@ class Oddballs(unittest.TestCase):
             def __int__(self):
                 return self.value
 
-        for xx in [decimal.Decimal(10),
-                   decimal.Decimal('10.9'),
-                   Number(10)]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertEqual(datetime(10, 10, 10, 10, 10, 10, 10),
-                                 datetime(xx, xx, xx, xx, xx, xx, xx))
-
-        with self.assertRaisesRegex(TypeError, '^an integer is required '
-                                              r'\(got type str\)$'):
-            datetime(10, 10, '10')
-
-        f10 = Number(10.9)
-        with self.assertRaisesRegex(TypeError, '^__int__ returned non-int '
-                                               r'\(type float\)$'):
-            datetime(10, 10, f10)
-
         class Float(float):
             pass
-        s10 = Float(10.9)
-        with self.assertRaisesRegex(TypeError, '^integer argument expected, '
-                                               'got float$'):
-            datetime(10, 10, s10)
 
-        with self.assertRaises(TypeError):
-            datetime(10., 10, 10)
-        with self.assertRaises(TypeError):
-            datetime(10, 10., 10)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10, 10, 10.)
-        with self.assertRaises(TypeError):
-            datetime(10, 10, 10, 10, 10, 10, 10.)
+        for xx in [10.0, Float(10.9),
+                   decimal.Decimal(10), decimal.Decimal('10.9'),
+                   Number(10), Number(10.9),
+                   '10']:
+            self.assertRaises(TypeError, datetime, xx, 10, 10, 10, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, xx, 10, 10, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, xx, 10, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, xx, 10, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, 10, xx, 10, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, 10, 10, xx, 10)
+            self.assertRaises(TypeError, datetime, 10, 10, 10, 10, 10, 10, xx)
+
 
 #############################################################################
 # Local Time Disambiguation
@@ -5780,6 +5798,8 @@ class ZoneInfoTest(unittest.TestCase):
     zonename = 'America/New_York'
 
     def setUp(self):
+        if sys.platform == "vxworks":
+            self.skipTest("Skipping zoneinfo tests on VxWorks")
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
         try:
@@ -5975,30 +5995,36 @@ class CapiTest(unittest.TestCase):
 
         for klass in [datetime, DateTimeSubclass]:
             for args in [(1993, 8, 26, 22, 12, 55, 99999),
-                         (1993, 8, 26, 22, 12, 55, 99999)]:
+                         (1993, 8, 26, 22, 12, 55, 99999,
+                          timezone.utc)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond = _testcapi.PyDateTime_DATE_GET(d)
+                    hour, minute, second, microsecond, tzinfo = \
+                                            _testcapi.PyDateTime_DATE_GET(d)
 
                     self.assertEqual(hour, d.hour)
                     self.assertEqual(minute, d.minute)
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
+                    self.assertIs(tzinfo, d.tzinfo)
 
     def test_PyDateTime_TIME_GET(self):
         class TimeSubclass(time):
             pass
 
         for klass in [time, TimeSubclass]:
-            for args in [(12, 30, 20, 10), (12, 30, 20, 10)]:
+            for args in [(12, 30, 20, 10),
+                         (12, 30, 20, 10, timezone.utc)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond = _testcapi.PyDateTime_TIME_GET(d)
+                    hour, minute, second, microsecond, tzinfo = \
+                                              _testcapi.PyDateTime_TIME_GET(d)
 
                     self.assertEqual(hour, d.hour)
                     self.assertEqual(minute, d.minute)
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
+                    self.assertIs(tzinfo, d.tzinfo)
 
     def test_timezones_offset_zero(self):
         utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()
