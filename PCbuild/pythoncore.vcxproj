@@ -156,6 +156,7 @@
     <ClInclude Include="..\Include\cpython\pystrhex.h" />
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\pytime.h" />
+    <ClInclude Include="..\Include\cpython\symtable.h" />
     <ClInclude Include="..\Include\cpython\sysmodule.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
@@ -251,7 +252,6 @@
     <ClInclude Include="..\Include\sliceobject.h" />
     <ClInclude Include="..\Include\structmember.h" />
     <ClInclude Include="..\Include\structseq.h" />
-    <ClInclude Include="..\Include\symtable.h" />
     <ClInclude Include="..\Include\sysmodule.h" />
     <ClInclude Include="..\Include\token.h" />
     <ClInclude Include="..\Include\traceback.h" />

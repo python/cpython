@@ -1080,7 +1080,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/sliceobject.h \
 		$(srcdir)/Include/structmember.h \
 		$(srcdir)/Include/structseq.h \
-		$(srcdir)/Include/symtable.h \
 		$(srcdir)/Include/sysmodule.h \
 		$(srcdir)/Include/token.h \
 		$(srcdir)/Include/traceback.h \
@@ -1124,6 +1123,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pystrhex.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pytime.h \
+		$(srcdir)/Include/cpython/symtable.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \

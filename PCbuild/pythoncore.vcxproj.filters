@@ -231,9 +231,6 @@
     <ClInclude Include="..\Include\structseq.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\symtable.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\sysmodule.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -467,6 +464,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pythonrun.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\symtable.h">
+      <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\sysmodule.h">
       <Filter>Include\cpython</Filter>

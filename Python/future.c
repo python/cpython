@@ -2,7 +2,6 @@
 #include "Python-ast.h"
 #include "token.h"
 #include "code.h"
-#include "symtable.h"
 #include "ast.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"

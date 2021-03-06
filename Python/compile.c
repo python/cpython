@@ -28,7 +28,6 @@
 #include "Python-ast.h"
 #include "ast.h"
 #include "code.h"
-#include "symtable.h"
 #define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"
 #include "wordcode_helpers.h"

@@ -2,7 +2,6 @@
 
 #include "code.h"
 #include "Python-ast.h"
-#include "symtable.h"
 
 #include "clinic/symtablemodule.c.h"
 /*[clinic input]
