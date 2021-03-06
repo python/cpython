@@ -1180,15 +1180,14 @@ static PyObject *
 thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
 {
     int signum = SIGINT;
-    if (!PyArg_ParseTuple(args, "|i:signum", &signum))
-        return NULL;
-
-    if (signum < 1 || signum >= NSIG) {
-        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+    if (!PyArg_ParseTuple(args, "|i:signum", &signum)) {
         return NULL;
     }
 
-    PyErr_SetInterruptEx(signum);
+    if (PyErr_SetInterruptEx(signum)) {
+        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 

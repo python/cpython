@@ -64,7 +64,8 @@ This module defines the following constants and functions:
 .. function:: interrupt_main([signum])
 
    Simulate the effect of a signal arriving in the main thread.
-   A thread can use this function to interrupt the main thread.
+   A thread can use this function to interrupt the main thread, though
+   there is no guarantee that the interruption will happen immediately.
 
    If given, *signum* is the number of the signal to simulate.
    If *signum* is not given, :data:`signal.SIGINT` is simulated.
@@ -77,10 +78,8 @@ This module defines the following constants and functions:
       The *signum* argument is added to customize the signal number.
 
    .. note::
-      This does not emit the corresponding signal, so you can simulate
-      signals which would otherwise stop or kill the process, such as
-      :data:`signal.SIGSTOP`.
-
+      This does not emit the corresponding signal but schedules a call to
+      the associated handler (if it exists).
       If you want to truly emit the signal, use :func:`signal.raise_signal`.
 
 

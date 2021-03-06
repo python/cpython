@@ -1771,19 +1771,23 @@ _PyErr_CheckSignals(void)
    is called,  the corresponding Python signal handler will be raised.
 
    Missing signal handler for the given signal number is silently ignored. */
-void
+int
 PyErr_SetInterruptEx(int signum)
 {
+    if (signum < 1 || signum >= NSIG) {
+        return -1;
+    }
     PyObject* func = GetHandler(signum);
     if (func != IgnoreHandler && func != DefaultHandler) {
         trip_signal(signum);
     }
+    return 0;
 }
 
 void
 PyErr_SetInterrupt(void)
 {
-    PyErr_SetInterruptEx(SIGINT);
+    (void) PyErr_SetInterruptEx(SIGINT);
 }
 
 static int

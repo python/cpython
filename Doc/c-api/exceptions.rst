@@ -543,7 +543,7 @@ Signal Handling
       the :term:`GIL` and from a C signal handler.
 
 
-.. c:function:: void PyErr_SetInterruptEx(int signum)
+.. c:function:: int PyErr_SetInterruptEx(int signum)
 
    .. index::
       module: signal
@@ -560,6 +560,10 @@ Signal Handling
 
    If the given signal isn't handled by Python (it was set to
    :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+
+   If *signum* is outside of the allowed range of signal numbers, ``-1``
+   is returned.  Otherwise, ``0`` is returned.  The error indicator is
+   never changed by this function.
 
    .. note::
       This function is async-signal-safe.  It can be called without
