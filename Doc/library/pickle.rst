@@ -368,7 +368,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       .. versionadded:: 3.3
 
-   .. method:: reducer_override(self, obj)
+   .. method:: reducer_override(obj)
 
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
