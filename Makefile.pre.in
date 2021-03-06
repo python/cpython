@@ -871,9 +871,13 @@ regen-opcode:
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
 .PHONY: regen-frozen
-regen-frozen:
+regen-frozen: Programs/_freeze_importlib
 	# Regenerate code for frozen module "__hello__".
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/freeze/regen_frozen.py $(srcdir)/Python/frozen_hello.h
+	./Programs/_freeze_importlib hello \
+		$(srcdir)/Tools/freeze/flag.py \
+		$(srcdir)/Python/frozen_hello.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/frozen_hello.h \
+		$(srcdir)/Python/frozen_hello.h.new
 
 .PHONY: regen-token
 regen-token:
