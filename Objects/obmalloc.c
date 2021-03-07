@@ -1397,95 +1397,104 @@ static int arena_map_bot_count;
 static arena_map_bot_t arena_map_root;
 #endif
 
-#define CACHE_BITS 10
+#define CACHE_BITS 7
 #define CACHE_SIZE (1<<CACHE_BITS)
 #define CACHE_MASK (CACHE_SIZE - 1)
-#define ADDRESS_MASK ((1UL<<ADDRESS_BITS) - 1)
-#define POOL_NUMBER(p) ((AS_UINT(p) & ADDRESS_MASK) >> POOL_BITS)
-#define CACHE_INDEX(p) (POOL_NUMBER(p) & CACHE_MASK)
 
-#define CACHE_ENTRY_BITS 2
-#define CACHE_ENTRY_MASK ((1<<CACHE_ENTRY_BITS) - 1)
-#define CACHE_ENTRY_EMPTY 0
+#define CACHE_VALUE_EMPTY 0
 /* pool address contains large object (outside arena) */
-#define CACHE_ENTRY_LARGE 1
+#define CACHE_VALUE_LARGE 1
 /* pool address contains small object (inside arena) */
-#define CACHE_ENTRY_SMALL 2
+#define CACHE_VALUE_SMALL 2
+#define CACHE_VALUE_MASK (CACHE_VALUE_LARGE | CACHE_VALUE_SMALL)
 
 static uintptr_t arena_map_cache[CACHE_SIZE];
 
-//#define CACHE_STATS
+/* turn off for benchmarks, some overhead */
+#define CACHE_STATS
+
 #ifdef CACHE_STATS
 static unsigned int cache_hits;
 static unsigned int cache_collisions;
 static unsigned int cache_lookups;
 #endif
 
-void
-cache_put(block *p, int value)
+static inline uintptr_t
+pool_number(poolp pool)
 {
-    int idx = CACHE_INDEX(p);
-    uintptr_t entry = (POOL_NUMBER(p) << CACHE_ENTRY_BITS);
-    assert((value & CACHE_MASK) == value);
-    entry |= value;
-#if 0
-    fprintf(stderr, "cache put %p %lu %d %x %lx\n", p, POOL_NUMBER(p),
-            is_used, idx, entry);
-#endif
-    if (arena_map_cache[idx] != entry) {
+    return AS_UINT(pool) >> POOL_BITS;
+}
+
+static inline uintptr_t
+cache_index(poolp pool)
+{
+    uintptr_t pool_number = AS_UINT(pool) >> POOL_BITS;
+    return pool_number & CACHE_MASK;
+}
+
+static inline void
+cache_put(poolp pool, int value)
+{
+    int idx = cache_index(pool);
+    uintptr_t entry = AS_UINT(pool) | value;
+    assert((entry & ~CACHE_VALUE_MASK) == AS_UINT(pool));
 #ifdef CACHE_STATS
+    if (arena_map_cache[idx] != entry) {
         if (arena_map_cache[idx] != 0) {
             cache_collisions++;
         }
-#endif
         arena_map_cache[idx] = entry;
     }
+#else
+    arena_map_cache[idx] = entry;
+#endif
 }
 
-int
-cache_get(block *p)
+static uintptr_t
+cache_get(poolp pool)
 {
-    int idx = CACHE_INDEX(p);
+    int idx = cache_index(pool);
     uintptr_t entry = arena_map_cache[idx];
 #ifdef CACHE_STATS
     cache_lookups++;
 #endif
-    if ((entry >> CACHE_ENTRY_BITS) != POOL_NUMBER(p)) {
-        return CACHE_ENTRY_EMPTY;
+    if ((entry & ~CACHE_VALUE_MASK) != AS_UINT(pool)) {
+        /* entry exists but pool addr doesn't match */
+        return CACHE_VALUE_EMPTY;
     }
 #ifdef CACHE_STATS
     cache_hits++;
 #endif
-    return (entry & CACHE_ENTRY_MASK);
+    return (entry & CACHE_VALUE_MASK);
 }
 
-void
-cache_clear(block *p)
+static inline void
+cache_clear(poolp pool)
 {
-    if (cache_get(p) != CACHE_ENTRY_EMPTY) {
-        int idx = CACHE_INDEX(p);
-        arena_map_cache[idx] = 0;
-    }
+    int idx = cache_index(pool);
+    arena_map_cache[idx] = 0;
 }
 
+#if 0
 /* setup cache for all pools in arena */
-void
+static void
 cache_mark_arena(struct arena_object *arenaobj)
 {
     uintptr_t base = (uintptr_t)_Py_ALIGN_UP(arenaobj->address, POOL_SIZE);
     for (uint i = 0; i < arenaobj->ntotalpools; i++) {
-        cache_put((block *)base, CACHE_ENTRY_SMALL);
+        cache_put((poolp)base, CACHE_VALUE_SMALL);
         base += POOL_SIZE;
     }
 }
+#endif
 
 /* clear cache for all pools in arena */
-void
+static void
 cache_clear_arena(struct arena_object *arenaobj)
 {
     uintptr_t base = (uintptr_t)_Py_ALIGN_UP(arenaobj->address, POOL_SIZE);
     for (uint i = 0; i < arenaobj->ntotalpools; i++) {
-        cache_clear((block *)base);
+        cache_clear((poolp)base);
         base += POOL_SIZE;
     }
 }
@@ -1735,13 +1744,15 @@ static bool
 address_in_range(void *p, poolp pool)
 {
     bool in_arena;
-    int cache_value = cache_get(p);
-    if (cache_value == CACHE_ENTRY_EMPTY) {
+    int cache_value = cache_get(pool);
+    if (cache_value == CACHE_VALUE_EMPTY) {
         in_arena = arena_map_is_used(p);
-        cache_put(p, in_arena ? CACHE_ENTRY_SMALL : CACHE_ENTRY_LARGE);
+        uintptr_t cache_value = in_arena ? CACHE_VALUE_SMALL : CACHE_VALUE_LARGE;
+        cache_put(pool, cache_value);
+        //assert(cache_get(pool) == cache_value);
     }
     else {
-        in_arena = cache_value == CACHE_ENTRY_SMALL;
+        in_arena = cache_value == CACHE_VALUE_SMALL;
     }
     assert(in_arena == arena_map_is_used(p));
     return in_arena;
@@ -1995,25 +2006,6 @@ allocate_from_new_pool(uint size)
 }
 
 
-static void
-log_malloc(void *p, size_t size, int is_free)
-{
-    static FILE *fp;
-    if (fp == NULL) {
-        fp = fopen("/tmp/obmalloc.dat", "a");
-    }
-    /* bit 1: 0 = alloc, 1 = free */
-    char info = is_free ? 1 : 0;
-    /* bit 2: 0 = small, 1 = large */
-    if (size > SMALL_REQUEST_THRESHOLD) {
-        info |= 2;
-    }
-    uintptr_t data = (uintptr_t)p;
-    data |= info;
-    fwrite(&data, 8, 1, fp);
-}
-
-
 /* pymalloc allocator
 
    Return a pointer to newly allocated memory if pymalloc allocated memory.
@@ -2065,7 +2057,7 @@ pymalloc_alloc(void *ctx, size_t nbytes)
          */
         bp = allocate_from_new_pool(size);
     }
-    //cache_put(bp, CACHE_ENTRY_SMALL);
+    //cache_put(bp, CACHE_VALUE_SMALL);
     return (void *)bp;
 }
 
@@ -2075,14 +2067,12 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 {
     void* ptr = pymalloc_alloc(ctx, nbytes);
     if (LIKELY(ptr != NULL)) {
-        //log_malloc(ptr, nbytes, 0);
         return ptr;
     }
 
     ptr = PyMem_RawMalloc(nbytes);
     if (ptr != NULL) {
-        //log_malloc(ptr, nbytes, 0);
-        //cache_put(ptr, CACHE_ENTRY_LARGE);
+        //cache_put(ptr, CACHE_VALUE_LARGE);
         raw_allocated_blocks++;
     }
     return ptr;
@@ -2103,7 +2093,7 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 
     ptr = PyMem_RawCalloc(nelem, elsize);
     if (ptr != NULL) {
-        //cache_put(ptr, CACHE_ENTRY_LARGE);
+        //cache_put(ptr, CACHE_VALUE_LARGE);
         raw_allocated_blocks++;
     }
     return ptr;
@@ -2363,11 +2353,10 @@ _PyObject_Free(void *ctx, void *p)
         return;
     }
 
-    //log_malloc(p, 0, 1);
     if (UNLIKELY(!pymalloc_free(ctx, p))) {
         /* pymalloc didn't allocate this address */
         PyMem_RawFree(p);
-        cache_clear(p);
+        cache_clear(POOL_ADDR(p));
         raw_allocated_blocks--;
     }
 }
