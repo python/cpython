@@ -1414,9 +1414,12 @@ static arena_map_bot_t arena_map_root;
 
 static uintptr_t arena_map_cache[CACHE_SIZE];
 
+//#define CACHE_STATS
+#ifdef CACHE_STATS
 static unsigned int cache_hits;
 static unsigned int cache_collisions;
 static unsigned int cache_lookups;
+#endif
 
 void
 cache_put(block *p, int value)
@@ -1430,9 +1433,11 @@ cache_put(block *p, int value)
             is_used, idx, entry);
 #endif
     if (arena_map_cache[idx] != entry) {
+#ifdef CACHE_STATS
         if (arena_map_cache[idx] != 0) {
             cache_collisions++;
         }
+#endif
         arena_map_cache[idx] = entry;
     }
 }
@@ -1442,11 +1447,15 @@ cache_get(block *p)
 {
     int idx = CACHE_INDEX(p);
     uintptr_t entry = arena_map_cache[idx];
+#ifdef CACHE_STATS
     cache_lookups++;
+#endif
     if ((entry >> CACHE_ENTRY_BITS) != POOL_NUMBER(p)) {
         return CACHE_ENTRY_EMPTY;
     }
+#ifdef CACHE_STATS
     cache_hits++;
+#endif
     return (entry & CACHE_ENTRY_MASK);
 }
 
@@ -1456,6 +1465,17 @@ cache_clear(block *p)
     if (cache_get(p) != CACHE_ENTRY_EMPTY) {
         int idx = CACHE_INDEX(p);
         arena_map_cache[idx] = 0;
+    }
+}
+
+/* setup cache for all pools in arena */
+void
+cache_mark_arena(struct arena_object *arenaobj)
+{
+    uintptr_t base = (uintptr_t)_Py_ALIGN_UP(arenaobj->address, POOL_SIZE);
+    for (uint i = 0; i < arenaobj->ntotalpools; i++) {
+        cache_put((block *)base, CACHE_ENTRY_SMALL);
+        base += POOL_SIZE;
     }
 }
 
@@ -1700,6 +1720,8 @@ new_arena(void)
     }
     arenaobj->ntotalpools = arenaobj->nfreepools;
 
+    //cache_mark_arena(arenaobj);
+
     return arenaobj;
 }
 
@@ -1712,13 +1734,17 @@ new_arena(void)
 static bool
 address_in_range(void *p, poolp pool)
 {
+    bool in_arena;
     int cache_value = cache_get(p);
-    if (cache_value != CACHE_ENTRY_EMPTY) {
-        int in_arena = (cache_value == CACHE_ENTRY_SMALL);
-        assert(in_arena == arena_map_is_used(p));
-        return in_arena;
+    if (cache_value == CACHE_ENTRY_EMPTY) {
+        in_arena = arena_map_is_used(p);
+        cache_put(p, in_arena ? CACHE_ENTRY_SMALL : CACHE_ENTRY_LARGE);
     }
-    return arena_map_is_used(p);
+    else {
+        in_arena = cache_value == CACHE_ENTRY_SMALL;
+    }
+    assert(in_arena == arena_map_is_used(p));
+    return in_arena;
 }
 #else
 /*
@@ -2039,7 +2065,7 @@ pymalloc_alloc(void *ctx, size_t nbytes)
          */
         bp = allocate_from_new_pool(size);
     }
-    cache_put(bp, CACHE_ENTRY_SMALL);
+    //cache_put(bp, CACHE_ENTRY_SMALL);
     return (void *)bp;
 }
 
@@ -2056,7 +2082,7 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
     ptr = PyMem_RawMalloc(nbytes);
     if (ptr != NULL) {
         //log_malloc(ptr, nbytes, 0);
-        cache_clear(ptr);
+        //cache_put(ptr, CACHE_ENTRY_LARGE);
         raw_allocated_blocks++;
     }
     return ptr;
@@ -2077,7 +2103,7 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 
     ptr = PyMem_RawCalloc(nelem, elsize);
     if (ptr != NULL) {
-        cache_put(ptr, CACHE_ENTRY_LARGE);
+        //cache_put(ptr, CACHE_ENTRY_LARGE);
         raw_allocated_blocks++;
     }
     return ptr;
@@ -3168,8 +3194,10 @@ _PyObject_DebugMallocStats(FILE *out)
 #endif
     (void)printone(out, "Total", total);
 
+#ifdef CACHE_STATS
     fprintf(out, "cache hits %d lookups %d collisions %d %.3f\n", cache_hits,
             cache_lookups, cache_collisions, ((double)cache_hits)/(cache_lookups));
+#endif
     return 1;
 }
 
