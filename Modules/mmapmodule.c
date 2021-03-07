@@ -458,6 +458,9 @@ mmap_size_method(mmap_object *self,
 
 #ifdef UNIX
     {
+        if (self->fd == -1) {
+            return PyLong_FromSsize_t(self->size);
+        }
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
