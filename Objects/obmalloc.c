@@ -1397,6 +1397,79 @@ static int arena_map_bot_count;
 static arena_map_bot_t arena_map_root;
 #endif
 
+#define CACHE_BITS 10
+#define CACHE_SIZE (1<<CACHE_BITS)
+#define CACHE_MASK (CACHE_SIZE - 1)
+#define ADDRESS_MASK ((1UL<<ADDRESS_BITS) - 1)
+#define POOL_NUMBER(p) ((AS_UINT(p) & ADDRESS_MASK) >> POOL_BITS)
+#define CACHE_INDEX(p) (POOL_NUMBER(p) & CACHE_MASK)
+
+#define CACHE_ENTRY_BITS 2
+#define CACHE_ENTRY_MASK ((1<<CACHE_ENTRY_BITS) - 1)
+#define CACHE_ENTRY_EMPTY 0
+/* pool address contains large object (outside arena) */
+#define CACHE_ENTRY_LARGE 1
+/* pool address contains small object (inside arena) */
+#define CACHE_ENTRY_SMALL 2
+
+static uintptr_t arena_map_cache[CACHE_SIZE];
+
+static unsigned int cache_hits;
+static unsigned int cache_collisions;
+static unsigned int cache_lookups;
+
+void
+cache_put(block *p, int value)
+{
+    int idx = CACHE_INDEX(p);
+    uintptr_t entry = (POOL_NUMBER(p) << CACHE_ENTRY_BITS);
+    assert((value & CACHE_MASK) == value);
+    entry |= value;
+#if 0
+    fprintf(stderr, "cache put %p %lu %d %x %lx\n", p, POOL_NUMBER(p),
+            is_used, idx, entry);
+#endif
+    if (arena_map_cache[idx] != entry) {
+        if (arena_map_cache[idx] != 0) {
+            cache_collisions++;
+        }
+        arena_map_cache[idx] = entry;
+    }
+}
+
+int
+cache_get(block *p)
+{
+    int idx = CACHE_INDEX(p);
+    uintptr_t entry = arena_map_cache[idx];
+    cache_lookups++;
+    if ((entry >> CACHE_ENTRY_BITS) != POOL_NUMBER(p)) {
+        return CACHE_ENTRY_EMPTY;
+    }
+    cache_hits++;
+    return (entry & CACHE_ENTRY_MASK);
+}
+
+void
+cache_clear(block *p)
+{
+    if (cache_get(p) != CACHE_ENTRY_EMPTY) {
+        int idx = CACHE_INDEX(p);
+        arena_map_cache[idx] = 0;
+    }
+}
+
+/* clear cache for all pools in arena */
+void
+cache_clear_arena(struct arena_object *arenaobj)
+{
+    uintptr_t base = (uintptr_t)_Py_ALIGN_UP(arenaobj->address, POOL_SIZE);
+    for (uint i = 0; i < arenaobj->ntotalpools; i++) {
+        cache_clear((block *)base);
+        base += POOL_SIZE;
+    }
+}
+
 /* Return a pointer to a bottom tree node, return NULL if it doesn't exist or
  * it cannot be created */
 static arena_map_bot_t *
@@ -1639,6 +1712,12 @@ new_arena(void)
 static bool
 address_in_range(void *p, poolp pool)
 {
+    int cache_value = cache_get(p);
+    if (cache_value != CACHE_ENTRY_EMPTY) {
+        int in_arena = (cache_value == CACHE_ENTRY_SMALL);
+        assert(in_arena == arena_map_is_used(p));
+        return in_arena;
+    }
     return arena_map_is_used(p);
 }
 #else
@@ -1889,6 +1968,26 @@ allocate_from_new_pool(uint size)
     return bp;
 }
 
+
+static void
+log_malloc(void *p, size_t size, int is_free)
+{
+    static FILE *fp;
+    if (fp == NULL) {
+        fp = fopen("/tmp/obmalloc.dat", "a");
+    }
+    /* bit 1: 0 = alloc, 1 = free */
+    char info = is_free ? 1 : 0;
+    /* bit 2: 0 = small, 1 = large */
+    if (size > SMALL_REQUEST_THRESHOLD) {
+        info |= 2;
+    }
+    uintptr_t data = (uintptr_t)p;
+    data |= info;
+    fwrite(&data, 8, 1, fp);
+}
+
+
 /* pymalloc allocator
 
    Return a pointer to newly allocated memory if pymalloc allocated memory.
@@ -1940,7 +2039,7 @@ pymalloc_alloc(void *ctx, size_t nbytes)
          */
         bp = allocate_from_new_pool(size);
     }
-
+    cache_put(bp, CACHE_ENTRY_SMALL);
     return (void *)bp;
 }
 
@@ -1950,11 +2049,14 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 {
     void* ptr = pymalloc_alloc(ctx, nbytes);
     if (LIKELY(ptr != NULL)) {
+        //log_malloc(ptr, nbytes, 0);
         return ptr;
     }
 
     ptr = PyMem_RawMalloc(nbytes);
     if (ptr != NULL) {
+        //log_malloc(ptr, nbytes, 0);
+        cache_clear(ptr);
         raw_allocated_blocks++;
     }
     return ptr;
@@ -1975,6 +2077,7 @@ _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 
     ptr = PyMem_RawCalloc(nelem, elsize);
     if (ptr != NULL) {
+        cache_put(ptr, CACHE_ENTRY_LARGE);
         raw_allocated_blocks++;
     }
     return ptr;
@@ -2082,6 +2185,7 @@ insert_to_freepool(poolp pool)
 #if WITH_PYMALLOC_RADIX_TREE
         /* mark arena region as not under control of obmalloc */
         arena_map_mark_used(ao->address, 0);
+        cache_clear_arena(ao);
 #endif
 
         /* Free the entire arena. */
@@ -2233,9 +2337,11 @@ _PyObject_Free(void *ctx, void *p)
         return;
     }
 
+    //log_malloc(p, 0, 1);
     if (UNLIKELY(!pymalloc_free(ctx, p))) {
         /* pymalloc didn't allocate this address */
         PyMem_RawFree(p);
+        cache_clear(p);
         raw_allocated_blocks--;
     }
 }
@@ -3061,6 +3167,9 @@ _PyObject_DebugMallocStats(FILE *out)
                       sizeof(arena_map_bot_t) * arena_map_bot_count);
 #endif
     (void)printone(out, "Total", total);
+
+    fprintf(out, "cache hits %d lookups %d collisions %d %.3f\n", cache_hits,
+            cache_lookups, cache_collisions, ((double)cache_hits)/(cache_lookups));
     return 1;
 }
 
