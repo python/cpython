@@ -786,13 +786,15 @@ the code ::
    f = io.BytesIO()
    p = MyPickler(f)
 
-does the same, but all instances of ``MyPickler`` will by default
-share the same dispatch table.  The equivalent code using the
-:mod:`copyreg` module is ::
+does the same but all instances of ``MyPickler`` will by default
+share the private dispatch table.  On the other hand, the code ::
 
    copyreg.pickle(SomeClass, reduce_SomeClass)
    f = io.BytesIO()
    p = pickle.Pickler(f)
+
+does the same but all instances of :class:`pickle.Pickler` will by default
+share the modified global dispatch table.
 
 .. _pickle-state:
 
