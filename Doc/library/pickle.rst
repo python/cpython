@@ -502,7 +502,7 @@ The following types can be pickled:
 
 * tuples, lists, sets, and dictionaries containing only picklable objects;
 
-* built-in and user-defined functions defined at the top level of a module
+* functions (built-in and user-defined) defined at the top level of a module
   (using :keyword:`def`, not :keyword:`lambda`);
 
 * classes defined at the top level of a module;
@@ -567,7 +567,7 @@ implementation of this behaviour::
    def save(obj):
        return (obj.__class__, obj.__dict__)
 
-   def load(cls, attributes):
+   def restore(cls, attributes):
        obj = cls.__new__(cls)
        obj.__dict__.update(attributes)
        return obj
