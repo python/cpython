@@ -9,7 +9,7 @@ import types
 import warnings
 import contextvars
 
-from . import futures, iscoroutinefunction
+from . import futures
 
 
 class AsyncIOInteractiveConsole(code.InteractiveConsole):
@@ -33,10 +33,6 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
 
             func = types.FunctionType(code, self.locals)
             try:
-                if not iscoroutinefunction(func):
-                    code_ = self.compile("repl_ctx.run(repl_f)", self.filename)
-                    new_locals = dict(repl_ctx=repl_context, repl_f=func, **self.locals)
-                    func = types.FunctionType(code_, new_locals)
                 coro = func()
             except SystemExit:
                 raise
@@ -58,7 +54,7 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback, context=repl_context.copy())
+        loop.call_soon_threadsafe(callback, context=repl_context)
 
         try:
             return future.result()
