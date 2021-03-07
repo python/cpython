@@ -1098,7 +1098,7 @@ Here is an example of an unpickler allowing only few safe classes from the
        """Helper function analogous to pickle.loads()."""
        return RestrictedUnpickler(io.BytesIO(s)).load()
 
-A sample usage of our unpickler working has intended::
+A sample usage of our unpickler working as intended::
 
     >>> restricted_loads(pickle.dumps([1, 2, range(15)]))
     [1, 2, range(0, 15)]
@@ -1142,7 +1142,7 @@ For the simplest code, use the :func:`dump` and :func:`load` functions. ::
 
    # An arbitrary collection of objects supported by pickle.
    data = {
-       'a': [1, 2.0, 3, 4+6j],
+       'a': [1, 2.0, 3+4j],
        'b': ("character string", b"byte string"),
        'c': {None, True, False}
    }
@@ -1198,6 +1198,6 @@ The following example reads the resulting pickled data. ::
    operations.
 
 .. [#] The limitation on alphanumeric characters is due to the fact
-   the persistent IDs, in protocol 0, are delimited by the newline
+   that persistent IDs in protocol 0 are delimited by the newline
    character.  Therefore if any kind of newline characters occurs in
-   persistent IDs, the resulting pickle will become unreadable.
+   persistent IDs, the resulting pickled data will become unreadable.
