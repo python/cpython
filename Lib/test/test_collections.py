@@ -249,6 +249,10 @@ class TestChainMap(unittest.TestCase):
         for k, v in dict(a=1, B=20, C=30, z=100).items():             # check get
             self.assertEqual(d.get(k, 100), v)
 
+        c = ChainMap({'a': 1, 'b': 2})
+        d = c.new_child(b=20, c=30)
+        self.assertEqual(d.maps, [{'b': 20, 'c': 30}, {'a': 1, 'b': 2}])
+
     def test_union_operators(self):
         cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
