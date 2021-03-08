@@ -1113,18 +1113,27 @@ functions.
 
 .. function:: getLevelName(level)
 
-   Returns the textual representation of logging level *level*. If the level is one
-   of the predefined levels :const:`CRITICAL`, :const:`ERROR`, :const:`WARNING`,
-   :const:`INFO` or :const:`DEBUG` then you get the corresponding string. If you
-   have associated levels with names using :func:`addLevelName` then the name you
-   have associated with *level* is returned. If a numeric value corresponding to one
-   of the defined levels is passed in, the corresponding string representation is
-   returned. Otherwise, the string 'Level %s' % level is returned.
+   Returns the textual or numeric representation of logging level *level*.
+
+   If *level* is one of the predefined levels :const:`CRITICAL`, :const:`ERROR`,
+   :const:`WARNING`, :const:`INFO` or :const:`DEBUG` then you get the
+   corresponding string. If you have associated levels with names using
+   :func:`addLevelName` then the name you have associated with *level* is
+   returned. If a numeric value corresponding to one of the defined levels is
+   passed in, the corresponding string representation is returned.
+
+   The *level* parameter also accepts a string representation of the level such
+   as 'INFO'. In such cases, this functions returns the corresponding numeric
+   value of the level.
+
+   If no matching numeric or string value is passed in, the string
+   'Level %s' % level is returned.
 
    .. note:: Levels are internally integers (as they need to be compared in the
       logging logic). This function is used to convert between an integer level
       and the level name displayed in the formatted log output by means of the
-      ``%(levelname)s`` format specifier (see :ref:`logrecord-attributes`).
+      ``%(levelname)s`` format specifier (see :ref:`logrecord-attributes`), and
+      vice versa.
 
    .. versionchanged:: 3.4
       In Python versions earlier than 3.4, this function could also be passed a
