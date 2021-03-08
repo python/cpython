@@ -191,6 +191,10 @@ class ConnectionTests(unittest.TestCase):
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
 
+    def test_database_keyword(self):
+        with sqlite.connect(database=":memory:") as cx:
+            self.assertEqual(type(cx), sqlite.Connection)
+
 
 class CursorTests(unittest.TestCase):
     def setUp(self):
