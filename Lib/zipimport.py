@@ -321,6 +321,16 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         return ZipReader(self, fullname)
 
 
+    def invalidate_caches(self):
+        """Reload the file data of the archive path."""
+        try:
+            self._files = _read_directory(self.archive)
+            _zip_directory_cache[self.archive] = self._files
+        except ZipImportError:
+            _zip_directory_cache.pop(self.archive, None)
+            self._files = None
+
+
     def __repr__(self):
         return f'<zipimporter object "{self.archive}{path_sep}{self.prefix}">'
 
