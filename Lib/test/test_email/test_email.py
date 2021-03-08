@@ -4261,7 +4261,7 @@ class TestBase64(unittest.TestCase):
 
     def test_encode(self):
         eq = self.assertEqual
-        eq(base64mime.body_encode(b''), '')  # bpo-43125
+        eq(base64mime.body_encode(b''), '')
         eq(base64mime.body_encode(b'hello'), 'aGVsbG8=\n')
         # Test the binary flag
         eq(base64mime.body_encode(b'hello\n'), 'aGVsbG8K\n')
