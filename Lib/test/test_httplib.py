@@ -2067,7 +2067,7 @@ class TunnelTests(TestCase):
         self.assertIn(b'CONNECT destination.com', proxy_setup_data_sent)
         self.assertTrue(
                 proxy_setup_data_sent.endswith(b'\r\n\r\n'),
-                msg=f'unexpected proxy data sent {proxy_setup_data_sent}')
+                msg=f'unexpected proxy data sent {proxy_setup_data_sent!r}')
 
     def test_connect_put_request(self):
         self.conn.set_tunnel('destination.com')
