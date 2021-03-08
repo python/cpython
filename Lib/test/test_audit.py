@@ -118,5 +118,19 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(events[2][0], "socket.bind")
         self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
 
+    def test_gc(self):
+        import_helper.import_module("gc")
+        returncode, events, stderr = self.run_python("test_gc")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "gc.get_objects")
+        self.assertEqual(events[1][0], "gc.get_referrers")
+        self.assertEqual(events[2][0], "gc.get_referents")
+
+
+
 if __name__ == "__main__":
     unittest.main()
