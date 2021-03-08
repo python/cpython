@@ -1,0 +1,3 @@
+Added function `clear` to module `os`.
+This function clears the screen by running `cls` in windows and `clear` in unix.
+Patch by parsa shahmaleki

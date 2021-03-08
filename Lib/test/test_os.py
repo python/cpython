@@ -4050,6 +4050,14 @@ class BlockingTests(unittest.TestCase):
         self.assertEqual(os.get_blocking(fd), True)
 
 
+class ClearTests(unittest.TestCase):
+    def test_clear():
+        if os.name == 'nt':
+            pass
+            # TODO : add test for windows
+        else:
+            self.assertIn('\x1b[3J\x1b[H\x1b[2J', subprocess.check_output(sys.executable + ' -c "import os; os.clear()"', shell=True).decode())
+
 
 class ExportsTests(unittest.TestCase):
     def test_os_all(self):

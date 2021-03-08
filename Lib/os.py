@@ -1118,3 +1118,10 @@ if name == 'nt':
             cookie,
             nt._remove_dll_directory
         )
+
+def clear():
+    """ Runs the clear command in the shell """
+    if name == 'nt':
+        system('cls')
+    else:
+        system('clear')
