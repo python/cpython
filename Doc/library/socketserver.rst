@@ -433,7 +433,7 @@ Request Handler Objects
 
    The :attr:`rfile` attributes of both classes support the
    :class:`io.BufferedIOBase` readable interface, and
-   :attr:`DatagramRequestHandler.wfile` supports the
+   the :attr:`wfile` attributes of both classes support the
    :class:`io.BufferedIOBase` writable interface.
 
    .. versionchanged:: 3.6
