@@ -1,0 +1,3 @@
+Add optional parameter *ignore_cleanup_errors* to
+:func:`tempfile.TemporaryDirectory` and allow multiple :func:`cleanup` attempts.
+Contributed by C.A.M. Gerlach.
