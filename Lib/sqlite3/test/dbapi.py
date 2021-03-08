@@ -680,6 +680,21 @@ class ThreadTests(unittest.TestCase):
         if len(errors) > 0:
             self.fail("\n".join(errors))
 
+    def test_dont_check_same_thread(self):
+        def run(con, err):
+            try:
+                cur = con.execute("select 1")
+            except sqlite.Error:
+                err.append("multi-threading not allowed")
+
+        con = sqlite.connect(":memory:", check_same_thread=False)
+        err = []
+        t = threading.Thread(target=run, kwargs={"con": con, "err": err})
+        t.start()
+        t.join()
+        self.assertEqual(len(err), 0, "\n".join(err))
+
+
 class ConstructorTests(unittest.TestCase):
     def test_date(self):
         d = sqlite.Date(2004, 10, 28)
