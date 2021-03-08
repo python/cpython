@@ -61,7 +61,7 @@ This module defines the following constants and functions:
       :func:`sys.unraisablehook` is now used to handle unhandled exceptions.
 
 
-.. function:: interrupt_main([signum])
+.. function:: interrupt_main(signum=signal.SIGINT, /)
 
    Simulate the effect of a signal arriving in the main thread.
    A thread can use this function to interrupt the main thread, though

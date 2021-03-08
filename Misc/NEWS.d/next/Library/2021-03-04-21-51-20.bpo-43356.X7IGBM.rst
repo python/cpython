@@ -1,1 +1,1 @@
-Allow passing a signal number to ``interrupt_main()``.
+Allow passing a signal number to ``_thread.interrupt_main()``.

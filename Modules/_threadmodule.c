@@ -1192,7 +1192,7 @@ thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(interrupt_doc,
-"interrupt_main([signum])\n\
+"interrupt_main(signum=signal.SIGINT, /)\n\
 \n\
 Simulate the arrival of the given signal in the main thread,\n\
 where the corresponding signal handler will be executed.\n\

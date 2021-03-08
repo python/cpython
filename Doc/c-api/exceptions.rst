@@ -512,10 +512,11 @@ Signal Handling
    and if so, invokes the corresponding signal handler.  If the :mod:`signal`
    module is supported, this can invoke a signal handler written in Python.
 
-   If an exception is raised by a Python signal handler, the error indicator
-   is set and the function returns ``-1``; otherwise the function returns
-   ``0``.  The error indicator may or may not be cleared if it was previously
-   set.
+   The function attemps to handle all pending signals, and then returns ``0``.
+   However, if a Python signal handler raises an exception, the error
+   indicator is set and the function returns ``-1`` immediately (such that
+   other pending signals may not have been handled yet: they will be on the
+   next :c:func:`PyErr_CheckSignals()` invocation).
 
    If the function is called from a non-main thread, or under a non-main
    Python interpreter, it does nothing and returns ``0``.
