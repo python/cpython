@@ -24,8 +24,8 @@ context managers. :func:`mkstemp` and
 All the user-callable functions and constructors take additional arguments which
 allow direct control over the location and name of temporary files and
 directories. Files names used by this module include a string of
-random characters which allows those files to be securely created in
-shared temporary directories.
+random characters (`a-z`, `0-9`, `_`) which allows those files to be securely
+created in shared temporary directories.
 To maintain backward compatibility, the argument order is somewhat odd; it
 is recommended to use keyword arguments for clarity.
 
