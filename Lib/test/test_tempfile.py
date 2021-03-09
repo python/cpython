@@ -1425,9 +1425,14 @@ class TestTemporaryDirectory(BaseTestCase):
             with open(temp_path / "a_file.txt", "w+t") as open_file:
                 open_file.write("Hello world!\n")
                 temp_dir.cleanup()
-            self.assertIn(len(list(temp_path.glob("*"))), {0, 1},
-                          "Not all closed files cleaned up in "
-                          f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(len(list(temp_path.glob("*"))),
+                             int(sys.platform.startswith("win")),
+                             "Unexpected number of files in "
+                             f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(
+                temp_path.exists(),
+                sys.platform.startswith("win"),
+                f"TemporaryDirectory {temp_path!s} existance state unexpected")
             temp_dir.cleanup()
             self.assertFalse(
                 temp_path.exists(),
@@ -1479,9 +1484,14 @@ class TestTemporaryDirectory(BaseTestCase):
             with open(temp_path / "a_file.txt", "w+t") as open_file:
                 open_file.write("Hello world!\n")
                 del temp_dir
-            self.assertIn(len(list(temp_path.glob("*"))), {0, 1},
-                          "Not all closed files cleaned up in "
-                          f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(len(list(temp_path.glob("*"))),
+                             int(sys.platform.startswith("win")),
+                             "Unexpected number of files in "
+                             f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(
+                temp_path.exists(),
+                sys.platform.startswith("win"),
+                f"TemporaryDirectory {temp_path!s} existance state unexpected")
 
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
@@ -1539,9 +1549,14 @@ class TestTemporaryDirectory(BaseTestCase):
                 """.format(working_dir=working_dir)
             __, out, err = script_helper.assert_python_ok("-c", code)
             temp_path = pathlib.Path(out.decode().strip())
-            self.assertIn(len(list(temp_path.glob("*"))), {0, 1},
-                          "Not all closed files cleaned up in "
-                          f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(len(list(temp_path.glob("*"))),
+                             int(sys.platform.startswith("win")),
+                             "Unexpected number of files in "
+                             f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(
+                temp_path.exists(),
+                sys.platform.startswith("win"),
+                f"TemporaryDirectory {temp_path!s} existance state unexpected")
             err = err.decode('utf-8', 'backslashreplace')
             self.assertNotIn("Exception", err)
             self.assertNotIn("Error", err)
