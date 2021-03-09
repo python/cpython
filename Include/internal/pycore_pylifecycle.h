@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_runtime.h"       // _PyRuntimeState
+
 /* Forward declarations */
 struct _PyArgv;
 struct pyruntimestate;
@@ -88,7 +90,8 @@ extern void _PyWarnings_Fini(PyInterpreterState *interp);
 extern void _PyAST_Fini(PyInterpreterState *interp);
 extern void _PyAtExit_Fini(PyInterpreterState *interp);
 
-extern PyStatus _PyGILState_Init(PyThreadState *tstate);
+extern PyStatus _PyGILState_Init(_PyRuntimeState *runtime);
+extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyInterpreterState *interp);
