@@ -1252,7 +1252,7 @@ Control flow
    :class:`match_case` nodes with the different cases.
 
 
-.. class:: match_case(context_expr, optional_vars)
+.. class:: match_case(pattern, guard, body)
 
     A single case pattern in a ``match`` statement. ``pattern`` contains the
     match pattern that will be used to match the subject against. Notice that
