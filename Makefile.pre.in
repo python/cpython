@@ -913,7 +913,7 @@ regen-keyword:
 	$(UPDATE_FILE) $(srcdir)/Lib/keyword.py $(srcdir)/Lib/keyword.py.new
 
 .PHONY: regen-stdlib-module-names
-regen-stdlib-module-names: build_all
+regen-stdlib-module-names: build_all Programs/_testembed
 	# Regenerate Python/stdlib_module_names.h
 	# using Tools/scripts/generate_stdlib_module_names.py
 	$(RUNSHARED) ./$(BUILDPYTHON) \
