@@ -1571,12 +1571,7 @@ class PyBuildExt(build_ext):
                 '_sqlite/row.c',
                 '_sqlite/statement.c',
                 '_sqlite/util.c', ]
-
             sqlite_defines = []
-            if not MS_WINDOWS:
-                sqlite_defines.append(('MODULE_NAME', '"sqlite3"'))
-            else:
-                sqlite_defines.append(('MODULE_NAME', '\\"sqlite3\\"'))
 
             # Enable support for loadable extensions in the sqlite3 module
             # if --enable-loadable-sqlite-extensions configure option is used.
