@@ -1018,7 +1018,6 @@ class ChainMap(_collections_abc.MutableMapping):
         if m is None:
             m = kwargs
         elif kwargs:
-            m = m.copy()
             m.update(kwargs)
         return self.__class__(m, *self.maps)
 
