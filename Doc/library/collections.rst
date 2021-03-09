@@ -123,7 +123,7 @@ The class can be used to simulate nested scopes and is useful in templating.
       writing to any mapping in the chain.
 
     * Django's `Context class
-      <https://github.com/django/django/blob/master/django/template/context.py>`_
+      <https://github.com/django/django/blob/main/django/template/context.py>`_
       for templating is a read-only chain of mappings.  It also features
       pushing and popping of contexts similar to the
       :meth:`~collections.ChainMap.new_child` method and the
