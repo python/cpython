@@ -3115,7 +3115,13 @@ class Signature:
             # flag was not reset to 'False'
             result.append('/')
 
-        rendered = '({})'.format(', '.join(result))
+        # If arguments are liable exceed to some representative line width,
+        # write one per line with an indent. Improves pydoc rendering of
+        # complex annotations.
+        if (sum(map(len, result)) + (2 * len(result))) > 150:
+            rendered = '(\n    {}\n)'.format(',\n    '.join(result))
+        else:
+            rendered = '({})'.format(', '.join(result))
 
         if self.return_annotation is not _empty:
             anno = formatannotation(self.return_annotation)
