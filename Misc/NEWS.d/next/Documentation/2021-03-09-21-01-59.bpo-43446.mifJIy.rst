@@ -1,0 +1,1 @@
+Fix footnote in sqlite3 docs
