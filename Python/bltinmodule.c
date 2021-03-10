@@ -528,13 +528,13 @@ filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     /* create filterobject structure */
-    lz = (filterobject *)type->tp_alloc(type, 0);
+    lz = (filterobject *)PyType_GenericAlloc((PyTypeObject *)type, 0);
     if (lz == NULL) {
         Py_DECREF(it);
         return NULL;
     }
-    Py_INCREF(func);
-    lz->func = func;
+
+    lz->func = Py_NewRef(func);
     lz->it = it;
 
     return (PyObject *)lz;
@@ -544,8 +544,7 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    assert(PyType_Check(type));
-    if (!_PyArg_NoKwnames("filter", kwnames)) {
+    if ((PyTypeObject *)type == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
 
@@ -565,8 +564,9 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    lz->it = it;
     lz->func = Py_NewRef(args[0]);
+    lz->it = it;
+
     return (PyObject *)lz;
 }
 
