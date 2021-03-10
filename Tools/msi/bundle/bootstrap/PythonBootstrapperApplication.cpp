@@ -130,6 +130,7 @@ enum CONTROL_ID {
     ID_SUCCESS_RESTART_BUTTON,
     ID_SUCCESS_CANCEL_BUTTON,
     ID_SUCCESS_MAX_PATH_BUTTON,
+    ID_SUCCESS_UTF8_MODE_BUTTON,
 
     // Failure page
     ID_FAILURE_LOGFILE_LINK,
@@ -189,6 +190,7 @@ static THEME_ASSIGN_CONTROL_ID CONTROL_ID_NAMES[] = {
     { ID_SUCCESS_RESTART_BUTTON, L"SuccessRestartButton" },
     { ID_SUCCESS_CANCEL_BUTTON, L"SuccessCancelButton" },
     { ID_SUCCESS_MAX_PATH_BUTTON, L"SuccessMaxPathButton" },
+    { ID_SUCCESS_UTF8_MODE_BUTTON, L"SuccessUTF8ModeButton" },
 
     { ID_FAILURE_LOGFILE_LINK, L"FailureLogFileLink" },
     { ID_FAILURE_MESSAGE_TEXT, L"FailureMessageText" },
@@ -429,6 +431,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             EnableMaxPathSupport();
             ThemeControlEnable(_theme, ID_SUCCESS_MAX_PATH_BUTTON, FALSE);
             break;
+
+        case ID_SUCCESS_UTF8_MODE_BUTTON:
+            EnableUTF8Mode();
+            ThemeControlEnable(_theme, ID_SUCCESS_UTF8_MODE_BUTTON, FALSE);
+            break;
         }
 
     LExit:
@@ -527,7 +534,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
 
     void SuccessPage_Show() {
         // on the "Success" page, check if the restart button should be enabled.
-        BOOL showRestartButton = FALSE;
+        BOOL showRestartButton = TRUE;
         LOC_STRING *successText = nullptr;
         HRESULT hr = S_OK;
         
@@ -567,6 +574,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         if (_command.action != BOOTSTRAPPER_ACTION_INSTALL ||
             !IsWindowsVersionOrGreater(10, 0, 0)) {
             ThemeControlEnable(_theme, ID_SUCCESS_MAX_PATH_BUTTON, FALSE);
+            ThemeControlEnable(_theme, ID_SUCCESS_UTF8_MODE_BUTTON, FALSE);
         } else {
             DWORD dataType = 0, buffer = 0, bufferLen = sizeof(buffer);
             HKEY hKey;
@@ -674,6 +682,28 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             ")\"";
         BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Executing %ls %ls", pythonw, arguments);
         HINSTANCE res = ShellExecuteW(0, L"runas", pythonw, arguments, NULL, SW_HIDE);
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "return code 0x%08x", res);
+    }
+
+    static void EnableUTF8Mode() {
+        LONGLONG installAllUsers;
+        HRESULT hr = BalGetNumericVariable(L"InstallAllUsers", &installAllUsers);
+
+        if (FAILED(hr)) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to get install scope");
+            return;
+        }
+
+        // XXX: This doesn't work yet.
+        HINSTANCE res;
+        if (installAllUsers) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Executing runas setx PYTHONUTF8 1 -m");
+            res = ShellExecuteW(NULL, L"runas", L"%SystemRoot%\\system32\\setx.exe", L"PYTHONUTF8 1 -m", NULL, SW_HIDE);
+        }
+        else {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Executing setx PYTHONUTF8 1");
+            res = ShellExecuteW(NULL, NULL, L"%SystemRoot%\\system32\\setx.exe", L"PYTHONUTF8 1", NULL, SW_HIDE);
+        }
         BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "return code 0x%08x", res);
     }
 

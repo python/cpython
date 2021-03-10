@@ -106,7 +106,6 @@ Select Customize to review current options.</String>
   <String Id="SuccessRestartText">You may need to restart your computer to finish updating files.</String>
   <String Id="SuccessRestartButton">&amp;Restart</String>
   <String Id="SuccessInstallMessage">New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;. At your terminal, type "py" to launch Python, or search for Python in your Start menu.
-
 See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release, or find more info about &lt;a href="https://docs.python.org/[ShortVersion]/using/windows.html"&gt;using Python on Windows&lt;/a&gt;.</String>
   <String Id="SuccessModifyMessage">Thank you for using [WixBundleName].</String>
   <String Id="SuccessRepairMessage">Thank you for using [WixBundleName].
@@ -126,4 +125,6 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
 Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
+  <String Id="SuccessUTF8ModeButton">Enable UTF-8 Mode</String>
+  <String Id="SuccessUTF8ModeButtonNote">Enable UTF-8 Mode by setting PYTHONUTF8=1 environment variable. (Caution: This setting affects all Python installations)</String>
 </WixLocalization>
