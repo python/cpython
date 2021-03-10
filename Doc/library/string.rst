@@ -554,8 +554,7 @@ and :class:`~decimal.Decimal` values are:
    |         | The representations of infinity and NaN are uppercased,  |
    |         | too.                                                     |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number.  
-   as ``'g'`` except that it uses |
+   | ``'n'`` | Number.  This is the same as ``'g'`` except that it uses |
    |         | the current locale setting to insert the appropriate     |
    |         | number separator characters.                             |
    +---------+----------------------------------------------------------+
