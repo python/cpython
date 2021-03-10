@@ -1,2 +1,0 @@
-Sped up the creation time of constant :class:`list` and :class:`set` displays.
-Patch by Brandt Bucher.

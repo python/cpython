@@ -1,2 +1,0 @@
-Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has
-been removed in Python 3.3.

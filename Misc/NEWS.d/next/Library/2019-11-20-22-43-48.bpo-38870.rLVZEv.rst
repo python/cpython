@@ -1,4 +1,0 @@
-Expose :func:`ast.unparse` as a function of the :mod:`ast` module that can
-be used to unparse an :class:`ast.AST` object and produce a string with code
-that would produce an equivalent :class:`ast.AST` object when parsed. Patch
-by Pablo Galindo and Batuhan Taskaya.

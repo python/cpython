@@ -52,7 +52,7 @@ or :class:`datetime.datetime` objects.
 
 This module defines the following functions:
 
-.. function:: load(fp, \*, fmt=None, dict_type=dict)
+.. function:: load(fp, *, fmt=None, dict_type=dict)
 
    Read a plist file. *fp* should be a readable and binary file object.
    Return the unpacked root object (which usually is a
@@ -80,7 +80,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: loads(data, \*, fmt=None, dict_type=dict)
+.. function:: loads(data, *, fmt=None, dict_type=dict)
 
    Load a plist from a bytes object. See :func:`load` for an explanation of
    the keyword arguments.
@@ -88,7 +88,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: dump(value, fp, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
    Write *value* to a plist file. *Fp* should be a writable, binary
    file object.
@@ -116,7 +116,7 @@ This module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: dumps(value, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
    Return *value* as a plist-formatted bytes object. See
    the documentation for :func:`dump` for an explanation of the keyword

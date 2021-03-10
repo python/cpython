@@ -30,8 +30,11 @@ def main():
                         default=sys.stdout)
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
+    parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
+                        help='disable escaping of non-ASCII characters')
     parser.add_argument('--json-lines', action='store_true', default=False,
-                        help='parse input using the jsonlines format')
+                        help='parse input using the JSON Lines format. '
+                        'Use with --no-indent or --compact to produce valid JSON Lines output.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
                        help='separate items with newlines and use this number '
@@ -49,6 +52,7 @@ def main():
     dump_args = {
         'sort_keys': options.sort_keys,
         'indent': options.indent,
+        'ensure_ascii': options.ensure_ascii,
     }
     if options.compact:
         dump_args['indent'] = None
@@ -68,4 +72,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except BrokenPipeError as exc:
+        sys.exit(exc.errno)

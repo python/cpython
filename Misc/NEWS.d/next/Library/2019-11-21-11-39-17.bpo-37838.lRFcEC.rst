@@ -1,1 +1,0 @@
-:meth:`typing.get_type_hints` properly handles functions decorated with :meth:`functools.wraps`.

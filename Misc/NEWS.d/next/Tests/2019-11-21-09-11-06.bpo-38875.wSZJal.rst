@@ -1,1 +1,0 @@
-test_capi: trashcan tests now require the test "cpu" resource.

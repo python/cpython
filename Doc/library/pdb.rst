@@ -538,6 +538,7 @@ by the local file.
    executed in the current environment).
 
 .. pdbcommand:: retval
+
    Print the return value for the last return of a function.
 
 .. rubric:: Footnotes

@@ -1,2 +1,0 @@
-Skip asyncio test_create_datagram_endpoint_existing_sock_unix on platforms
-lacking a functional bind() for named unix domain sockets.

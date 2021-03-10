@@ -1,1 +1,0 @@
-random.choices() now raises a ValueError when all the weights are zero.

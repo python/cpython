@@ -18,14 +18,16 @@ import time
 import unittest
 from unittest import mock
 
-import test.support
-from test.support import (
-    TESTFN, forget, is_jython,
-    make_legacy_pyc, rmtree, swap_attr, swap_item, temp_umask,
-    unlink, unload, cpython_only, TESTFN_UNENCODABLE,
-    temp_dir, DirsOnSysPath)
+from test.support import os_helper
+from test.support import (is_jython, swap_attr, swap_item, cpython_only)
+from test.support.import_helper import (
+    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath)
+from test.support.os_helper import (
+    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
 from test.support import script_helper
+from test.support import threading_helper
 from test.test_importlib.util import uncache
+from types import ModuleType
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -435,22 +437,30 @@ class ImportTests(unittest.TestCase):
                 os.does_not_exist
 
     def test_concurrency(self):
+        # bpo 38091: this is a hack to slow down the code that calls
+        # has_deadlock(); the logic was itself sometimes deadlocking.
+        def delay_has_deadlock(frame, event, arg):
+            if event == 'call' and frame.f_code.co_name == 'has_deadlock':
+                time.sleep(0.1)
+
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
         try:
             exc = None
             def run():
+                sys.settrace(delay_has_deadlock)
                 event.wait()
                 try:
                     import package
                 except BaseException as e:
                     nonlocal exc
                     exc = e
+                sys.settrace(None)
 
             for i in range(10):
                 event = threading.Event()
                 threads = [threading.Thread(target=run) for x in range(2)]
                 try:
-                    with test.support.start_threads(threads, event.set):
+                    with threading_helper.start_threads(threads, event.set):
                         time.sleep(0)
                 finally:
                     sys.modules.pop('package', None)
@@ -469,14 +479,14 @@ class ImportTests(unittest.TestCase):
             os.path.dirname(pydname),
             "sqlite3{}.dll".format("_d" if "_d" in pydname else ""))
 
-        with test.support.temp_dir() as tmp:
+        with os_helper.temp_dir() as tmp:
             tmp2 = os.path.join(tmp, "DLLs")
             os.mkdir(tmp2)
 
             pyexe = os.path.join(tmp, os.path.basename(sys.executable))
             shutil.copy(sys.executable, pyexe)
             shutil.copy(dllname, tmp)
-            for f in glob.glob(os.path.join(sys.prefix, "vcruntime*.dll")):
+            for f in glob.glob(os.path.join(glob.escape(sys.prefix), "vcruntime*.dll")):
                 shutil.copy(f, tmp)
 
             shutil.copy(pydname, tmp2)
@@ -987,22 +997,22 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
     tagged = package_name + '-tagged'
 
     def setUp(self):
-        test.support.rmtree(self.tagged)
-        test.support.rmtree(self.package_name)
+        os_helper.rmtree(self.tagged)
+        os_helper.rmtree(self.package_name)
         self.orig_sys_path = sys.path[:]
 
         # create a sample package; imagine you have a package with a tag and
         #  you want to symbolically link it from its untagged name.
         os.mkdir(self.tagged)
-        self.addCleanup(test.support.rmtree, self.tagged)
+        self.addCleanup(os_helper.rmtree, self.tagged)
         init_file = os.path.join(self.tagged, '__init__.py')
-        test.support.create_empty_file(init_file)
+        os_helper.create_empty_file(init_file)
         assert os.path.exists(init_file)
 
         # now create a symlink to the tagged package
         # sample -> sample-tagged
         os.symlink(self.tagged, self.package_name, target_is_directory=True)
-        self.addCleanup(test.support.unlink, self.package_name)
+        self.addCleanup(os_helper.unlink, self.package_name)
         importlib.invalidate_caches()
 
         self.assertEqual(os.path.isdir(self.package_name), True)
@@ -1017,7 +1027,7 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
         not hasattr(sys, 'getwindowsversion')
         or sys.getwindowsversion() >= (6, 0),
         "Windows Vista or later required")
-    @test.support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_symlinked_dir_importable(self):
         # make sure sample can only be imported from the current directory.
         sys.path[:] = ['.']
@@ -1338,6 +1348,19 @@ class CircularImportTests(unittest.TestCase):
             "(most likely due to a circular import)",
             str(cm.exception),
         )
+
+    def test_unwritable_module(self):
+        self.addCleanup(unload, "test.test_import.data.unwritable")
+        self.addCleanup(unload, "test.test_import.data.unwritable.x")
+
+        import test.test_import.data.unwritable as unwritable
+        with self.assertWarns(ImportWarning):
+            from test.test_import.data.unwritable import x
+
+        self.assertNotEqual(type(unwritable), ModuleType)
+        self.assertEqual(type(x), ModuleType)
+        with self.assertRaises(AttributeError):
+            unwritable.x = 42
 
 
 if __name__ == '__main__':

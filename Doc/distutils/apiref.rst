@@ -1142,6 +1142,24 @@ other utility module.
 
    * ``macosx-10.6-intel``
 
+   For AIX, Python 3.9 and later return a string starting with "aix", followed
+   by additional fields (separated by ``'-'``) that represent the combined
+   values of AIX Version, Release and Technology Level (first field), Build Date
+   (second field), and bit-size (third field). Python 3.8 and earlier returned
+   only a single additional field with the AIX Version and Release.
+
+   Examples of returned values on AIX:
+
+   * ``aix-5307-0747-32`` # 32-bit build on AIX ``oslevel -s``: 5300-07-00-0000
+
+   * ``aix-7105-1731-64`` # 64-bit build on AIX ``oslevel -s``: 7100-05-01-1731
+
+   * ``aix-7.2``          # Legacy form reported in Python 3.8 and earlier
+
+   .. versionchanged:: 3.9
+      The AIX platform string format now also includes the technology level,
+      build date, and ABI bit-size.
+
 
 .. function:: convert_path(pathname)
 
@@ -1837,14 +1855,12 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. class:: bdist_msi
 
+.. deprecated:: 3.9
+   Use bdist_wheel (wheel packages) instead.
+
    Builds a `Windows Installer`_ (.msi) binary package.
 
    .. _Windows Installer: https://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
-
-   In most cases, the ``bdist_msi`` installer is a better choice than the
-   ``bdist_wininst`` installer, because it provides better support for
-   Win64 platforms, allows administrators to perform non-interactive
-   installations, and allows installation through group policies.
 
 
 :mod:`distutils.command.bdist_rpm` --- Build a binary distribution as a Redhat RPM and SRPM
@@ -1852,19 +1868,6 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. module:: distutils.command.bdist_rpm
    :synopsis: Build a binary distribution as a Redhat RPM and SRPM
-
-
-.. % todo
-
-
-:mod:`distutils.command.bdist_wininst` --- Build a Windows installer
-====================================================================
-
-.. module:: distutils.command.bdist_wininst
-   :synopsis: Build a Windows installer
-
-.. deprecated:: 3.8
-   Use bdist_wheel (wheel packages) instead.
 
 
 .. % todo
