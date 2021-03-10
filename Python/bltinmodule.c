@@ -528,7 +528,7 @@ filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
 
     /* create filterobject structure */
-    lz = (filterobject *)PyType_GenericAlloc((PyTypeObject *)type, 0);
+    lz = (filterobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_DECREF(it);
         return NULL;
@@ -558,7 +558,9 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    filterobject *lz = (filterobject *)PyType_GenericAlloc((PyTypeObject *)type, 0);
+    PyTypeObject *tp = (PyTypeObject *)type;
+    filterobject *lz = (filterobject *)tp->tp_alloc(tp, 0);
+
     if (lz == NULL) {
         Py_DECREF(it);
         return NULL;
