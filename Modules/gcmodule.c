@@ -1480,6 +1480,10 @@ static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
 {
     int i;
+    if (PySys_Audit("gc.get_referrers", "O", args) < 0) {
+        return NULL;
+    }
+
     PyObject *result = PyList_New(0);
     if (!result) return NULL;
 
@@ -1508,6 +1512,9 @@ static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
     Py_ssize_t i;
+    if (PySys_Audit("gc.get_referents", "O", args) < 0) {
+        return NULL;
+    }
     PyObject *result = PyList_New(0);
 
     if (result == NULL)
@@ -1548,6 +1555,10 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     int i;
     PyObject* result;
     struct _gc_runtime_state *state = &_PyRuntime.gc;
+
+    if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
+        return NULL;
+    }
 
     result = PyList_New(0);
     if (result == NULL) {
