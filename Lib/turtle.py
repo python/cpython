@@ -258,17 +258,18 @@ class Vec2D(tuple):
     def __rmul__(self, other):
         if isinstance(other, int) or isinstance(other, float):
             return Vec2D(self[0]*other, self[1]*other)
+        return NotImplemented
     def __sub__(self, other):
         return Vec2D(self[0]-other[0], self[1]-other[1])
     def __neg__(self):
         return Vec2D(-self[0], -self[1])
     def __abs__(self):
-        return (self[0]**2 + self[1]**2)**0.5
+        return math.hypot(*self)
     def rotate(self, angle):
         """rotate self counterclockwise by angle
         """
         perp = Vec2D(-self[1], self[0])
-        angle = angle * math.pi / 180.0
+        angle = math.radians(angle)
         c, s = math.cos(angle), math.sin(angle)
         return Vec2D(self[0]*c+perp[0]*s, self[1]*c+perp[1]*s)
     def __getnewargs__(self):
@@ -1597,7 +1598,7 @@ class TNavigator(object):
         >>> turtle.heading()
         1.5707963267948966
         """
-        self._setDegreesPerAU(2*math.pi)
+        self._setDegreesPerAU(math.tau)
 
     def _go(self, distance):
         """move turtle forward by specified distance"""
@@ -1888,7 +1889,7 @@ class TNavigator(object):
         elif isinstance(x, TNavigator):
             pos = x._position
         x, y = pos - self._position
-        result = round(math.atan2(y, x)*180.0/math.pi, 10) % 360.0
+        result = round(math.degrees(math.atan2(y, x)), 10) % 360.0
         result /= self._degreesPerAU
         return (self._angleOffset + self._angleOrient*result) % self._fullcircle
 
@@ -1903,7 +1904,7 @@ class TNavigator(object):
         67.0
         """
         x, y = self._orient
-        result = round(math.atan2(y, x)*180.0/math.pi, 10) % 360.0
+        result = round(math.degrees(math.atan2(y, x)), 10) % 360.0
         result /= self._degreesPerAU
         return (self._angleOffset + self._angleOrient*result) % self._fullcircle
 
@@ -1976,7 +1977,7 @@ class TNavigator(object):
             steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
         w = 1.0 * extent / steps
         w2 = 0.5 * w
-        l = 2.0 * radius * math.sin(w2*math.pi/180.0*self._degreesPerAU)
+        l = 2.0 * radius * math.sin(math.radians(w2)*self._degreesPerAU)
         if radius < 0:
             l, w, w2 = -l, -w, -w2
         tr = self._tracer()
@@ -2861,7 +2862,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.fd(50)
         """
         tilt = -angle * self._degreesPerAU * self._angleOrient
-        tilt = (tilt * math.pi / 180.0) % (2*math.pi)
+        tilt = math.radians(tilt) % math.tau
         self.pen(resizemode="user", tilt=tilt)
 
     def tiltangle(self, angle=None):
@@ -2885,7 +2886,7 @@ class RawTurtle(TPen, TNavigator):
         >>> turtle.tiltangle()
         """
         if angle is None:
-            tilt = -self._tilt * (180.0/math.pi) * self._angleOrient
+            tilt = -math.degrees(self._tilt) * self._angleOrient
             return (tilt / self._degreesPerAU) % self._fullcircle
         else:
             self.settiltangle(angle)
@@ -2939,7 +2940,7 @@ class RawTurtle(TPen, TNavigator):
         if t11 * t22 - t12 * t21 == 0:
             raise TurtleGraphicsError("Bad shape transform matrix: must not be singular")
         self._shapetrafo = (m11, m12, m21, m22)
-        alfa = math.atan2(-m21, m11) % (2 * math.pi)
+        alfa = math.atan2(-m21, m11) % math.tau
         sa, ca = math.sin(alfa), math.cos(alfa)
         a11, a12, a21, a22 = (ca*m11 - sa*m21, ca*m12 - sa*m22,
                               sa*m11 + ca*m21, sa*m12 + ca*m22)

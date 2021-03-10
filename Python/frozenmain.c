@@ -2,7 +2,7 @@
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime_Initialize()
 #include <locale.h>
 
 #ifdef MS_WINDOWS
@@ -99,7 +99,7 @@ Py_FrozenMain(int argc, char **argv)
 
     n = PyImport_ImportFrozenModule("__main__");
     if (n == 0)
-        Py_FatalError("__main__ not frozen");
+        Py_FatalError("the __main__ module is not frozen");
     if (n < 0) {
         PyErr_Print();
         sts = 1;

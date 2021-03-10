@@ -48,7 +48,7 @@ place it, and run the :mod:`venv` module as a script with the directory path::
 
 This will create the ``tutorial-env`` directory if it doesn't exist,
 and also create directories inside it containing a copy of the Python
-interpreter, the standard library, and various supporting files.
+interpreter and various supporting files.
 
 A common directory location for a virtual environment is ``.venv``.
 This name keeps the directory typically hidden in your shell and thus

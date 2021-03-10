@@ -17,7 +17,8 @@ from distutils.errors import DistutilsOptionError
 
 from site import USER_BASE
 from site import USER_SITE
-HAS_USER_SITE = True
+
+HAS_USER_SITE = (USER_SITE is not None)
 
 WINDOWS_SCHEME = {
     'purelib': '$base/Lib/site-packages',
@@ -30,14 +31,14 @@ WINDOWS_SCHEME = {
 INSTALL_SCHEMES = {
     'unix_prefix': {
         'purelib': '$base/lib/python$py_version_short/site-packages',
-        'platlib': '$platbase/lib/python$py_version_short/site-packages',
+        'platlib': '$platbase/$platlibdir/python$py_version_short/site-packages',
         'headers': '$base/include/python$py_version_short$abiflags/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base',
         },
     'unix_home': {
         'purelib': '$base/lib/python',
-        'platlib': '$base/lib/python',
+        'platlib': '$base/$platlibdir/python',
         'headers': '$base/include/python/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base',
@@ -169,8 +170,9 @@ class install(Command):
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
-        self.install_userbase = USER_BASE
-        self.install_usersite = USER_SITE
+        if HAS_USER_SITE:
+            self.install_userbase = USER_BASE
+            self.install_usersite = USER_SITE
 
         self.compile = None
         self.optimize = None
@@ -298,6 +300,7 @@ class install(Command):
                             'sys_exec_prefix': exec_prefix,
                             'exec_prefix': exec_prefix,
                             'abiflags': abiflags,
+                            'platlibdir': sys.platlibdir,
                            }
 
         if HAS_USER_SITE:
@@ -342,8 +345,9 @@ class install(Command):
         # Convert directories from Unix /-separated syntax to the local
         # convention.
         self.convert_paths('lib', 'purelib', 'platlib',
-                           'scripts', 'data', 'headers',
-                           'userbase', 'usersite')
+                           'scripts', 'data', 'headers')
+        if HAS_USER_SITE:
+            self.convert_paths('userbase', 'usersite')
 
         # Deprecated
         # Well, we're not actually fully completely finalized yet: we still

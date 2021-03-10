@@ -1,2 +1,0 @@
-Activate the ``GC_DEBUG`` macro for debug builds of the interpreter (when
-``Py_DEBUG`` is set). Patch by Pablo Galindo.

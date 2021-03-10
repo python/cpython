@@ -1,0 +1,2 @@
+Fix a regression introduced in GH-24562, where an empty bytestring was fetched
+as ``None`` instead of ``b''`` in :mod:`sqlite3`. Patch by Mariusz Felisiak.

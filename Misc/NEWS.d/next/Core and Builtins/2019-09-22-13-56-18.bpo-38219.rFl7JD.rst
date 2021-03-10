@@ -1,2 +1,0 @@
-Optimized the :class:`dict` constructor and the :meth:`~dict.update` method
-for the case when the argument is a dict.

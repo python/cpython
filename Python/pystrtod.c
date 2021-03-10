@@ -1,6 +1,7 @@
 /* -*- Mode: C; c-file-style: "python" -*- */
 
 #include <Python.h>
+#include "pycore_dtoa.h"
 #include <locale.h>
 
 /* Case-insensitive string match used for nan and inf detection; t should be
@@ -254,7 +255,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
         char *copy, *c;
         /* Create a copy of the input, with the '.' converted to the
            locale-specific decimal point */
-        copy = (char *)PyMem_MALLOC(end - digits_pos +
+        copy = (char *)PyMem_Malloc(end - digits_pos +
                                     1 + decimal_point_len);
         if (copy == NULL) {
             *endptr = (char *)nptr;
@@ -285,7 +286,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
                     (fail_pos - copy);
         }
 
-        PyMem_FREE(copy);
+        PyMem_Free(copy);
 
     }
     else {
@@ -342,9 +343,7 @@ PyOS_string_to_double(const char *s,
     char *fail_pos;
 
     errno = 0;
-    PyFPE_START_PROTECT("PyOS_string_to_double", return -1.0)
     x = _PyOS_ascii_strtod(s, &fail_pos);
-    PyFPE_END_PROTECT(x)
 
     if (errno == ENOMEM) {
         PyErr_NoMemory();

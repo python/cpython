@@ -41,8 +41,9 @@ but these are two different characters that have different meanings.
 
 The Unicode standard describes how characters are represented by
 **code points**.  A code point value is an integer in the range 0 to
-0x10FFFF (about 1.1 million values, with some 110 thousand assigned so
-far).  In the standard and in this document, a code point is written
+0x10FFFF (about 1.1 million values, the
+`actual number assigned <https://www.unicode.org/versions/latest/#Summary>`_
+is less than that). In the standard and in this document, a code point is written
 using the notation ``U+265E`` to mean the character with value
 ``0x265e`` (9,822 in decimal).
 
@@ -156,9 +157,9 @@ UTF-8 has several convenient properties:
 References
 ----------
 
-The `Unicode Consortium site <http://www.unicode.org>`_ has character charts, a
+The `Unicode Consortium site <https://www.unicode.org>`_ has character charts, a
 glossary, and PDF versions of the Unicode specification.  Be prepared for some
-difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
+difficult reading.  `A chronology <https://www.unicode.org/history/>`_ of the
 origin and development of Unicode is also available on the site.
 
 On the Computerphile Youtube channel, Tom Scott briefly
@@ -393,7 +394,7 @@ These are grouped into categories such as "Letter", "Number", "Punctuation", or
 from the above output, ``'Ll'`` means 'Letter, lowercase', ``'No'`` means
 "Number, other", ``'Mn'`` is "Mark, nonspacing", and ``'So'`` is "Symbol,
 other".  See
-`the General Category Values section of the Unicode Character Database documentation <http://www.unicode.org/reports/tr44/#General_Category_Values>`_ for a
+`the General Category Values section of the Unicode Character Database documentation <https://www.unicode.org/reports/tr44/#General_Category_Values>`_ for a
 list of category codes.
 
 
@@ -608,9 +609,9 @@ implemented by converting the Unicode string into some encoding that
 varies depending on the system.  Today Python is converging on using
 UTF-8: Python on MacOS has used UTF-8 for several versions, and Python
 3.6 switched to using UTF-8 on Windows as well.  On Unix systems,
-there will only be a filesystem encoding if you've set the ``LANG`` or
-``LC_CTYPE`` environment variables; if you haven't, the default
-encoding is again UTF-8.
+there will only be a :term:`filesystem encoding <filesystem encoding and error
+handler>`. if you've set the ``LANG`` or ``LC_CTYPE`` environment variables; if
+you haven't, the default encoding is again UTF-8.
 
 The :func:`sys.getfilesystemencoding` function returns the encoding to use on
 your current system, in case you want to do the encoding manually, but there's
@@ -632,8 +633,8 @@ provided the directory path as bytes or a Unicode string.  If you pass a
 Unicode string as the path, filenames will be decoded using the filesystem's
 encoding and a list of Unicode strings will be returned, while passing a byte
 path will return the filenames as bytes.  For example,
-assuming the default filesystem encoding is UTF-8, running the following
-program::
+assuming the default :term:`filesystem encoding <filesystem encoding and error
+handler>` is UTF-8, running the following program::
 
    fn = 'filename\u4500abc'
    f = open(fn, 'w')

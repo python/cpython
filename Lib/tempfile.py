@@ -44,6 +44,7 @@ import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
 import sys as _sys
+import types as _types
 import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
@@ -98,7 +99,11 @@ def _infer_return_type(*args):
                                 "path components.")
             return_type = str
     if return_type is None:
-        return str  # tempfile APIs return a str by default.
+        if tempdir is None or isinstance(tempdir, str):
+            return str  # tempfile APIs return a str by default.
+        else:
+            # we could check for bytes but it'll fail later on anyway
+            return bytes
     return return_type
 
 
@@ -142,10 +147,7 @@ class _RandomNameSequence:
         return self
 
     def __next__(self):
-        c = self.characters
-        choose = self.rng.choice
-        letters = [choose(c) for dummy in range(8)]
-        return ''.join(letters)
+        return ''.join(self.rng.choices(self.characters, k=8))
 
 def _candidate_tempdir_list():
     """Generate a list of candidate temporary directories which
@@ -267,17 +269,17 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
 # User visible interfaces.
 
 def gettempprefix():
-    """The default prefix for temporary directories."""
-    return template
+    """The default prefix for temporary directories as string."""
+    return _os.fsdecode(template)
 
 def gettempprefixb():
     """The default prefix for temporary directories as bytes."""
-    return _os.fsencode(gettempprefix())
+    return _os.fsencode(template)
 
 tempdir = None
 
-def gettempdir():
-    """Accessor for tempfile.tempdir."""
+def _gettempdir():
+    """Private accessor for tempfile.tempdir."""
     global tempdir
     if tempdir is None:
         _once_lock.acquire()
@@ -288,9 +290,13 @@ def gettempdir():
             _once_lock.release()
     return tempdir
 
+def gettempdir():
+    """Returns tempfile.tempdir as str."""
+    return _os.fsdecode(_gettempdir())
+
 def gettempdirb():
-    """A bytes version of tempfile.gettempdir()."""
-    return _os.fsencode(gettempdir())
+    """Returns tempfile.tempdir as bytes."""
+    return _os.fsencode(_gettempdir())
 
 def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     """User-callable function to create and return a unique temporary
@@ -307,8 +313,7 @@ def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     otherwise a default directory is used.
 
     If 'text' is specified and true, the file is opened in text
-    mode.  Else (the default) the file is opened in binary mode.  On
-    some operating systems, this makes no difference.
+    mode.  Else (the default) the file is opened in binary mode.
 
     If any of 'suffix', 'prefix' and 'dir' are not None, they must be the
     same type.  If they are bytes, the returned name will be bytes; str
@@ -633,16 +638,17 @@ class SpooledTemporaryFile:
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
-            # Setting newline="\n" avoids newline translation;
-            # this is important because otherwise on Windows we'd
-            # get double newline translation upon rollover().
-            self._file = _io.StringIO(newline="\n")
+            self._file = _io.TextIOWrapper(_io.BytesIO(),
+                            encoding=encoding, errors=errors,
+                            newline=newline)
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
                                    'suffix': suffix, 'prefix': prefix,
                                    'encoding': encoding, 'newline': newline,
                                    'dir': dir, 'errors': errors}
+
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
     def _check(self, file):
         if self._rolled: return
@@ -656,8 +662,12 @@ class SpooledTemporaryFile:
         newfile = self._file = TemporaryFile(**self._TemporaryFileArgs)
         del self._TemporaryFileArgs
 
-        newfile.write(file.getvalue())
-        newfile.seek(file.tell(), 0)
+        pos = file.tell()
+        if hasattr(newfile, 'buffer'):
+            newfile.buffer.write(file.detach().getvalue())
+        else:
+            newfile.write(file.getvalue())
+        newfile.seek(pos, 0)
 
         self._rolled = True
 
@@ -732,11 +742,7 @@ class SpooledTemporaryFile:
         return self._file.readlines(*args)
 
     def seek(self, *args):
-        self._file.seek(*args)
-
-    @property
-    def softspace(self):
-        return self._file.softspace
+        return self._file.seek(*args)
 
     def tell(self):
         return self._file.tell()
@@ -827,3 +833,5 @@ class TemporaryDirectory(object):
     def cleanup(self):
         if self._finalizer.detach():
             self._rmtree(self.name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)

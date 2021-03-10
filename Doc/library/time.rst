@@ -42,17 +42,12 @@ An explanation of some terminology and conventions is in order.
   library; for 32-bit systems, it is typically in 2038.
 
 .. index::
-   single: Year 2000
-   single: Y2K
+   single: 2-digit years
 
-.. _time-y2kissues:
-
-* **Year 2000 (Y2K) issues**: Python depends on the platform's C library, which
-  generally doesn't have year 2000 issues, since all dates and times are
-  represented internally as seconds since the epoch.  Function :func:`strptime`
-  can parse 2-digit years when given ``%y`` format code.  When 2-digit years are
-  parsed, they are converted according to the POSIX and ISO C standards: values
-  69--99 are mapped to 1969--1999, and values 0--68 are mapped to 2000--2068.
+* Function :func:`strptime` can parse 2-digit years when given ``%y`` format
+  code. When 2-digit years are parsed, they are converted according to the POSIX
+  and ISO C standards: values 69--99 are mapped to 1969--1999, and values 0--68
+  are mapped to 2000--2068.
 
 .. index::
    single: UTC
@@ -171,6 +166,9 @@ Functions
    Return the time of the specified clock *clk_id*.  Refer to
    :ref:`time-clock-id-constants` for a list of accepted values for *clk_id*.
 
+   Use :func:`clock_gettime_ns` to avoid the precision loss caused by the
+   :class:`float` type.
+
    .. availability:: Unix.
 
    .. versionadded:: 3.3
@@ -189,6 +187,9 @@ Functions
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
+
+   Use :func:`clock_settime_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. availability:: Unix.
 
@@ -223,7 +224,6 @@ Functions
    Supported clock names and the corresponding functions to read their value
    are:
 
-   * ``'clock'``: :func:`time.clock`
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
@@ -277,11 +277,18 @@ Functions
    Return the value (in fractional seconds) of a monotonic clock, i.e. a clock
    that cannot go backwards.  The clock is not affected by system clock updates.
    The reference point of the returned value is undefined, so that only the
-   difference between the results of consecutive calls is valid.
+   difference between the results of two calls is valid.
+
+   Use :func:`monotonic_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
+
    .. versionchanged:: 3.5
       The function is now always available and always system-wide.
+
+   .. versionchanged:: 3.10
+      On macOS, the function is now system-wide.
 
 
 .. function:: monotonic_ns() -> int
@@ -299,9 +306,15 @@ Functions
    clock with the highest available resolution to measure a short duration.  It
    does include time elapsed during sleep and is system-wide.  The reference
    point of the returned value is undefined, so that only the difference between
-   the results of consecutive calls is valid.
+   the results of two calls is valid.
+
+   Use :func:`perf_counter_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      On Windows, the function is now system-wide.
 
 .. function:: perf_counter_ns() -> int
 
@@ -321,7 +334,10 @@ Functions
    CPU time of the current process.  It does not include time elapsed during
    sleep.  It is process-wide by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
-   of consecutive calls is valid.
+   of two calls is valid.
+
+   Use :func:`process_time_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. versionadded:: 3.3
 
@@ -587,6 +603,17 @@ Functions
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
 
+   Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
+   type.
+
+
+.. function:: time_ns() -> int
+
+   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
+   since the epoch_.
+
+   .. versionadded:: 3.7
+
 
 .. function:: thread_time() -> float
 
@@ -599,7 +626,10 @@ Functions
    CPU time of the current thread.  It does not include time elapsed during
    sleep.  It is thread-specific by definition.  The reference point of the
    returned value is undefined, so that only the difference between the results
-   of consecutive calls in the same thread is valid.
+   of two calls in the same thread is valid.
+
+   Use :func:`thread_time_ns` to avoid the precision loss caused by the
+   :class:`float` type.
 
    .. availability::  Windows, Linux, Unix systems supporting
       ``CLOCK_THREAD_CPUTIME_ID``.
@@ -613,13 +643,6 @@ Functions
 
    .. versionadded:: 3.7
 
-
-.. function:: time_ns() -> int
-
-   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
-   since the epoch_.
-
-   .. versionadded:: 3.7
 
 .. function:: tzset()
 
@@ -780,6 +803,16 @@ These constants are used as parameters for :func:`clock_getres` and
 
    .. versionadded:: 3.7
 
+.. data:: CLOCK_TAI
+
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+
+   The system must have a current leap second table in order for this to give
+   the correct answer.  PTP or NTP software can maintain a leap second table.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.9
 
 .. data:: CLOCK_THREAD_CPUTIME_ID
 
@@ -810,7 +843,6 @@ These constants are used as parameters for :func:`clock_getres` and
    .. availability:: macOS 10.12 and newer.
 
    .. versionadded:: 3.8
-
 
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.

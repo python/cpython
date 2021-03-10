@@ -29,6 +29,7 @@ test_urlparse.py provides a good indicator of parsing behavior.
 
 import re
 import sys
+import types
 import collections
 import warnings
 
@@ -175,6 +176,8 @@ class _NetlocResultMixinBase(object):
             if not ( 0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 class _NetlocResultMixinStr(_NetlocResultMixinBase, _ResultMixinStr):
@@ -366,9 +369,23 @@ del _fix_result_transcoding
 def urlparse(url, scheme='', allow_fragments=True):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
-    Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
+
+    The result is a named 6-tuple with fields corresponding to the
+    above. It is either a ParseResult or ParseResultBytes object,
+    depending on the type of the url parameter.
+
+    The username, password, hostname, and port sub-components of netloc
+    can also be accessed as attributes of the returned object.
+
+    The scheme argument provides the default value of the scheme
+    component when no scheme is found in url.
+
+    If allow_fragments is False, no attempt is made to separate the
+    fragment component from the previous component, which can be either
+    path or query.
+
+    Note that % escapes are not expanded.
+    """
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
@@ -417,9 +434,24 @@ def _checknetloc(netloc):
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
-    Return a 5-tuple: (scheme, netloc, path, query, fragment).
-    Note that we don't break the components up in smaller bits
-    (e.g. netloc is a single string) and we don't expand % escapes."""
+
+    The result is a named 5-tuple with fields corresponding to the
+    above. It is either a SplitResult or SplitResultBytes object,
+    depending on the type of the url parameter.
+
+    The username, password, hostname, and port sub-components of netloc
+    can also be accessed as attributes of the returned object.
+
+    The scheme argument provides the default value of the scheme
+    component when no scheme is found in url.
+
+    If allow_fragments is False, no attempt is made to separate the
+    fragment component from the previous component, which can be either
+    path or query.
+
+    Note that % escapes are not expanded.
+    """
+
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     allow_fragments = bool(allow_fragments)
     key = url, scheme, allow_fragments, type(url), type(scheme)
@@ -630,7 +662,7 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
-             encoding='utf-8', errors='replace', max_num_fields=None):
+             encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -654,12 +686,15 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
         max_num_fields: int. If set, then throws a ValueError if there
             are more than n fields read by parse_qsl().
 
+        separator: str. The symbol to use for separating the query arguments.
+            Defaults to &.
+
         Returns a dictionary.
     """
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
                       encoding=encoding, errors=errors,
-                      max_num_fields=max_num_fields)
+                      max_num_fields=max_num_fields, separator=separator)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -669,7 +704,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
-              encoding='utf-8', errors='replace', max_num_fields=None):
+              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -692,19 +727,25 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         max_num_fields: int. If set, then throws a ValueError
             if there are more than n fields read by parse_qsl().
 
+        separator: str. The symbol to use for separating the query arguments.
+            Defaults to &.
+
         Returns a list, as G-d intended.
     """
     qs, _coerce_result = _coerce_args(qs)
+
+    if not separator or (not isinstance(separator, (str, bytes))):
+        raise ValueError("Separator must be of type string or bytes.")
 
     # If max_num_fields is defined then check that the number of fields
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        num_fields = 1 + qs.count('&') + qs.count(';')
+        num_fields = 1 + qs.count(separator)
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
-    pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
+    pairs = [s1 for s1 in qs.split(separator)]
     r = []
     for name_value in pairs:
         if not name_value and not strict_parsing:
@@ -1056,9 +1097,9 @@ def _splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+        _portprog = re.compile('(.*):([0-9]*)', re.DOTALL)
 
-    match = _portprog.match(host)
+    match = _portprog.fullmatch(host)
     if match:
         host, port = match.groups()
         if port:

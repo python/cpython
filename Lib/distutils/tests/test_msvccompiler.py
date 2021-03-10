@@ -32,57 +32,6 @@ class msvccompilerTestCase(support.TempdirManager,
         finally:
             _msvccompiler._find_vcvarsall = old_find_vcvarsall
 
-    def test_compiler_options(self):
-        import distutils._msvccompiler as _msvccompiler
-        # suppress path to vcruntime from _find_vcvarsall to
-        # check that /MT is added to compile options
-        old_find_vcvarsall = _msvccompiler._find_vcvarsall
-        def _find_vcvarsall(plat_spec):
-            return old_find_vcvarsall(plat_spec)[0], None
-        _msvccompiler._find_vcvarsall = _find_vcvarsall
-        try:
-            compiler = _msvccompiler.MSVCCompiler()
-            compiler.initialize()
-
-            self.assertIn('/MT', compiler.compile_options)
-            self.assertNotIn('/MD', compiler.compile_options)
-        finally:
-            _msvccompiler._find_vcvarsall = old_find_vcvarsall
-
-    def test_vcruntime_copy(self):
-        import distutils._msvccompiler as _msvccompiler
-        # force path to a known file - it doesn't matter
-        # what we copy as long as its name is not in
-        # _msvccompiler._BUNDLED_DLLS
-        old_find_vcvarsall = _msvccompiler._find_vcvarsall
-        def _find_vcvarsall(plat_spec):
-            return old_find_vcvarsall(plat_spec)[0], __file__
-        _msvccompiler._find_vcvarsall = _find_vcvarsall
-        try:
-            tempdir = self.mkdtemp()
-            compiler = _msvccompiler.MSVCCompiler()
-            compiler.initialize()
-            compiler._copy_vcruntime(tempdir)
-
-            self.assertTrue(os.path.isfile(os.path.join(
-                tempdir, os.path.basename(__file__))))
-        finally:
-            _msvccompiler._find_vcvarsall = old_find_vcvarsall
-
-    def test_vcruntime_skip_copy(self):
-        import distutils._msvccompiler as _msvccompiler
-
-        tempdir = self.mkdtemp()
-        compiler = _msvccompiler.MSVCCompiler()
-        compiler.initialize()
-        dll = compiler._vcruntime_redist
-        self.assertTrue(os.path.isfile(dll), dll or "<None>")
-
-        compiler._copy_vcruntime(tempdir)
-
-        self.assertFalse(os.path.isfile(os.path.join(
-            tempdir, os.path.basename(dll))), dll or "<None>")
-
     def test_get_vc_env_unicode(self):
         import distutils._msvccompiler as _msvccompiler
 

@@ -6,7 +6,6 @@ Distributing Python Packages
 
 :Email: distutils-sig@python.org
 
-
 As a popular open source development project, Python has an active
 supporting community of contributors and users that also make their software
 available for other Python developers to use under open source license terms.
@@ -64,6 +63,7 @@ Key terms
 .. _setuptools: https://setuptools.readthedocs.io/en/latest/
 .. _wheel: https://wheel.readthedocs.io/
 
+
 Open source licensing and collaboration
 =======================================
 
@@ -119,6 +119,7 @@ recommended tools`_.
 
 .. _publishing-python-packages:
 
+
 Reading the Python Packaging User Guide
 =======================================
 
@@ -126,23 +127,26 @@ The Python Packaging User Guide covers the various key steps and elements
 involved in creating and publishing a project:
 
 * `Creating the project structure`_
-* `Building distributions`_
-* `Uploading the distributions to the Python Package Index`_
+* `Packaging the project`_
+* `Uploading the project to the Python Package Index`_
+* `The .pypirc file`_
 
 .. _Creating the project structure: \
    https://packaging.python.org/tutorials/packaging-projects/#creating-the-package-files
-.. _Building distributions: \
+.. _Packaging the project: \
    https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives
-.. _Uploading the distributions to the Python Package Index: \
+.. _Uploading the project to the Python Package Index: \
    https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives
+.. _The .pypirc file: \
+   https://packaging.python.org/specifications/pypirc/
 
 
-How do I...
+How do I…
 ===========
 
 These are quick answers or links for some common tasks.
 
-... choose a name for my project?
+… choose a name for my project?
 ---------------------------------
 
 This isn't an easy topic, but here are a few tips:
@@ -155,8 +159,7 @@ This isn't an easy topic, but here are a few tips:
   as they can make it difficult for users to find your software when
   searching for it.
 
-
-... create and distribute binary extensions?
+… create and distribute binary extensions?
 --------------------------------------------
 
 This is actually quite a complex topic, with a variety of alternatives

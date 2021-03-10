@@ -101,11 +101,6 @@ Context object management functions:
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
 
-.. c:function:: int PyContext_ClearFreeList()
-
-   Clear the context variable free list. Return the total number of
-   freed items.  This function always succeeds.
-
 
 Context variable functions:
 
