@@ -1094,7 +1094,7 @@ class SMTPSimTests(unittest.TestCase):
 
     def testAUTH_BUGGY(self):
         self.serv.add_feature("AUTH BUGGY")
-        
+
         def auth_buggy(challenge=None):
             self.assertEqual(b"BuGgYbUgGy", challenge)
             return "\0"
