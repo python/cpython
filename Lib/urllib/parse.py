@@ -733,6 +733,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         Returns a list, as G-d intended.
     """
     qs, _coerce_result = _coerce_args(qs)
+    separator, _ = _coerce_args(separator)
 
     if not separator or (not isinstance(separator, (str, bytes))):
         raise ValueError("Separator must be of type string or bytes.")
