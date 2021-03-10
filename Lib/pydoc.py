@@ -2283,7 +2283,7 @@ def apropos(key):
 
 # As of 2021, a secret with this number of bytes is secure. Update in the future
 # if necessary.
-SECRET_URL_TOKEN = secrets.token_urlsafe(80)
+SECRET_URL_TOKEN = secrets.token_urlsafe(64)
 
 def _start_server(urlhandler, hostname, port):
     """Start an HTTP server thread on a specific port.
@@ -2663,11 +2663,12 @@ def _url_handler(url, content_type="text/html"):
             title, content = html_error(complete_url, exc)
         return html.page(title, content)
 
+    if url.startswith('/'):
+        url = url[1:]
     # Make sure the secret token is inside before doing any URL operations.
-    left, sep, right = url.partition(SECRET_URL_TOKEN)
-    if not sep:
+    if not secrets.compare_digest(url[:len(SECRET_URL_TOKEN)], SECRET_URL_TOKEN):
         raise ValueError(f'Invalid secret token for {url}')
-    url = right
+    url = url[len(SECRET_URL_TOKEN):]
     if url.startswith('/'):
         url = url[1:]
     if content_type == 'text/css':
@@ -2698,6 +2699,7 @@ def browse(port=0, *, open_browser=True, hostname='localhost'):
             webbrowser.open(serverthread.url)
         try:
             print('Server ready at', serverthread.url)
+            print("Note: This URL is unique to you. Please don't share it.")
             print(server_help_msg)
             while serverthread.serving:
                 cmd = input('server> ')
