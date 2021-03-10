@@ -28,6 +28,7 @@ IGNORE = {
     '_testimportmultiple',
     '_testinternalcapi',
     '_testmultiphase',
+    '_xxsubinterpreters',
     '_xxtestfuzz',
     'distutils.tests',
     'idlelib.idle_test',
