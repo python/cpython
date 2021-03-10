@@ -673,8 +673,15 @@ When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 
 encodings
 ---------
+
 :func:`encodings.normalize_encoding` now ignores non-ASCII characters.
 (Contributed by Hai Shi in :issue:`39337`.)
+
+gc
+--
+
+Added audit hooks for :func:`gc.get_objects`, :func:`gc.get_referrers` and
+:func:`gc.get_referents`. (Contributed by Pablo Galindo in :issue:`43439`.)
 
 glob
 ----
