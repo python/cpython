@@ -851,6 +851,11 @@ class SimSMTPChannel(smtpd.SMTPChannel):
             self._authenticated(self._auth_login_user, password == sim_auth[1])
             del self._auth_login_user
 
+    def _auth_buggy(self, arg=None):
+        # This AUTH mechanism will 'trap' client in a neverending 334
+        # base64 encoded 'BuGgYbUgGy'
+        self.push('334 QnVHZ1liVWdHeQ==')
+
     def _auth_cram_md5(self, arg=None):
         if arg is None:
             self.push('334 {}'.format(sim_cram_md5_challenge))
@@ -1086,6 +1091,26 @@ class SMTPSimTests(unittest.TestCase):
             smtp.ehlo("test_auth_login")
             resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=False)
             self.assertEqual(resp, (235, b'Authentication Succeeded'))
+
+    def testAUTH_BUGGY(self):
+        self.serv.add_feature("AUTH BUGGY")
+        
+        def auth_buggy(challenge=None):
+            self.assertEqual(b"BuGgYbUgGy", challenge)
+            return "\0"
+
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT
+        )
+        try:
+            smtp.user, smtp.password = sim_auth
+            smtp.ehlo("test_auth_buggy")
+            expect = r"^Server AUTH mechanism infinite loop.*"
+            with self.assertRaisesRegex(smtplib.SMTPException, expect) as cm:
+                smtp.auth("BUGGY", auth_buggy, initial_response_ok=False)
+        finally:
+            smtp.close()
 
     @hashlib_helper.requires_hashdigest('md5')
     def testAUTH_CRAM_MD5(self):
