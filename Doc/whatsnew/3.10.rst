@@ -1043,6 +1043,13 @@ Add :data:`sys.stdlib_module_names`, containing the list of the standard library
 module names.
 (Contributed by Victor Stinner in :issue:`42955`.)
 
+sqlite3
+-------
+
+Added :meth:`~sqlite3.Connection.create_window_function` to create aggregate
+window functions.
+(Contributed by Erlend E. Aasland in :issue:`34916`.)
+
 _thread
 -------
 
