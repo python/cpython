@@ -498,8 +498,8 @@ and :class:`~decimal.Decimal` values are:
    |         | decimal point, the decimal point is also removed unless  |
    |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
-   | ``'E'`` | Scientific notation.  Same as ``'e'`` except it uses the |
-   |         | uppercase letter 'E' as the separator character.         |
+   | ``'E'`` | Scientific notation.  This is the same as ``'e'`` except |
+   |         | that it uses the uppercase letter 'E' as separator.      |
    +---------+----------------------------------------------------------+
    | ``'f'`` | Fixed-point notation.  For a given precision ``p``,      |
    |         | formats the number as a decimal number with exactly      |
@@ -511,8 +511,9 @@ and :class:`~decimal.Decimal` values are:
    |         | decimal point, the decimal point is also removed unless  |
    |         | the ``#`` option is used.                                |
    +---------+----------------------------------------------------------+
-   | ``'F'`` | Fixed-point notation.  Same as ``'f'``, but converts     |
-   |         | ``nan`` to  ``NAN`` and ``inf`` to ``INF``.              |
+   | ``'F'`` | Fixed-point notation.  This is the same as ``'f'``       |
+   |         | except that it converts ``nan`` to ``NAN`` and ``inf``   |
+   |         | to ``INF``.                                              |
    +---------+----------------------------------------------------------+
    | ``'g'`` | General format.  For a given precision ``p >= 1``,       |
    |         | this rounds the number to ``p`` significant digits and   |
@@ -548,11 +549,13 @@ and :class:`~decimal.Decimal` values are:
    |         | ``0``, ``-0`` and ``nan`` respectively, regardless of    |
    |         | the precision.                                           |
    +---------+----------------------------------------------------------+
-   | ``'G'`` | General format.  Same as ``'g'`` except switches to      |
-   |         | ``'E'`` if the number gets too large.  The               |
-   |         | representations of infinity and NaN are uppercased, too. |
+   | ``'G'`` | General format.  This is the same as ``'g'`` except that |
+   |         | is switches to ``'E'`` if the number gets too large.     |
+   |         | The representations of infinity and NaN are uppercased,  |
+   |         | too.                                                     |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number.  This is the same as ``'g'`` except that it uses |
+   | ``'n'`` | Number.  
+   as ``'g'`` except that it uses |
    |         | the current locale setting to insert the appropriate     |
    |         | number separator characters.                             |
    +---------+----------------------------------------------------------+
