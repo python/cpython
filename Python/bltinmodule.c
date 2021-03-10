@@ -544,7 +544,8 @@ static PyObject *
 filter_vectorcall(PyObject *type, PyObject * const*args,
                 size_t nargsf, PyObject *kwnames)
 {
-    if ((PyTypeObject *)type == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
+    PyTypeObject *tp = (PyTypeObject *)type;
+    if (tp == &PyFilter_Type && !_PyArg_NoKwnames("filter", kwnames)) {
         return NULL;
     }
 
@@ -558,7 +559,6 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyTypeObject *tp = (PyTypeObject *)type;
     filterobject *lz = (filterobject *)tp->tp_alloc(tp, 0);
 
     if (lz == NULL) {
