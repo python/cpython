@@ -4,6 +4,7 @@
 """Fraction, infinite-precision, real numbers."""
 
 from decimal import Decimal
+import functools
 import math
 import numbers
 import operator
@@ -380,20 +381,17 @@ class Fraction(numbers.Rational):
 
         return forward, reverse
 
-    def _add(a, b):
-        """a + b"""
+    def _add_sub_(a, b, pm=int.__add__):
         da, db = a.denominator, b.denominator
-        return Fraction(a.numerator * db + b.numerator * da,
+        return Fraction(pm(a.numerator * db, b.numerator * da),
                         da * db)
 
+    _add = functools.partial(_add_sub_)
+    _add.__doc__ = 'a + b'
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
-    def _sub(a, b):
-        """a - b"""
-        da, db = a.denominator, b.denominator
-        return Fraction(a.numerator * db - b.numerator * da,
-                        da * db)
-
+    _sub = functools.partial(_add_sub_, pm=int.__sub__)
+    _sub.__doc__ = 'a - b'
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
     def _mul(a, b):
