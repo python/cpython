@@ -98,6 +98,7 @@ the definition of all other Python objects.
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
 
    Set the object *o* reference counter to *refcnt*.
+   :ref:`immortal-objects` are not affected.
 
    .. versionadded:: 3.9
 
@@ -133,6 +134,39 @@ the definition of all other Python objects.
 
       _PyObject_EXTRA_INIT
       1, type, size,
+
+
+.. c:macro:: _PyObject_HEAD_IMMORTAL_INIT(type)
+
+   This is a macro which expands to initialization values for a new
+   :c:type:`PyObject` type.  It makes the object
+   :ref:`immortal <immortal-objects>`.  This macro expands to::
+
+      _PyObject_EXTRA_INIT
+      _PyObject_IMMORTAL_INIT_REFCNT, type,
+
+   For now you must opt in to use this by defining
+   ``_Py_IMMORTAL_OBJECTS``.
+
+   .. versionadded:: 3.10
+
+
+.. c:macro:: PyVarObject_HEAD_IMMORTAL_INIT(type, size)
+
+   This is a macro which expands to initialization values for a new
+   :c:type:`PyVarObject` type, including the :attr:`ob_size` field.
+   It makes the object :ref:`immortal <immortal-objects>`.  This
+   macro expands to::
+
+      _PyObject_EXTRA_INIT
+      _PyObject_IMMORTAL_INIT_REFCNT, type, size,
+
+   This is especially useful for static types.
+
+   For now you must opt in to use this by defining
+   ``_Py_IMMORTAL_OBJECTS``.
+
+   .. versionadded:: 3.10
 
 
 Implementing functions and methods

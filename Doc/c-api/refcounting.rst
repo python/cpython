@@ -119,3 +119,69 @@ The following functions or macros are only for use within the interpreter core:
 :c:func:`_Py_Dealloc`, :c:func:`_Py_ForgetReference`, :c:func:`_Py_NewReference`,
 as well as the global variable :c:data:`_Py_RefTotal`.
 
+.. _immortal-objects:
+
+Immortal Objects
+================
+
+"Immortal" objects are those that are expected to never be deallocated
+by the runtime (due to their reference count reaching 0).  In the public
+C-API examples of such objects includes the singletons and many builtin
+types.  For such objects the reference count is essentially irrelevant.
+Immortal objects are especially useful if otherwise immutable.
+
+Note that for now the API for immortal objects is not available
+for general use, by default.  Users of the public C-API (but not
+the limited API) may opt in by defining ``_Py_IMMORTAL_OBJECTS``.
+This API should not be considered stable yet.
+
+.. c:function:: int _PyObject_IsImmortal(PyObject *o)
+
+   Return non-zero if the object is immortal.
+
+   .. versionadded:: 3.10
+
+.. c:function:: void _PyObject_SetImmortal(PyObject *o)
+
+   Mark an object as immortal.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: _PyObject_IMMORTAL_BIT
+
+   This is the bit in the reference count value that indicates whether
+   or not the object is immortal.
+
+   This is for internal use only.  Instead use
+   :c:func:`_PyObject_IsImmortal` and
+   :c:func:`_PyObject_IsImmortal`.
+
+   .. versionadded:: 3.10
+
+.. c:macro:: _PyObject_IMMORTAL_INIT_REFCNT
+
+   This is the reference count value to which immortal objects
+   are initialized.
+
+   This is for internal use only.  Instead use
+   :c:func:`_PyObject_IsImmortal` and
+   :c:func:`_PyObject_IsImmortal`.
+
+   .. versionadded:: 3.10
+
+Also see :c:macro:`_PyObject_HEAD_IMMORTAL_INIT` and
+:c:macro:`_PyVarObject_HEAD_IMMORTAL_INIT`.
+
+.. _immutable-refcounts:
+
+Immutable Refcounts
+-------------------
+
+If ``Py_IMMORTAL_CONST_REFCOUNTS`` is defined then the following
+happens:
+
+* the immortal objects API is enabled
+* the runtime never changes reference counts for immortal objects
+
+This mode can help with copy-on-write semantics when forking.
+
