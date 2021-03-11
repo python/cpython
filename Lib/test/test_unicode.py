@@ -2938,31 +2938,35 @@ class CAPITest(unittest.TestCase):
     @support.requires_legacy_unicode_capi
     def test_encode_decimal(self):
         from _testcapi import unicode_encodedecimal
-        self.assertEqual(unicode_encodedecimal('123'),
-                         b'123')
-        self.assertEqual(unicode_encodedecimal('\u0663.\u0661\u0664'),
-                         b'3.14')
-        self.assertEqual(unicode_encodedecimal("\N{EM SPACE}3.14\N{EN SPACE}"),
-                         b' 3.14 ')
-        self.assertRaises(UnicodeEncodeError,
-                          unicode_encodedecimal, "123\u20ac", "strict")
-        self.assertRaisesRegex(
-            ValueError,
-            "^'decimal' codec can't encode character",
-            unicode_encodedecimal, "123\u20ac", "replace")
+        with warnings_helper.check_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertEqual(unicode_encodedecimal('123'),
+                             b'123')
+            self.assertEqual(unicode_encodedecimal('\u0663.\u0661\u0664'),
+                             b'3.14')
+            self.assertEqual(unicode_encodedecimal(
+                             "\N{EM SPACE}3.14\N{EN SPACE}"), b' 3.14 ')
+            self.assertRaises(UnicodeEncodeError,
+                              unicode_encodedecimal, "123\u20ac", "strict")
+            self.assertRaisesRegex(
+                ValueError,
+                "^'decimal' codec can't encode character",
+                unicode_encodedecimal, "123\u20ac", "replace")
 
     @support.cpython_only
     @support.requires_legacy_unicode_capi
     def test_transform_decimal(self):
         from _testcapi import unicode_transformdecimaltoascii as transform_decimal
-        self.assertEqual(transform_decimal('123'),
-                         '123')
-        self.assertEqual(transform_decimal('\u0663.\u0661\u0664'),
-                         '3.14')
-        self.assertEqual(transform_decimal("\N{EM SPACE}3.14\N{EN SPACE}"),
-                         "\N{EM SPACE}3.14\N{EN SPACE}")
-        self.assertEqual(transform_decimal('123\u20ac'),
-                         '123\u20ac')
+        with warnings_helper.check_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            self.assertEqual(transform_decimal('123'),
+                             '123')
+            self.assertEqual(transform_decimal('\u0663.\u0661\u0664'),
+                             '3.14')
+            self.assertEqual(transform_decimal("\N{EM SPACE}3.14\N{EN SPACE}"),
+                             "\N{EM SPACE}3.14\N{EN SPACE}")
+            self.assertEqual(transform_decimal('123\u20ac'),
+                             '123\u20ac')
 
     @support.cpython_only
     def test_pep393_utf8_caching_bug(self):

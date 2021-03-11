@@ -12,6 +12,8 @@ extern "C" {
 #include <signal.h>
 #endif
 
+#include "pycore_runtime.h"       // _PyRuntimeState
+
 #ifndef NSIG
 # if defined(_NSIG)
 #  define NSIG _NSIG            /* For BSD/SysV */
@@ -104,7 +106,8 @@ extern void _PyWarnings_Fini(PyInterpreterState *interp);
 extern void _PyAST_Fini(PyInterpreterState *interp);
 extern void _PyAtExit_Fini(PyInterpreterState *interp);
 
-extern PyStatus _PyGILState_Init(PyThreadState *tstate);
+extern PyStatus _PyGILState_Init(_PyRuntimeState *runtime);
+extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(PyInterpreterState *interp);

@@ -136,7 +136,7 @@ Module-level decorators, classes, and functions
      attribute ``__hash__ = None`` has a specific meaning to Python, as
      described in the :meth:`__hash__` documentation.
 
-     If :meth:`__hash__` is not explicit defined, or if it is set to ``None``,
+     If :meth:`__hash__` is not explicitly defined, or if it is set to ``None``,
      then :func:`dataclass` *may* add an implicit :meth:`__hash__` method.
      Although not recommended, you can force :func:`dataclass` to create a
      :meth:`__hash__` method with ``unsafe_hash=True``. This might be the case
