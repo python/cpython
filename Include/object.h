@@ -476,14 +476,7 @@ static inline void _Py_DECREF(
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
-#ifdef Py_IMMORTAL_CONST_REFCOUNTS
             _Py_NegativeRefcount(filename, lineno, op);
-#else
-            extern int _PyObject_IsImmortal(PyObject *);
-            if (!_PyObject_IsImmortal(op)) {
-                _Py_NegativeRefcount(filename, lineno, op);
-            }
-#endif
         }
 #endif
     }
