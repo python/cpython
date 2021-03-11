@@ -48,8 +48,8 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1g",
-    # "3.0.0-alpha2"
+    "1.1.1j",
+    # "3.0.0-alpha12"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -57,7 +57,7 @@ LIBRESSL_OLD_VERSIONS = [
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "3.1.0",
+    "3.2.4",
 ]
 
 # store files in ../multissl
@@ -169,7 +169,9 @@ class AbstractBuilder(object):
     url_templates = None
     src_template = None
     build_template = None
+    depend_target = None
     install_target = 'install'
+    jobs = os.cpu_count()
 
     module_files = ("Modules/_ssl.c",
                     "Modules/_hashopenssl.c")
@@ -321,8 +323,11 @@ class AbstractBuilder(object):
         if self.system:
             env['SYSTEM'] = self.system
         self._subprocess_call(cmd, cwd=cwd, env=env)
-        # Old OpenSSL versions do not support parallel builds.
-        self._subprocess_call(["make", "-j1"], cwd=cwd, env=env)
+        if self.depend_target:
+            self._subprocess_call(
+                ["make", "-j1", self.depend_target], cwd=cwd, env=env
+            )
+        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
 
     def _make_install(self):
         self._subprocess_call(
@@ -409,6 +414,7 @@ class BuildOpenSSL(AbstractBuilder):
     build_template = "openssl-{}"
     # only install software, skip docs
     install_target = 'install_sw'
+    depend_target = 'depend'
 
     def _post_install(self):
         if self.version.startswith("3.0"):
@@ -434,11 +440,11 @@ class BuildOpenSSL(AbstractBuilder):
                 self.openssl_cli, "fipsinstall",
                 "-out", fipsinstall_cnf,
                 "-module", fips_mod,
-                "-provider_name", "fips",
-                "-mac_name", "HMAC",
-                "-macopt", "digest:SHA256",
-                "-macopt", "hexkey:00",
-                "-section_name", "fips_sect"
+                # "-provider_name", "fips",
+                # "-mac_name", "HMAC",
+                # "-macopt", "digest:SHA256",
+                # "-macopt", "hexkey:00",
+                # "-section_name", "fips_sect"
             ]
         )
         with open(openssl_fips_cnf, "w") as f:
