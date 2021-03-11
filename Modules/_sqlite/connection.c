@@ -1651,7 +1651,6 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    int callback_error = 0;
     int rc;
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -1659,16 +1658,18 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
         Py_END_ALLOW_THREADS
 
         if (progress != Py_None) {
+            int remaining = sqlite3_backup_remaining(bck_handle);
+            int pagecount = sqlite3_backup_pagecount(bck_handle);
             PyObject *res = PyObject_CallFunction(progress, "iii", rc,
-                                        sqlite3_backup_remaining(bck_handle),
-                                        sqlite3_backup_pagecount(bck_handle));
+                                                  remaining, pagecount);
             if (res == NULL) {
-                /* Callback failed: interrupt the loop and propagate error. */
-                callback_error = 1;
-                break;
-            } else {
-                Py_DECREF(res);
+                /* Callback failed: abort backup and bail. */
+                Py_BEGIN_ALLOW_THREADS
+                sqlite3_backup_finish(bck_handle);
+                Py_END_ALLOW_THREADS
+                return NULL;
             }
+            Py_DECREF(res);
         }
 
         /* Sleep for a while if there are still further pages to copy and
@@ -1683,10 +1684,6 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_backup_finish(bck_handle);
     Py_END_ALLOW_THREADS
-
-    if (callback_error) {
-        return NULL;
-    }
 
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(bck_conn, NULL);
