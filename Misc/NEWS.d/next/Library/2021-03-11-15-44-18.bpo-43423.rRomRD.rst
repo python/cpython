@@ -1,0 +1,1 @@
+Fixed subprocess communicate function could raise an IndexError when there is an empty buffer
