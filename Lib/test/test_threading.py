@@ -1489,6 +1489,29 @@ class MiscTestCase(unittest.TestCase):
 
 
 class InterruptMainTests(unittest.TestCase):
+    def check_interrupt_main_with_signal_handler(self, signum):
+        def handler(signum, frame):
+            1/0
+
+        old_handler = signal.signal(signum, handler)
+        self.addCleanup(signal.signal, signum, old_handler)
+
+        with self.assertRaises(ZeroDivisionError):
+            _thread.interrupt_main()
+
+    def check_interrupt_main_noerror(self, signum):
+        handler = signal.getsignal(signum)
+        try:
+            # No exception should arise.
+            signal.signal(signum, signal.SIG_IGN)
+            _thread.interrupt_main(signum)
+
+            signal.signal(signum, signal.SIG_DFL)
+            _thread.interrupt_main(signum)
+        finally:
+            # Restore original handler
+            signal.signal(signum, handler)
+
     def test_interrupt_main_subthread(self):
         # Calling start_new_thread with a function that executes interrupt_main
         # should raise KeyboardInterrupt upon completion.
@@ -1506,18 +1529,18 @@ class InterruptMainTests(unittest.TestCase):
         with self.assertRaises(KeyboardInterrupt):
             _thread.interrupt_main()
 
-    def test_interrupt_main_noerror(self):
-        handler = signal.getsignal(signal.SIGINT)
-        try:
-            # No exception should arise.
-            signal.signal(signal.SIGINT, signal.SIG_IGN)
-            _thread.interrupt_main()
+    def test_interrupt_main_with_signal_handler(self):
+        self.check_interrupt_main_with_signal_handler(signal.SIGINT)
+        self.check_interrupt_main_with_signal_handler(signal.SIGTERM)
 
-            signal.signal(signal.SIGINT, signal.SIG_DFL)
-            _thread.interrupt_main()
-        finally:
-            # Restore original handler
-            signal.signal(signal.SIGINT, handler)
+    def test_interrupt_main_noerror(self):
+        self.check_interrupt_main_noerror(signal.SIGINT)
+        self.check_interrupt_main_noerror(signal.SIGTERM)
+
+    def test_interrupt_main_invalid_signal(self):
+        self.assertRaises(ValueError, _thread.interrupt_main, -1)
+        self.assertRaises(ValueError, _thread.interrupt_main, signal.NSIG)
+        self.assertRaises(ValueError, _thread.interrupt_main, 1000000)
 
 
 class AtexitTests(unittest.TestCase):

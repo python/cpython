@@ -8,7 +8,23 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+
 #include "pycore_runtime.h"       // _PyRuntimeState
+
+#ifndef NSIG
+# if defined(_NSIG)
+#  define NSIG _NSIG            /* For BSD/SysV */
+# elif defined(_SIGMAX)
+#  define NSIG (_SIGMAX + 1)    /* For QNX */
+# elif defined(SIGMAX)
+#  define NSIG (SIGMAX + 1)     /* For djgpp */
+# else
+#  define NSIG 64               /* Use a reasonable default value */
+# endif
+#endif
 
 /* Forward declarations */
 struct _PyArgv;

@@ -788,6 +788,13 @@ Add :data:`sys.stdlib_module_names`, containing the list of the standard library
 module names.
 (Contributed by Victor Stinner in :issue:`42955`.)
 
+_thread
+-------
+
+:func:`_thread.interrupt_main` now takes an optional signal number to
+simulate (the default is still :data:`signal.SIGINT`).
+(Contributed by Antoine Pitrou in :issue:`43356`.)
+
 threading
 ---------
 
@@ -1209,6 +1216,11 @@ New Features
 * Add a new :c:func:`PySet_CheckExact` function to the C-API to check if an
   object is an instance of :class:`set` but not an instance of a subtype.
   (Contributed by Pablo Galindo in :issue:`43277`.)
+
+* Added :c:func:`PyErr_SetInterruptEx` which allows passing a signal number
+  to simulate.
+  (Contributed by Antoine Pitrou in :issue:`43356`.)
+
 
 Porting to Python 3.10
 ----------------------
