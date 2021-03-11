@@ -121,22 +121,6 @@ typedef struct {
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
-// This is a static version of _PyObject_IsImmortal(), for the sake
-// of other static functions, like _Py_SET_REFCNT() and _Py_INCREF().
-static inline int _py_is_immortal(PyObject *op)
-{
-#ifdef Py_IMMORTAL_CONST_REFCOUNTS
-#ifndef _PyObject_IMMORTAL_BIT
-// This is duplicated as-is from the internal API.
-#define _PyObject_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
-#endif
-    return (op->ob_refcnt & _PyObject_IMMORTAL_BIT) != 0;
-#else
-    extern int _PyObject_IsImmortal(PyObject *);
-    return _PyObject_IsImmortal(op);
-#endif
-}
-
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
@@ -155,6 +139,8 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
+
+static inline int _py_is_immortal(PyObject *);  // forward
 
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     if (_py_is_immortal((PyObject *)ob)) {
@@ -707,6 +693,20 @@ times.
     (defined(_Py_IMMORTAL_OBJECTS) || defined(Py_IMMORTAL_CONST_REFCOUNTS))
 #error "the immortal objects API is not available in the limited API"
 #endif
+
+// This is a static version of _PyObject_IsImmortal(), for the sake
+// of other static functions, like _Py_SET_REFCNT() and _Py_INCREF().
+static inline int _py_is_immortal(PyObject *op)
+{
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+    return (op->ob_refcnt & _PyObject_IMMORTAL_BIT) != 0;
+#else
+#ifndef _Py_IMMORTAL_OBJECTS
+    extern int _PyObject_IsImmortal(PyObject *);
+#endif
+    return _PyObject_IsImmortal(op);
+#endif
+}
 
 
 static inline int
