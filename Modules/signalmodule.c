@@ -8,6 +8,7 @@
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"    // _PyThreadState_GET()
 
 #ifndef MS_WINDOWS
@@ -47,18 +48,6 @@
 
 #ifndef SIG_ERR
 #define SIG_ERR ((PyOS_sighandler_t)(-1))
-#endif
-
-#ifndef NSIG
-# if defined(_NSIG)
-#  define NSIG _NSIG            /* For BSD/SysV */
-# elif defined(_SIGMAX)
-#  define NSIG (_SIGMAX + 1)    /* For QNX */
-# elif defined(SIGMAX)
-#  define NSIG (SIGMAX + 1)     /* For djgpp */
-# else
-#  define NSIG 64               /* Use a reasonable default value */
-# endif
 #endif
 
 #include "clinic/signalmodule.c.h"
@@ -106,7 +95,10 @@ class sigset_t_converter(CConverter):
 
 static volatile struct {
     _Py_atomic_int tripped;
-    PyObject *func;
+    /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
+     * (even though it would probably be otherwise, anyway).
+     */
+    _Py_atomic_address func;
 } Handlers[NSIG];
 
 #ifdef MS_WINDOWS
@@ -142,6 +134,16 @@ static HANDLE sigint_event = NULL;
 #if defined(HAVE_GETITIMER) || defined(HAVE_SETITIMER)
 static PyObject *ItimerError;
 #endif
+
+Py_LOCAL_INLINE(PyObject *)
+get_handler(int i) {
+    return (PyObject *)_Py_atomic_load(&Handlers[i].func);
+}
+
+Py_LOCAL_INLINE(void)
+SetHandler(int i, PyObject* func) {
+    _Py_atomic_store(&Handlers[i].func, (uintptr_t)func);
+}
 
 #ifdef HAVE_GETITIMER
 /* auxiliary functions for setitimer */
@@ -516,8 +518,8 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
         return NULL;
     }
 
-    old_handler = Handlers[signalnum].func;
-    Handlers[signalnum].func = Py_NewRef(handler);
+    old_handler = get_handler(signalnum);
+    SetHandler(signalnum, Py_NewRef(handler));
 
     if (old_handler != NULL) {
         return old_handler;
@@ -553,7 +555,7 @@ signal_getsignal_impl(PyObject *module, int signalnum)
                         "signal number out of range");
         return NULL;
     }
-    old_handler = Handlers[signalnum].func;
+    old_handler = get_handler(signalnum);
     if (old_handler != NULL) {
         return Py_NewRef(old_handler);
     }
@@ -1584,17 +1586,21 @@ signal_module_exec(PyObject *m)
         }
         // If signal_module_exec() is called more than one, we must
         // clear the strong reference to the previous function.
-        Py_XSETREF(Handlers[signum].func, Py_NewRef(func));
+        PyObject* old_func = get_handler(signum);
+        SetHandler(signum, Py_NewRef(func));
+        Py_XDECREF(old_func);
     }
 
     // Instal Python SIGINT handler which raises KeyboardInterrupt
-    if (Handlers[SIGINT].func == DefaultHandler) {
+    PyObject* sigint_func = get_handler(SIGINT);
+    if (sigint_func == DefaultHandler) {
         PyObject *int_handler = PyMapping_GetItemString(d, "default_int_handler");
         if (!int_handler) {
             return -1;
         }
 
-        Py_SETREF(Handlers[SIGINT].func, int_handler);
+        SetHandler(SIGINT, int_handler);
+        Py_DECREF(sigint_func);
         PyOS_setsig(SIGINT, signal_handler);
     }
 
@@ -1630,9 +1636,9 @@ _PySignal_Fini(void)
 {
     // Restore default signals and clear handlers
     for (int signum = 1; signum < NSIG; signum++) {
-        PyObject *func = Handlers[signum].func;
+        PyObject *func = get_handler(signum);
         _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
-        Handlers[signum].func = NULL;
+        SetHandler(signum, NULL);
         if (func != NULL
             && func != Py_None
             && func != DefaultHandler
@@ -1712,7 +1718,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
          * signal handler for it by the time PyErr_CheckSignals() is called
          * (see bpo-43406).
          */
-        PyObject *func = Handlers[i].func;
+        PyObject *func = get_handler(i);
         if (func == NULL || func == Py_None || func == IgnoreHandler ||
             func == DefaultHandler) {
             /* No Python signal handler due to aforementioned race condition.
@@ -1761,18 +1767,27 @@ _PyErr_CheckSignals(void)
 }
 
 
-/* Simulate the effect of a signal.SIGINT signal arriving. The next time
-   PyErr_CheckSignals is called,  the Python SIGINT signal handler will be
-   raised.
+/* Simulate the effect of a signal arriving. The next time PyErr_CheckSignals
+   is called,  the corresponding Python signal handler will be raised.
 
-   Missing signal handler for the SIGINT signal is silently ignored. */
+   Missing signal handler for the given signal number is silently ignored. */
+int
+PyErr_SetInterruptEx(int signum)
+{
+    if (signum < 1 || signum >= NSIG) {
+        return -1;
+    }
+    PyObject* func = get_handler(signum);
+    if (func != IgnoreHandler && func != DefaultHandler) {
+        trip_signal(signum);
+    }
+    return 0;
+}
+
 void
 PyErr_SetInterrupt(void)
 {
-    if ((Handlers[SIGINT].func != IgnoreHandler) &&
-        (Handlers[SIGINT].func != DefaultHandler)) {
-        trip_signal(SIGINT);
-    }
+    (void) PyErr_SetInterruptEx(SIGINT);
 }
 
 static int
