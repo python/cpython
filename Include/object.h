@@ -703,6 +703,12 @@ times.
 #endif
 
 
+#if defined(Py_LIMITED_API) && \
+    (defined(_Py_IMMORTAL_OBJECTS) || defined(Py_IMMORTAL_CONST_REFCOUNTS))
+#error "the immortal objects API is not available in the limited API"
+#endif
+
+
 static inline int
 PyType_HasFeature(PyTypeObject *type, unsigned long feature)
 {
