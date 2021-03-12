@@ -1825,19 +1825,26 @@ _PyTypes_Init(void)
 #undef INIT_TYPE
 }
 
+/* _Py_NewReference() is called in the following situations:
+ *  - for newly allocatoed objects, via _PyObject_Init()
+ *  - when resizing immutable objects (bytes, unicode, tuple)
+ *  - when "allocating" from a freelist
+ *  - when resurrecting an object
+ */
 
 void
 _Py_NewReference(PyObject *op)
 {
+    // None of the cases above should ever apply to immortal objects.
+    assert(!_PyObject_IsImmortal(op));
+
     if (_Py_tracemalloc_config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    /* Do not use Py_SET_REFCNT to skip the Immortal Instance check. This
-     * API guarantees that an instance will always be set to a refcnt of 1 */
-    op->ob_refcnt = 1;
+    Py_SET_REFCNT(op, 1);
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif
