@@ -434,11 +434,6 @@ static inline void _Py_INCREF(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-#ifdef Py_IMMORTAL_CONST_REFCOUNTS
-    if (_py_is_immortal(op)) {
-        return;
-    }
-#endif
     op->ob_refcnt++;
 }
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
@@ -451,11 +446,6 @@ static inline void _Py_DECREF(
 {
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
-#endif
-#ifdef Py_IMMORTAL_CONST_REFCOUNTS
-    if (_py_is_immortal(op)) {
-        return;
-    }
 #endif
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
@@ -685,22 +675,6 @@ times.
 #  define Py_CPYTHON_OBJECT_H
 #  include  "cpython/object.h"
 #  undef Py_CPYTHON_OBJECT_H
-#endif
-
-
-#if defined(Py_LIMITED_API) && \
-    (defined(_Py_IMMORTAL_OBJECTS) || defined(Py_IMMORTAL_CONST_REFCOUNTS))
-#error "the immortal objects API is not available in the limited API"
-#endif
-
-#ifdef Py_IMMORTAL_CONST_REFCOUNTS
-// We need this function since _PyObject_IMMORTAL_BIT is defined
-// in cpython/object.h and not available for use above.  Otherwise
-// we wouldn't need this function.
-static inline int _py_is_immortal(PyObject *op)
-{
-    return (op->ob_refcnt & _PyObject_IMMORTAL_BIT) != 0;
-}
 #endif
 
 

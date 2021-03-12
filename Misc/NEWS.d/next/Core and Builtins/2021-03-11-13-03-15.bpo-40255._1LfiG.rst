@@ -1,6 +1,5 @@
-There is now internal support for "immortal" objects.  Those are objects
-that will never be deleted, like the singletons and static types.  This has
-benefits for the C-API and subinterpreters, as well as allowing for better
-copy-on-write behavior for forking (if Py_IMMORTAL_CONST_REFCOUNTS is used).
-The feature is currently intended for internal use, though you can try it
-out by building with _Py_IMMORTAL_OBJECTS defined.
+There is now internal support for "immortal" objects (with a "private"
+C-API).  Those are objects that will never be deleted, like the
+singletons and static types.  This will benefit the C-API and
+subinterpreters.  For now the API is currently intended only
+for internal use.

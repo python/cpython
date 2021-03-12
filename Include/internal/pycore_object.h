@@ -30,6 +30,55 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
 
+/* Immortal Objects
+ *
+ * An "immortal" object is one for which Py_DECREF() will never try
+ * to deallocate it.
+ *
+ * At the moment this API is strictly internal.  However, if it proves
+ * helpful for extension authors we may move it to the public API. */
+
+#define _Py_IMMORTAL_OBJECTS 1
+
+/* The implementation-independent API is only the following functions: */
+PyAPI_FUNC(int) _PyObject_IsImmortal(PyObject *);
+PyAPI_FUNC(void) _PyObject_SetImmortal(PyObject *);
+
+/* In the actual implementation we set the refcount to some positive
+ * value that we would never expect to be reachable through use of
+ * Py_INCREF() in a program.
+ *
+ * The only parts that should be used directly are the two
+ * _Py*Object_HEAD_IMMORTAL_INIT() macros.
+ */
+
+/* _PyObject_IMMORTAL_BIT is the bit in the refcount value (Py_ssize_t)
+ * that we use to mark an object as immortal.  It shouldn't ever be
+ * part of the public API.
+ *
+ * The GC bit-shifts refcounts left by two, and after that shift we still
+ * need this to be >> 0, so leave three high zero bits (the sign bit and
+ * room for a shift of two.) */
+#define _PyObject_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
+
+/* _PyObject_IMMORTAL_INIT_REFCNT is the initial value we use for
+ * immortal objects.  It shouldn't ever be part of the public API.
+ *
+ * We leave plenty of room to preserve _PyObject_IMMORTAL_BIT. */
+#define _PyObject_IMMORTAL_INIT_REFCNT \
+    (_PyObject_IMMORTAL_BIT + (_PyObject_IMMORTAL_BIT / 2))
+
+/* These macros are drop-in replacements for the corresponding
+ * Py*Object_HEAD_INIT() macros.  They will probably become
+ * part of the public API. */
+#define _PyObject_HEAD_IMMORTAL_INIT(type) \
+    { _PyObject_EXTRA_INIT _PyObject_IMMORTAL_INIT_REFCNT, type },
+#define _PyVarObject_HEAD_IMMORTAL_INIT(type, size) \
+    { PyObject_HEAD_IMMORTAL_INIT(type) size },
+
+/* end Immortal Objects */
+
+
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
    _PyObject_InitVar() is the fast version of PyObject_InitVar().
