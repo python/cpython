@@ -147,28 +147,6 @@ This API should not be considered stable yet.
 
    .. versionadded:: 3.10
 
-.. c:macro:: _PyObject_IMMORTAL_BIT
-
-   This is the bit in the reference count value that indicates whether
-   or not the object is immortal.
-
-   This is for internal use only.  Instead use
-   :c:func:`_PyObject_IsImmortal` and
-   :c:func:`_PyObject_IsImmortal`.
-
-   .. versionadded:: 3.10
-
-.. c:macro:: _PyObject_IMMORTAL_INIT_REFCNT
-
-   This is the reference count value to which immortal objects
-   are initialized.
-
-   This is for internal use only.  Instead use
-   :c:func:`_PyObject_IsImmortal` and
-   :c:func:`_PyObject_IsImmortal`.
-
-   .. versionadded:: 3.10
-
 Also see :c:macro:`_PyObject_HEAD_IMMORTAL_INIT` and
 :c:macro:`_PyVarObject_HEAD_IMMORTAL_INIT`.
 

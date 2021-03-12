@@ -375,22 +375,41 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
         Py_XDECREF(_py_tmp);                    \
     } while (0)
 
-/* An "immortal" object is one for which Py_DECREF() will never try
- * to deallocate it.  To achieve this we set the refcount to some
- * positive value that we would never expect to be reachable through
- * use of Py_INCREF() in a program.
- */
+
+/* Immortal Objects
+ *
+ * An "immortal" object is one for which Py_DECREF() will never try
+ * to deallocate it. */
 
 #if defined(Py_IMMORTAL_CONST_REFCOUNTS) || defined(Py_BUILD_CORE)
 #define _Py_IMMORTAL_OBJECTS 1
 #endif
 
 #ifdef _Py_IMMORTAL_OBJECTS
-/* The GC bit-shifts refcounts left by two, and after that shift we still
+
+/* The implementation-independent API is only the following functions: */
+PyAPI_FUNC(int) _PyObject_IsImmortal(PyObject *);
+PyAPI_FUNC(void) _PyObject_SetImmortal(PyObject *);
+
+/* In the actual implementation we set the refcount to some positive
+ * value that we would never expect to be reachable through use of
+ * Py_INCREF() in a program.
+ *
+ * The only parts that should be used directly are the two
+ * _Py*Object_HEAD_IMMORTAL_INIT() macros.
+ */
+
+/* _PyObject_IMMORTAL_BIT is the bit in the refcount value (Py_ssize_t)
+ * that we use to mark an object as immortal.  It shouldn't ever be
+ * part of the public API.
+ *
+ * The GC bit-shifts refcounts left by two, and after that shift we still
  * need this to be >> 0, so leave three high zero bits (the sign bit and
  * room for a shift of two.) */
 #define _PyObject_IMMORTAL_BIT (1LL << (8 * sizeof(Py_ssize_t) - 4))
 
+/* _PyObject_IMMORTAL_INIT_REFCNT is the initial value we use for
+ * immortal objects.  It shouldn't ever be part of the public API. */
 #ifdef Py_IMMORTAL_CONST_REFCOUNTS
 #define _PyObject_IMMORTAL_INIT_REFCNT \
     _PyObject_IMMORTAL_BIT
@@ -400,14 +419,15 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
     (_PyObject_IMMORTAL_BIT + (_PyObject_IMMORTAL_BIT / 2))
 #endif
 
+/* These macros are drop-in replacements for the corresponding
+ * Py*Object_HEAD_INIT() macros.  They will probably become
+ * part of the public API. */
 #define _PyObject_HEAD_IMMORTAL_INIT(type) \
     { _PyObject_EXTRA_INIT _PyObject_IMMORTAL_INIT_REFCNT, type },
 #define _PyVarObject_HEAD_IMMORTAL_INIT(type, size) \
     { PyObject_HEAD_IMMORTAL_INIT(type) size },
 
-PyAPI_FUNC(int) _PyObject_IsImmortal(PyObject *);
-PyAPI_FUNC(void) _PyObject_SetImmortal(PyObject *);
-#endif
+#endif  /* defined(_Py_IMMORTAL_OBJECTS) */
 
 
 PyAPI_DATA(PyTypeObject) _PyNone_Type;
