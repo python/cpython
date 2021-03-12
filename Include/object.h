@@ -121,6 +121,7 @@ typedef struct {
 #define _PyVarObject_CAST(op) ((PyVarObject*)(op))
 #define _PyVarObject_CAST_CONST(op) ((const PyVarObject*)(op))
 
+
 static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
     return ob->ob_refcnt;
 }
@@ -475,6 +476,7 @@ static inline void _Py_DECREF(
 #else
 #  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
 #endif
+
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
  * and tp_dealloc implementations.
