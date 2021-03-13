@@ -245,12 +245,12 @@ class QueryTestCase(unittest.TestCase):
              'write_io_runtime_us': 43690}
         exp = """\
 {'RPM_cal': 0,
- 'RPM_cal2': 48059,
+ 'RPM_cal2': 48_059,
  'Speed_cal': 0,
  'controldesk_runtime_us': 0,
  'main_code_runtime_us': 0,
  'read_io_runtime_us': 0,
- 'write_io_runtime_us': 43690}"""
+ 'write_io_runtime_us': 43_690}"""
         for type in [dict, dict2]:
             self.assertEqual(pprint.pformat(type(o)), exp)
 
@@ -322,6 +322,10 @@ class QueryTestCase(unittest.TestCase):
       3],
      '1 '
      '2']]]]]""")
+
+    def test_numbers(self):
+        self.assertEqual(pprint.pformat(1234567), '1_234_567')
+        self.assertEqual(pprint.pformat(1234567, underscore_numbers=False), '1234567')
 
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
