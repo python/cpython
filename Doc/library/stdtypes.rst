@@ -1610,6 +1610,14 @@ expression support in the :mod:`re` module).
    only used at the first encoding error. Enable the :ref:`Python Development
    Mode <devmode>`, or use a debug build to check *errors*.
 
+   For example::
+
+      >>> encoded_str_to_byte = 'Python'.encode()
+      >>> type(encoded_str_to_byte)
+      <class 'bytes'>
+      >>> encoded_str_to_byte
+      b'Python'
+
    .. versionchanged:: 3.1
       Support for keyword arguments added.
 
