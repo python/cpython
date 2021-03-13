@@ -170,7 +170,7 @@ def addpackage(sitedir, name, known_paths):
     fullname = os.path.join(sitedir, name)
     _trace(f"Processing .pth file: {fullname!r}")
     try:
-        f = io.TextIOWrapper(io.open_code(fullname))
+        f = io.TextIOWrapper(io.open_code(fullname), encoding="utf-8")
     except OSError:
         return
     with f:
