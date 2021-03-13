@@ -349,9 +349,6 @@ class HTTPResponse(io.BufferedIOBase):
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         self.length = None
         length = self.headers.get("content-length")
-
-         # are we using the chunked-style of transfer encoding?
-        tr_enc = self.headers.get("transfer-encoding")
         if length and not self.chunked:
             try:
                 self.length = int(length)
