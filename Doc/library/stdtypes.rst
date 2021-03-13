@@ -1712,6 +1712,14 @@ expression support in the :mod:`re` module).
    :ref:`devmode` is enabled
    or a :ref:`debug build <debug-build>` is used.
 
+   For example::
+
+      >>> encoded_str_to_byte = 'Python'.encode()
+      >>> type(encoded_str_to_byte)
+      <class 'bytes'>
+      >>> encoded_str_to_byte
+      b'Python'
+
    .. versionchanged:: 3.1
       Added support for keyword arguments.
 
