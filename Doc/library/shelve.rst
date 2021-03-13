@@ -60,7 +60,8 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    to load a shelf from an untrusted source.  Like with pickle, loading a shelf
    can execute arbitrary code.
 
-Shelf objects support all methods supported by dictionaries.  This eases the
+Shelf objects support most of methods and operations supported by dictionaries
+(except copying, constructors and operators ``|`` and ``|=``).  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
 Two additional methods are supported:
