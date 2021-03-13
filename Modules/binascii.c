@@ -472,7 +472,9 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
                 */
                 if (i + 1 < ascii_len) {
                     binascii_state *state = PyModule_GetState(module);
-                    PyErr_SetString(state->Error, "Excess data after padding is not allowed");
+                    if (state) {
+                        PyErr_SetString(state->Error, "Excess data after padding is not allowed");
+                    }
                     goto error_end;
                 }
 
