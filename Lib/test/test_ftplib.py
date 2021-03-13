@@ -714,7 +714,7 @@ class TestFTPClass(TestCase):
 
     def test_makepasv_issue43285_security_disabled(self):
         """Test the opt-in to the old vulnerable behavior."""
-        self.client.use_untrusted_server_pasv_ipv4_addr = True
+        self.client.trust_server_pasv_ipv4_address = True
         bad_host, port = self.client.makepasv()
         self.assertEqual(
                 bad_host, self.server.handler_instance.fake_pasv_server_ip)
@@ -724,7 +724,7 @@ class TestFTPClass(TestCase):
                                  timeout=TIMEOUT).close()
 
     def test_makepasv_issue43285_security_enabled_default(self):
-        self.assertFalse(self.client.use_untrusted_server_pasv_ipv4_addr)
+        self.assertFalse(self.client.trust_server_pasv_ipv4_address)
         trusted_host, port = self.client.makepasv()
         self.assertNotEqual(
                 trusted_host, self.server.handler_instance.fake_pasv_server_ip)

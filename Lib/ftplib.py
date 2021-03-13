@@ -104,7 +104,7 @@ class FTP:
     welcome = None
     passiveserver = True
     # Disables https://bugs.python.org/issue43285 security if set to True.
-    use_untrusted_server_pasv_ipv4_addr = False
+    trust_server_pasv_ipv4_address = False
 
     def __init__(self, host='', user='', passwd='', acct='',
                  timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None, *,
@@ -325,7 +325,7 @@ class FTP:
         """Internal: Does the PASV or EPSV handshake -> (address, port)"""
         if self.af == socket.AF_INET:
             untrusted_host, port = parse227(self.sendcmd('PASV'))
-            if self.use_untrusted_server_pasv_ipv4_addr:
+            if self.trust_server_pasv_ipv4_address:
                 host = untrusted_host
             else:
                 host = self.sock.getpeername()[0]
