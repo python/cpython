@@ -101,6 +101,7 @@ import shutil
 import socket # For gethostbyaddr()
 import socketserver
 import sys
+import re
 import time
 import urllib.parse
 import contextlib
@@ -331,6 +332,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     "Bad HTTP/0.9 request type (%r)" % command)
                 return False
         self.command, self.path = command, path
+
+        # bpo-43223: The purpose of replacing '//' with '/' is to protect against 
+        # open redirect attacks reside within http.server module which can be triggered
+        # if the path contains '//' at the beginning because web clients treat //path as
+        # an absolute url without scheme (similar to http://path) rather than a relative path
+        self.path = re.sub(r'^(/)+', '/', self.path)
 
         # Examine the headers and look for a Connection directive.
         try:

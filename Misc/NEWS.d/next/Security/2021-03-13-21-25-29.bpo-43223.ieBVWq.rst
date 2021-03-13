@@ -1,0 +1,2 @@
+:mod:`http.server`: Fix an open redirection vulnerability in the HTTP server when an URL contains ``//``.
+Vulnerability discovered and fixed by Hamza Avvan.
