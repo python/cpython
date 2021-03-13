@@ -27,6 +27,27 @@ class Vec:
     or on the right
     >>> a * 3.0
     Vec(3.0, 6.0, 9.0)
+    
+    lenght of Vector
+    >>> len(a)
+    3
+    
+    printing argument of Vector by index
+    >>> a[1]
+    2
+    
+    New!!
+    >>> a * b
+    Vec(3, 4, 3)
+    
+    >>> a / b
+    Vec(0.3333333333333333, 1.0, 3.0)
+    
+    >>> a // b
+    Vec(1, 0, 0)
+    
+    >>> a % 2
+    Vec(1, 0, 1)
     """
     def __init__(self, *v):
         self.v = list(v)
@@ -53,18 +74,45 @@ class Vec:
         # Element-wise addition
         v = [x + y for x, y in zip(self.v, other.v)]
         return Vec.fromlist(v)
-
+ 
     def __sub__(self, other):
         # Element-wise subtraction
         v = [x - y for x, y in zip(self.v, other.v)]
         return Vec.fromlist(v)
 
-    def __mul__(self, scalar):
-        # Multiply by scalar
-        v = [x * scalar for x in self.v]
-        return Vec.fromlist(v)
+	def __mul__(self, other):
+		if isinstance(other, int) or isinstance(other, float):
+			m = [x * other for x in self.matrix]
+		else:
+			m = [x * y for x, y in zip(self.matrix, other.matrix)]
 
-    __rmul__ = __mul__
+		return Matrix.fromlist(m)
+
+	def __truediv__(self, other):
+		if isinstance(other, int) or isinstance(other, float):
+			m = [x / other for x in self.matrix]
+		else:
+			m = [x / y for x, y in zip(self.matrix, other.matrix)]
+
+		return Matrix.fromlist(m)
+
+	def __floordiv__(self, other):
+		if isinstance(other, int) or isinstance(other, float):
+			m = [x // other for x in self.matrix]
+		else:
+			m = [x // y for x, y in zip(self.matrix, other.matrix)]
+
+		return Matrix.fromlist(m)
+
+	def __mod__(self, other):
+		if isinstance(other, int) or isinstance(other, float):
+			m = [x % other for x in self.matrix]
+		else:
+			m = [x % y for x, y in zip(self.matrix, other.matrix)]
+
+		return Matrix.fromlist(m)
+
+	__rmul__ = __mul__
 
 
 def test():
