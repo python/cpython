@@ -889,6 +889,7 @@ deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
             return NULL;
         }
         n = PyLong_AsSsize_t(index);
+        Py_DECREF(index);
         if (n == -1 && PyErr_Occurred()) {
             return NULL;
         }
