@@ -7,7 +7,7 @@ import sys
 import unittest
 import threading
 from collections import OrderedDict
-from enum import Enum, IntEnum, StrEnum, EnumMeta, Flag, IntFlag, unique, auto
+from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
@@ -2339,7 +2339,7 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(str(~Perm.W), 'R|X')
         self.assertEqual(str(~Perm.X), 'R|W')
         self.assertEqual(str(~(Perm.R | Perm.W)), 'X')
-        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), '0')
+        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
         self.assertEqual(str(Perm(~0)), 'R|W|X')
 
         Open = self.Open
@@ -2347,9 +2347,9 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(str(Open.WO), 'WO')
         self.assertEqual(str(Open.AC), 'AC')
         self.assertEqual(str(Open.RO | Open.CE), 'CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'CE|WO')
-        self.assertEqual(str(~Open.RO), 'CE|AC|RW|WO')
-        self.assertEqual(str(~Open.WO), 'CE|RW')
+        self.assertEqual(str(Open.WO | Open.CE), 'WO|CE')
+        self.assertEqual(str(~Open.RO), 'WO|RW|CE')
+        self.assertEqual(str(~Open.WO), 'RW|CE')
         self.assertEqual(str(~Open.AC), 'CE')
         self.assertEqual(str(~(Open.RO | Open.CE)), 'AC')
         self.assertEqual(str(~(Open.WO | Open.CE)), 'RW')
@@ -2374,17 +2374,17 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(Open.WO), 'Open.WO')
         self.assertEqual(repr(Open.AC), 'Open.AC')
         self.assertEqual(repr(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(repr(Open.WO | Open.CE), 'Open.CE|Open.WO')
-        self.assertEqual(repr(~Open.RO), 'Open.CE|Open.AC|Open.RW|Open.WO')
-        self.assertEqual(repr(~Open.WO), 'Open.CE|Open.RW')
+        self.assertEqual(repr(Open.WO | Open.CE), 'Open.WO|Open.CE')
+        self.assertEqual(repr(~Open.RO), 'Open.WO|Open.RW|Open.CE')
+        self.assertEqual(repr(~Open.WO), 'Open.RW|Open.CE')
         self.assertEqual(repr(~Open.AC), 'Open.CE')
         self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open.AC')
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
 
     def test_format(self):
         Perm = self.Perm
-        self.assertEqual(format(Perm.R, ''), 'Perm.R')
-        self.assertEqual(format(Perm.R | Perm.X, ''), 'Perm.R|X')
+        self.assertEqual(format(Perm.R, ''), 'R')
+        self.assertEqual(format(Perm.R | Perm.X, ''), 'R|X')
 
     def test_or(self):
         Perm = self.Perm
@@ -2852,31 +2852,31 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(str(Perm.X), 'X')
         self.assertEqual(str(Perm.R | Perm.W), 'R|W')
         self.assertEqual(str(Perm.R | Perm.W | Perm.X), 'R|W|X')
-        self.assertEqual(str(Perm.R | 8), '8|R')
+        self.assertEqual(str(Perm.R | 8), '12')
         self.assertEqual(str(Perm(0)), 'Perm(0)')
         self.assertEqual(str(Perm(8)), '8')
         self.assertEqual(str(~Perm.R), 'W|X')
         self.assertEqual(str(~Perm.W), 'R|X')
         self.assertEqual(str(~Perm.X), 'R|W')
         self.assertEqual(str(~(Perm.R | Perm.W)), 'X')
-        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), '-8')
-        self.assertEqual(str(~(Perm.R | 8)), 'W|X')
+        self.assertEqual(str(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
+        self.assertEqual(str(~(Perm.R | 8)), '-13')
         self.assertEqual(str(Perm(~0)), 'R|W|X')
-        self.assertEqual(str(Perm(~8)), 'R|W|X')
+        self.assertEqual(str(Perm(~8)), '-9')
 
         Open = self.Open
         self.assertEqual(str(Open.RO), 'RO')
         self.assertEqual(str(Open.WO), 'WO')
         self.assertEqual(str(Open.AC), 'AC')
         self.assertEqual(str(Open.RO | Open.CE), 'CE')
-        self.assertEqual(str(Open.WO | Open.CE), 'CE|WO')
+        self.assertEqual(str(Open.WO | Open.CE), 'WO|CE')
         self.assertEqual(str(Open(4)), '4')
-        self.assertEqual(str(~Open.RO), 'CE|AC|RW|WO')
-        self.assertEqual(str(~Open.WO), 'CE|RW')
+        self.assertEqual(str(~Open.RO), 'WO|RW|CE')
+        self.assertEqual(str(~Open.WO), 'RW|CE')
         self.assertEqual(str(~Open.AC), 'CE')
-        self.assertEqual(str(~(Open.RO | Open.CE)), 'AC|RW|WO')
+        self.assertEqual(str(~(Open.RO | Open.CE)), 'AC')
         self.assertEqual(str(~(Open.WO | Open.CE)), 'RW')
-        self.assertEqual(str(Open(~4)), 'CE|AC|RW|WO')
+        self.assertEqual(str(Open(~4)), '-5')
 
     def test_repr(self):
         Perm = self.Perm
@@ -2885,31 +2885,31 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(Perm.X), 'Perm.X')
         self.assertEqual(repr(Perm.R | Perm.W), 'Perm.R|Perm.W')
         self.assertEqual(repr(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
-        self.assertEqual(repr(Perm.R | 8), 'Perm.8|Perm.R')
+        self.assertEqual(repr(Perm.R | 8), '12')
         self.assertEqual(repr(Perm(0)), 'Perm(0)')
-        self.assertEqual(repr(Perm(8)), 'Perm.8')
+        self.assertEqual(repr(Perm(8)), '8')
         self.assertEqual(repr(~Perm.R), 'Perm.W|Perm.X')
         self.assertEqual(repr(~Perm.W), 'Perm.R|Perm.X')
         self.assertEqual(repr(~Perm.X), 'Perm.R|Perm.W')
         self.assertEqual(repr(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), 'Perm.-8')
-        self.assertEqual(repr(~(Perm.R | 8)), 'Perm.W|Perm.X')
+        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
+        self.assertEqual(repr(~(Perm.R | 8)), '-13')
         self.assertEqual(repr(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
-        self.assertEqual(repr(Perm(~8)), 'Perm.R|Perm.W|Perm.X')
+        self.assertEqual(repr(Perm(~8)), '-9')
 
         Open = self.Open
         self.assertEqual(repr(Open.RO), 'Open.RO')
         self.assertEqual(repr(Open.WO), 'Open.WO')
         self.assertEqual(repr(Open.AC), 'Open.AC')
         self.assertEqual(repr(Open.RO | Open.CE), 'Open.CE')
-        self.assertEqual(repr(Open.WO | Open.CE), 'Open.CE|Open.WO')
-        self.assertEqual(repr(Open(4)), 'Open.4')
-        self.assertEqual(repr(~Open.RO), 'Open.CE|Open.AC|Open.RW|Open.WO')
-        self.assertEqual(repr(~Open.WO), 'Open.CE|Open.RW')
+        self.assertEqual(repr(Open.WO | Open.CE), 'Open.WO|Open.CE')
+        self.assertEqual(repr(Open(4)), '4')
+        self.assertEqual(repr(~Open.RO), 'Open.WO|Open.RW|Open.CE')
+        self.assertEqual(repr(~Open.WO), 'Open.RW|Open.CE')
         self.assertEqual(repr(~Open.AC), 'Open.CE')
-        self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open.AC|Open.RW|Open.WO')
+        self.assertEqual(repr(~(Open.RO | Open.CE)), 'Open.AC')
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
-        self.assertEqual(repr(Open(~4)), 'Open.CE|Open.AC|Open.RW|Open.WO')
+        self.assertEqual(repr(Open(~4)), '-5')
 
     def test_format(self):
         Perm = self.Perm
@@ -3396,7 +3396,7 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Readonly properties inherited from enum.EnumMeta:
+ |  Readonly properties inherited from enum.EnumType:
  |\x20\x20
  |  __members__
  |      Returns a mapping of member name->value.
@@ -3431,7 +3431,7 @@ class Color(enum.Enum)
  |  value
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumMeta:
+ |  Data descriptors inherited from enum.EnumType:
  |\x20\x20
  |  __members__"""
 
@@ -3458,7 +3458,7 @@ class TestStdLib(unittest.TestCase):
 
     def test_inspect_getmembers(self):
         values = dict((
-                ('__class__', EnumMeta),
+                ('__class__', EnumType),
                 ('__doc__', 'An enumeration.'),
                 ('__members__', self.Color.__members__),
                 ('__module__', __name__),
@@ -3485,11 +3485,11 @@ class TestStdLib(unittest.TestCase):
         from inspect import Attribute
         values = [
                 Attribute(name='__class__', kind='data',
-                    defining_class=object, object=EnumMeta),
+                    defining_class=object, object=EnumType),
                 Attribute(name='__doc__', kind='data',
                     defining_class=self.Color, object='An enumeration.'),
                 Attribute(name='__members__', kind='property',
-                    defining_class=EnumMeta, object=EnumMeta.__members__),
+                    defining_class=EnumType, object=EnumType.__members__),
                 Attribute(name='__module__', kind='data',
                     defining_class=self.Color, object=__name__),
                 Attribute(name='blue', kind='data',

@@ -4,7 +4,7 @@ from builtins import property as _bltin_property, bin as _bltin_bin
 
 
 __all__ = [
-        'EnumMeta',
+        'EnumType', 'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
         'auto', 'unique',
         'property',
@@ -15,7 +15,7 @@ __all__ = [
 
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
-# This is also why there are checks in EnumMeta like `if Enum is not None`
+# This is also why there are checks in EnumType like `if Enum is not None`
 Enum = Flag = EJECT = None
 
 def _is_descriptor(obj):
@@ -286,7 +286,7 @@ class _EnumDict(dict):
     """
     Track enum member order and ensure member names are not reused.
 
-    EnumMeta will use the names found in self._member_names as the
+    EnumType will use the names found in self._member_names as the
     enumeration member names.
     """
     def __init__(self):
@@ -369,7 +369,7 @@ class _EnumDict(dict):
             self[name] = value
 
 
-class EnumMeta(type):
+class EnumType(type):
     """
     Metaclass for Enum
     """
@@ -882,9 +882,10 @@ class EnumMeta(type):
         else:
             use_args = True
         return __new__, save_new, use_args
+EnumMeta = EnumType
 
 
-class Enum(metaclass=EnumMeta):
+class Enum(metaclass=EnumType):
     """
     Generic enumeration.
 
@@ -985,7 +986,7 @@ class Enum(metaclass=EnumMeta):
         # the value
 
         # pure Enum branch, or branch with __str__ explicitly overridden
-        str_overridden = type(self).__str__ not in (Enum.__str__, Flag.__str__, global_enum_str)
+        str_overridden = type(self).__str__ not in (Enum.__str__, Flag.__str__)
         if self._member_type_ is object or str_overridden:
             cls = str
             val = str(self)
@@ -1220,19 +1221,28 @@ class Flag(Enum, boundary=STRICT):
         return self._value_.bit_count()
 
     def __repr__(self):
-        cls = self.__class__
-        if self._name_ is not None:
-            return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
+        cls_name = self.__class__.__name__
+        if self._name_ is None:
+            return "%s(%x)" % (cls_name, self._value_)
+        if _is_single_bit(self._value_):
+            return '%s.%s' % (cls_name, self._name_)
+        if self._boundary_ is not FlagBoundary.KEEP:
+            return '%s.' % cls_name + ('|%s.' % cls_name).join(self.name.split('|'))
         else:
-            # only zero is unnamed by default
-            return '<%s: %r>' % (cls.__name__, self._value_)
+            name = []
+            for n in self._name_.split('|'):
+                if n.startswith('0'):
+                    name.append('%s(%s)' % (cls_name, n))
+                else:
+                    name.append('%s.%s' % (cls_name, n))
+            return '|'.join(name)
 
     def __str__(self):
         cls = self.__class__
-        if self._name_ is not None:
-            return '%s.%s' % (cls.__name__, self._name_)
+        if self._name_ is None:
+            return '%s(%x)' % (cls.__name__, self._value_)
         else:
-            return '%s(%s)' % (cls.__name__, self._value_)
+            return self._name_
 
     def __bool__(self):
         return bool(self._value_)
@@ -1331,30 +1341,26 @@ def _power_of_two(value):
     return value == 2 ** _high_bit(value)
 
 def global_int_repr(self):
-    return '%s.%s' % (self.__class__.__module__, self.name)
+    return '%s.%s' % (self.__class__.__module__, self._name_)
 
 def global_flag_repr(self):
     module = self.__class__.__module__
-    if self._name_ is not None:
-        return '%s.%s' % (module, self.name)
-    value = self._value_
-    members = []
-    negative = value < 0
-    if negative:
-        value = ~value
-    for m in self.__class__:
-        if value & m._value_:
-            value &= ~m._value_
-            members.append('re.%s' % (m._name_, ))
-    if value:
-        members.append(hex(value))
-    res = '|'.join(members)
-    if negative:
-        if len(members) > 1:
-            res = '~(%s)' % (res, )
-        else:
-            res = '~%s' % (res, )
-    return res
+    cls_name = self.__class__.__name__
+    if self._name_ is None:
+        return "%s.%s(%x)" % (module, cls_name, self._value_)
+    if _is_single_bit(self):
+        return '%s.%s' % (module, self._name_)
+    if self._boundary_ is not FlagBoundary.KEEP:
+        return module + module.join(self.name.split('|'))
+    else:
+        name = []
+        for n in self._name_.split('|'):
+            if n.startswith('0'):
+                name.append('%s.%s(%s)' % (module, cls_name, n))
+            else:
+                name.append('%s.%s' % (module, n))
+        return '|'.join(name)
+
 
 def global_enum(cls):
     """

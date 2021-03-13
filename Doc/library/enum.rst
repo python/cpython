@@ -114,7 +114,7 @@ follows::
 Enumeration members have human readable string representations::
 
     >>> print(Color.RED)
-    Color.RED
+    RED
 
 ...while their ``repr`` has more information::
 
@@ -144,10 +144,10 @@ Enumerations support iteration, in definition order::
     >>> for shake in Shake:
     ...     print(shake)
     ...
-    Shake.VANILLA
-    Shake.CHOCOLATE
-    Shake.COOKIES
-    Shake.MINT
+    VANILLA
+    CHOCOLATE
+    COOKIES
+    MINT
 
 Enumeration members are hashable, so they can be used in dictionaries and sets::
 
@@ -705,7 +705,7 @@ Because :class:`IntFlag` members are also subclasses of :class:`int` they can
 be combined with them (but may lose :class:`IntFlag` membership::
 
     >>> Perm.X | 4
-    <Perm.R|X: 5>
+    Perm.R|Perm.X
 
     >>> Perm.X | 8
     9
@@ -858,10 +858,10 @@ want one of them to be the value::
     ...
 
     >>> print(Coordinate['PY'])
-    Coordinate.PY
+    PY
 
     >>> print(Coordinate(3))
-    Coordinate.VY
+    VY
 
 Interesting examples
 --------------------
@@ -984,7 +984,7 @@ to handle any extra arguments::
     ...     BLEACHED_CORAL = () # New color, no Pantone code yet!
     ...
     >>> Swatch.SEA_GREEN
-    Swatch.SEA_GREEN
+    <Swatch.SEA_GREEN>
     >>> Swatch.SEA_GREEN.pantone
     '1246'
     >>> Swatch.BLEACHED_CORAL.pantone
@@ -1329,16 +1329,16 @@ The code sample::
 - only canonical flags are returned during iteration::
 
     >>> list(Color.WHITE)
-    [<Color.RED: 1>, <Color.GREEN: 2>, <Color.BLUE: 4>]
+    [Color.RED, Color.GREEN, Color.BLUE]
 
 - negating a flag or flag set returns a new flag/flag set with the
   corresponding positive integer value::
 
     >>> Color.GREEN
-    <Color.GREEN: 2>
+    Color.GREEN
 
     >>> ~Color.GREEN
-    <Color.PURPLE: 5>
+    Color.PURPLE
 
 - names of pseudo-flags are constructed from their members' names::
 
@@ -1348,10 +1348,10 @@ The code sample::
 - multi-bit flags, aka aliases, can be returned from operations::
 
     >>> Color.RED | Color.BLUE
-    <Color.PURPLE: 5>
+    Color.PURPLE
 
     >>> Color(7)  # or Color(-1)
-    <Color.WHITE: 7>
+    Color.WHITE
 
 - membership / containment checking has changed slightly -- zero valued flags
   are never considered to be contained::
