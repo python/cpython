@@ -1690,7 +1690,7 @@ Return the list of objects that directly refer to any of objs.");
 static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
 {
-    if (PySys_Audit("gc.get_referrers", "O", args) < 0) {
+    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
         return NULL;
     }
 
@@ -1724,7 +1724,7 @@ static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
     Py_ssize_t i;
-    if (PySys_Audit("gc.get_referents", "O", args) < 0) {
+    if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;
     }
     PyObject *result = PyList_New(0);
