@@ -1,0 +1,9 @@
+What's new in Vector (vector.py)
+
+1) Added multiplay (Vector and Vector)
+2) Added division (Vector and Vector) and (Vector and scalar)
+3) Added FloorDiv (Vector and Vector) and (Vector and scalar)
+4) Added __mod__ (Vector and Vector) and (Vector and scalar)
+
+This new methods is very useful!
+[It is beta version! By the way we will fix bugs]
