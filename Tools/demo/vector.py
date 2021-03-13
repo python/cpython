@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """
 A demonstration of classes and their special methods in Python.
@@ -6,6 +7,7 @@ A demonstration of classes and their special methods in Python.
 
 
 class Vec:
+
     """A simple vector class.
 
     Instances of the Vec class can be constructed from numbers
@@ -30,6 +32,7 @@ class Vec:
     Vec(3.0, 6.0, 9.0)
 
     """
+
     def __init__(self, *v):
         self.v = list(v)
 
@@ -52,20 +55,24 @@ class Vec:
         return self.v[i]
 
     def __add__(self, other):
+
         # Element-wise addition
-        v = [x + y for x, y in zip(self.v, other.v)]
+
+        v = [x + y for (x, y) in zip(self.v, other.v)]
         return Vec.fromlist(v)
- 
+
     def __sub__(self, other):
+
         # Element-wise subtraction
-        v = [x - y for x, y in zip(self.v, other.v)]
+
+        v = [x - y for (x, y) in zip(self.v, other.v)]
         return Vec.fromlist(v)
 
     def __mul__(self, other):
         if isinstance(other, int) or isinstance(other, float):
             m = [x * other for x in self.matrix]
         else:
-            m = [x * y for x, y in zip(self.matrix, other.matrix)]
+            m = [x * y for (x, y) in zip(self.matrix, other.matrix)]
 
         return Matrix.fromlist(m)
 
@@ -73,7 +80,7 @@ class Vec:
         if isinstance(other, int) or isinstance(other, float):
             m = [x / other for x in self.matrix]
         else:
-            m = [x / y for x, y in zip(self.matrix, other.matrix)]
+            m = [x / y for (x, y) in zip(self.matrix, other.matrix)]
 
         return Matrix.fromlist(m)
 
@@ -81,7 +88,7 @@ class Vec:
         if isinstance(other, int) or isinstance(other, float):
             m = [x // other for x in self.matrix]
         else:
-            m = [x // y for x, y in zip(self.matrix, other.matrix)]
+            m = [x // y for (x, y) in zip(self.matrix, other.matrix)]
 
         return Matrix.fromlist(m)
 
@@ -89,7 +96,7 @@ class Vec:
         if isinstance(other, int) or isinstance(other, float):
             m = [x % other for x in self.matrix]
         else:
-            m = [x % y for x, y in zip(self.matrix, other.matrix)]
+            m = [x % y for (x, y) in zip(self.matrix, other.matrix)]
 
         return Matrix.fromlist(m)
 
@@ -99,5 +106,6 @@ class Vec:
 def test():
     import doctest
     doctest.testmod()
+
 
 test()
