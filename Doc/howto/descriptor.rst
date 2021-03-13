@@ -1139,8 +1139,8 @@ If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
 
 
-Static methods
---------------
+Other kinds of methods
+----------------------
 
 Non-data descriptors provide a simple mechanism for variations on the usual
 patterns of binding functions into methods.
@@ -1162,6 +1162,10 @@ This chart summarizes the binding and its two most useful variants:
       +-----------------+----------------------+------------------+
       | classmethod     | f(type(obj), \*args) | f(cls, \*args)   |
       +-----------------+----------------------+------------------+
+
+
+Static methods
+--------------
 
 Static methods return the underlying function without changes.  Calling either
 ``c.f`` or ``C.f`` is the equivalent of a direct lookup into
