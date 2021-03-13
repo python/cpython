@@ -1018,8 +1018,7 @@ class SMTPSimTests(unittest.TestCase):
 
     def testAUTH_LOGIN_initial_response_ok(self):
         self.serv.add_feature("AUTH LOGIN")
-        with smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+        with smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15) as smtp:
             smtp.user, smtp.password = sim_auth
             smtp.ehlo("test_auth_login")
             resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=True)
@@ -1027,8 +1026,7 @@ class SMTPSimTests(unittest.TestCase):
 
     def testAUTH_LOGIN_initial_response_notok(self):
         self.serv.add_feature("AUTH LOGIN")
-        with smtplib.SMTP(HOST, self.port, local_hostname='localhost',
-                          timeout=support.LOOPBACK_TIMEOUT) as smtp:
+        with smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15) as smtp:
             smtp.user, smtp.password = sim_auth
             smtp.ehlo("test_auth_login")
             resp = smtp.auth("LOGIN", smtp.auth_login, initial_response_ok=False)
@@ -1041,10 +1039,7 @@ class SMTPSimTests(unittest.TestCase):
             self.assertEqual(b"BuGgYbUgGy", challenge)
             return "\0"
 
-        smtp = smtplib.SMTP(
-            HOST, self.port, local_hostname='localhost',
-            timeout=support.LOOPBACK_TIMEOUT
-        )
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
         try:
             smtp.user, smtp.password = sim_auth
             smtp.ehlo("test_auth_buggy")
