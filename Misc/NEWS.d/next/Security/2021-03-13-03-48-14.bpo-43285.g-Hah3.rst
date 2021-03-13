@@ -1,0 +1,4 @@
+:mod:`ftplib` no longer trusts the IP address value returned from the server
+in response to the PASV command by default.  This prevents a malicious FTP
+server from using the response to probe IPv4 address and port combinations
+on the client network.
