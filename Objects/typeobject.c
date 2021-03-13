@@ -39,6 +39,7 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
+// bpo-42745: next_version_tag remains shared by all interpreters because of static types
 // Used to set PyTypeObject.tp_version_tag
 static unsigned int next_version_tag = 0;
 
@@ -252,8 +253,9 @@ _PyType_InitCache(PyInterpreterState *interp)
 
 
 static unsigned int
-_PyType_ClearCache(struct type_cache *cache)
+_PyType_ClearCache(PyInterpreterState *interp)
 {
+    struct type_cache *cache = &interp->type_cache;
 #if MCACHE_STATS
     size_t total = cache->hits + cache->collisions + cache->misses;
     fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
@@ -267,7 +269,10 @@ _PyType_ClearCache(struct type_cache *cache)
 #endif
 
     unsigned int cur_version_tag = next_version_tag - 1;
-    next_version_tag = 0;
+    if (_Py_IsMainInterpreter(interp)) {
+        next_version_tag = 0;
+    }
+
     type_cache_clear(cache, 0);
 
     return cur_version_tag;
@@ -277,15 +282,15 @@ _PyType_ClearCache(struct type_cache *cache)
 unsigned int
 PyType_ClearCache(void)
 {
-    struct type_cache *cache = get_type_cache();
-    return _PyType_ClearCache(cache);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _PyType_ClearCache(interp);
 }
 
 
 void
 _PyType_Fini(PyInterpreterState *interp)
 {
-    _PyType_ClearCache(&interp->type_cache);
+    _PyType_ClearCache(interp);
     if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
