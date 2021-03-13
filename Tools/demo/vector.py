@@ -5,7 +5,6 @@ A demonstration of classes and their special methods in Python.
 """
 
 
-
 class Vec:
     """A simple vector class.
 
