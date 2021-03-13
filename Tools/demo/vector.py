@@ -4,6 +4,8 @@
 A demonstration of classes and their special methods in Python.
 """
 
+
+
 class Vec:
     """A simple vector class.
 
@@ -60,39 +62,39 @@ class Vec:
         v = [x - y for x, y in zip(self.v, other.v)]
         return Vec.fromlist(v)
 
-	def __mul__(self, other):
-		if isinstance(other, int) or isinstance(other, float):
-			m = [x * other for x in self.matrix]
-		else:
-			m = [x * y for x, y in zip(self.matrix, other.matrix)]
+    def __mul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            m = [x * other for x in self.matrix]
+        else:
+            m = [x * y for x, y in zip(self.matrix, other.matrix)]
 
-		return Matrix.fromlist(m)
+        return Matrix.fromlist(m)
 
-	def __truediv__(self, other):
-		if isinstance(other, int) or isinstance(other, float):
-			m = [x / other for x in self.matrix]
-		else:
-			m = [x / y for x, y in zip(self.matrix, other.matrix)]
+    def __truediv__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            m = [x / other for x in self.matrix]
+        else:
+            m = [x / y for x, y in zip(self.matrix, other.matrix)]
 
-		return Matrix.fromlist(m)
+        return Matrix.fromlist(m)
 
-	def __floordiv__(self, other):
-		if isinstance(other, int) or isinstance(other, float):
-			m = [x // other for x in self.matrix]
-		else:
-			m = [x // y for x, y in zip(self.matrix, other.matrix)]
+    def __floordiv__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            m = [x // other for x in self.matrix]
+        else:
+            m = [x // y for x, y in zip(self.matrix, other.matrix)]
 
-		return Matrix.fromlist(m)
+        return Matrix.fromlist(m)
 
-	def __mod__(self, other):
-		if isinstance(other, int) or isinstance(other, float):
-			m = [x % other for x in self.matrix]
-		else:
-			m = [x % y for x, y in zip(self.matrix, other.matrix)]
+    def __mod__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            m = [x % other for x in self.matrix]
+        else:
+            m = [x % y for x, y in zip(self.matrix, other.matrix)]
 
-		return Matrix.fromlist(m)
+        return Matrix.fromlist(m)
 
-	__rmul__ = __mul__
+    __rmul__ = __mul__
 
 
 def test():
