@@ -4145,9 +4145,12 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
 
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
+    int old_lineno = c->u->u_lineno;
+    c->u->u_lineno = meth->end_lineno;
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
     ADDOP_I(c, CALL_METHOD, asdl_seq_LEN(e->v.Call.args));
+    c->u->u_lineno = old_lineno;
     return 1;
 }
 
@@ -5113,12 +5116,21 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         VISIT(c, expr, e->v.Attribute.value);
         switch (e->v.Attribute.ctx) {
         case Load:
+        {
+            int old_lineno = c->u->u_lineno;
+            c->u->u_lineno = e->end_lineno;
             ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
+            c->u->u_lineno = old_lineno;
             break;
+        }
         case Store:
-            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx)) {
                 return 0;
+            }
+            int old_lineno = c->u->u_lineno;
+            c->u->u_lineno = e->end_lineno;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
+            c->u->u_lineno = old_lineno;
             break;
         case Del:
             ADDOP_NAME(c, DELETE_ATTR, e->v.Attribute.attr, names);
@@ -5182,7 +5194,10 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     case Attribute_kind:
         VISIT(c, expr, e->v.Attribute.value);
         ADDOP(c, DUP_TOP);
+        int old_lineno = c->u->u_lineno;
+        c->u->u_lineno = e->end_lineno;
         ADDOP_NAME(c, LOAD_ATTR, e->v.Attribute.attr, names);
+        c->u->u_lineno = old_lineno;
         break;
     case Subscript_kind:
         VISIT(c, expr, e->v.Subscript.value);
@@ -5211,6 +5226,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 
     switch (e->kind) {
     case Attribute_kind:
+        c->u->u_lineno = e->end_lineno;
         ADDOP(c, ROT_TWO);
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
