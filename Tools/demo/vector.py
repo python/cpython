@@ -35,7 +35,7 @@ class Vec:
     """
 
     def __init__(self, *v):
-        self.v = v
+        self.v = list(v)
 
     @classmethod
     def fromlist(cls, v):
