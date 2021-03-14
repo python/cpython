@@ -1,0 +1,2 @@
+pprint.pprint() displays integers with thousands separated by an underscore
+character to improve readability (for example 1_000_000 instead of 1000000).
