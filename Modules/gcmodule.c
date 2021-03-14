@@ -1672,7 +1672,6 @@ Return the list of objects that directly refer to any of objs.");
 static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
 {
-<<<<<<< HEAD
     PyThreadState *tstate = _PyThreadState_GET();
 
     if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
