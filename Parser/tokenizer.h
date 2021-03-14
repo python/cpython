@@ -26,6 +26,9 @@ struct tok_state {
     char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
+    int fp_interactive; /* If the file descriptor is interactive */
+    char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
+    char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
     const char *end;    /* End of input buffer if buf != NULL */
     const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
@@ -37,7 +40,6 @@ struct tok_state {
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
     const char *prompt, *nextprompt;          /* For interactive prompting */
-    char *stdin_content;
     int lineno;         /* Current line number */
     int first_lineno;   /* First line of a single line or multi line string
                            expression (cf. issue 16806) */
