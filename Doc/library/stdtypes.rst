@@ -1980,6 +1980,16 @@ expression support in the :mod:`re` module).
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
    ``c.isdigit()``, or ``c.isnumeric()``.
 
+   For example::
+
+      >>> ''.isalnum()
+      False
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 .. method:: str.isalpha()
 
