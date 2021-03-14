@@ -854,7 +854,6 @@ if 1:
             )
         load_method_lines = [ 2, 3, 4, 3, 1 ]
 
-
         def store_attr():
             (
                 o.

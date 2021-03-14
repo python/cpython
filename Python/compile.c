@@ -5124,9 +5124,9 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             break;
         }
         case Store:
-            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx))
+            if (forbidden_name(c, e->v.Attribute.attr, e->v.Attribute.ctx)) {
                 return 0;
-
+            }
             int old_lineno = c->u->u_lineno;
             c->u->u_lineno = e->end_lineno;
             ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
