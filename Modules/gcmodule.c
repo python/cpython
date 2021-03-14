@@ -1675,7 +1675,7 @@ gc_get_referrers(PyObject *self, PyObject *args)
     PyThreadState *tstate = _PyThreadState_GET();
     int i;
 
-    if (PySys_Audit("gc.get_referrers", "O", args) < 0) {
+    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
         return NULL;
     }
 
@@ -1709,7 +1709,7 @@ static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
     Py_ssize_t i;
-    if (PySys_Audit("gc.get_referents", "O", args) < 0) {
+    if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;
     }
     PyObject *result = PyList_New(0);
