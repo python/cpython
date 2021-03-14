@@ -1618,10 +1618,11 @@ def pipepager(text, cmd):
 def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
-    with tempfile.NamedTemporaryFile('w', errors='backslashreplace') as file:
-        file.write(text)
-        file.flush()
-        os.system(cmd + ' "' + file.name + '"')
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, 'pydoc.out')
+        with open(filename, 'w', errors='backslashreplace') as file:
+            file.write(text)
+        os.system(cmd + ' "' + filename + '"')
 
 def _escape_stdout(text):
     # Escape non-encodable characters to avoid encoding errors later
