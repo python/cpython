@@ -838,7 +838,7 @@ Statements
    context), ``op`` is :class:`Add`, and ``value`` is a :class:`Constant` with
    value for 1.
 
-   The ``target`` attribute connot be of class :class:`Tuple` or :class:`List`,
+   The ``target`` attribute cannot be of class :class:`Tuple` or :class:`List`,
    unlike the targets of :class:`Assign`.
 
    .. doctest::
