@@ -1743,6 +1743,12 @@ expression support in the :mod:`re` module).
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
    not found.
 
+   For example::
+
+      >>> 'spam, spam, spam'.index('eggs')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ValueError: substring not found
 
 .. method:: str.isalnum()
 
