@@ -1211,6 +1211,8 @@ class GrammarTests(unittest.TestCase):
 
         self.check_syntax_warning('assert(x, "msg")',
                                   'assertion is always true')
+        self.check_syntax_warning('assert(False, "msg")',
+                                  'assertion is always true')
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
             compile('assert x, "msg"', '<testcase>', 'exec')
