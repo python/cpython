@@ -424,8 +424,8 @@ class Fraction(numbers.Rational):
     # is a normalized fraction.  This is useful because the unnormalized
     # denominator d could be much larger than g.
     #
-    # We should special-case g == 1, since 60.8% of randomly-chosen
-    # integers are coprime:
+    # We should special-case g == 1 (and g2 == 1), since 60.8% of
+    # randomly-chosen integers are coprime:
     # https://en.wikipedia.org/wiki/Coprime_integers#Probability_of_coprimality
     #
     # 2) Consider multiplication
@@ -456,7 +456,10 @@ class Fraction(numbers.Rational):
             s = da // g
             t = pm(na * (db // g), nb * s)
             g2 = math.gcd(t, g)
-            return Fraction(t // g2, s * (db // g2), _normalize=False)
+            if g2 == 1:
+                return Fraction(t, s * db, _normalize=False)
+            else:
+                return Fraction(t // g2, s * (db // g2), _normalize=False)
 
     _add = functools.partial(_add_sub_)
     _add.__doc__ = 'a + b'
