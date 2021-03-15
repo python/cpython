@@ -1600,6 +1600,19 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
             self.assertRaises(OSError, DummyURLopener().open, url)
             self.assertRaises(OSError, DummyURLopener().retrieve, url)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_local_file_open_url(self):
+        # bpo-37820, urllib must reject URL: scheme with local file
+        class DummyURLopener(urllib.request.URLopener):
+            def open_local_file(self, url):
+                return url
+        for url in ('URL:example', 'URL:/example'):
+            self.assertRaises(ValueError, urllib.request.urlopen, url)
+            self.assertRaises(ValueError, urllib.request.URLopener().open, url)
+            self.assertRaises(ValueError, urllib.request.URLopener().retrieve, url)
+            self.assertRaises(ValueError, DummyURLopener().open, url)
+            self.assertRaises(ValueError, DummyURLopener().retrieve, url)
+
 
 class RequestTests(unittest.TestCase):
     """Unit tests for urllib.request.Request."""
