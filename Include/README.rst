@@ -19,7 +19,8 @@ be added to the Limited API or the Stable ABI.  A strong reference
 *must* be returned.  The API in ``Include/`` should not expose or leak
 implementation details.
 
-Please start a public discussion before adding new C API to ``Include/``.
+Please start a public discussion before adding new functions or macros to
+the Limited API.
 
 Functions or macros with a ``_Py`` prefix do not belong in ``Include/``.
 
@@ -28,9 +29,9 @@ Include/cpython: CPython implementation details
 ===============================================
 
 ``Include/cpython/`` contains the public API that is excluded from the
-Limited and Stable ABI.  :pep:`384` introduced the ``Py_LIMITED_API``
-define to exclude functions from the Limited API.  When a new API is
-introduced, it has to be explicitly excluded using
+Limited API and Stable ABI.  :pep:`384` introduced the ``Py_LIMITED_API``
+define to exclude functions from the Limited API.  When a new function or
+macro is introduced, it has to be explicitly excluded using
 ``#ifndef Py_LIMITED_API``.
 
 Functions stealing references or returning borrowed references *must not*
@@ -47,17 +48,18 @@ Include/internal: The internal API
 With PyAPI_FUNC or PyAPI_DATA
 -----------------------------
 
-``Include/internal/`` API defined with ``PyAPI_FUNC`` or ``PyAPI_DATA``
-contains the internal API which is exposed for specific use cases like
-debuggers and profilers.
+``Include/internal/`` functions or structures defined with ``PyAPI_FUNC``
+or ``PyAPI_DATA`` contains the internal API which is exposed for specific
+use cases like debuggers and profilers.
 
 
 With extern keyword
 -------------------
 
-``Include/internal/`` API defined with ``extern`` *must not and can not*
-be used outside the CPython code base.  Only built-in stdlib extensions
-(built with Py_BUILD_CORE_BUILTIN macro defined) can use it.
+``Include/internal/`` function defined with ``extern`` *must not and can
+not* be used outside the CPython code base.  Only built-in stdlib
+extensions (built with ``Py_BUILD_CORE_BUILTIN`` macro defined) can use
+it.
 
-In case of doubt, new internal C API must be defined in the internal C
-API with ``extern``.
+In case of doubt, new internal functions must be defined in the internal
+C API with ``extern``.
