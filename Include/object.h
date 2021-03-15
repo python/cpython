@@ -141,14 +141,7 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
 
-static inline int _py_is_immortal(PyObject *);  // forward
-
-static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
-    if (_py_is_immortal((PyObject *)ob)) {
-        return;
-    }
-    ob->ob_refcnt = refcnt;
-}
+PyAPI_FUNC(void) _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt);
 #define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
 
 
@@ -431,6 +424,8 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
 #endif /* Py_REF_DEBUG */
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
+
+static inline int _py_is_immortal(PyObject *);  // forward
 
 static inline void _Py_INCREF(PyObject *op)
 {

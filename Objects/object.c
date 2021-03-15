@@ -136,6 +136,15 @@ Py_DecRef(PyObject *o)
     Py_XDECREF(o);
 }
 
+void
+_Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+    if (_PyObject_IsImmortal(ob)) {
+        // XXX It may be worth emitting a warning here.
+        return;
+    }
+    ob->ob_refcnt = refcnt;
+}
+
 int
 _PyObject_IsImmortal(PyObject *ob)
 {
