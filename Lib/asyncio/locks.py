@@ -1,6 +1,6 @@
 """Synchronization primitives."""
 
-__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore', 'Barrier', 'BrokenBarrierError')
 
 import collections
 
@@ -418,3 +418,174 @@ class BoundedSemaphore(Semaphore):
         if self._value >= self._bound_value:
             raise ValueError('BoundedSemaphore released too many times')
         super().release()
+
+
+# A barrier class.  Inspired in part by the pthread_barrier_* api and
+# the CyclicBarrier class from Java.  See
+# http://sourceware.org/pthreads-win32/manual/pthread_barrier_init.html and
+# http://java.sun.com/j2se/1.5.0/docs/api/java/util/concurrent/
+#        CyclicBarrier.html
+# for information.
+# We maintain two main states, 'filling' and 'draining' enabling the barrier
+# to be cyclic.  Tasks are not allowed into it until it has fully drained
+# since the previous cycle.  In addition, a 'resetting' state exists which is
+# similar to 'draining' except that tasks leave with a BrokenBarrierError,
+# and a 'broken' state in which all tasks get the exception.
+
+class Barrier(mixins._LoopBoundMixin):
+    """Asynchronous equivalent to threading.Barrier 
+
+    Implements a Barrier.
+    Useful for synchronizing a fixed number of tasks at known synchronization
+    points.  Tasks block on 'wait()' and are simultaneously awoken once they
+    have all made that call.
+    """
+
+    def __init__(self, parties, action=None, *, loop=mixins._marker):
+        """Create a barrier, initialised to 'parties' tasks.
+        'action' is a callable which, when supplied, will be called by one of
+        the tasks after they have all entered the barrier and just prior to
+        releasing them all. 
+        """
+        super().__init__(loop=loop)
+        if parties < 1:
+            raise ValueError('parties must be > 0')
+
+        self._waiting = Event()     # used notify all waiting tasks
+        self._blocking = Event()    # used block tasks while wainting tasks are draining or broken 
+        self._action = action
+        self._parties = parties
+        self._state = 0             # 0 filling, 1, draining, -1 resetting, -2 broken
+        self._count = 0             # count waiting tasks 
+
+    def __repr__(self):
+        res = super().__repr__()
+        _wait = 'set' if self._waiting.is_set() else 'unset'
+        _block = 'set' if self._blocking.is_set() else 'unset'
+        extra = f'{_wait}, count:{self._count}/{self._parties}, {_block}, state:{self._state}'
+        return f'<{res[1:-1]} [{extra}]>'
+
+    async def wait(self):
+        """Wait for the barrier.
+        When the specified number of tasks have started waiting, they are all
+        simultaneously awoken. If an 'action' was provided for the barrier, one
+        of the tasks will have executed that callback prior to returning.
+        Returns an individual index number from 0 to 'parties-1'.
+        """
+        await self._block() # Block while the barrier drains or resets.
+        index = self._count
+        self._count += 1
+        try:
+            if index + 1 == self._parties:
+                # We release the barrier
+                self._release()
+            else:
+                # We wait until someone releases us
+                await self._wait()
+            return index
+        finally:
+            self._count -= 1
+            # Wake up any tasks waiting for barrier to drain.
+            self._exit()
+
+    # Block until the barrier is ready for us, or raise an exception
+    # if it is broken.
+    async def _block (self):
+        if self._state in (-1, 1):
+            # It is draining or resetting, wait until done
+            await self._blocking.wait()
+    
+        #see if the barrier is in a broken state
+        if self._state < 0:
+            raise BrokenBarrierError
+        assert self._state == 0, repr(self)
+
+    # Optionally run the 'action' and release the tasks waiting
+    # in the barrier.
+    def _release(self):
+        try:
+            if self._action:
+                self._action()
+            # enter draining state
+            self._state = 1
+            self._blocking.clear()
+            self._waiting.set()
+        except:
+            #an exception during the _action handler.  Break and reraise
+            self._state = -2
+            self._blocking.clear()
+            self._waiting.set()
+            raise 
+
+    # Wait in the barrier until we are released.  Raise an exception
+    # if the barrier is reset or broken.
+    async def _wait(self):
+        await self._waiting.wait()
+        # no timeout so
+        if self._state < 0:
+            raise BrokenBarrierError
+        assert self._state == 1, repr(self)
+
+    # If we are the last tasks to exit the barrier, signal any tasks
+    # waiting for the barrier to drain.
+    def _exit(self):
+        if self._count == 0: 
+            if self._state == 1:
+                self._state = 0
+            elif self._state == -1:
+                self._state = 0
+            self._waiting.clear()
+            self._blocking.set()
+
+    # async def reset(self):
+    def reset(self):
+        """Reset the barrier to the initial state.
+        Any tasks currently waiting will get the BrokenBarrier exception
+        raised.
+        """
+        if self._count > 0: 
+            if self._state in (0, 1):
+                #reset the barrier, waking up tasks
+                self._state = -1
+            elif self._state == -2:
+                #was broken, set it to reset state
+                #which clears when the last tasks exits
+                self._state = -1
+            self._waiting.set()
+            self._blocking.clear()
+        else:
+            self._state = 0
+
+
+    # async def abort(self):
+    def abort(self):
+        """Place the barrier into a 'broken' state.
+        Useful in case of error.  Any currently waiting tasks and tasks
+        attempting to 'wait()' will have BrokenBarrierError raised.
+        """
+        self._state = -2
+        self._waiting.set()
+        self._blocking.clear()
+
+    @property
+    def parties(self):
+        """Return the number of tasks required to trip the barrier."""
+        return self._parties
+
+    @property
+    def n_waiting(self):
+        """Return the number of tasks currently waiting at the barrier."""
+        # We don't need synchronization here since this is an ephemeral result
+        # anyway.  It returns the correct value in the steady state.
+        if self._state == 0:
+            return self._count
+        return 0
+
+    @property
+    def broken(self):
+        """Return True if the barrier is in a broken state."""
+        return self._state == -2
+
+# exception raised by the Barrier class
+class BrokenBarrierError(RuntimeError):
+    pass
