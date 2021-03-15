@@ -15,7 +15,7 @@ Include: Limited API and Stable ABI
 Stable ABI is defined by :pep:`384`.
 
 Functions stealing references or returning borrowed references *must not*
-be added to the Limited API API or the Stable ABI.  A strong reference
+be added to the Limited API or the Stable ABI.  A strong reference
 *must* be returned.  The API in ``Include/`` should not expose or leak
 implementation details.
 
