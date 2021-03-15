@@ -646,7 +646,10 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     t = PyList_GET_ITEM(value, j);
                     if (!PyUnicode_Check(t))
                         return FALSE;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
                     wstr = PyUnicode_AsUnicodeAndSize(t, &len);
+_Py_COMP_DIAG_POP
                     if (wstr == NULL)
                         return FALSE;
                     size += Py_SAFE_DOWNCAST((len + 1) * sizeof(wchar_t),
@@ -669,7 +672,10 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     Py_ssize_t len;
 
                     t = PyList_GET_ITEM(value, j);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
                     wstr = PyUnicode_AsUnicodeAndSize(t, &len);
+_Py_COMP_DIAG_POP
                     assert(wstr);
                     wcscpy(P, wstr);
                     P += (len + 1);

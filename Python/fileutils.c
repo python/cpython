@@ -1010,7 +1010,10 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     struct _stat wstatbuf;
     const wchar_t *wpath;
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wpath = _PyUnicode_AsUnicode(path);
+_Py_COMP_DIAG_POP
     if (wpath == NULL)
         return -2;
 
@@ -1455,7 +1458,10 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wpath = _PyUnicode_AsUnicode(path);
+_Py_COMP_DIAG_POP
     if (wpath == NULL)
         return NULL;
 
