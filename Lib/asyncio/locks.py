@@ -433,7 +433,7 @@ class BoundedSemaphore(Semaphore):
 # and a 'broken' state in which all tasks get the exception.
 
 class Barrier(mixins._LoopBoundMixin):
-    """Asynchronous equivalent to threading.Barrier 
+    """Asynchronous equivalent to threading.Barrier
 
     Implements a Barrier.
     Useful for synchronizing a fixed number of tasks at known synchronization
@@ -445,18 +445,18 @@ class Barrier(mixins._LoopBoundMixin):
         """Create a barrier, initialised to 'parties' tasks.
         'action' is a callable which, when supplied, will be called by one of
         the tasks after they have all entered the barrier and just prior to
-        releasing them all. 
+        releasing them all.
         """
         super().__init__(loop=loop)
         if parties < 1:
             raise ValueError('parties must be > 0')
 
         self._waiting = Event()     # used notify all waiting tasks
-        self._blocking = Event()    # used block tasks while wainting tasks are draining or broken 
+        self._blocking = Event()    # used block tasks while wainting tasks are draining or broken
         self._action = action
         self._parties = parties
         self._state = 0             # 0 filling, 1, draining, -1 resetting, -2 broken
-        self._count = 0             # count waiting tasks 
+        self._count = 0             # count waiting tasks
 
     def __repr__(self):
         res = super().__repr__()
@@ -494,7 +494,7 @@ class Barrier(mixins._LoopBoundMixin):
         if self._state in (-1, 1):
             # It is draining or resetting, wait until done
             await self._blocking.wait()
-    
+
         #see if the barrier is in a broken state
         if self._state < 0:
             raise BrokenBarrierError
@@ -515,7 +515,7 @@ class Barrier(mixins._LoopBoundMixin):
             self._state = -2
             self._blocking.clear()
             self._waiting.set()
-            raise 
+            raise
 
     # Wait in the barrier until we are released.  Raise an exception
     # if the barrier is reset or broken.
@@ -529,7 +529,7 @@ class Barrier(mixins._LoopBoundMixin):
     # If we are the last tasks to exit the barrier, signal any tasks
     # waiting for the barrier to drain.
     def _exit(self):
-        if self._count == 0: 
+        if self._count == 0:
             if self._state == 1:
                 self._state = 0
             elif self._state == -1:
@@ -543,7 +543,7 @@ class Barrier(mixins._LoopBoundMixin):
         Any tasks currently waiting will get the BrokenBarrier exception
         raised.
         """
-        if self._count > 0: 
+        if self._count > 0:
             if self._state in (0, 1):
                 #reset the barrier, waking up tasks
                 self._state = -1
