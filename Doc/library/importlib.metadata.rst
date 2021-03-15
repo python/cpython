@@ -79,15 +79,43 @@ Entry points are represented by ``EntryPoint`` instances;
 each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
 a ``.load()`` method to resolve the value.  There are also ``.module``,
 ``.attr``, and ``.extras`` attributes for getting the components of the
-``.value`` attribute::
+``.value`` attribute.
+
+Query all entry points::
 
     >>> eps = entry_points()  # doctest: +SKIP
+
+The ``entry_points()`` function returns an ``EntryPoints`` object,
+a sequence of all ``EntryPoint`` objects with ``names`` and ``groups``
+attributes for convenience::
+
     >>> sorted(eps.groups)  # doctest: +SKIP
     ['console_scripts', 'distutils.commands', 'distutils.setup_keywords', 'egg_info.writers', 'setuptools.installation']
+
+``EntryPoints`` has a ``select`` method to select entry points
+matching specific properties. Select entry points in the
+``console_scripts`` group::
+
     >>> scripts = eps.select(group='console_scripts')  # doctest: +SKIP
+
+Equivalently, since ``entry_points`` passes keyword arguments
+through to select::
+
+    >>> scripts = entry_points(group='console_scripts')  # doctest: +SKIP
+
+Pick out a specific script named "wheel" (found in the wheel project)::
+
     >>> 'wheel' in scripts.names  # doctest: +SKIP
     True
     >>> wheel = scripts['wheel']  # doctest: +SKIP
+
+Equivalently, query for that entry point during selection::
+
+    >>> (wheel,) = entry_points(group='console_scripts', name='wheel')  # doctest: +SKIP
+    >>> (wheel,) = entry_points().select(group='console_scripts', name='wheel')  # doctest: +SKIP
+
+Inspect the resolved entry point::
+
     >>> wheel  # doctest: +SKIP
     EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')
     >>> wheel.module  # doctest: +SKIP
@@ -105,6 +133,17 @@ and usually a client will wish to resolve all entry points for a particular
 group.  Read `the setuptools docs
 <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_
 for more information on entry points, their definition, and usage.
+
+*Compatibility Note*
+
+The "selectable" entry points were introduced in ``importlib_metadata``
+3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
+no parameters and always returned a dictionary of entry points, keyed
+by group. For compatibility, if no parameters are passed to entry_points,
+a ``SelectableGroups`` object is returned, implementing that dict
+interface. In the future, calling ``entry_points`` with no parameters
+will return an ``EntryPoints`` object. Users should rely on the selection
+interface to retrieve entry points by group.
 
 
 .. _metadata:
@@ -198,6 +237,8 @@ Python packages or modules::
 
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
+
+.. versionadded:: 3.10
 
 
 Distributions

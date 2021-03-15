@@ -690,6 +690,19 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+importlib.metadata
+------------------
+
+Feature parity with ``importlib_metadata`` 3.7.
+
+:func:`importlib.metadata.entry_points` now provides a nicer experience
+for selecting entry points by group and name through a new
+:class:`importlib.metadata.EntryPoints` class.
+
+Added :func:`importlib.metadata.packages_distributions` for resolving
+top-level Python modules and packages to their
+:class:`importlib.metadata.Distribution`.
+
 inspect
 -------
 
