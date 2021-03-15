@@ -1822,6 +1822,12 @@ expression support in the :mod:`re` module).
    ZERO.  Formally a decimal character is a character in the Unicode
    General Category "Nd".
 
+   For example::
+
+      >>> '0123456789'.isdecimal()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal() #ARABIC-INDIC DIGIT ZERO TO NINE
+      True
 
 .. method:: str.isdigit()
 
@@ -1831,7 +1837,6 @@ expression support in the :mod:`re` module).
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
-
 
 .. method:: str.isidentifier()
 
