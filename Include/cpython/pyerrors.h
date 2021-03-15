@@ -74,6 +74,11 @@ PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
 PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
+static inline int _PyExceptionClass_Check(PyObject *exc) {
+    return (PyType_Check(exc) &&
+            PyType_FastSubclass((PyTypeObject *)(exc), Py_TPFLAGS_BASE_EXC_SUBCLASS));
+}
+
 /* Context manipulation (PEP 3134) */
 
 PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
