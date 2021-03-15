@@ -369,11 +369,13 @@ Process-wide parameters
    of the ``argv[0]`` argument to the :c:func:`main` function of the program
    (converted to wide characters).
    This is used by :c:func:`Py_GetPath` and some other functions below to find
-   the Python run-time libraries relative to the interpreter executable.  The
-   default value is ``'python'``.  The argument should point to a
-   zero-terminated wide character string in static storage whose contents will not
-   change for the duration of the program's execution.  No code in the Python
-   interpreter will change the contents of this storage.
+   the Python run-time libraries relative to the interpreter executable.
+   Without calling this function, a program name is inferred as described in
+   :c:member:`PyConfig.program_name`.  The argument should point to a
+   zero-terminated wide character string.  The string will be copied, so the
+   caller may free the corresponding memory afterwards.  The argument to this
+   function may be ``NULL`` or an empty string, in which case the function does
+   nothing.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
