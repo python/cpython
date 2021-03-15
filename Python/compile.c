@@ -3397,6 +3397,8 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
     }
 
     VISIT(c, expr, value);
+    /* Mark POP_TOP as artificial */
+    c->u->u_lineno = -1;
     ADDOP(c, POP_TOP);
     return 1;
 }
