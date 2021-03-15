@@ -4,7 +4,6 @@ import abc
 import csv
 import sys
 import email
-import inspect
 import pathlib
 import zipfile
 import operator
@@ -12,7 +11,7 @@ import warnings
 import functools
 import itertools
 import posixpath
-import collections.abc
+import collections
 
 from ._itertools import unique_everseen
 
@@ -33,6 +32,7 @@ __all__ = [
     'entry_points',
     'files',
     'metadata',
+    'packages_distributions',
     'requires',
     'version',
 ]
@@ -158,21 +158,33 @@ class EntryPoints(tuple):
     __slots__ = ()
 
     def __getitem__(self, name):  # -> EntryPoint:
+        """
+        Get the EntryPoint in self matching name.
+        """
         try:
             return next(iter(self.select(name=name)))
         except StopIteration:
             raise KeyError(name)
 
     def select(self, **params):
+        """
+        Select entry points from self that match the
+        given parameters (typically group and/or name).
+        """
         return EntryPoints(ep for ep in self if ep.matches(**params))
 
     @property
     def names(self):
+        """
+        Return the set of all names of all entry points.
+        """
         return set(ep.name for ep in self)
 
     @property
     def groups(self):
         """
+        Return the set of all groups of all entry points.
+
         For coverage while SelectableGroups is present.
         >>> EntryPoints().groups
         set()
@@ -185,6 +197,9 @@ class EntryPoints(tuple):
 
 
 def flake8_bypass(func):
+    # defer inspect import as performance optimization.
+    import inspect
+
     is_flake8 = any('flake8' in str(frame.filename) for frame in inspect.stack()[:5])
     return func if not is_flake8 else lambda: None
 
@@ -813,6 +828,7 @@ def packages_distributions() -> Mapping[str, List[str]]:
     Return a mapping of top-level packages to their
     distributions.
 
+    >>> import collections.abc
     >>> pkgs = packages_distributions()
     >>> all(isinstance(dist, collections.abc.Sequence) for dist in pkgs.values())
     True
