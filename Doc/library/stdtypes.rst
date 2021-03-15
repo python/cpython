@@ -1776,6 +1776,20 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the "Alphabetic" property defined in the Unicode Standard.
 
+   For example::
+
+      >>> 'a commom word'.isalpha()
+      False
+      >>> 'acommomword'.isalpha()
+      True
+      >>> 'µ'.isalpha()
+      True
+      >>> 'æ'.isalpha()
+      True
+      >>> 'Ŧ'.isalpha()
+      True
+
+   See Unicode Properties section in :ref:`unicode-howto`.
 
 .. method:: str.isascii()
 
