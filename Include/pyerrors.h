@@ -47,6 +47,10 @@ PyAPI_FUNC(void) PyException_SetCause(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyException_GetContext(PyObject *);
 PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
 
+static inline int _PyExceptionClass_Check(PyObject *exc) {
+    return (PyType_Check(exc) &&
+            PyType_FastSubclass((PyTypeObject *)(exc), Py_TPFLAGS_BASE_EXC_SUBCLASS));
+}
 #define PyExceptionClass_Check(exc) _PyExceptionClass_Check(_PyObject_CAST(exc))
 
 #define PyExceptionInstance_Check(x)                    \
