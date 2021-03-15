@@ -1161,7 +1161,9 @@ functions.
    |              | to ``'a'``.                                 |
    +--------------+---------------------------------------------+
    | *format*     | Use the specified format string for the     |
-   |              | handler.                                    |
+   |              | handler. Defaults to attributes             |
+   |              | ``levelname``, ``name`` and ``message``     |
+   |              | separated by colons.                        |
    +--------------+---------------------------------------------+
    | *datefmt*    | Use the specified date/time format, as      |
    |              | accepted by :func:`time.strftime`.          |
