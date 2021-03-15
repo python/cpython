@@ -1,2 +1,0 @@
-Convert ``PyExceptionClass_Check`` from macro to static inline function.
-Patch by Erlend E. Aasland.
