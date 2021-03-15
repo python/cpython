@@ -32,6 +32,10 @@ class Vec:
     >>> a.dot(b)
     10
 
+    and printed in vector notation
+    >>> print(a)
+    <1 2 3>
+
     """
 
     def __init__(self, *v):
@@ -48,6 +52,10 @@ class Vec:
     def __repr__(self):
         args = ', '.join([repr(x) for x in self.v])
         return f'{type(self).__name__}({args})'
+
+    def __str__(self):
+        components = ' '.join([str(x) for x in self.v])
+        return f'<{components}>'
 
     def __len__(self):
         return len(self.v)
