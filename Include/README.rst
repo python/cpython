@@ -28,7 +28,7 @@ Include/cpython: CPython implementation details
 ===============================================
 
 ``Include/cpython/`` contains the public API that is excluded from the
-Limited and Stable API.  :pep:`384` introduced the ``Py_LIMITED_API``
+Limited and Stable ABI.  :pep:`384` introduced the ``Py_LIMITED_API``
 define to exclude functions from the Limited API.  When a new API is
 introduced, it has to be explicitly excluded using
 ``#ifndef Py_LIMITED_API``.
