@@ -601,7 +601,7 @@ Why is there no goto?
 ---------------------
 
 In the 1970s people realized that unrestricted goto could lead
-to messy "sphagetti" code that was hard to understand and revise.
+to messy "spaghetti" code that was hard to understand and revise.
 In a high-level language, it is also unneeded as long as there
 are ways to branch (in Python, with ``if`` statements and ``or``,
 ``and``, and ``if-else`` expressions) and loop (with ``while``
