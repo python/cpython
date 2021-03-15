@@ -425,7 +425,9 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
 static inline int _py_is_immortal(PyObject *);  // forward
+#endif
 
 static inline void _Py_INCREF(PyObject *op)
 {
@@ -691,19 +693,15 @@ times.
 #error "the immortal objects API is not available in the limited API"
 #endif
 
-// This is a static version of _PyObject_IsImmortal(), for the sake
-// of other static functions, like _Py_SET_REFCNT() and _Py_INCREF().
+#ifdef Py_IMMORTAL_CONST_REFCOUNTS
+// We need this function since _PyObject_IMMORTAL_BIT is defined
+// in cpython/object.h and not available for use above.  Otherwise
+// we wouldn't need this function.
 static inline int _py_is_immortal(PyObject *op)
 {
-#ifdef Py_IMMORTAL_CONST_REFCOUNTS
     return (op->ob_refcnt & _PyObject_IMMORTAL_BIT) != 0;
-#else
-#ifndef _Py_IMMORTAL_OBJECTS
-    extern int _PyObject_IsImmortal(PyObject *);
-#endif
-    return _PyObject_IsImmortal(op);
-#endif
 }
+#endif
 
 
 static inline int
