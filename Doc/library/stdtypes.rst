@@ -1886,6 +1886,20 @@ expression support in the :mod:`re` module).
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
 
+   For example::
+
+      >>> 'a commom word'.isalpha()
+      False
+      >>> 'acommomword'.isalpha()
+      True
+      >>> 'µ'.isalpha()
+      True
+      >>> 'æ'.isalpha()
+      True
+      >>> 'Ŧ'.isalpha()
+      True
+
+   See Unicode Properties section in :ref:`unicode-howto`.
 
 .. method:: str.isascii()
 
