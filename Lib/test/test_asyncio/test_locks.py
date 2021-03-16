@@ -11,8 +11,8 @@ import functools
 STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'
     r'\[(?P<extras>'
-    r'(set|unset|locked|unlocked)(, value:\d)?(, waiters:\d+)?(, count:\d+/\d+)?(, state:^-?\d)?'
-    r'(, count:\d+\/\d+)?(, (set|unset))?(, state:(-2|-1|0|1))?' # this line to repr barrier object
+    r'(set|unset|locked|unlocked)(, value:\d)?(, waiters:\d+)?'
+    r'(, count:\d+\/\d+)?(, (set|unset))?(, state:(-2|-1|0|1))?' # this line to repr barrier
     r')\]>\Z'
 )
 RGX_REPR = re.compile(STR_RGX_REPR)
@@ -71,7 +71,7 @@ class LockTests(test_utils.TestCase):
                 cls(loop=self.loop)
 
         # Barrier object has a positional paramater
-        # so check alone
+        # so test alone
         cls = asyncio.Barrier
         with self.assertRaisesRegex(
             TypeError,
