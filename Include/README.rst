@@ -12,32 +12,36 @@ Include: Limited API and Stable ABI
 ===================================
 
 ``Include/``, excluding the ``cpython`` and ``internal`` subdirectories,
-contains the public Limited API and the Stable ABI.  The Stable ABI is
-defined by :pep:`384`.
+contains the public Limited API (Application Programming Interface) and
+the Stable ABI (Application Binary Interface).  :pep:`384` defined the
+Stable ABI and the Limited API; two related, but distinct concepts.
+The Stable ABI promises binary compatibility across subsequent versions of
+CPython 3.x, given that the source code restricts itself to the Limited
+API.  The Limited API is a subset of the C API.
 
-*Note:* Functions stealing references or returning borrowed references
-*must not* be added to the Limited API or the Stable ABI.  A strong
-reference *must* be returned.  The API in ``Include/`` should not expose
-or leak implementation details.
+Guidelines for expanding the Limited API:
 
-Please start a public discussion before adding new functions or macros to
-the Limited API.
-
-Functions or macros with a ``_Py`` prefix do not belong in ``Include/``.
+- Functions *must not* steal references
+- Functions *must not* return borrowed references
+- Functions returning references *must* return a strong reference
+- Macros should not expose implementation details
+- Please start a public discussion before expanding the API
+- Functions or macros with a ``_Py`` prefix do not belong in ``Include/``.
 
 
 Include/cpython: CPython implementation details
 ===============================================
 
 ``Include/cpython/`` contains the public API that is excluded from the
-Limited API and the Stable ABI.  :pep:`384` introduced the
-``Py_LIMITED_API`` define to exclude functions from the Limited API.
-When a new function or macro is introduced, it has to be explicitly
-excluded using ``#ifndef Py_LIMITED_API``.
+Limited API and the Stable ABI.  When a new function or macro is
+introduced, it has to be explicitly excluded from the Limited API using
+``#ifndef Py_LIMITED_API``.
 
-*Note:* Functions stealing references or returning borrowed references
-*must not* be added to ``Include/cpython/``.  A strong reference *must*
-be returned.
+Guidelines for expanding the public API:
+
+- Functions *must not* steal references
+- Functions *must not* return borrowed references
+- Functions returning references *must* return a strong reference
 
 
 Include/internal: The internal API
@@ -52,13 +56,13 @@ Functions or structures in ``Include/internal/`` defined with
 exposed only for specific use cases like debuggers and profilers.
 
 
-With extern keyword
--------------------
+With the extern keyword
+-----------------------
 
-Functions in ``Include/internal/`` defined with ``extern`` *must not and can
-not* be used outside the CPython code base.  Only built-in stdlib
-extensions (built with ``Py_BUILD_CORE_BUILTIN`` macro defined) can use
-such functions.
+Functions in ``Include/internal/`` defined with the ``extern`` keyword
+*must not and can not* be used outside the CPython code base.  Only
+built-in stdlib extensions (built with the ``Py_BUILD_CORE_BUILTIN``
+macro defined) can use such functions.
 
 When in doubt, new internal C functions should be defined in
-``Include/internal`` using ``extern``.
+``Include/internal`` using the ``extern`` keyword.
