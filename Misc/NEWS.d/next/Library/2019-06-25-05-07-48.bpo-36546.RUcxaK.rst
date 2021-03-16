@@ -1,4 +1,0 @@
-The *dist* argument for statistics.quantiles() is now positional only. The
-current name doesn't reflect that the argument can be either a dataset or a
-distribution.  Marking the parameter as positional avoids confusion and
-makes it possible to change the name later.

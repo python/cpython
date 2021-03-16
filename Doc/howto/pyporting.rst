@@ -125,7 +125,7 @@ Once you have your code well-tested you are ready to begin porting your code to
 Python 3! But to fully understand how your code is going to change and what
 you want to look out for while you code, you will want to learn what changes
 Python 3 makes in terms of Python 2. Typically the two best ways of doing that
-is reading the `"What's New"`_ doc for each release of Python 3 and the
+is reading the :ref:`"What's New" <whatsnew-index>` doc for each release of Python 3 and the
 `Porting to Python 3`_ book (which is free online). There is also a handy
 `cheat sheet`_ from the Python-Future project.
 
@@ -308,10 +308,10 @@ If for some reason that doesn't work then you should make the version check be
 against Python 2 and not Python 3. To help explain this, let's look at an
 example.
 
-Let's pretend that you need access to a feature of importlib_ that
+Let's pretend that you need access to a feature of :mod:`importlib` that
 is available in Python's standard library since Python 3.3 and available for
 Python 2 through importlib2_ on PyPI. You might be tempted to write code to
-access e.g. the ``importlib.abc`` module by doing the following::
+access e.g. the :mod:`importlib.abc` module by doing the following::
 
   import sys
 
@@ -432,12 +432,10 @@ can also explicitly state whether your APIs use textual or binary data, helping
 to make sure everything functions as expected in both versions of Python.
 
 
-.. _2to3: https://docs.python.org/3/library/2to3.html
 .. _caniusepython3: https://pypi.org/project/caniusepython3
 .. _cheat sheet: http://python-future.org/compatible_idioms.html
 .. _coverage.py: https://pypi.org/project/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
-.. _importlib: https://docs.python.org/3/library/importlib.html#module-importlib
 .. _importlib2: https://pypi.org/project/importlib2
 .. _Modernize: https://python-modernize.readthedocs.io/
 .. _mypy: http://mypy-lang.org/
@@ -452,7 +450,5 @@ to make sure everything functions as expected in both versions of Python.
 .. _six: https://pypi.org/project/six
 .. _tox: https://pypi.org/project/tox
 .. _trove classifier: https://pypi.org/classifiers
-
-.. _"What's New": https://docs.python.org/3/whatsnew/index.html
 
 .. _Why Python 3 exists: https://snarky.ca/why-python-3-exists

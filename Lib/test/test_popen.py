@@ -7,6 +7,9 @@ import unittest
 from test import support
 import os, sys
 
+if not hasattr(os, 'popen'):
+    raise unittest.SkipTest("need os.popen()")
+
 # Test that command-lines get down as we expect.
 # To do this we execute:
 #    python -c "import sys;print(sys.argv)" {rest_of_commandline}
@@ -44,10 +47,11 @@ class PopenTest(unittest.TestCase):
 
     def test_return_code(self):
         self.assertEqual(os.popen("exit 0").close(), None)
+        status = os.popen("exit 42").close()
         if os.name == 'nt':
-            self.assertEqual(os.popen("exit 42").close(), 42)
+            self.assertEqual(status, 42)
         else:
-            self.assertEqual(os.popen("exit 42").close(), 42 << 8)
+            self.assertEqual(os.waitstatus_to_exitcode(status), 42)
 
     def test_contextmanager(self):
         with os.popen("echo hello") as f:

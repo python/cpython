@@ -12,7 +12,7 @@
 
 #ifdef MS_WINDOWS
 
-#include "structmember.h"
+#include "structmember.h"         // PyMemberDef
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -271,12 +271,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         }
         else
             self->fd = -1;
-    }
-
-    if (PyFloat_Check(nameobj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float");
-        return -1;
     }
 
     fd = _PyLong_AsInt(nameobj);

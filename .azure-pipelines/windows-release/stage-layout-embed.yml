@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), eq(variables['DoEmbed'], 'true'))
 
   pool:
-    vmName: win2016-vs2017
+    vmImage: windows-2019
 
   workspace:
     clean: all
@@ -18,6 +18,11 @@ jobs:
       amd64:
         Name: amd64
         Python: $(Build.BinariesDirectory)\bin\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+      arm64:
+        Name: arm64
+        HostArch: amd64
+        Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
 
   steps:

@@ -69,6 +69,27 @@ _codecs_register(PyObject *module, PyObject *search_function)
 }
 
 /*[clinic input]
+_codecs.unregister
+    search_function: object
+    /
+
+Unregister a codec search function and clear the registry's cache.
+
+If the search function is not registered, do nothing.
+[clinic start generated code]*/
+
+static PyObject *
+_codecs_unregister(PyObject *module, PyObject *search_function)
+/*[clinic end generated code: output=1f0edee9cf246399 input=dd7c004c652d345e]*/
+{
+    if (PyCodec_Unregister(search_function) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 _codecs.lookup
     encoding: str
     /
@@ -138,25 +159,6 @@ _codecs_decode_impl(PyObject *module, PyObject *obj, const char *encoding,
 }
 
 /* --- Helpers ------------------------------------------------------------ */
-
-/*[clinic input]
-_codecs._forget_codec
-
-    encoding: str
-    /
-
-Purge the named codec from the internal codec lookup cache
-[clinic start generated code]*/
-
-static PyObject *
-_codecs__forget_codec_impl(PyObject *module, const char *encoding)
-/*[clinic end generated code: output=0bde9f0a5b084aa2 input=18d5d92d0e386c38]*/
-{
-    if (_PyCodec_Forget(encoding) < 0) {
-        return NULL;
-    };
-    Py_RETURN_NONE;
-}
 
 static
 PyObject *codec_tuple(PyObject *decoded,
@@ -992,6 +994,7 @@ _codecs_lookup_error_impl(PyObject *module, const char *name)
 
 static PyMethodDef _codecs_functions[] = {
     _CODECS_REGISTER_METHODDEF
+    _CODECS_UNREGISTER_METHODDEF
     _CODECS_LOOKUP_METHODDEF
     _CODECS_ENCODE_METHODDEF
     _CODECS_DECODE_METHODDEF
@@ -1035,17 +1038,20 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
-    _CODECS__FORGET_CODEC_METHODDEF
     {NULL, NULL}                /* sentinel */
+};
+
+static PyModuleDef_Slot _codecs_slots[] = {
+    {0, NULL}
 };
 
 static struct PyModuleDef codecsmodule = {
         PyModuleDef_HEAD_INIT,
         "_codecs",
         NULL,
-        -1,
+        0,
         _codecs_functions,
-        NULL,
+        _codecs_slots,
         NULL,
         NULL,
         NULL
@@ -1054,5 +1060,5 @@ static struct PyModuleDef codecsmodule = {
 PyMODINIT_FUNC
 PyInit__codecs(void)
 {
-        return PyModule_Create(&codecsmodule);
+    return PyModuleDef_Init(&codecsmodule);
 }

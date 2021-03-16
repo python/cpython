@@ -372,7 +372,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file)
+        f = open(file, encoding='utf-8')
     except OSError:
         return None
     with f:
@@ -401,6 +401,7 @@ def _default_mime_types():
         '.Z': 'compress',
         '.bz2': 'bzip2',
         '.xz': 'xz',
+        '.br': 'br',
         }
 
     # Before adding new types, make sure they are either registered with IANA,
@@ -447,6 +448,7 @@ def _default_mime_types():
         '.dvi'    : 'application/x-dvi',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',
+        '.h5'     : 'application/x-hdf5',
         '.latex'  : 'application/x-latex',
         '.mif'    : 'application/x-mif',
         '.cdf'    : 'application/x-netcdf',
@@ -479,10 +481,19 @@ def _default_mime_types():
         '.wsdl'   : 'application/xml',
         '.xpdl'   : 'application/xml',
         '.zip'    : 'application/zip',
+        '.3gp'    : 'audio/3gpp',
+        '.3gpp'   : 'audio/3gpp',
+        '.3g2'    : 'audio/3gpp2',
+        '.3gpp2'  : 'audio/3gpp2',
+        '.aac'    : 'audio/aac',
+        '.adts'   : 'audio/aac',
+        '.loas'   : 'audio/aac',
+        '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
+        '.opus'   : 'audio/opus',
         '.aif'    : 'audio/x-aiff',
         '.aifc'   : 'audio/x-aiff',
         '.aiff'   : 'audio/x-aiff',
@@ -563,7 +574,7 @@ def _default_mime_types():
 _default_mime_types()
 
 
-if __name__ == '__main__':
+def _main():
     import getopt
 
     USAGE = """\
@@ -607,3 +618,7 @@ More than one type argument may be given.
             guess, encoding = guess_type(gtype, strict)
             if not guess: print("I don't know anything about type", gtype)
             else: print('type:', guess, 'encoding:', encoding)
+
+
+if __name__ == '__main__':
+    _main()

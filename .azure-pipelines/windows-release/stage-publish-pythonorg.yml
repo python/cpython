@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
 
   pool:
-    #vmName: win2016-vs2017
+    #vmImage: windows-2019
     name: 'Windows Release'
 
   workspace:
@@ -38,7 +38,6 @@ jobs:
     inputs:
       artifactName: embed
       downloadPath: $(Build.BinariesDirectory)
-
 
   - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact from $(BuildToPublish): Doc'
@@ -75,6 +74,11 @@ jobs:
       pipeline: Windows-Release
       buildVersionToDownload: specific
       buildId: $(BuildToPublish)
+
+  - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
+    displayName: 'Prevent publishing ARM/ARM64 packages'
+    workingDirectory: '$(Build.BinariesDirectory)\embed'
+    condition: and(succeeded(), not(variables['PublishArmPackages']))
 
 
   - template: ./gpg-sign.yml

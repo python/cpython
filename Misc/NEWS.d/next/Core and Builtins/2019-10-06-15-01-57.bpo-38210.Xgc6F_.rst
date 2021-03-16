@@ -1,2 +1,0 @@
-Remove unecessary intersection and update set operation in dictview with
-empty set. (Contributed by Dong-hee Na in :issue:`38210`.)

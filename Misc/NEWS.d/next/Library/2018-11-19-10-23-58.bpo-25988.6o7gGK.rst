@@ -1,2 +1,0 @@
-The abstract base classes in :mod:`collections.abc` no longer are exposed in
-the regular :mod:`collections` module.

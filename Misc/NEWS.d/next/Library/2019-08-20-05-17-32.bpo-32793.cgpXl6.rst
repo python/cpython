@@ -1,1 +1,0 @@
-Fix a duplicated debug message when :meth:`smtplib.SMTP.connect` is called.

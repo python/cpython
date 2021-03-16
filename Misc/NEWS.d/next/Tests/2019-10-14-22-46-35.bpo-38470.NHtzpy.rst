@@ -1,3 +1,0 @@
-Fix ``test_compileall.test_compile_dir_maxlevels()`` on Windows without long
-path support: only create 3 subdirectories instead of between 20 and 100
-subdirectories.

@@ -1,2 +1,0 @@
-Improve error reporting for corrupt zip files with bad zip64 extra data. Patch
-by Daniel Hillier.

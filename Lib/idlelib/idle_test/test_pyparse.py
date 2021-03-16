@@ -18,7 +18,7 @@ class ParseMapTest(unittest.TestCase):
         # trans is the production instance of ParseMap, used in _study1
         parser = pyparse.Parser(4, 4)
         self.assertEqual('\t a([{b}])b"c\'d\n'.translate(pyparse.trans),
-                          'xxx(((x)))x"x\'x\n')
+                         'xxx(((x)))x"x\'x\n')
 
 
 class PyParseTest(unittest.TestCase):
@@ -58,17 +58,33 @@ class PyParseTest(unittest.TestCase):
         p = self.parser
         setcode = p.set_code
         start = p.find_good_parse_start
+        def char_in_string_false(index): return False
+
+        # First line starts with 'def' and ends with ':', then 0 is the pos.
+        setcode('def spam():\n')
+        eq(start(char_in_string_false), 0)
+
+        # First line begins with a keyword in the list and ends
+        # with an open brace, then 0 is the pos.  This is how
+        # hyperparser calls this function as the newline is not added
+        # in the editor, but rather on the call to setcode.
+        setcode('class spam( ' + ' \n')
+        eq(start(char_in_string_false), 0)
 
         # Split def across lines.
         setcode('"""This is a module docstring"""\n'
-               'class C():\n'
-               '    def __init__(self, a,\n'
-               '                 b=True):\n'
-               '        pass\n'
-               )
+                'class C:\n'
+                '    def __init__(self, a,\n'
+                '                 b=True):\n'
+                '        pass\n'
+                )
+        pos0, pos = 33, 42  # Start of 'class...', '    def' lines.
 
-        # No value sent for is_char_in_string().
-        self.assertIsNone(start())
+        # Passing no value or non-callable should fail (issue 32989).
+        with self.assertRaises(TypeError):
+            start()
+        with self.assertRaises(TypeError):
+            start(False)
 
         # Make text look like a string.  This returns pos as the start
         # position, but it's set to None.
@@ -76,40 +92,41 @@ class PyParseTest(unittest.TestCase):
 
         # Make all text look like it's not in a string.  This means that it
         # found a good start position.
-        eq(start(is_char_in_string=lambda index: False), 44)
+        eq(start(char_in_string_false), pos)
 
         # If the beginning of the def line is not in a string, then it
         # returns that as the index.
-        eq(start(is_char_in_string=lambda index: index > 44), 44)
+        eq(start(is_char_in_string=lambda index: index > pos), pos)
         # If the beginning of the def line is in a string, then it
         # looks for a previous index.
-        eq(start(is_char_in_string=lambda index: index >= 44), 33)
+        eq(start(is_char_in_string=lambda index: index >= pos), pos0)
         # If everything before the 'def' is in a string, then returns None.
         # The non-continuation def line returns 44 (see below).
-        eq(start(is_char_in_string=lambda index: index < 44), None)
+        eq(start(is_char_in_string=lambda index: index < pos), None)
 
         # Code without extra line break in def line - mostly returns the same
         # values.
         setcode('"""This is a module docstring"""\n'
-               'class C():\n'
-               '    def __init__(self, a, b=True):\n'
-               '        pass\n'
-               )
-        eq(start(is_char_in_string=lambda index: False), 44)
-        eq(start(is_char_in_string=lambda index: index > 44), 44)
-        eq(start(is_char_in_string=lambda index: index >= 44), 33)
+                'class C:\n'
+                '    def __init__(self, a, b=True):\n'
+                '        pass\n'
+                )  # Does not affect class, def positions.
+        eq(start(char_in_string_false), pos)
+        eq(start(is_char_in_string=lambda index: index > pos), pos)
+        eq(start(is_char_in_string=lambda index: index >= pos), pos0)
         # When the def line isn't split, this returns which doesn't match the
         # split line test.
-        eq(start(is_char_in_string=lambda index: index < 44), 44)
+        eq(start(is_char_in_string=lambda index: index < pos), pos)
 
     def test_set_lo(self):
         code = (
                 '"""This is a module docstring"""\n'
-                'class C():\n'
+                'class C:\n'
                 '    def __init__(self, a,\n'
                 '                 b=True):\n'
                 '        pass\n'
                 )
+        pos = 42
         p = self.parser
         p.set_code(code)
 
@@ -122,8 +139,8 @@ class PyParseTest(unittest.TestCase):
         self.assertEqual(p.code, code)
 
         # An index that is preceded by a newline.
-        p.set_lo(44)
-        self.assertEqual(p.code, code[44:])
+        p.set_lo(pos)
+        self.assertEqual(p.code, code[pos:])
 
     def test_study1(self):
         eq = self.assertEqual

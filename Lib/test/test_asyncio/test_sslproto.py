@@ -2,7 +2,7 @@
 
 import logging
 import socket
-import sys
+from test import support
 import unittest
 import weakref
 from unittest import mock
@@ -15,6 +15,7 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
+from test import support
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -162,7 +163,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
     PAYLOAD_SIZE = 1024 * 100
-    TIMEOUT = 60
+    TIMEOUT = support.LONG_TIMEOUT
 
     def new_loop(self):
         raise NotImplementedError
@@ -272,7 +273,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left if SSL is closed uncleanly
         client_context = weakref.ref(client_context)
@@ -333,7 +335,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
@@ -489,7 +492,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -617,7 +621,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     *addr,
                     ssl=client_sslctx,
                     server_hostname='',
-                    ssl_handshake_timeout=10.0),
+                    ssl_handshake_timeout=support.SHORT_TIMEOUT),
                 0.5)
 
         with self.tcp_server(server,
@@ -653,13 +657,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            with self.assertWarns(DeprecationWarning):
-                reader, writer = await asyncio.open_connection(
-                    *addr,
-                    ssl=client_sslctx,
-                    server_hostname='',
-                    loop=self.loop,
-                    ssl_handshake_timeout=1.0)
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                ssl_handshake_timeout=1.0)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -693,13 +695,11 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            with self.assertWarns(DeprecationWarning):
-                reader, writer = await asyncio.open_connection(
-                    *addr,
-                    ssl=client_sslctx,
-                    server_hostname='',
-                    loop=self.loop,
-                    ssl_handshake_timeout=1.0)
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='',
+                ssl_handshake_timeout=support.LOOPBACK_TIMEOUT)
 
         with self.tcp_server(server,
                              max_clients=1,
@@ -730,12 +730,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 sock.close()
 
         async def client(addr):
-            with self.assertWarns(DeprecationWarning):
-                reader, writer = await asyncio.open_connection(
-                    *addr,
-                    ssl=client_sslctx,
-                    server_hostname='',
-                    loop=self.loop)
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='')
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')

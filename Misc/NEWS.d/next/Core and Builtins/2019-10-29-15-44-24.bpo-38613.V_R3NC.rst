@@ -1,3 +1,0 @@
-Optimized some set operations (e.g. ``|``, ``^``, and ``-``) of
-``dict_keys``. ``d.keys() | other`` was slower than ``set(d) | other`` but
-they are almost same performance for now.

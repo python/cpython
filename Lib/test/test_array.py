@@ -2,15 +2,16 @@
    Roger E. Masse
 """
 
+import collections.abc
 import unittest
 from test import support
+from test.support import os_helper
 from test.support import _2G
 import weakref
 import pickle
 import operator
 import struct
 import sys
-import warnings
 
 import array
 from array import _array_reconstructor as array_reconstructor
@@ -28,6 +29,10 @@ class ArraySubclassWithKwargs(array.array):
 typecodes = 'ubBhHiIlLfdqQ'
 
 class MiscTest(unittest.TestCase):
+
+    def test_array_is_sequence(self):
+        self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
+        self.assertIsInstance(array.array("B"), collections.abc.Reversible)
 
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
@@ -331,6 +336,67 @@ class BaseTest:
         self.assertEqual(list(empit), [self.outside])
         self.assertEqual(list(a), list(self.example) + [self.outside])
 
+    def test_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        self.assertEqual(list(reversed(a)), list(iter(a))[::-1])
+
+    def test_reverse_iterator_picking(self):
+        orig = array.array(self.typecode, self.example)
+        data = list(orig)
+        data2 = [self.outside] + data
+        rev_data = data[len(data)-2::-1] + [self.outside]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # initial iterator
+            itorig = reversed(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data)
+            self.assertEqual(list(a), data2)
+
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data[1:])
+            self.assertEqual(list(a), data2)
+
+            # empty iterator
+            for i in range(1, len(data)):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+    def test_exhausted_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        exhit = reversed(a)
+        empit = reversed(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # Pointing past the 0th position.
+        a.insert(0, self.outside)
+        self.assertEqual(list(exhit), [])
+        # The iterator index points past the 0th position so inserting
+        # an element in the beginning does not make it appear.
+        self.assertEqual(list(empit), [])
+        self.assertEqual(list(a), [self.outside] + list(self.example))
+
     def test_insert(self):
         a = array.array(self.typecode, self.example)
         a.insert(0, self.example[0])
@@ -367,13 +433,13 @@ class BaseTest:
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        support.unlink(support.TESTFN)
-        f = open(support.TESTFN, 'wb')
+        os_helper.unlink(os_helper.TESTFN)
+        f = open(os_helper.TESTFN, 'wb')
         try:
             a.tofile(f)
             f.close()
             b = array.array(self.typecode)
-            f = open(support.TESTFN, 'rb')
+            f = open(os_helper.TESTFN, 'rb')
             self.assertRaises(TypeError, b.fromfile)
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
@@ -384,27 +450,27 @@ class BaseTest:
         finally:
             if not f.closed:
                 f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             self.assertRaises(OSError, a.fromfile, f, len(self.example))
         finally:
             f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             f.write(a)
             f.close()
             b = array.array(self.typecode)
-            f = open(support.TESTFN, 'rb')
+            f = open(os_helper.TESTFN, 'rb')
             b.fromfile(f, len(self.example))
             self.assertEqual(b, array.array(self.typecode, self.example))
             self.assertNotEqual(a, b)
@@ -414,7 +480,7 @@ class BaseTest:
         finally:
             if not f.closed:
                 f.close()
-            support.unlink(support.TESTFN)
+            os_helper.unlink(os_helper.TESTFN)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
@@ -425,26 +491,6 @@ class BaseTest:
         self.assertRaises(TypeError, b.fromlist, [None])
         b.fromlist(a.tolist())
         self.assertEqual(a, b)
-
-    def test_tofromstring(self):
-        # Warnings not raised when arguments are incorrect as Argument Clinic
-        # handles that before the warning can be raised.
-        nb_warnings = 2
-        with warnings.catch_warnings(record=True) as r:
-            warnings.filterwarnings("always",
-                                    message=r"(to|from)string\(\) is deprecated",
-                                    category=DeprecationWarning)
-            a = array.array(self.typecode, 2*self.example)
-            b = array.array(self.typecode)
-            self.assertRaises(TypeError, a.tostring, 42)
-            self.assertRaises(TypeError, b.fromstring)
-            self.assertRaises(TypeError, b.fromstring, 42)
-            b.fromstring(a.tostring())
-            self.assertEqual(a, b)
-            if a.itemsize>1:
-                self.assertRaises(ValueError, b.fromstring, "x")
-                nb_warnings += 1
-        self.assertEqual(len(r), nb_warnings)
 
     def test_tofrombytes(self):
         a = array.array(self.typecode, 2*self.example)

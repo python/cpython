@@ -1,1 +1,0 @@
-Set Windows 8 as the minimum required version for API support

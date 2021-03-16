@@ -1,0 +1,2 @@
+Speed up calls to ``filter()`` by using the :pep:`590` ``vectorcall``
+calling convention. Patch by Dong-hee Na.

@@ -32,16 +32,10 @@ parse_qsl_test_cases = [
     (b"&a=b", [(b'a', b'b')]),
     (b"a=a+b&b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
     (b"a=1&a=2", [(b'a', b'1'), (b'a', b'2')]),
-    (";", []),
-    (";;", []),
-    (";a=b", [('a', 'b')]),
-    ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
-    ("a=1;a=2", [('a', '1'), ('a', '2')]),
-    (b";", []),
-    (b";;", []),
-    (b";a=b", [(b'a', b'b')]),
-    (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
-    (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+    (";a=b", [(';a', 'b')]),
+    ("a=a+b;b=b+c", [('a', 'a b;b=b c')]),
+    (b";a=b", [(b';a', b'b')]),
+    (b"a=a+b;b=b+c", [(b'a', b'a b;b=b c')]),
 ]
 
 # Each parse_qs testcase is a two-tuple that contains
@@ -68,16 +62,10 @@ parse_qs_test_cases = [
     (b"&a=b", {b'a': [b'b']}),
     (b"a=a+b&b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
     (b"a=1&a=2", {b'a': [b'1', b'2']}),
-    (";", {}),
-    (";;", {}),
-    (";a=b", {'a': ['b']}),
-    ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
-    ("a=1;a=2", {'a': ['1', '2']}),
-    (b";", {}),
-    (b";;", {}),
-    (b";a=b", {b'a': [b'b']}),
-    (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
-    (b"a=1;a=2", {b'a': [b'1', b'2']}),
+    (";a=b", {';a': ['b']}),
+    ("a=a+b;b=b+c", {'a': ['a b;b=b c']}),
+    (b";a=b", {b';a': [b'b']}),
+    (b"a=a+b;b=b+c", {b'a':[ b'a b;b=b c']}),
 ]
 
 class UrlParseTestCase(unittest.TestCase):
@@ -886,9 +874,45 @@ class UrlParseTestCase(unittest.TestCase):
     def test_parse_qsl_max_num_fields(self):
         with self.assertRaises(ValueError):
             urllib.parse.parse_qs('&'.join(['a=a']*11), max_num_fields=10)
-        with self.assertRaises(ValueError):
-            urllib.parse.parse_qs(';'.join(['a=a']*11), max_num_fields=10)
         urllib.parse.parse_qs('&'.join(['a=a']*10), max_num_fields=10)
+
+    def test_parse_qs_separator(self):
+        parse_qs_semicolon_cases = [
+            (";", {}),
+            (";;", {}),
+            (";a=b", {'a': ['b']}),
+            ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+            ("a=1;a=2", {'a': ['1', '2']}),
+            (b";", {}),
+            (b";;", {}),
+            (b";a=b", {b'a': [b'b']}),
+            (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
+            (b"a=1;a=2", {b'a': [b'1', b'2']}),
+        ]
+        for orig, expect in parse_qs_semicolon_cases:
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
+                result = urllib.parse.parse_qs(orig, separator=';')
+                self.assertEqual(result, expect, "Error parsing %r" % orig)
+
+
+    def test_parse_qsl_separator(self):
+        parse_qsl_semicolon_cases = [
+            (";", []),
+            (";;", []),
+            (";a=b", [('a', 'b')]),
+            ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
+            ("a=1;a=2", [('a', '1'), ('a', '2')]),
+            (b";", []),
+            (b";;", []),
+            (b";a=b", [(b'a', b'b')]),
+            (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
+            (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+        ]
+        for orig, expect in parse_qsl_semicolon_cases:
+            with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
+                result = urllib.parse.parse_qsl(orig, separator=';')
+                self.assertEqual(result, expect, "Error parsing %r" % orig)
+
 
     def test_urlencode_sequences(self):
         # Other tests incidentally urlencode things; test non-covered cases:

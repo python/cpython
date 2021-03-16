@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
@@ -102,7 +98,3 @@ PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
 
    The function does nothing if Python is not compiled is debug mode. */
 PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
-
-#ifdef __cplusplus
-}
-#endif

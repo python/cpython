@@ -377,7 +377,7 @@ class socket(_socket.socket):
             try:
                 while True:
                     if timeout and not selector_select(timeout):
-                        raise _socket.timeout('timed out')
+                        raise TimeoutError('timed out')
                     if count:
                         blocksize = count - total_sent
                         if blocksize <= 0:
@@ -706,7 +706,7 @@ class SocketIO(io.RawIOBase):
                 self._timeout_occurred = True
                 raise
             except error as e:
-                if e.args[0] in _blocking_errnos:
+                if e.errno in _blocking_errnos:
                     return None
                 raise
 
@@ -722,7 +722,7 @@ class SocketIO(io.RawIOBase):
             return self._sock.send(b)
         except error as e:
             # XXX what about EINTR?
-            if e.args[0] in _blocking_errnos:
+            if e.errno in _blocking_errnos:
                 return None
             raise
 
@@ -839,7 +839,11 @@ def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                 sock.close()
 
     if err is not None:
-        raise err
+        try:
+            raise err
+        finally:
+            # Break explicitly a reference cycle
+            err = None
     else:
         raise error("getaddrinfo returns an empty list")
 
@@ -874,7 +878,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
     connections. When false it will explicitly disable this option on
     platforms that enable it by default (e.g. Linux).
 
-    >>> with create_server((None, 8000)) as server:
+    >>> with create_server(('', 8000)) as server:
     ...     while True:
     ...         conn, addr = server.accept()
     ...         # handle new connection

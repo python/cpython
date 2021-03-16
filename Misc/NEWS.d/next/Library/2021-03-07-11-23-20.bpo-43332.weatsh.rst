@@ -1,0 +1,3 @@
+Improves the networking efficiency of :mod:`http.client` when using a proxy
+via :meth:`~HTTPConnection.set_tunnel`.  Fewer small send calls are made
+during connection setup.

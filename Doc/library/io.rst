@@ -132,12 +132,13 @@ High-level Module Interface
    Opens the provided file with mode ``'rb'``. This function should be used
    when the intent is to treat the contents as executable code.
 
-   ``path`` should be an absolute path.
+   ``path`` should be a :class:`str` and an absolute path.
 
    The behavior of this function may be overridden by an earlier call to the
-   :c:func:`PyFile_SetOpenCodeHook`, however, it should always be considered
-   interchangeable with ``open(path, 'rb')``. Overriding the behavior is
-   intended for additional validation or preprocessing of the file.
+   :c:func:`PyFile_SetOpenCodeHook`. However, assuming that ``path`` is a
+   :class:`str` and an absolute path, ``open_code(path)`` should always behave
+   the same as ``open(path, 'rb')``. Overriding the behavior is intended for
+   additional validation or preprocessing of the file.
 
    .. versionadded:: 3.8
 

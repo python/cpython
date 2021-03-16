@@ -1,2 +1,0 @@
-Parameters *out* and *in* of :func:`os.sendfile` was renamed to *out_fd* and
-*in_fd*.

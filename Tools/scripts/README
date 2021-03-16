@@ -7,7 +7,6 @@ abitype.py                Converts a C file to use the PEP 384 type definition A
 analyze_dxp.py            Analyzes the result of sys.getdxp()
 byext.py                  Print lines/words/chars stats of files by extension
 byteyears.py              Print product of a file's size and age
-checkpyc.py               Check presence and validity of ".pyc" files
 cleanfuture.py            Fix redundant Python __future__ statements
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output
 copytime.py               Copy one file's atime and mtime to another

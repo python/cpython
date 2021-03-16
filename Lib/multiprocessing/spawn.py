@@ -36,7 +36,7 @@ else:
 if WINSERVICE:
     _python_exe = os.path.join(sys.exec_prefix, 'python.exe')
 else:
-    _python_exe = sys._base_executable
+    _python_exe = sys.executable
 
 def set_executable(exe):
     global _python_exe

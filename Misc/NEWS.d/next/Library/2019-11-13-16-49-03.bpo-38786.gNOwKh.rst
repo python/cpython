@@ -1,1 +1,0 @@
-pydoc now recognizes and parses HTTPS URLs. Patch by python273.

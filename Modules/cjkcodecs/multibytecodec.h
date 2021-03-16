@@ -30,7 +30,7 @@ typedef struct {
 typedef int (*mbcodec_init)(const void *config);
 typedef Py_ssize_t (*mbencode_func)(MultibyteCodec_State *state,
                         const void *config,
-                        int kind, void *data,
+                        int kind, const void *data,
                         Py_ssize_t *inpos, Py_ssize_t inlen,
                         unsigned char **outbuf, Py_ssize_t outleft,
                         int flags);
@@ -65,7 +65,7 @@ typedef struct {
     MultibyteCodec *codec;
 } MultibyteCodecObject;
 
-#define MultibyteCodec_Check(op) ((op)->ob_type == &MultibyteCodec_Type)
+#define MultibyteCodec_Check(state, op) Py_IS_TYPE((op), state->multibytecodec_type)
 
 #define _MultibyteStatefulCodec_HEAD            \
     PyObject_HEAD                               \
