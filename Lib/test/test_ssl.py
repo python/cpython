@@ -110,7 +110,7 @@ SIGNED_CERTFILE_INFO = {
     'issuer': ((('countryName', 'XY'),),
             (('organizationName', 'Python Software Foundation CA'),),
             (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notAfter': 'Oct 28 14:23:16 2037 GMT',
     'notBefore': 'Aug 29 14:23:16 2018 GMT',
     'serialNumber': 'CB2D80995A69525C',
     'subject': ((('countryName', 'XY'),),
@@ -131,6 +131,8 @@ SIGNING_CA = data_file("capath", "ceff1710.0")
 # cert with all kinds of subject alt names
 ALLSANFILE = data_file("allsans.pem")
 IDNSANSFILE = data_file("idnsans.pem")
+NOSANFILE = data_file("nosan.pem")
+NOSAN_HOSTNAME = 'localhost'
 
 REMOTE_HOST = "self-signed.pythontest.net"
 
@@ -345,6 +347,8 @@ def testing_context(server_cert=SIGNED_CERTFILE):
         hostname = SIGNED_CERTFILE_HOSTNAME
     elif server_cert == SIGNED_CERTFILE2:
         hostname = SIGNED_CERTFILE2_HOSTNAME
+    elif server_cert == NOSANFILE:
+        hostname = NOSAN_HOSTNAME
     else:
         raise ValueError(server_cert)
 
@@ -3026,6 +3030,30 @@ class ThreadedTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,
                                             "check_hostname requires server_hostname"):
                     client_context.wrap_socket(s)
+
+    @unittest.skipUnless(
+        ssl.HAS_NEVER_CHECK_COMMON_NAME, "test requires hostname_checks_common_name"
+    )
+    def test_hostname_checks_common_name(self):
+        client_context, server_context, hostname = testing_context()
+        assert client_context.hostname_checks_common_name
+        client_context.hostname_checks_common_name = False
+
+        # default cert has a SAN
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+
+        client_context, server_context, hostname = testing_context(NOSANFILE)
+        client_context.hostname_checks_common_name = False
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                with self.assertRaises(ssl.SSLCertVerificationError):
+                    s.connect((HOST, server.port))
 
     def test_ecc_cert(self):
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
