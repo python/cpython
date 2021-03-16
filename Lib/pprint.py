@@ -529,7 +529,7 @@ class PrettyPrinter:
 
         r = getattr(typ, "__repr__", None)
 
-        if issubclass(typ, int):
+        if issubclass(typ, int) and r is int.__repr__:
             if self._underscore_numbers:
                 return builtins.format(object, "_d"), True, False
             else:

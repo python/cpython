@@ -327,6 +327,14 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(pprint.pformat(1234567), '1_234_567')
         self.assertEqual(pprint.pformat(1234567, underscore_numbers=False), '1234567')
 
+        class Temperature(int):
+            def __new__(cls, celsius_degrees):
+                return super().__new__(Temperature, celsius_degrees)
+            def __repr__(self):
+                kelvin_degrees = self + 273.15
+                return f"{kelvin_degrees}°K"
+        self.assertEqual(pprint.pformat(Temperature(1000)), '1273.15°K')
+
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
         # of how small the dictionary may be.
