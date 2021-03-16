@@ -452,7 +452,7 @@ class Barrier(mixins._LoopBoundMixin):
             raise ValueError('parties must be > 0')
 
         self._waiting = Event()     # used notify all waiting tasks
-        self._blocking = Event()    # used block tasks while wainting tasks are draining or broken
+        self._blocking = Event()    # used block new tasks while waiting tasks are draining or broken
         self._action = action
         self._parties = parties
         self._state = 0             # 0 filling, 1, draining, -1 resetting, -2 broken
@@ -491,7 +491,7 @@ class Barrier(mixins._LoopBoundMixin):
     # Block until the barrier is ready for us, or raise an exception
     # if it is broken.
     async def _block (self):
-        if self._state in (-1, 1):
+        while self._state in (-1, 1):
             # It is draining or resetting, wait until done
             await self._blocking.wait()
 
@@ -522,7 +522,7 @@ class Barrier(mixins._LoopBoundMixin):
     async def _wait(self):
         await self._waiting.wait()
         # no timeout so
-        if self._state < 0:
+        if self._state < 0: # resetting or broken
             raise BrokenBarrierError
         assert self._state == 1, repr(self)
 
@@ -530,9 +530,9 @@ class Barrier(mixins._LoopBoundMixin):
     # waiting for the barrier to drain.
     def _exit(self):
         if self._count == 0:
-            if self._state == 1:
+            if self._state == 1: # draining
                 self._state = 0
-            elif self._state == -1:
+            elif self._state == -1: # resetting
                 self._state = 0
             self._waiting.clear()
             self._blocking.set()
@@ -544,12 +544,12 @@ class Barrier(mixins._LoopBoundMixin):
         raised.
         """
         if self._count > 0:
-            if self._state in (0, 1):
-                #reset the barrier, waking up tasks
+            if self._state in (0, 1): # filling or draining
+                # reset the barrier, waking up tasks
                 self._state = -1
             elif self._state == -2:
-                #was broken, set it to reset state
-                #which clears when the last tasks exits
+                # was broken, set it to reset state
+                # which clears when the last tasks exits
                 self._state = -1
             self._waiting.set()
             self._blocking.clear()
