@@ -170,7 +170,10 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
     _Py_CheckPython3();
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     wpathname = _PyUnicode_AsUnicode(pathname);
+_Py_COMP_DIAG_POP
     if (wpathname == NULL)
         return NULL;
 

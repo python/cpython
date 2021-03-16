@@ -625,7 +625,10 @@ summary_setproperty(msiobj* si, PyObject *args)
         return NULL;
 
     if (PyUnicode_Check(data)) {
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         const WCHAR *value = _PyUnicode_AsUnicode(data);
+_Py_COMP_DIAG_POP
         if (value == NULL) {
             return NULL;
         }

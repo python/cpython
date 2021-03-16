@@ -4321,7 +4321,10 @@ unicode_decode_call_errorhandler_wchar(
         goto onError;
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     repwstr = PyUnicode_AsUnicodeAndSize(repunicode, &repwlen);
+_Py_COMP_DIAG_POP
     if (repwstr == NULL)
         goto onError;
     /* need more space? (at least enough for what we
@@ -7654,7 +7657,10 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     substring = PyUnicode_Substring(unicode, offset, offset+len);
     if (substring == NULL)
         return -1;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     p = PyUnicode_AsUnicodeAndSize(substring, &size);
+_Py_COMP_DIAG_POP
     if (p == NULL) {
         Py_DECREF(substring);
         return -1;

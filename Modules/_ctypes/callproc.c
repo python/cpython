@@ -1358,7 +1358,10 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U|i:LoadLibrary", &nameobj, &load_flags))
         return NULL;
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     name = _PyUnicode_AsUnicode(nameobj);
+_Py_COMP_DIAG_POP
     if (!name)
         return NULL;
 
