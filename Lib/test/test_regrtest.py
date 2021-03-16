@@ -18,6 +18,7 @@ import textwrap
 import unittest
 from test import libregrtest
 from test import support
+from test.support import os_helper
 from test.libregrtest import utils
 
 
@@ -161,12 +162,12 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertEqual(ns.ignore_tests, ['pattern'])
                 self.checkError([opt], 'expected one argument')
 
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, "w") as fp:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, "w") as fp:
             print('matchfile1', file=fp)
             print('matchfile2', file=fp)
 
-        filename = os.path.abspath(support.TESTFN)
+        filename = os.path.abspath(os_helper.TESTFN)
         ns = libregrtest._parse_args(['-m', 'match',
                                       '--ignorefile', filename])
         self.assertEqual(ns.ignore_tests,
@@ -183,12 +184,12 @@ class ParseArgsTestCase(unittest.TestCase):
                                       '-m', 'pattern2'])
         self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
 
-        self.addCleanup(support.unlink, support.TESTFN)
-        with open(support.TESTFN, "w") as fp:
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(os_helper.TESTFN, "w") as fp:
             print('matchfile1', file=fp)
             print('matchfile2', file=fp)
 
-        filename = os.path.abspath(support.TESTFN)
+        filename = os.path.abspath(os_helper.TESTFN)
         ns = libregrtest._parse_args(['-m', 'match',
                                       '--matchfile', filename])
         self.assertEqual(ns.match_tests,
@@ -237,7 +238,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_testdir(self):
         ns = libregrtest._parse_args(['--testdir', 'foo'])
-        self.assertEqual(ns.testdir, os.path.join(support.SAVEDCWD, 'foo'))
+        self.assertEqual(ns.testdir, os.path.join(os_helper.SAVEDCWD, 'foo'))
         self.checkError(['--testdir'], 'expected one argument')
 
     def test_runleaks(self):
@@ -284,7 +285,7 @@ class ParseArgsTestCase(unittest.TestCase):
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt, 'foo'])
                 self.assertEqual(ns.coverdir,
-                                 os.path.join(support.SAVEDCWD, 'foo'))
+                                 os.path.join(os_helper.SAVEDCWD, 'foo'))
                 self.checkError([opt], 'expected one argument')
 
     def test_nocoverdir(self):
@@ -363,7 +364,7 @@ class BaseTestCase(unittest.TestCase):
         self.testdir = os.path.realpath(os.path.dirname(__file__))
 
         self.tmptestdir = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, self.tmptestdir)
+        self.addCleanup(os_helper.rmtree, self.tmptestdir)
 
     def create_test(self, name=None, code=None):
         if not name:
@@ -384,7 +385,7 @@ class BaseTestCase(unittest.TestCase):
         name = self.TESTNAME_PREFIX + name
         path = os.path.join(self.tmptestdir, name + '.py')
 
-        self.addCleanup(support.unlink, path)
+        self.addCleanup(os_helper.unlink, path)
         # Use 'x' mode to ensure that we do not override existing tests
         try:
             with open(path, 'x', encoding='utf-8') as fp:
@@ -556,7 +557,7 @@ class CheckActualTests(BaseTestCase):
         args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
         output = self.run_python(args)
         rough_number_of_tests_found = len(output.splitlines())
-        actual_testsuite_glob = os.path.join(os.path.dirname(__file__),
+        actual_testsuite_glob = os.path.join(glob.escape(os.path.dirname(__file__)),
                                              'test*.py')
         rough_counted_test_py_files = len(glob.glob(actual_testsuite_glob))
         # We're not trying to duplicate test finding logic in here,
@@ -770,8 +771,8 @@ class ArgsTestCase(BaseTestCase):
         # Write the list of files using a format similar to regrtest output:
         # [1/2] test_1
         # [2/2] test_2
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
 
         # test format '0:00:00 [2/7] test_opcodes -- test_grammar took 0 sec'
         with open(filename, "w") as fp:
@@ -886,7 +887,7 @@ class ArgsTestCase(BaseTestCase):
         test = self.create_test('huntrleaks', code=code)
 
         filename = 'reflog.txt'
-        self.addCleanup(support.unlink, filename)
+        self.addCleanup(os_helper.unlink, filename)
         output = self.run_tests('--huntrleaks', '3:3:', test,
                                 exitcode=2,
                                 stderr=subprocess.STDOUT)
@@ -997,8 +998,8 @@ class ArgsTestCase(BaseTestCase):
         testname = self.create_test(code=code)
 
         # only run a subset
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
 
         subset = [
             # only ignore the method name
@@ -1038,8 +1039,8 @@ class ArgsTestCase(BaseTestCase):
         self.assertEqual(methods, all_methods)
 
         # only run a subset
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
 
         subset = [
             # only match the method name
@@ -1234,10 +1235,12 @@ class ArgsTestCase(BaseTestCase):
                          re.compile('%s timed out' % testname, re.MULTILINE))
 
     def test_unraisable_exc(self):
-        # --fail-env-changed must catch unraisable exception
+        # --fail-env-changed must catch unraisable exception.
+        # The exceptioin must be displayed even if sys.stderr is redirected.
         code = textwrap.dedent(r"""
             import unittest
             import weakref
+            from test.support import captured_stderr
 
             class MyObject:
                 pass
@@ -1249,9 +1252,11 @@ class ArgsTestCase(BaseTestCase):
                 def test_unraisable_exc(self):
                     obj = MyObject()
                     ref = weakref.ref(obj, weakref_callback)
-                    # call weakref_callback() which logs
-                    # an unraisable exception
-                    obj = None
+                    with captured_stderr() as stderr:
+                        # call weakref_callback() which logs
+                        # an unraisable exception
+                        obj = None
+                    self.assertEqual(stderr.getvalue(), '')
         """)
         testname = self.create_test(code=code)
 
@@ -1260,6 +1265,7 @@ class ArgsTestCase(BaseTestCase):
                                   env_changed=[testname],
                                   fail_env_changed=True)
         self.assertIn("Warning -- Unraisable exception", output)
+        self.assertIn("Exception: weakref callback bug", output)
 
     def test_cleanup(self):
         dirname = os.path.join(self.tmptestdir, "test_python_123")

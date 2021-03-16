@@ -16,6 +16,7 @@ from asyncio import constants
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support import os_helper
 from test.support import socket_helper
 
 
@@ -1159,9 +1160,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
-            with self.assertWarns(DeprecationWarning):
-                srv = await asyncio.start_server(
-                    lambda: None, '::1', 0, loop=self.loop)
+            srv = await asyncio.start_server(lambda: None, '::1', 0)
             try:
                 self.assertGreater(len(srv.sockets), 0)
             finally:
@@ -1746,6 +1745,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyDatagramProto, allow_broadcast=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
+    @unittest.skipIf(sys.platform == 'vxworks',
+                    "SO_BROADCAST is enabled by default on VxWorks")
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
         # SO_REUSEPORT is not available on all platforms.
@@ -1983,14 +1984,14 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
     def setUpClass(cls):
         cls.__old_bufsize = constants.SENDFILE_FALLBACK_READBUFFER_SIZE
         constants.SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 16
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         constants.SENDFILE_FALLBACK_READBUFFER_SIZE = cls.__old_bufsize
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
@@ -1998,7 +1999,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
         # BaseSelectorEventLoop() has no native implementation
         self.loop = BaseSelectorEventLoop()
         self.set_event_loop(self.loop)
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 
@@ -2095,7 +2096,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     def test_nonbinary_file(self):
         sock = self.make_socket()
-        with open(support.TESTFN, 'r') as f:
+        with open(os_helper.TESTFN, 'r') as f:
             with self.assertRaisesRegex(ValueError, "binary mode"):
                 self.run_loop(self.loop.sock_sendfile(sock, f))
 

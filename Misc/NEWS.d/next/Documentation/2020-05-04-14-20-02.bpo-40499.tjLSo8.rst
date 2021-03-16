@@ -1,1 +1,0 @@
-Mention that :func:`asyncio.wait` requires a non-empty set of awaitables.

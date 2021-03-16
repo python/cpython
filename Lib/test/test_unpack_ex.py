@@ -158,6 +158,11 @@ List comprehension element unpacking
     ...
     SyntaxError: iterable unpacking cannot be used in comprehension
 
+    >>> {**{} for a in [1]}
+    Traceback (most recent call last):
+    ...
+    SyntaxError: dict unpacking cannot be used in dict comprehension
+
 # Pegen is better here.
 # Generator expression in function arguments
 
@@ -337,6 +342,31 @@ Now some general starred expressions (all fail).
     SyntaxError: can't use starred expression here
 
     >>> x = *a # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: can't use starred expression here
+
+    >>> (*x),y = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: can't use starred expression here
+
+    >>> (((*x))),y = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: can't use starred expression here
+
+    >>> z,(*x),y = 1, 2, 4 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: can't use starred expression here
+
+    >>> z,(*x) = 1, 2 # doctest:+ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    SyntaxError: can't use starred expression here
+
+    >>> ((*x),y) = 1, 2 # doctest:+ELLIPSIS
     Traceback (most recent call last):
       ...
     SyntaxError: can't use starred expression here

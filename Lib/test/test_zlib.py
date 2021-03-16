@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import import_helper
 import binascii
 import copy
 import pickle
@@ -7,7 +8,8 @@ import random
 import sys
 from test.support import bigmemtest, _1G, _4G
 
-zlib = support.import_module('zlib')
+
+zlib = import_helper.import_module('zlib')
 
 requires_Compress_copy = unittest.skipUnless(
         hasattr(zlib.compressobj(), "copy"),

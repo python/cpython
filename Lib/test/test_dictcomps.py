@@ -77,7 +77,7 @@ class DictComprehensionTest(unittest.TestCase):
             compile("{x: y for y, x in ((1, 2), (3, 4))} = 5", "<test>",
                     "exec")
 
-        with self.assertRaisesRegex(SyntaxError, "cannot assign"):
+        with self.assertRaisesRegex(SyntaxError, "illegal expression"):
             compile("{x: y for y, x in ((1, 2), (3, 4))} += 5", "<test>",
                     "exec")
 

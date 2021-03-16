@@ -39,7 +39,7 @@ if __name__ == "__main__":
     f = sys.stdout if use_stdout else open(outfile, "w")
     # mnemonic -> (library code, error prefix, header file)
     error_libraries = {}
-    for error_header in glob.glob(os.path.join(openssl_inc, 'include/openssl/*err.h')):
+    for error_header in glob.glob(os.path.join(glob.escape(openssl_inc), 'include/openssl/*err.h')):
         base = os.path.basename(error_header)
         if base in ('buffererr.h', 'objectserr.h', 'storeerr.h'):
             # Deprecated in 3.0.

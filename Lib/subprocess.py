@@ -5,7 +5,6 @@
 # Copyright (c) 2003-2005 by Peter Astrand <astrand@lysator.liu.se>
 #
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/2.4/license for licensing details.
 
 r"""Subprocesses with accessible I/O streams
 
@@ -62,6 +61,11 @@ try:
     import grp
 except ImportError:
     grp = None
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
@@ -326,7 +330,7 @@ def _args_from_interpreter_flags():
     if dev_mode:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'showrefcount', 'utf8', 'oldparser'):
+                'showrefcount', 'utf8'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:
@@ -415,7 +419,11 @@ def check_output(*popenargs, timeout=None, **kwargs):
     if 'input' in kwargs and kwargs['input'] is None:
         # Explicitly passing input=None was previously equivalent to passing an
         # empty string. That is maintained here for backwards compatibility.
-        kwargs['input'] = '' if kwargs.get('universal_newlines', False) else b''
+        if kwargs.get('universal_newlines') or kwargs.get('text'):
+            empty = ''
+        else:
+            empty = b''
+        kwargs['input'] = empty
 
     return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
                **kwargs).stdout
@@ -756,7 +764,7 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None, umask=-1):
+                 encoding=None, errors=None, text=None, umask=-1, pipesize=-1):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -772,6 +780,11 @@ class Popen(object):
             bufsize = -1  # Restore default
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
+
+        if pipesize is None:
+            pipesize = -1  # Restore default
+        if not isinstance(pipesize, int):
+            raise TypeError("pipesize must be an integer")
 
         if _mswindows:
             if preexec_fn is not None:
@@ -797,6 +810,7 @@ class Popen(object):
         self.returncode = None
         self.encoding = encoding
         self.errors = errors
+        self.pipesize = pipesize
 
         # Validate the combinations of text and universal_newlines
         if (text is not None and universal_newlines is not None
@@ -1521,10 +1535,8 @@ class Popen(object):
                 self.stderr.close()
 
             # All data exchanged.  Translate lists into strings.
-            if stdout is not None:
-                stdout = stdout[0]
-            if stderr is not None:
-                stderr = stderr[0]
+            stdout = stdout[0] if stdout else None
+            stderr = stderr[0] if stderr else None
 
             return (stdout, stderr)
 
@@ -1575,6 +1587,8 @@ class Popen(object):
                 pass
             elif stdin == PIPE:
                 p2cread, p2cwrite = os.pipe()
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(p2cwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdin == DEVNULL:
                 p2cread = self._get_devnull()
             elif isinstance(stdin, int):
@@ -1587,6 +1601,8 @@ class Popen(object):
                 pass
             elif stdout == PIPE:
                 c2pread, c2pwrite = os.pipe()
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(c2pwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stdout == DEVNULL:
                 c2pwrite = self._get_devnull()
             elif isinstance(stdout, int):
@@ -1599,6 +1615,8 @@ class Popen(object):
                 pass
             elif stderr == PIPE:
                 errread, errwrite = os.pipe()
+                if self.pipesize > 0 and hasattr(fcntl, "F_SETPIPE_SZ"):
+                    fcntl.fcntl(errwrite, fcntl.F_SETPIPE_SZ, self.pipesize)
             elif stderr == STDOUT:
                 if c2pwrite != -1:
                     errwrite = c2pwrite
@@ -2061,7 +2079,11 @@ class Popen(object):
             # The race condition can still happen if the race condition
             # described above happens between the returncode test
             # and the kill() call.
-            os.kill(self.pid, sig)
+            try:
+                os.kill(self.pid, sig)
+            except ProcessLookupError:
+                # Supress the race condition error; bpo-40550.
+                pass
 
         def terminate(self):
             """Terminate the process with SIGTERM

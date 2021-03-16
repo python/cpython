@@ -1,10 +1,10 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
-#include "pycore_ceval.h"        // _Py_EnterRecursiveCall()
-#include "pycore_object.h"
-#include "pycore_pystate.h"      // _PyThreadState_GET()
-#include "pycore_tupleobject.h"
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "structmember.h"         // PyMemberDef
 
 _Py_IDENTIFIER(getattr);
@@ -360,7 +360,6 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
-     NULL;
     PyCMethod meth = (PyCMethod) method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -996,6 +995,11 @@ PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
     return (PyObject *)descr;
 }
 
+int
+PyDescr_IsData(PyObject *ob)
+{
+    return Py_TYPE(ob)->tp_descr_set != NULL;
+}
 
 /* --- mappingproxy: read-only proxy for mappings --- */
 
@@ -1491,6 +1495,7 @@ typedef struct {
     PyObject *prop_set;
     PyObject *prop_del;
     PyObject *prop_doc;
+    PyObject *prop_name;
     int getter_doc;
 } propertyobject;
 
@@ -1536,10 +1541,33 @@ property_deleter(PyObject *self, PyObject *deleter)
 }
 
 
+PyDoc_STRVAR(set_name_doc,
+             "Method to set name of a property.");
+
+static PyObject *
+property_set_name(PyObject *self, PyObject *args) {
+    if (PyTuple_GET_SIZE(args) != 2) {
+        PyErr_Format(
+                PyExc_TypeError,
+                "__set_name__() takes 2 positional arguments but %d were given",
+                PyTuple_GET_SIZE(args));
+        return NULL;
+    }
+
+    propertyobject *prop = (propertyobject *)self;
+    PyObject *name = PyTuple_GET_ITEM(args, 1);
+
+    Py_XINCREF(name);
+    Py_XSETREF(prop->prop_name, name);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef property_methods[] = {
     {"getter", property_getter, METH_O, getter_doc},
     {"setter", property_setter, METH_O, setter_doc},
     {"deleter", property_deleter, METH_O, deleter_doc},
+    {"__set_name__", property_set_name, METH_VARARGS, set_name_doc},
     {0}
 };
 
@@ -1554,6 +1582,7 @@ property_dealloc(PyObject *self)
     Py_XDECREF(gs->prop_set);
     Py_XDECREF(gs->prop_del);
     Py_XDECREF(gs->prop_doc);
+    Py_XDECREF(gs->prop_name);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -1567,7 +1596,12 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
+        if (gs->prop_name != NULL) {
+            PyErr_Format(PyExc_AttributeError, "unreadable attribute %R", gs->prop_name);
+        } else {
+            PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
+        }
+
         return NULL;
     }
 
@@ -1585,10 +1619,18 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     else
         func = gs->prop_set;
     if (func == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
+        if (gs->prop_name != NULL) {
+            PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
-                        "can't delete attribute" :
-                "can't set attribute");
+                        "can't delete attribute %R" :
+                        "can't set attribute %R",
+                        gs->prop_name);
+        } else {
+            PyErr_SetString(PyExc_AttributeError,
+                            value == NULL ?
+                            "can't delete attribute" :
+                            "can't set attribute");
+        }
         return -1;
     }
     if (value == NULL)
@@ -1635,6 +1677,9 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
     Py_DECREF(type);
     if (new == NULL)
         return NULL;
+
+    Py_XINCREF(pold->prop_name);
+    Py_XSETREF(((propertyobject *) new)->prop_name, pold->prop_name);
     return new;
 }
 
@@ -1696,6 +1741,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     Py_XSETREF(self->prop_set, fset);
     Py_XSETREF(self->prop_del, fdel);
     Py_XSETREF(self->prop_doc, doc);
+    Py_XSETREF(self->prop_name, NULL);
+
     self->getter_doc = 0;
 
     /* if no docstring given and the getter has one, use that one */
@@ -1770,6 +1817,7 @@ property_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(pp->prop_set);
     Py_VISIT(pp->prop_del);
     Py_VISIT(pp->prop_doc);
+    Py_VISIT(pp->prop_name);
     return 0;
 }
 

@@ -106,7 +106,7 @@ import random
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby
+from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter
@@ -163,7 +163,7 @@ def _sum(data, start=0):
     T = _coerce(int, type(start))
     for typ, values in groupby(data, type):
         T = _coerce(T, typ)  # or raise TypeError
-        for n,d in map(_exact_ratio, values):
+        for n, d in map(_exact_ratio, values):
             count += 1
             partials[d] = partials_get(d, 0) + n
     if None in partials:
@@ -261,7 +261,7 @@ def _convert(value, T):
         return T(value)
     except TypeError:
         if issubclass(T, Decimal):
-            return T(value.numerator)/T(value.denominator)
+            return T(value.numerator) / T(value.denominator)
         else:
             raise
 
@@ -277,8 +277,8 @@ def _find_lteq(a, x):
 def _find_rteq(a, l, x):
     'Locate the rightmost value exactly equal to x'
     i = bisect_right(a, x, lo=l)
-    if i != (len(a)+1) and a[i-1] == x:
-        return i-1
+    if i != (len(a) + 1) and a[i - 1] == x:
+        return i - 1
     raise ValueError
 
 
@@ -315,7 +315,7 @@ def mean(data):
         raise StatisticsError('mean requires at least one data point')
     T, total, count = _sum(data)
     assert count == n
-    return _convert(total/n, T)
+    return _convert(total / n, T)
 
 
 def fmean(data):
@@ -364,37 +364,36 @@ def geometric_mean(data):
                               ' containing positive numbers') from None
 
 
-def harmonic_mean(data):
+def harmonic_mean(data, weights=None):
     """Return the harmonic mean of data.
 
-    The harmonic mean, sometimes called the subcontrary mean, is the
-    reciprocal of the arithmetic mean of the reciprocals of the data,
-    and is often appropriate when averaging quantities which are rates
-    or ratios, for example speeds. Example:
+    The harmonic mean is the reciprocal of the arithmetic mean of the
+    reciprocals of the data.  It can be used for averaging ratios or
+    rates, for example speeds.
 
-    Suppose an investor purchases an equal value of shares in each of
-    three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
-    What is the average P/E ratio for the investor's portfolio?
+    Suppose a car travels 40 km/hr for 5 km and then speeds-up to
+    60 km/hr for another 5 km. What is the average speed?
 
-    >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
-    3.6
+        >>> harmonic_mean([40, 60])
+        48.0
 
-    Using the arithmetic mean would give an average of about 5.167, which
-    is too high.
+    Suppose a car travels 40 km/hr for 5 km, and when traffic clears,
+    speeds-up to 60 km/hr for the remaining 30 km of the journey. What
+    is the average speed?
+
+        >>> harmonic_mean([40, 60], weights=[5, 30])
+        56.0
 
     If ``data`` is empty, or any element is less than zero,
     ``harmonic_mean`` will raise ``StatisticsError``.
     """
-    # For a justification for using harmonic mean for P/E ratios, see
-    # http://fixthepitch.pellucid.com/comps-analysis-the-missing-harmony-of-summary-statistics/
-    # http://papers.ssrn.com/sol3/papers.cfm?abstract_id=2621087
     if iter(data) is data:
         data = list(data)
     errmsg = 'harmonic mean does not support negative values'
     n = len(data)
     if n < 1:
         raise StatisticsError('harmonic_mean requires at least one data point')
-    elif n == 1:
+    elif n == 1 and weights is None:
         x = data[0]
         if isinstance(x, (numbers.Real, Decimal)):
             if x < 0:
@@ -402,13 +401,23 @@ def harmonic_mean(data):
             return x
         else:
             raise TypeError('unsupported type')
+    if weights is None:
+        weights = repeat(1, n)
+        sum_weights = n
+    else:
+        if iter(weights) is weights:
+            weights = list(weights)
+        if len(weights) != n:
+            raise StatisticsError('Number of weights does not match data size')
+        _, sum_weights, _ = _sum(w for w in _fail_neg(weights, errmsg))
     try:
-        T, total, count = _sum(1/x for x in _fail_neg(data, errmsg))
+        data = _fail_neg(data, errmsg)
+        T, total, count = _sum(w / x if w else 0 for w, x in zip(weights, data))
     except ZeroDivisionError:
         return 0
-    assert count == n
-    return _convert(n/total, T)
-
+    if total <= 0:
+        raise StatisticsError('Weighted sum must be positive')
+    return _convert(sum_weights / total, T)
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
 def median(data):
@@ -428,11 +437,11 @@ def median(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return data[n // 2]
     else:
-        i = n//2
-        return (data[i - 1] + data[i])/2
+        i = n // 2
+        return (data[i - 1] + data[i]) / 2
 
 
 def median_low(data):
@@ -451,10 +460,10 @@ def median_low(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    if n%2 == 1:
-        return data[n//2]
+    if n % 2 == 1:
+        return data[n // 2]
     else:
-        return data[n//2 - 1]
+        return data[n // 2 - 1]
 
 
 def median_high(data):
@@ -473,7 +482,7 @@ def median_high(data):
     n = len(data)
     if n == 0:
         raise StatisticsError("no median for empty data")
-    return data[n//2]
+    return data[n // 2]
 
 
 def median_grouped(data, interval=1):
@@ -510,15 +519,15 @@ def median_grouped(data, interval=1):
         return data[0]
     # Find the value at the midpoint. Remember this corresponds to the
     # centre of the class interval.
-    x = data[n//2]
+    x = data[n // 2]
     for obj in (x, interval):
         if isinstance(obj, (str, bytes)):
             raise TypeError('expected number but got %r' % obj)
     try:
-        L = x - interval/2  # The lower limit of the median interval.
+        L = x - interval / 2  # The lower limit of the median interval.
     except TypeError:
         # Mixed type. For now we just coerce to float.
-        L = float(x) - float(interval)/2
+        L = float(x) - float(interval) / 2
 
     # Uses bisection search to search for x in data with log(n) time complexity
     # Find the position of leftmost occurrence of x in data
@@ -528,7 +537,7 @@ def median_grouped(data, interval=1):
     l2 = _find_rteq(data, l1, x)
     cf = l1
     f = l2 - l1 + 1
-    return L + interval*(n/2 - cf)/f
+    return L + interval * (n / 2 - cf) / f
 
 
 def mode(data):
@@ -554,8 +563,7 @@ def mode(data):
     If *data* is empty, ``mode``, raises StatisticsError.
 
     """
-    data = iter(data)
-    pairs = Counter(data).most_common(1)
+    pairs = Counter(iter(data)).most_common(1)
     try:
         return pairs[0][0]
     except IndexError:
@@ -597,7 +605,7 @@ def multimode(data):
 # For sample data where there is a positive probability for values
 # beyond the range of the data, the R6 exclusive method is a
 # reasonable choice.  Consider a random sample of nine values from a
-# population with a uniform distribution from 0.0 to 100.0.  The
+# population with a uniform distribution from 0.0 to 1.0.  The
 # distribution of the third ranked sample point is described by
 # betavariate(alpha=3, beta=7) which has mode=0.250, median=0.286, and
 # mean=0.300.  Only the latter (which corresponds with R6) gives the
@@ -643,9 +651,8 @@ def quantiles(data, *, n=4, method='exclusive'):
         m = ld - 1
         result = []
         for i in range(1, n):
-            j = i * m // n
-            delta = i*m - j*n
-            interpolated = (data[j] * (n - delta) + data[j+1] * delta) / n
+            j, delta = divmod(i * m, n)
+            interpolated = (data[j] * (n - delta) + data[j + 1] * delta) / n
             result.append(interpolated)
         return result
     if method == 'exclusive':
@@ -655,7 +662,7 @@ def quantiles(data, *, n=4, method='exclusive'):
             j = i * m // n                               # rescale i to m/n
             j = 1 if j < 1 else ld-1 if j > ld-1 else j  # clamp to 1 .. ld-1
             delta = i*m - j*n                            # exact integer math
-            interpolated = (data[j-1] * (n - delta) + data[j] * delta) / n
+            interpolated = (data[j - 1] * (n - delta) + data[j] * delta) / n
             result.append(interpolated)
         return result
     raise ValueError(f'Unknown method: {method!r}')
@@ -682,14 +689,16 @@ def _ss(data, c=None):
     calculated from ``c`` as given. Use the second case with care, as it can
     lead to garbage results.
     """
-    if c is None:
-        c = mean(data)
+    if c is not None:
+        T, total, count = _sum((x-c)**2 for x in data)
+        return (T, total)
+    c = mean(data)
     T, total, count = _sum((x-c)**2 for x in data)
     # The following sum should mathematically equal zero, but due to rounding
     # error may not.
-    U, total2, count2 = _sum((x-c) for x in data)
+    U, total2, count2 = _sum((x - c) for x in data)
     assert T == U and count == count2
-    total -=  total2**2/len(data)
+    total -= total2 ** 2 / len(data)
     assert not total < 0, 'negative sum of square deviations: %f' % total
     return (T, total)
 
@@ -738,7 +747,7 @@ def variance(data, xbar=None):
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
     T, ss = _ss(data, xbar)
-    return _convert(ss/(n-1), T)
+    return _convert(ss / (n - 1), T)
 
 
 def pvariance(data, mu=None):
@@ -782,7 +791,7 @@ def pvariance(data, mu=None):
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
     T, ss = _ss(data, mu)
-    return _convert(ss/n, T)
+    return _convert(ss / n, T)
 
 
 def stdev(data, xbar=None):
@@ -991,7 +1000,7 @@ class NormalDist:
         if not isinstance(other, NormalDist):
             raise TypeError('Expected another NormalDist instance')
         X, Y = self, other
-        if (Y._sigma, Y._mu) < (X._sigma, X._mu):   # sort to assure commutativity
+        if (Y._sigma, Y._mu) < (X._sigma, X._mu):  # sort to assure commutativity
             X, Y = Y, X
         X_var, Y_var = X.variance, Y.variance
         if not X_var or not Y_var:

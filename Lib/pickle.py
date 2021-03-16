@@ -340,7 +340,9 @@ def whichmodule(obj, name):
     # Protect the iteration by using a list copy of sys.modules against dynamic
     # modules that trigger imports of other modules upon calls to getattr.
     for module_name, module in sys.modules.copy().items():
-        if module_name == '__main__' or module is None:
+        if (module_name == '__main__'
+            or module_name == '__mp_main__'  # bpo-42406
+            or module is None):
             continue
         try:
             if _getattribute(module, name)[0] is obj:

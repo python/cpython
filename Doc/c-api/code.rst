@@ -27,7 +27,7 @@ bound into a function.
 
 .. c:function:: int PyCode_Check(PyObject *co)
 
-   Return true if *co* is a :class:`code` object.
+   Return true if *co* is a :class:`code` object.  This function always succeeds.
 
 .. c:function:: int PyCode_GetNumFree(PyCodeObject *co)
 

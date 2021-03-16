@@ -291,14 +291,14 @@ Object Protocol
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
    function instead of the common expression ``o->ob_type``, which returns a
-   pointer of type :c:type:`PyTypeObject\*`, except when the incremented reference
+   pointer of type :c:type:`PyTypeObject*`, except when the incremented reference
    count is needed.
 
 
 .. c:function:: int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)
 
-   Return true if the object *o* is of type *type* or a subtype of *type*.  Both
-   parameters must be non-``NULL``.
+   Return non-zero if the object *o* is of type *type* or a subtype of *type*, and
+   ``0`` otherwise.  Both parameters must be non-``NULL``.
 
 
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)

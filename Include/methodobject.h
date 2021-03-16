@@ -13,7 +13,8 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) (Py_IS_TYPE(op, &PyCFunction_Type) || (PyType_IsSubtype(Py_TYPE(op), &PyCFunction_Type)))
+#define PyCFunction_CheckExact(op) Py_IS_TYPE(op, &PyCFunction_Type)
+#define PyCFunction_Check(op) PyObject_TypeCheck(op, &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
@@ -40,7 +41,13 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
+/* PyCFunction_New is declared as a function for stable ABI (declaration is
+ * needed for e.g. GCC with -fvisibility=hidden), but redefined as a macro
+ * that calls PyCFunction_NewEx. */
+PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
+
+/* PyCFunction_NewEx is similar: on 3.9+, this calls PyCMethod_New. */
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 
@@ -72,7 +79,7 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
-#ifndef Py_LIMITED_API
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
 #define METH_FASTCALL  0x0080
 #endif
 

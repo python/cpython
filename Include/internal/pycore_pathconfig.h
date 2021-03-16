@@ -65,6 +65,7 @@ extern wchar_t* _Py_GetDLLPath(void);
 
 extern PyStatus _PyConfig_WritePathConfig(const PyConfig *config);
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
+extern PyObject* _PyPathConfig_AsDict(void);
 
 #ifdef __cplusplus
 }

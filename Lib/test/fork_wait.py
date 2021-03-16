@@ -12,6 +12,7 @@ active threads survive in the child after a fork(); this is an error.
 import os, sys, time, unittest
 import threading
 from test import support
+from test.support import threading_helper
 
 
 LONGSLEEP = 2
@@ -21,7 +22,7 @@ NUM_THREADS = 4
 class ForkWait(unittest.TestCase):
 
     def setUp(self):
-        self._threading_key = support.threading_setup()
+        self._threading_key = threading_helper.threading_setup()
         self.alive = {}
         self.stop = 0
         self.threads = []
@@ -33,7 +34,7 @@ class ForkWait(unittest.TestCase):
             thread.join()
         thread = None
         self.threads.clear()
-        support.threading_cleanup(*self._threading_key)
+        threading_helper.threading_cleanup(*self._threading_key)
 
     def f(self, id):
         while not self.stop:
