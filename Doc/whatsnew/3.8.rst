@@ -2264,3 +2264,12 @@ separator key, with ``&`` as the default.  This change also affects
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.8.9
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :issue:`43285`)
