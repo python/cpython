@@ -1,0 +1,2 @@
+:func:`unittest.TestResult.wasSuccessful` now returns False if no tests were
+found.

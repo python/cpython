@@ -159,10 +159,15 @@ class TestResult(object):
 
     def wasSuccessful(self):
         """Tells whether or not this result was a success."""
+        # testsRun > 0 ensures that we do not return success if test
+        # discovery failed.  We additionally need to check skipped list
+        # since class/module-level skips do not count towards testsRun.
+        #
         # The hasattr check is for test_result's OldResult test.  That
         # way this method works on objects that lack the attribute.
         # (where would such result instances come from? old stored pickles?)
-        return ((len(self.failures) == len(self.errors) == 0) and
+        return ((self.testsRun > 0 or len(getattr(self, 'skipped', ())) > 0) and
+                (len(self.failures) == len(self.errors) == 0) and
                 (not hasattr(self, 'unexpectedSuccesses') or
                  len(self.unexpectedSuccesses) == 0))
 

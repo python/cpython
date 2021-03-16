@@ -6,6 +6,7 @@ from test.support import warnings_helper
 
 import traceback
 import unittest
+from unittest.suite import _ErrorHolder
 
 
 class MockTraceback(object):
@@ -35,9 +36,10 @@ class Test_TestResult(unittest.TestCase):
     def test_init(self):
         result = unittest.TestResult()
 
-        self.assertTrue(result.wasSuccessful())
+        self.assertFalse(result.wasSuccessful())
         self.assertEqual(len(result.errors), 0)
         self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 0)
         self.assertEqual(result.shouldStop, False)
         self.assertIsNone(result._stdout_buffer)
@@ -69,6 +71,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(result.wasSuccessful())
         self.assertEqual(len(result.errors), 0)
         self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(result.shouldStop, False)
 
@@ -90,6 +93,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(result.wasSuccessful())
         self.assertEqual(len(result.errors), 0)
         self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(result.shouldStop, False)
 
@@ -143,6 +147,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(result.wasSuccessful())
         self.assertEqual(len(result.errors), 0)
         self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(result.shouldStop, False)
 
@@ -186,6 +191,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertFalse(result.wasSuccessful())
         self.assertEqual(len(result.errors), 0)
         self.assertEqual(len(result.failures), 1)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(result.shouldStop, False)
 
@@ -234,6 +240,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertFalse(result.wasSuccessful())
         self.assertEqual(len(result.errors), 1)
         self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(result.shouldStop, False)
 
@@ -260,6 +267,48 @@ class Test_TestResult(unittest.TestCase):
         test_case, formatted_exc = result.errors[0]
         self.assertEqual('A tracebacklocals', formatted_exc)
 
+    def test_addSkip(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        test = Foo('test_1')
+
+        result = unittest.TestResult()
+
+        result.startTest(test)
+        result.addSkip(test, "skipped")
+        result.stopTest(test)
+
+        self.assertTrue(result.wasSuccessful())
+        self.assertEqual(len(result.errors), 0)
+        self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 1)
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.shouldStop, False)
+
+        test_case, reason = result.skipped[0]
+        self.assertIs(test_case, test)
+        self.assertEqual(reason, "skipped")
+
+    def test_addSkipClassLevel(self):
+        """Test for SkipTest happening at the class level"""
+        error = _ErrorHolder('setUpClass (test_foo.Foo)')
+
+        result = unittest.TestResult()
+        result.addSkip(error, "skipped")
+
+        self.assertTrue(result.wasSuccessful())
+        self.assertEqual(len(result.errors), 0)
+        self.assertEqual(len(result.failures), 0)
+        self.assertEqual(len(result.skipped), 1)
+        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(result.shouldStop, False)
+
+        test_case, reason = result.skipped[0]
+        self.assertIs(test_case, error)
+        self.assertEqual(reason, "skipped")
+
     def test_addSubTest(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -284,6 +333,7 @@ class Test_TestResult(unittest.TestCase):
         self.assertFalse(result.wasSuccessful())
         self.assertEqual(len(result.errors), 1)
         self.assertEqual(len(result.failures), 1)
+        self.assertEqual(len(result.skipped), 0)
         self.assertEqual(result.testsRun, 1)
         self.assertEqual(result.shouldStop, False)
 

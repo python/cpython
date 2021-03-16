@@ -2012,12 +2012,15 @@ Loading and running tests
 
    .. method:: wasSuccessful()
 
-      Return ``True`` if all tests run so far have passed, otherwise returns
-      ``False``.
+      Return ``True`` if all tests run so far have passed and at least one test
+      was found, otherwise returns ``False``.
 
       .. versionchanged:: 3.4
          Returns ``False`` if there were any :attr:`unexpectedSuccesses`
          from tests marked with the :func:`expectedFailure` decorator.
+
+      .. versionchanged:: 3.10b1
+         Returns ``False`` if no tests were found.
 
    .. method:: stop()
 
