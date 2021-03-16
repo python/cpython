@@ -19,19 +19,21 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: None
 
-   The sole value of the type ``NoneType``.  ``None`` is frequently used to
-   represent the absence of a value, as when default arguments are not passed to a
-   function. Assignments to ``None`` are illegal and raise a :exc:`SyntaxError`.
+   An object frequently used to represent the absence of a value, as when
+   default arguments are not passed to a function. Assignments to ``None``
+   are illegal and raise a :exc:`SyntaxError`.
+   ``None`` is the sole instance of the :data:`NoneType` type.
 
 
 .. data:: NotImplemented
 
-   Special value which should be returned by the binary special methods
+   A special value which should be returned by the binary special methods
    (e.g. :meth:`__eq__`, :meth:`__lt__`, :meth:`__add__`, :meth:`__rsub__`,
    etc.) to indicate that the operation is not implemented with respect to
    the other type; may be returned by the in-place binary special methods
    (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
-   Its truth value is true.
+   It should not be evaluated in a boolean context.
+   ``NotImplemented`` is the sole instance of the :data:`types.NotImplementedType` type.
 
    .. note::
 
@@ -50,11 +52,18 @@ A small number of constants live in the built-in namespace.  They are:
       even though they have similar names and purposes.
       See :exc:`NotImplementedError` for details on when to use it.
 
+   .. versionchanged:: 3.9
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
+
+.. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as ``...``.  Special value used mostly in conjunction with extended
-   slicing syntax for user-defined container data types.
+   The same as the ellipsis literal "``...``". Special value used mostly in conjunction
+   with extended slicing syntax for user-defined container data types.
+   ``Ellipsis`` is the sole instance of the :data:`types.EllipsisType` type.
 
 
 .. data:: __debug__
@@ -86,10 +95,13 @@ should not be used in programs.
    specified exit code.
 
 .. data:: copyright
-          license
           credits
 
-   Objects that when printed, print a message like "Type license() to see the
-   full license text", and when called, display the corresponding text in a
-   pager-like fashion (one screen at a time).
+   Objects that when printed or called, print the text of copyright or
+   credits, respectively.
 
+.. data:: license
+
+   Object that when printed, prints the message "Type license() to see the
+   full license text", and when called, displays the full license text in a
+   pager-like fashion (one screen at a time).

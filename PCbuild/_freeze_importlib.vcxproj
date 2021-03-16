@@ -1,6 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -8,6 +16,14 @@
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="PGInstrument|Win32">
       <Configuration>PGInstrument</Configuration>
@@ -17,6 +33,14 @@
       <Configuration>PGInstrument</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="PGUpdate|Win32">
       <Configuration>PGUpdate</Configuration>
       <Platform>Win32</Platform>
@@ -24,6 +48,14 @@
     <ProjectConfiguration Include="PGUpdate|x64">
       <Configuration>PGUpdate</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -77,19 +109,26 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Lib\importlib\_bootstrap.py">
+      <ModName>importlib._bootstrap</ModName>
       <IntFile>$(IntDir)importlib.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\importlib.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
+      <ModName>importlib._bootstrap_external</ModName>
       <IntFile>$(IntDir)importlib_external.g.h</IntFile>
       <OutFile>$(PySourcePath)Python\importlib_external.h</OutFile>
+    </None>
+    <None Include="..\Lib\zipimport.py">
+      <ModName>zipimport</ModName>
+      <IntFile>$(IntDir)importlib_zipimport.g.h</IntFile>
+      <OutFile>$(PySourcePath)Python\importlib_zipimport.h</OutFile>
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_RebuildImportLib">
-    <Exec Command='"$(TargetPath)" "%(None.FullPath)" "%(None.IntFile)"' />
+    <Exec Command='"$(TargetPath)" "%(None.ModName)" "%(None.FullPath)" "%(None.IntFile)"' />
     
     <PropertyGroup>
       <_OldContent Condition="Exists($(OutTargetPath))"></_OldContent>
@@ -102,9 +141,9 @@
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
     
-    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes."
+    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
              Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
-    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes."
+    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
            Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
   </Target>
   <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"
@@ -114,6 +153,7 @@
     <ItemGroup>
       <Clean Include="$(IntDir)importlib.g.h" />
       <Clean Include="$(IntDir)importlib_external.g.h" />
+      <Clean Include="$(IntDir)importlib_zipimport.g.h" />
     </ItemGroup>
   </Target>
 </Project>

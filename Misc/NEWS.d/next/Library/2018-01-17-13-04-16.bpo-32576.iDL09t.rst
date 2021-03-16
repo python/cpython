@@ -1,2 +1,0 @@
-Use queue.SimpleQueue() in places where it can be invoked from a weakref
-callback.

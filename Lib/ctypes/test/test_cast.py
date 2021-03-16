@@ -82,5 +82,18 @@ class Test(unittest.TestCase):
         self.assertEqual(cast(cast(s, c_void_p), c_wchar_p).value,
                              "hiho")
 
+    def test_bad_type_arg(self):
+        # The type argument must be a ctypes pointer type.
+        array_type = c_byte * sizeof(c_int)
+        array = array_type()
+        self.assertRaises(TypeError, cast, array, None)
+        self.assertRaises(TypeError, cast, array, array_type)
+        class Struct(Structure):
+            _fields_ = [("a", c_int)]
+        self.assertRaises(TypeError, cast, array, Struct)
+        class MyUnion(Union):
+            _fields_ = [("a", c_int)]
+        self.assertRaises(TypeError, cast, array, MyUnion)
+
 if __name__ == "__main__":
     unittest.main()

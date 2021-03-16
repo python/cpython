@@ -31,20 +31,26 @@ are:
 
 #. Only worry about supporting Python 2.7
 #. Make sure you have good test coverage (coverage.py_ can help;
-   ``pip install coverage``)
+   ``python -m pip install coverage``)
 #. Learn the differences between Python 2 & 3
-#. Use Futurize_ (or Modernize_) to update your code (e.g. ``pip install future``)
+#. Use Futurize_ (or Modernize_) to update your code (e.g. ``python -m pip install future``)
 #. Use Pylint_ to help make sure you don't regress on your Python 3 support
-   (``pip install pylint``)
+   (``python -m pip install pylint``)
 #. Use caniusepython3_ to find out which of your dependencies are blocking your
-   use of Python 3 (``pip install caniusepython3``)
+   use of Python 3 (``python -m pip install caniusepython3``)
 #. Once your dependencies are no longer blocking you, use continuous integration
    to make sure you stay compatible with Python 2 & 3 (tox_ can help test
-   against multiple versions of Python; ``pip install tox``)
+   against multiple versions of Python; ``python -m pip install tox``)
 #. Consider using optional static type checking to make sure your type usage
    works in both Python 2 & 3 (e.g. use mypy_ to check your typing under both
-   Python 2 & Python 3).
+   Python 2 & Python 3; ``python -m pip install mypy``).
 
+.. note::
+
+   Note: Using ``python -m pip install`` guarantees that the ``pip`` you invoke
+   is the one installed for the Python currently in use, whether it be
+   a system-wide ``pip`` or one installed within a
+   :ref:`virtual environment <tut-venv>`.
 
 Details
 =======
@@ -71,7 +77,7 @@ Drop support for Python 2.6 and older
 While you can make Python 2.5 work with Python 3, it is **much** easier if you
 only have to work with Python 2.7. If dropping Python 2.5 is not an
 option then the six_ project can help you support Python 2.5 & 3 simultaneously
-(``pip install six``). Do realize, though, that nearly all the projects listed
+(``python -m pip install six``). Do realize, though, that nearly all the projects listed
 in this HOWTO will not be available to you.
 
 If you are able to skip Python 2.5 and older, then the required changes
@@ -119,7 +125,7 @@ Once you have your code well-tested you are ready to begin porting your code to
 Python 3! But to fully understand how your code is going to change and what
 you want to look out for while you code, you will want to learn what changes
 Python 3 makes in terms of Python 2. Typically the two best ways of doing that
-is reading the `"What's New"`_ doc for each release of Python 3 and the
+is reading the :ref:`"What's New" <whatsnew-index>` doc for each release of Python 3 and the
 `Porting to Python 3`_ book (which is free online). There is also a handy
 `cheat sheet`_ from the Python-Future project.
 
@@ -302,10 +308,10 @@ If for some reason that doesn't work then you should make the version check be
 against Python 2 and not Python 3. To help explain this, let's look at an
 example.
 
-Let's pretend that you need access to a feature of importlib_ that
+Let's pretend that you need access to a feature of :mod:`importlib` that
 is available in Python's standard library since Python 3.3 and available for
 Python 2 through importlib2_ on PyPI. You might be tempted to write code to
-access e.g. the ``importlib.abc`` module by doing the following::
+access e.g. the :mod:`importlib.abc` module by doing the following::
 
   import sys
 
@@ -426,27 +432,23 @@ can also explicitly state whether your APIs use textual or binary data, helping
 to make sure everything functions as expected in both versions of Python.
 
 
-.. _2to3: https://docs.python.org/3/library/2to3.html
-.. _caniusepython3: https://pypi.python.org/pypi/caniusepython3
+.. _caniusepython3: https://pypi.org/project/caniusepython3
 .. _cheat sheet: http://python-future.org/compatible_idioms.html
-.. _coverage.py: https://pypi.python.org/pypi/coverage
+.. _coverage.py: https://pypi.org/project/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
-.. _importlib: https://docs.python.org/3/library/importlib.html#module-importlib
-.. _importlib2: https://pypi.python.org/pypi/importlib2
+.. _importlib2: https://pypi.org/project/importlib2
 .. _Modernize: https://python-modernize.readthedocs.io/
 .. _mypy: http://mypy-lang.org/
 .. _Porting to Python 3: http://python3porting.com/
-.. _Pylint: https://pypi.python.org/pypi/pylint
+.. _Pylint: https://pypi.org/project/pylint
 
 .. _Python 3 Q & A: https://ncoghlan-devs-python-notes.readthedocs.io/en/latest/python3/questions_and_answers.html
 
 .. _pytype: https://github.com/google/pytype
 .. _python-future: http://python-future.org/
 .. _python-porting: https://mail.python.org/mailman/listinfo/python-porting
-.. _six: https://pypi.python.org/pypi/six
-.. _tox: https://pypi.python.org/pypi/tox
-.. _trove classifier: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-
-.. _"What's New": https://docs.python.org/3/whatsnew/index.html
+.. _six: https://pypi.org/project/six
+.. _tox: https://pypi.org/project/tox
+.. _trove classifier: https://pypi.org/classifiers
 
 .. _Why Python 3 exists: https://snarky.ca/why-python-3-exists

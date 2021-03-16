@@ -629,7 +629,7 @@ Library
 - Issue #21560: An attempt to write a data of wrong type no longer cause
   GzipFile corruption.  Original patch by Wolfgang Maier.
 
-- Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
+- Issue #23647: Increase imaplib's MAXLINE to accommodate modern mailbox sizes.
 
 - Issue #23539: If body is None, http.client.HTTPConnection.request now sets
   Content-Length to 0 for PUT, POST, and PATCH headers to avoid 411 errors from
@@ -677,7 +677,7 @@ Library
 - Issue #23521: Corrected pure python implementation of timedelta division.
 
  * Eliminated OverflowError from timedelta * float for some floats;
- * Corrected rounding in timedlta true division.
+ * Corrected rounding in timedelta true division.
 
 - Issue #21619: Popen objects no longer leave a zombie after exit in the with
   statement if the pipe was broken.  Patch by Martin Panter.
@@ -966,7 +966,7 @@ Core and Builtins
   returned NotImplemented.  Original patch by Martin Panter.
 
 - Issue #23321: Fixed a crash in str.decode() when error handler returned
-  replacment string longer than mailformed input data.
+  replacement string longer than malformed input data.
 
 - Issue #23048: Fix jumping out of an infinite while loop in the pdb.
 
@@ -1042,7 +1042,7 @@ Library
 - Issue #23250: In the http.cookies module, capitalize "HttpOnly" and "Secure"
   as they are written in the standard.
 
-- Issue #23063: In the disutils' check command, fix parsing of reST with code or
+- Issue #23063: In the distutils' check command, fix parsing of reST with code or
   code-block directives.
 
 - Issue #23209, #23225: selectors.BaseSelector.close() now clears its internal
@@ -1231,7 +1231,7 @@ Library
 - Issue #22448: Improve canceled timer handles cleanup to prevent
   unbound memory usage. Patch by Joshua Moore-Oliva.
 
-- Issue #23009: Make sure selectors.EpollSelecrtor.select() works when no
+- Issue #23009: Make sure selectors.EpollSelector.select() works when no
   FD is registered.
 
 IDLE
@@ -1389,7 +1389,7 @@ Release date: 2014-09-22
 Core and Builtins
 -----------------
 
-- Issue #22258: Fix the the internal function set_inheritable() on Illumos.
+- Issue #22258: Fix the internal function set_inheritable() on Illumos.
   This platform exposes the function ``ioctl(FIOCLEX)``, but calling it fails
   with errno is ENOTTY: "Inappropriate ioctl for device". set_inheritable()
   now falls back to the slower ``fcntl()`` (``F_GETFD`` and then ``F_SETFD``).
@@ -2113,7 +2113,7 @@ Build
 - Issue #21285: Refactor and fix curses configure check to always search
   in a ncursesw directory.
 
-- Issue #15234: For BerkelyDB and Sqlite, only add the found library and
+- Issue #15234: For BerkeleyDB and Sqlite, only add the found library and
   include directories if they aren't already being searched. This avoids
   an explicit runtime library dependency.
 
@@ -9956,7 +9956,7 @@ Library
   ensure that it will be found regardless of the shell PATH. This ensures
   that multiprocessing.cpu_count works on default installs of MacOSX.
 
-- Issue #11501: disutils.archive_utils.make_zipfile no longer fails if zlib is
+- Issue #11501: distutils.archive_utils.make_zipfile no longer fails if zlib is
   not installed. Instead, the zipfile.ZIP_STORED compression is used to create
   the ZipFile. Patch by Natalia B. Bidart.
 
@@ -16660,7 +16660,7 @@ Core and Builtins
   Exception (KeyboardInterrupt, and SystemExit) propagate instead of
   ignoring them.
 
-- #3021 Exception reraising sematics have been significantly improved.  However,
+- #3021 Exception reraising semantics have been significantly improved.  However,
   f_exc_type, f_exc_value, and f_exc_traceback cannot be accessed from Python
   code anymore.
 

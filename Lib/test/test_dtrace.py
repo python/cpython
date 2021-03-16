@@ -79,7 +79,7 @@ class TraceBackend:
         try:
             output = self.trace(abspath("assert_usable" + self.EXTENSION))
             output = output.strip()
-        except (FileNotFoundError, PermissionError) as fnfe:
+        except (FileNotFoundError, NotADirectoryError, PermissionError) as fnfe:
             output = str(fnfe)
         if output != "probe: success":
             raise unittest.SkipTest(

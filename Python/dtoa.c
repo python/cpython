@@ -64,6 +64,9 @@
  *  7. _Py_dg_strtod has been modified so that it doesn't accept strings with
  *     leading whitespace.
  *
+ *  8. A corner case where _Py_dg_dtoa didn't strip trailing zeros has been
+ *     fixed. (bugs.python.org/issue40780)
+ *
  ***************************************************************/
 
 /* Please send bug reports for the original dtoa.c code to David M. Gay (dmg
@@ -115,6 +118,17 @@
 /* Linking of Python's #defines to Gay's #defines starts here. */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
+#include "pycore_interp.h"
+#include "pycore_pystate.h"
+
+#define ULong _PyDtoa_ULong
+#define Long _PyDtoa_Long
+#define ULLong _PyDtoa_ULLong
+#define Kmax _PyDtoa_Kmax
+
+typedef struct _PyDtoa_Bigint Bigint;
+
 
 /* if PY_NO_SHORT_FLOAT_REPR is defined, then don't even try to compile
    the following code */
@@ -149,11 +163,6 @@
 #if !defined(WORDS_BIGENDIAN) && defined(DOUBLE_IS_BIG_ENDIAN_IEEE754)
 #error "doubles and ints have incompatible endianness"
 #endif
-
-
-typedef uint32_t ULong;
-typedef int32_t Long;
-typedef uint64_t ULLong;
 
 #undef DEBUG
 #ifdef Py_DEBUG
@@ -293,8 +302,6 @@ BCinfo {
 
 #define FFFFFFFF 0xffffffffUL
 
-#define Kmax 7
-
 /* struct Bigint is used to represent arbitrary-precision integers.  These
    integers are stored in sign-magnitude format, with the magnitude stored as
    an array of base 2**32 digits.  Bigints are always normalized: if x is a
@@ -317,14 +324,6 @@ BCinfo {
        significant (x[0]) to most significant (x[wds-1]).
 */
 
-struct
-Bigint {
-    struct Bigint *next;
-    int k, maxwds, sign, wds;
-    ULong x[1];
-};
-
-typedef struct Bigint Bigint;
 
 #ifndef Py_USING_MEMORY_DEBUGGER
 
@@ -347,7 +346,13 @@ typedef struct Bigint Bigint;
    Bfree to PyMem_Free.  Investigate whether this has any significant
    performance on impact. */
 
-static Bigint *freelist[Kmax+1];
+
+/* Get Bigint freelist from interpreter  */
+static Bigint **
+get_freelist(void) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return interp->dtoa_freelist;
+} 
 
 /* Allocate space for a Bigint with up to 1<<k digits */
 
@@ -357,7 +362,7 @@ Balloc(int k)
     int x;
     Bigint *rv;
     unsigned int len;
-
+    Bigint **freelist = get_freelist();
     if (k <= Kmax && (rv = freelist[k]))
         freelist[k] = rv->next;
     else {
@@ -389,6 +394,7 @@ Bfree(Bigint *v)
         if (v->k > Kmax)
             FREE((void*)v);
         else {
+            Bigint **freelist = get_freelist();
             v->next = freelist[v->k];
             freelist[v->k] = v;
         }
@@ -1441,8 +1447,9 @@ _Py_dg_strtod(const char *s00, char **se)
     ULong y, z, abs_exp;
     Long L;
     BCinfo bc;
-    Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
+    Bigint *bb = NULL, *bd = NULL, *bd0 = NULL, *bs = NULL, *delta = NULL;
     size_t ndigits, fraclen;
+    double result;
 
     dval(&rv) = 0.;
 
@@ -1634,7 +1641,6 @@ _Py_dg_strtod(const char *s00, char **se)
     if (k > 9) {
         dval(&rv) = tens[k - 9] * dval(&rv) + z;
     }
-    bd0 = 0;
     if (nd <= DBL_DIG
         && Flt_Rounds == 1
         ) {
@@ -1804,14 +1810,11 @@ _Py_dg_strtod(const char *s00, char **se)
 
         bd = Balloc(bd0->k);
         if (bd == NULL) {
-            Bfree(bd0);
             goto failed_malloc;
         }
         Bcopy(bd, bd0);
         bb = sd2b(&rv, bc.scale, &bbe);   /* srv = bb * 2^bbe */
         if (bb == NULL) {
-            Bfree(bd);
-            Bfree(bd0);
             goto failed_malloc;
         }
         /* Record whether lsb of bb is odd, in case we need this
@@ -1821,9 +1824,6 @@ _Py_dg_strtod(const char *s00, char **se)
         /* tdv = bd * 10**e;  srv = bb * 2**bbe */
         bs = i2b(1);
         if (bs == NULL) {
-            Bfree(bb);
-            Bfree(bd);
-            Bfree(bd0);
             goto failed_malloc;
         }
 
@@ -1874,54 +1874,36 @@ _Py_dg_strtod(const char *s00, char **se)
         if (bb5 > 0) {
             bs = pow5mult(bs, bb5);
             if (bs == NULL) {
-                Bfree(bb);
-                Bfree(bd);
-                Bfree(bd0);
                 goto failed_malloc;
             }
-            bb1 = mult(bs, bb);
+            Bigint *bb1 = mult(bs, bb);
             Bfree(bb);
             bb = bb1;
             if (bb == NULL) {
-                Bfree(bs);
-                Bfree(bd);
-                Bfree(bd0);
                 goto failed_malloc;
             }
         }
         if (bb2 > 0) {
             bb = lshift(bb, bb2);
             if (bb == NULL) {
-                Bfree(bs);
-                Bfree(bd);
-                Bfree(bd0);
                 goto failed_malloc;
             }
         }
         if (bd5 > 0) {
             bd = pow5mult(bd, bd5);
             if (bd == NULL) {
-                Bfree(bb);
-                Bfree(bs);
-                Bfree(bd0);
                 goto failed_malloc;
             }
         }
         if (bd2 > 0) {
             bd = lshift(bd, bd2);
             if (bd == NULL) {
-                Bfree(bb);
-                Bfree(bs);
-                Bfree(bd0);
                 goto failed_malloc;
             }
         }
         if (bs2 > 0) {
             bs = lshift(bs, bs2);
             if (bs == NULL) {
-                Bfree(bb);
-                Bfree(bd);
-                Bfree(bd0);
                 goto failed_malloc;
             }
         }
@@ -1932,10 +1914,6 @@ _Py_dg_strtod(const char *s00, char **se)
 
         delta = diff(bb, bd);
         if (delta == NULL) {
-            Bfree(bb);
-            Bfree(bs);
-            Bfree(bd);
-            Bfree(bd0);
             goto failed_malloc;
         }
         dsign = delta->sign;
@@ -1989,10 +1967,6 @@ _Py_dg_strtod(const char *s00, char **se)
             }
             delta = lshift(delta,Log2P);
             if (delta == NULL) {
-                Bfree(bb);
-                Bfree(bs);
-                Bfree(bd);
-                Bfree(bd0);
                 goto failed_malloc;
             }
             if (cmp(delta, bs) > 0)
@@ -2094,11 +2068,6 @@ _Py_dg_strtod(const char *s00, char **se)
             if ((word0(&rv) & Exp_mask) >=
                 Exp_msk1*(DBL_MAX_EXP+Bias-P)) {
                 if (word0(&rv0) == Big0 && word1(&rv0) == Big1) {
-                    Bfree(bb);
-                    Bfree(bd);
-                    Bfree(bs);
-                    Bfree(bd0);
-                    Bfree(delta);
                     goto ovfl;
                 }
                 word0(&rv) = Big0;
@@ -2140,16 +2109,11 @@ _Py_dg_strtod(const char *s00, char **se)
                 }
         }
       cont:
-        Bfree(bb);
-        Bfree(bd);
-        Bfree(bs);
-        Bfree(delta);
+        Bfree(bb); bb = NULL;
+        Bfree(bd); bd = NULL;
+        Bfree(bs); bs = NULL;
+        Bfree(delta); delta = NULL;
     }
-    Bfree(bb);
-    Bfree(bd);
-    Bfree(bs);
-    Bfree(bd0);
-    Bfree(delta);
     if (bc.nd > nd) {
         error = bigcomp(&rv, s0, &bc);
         if (error)
@@ -2163,24 +2127,37 @@ _Py_dg_strtod(const char *s00, char **se)
     }
 
   ret:
-    return sign ? -dval(&rv) : dval(&rv);
+    result = sign ? -dval(&rv) : dval(&rv);
+    goto done;
 
   parse_error:
-    return 0.0;
+    result = 0.0;
+    goto done;
 
   failed_malloc:
     errno = ENOMEM;
-    return -1.0;
+    result = -1.0;
+    goto done;
 
   undfl:
-    return sign ? -0.0 : 0.0;
+    result = sign ? -0.0 : 0.0;
+    goto done;
 
   ovfl:
     errno = ERANGE;
     /* Can't trust HUGE_VAL */
     word0(&rv) = Exp_mask;
     word1(&rv) = 0;
-    return sign ? -dval(&rv) : dval(&rv);
+    result = sign ? -dval(&rv) : dval(&rv);
+    goto done;
+
+  done:
+    Bfree(bb);
+    Bfree(bd);
+    Bfree(bs);
+    Bfree(bd0);
+    Bfree(delta);
+    return result;
 
 }
 
@@ -2590,6 +2567,14 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
                             break;
                         }
                     ++*s++;
+                }
+                else {
+                    /* Strip trailing zeros. This branch was missing from the
+                       original dtoa.c, leading to surplus trailing zeros in
+                       some cases. See bugs.python.org/issue40780. */
+                    while (s > s0 && s[-1] == '0') {
+                        --s;
+                    }
                 }
                 break;
             }

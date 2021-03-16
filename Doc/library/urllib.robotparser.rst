@@ -76,6 +76,15 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
 
       .. versionadded:: 3.6
 
+   .. method:: site_maps()
+
+      Returns the contents of the ``Sitemap`` parameter from
+      ``robots.txt`` in the form of a :func:`list`. If there is no such
+      parameter or the ``robots.txt`` entry for this parameter has
+      invalid syntax, return ``None``.
+
+      .. versionadded:: 3.8
+
 
 The following example demonstrates basic use of the :class:`RobotFileParser`
 class::

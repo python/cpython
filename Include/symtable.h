@@ -1,10 +1,11 @@
 #ifndef Py_LIMITED_API
 #ifndef Py_SYMTABLE_H
 #define Py_SYMTABLE_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "Python-ast.h"   /* mod_ty */
 
 /* XXX(ncoghlan): This is a weird mix of public names and interpreter internal
  *                names.
@@ -32,6 +33,7 @@ struct symtable {
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
+    int in_pattern;                 /* whether we are currently in a pattern */
 };
 
 typedef struct _symtable_entry {
@@ -49,6 +51,7 @@ typedef struct _symtable_entry {
                                      including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
+    unsigned ste_comprehension : 1; /* true if namespace is a list comprehension */
     unsigned ste_varargs : 1;     /* true if block has varargs */
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
     unsigned ste_returns_value : 1;  /* true if namespace uses return with
@@ -56,17 +59,18 @@ typedef struct _symtable_entry {
     unsigned ste_needs_class_closure : 1; /* for class scopes, true if a
                                              closure over __class__
                                              should be created */
+    unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
+    int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */
     int ste_opt_lineno;      /* lineno of last exec or import * */
     int ste_opt_col_offset;  /* offset of last exec or import * */
-    int ste_tmpname;         /* counter for listcomp temp vars */
     struct symtable *ste_table;
 } PySTEntryObject;
 
 PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
-#define PySTEntry_Check(op) (Py_TYPE(op) == &PySTEntry_Type)
+#define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
 
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 
@@ -93,6 +97,7 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define DEF_FREE_CLASS 2<<5    /* free variable from class's method */
 #define DEF_IMPORT 2<<6        /* assignment occurred via import */
 #define DEF_ANNOT 2<<7         /* this name is annotated */
+#define DEF_COMP_ITER 2<<8     /* this name is a comprehension iteration variable */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
@@ -116,4 +121,4 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 }
 #endif
 #endif /* !Py_SYMTABLE_H */
-#endif /* Py_LIMITED_API */
+#endif /* !Py_LIMITED_API */

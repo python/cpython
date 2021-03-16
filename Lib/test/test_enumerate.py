@@ -2,6 +2,7 @@ import unittest
 import operator
 import sys
 import pickle
+import gc
 
 from test import support
 
@@ -134,6 +135,18 @@ class EnumerateTestCase(unittest.TestCase, PickleTest):
         self.assertEqual(len(set(map(id, list(enumerate(self.seq))))), len(self.seq))
         self.assertEqual(len(set(map(id, enumerate(self.seq)))), min(1,len(self.seq)))
 
+    @support.cpython_only
+    def test_enumerate_result_gc(self):
+        # bpo-42536: enumerate's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = self.enum([[]])
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
 class MyEnum(enumerate):
     pass
 
@@ -160,9 +173,9 @@ class TestReversed(unittest.TestCase, PickleTest):
                 raise StopIteration
             def __len__(self):
                 return 5
-        for data in 'abc', range(5), tuple(enumerate('abc')), A(), range(1,17,5):
+        for data in ('abc', range(5), tuple(enumerate('abc')), A(),
+                    range(1,17,5), dict.fromkeys('abcde')):
             self.assertEqual(list(data)[::-1], list(reversed(data)))
-        self.assertRaises(TypeError, reversed, {})
         # don't allow keyword arguments
         self.assertRaises(TypeError, reversed, [], a=1)
 

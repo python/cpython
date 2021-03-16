@@ -1,0 +1,144 @@
+jobs:
+- job: Pack_MSIX
+  displayName: Pack MSIX bundles
+
+  pool:
+    vmImage: windows-2019
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      amd64:
+        Name: amd64
+        Artifact: appx
+        Suffix:
+        ShouldSign: true
+      amd64_store:
+        Name: amd64
+        Artifact: appxstore
+        Suffix: -store
+        Upload: true
+      arm64:
+        Name: arm64
+        Artifact: appx
+        Suffix:
+        ShouldSign: true
+      arm64_store:
+        Name: arm64
+        Artifact: appxstore
+        Suffix: -store
+        Upload: true
+
+  steps:
+  - template: ./checkout.yml
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: layout_$(Artifact)_$(Name)'
+    inputs:
+      artifactName: layout_$(Artifact)_$(Name)
+      targetPath: $(Build.BinariesDirectory)\layout
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download artifact: symbols'
+    inputs:
+      artifactName: symbols
+      downloadPath: $(Build.BinariesDirectory)
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=VersionText]$($d.PythonVersion)"
+      Write-Host "##vso[task.setvariable variable=VersionNumber]$($d.PythonVersionNumber)"
+      Write-Host "##vso[task.setvariable variable=VersionHex]$($d.PythonVersionHex)"
+      Write-Host "##vso[task.setvariable variable=VersionUnique]$($d.PythonVersionUnique)"
+      Write-Host "##vso[task.setvariable variable=Filename]python-$($d.PythonVersion)-$(Name)$(Suffix)"
+    displayName: 'Extract version numbers'
+
+  - powershell: |
+      ./Tools/msi/make_appx.ps1 -layout "$(Build.BinariesDirectory)\layout" -msix "$(Build.ArtifactStagingDirectory)\msix\$(Filename).msix"
+    displayName: 'Build msix'
+
+  - powershell: |
+      7z a -tzip "$(Build.ArtifactStagingDirectory)\msix\$(Filename).appxsym" *.pdb
+    displayName: 'Build appxsym'
+    workingDirectory: $(Build.BinariesDirectory)\symbols\$(Name)
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: MSIX'
+    condition: and(succeeded(), or(ne(variables['ShouldSign'], 'true'), not(variables['SigningCertificate'])))
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)\msix'
+      ArtifactName: msix
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: MSIX'
+    condition: and(succeeded(), and(eq(variables['ShouldSign'], 'true'), variables['SigningCertificate']))
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)\msix'
+      ArtifactName: unsigned_msix
+
+  - powershell: |
+      7z a -tzip "$(Build.ArtifactStagingDirectory)\msixupload\$(Filename).msixupload" *
+    displayName: 'Build msixupload'
+    condition: and(succeeded(), eq(variables['Upload'], 'true'))
+    workingDirectory: $(Build.ArtifactStagingDirectory)\msix
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: MSIXUpload'
+    condition: and(succeeded(), eq(variables['Upload'], 'true'))
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)\msixupload'
+      ArtifactName: msixupload
+
+
+- job: Sign_MSIX
+  displayName: Sign side-loadable MSIX bundles
+  dependsOn:
+  - Pack_MSIX
+  condition: and(succeeded(), variables['SigningCertificate'])
+
+  pool:
+    name: 'Windows Release'
+
+  workspace:
+    clean: all
+
+  steps:
+  - template: ./checkout.yml
+  - template: ./find-sdk.yml
+
+  - powershell: |
+      $d = (.\PCbuild\build.bat -V) | %{ if($_ -match '\s+(\w+):\s*(.+)\s*$') { @{$Matches[1] = $Matches[2];} }};
+      Write-Host "##vso[task.setvariable variable=SigningDescription]Python $($d.PythonVersion)"
+    displayName: 'Update signing description'
+    condition: and(succeeded(), not(variables['SigningDescription']))
+
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Artifact: unsigned_msix'
+    inputs:
+      artifactName: unsigned_msix
+      downloadPath: $(Build.BinariesDirectory)
+
+  # MSIX must be signed and timestamped simultaneously
+  - powershell: |
+      $failed = $true
+      foreach ($retry in 1..3) {
+          signtool sign /a /n "$(SigningCertificate)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "$(SigningDescription)" (gi *.msix)
+          if ($?) {
+              $failed = $false
+              break
+          }
+          sleep 1
+      }
+      if ($failed) {
+          throw "Failed to sign MSIX"
+      }
+    displayName: 'Sign MSIX'
+    workingDirectory: $(Build.BinariesDirectory)\unsigned_msix
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: MSIX'
+    inputs:
+      PathtoPublish: '$(Build.BinariesDirectory)\unsigned_msix'
+      ArtifactName: msix

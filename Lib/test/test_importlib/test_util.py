@@ -1,4 +1,4 @@
-from . import util
+﻿from . import util
 abc = util.import_importlib('importlib.abc')
 init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
@@ -12,6 +12,7 @@ import sys
 from test import support
 import types
 import unittest
+import unittest.mock
 import warnings
 
 
@@ -374,7 +375,7 @@ class ResolveNameTests:
 
     def test_no_package(self):
         # .bacon in ''
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('.bacon', '')
 
     def test_in_package(self):
@@ -389,7 +390,7 @@ class ResolveNameTests:
 
     def test_escape(self):
         # ..bacon in spam
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('..bacon', 'spam')
 
 
@@ -517,7 +518,7 @@ class FindSpecTests:
         with util.temp_module(name, pkg=True) as pkg_dir:
             fullname, _ = util.submodule(name, subname, pkg_dir)
             relname = '.' + subname
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.util.find_spec(relname)
             self.assertNotIn(name, sorted(sys.modules))
             self.assertNotIn(fullname, sorted(sys.modules))
@@ -557,8 +558,8 @@ class PEP3147Tests:
 
     tag = sys.implementation.cache_tag
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag not be None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag not be None')
     def test_cache_from_source(self):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
@@ -678,18 +679,17 @@ class PEP3147Tests:
             self.util.cache_from_source('\\foo\\bar\\baz/qux.py', optimization=''),
             '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag not be None')
-    def test_source_from_cache_path_like_arg(self):
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag not be None')
+    def test_cache_from_source_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', 'qux.py')
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
                               'qux.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag to not be '
-                         'None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache(self):
         # Given the path to a PEP 3147 defined .pyc file, return the path to
         # its source.  This tests the good path.
@@ -749,14 +749,86 @@ class PEP3147Tests:
         with self.assertRaises(ValueError):
             self.util.source_from_cache(path)
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag to not be '
-                         'None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', '__pycache__',
                                 'qux.{}.pyc'.format(self.tag))
         expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
         self.assertEqual(self.util.source_from_cache(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_respects_pycache_prefix(self):
+        # If pycache_prefix is set, cache_from_source will return a bytecode
+        # path inside that directory (in a subdirectory mirroring the .py file's
+        # path) rather than in a __pycache__ dir next to the py file.
+        pycache_prefixes = [
+            os.path.join(os.path.sep, 'tmp', 'bytecode'),
+            os.path.join(os.path.sep, 'tmp', '\u2603'),  # non-ASCII in path!
+            os.path.join(os.path.sep, 'tmp', 'trailing-slash') + os.path.sep,
+        ]
+        drive = ''
+        if os.name == 'nt':
+            drive = 'C:'
+            pycache_prefixes = [
+                f'{drive}{prefix}' for prefix in pycache_prefixes]
+            pycache_prefixes += [r'\\?\C:\foo', r'\\localhost\c$\bar']
+        for pycache_prefix in pycache_prefixes:
+            with self.subTest(path=pycache_prefix):
+                path = drive + os.path.join(
+                    os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
+                expect = os.path.join(
+                    pycache_prefix, 'foo', 'bar', 'baz',
+                    'qux.{}.pyc'.format(self.tag))
+                with util.temporary_pycache_prefix(pycache_prefix):
+                    self.assertEqual(
+                        self.util.cache_from_source(path, optimization=''),
+                        expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_respects_pycache_prefix_relative(self):
+        # If the .py path we are given is relative, we will resolve to an
+        # absolute path before prefixing with pycache_prefix, to avoid any
+        # possible ambiguity.
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        root = os.path.splitdrive(os.getcwd())[0] + os.path.sep
+        expect = os.path.join(
+            pycache_prefix,
+            os.path.relpath(os.getcwd(), root),
+            'foo', 'bar', 'baz', f'qux.{self.tag}.pyc')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            self.assertEqual(
+                self.util.cache_from_source(path, optimization=''),
+                expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_source_from_cache_inside_pycache_prefix(self):
+        # If pycache_prefix is set and the cache path we get is inside it,
+        # we return an absolute path to the py file based on the remainder of
+        # the path within pycache_prefix.
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join(pycache_prefix, 'foo', 'bar', 'baz',
+                            f'qux.{self.tag}.pyc')
+        expect = os.path.join(os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            self.assertEqual(self.util.source_from_cache(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_source_from_cache_outside_pycache_prefix(self):
+        # If pycache_prefix is set but the cache path we get is not inside
+        # it, just ignore it and handle the cache path according to the default
+        # behavior.
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                            f'qux.{self.tag}.pyc')
+        expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            self.assertEqual(self.util.source_from_cache(path), expect)
 
 
 (Frozen_PEP3147Tests,
@@ -769,7 +841,7 @@ class MagicNumberTests(unittest.TestCase):
     Test release compatibility issues relating to importlib
     """
     @unittest.skipUnless(
-        sys.version_info.releaselevel in ('final', 'release'),
+        sys.version_info.releaselevel in ('candidate', 'final'),
         'only applies to candidate or final python release levels'
     )
     def test_magic_number(self):
@@ -789,7 +861,7 @@ class MagicNumberTests(unittest.TestCase):
         in advance. Such exceptional releases will then require an
         adjustment to this test case.
         """
-        EXPECTED_MAGIC_NUMBER = 3379
+        EXPECTED_MAGIC_NUMBER = 3413
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (

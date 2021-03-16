@@ -1,0 +1,51 @@
+jobs:
+- job: Pack_Nuget
+  displayName: Pack Nuget bundles
+  condition: and(succeeded(), eq(variables['DoNuget'], 'true'))
+
+  pool:
+    name: 'Windows Release'
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      amd64:
+        Name: amd64
+      win32:
+        Name: win32
+      arm64:
+        Name: arm64
+
+  steps:
+  - checkout: none
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: layout_nuget_$(Name)'
+    inputs:
+      artifactName: layout_nuget_$(Name)
+      targetPath: $(Build.BinariesDirectory)\layout
+
+  - task: NugetToolInstaller@0
+    displayName: 'Install Nuget'
+    inputs:
+      versionSpec: '>=5.0'
+
+  - powershell: |
+      nuget pack "$(Build.BinariesDirectory)\layout\python.nuspec" -OutputDirectory $(Build.ArtifactStagingDirectory) -NoPackageAnalysis -NonInteractive
+    displayName: 'Create nuget package'
+
+  - powershell: |
+      gci *.nupkg | %{
+        nuget sign "$_" -CertificateSubjectName "$(SigningCertificate)" -Timestamper http://timestamp.digicert.com/ -Overwrite
+      }
+    displayName: 'Sign nuget package'
+    workingDirectory: $(Build.ArtifactStagingDirectory)
+    condition: and(succeeded(), variables['SigningCertificate'])
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: nuget'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: nuget

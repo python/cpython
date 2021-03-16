@@ -343,7 +343,6 @@ AssertionError.
 
 Optimize asyncio.iscoroutine() and loop.create_task() for non-native
 coroutines (e.g. async/await compiled with Cython).
-
 'loop.create_task(python_coroutine)' used to be 20% faster than
 'loop.create_task(cython_coroutine)'.  Now, the latter is as fast.
 
@@ -426,7 +425,7 @@ Implement asyncio.create_task(coro) shortcut
 
 Convert asyncio functions that were documented as coroutines to coroutines.
 Affected functions: loop.sock_sendall, loop.sock_recv, loop.sock_accept,
-loop.run_in_executor, loop.getaddrinfo, loop.getnameinfo.
+loop.getaddrinfo, loop.getnameinfo.
 
 ..
 

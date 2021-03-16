@@ -40,10 +40,10 @@ class HierarchyTest(unittest.TestCase):
         self.assertIs(EnvironmentError, OSError)
 
     def test_socket_errors(self):
-        self.assertIs(socket.error, IOError)
+        self.assertIs(socket.error, OSError)
         self.assertIs(socket.gaierror.__base__, OSError)
         self.assertIs(socket.herror.__base__, OSError)
-        self.assertIs(socket.timeout.__base__, OSError)
+        self.assertIs(socket.timeout, TimeoutError)
 
     def test_select_error(self):
         self.assertIs(select.error, OSError)
@@ -150,10 +150,15 @@ class AttributesTest(unittest.TestCase):
             e = BlockingIOError(*args[:n])
             with self.assertRaises(AttributeError):
                 e.characters_written
+            with self.assertRaises(AttributeError):
+                del e.characters_written
         e = BlockingIOError("a", "b", 3)
         self.assertEqual(e.characters_written, 3)
         e.characters_written = 5
         self.assertEqual(e.characters_written, 5)
+        del e.characters_written
+        with self.assertRaises(AttributeError):
+            e.characters_written
 
 
 class ExplicitSubclassingTest(unittest.TestCase):

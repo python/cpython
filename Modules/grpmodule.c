@@ -34,16 +34,30 @@ static PyStructSequence_Desc struct_group_type_desc = {
 };
 
 
-static int initialized;
-static PyTypeObject StructGrpType;
+typedef struct {
+  PyTypeObject *StructGrpType;
+} grpmodulestate;
+
+static inline grpmodulestate*
+get_grp_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (grpmodulestate *)state;
+}
+
+static struct PyModuleDef grpmodule;
+
+#define DEFAULT_BUFFER_SIZE 1024
 
 static PyObject *
-mkgrent(struct group *p)
+mkgrent(PyObject *module, struct group *p)
 {
     int setIndex = 0;
-    PyObject *v = PyStructSequence_New(&StructGrpType), *w;
+    PyObject *v, *w;
     char **member;
 
+    v = PyStructSequence_New(get_grp_state(module)->StructGrpType);
     if (v == NULL)
         return NULL;
 
@@ -96,31 +110,58 @@ static PyObject *
 grp_getgrgid_impl(PyObject *module, PyObject *id)
 /*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
 {
-    PyObject *py_int_id;
+    PyObject *retval = NULL;
+    int nomem = 0;
+    char *buf = NULL, *buf2 = NULL;
     gid_t gid;
     struct group *p;
 
     if (!_Py_Gid_Converter(id, &gid)) {
-        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-            return NULL;
-        }
-        PyErr_Clear();
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                             "group id must be int, not %.200",
-                             id->ob_type->tp_name) < 0) {
-            return NULL;
-        }
-        py_int_id = PyNumber_Long(id);
-        if (!py_int_id)
-            return NULL;
-        if (!_Py_Gid_Converter(py_int_id, &gid)) {
-            Py_DECREF(py_int_id);
-            return NULL;
-        }
-        Py_DECREF(py_int_id);
+        return NULL;
+    }
+#ifdef HAVE_GETGRGID_R
+    int status;
+    Py_ssize_t bufsize;
+    /* Note: 'grp' will be used via pointer 'p' on getgrgid_r success. */
+    struct group grp;
+
+    Py_BEGIN_ALLOW_THREADS
+    bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (bufsize == -1) {
+        bufsize = DEFAULT_BUFFER_SIZE;
     }
 
-    if ((p = getgrgid(gid)) == NULL) {
+    while (1) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
+            p = NULL;
+            nomem = 1;
+            break;
+        }
+        buf = buf2;
+        status = getgrgid_r(gid, &grp, buf, bufsize, &p);
+        if (status != 0) {
+            p = NULL;
+        }
+        if (p != NULL || status != ERANGE) {
+            break;
+        }
+        if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
+            nomem = 1;
+            break;
+        }
+        bufsize <<= 1;
+    }
+
+    Py_END_ALLOW_THREADS
+#else
+    p = getgrgid(gid);
+#endif
+    if (p == NULL) {
+        PyMem_RawFree(buf);
+        if (nomem == 1) {
+            return PyErr_NoMemory();
+        }
         PyObject *gid_obj = _PyLong_FromGid(gid);
         if (gid_obj == NULL)
             return NULL;
@@ -128,7 +169,11 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
         Py_DECREF(gid_obj);
         return NULL;
     }
-    return mkgrent(p);
+    retval = mkgrent(module, p);
+#ifdef HAVE_GETGRGID_R
+    PyMem_RawFree(buf);
+#endif
+    return retval;
 }
 
 /*[clinic input]
@@ -145,7 +190,8 @@ static PyObject *
 grp_getgrnam_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
 {
-    char *name_chars;
+    char *buf = NULL, *buf2 = NULL, *name_chars;
+    int nomem = 0;
     struct group *p;
     PyObject *bytes, *retval = NULL;
 
@@ -154,13 +200,56 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
     /* check for embedded null bytes */
     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
         goto out;
+#ifdef HAVE_GETGRNAM_R
+    int status;
+    Py_ssize_t bufsize;
+    /* Note: 'grp' will be used via pointer 'p' on getgrnam_r success. */
+    struct group grp;
 
-    if ((p = getgrnam(name_chars)) == NULL) {
-        PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name_chars);
+    Py_BEGIN_ALLOW_THREADS
+    bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (bufsize == -1) {
+        bufsize = DEFAULT_BUFFER_SIZE;
+    }
+
+    while(1) {
+        buf2 = PyMem_RawRealloc(buf, bufsize);
+        if (buf2 == NULL) {
+            p = NULL;
+            nomem = 1;
+            break;
+        }
+        buf = buf2;
+        status = getgrnam_r(name_chars, &grp, buf, bufsize, &p);
+        if (status != 0) {
+            p = NULL;
+        }
+        if (p != NULL || status != ERANGE) {
+            break;
+        }
+        if (bufsize > (PY_SSIZE_T_MAX >> 1)) {
+            nomem = 1;
+            break;
+        }
+        bufsize <<= 1;
+    }
+
+    Py_END_ALLOW_THREADS
+#else
+    p = getgrnam(name_chars);
+#endif
+    if (p == NULL) {
+        if (nomem == 1) {
+            PyErr_NoMemory();
+        }
+        else {
+            PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %R", name);
+        }
         goto out;
     }
-    retval = mkgrent(p);
+    retval = mkgrent(module, p);
 out:
+    PyMem_RawFree(buf);
     Py_DECREF(bytes);
     return retval;
 }
@@ -185,7 +274,7 @@ grp_getgrall_impl(PyObject *module)
         return NULL;
     setgrent();
     while ((p = getgrent()) != NULL) {
-        PyObject *v = mkgrent(p);
+        PyObject *v = mkgrent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
             Py_DECREF(d);
@@ -221,36 +310,54 @@ users are not explicitly listed as members of the groups they are in\n\
 according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
+static int
+grpmodule_exec(PyObject *module)
+{
+    grpmodulestate *state = get_grp_state(module);
 
+    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
+    if (state->StructGrpType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->StructGrpType) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot grpmodule_slots[] = {
+    {Py_mod_exec, grpmodule_exec},
+    {0, NULL}
+};
+
+static int grpmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_grp_state(m)->StructGrpType);
+    return 0;
+}
+
+static int grpmodule_clear(PyObject *m) {
+    Py_CLEAR(get_grp_state(m)->StructGrpType);
+    return 0;
+}
+
+static void grpmodule_free(void *m) {
+    grpmodule_clear((PyObject *)m);
+}
 
 static struct PyModuleDef grpmodule = {
-        PyModuleDef_HEAD_INIT,
-        "grp",
-        grp__doc__,
-        -1,
-        grp_methods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+    PyModuleDef_HEAD_INIT,
+    .m_name = "grp",
+    .m_doc = grp__doc__,
+    .m_size = sizeof(grpmodulestate),
+    .m_methods = grp_methods,
+    .m_slots = grpmodule_slots,
+    .m_traverse = grpmodule_traverse,
+    .m_clear = grpmodule_clear,
+    .m_free = grpmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit_grp(void)
 {
-    PyObject *m, *d;
-    m = PyModule_Create(&grpmodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructGrpType,
-                                       &struct_group_type_desc) < 0)
-            return NULL;
-    }
-    if (PyDict_SetItemString(d, "struct_group",
-                             (PyObject *)&StructGrpType) < 0)
-        return NULL;
-    initialized = 1;
-    return m;
+   return PyModuleDef_Init(&grpmodule);
 }

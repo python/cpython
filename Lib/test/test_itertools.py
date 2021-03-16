@@ -11,6 +11,9 @@ import pickle
 from functools import reduce
 import sys
 import struct
+import threading
+import gc
+
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -147,6 +150,12 @@ class TestBasicOps(unittest.TestCase):
             list(accumulate(s, chr))                                # unary-operation
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, accumulate(range(10)))           # test pickling
+            self.pickletest(proto, accumulate(range(10), initial=7))
+        self.assertEqual(list(accumulate([10, 5, 1], initial=None)), [10, 15, 16])
+        self.assertEqual(list(accumulate([10, 5, 1], initial=100)), [100, 110, 115, 116])
+        self.assertEqual(list(accumulate([], initial=100)), [100])
+        with self.assertRaises(TypeError):
+            list(accumulate([10, 20], 100))
 
     def test_chain(self):
 
@@ -965,6 +974,18 @@ class TestBasicOps(unittest.TestCase):
             self.pickletest(proto, zip_longest("abc", "defgh", fillvalue=1))
             self.pickletest(proto, zip_longest("", "defgh"))
 
+    def test_zip_longest_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip_longest(BadIterable())
+
+        self.assertIs(cm.exception, exception)
+
     def test_bug_7244(self):
 
         class Repeater:
@@ -1004,6 +1025,25 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(it), (1, 2))
         self.assertEqual(next(it), (1, 2))
         self.assertRaises(RuntimeError, next, it)
+
+    def test_pairwise(self):
+        self.assertEqual(list(pairwise('')), [])
+        self.assertEqual(list(pairwise('a')), [])
+        self.assertEqual(list(pairwise('ab')),
+                              [('a', 'b')]),
+        self.assertEqual(list(pairwise('abcde')),
+                              [('a', 'b'), ('b', 'c'), ('c', 'd'), ('d', 'e')])
+        self.assertEqual(list(pairwise(range(10_000))),
+                         list(zip(range(10_000), range(1, 10_000))))
+
+        with self.assertRaises(TypeError):
+            pairwise()                                      # too few arguments
+        with self.assertRaises(TypeError):
+            pairwise('abc', 10)                             # too many arguments
+        with self.assertRaises(TypeError):
+            pairwise(iterable='abc')                        # keyword arguments
+        with self.assertRaises(TypeError):
+            pairwise(None)                                  # non-iterable argument
 
     def test_product(self):
         for args, result in [
@@ -1192,6 +1232,7 @@ class TestBasicOps(unittest.TestCase):
                 (10, 20, 3),
                 (10, 3, 20),
                 (10, 20),
+                (10, 10),
                 (10, 3),
                 (20,)
                 ]:
@@ -1216,6 +1257,10 @@ class TestBasicOps(unittest.TestCase):
         # Test number of items consumed     SF #1171417
         it = iter(range(10))
         self.assertEqual(list(islice(it, 3)), list(range(3)))
+        self.assertEqual(list(it), list(range(3, 10)))
+
+        it = iter(range(10))
+        self.assertEqual(list(islice(it, 3, 3)), [])
         self.assertEqual(list(it), list(range(3, 10)))
 
         # Test invalid arguments
@@ -1471,6 +1516,42 @@ class TestBasicOps(unittest.TestCase):
             del forward, backward
             raise
 
+    def test_tee_reenter(self):
+        class I:
+            first = True
+            def __iter__(self):
+                return self
+            def __next__(self):
+                first = self.first
+                self.first = False
+                if first:
+                    return next(b)
+
+        a, b = tee(I())
+        with self.assertRaisesRegex(RuntimeError, "tee"):
+            next(a)
+
+    def test_tee_concurrent(self):
+        start = threading.Event()
+        finish = threading.Event()
+        class I:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                start.set()
+                finish.wait()
+
+        a, b = tee(I())
+        thread = threading.Thread(target=next, args=[a])
+        thread.start()
+        try:
+            start.wait()
+            with self.assertRaisesRegex(RuntimeError, "tee"):
+                next(b)
+        finally:
+            finish.set()
+            thread.join()
+
     def test_StopIteration(self):
         self.assertRaises(StopIteration, next, zip())
 
@@ -1493,6 +1574,51 @@ class TestBasicOps(unittest.TestCase):
         for f in (filter, filterfalse, map, takewhile, dropwhile, starmap):
             self.assertRaises(StopIteration, next, f(lambda x:x, []))
             self.assertRaises(StopIteration, next, f(lambda x:x, StopNow()))
+
+    @support.cpython_only
+    def test_combinations_result_gc(self):
+        # bpo-42536: combinations's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = combinations([None, []], 1)
+        next(it)
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which has the value (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_combinations_with_replacement_result_gc(self):
+        # Ditto for combinations_with_replacement.
+        it = combinations_with_replacement([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_permutations_result_gc(self):
+        # Ditto for permutations.
+        it = permutations([None, []], 1)
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_product_result_gc(self):
+        # Ditto for product.
+        it = product([None, []])
+        next(it)
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_zip_longest_result_gc(self):
+        # Ditto for zip_longest.
+        it = zip_longest([[]])
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
+
 
 class TestExamples(unittest.TestCase):
 
@@ -1604,6 +1730,48 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(list(takewhile(lambda x: x<5, [1,4,6,4,1])), [1,4])
 
 
+class TestPurePythonRoughEquivalents(unittest.TestCase):
+
+    @staticmethod
+    def islice(iterable, *args):
+        s = slice(*args)
+        start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
+        it = iter(range(start, stop, step))
+        try:
+            nexti = next(it)
+        except StopIteration:
+            # Consume *iterable* up to the *start* position.
+            for i, element in zip(range(start), iterable):
+                pass
+            return
+        try:
+            for i, element in enumerate(iterable):
+                if i == nexti:
+                    yield element
+                    nexti = next(it)
+        except StopIteration:
+            # Consume to *stop*.
+            for i, element in zip(range(i + 1, stop), iterable):
+                pass
+
+    def test_islice_recipe(self):
+        self.assertEqual(list(self.islice('ABCDEFG', 2)), list('AB'))
+        self.assertEqual(list(self.islice('ABCDEFG', 2, 4)), list('CD'))
+        self.assertEqual(list(self.islice('ABCDEFG', 2, None)), list('CDEFG'))
+        self.assertEqual(list(self.islice('ABCDEFG', 0, None, 2)), list('ACEG'))
+        # Test items consumed.
+        it = iter(range(10))
+        self.assertEqual(list(self.islice(it, 3)), list(range(3)))
+        self.assertEqual(list(it), list(range(3, 10)))
+        it = iter(range(10))
+        self.assertEqual(list(self.islice(it, 3, 3)), [])
+        self.assertEqual(list(it), list(range(3, 10)))
+        # Test that slice finishes in predictable state.
+        c = count()
+        self.assertEqual(list(self.islice(c, 1, 3, 50)), [1])
+        self.assertEqual(next(c), 3)
+
+
 class TestGC(unittest.TestCase):
 
     def makecycle(self, iterator, container):
@@ -1684,6 +1852,10 @@ class TestGC(unittest.TestCase):
     def test_islice(self):
         a = []
         self.makecycle(islice([a]*2, None), a)
+
+    def test_pairwise(self):
+        a = []
+        self.makecycle(pairwise([a]*5), a)
 
     def test_permutations(self):
         a = []
@@ -1893,6 +2065,17 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, islice, N(s), 10)
             self.assertRaises(ZeroDivisionError, list, islice(E(s), 10))
 
+    def test_pairwise(self):
+        for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                seq = list(g(s))
+                expected = list(zip(seq, seq[1:]))
+                actual = list(pairwise(g(s)))
+                self.assertEqual(actual, expected)
+            self.assertRaises(TypeError, pairwise, X(s))
+            self.assertRaises(TypeError, pairwise, N(s))
+            self.assertRaises(ZeroDivisionError, list, pairwise(E(s)))
+
     def test_starmap(self):
         for s in (range(10), range(0), range(100), (7,11), range(20,50,5)):
             for g in (G, I, Ig, S, L, R):
@@ -2009,6 +2192,7 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(AssertionError, list, cycle(gen1()))
         self.assertEqual(hist, [0,1])
 
+    @support.skip_if_pgo_task
     def test_long_chain_of_empty_iterables(self):
         # Make sure itertools.chain doesn't run into recursion limits when
         # dealing with long chains of empty iterables. Even with a high
@@ -2151,12 +2335,28 @@ Samuele
 ...     "Return first n items of the iterable as a list"
 ...     return list(islice(iterable, n))
 
+>>> def prepend(value, iterator):
+...     "Prepend a single value in front of an iterator"
+...     # prepend(1, [2, 3, 4]) -> 1 2 3 4
+...     return chain([value], iterator)
+
 >>> def enumerate(iterable, start=0):
 ...     return zip(count(start), iterable)
 
 >>> def tabulate(function, start=0):
 ...     "Return function(0), function(1), ..."
 ...     return map(function, count(start))
+
+>>> import collections
+>>> def consume(iterator, n=None):
+...     "Advance the iterator n-steps ahead. If n is None, consume entirely."
+...     # Use functions that consume iterators at C speed.
+...     if n is None:
+...         # feed the entire iterator into a zero-length deque
+...         collections.deque(iterator, maxlen=0)
+...     else:
+...         # advance to the empty slice starting at position n
+...         next(islice(iterator, n, n), None)
 
 >>> def nth(iterable, n, default=None):
 ...     "Returns the nth item or a default value"
@@ -2171,7 +2371,7 @@ Samuele
 ...     "Count how many times the predicate is true"
 ...     return sum(map(pred, iterable))
 
->>> def padnone(iterable):
+>>> def pad_none(iterable):
 ...     "Returns the sequence elements and then returns None indefinitely"
 ...     return chain(iterable, repeat(None))
 
@@ -2192,15 +2392,6 @@ Samuele
 ...         return starmap(func, repeat(args))
 ...     else:
 ...         return starmap(func, repeat(args, times))
-
->>> def pairwise(iterable):
-...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-...     a, b = tee(iterable)
-...     try:
-...         next(b)
-...     except StopIteration:
-...         pass
-...     return zip(a, b)
 
 >>> def grouper(n, iterable, fillvalue=None):
 ...     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
@@ -2292,11 +2483,22 @@ perform as purported.
 >>> take(10, count())
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
+>>> list(prepend(1, [2, 3, 4]))
+[1, 2, 3, 4]
+
 >>> list(enumerate('abc'))
 [(0, 'a'), (1, 'b'), (2, 'c')]
 
 >>> list(islice(tabulate(lambda x: 2*x), 4))
 [0, 2, 4, 6]
+
+>>> it = iter(range(10))
+>>> consume(it, 3)
+>>> next(it)
+3
+>>> consume(it)
+>>> next(it, 'Done')
+'Done'
 
 >>> nth('abcde', 3)
 'd'
@@ -2321,16 +2523,7 @@ True
 >>> take(5, map(int, repeatfunc(random.random)))
 [0, 0, 0, 0, 0]
 
->>> list(pairwise('abcd'))
-[('a', 'b'), ('b', 'c'), ('c', 'd')]
-
->>> list(pairwise([]))
-[]
-
->>> list(pairwise('a'))
-[]
-
->>> list(islice(padnone('abc'), 0, 6))
+>>> list(islice(pad_none('abc'), 0, 6))
 ['a', 'b', 'c', None, None, None]
 
 >>> list(ncycles('abc', 3))
@@ -2386,6 +2579,7 @@ def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
                     RegressionTests, LengthTransparency,
                     SubclassWithKwargsTest, TestExamples,
+                    TestPurePythonRoughEquivalents,
                     SizeofTest)
     support.run_unittest(*test_classes)
 

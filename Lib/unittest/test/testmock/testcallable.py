@@ -98,8 +98,7 @@ class TestCallable(unittest.TestCase):
 
     def test_patch_spec_callable_class(self):
         class CallableX(X):
-            def __call__(self):
-                pass
+            def __call__(self): pass
 
         class Sub(CallableX):
             pass
@@ -128,7 +127,7 @@ class TestCallable(unittest.TestCase):
                     result.foo.assert_called_once_with(3, 2, 1)
 
 
-    def test_create_autopsec(self):
+    def test_create_autospec(self):
         mock = create_autospec(X)
         instance = mock()
         self.assertRaises(TypeError, instance)

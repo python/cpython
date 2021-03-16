@@ -1,2 +1,0 @@
-Use app-local UCRT install rather than the proper update for old versions of
-Windows.

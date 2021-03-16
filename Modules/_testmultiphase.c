@@ -4,11 +4,32 @@
 
 #include "Python.h"
 
+/* State for testing module state access from methods */
+
+typedef struct {
+    int counter;
+} meth_state;
+
+/*[clinic input]
+module _testmultiphase
+
+class _testmultiphase.StateAccessType "StateAccessTypeObject *" "!StateAccessType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bab9f2fe3bd312ff]*/
+
 /* Example objects */
 typedef struct {
     PyObject_HEAD
     PyObject            *x_attr;        /* Attributes dictionary */
 } ExampleObject;
+
+typedef struct {
+    PyObject *integer;
+} testmultiphase_state;
+
+typedef struct {
+    PyObject_HEAD
+} StateAccessTypeObject;
 
 /* Example methods */
 
@@ -19,11 +40,10 @@ Example_traverse(ExampleObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-static int
+static void
 Example_finalize(ExampleObject *self)
 {
     Py_CLEAR(self->x_attr);
-    return 0;
 }
 
 static PyObject *
@@ -39,6 +59,7 @@ Example_demo(ExampleObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#include "clinic/_testmultiphase.c.h"
 
 static PyMethodDef Example_methods[] = {
     {"demo",            (PyCFunction)Example_demo,  METH_VARARGS,
@@ -50,10 +71,13 @@ static PyObject *
 Example_getattro(ExampleObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -69,7 +93,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Example attribute");
         return rv;
@@ -92,8 +116,158 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     Example_Type_slots
+};
+
+
+static PyModuleDef def_meth_state_access;
+
+/*[clinic input]
+_testmultiphase.StateAccessType.get_defining_module
+
+    cls: defining_class
+
+Return the module of the defining class.
+
+Also tests that result of _PyType_GetModuleByDef matches defining_class's
+module.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *self,
+                                                         PyTypeObject *cls)
+/*[clinic end generated code: output=ba2a14284a5d0921 input=356f999fc16e0933]*/
+{
+    PyObject *retval;
+    retval = PyType_GetModule(cls);
+    if (retval == NULL) {
+        return NULL;
+    }
+    assert(_PyType_GetModuleByDef(Py_TYPE(self), &def_meth_state_access) == retval);
+    Py_INCREF(retval);
+    return retval;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.increment_count_clinic
+
+    cls: defining_class
+    /
+    n: int = 1
+    *
+    twice: bool = False
+
+Add 'n' from the module-state counter.
+
+Pass 'twice' to double that amount.
+
+This tests Argument Clinic support for defining_class.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_increment_count_clinic_impl(StateAccessTypeObject *self,
+                                                            PyTypeObject *cls,
+                                                            int n, int twice)
+/*[clinic end generated code: output=3b34f86bc5473204 input=551d482e1fe0b8f5]*/
+{
+    meth_state *m_state = PyType_GetModuleState(cls);
+    if (twice) {
+        n *= 2;
+    }
+    m_state->counter += n;
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(_StateAccessType_decrement_count__doc__,
+"decrement_count($self, /, n=1, *, twice=None)\n"
+"--\n"
+"\n"
+"Add 'n' from the module-state counter.\n"
+"Pass 'twice' to double that amount.\n"
+"(This is to test both positional and keyword arguments.");
+
+// Intentionally does not use Argument Clinic
+static PyObject *
+_StateAccessType_increment_count_noclinic(StateAccessTypeObject *self,
+                                          PyTypeObject *defining_class,
+                                          PyObject *const *args,
+                                          Py_ssize_t nargs,
+                                          PyObject *kwnames)
+{
+    if (!_PyArg_CheckPositional("StateAccessTypeObject.decrement_count", nargs, 0, 1)) {
+        return NULL;
+    }
+    long n = 1;
+    if (nargs) {
+        n = PyLong_AsLong(args[0]);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+    }
+    if (kwnames && PyTuple_Check(kwnames)) {
+        if (PyTuple_GET_SIZE(kwnames) > 1 ||
+            PyUnicode_CompareWithASCIIString(
+                PyTuple_GET_ITEM(kwnames, 0),
+                "twice"
+            )) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "decrement_count only takes 'twice' keyword argument"
+            );
+            return NULL;
+        }
+        n *= 2;
+    }
+    meth_state *m_state = PyType_GetModuleState(defining_class);
+    m_state->counter += n;
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.get_count
+
+    cls: defining_class
+
+Return the value of the module-state counter.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
+                                               PyTypeObject *cls)
+/*[clinic end generated code: output=64600f95b499a319 input=d5d181f12384849f]*/
+{
+    meth_state *m_state = PyType_GetModuleState(cls);
+    return PyLong_FromLong(m_state->counter);
+}
+
+static PyMethodDef StateAccessType_methods[] = {
+    _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_GET_COUNT_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_INCREMENT_COUNT_CLINIC_METHODDEF
+    {
+        "increment_count_noclinic",
+        (PyCFunction)(void(*)(void))_StateAccessType_increment_count_noclinic,
+        METH_METHOD|METH_FASTCALL|METH_KEYWORDS,
+        _StateAccessType_decrement_count__doc__
+    },
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyType_Slot StateAccessType_Type_slots[] = {
+    {Py_tp_doc, "Type for testing per-module state access from methods."},
+    {Py_tp_methods, StateAccessType_methods},
+    {0, NULL}
+};
+
+static PyType_Spec StateAccessType_spec = {
+    "_testimportexec.StateAccessType",
+    sizeof(StateAccessTypeObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE | Py_TPFLAGS_BASETYPE,
+    StateAccessType_Type_slots
 };
 
 /* Function of two integers returning integer */
@@ -187,30 +361,42 @@ static int execfunc(PyObject *m)
 
     /* Add a custom type */
     temp = PyType_FromSpec(&Example_Type_spec);
-    if (temp == NULL)
+    if (temp == NULL) {
         goto fail;
-    if (PyModule_AddObject(m, "Example", temp) != 0)
+    }
+    if (PyModule_AddObject(m, "Example", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
+    }
+
 
     /* Add an exception type */
     temp = PyErr_NewException("_testimportexec.error", NULL, NULL);
-    if (temp == NULL)
+    if (temp == NULL) {
         goto fail;
-    if (PyModule_AddObject(m, "error", temp) != 0)
+    }
+    if (PyModule_AddObject(m, "error", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
+    }
 
     /* Add Str */
     temp = PyType_FromSpec(&Str_Type_spec);
-    if (temp == NULL)
+    if (temp == NULL) {
         goto fail;
-    if (PyModule_AddObject(m, "Str", temp) != 0)
+    }
+    if (PyModule_AddObject(m, "Str", temp) != 0) {
+        Py_DECREF(temp);
         goto fail;
+    }
 
-    if (PyModule_AddIntConstant(m, "int_const", 1969) != 0)
+    if (PyModule_AddIntConstant(m, "int_const", 1969) != 0) {
         goto fail;
+    }
 
-    if (PyModule_AddStringConstant(m, "str_const", "something different") != 0)
+    if (PyModule_AddStringConstant(m, "str_const", "something different") != 0) {
         goto fail;
+    }
 
     return 0;
  fail:
@@ -218,6 +404,7 @@ static int execfunc(PyObject *m)
 }
 
 /* Helper for module definitions; there'll be a lot of them */
+
 #define TEST_MODULE_DEF(name, slots, methods) { \
     PyModuleDef_HEAD_INIT,                      /* m_base */ \
     name,                                       /* m_name */ \
@@ -230,7 +417,7 @@ static int execfunc(PyObject *m)
     NULL,                                       /* m_free */ \
 }
 
-PyModuleDef_Slot main_slots[] = {
+static PyModuleDef_Slot main_slots[] = {
     {Py_mod_exec, execfunc},
     {0, NULL},
 };
@@ -480,7 +667,7 @@ createfunc_null(PyObject *spec, PyModuleDef *def)
     return NULL;
 }
 
-PyModuleDef_Slot slots_create_null[] = {
+static PyModuleDef_Slot slots_create_null[] = {
     {Py_mod_create, createfunc_null},
     {0, NULL},
 };
@@ -613,6 +800,51 @@ PyInit__testmultiphase_exec_unreported_exception(PyObject *spec)
     return PyModuleDef_Init(&def_exec_unreported_exception);
 }
 
+static int
+meth_state_access_exec(PyObject *m)
+{
+    PyObject *temp;
+    meth_state *m_state;
+
+    m_state = PyModule_GetState(m);
+    if (m_state == NULL) {
+        return -1;
+    }
+
+    temp = PyType_FromModuleAndSpec(m, &StateAccessType_spec, NULL);
+    if (temp == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObject(m, "StateAccessType", temp) != 0) {
+        Py_DECREF(temp);
+        return -1;
+    }
+
+
+    return 0;
+}
+
+static PyModuleDef_Slot meth_state_access_slots[] = {
+    {Py_mod_exec, meth_state_access_exec},
+    {0, NULL}
+};
+
+static PyModuleDef def_meth_state_access = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testmultiphase_meth_state_access",
+    .m_doc = PyDoc_STR("Module testing access"
+                       " to state from methods."),
+    .m_size = sizeof(meth_state),
+    .m_slots = meth_state_access_slots,
+};
+
+PyMODINIT_FUNC
+PyInit__testmultiphase_meth_state_access(PyObject *spec)
+{
+    return PyModuleDef_Init(&def_meth_state_access);
+}
+
+
 /*** Helper for imp test ***/
 
 static PyModuleDef imp_dummy_def = TEST_MODULE_DEF("imp_dummy", main_slots, testexport_methods);
@@ -622,3 +854,4 @@ PyInit_imp_dummy(PyObject *spec)
 {
     return PyModuleDef_Init(&imp_dummy_def);
 }
+
