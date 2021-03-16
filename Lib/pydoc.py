@@ -1620,7 +1620,10 @@ def tempfilepager(text, cmd):
     import tempfile
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, 'pydoc.out')
-        with open(filename, 'w', errors='backslashreplace') as file:
+        with open(filename, 'w', errors='backslashreplace',
+                  encoding=os.device_encoding(0) if
+                  sys.platform == 'win32' else None
+                  ) as file:
             file.write(text)
         os.system(cmd + ' "' + filename + '"')
 
