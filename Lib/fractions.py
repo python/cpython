@@ -427,6 +427,8 @@ class Fraction(numbers.Rational):
     # We should special-case g == 1 (and g2 == 1), since 60.8% of
     # randomly-chosen integers are coprime:
     # https://en.wikipedia.org/wiki/Coprime_integers#Probability_of_coprimality
+    # Note, that g2 == 1 always for fractions, obtained from floats: here
+    # g is a power of 2 and the unnormalized numerator t is an odd integer.
     #
     # 2) Consider multiplication
     #
