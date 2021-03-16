@@ -445,6 +445,10 @@ class Fraction(numbers.Rational):
     # Indeed, pick (na//g1).  It's coprime with (da//g2), because input
     # fractions are normalized.  It's also coprime with (db//g1), because
     # common factors are removed by g1 == gcd(na, db).
+    #
+    # As for addition/substraction, we should special-case g1 == 1
+    # and g2 == 1 for same reason.  That happens also for multiplying
+    # rationals, obtained from floats.
 
     def _add_sub_(a, b, pm=int.__add__):
         na, da = a._numerator, a._denominator
@@ -474,9 +478,14 @@ class Fraction(numbers.Rational):
         na, da = a._numerator, a._denominator
         nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, db)
+        if g1 > 1:
+            na //= g1
+            db //= g1
         g2 = math.gcd(nb, da)
-        return Fraction((na // g1) * (nb // g2),
-                        (db // g1) * (da // g2), _normalize=False)
+        if g2 > 1:
+            nb //= g2
+            da //= g2
+        return Fraction(na * nb, db * da, _normalize=False)
 
     __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
 
@@ -486,8 +495,14 @@ class Fraction(numbers.Rational):
         na, da = a._numerator, a._denominator
         nb, db = b._numerator, b._denominator
         g1 = math.gcd(na, nb)
+        if g1 > 1:
+            na //= g1
+            nb //= g1
         g2 = math.gcd(db, da)
-        n, d = (na // g1) * (db // g2), (nb // g1) * (da // g2)
+        if g2 > 1:
+            da //= g2
+            db //= g2
+        n, d = na * db, nb * da
         if nb < 0:
             n, d = -n, -d
         return Fraction(n, d, _normalize=False)
