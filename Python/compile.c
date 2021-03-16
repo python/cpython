@@ -3355,10 +3355,12 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     basicblock *end;
 
-    if (c->c_optimize)
-        return 1;
-    if (s->v.Assert.test->kind == Tuple_kind &&
-        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0)
+    /* Always emit a warning if the test is a non-zero length tuple */
+    if ((s->v.Assert.test->kind == Tuple_kind &&
+        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
+        (s->v.Assert.test->kind == Constant_kind &&
+         PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
+         PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
     {
         if (!compiler_warn(c, "assertion is always true, "
                               "perhaps remove parentheses?"))
@@ -3366,6 +3368,8 @@ compiler_assert(struct compiler *c, stmt_ty s)
             return 0;
         }
     }
+    if (c->c_optimize)
+        return 1;
     end = compiler_new_block(c);
     if (end == NULL)
         return 0;
