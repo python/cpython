@@ -466,6 +466,8 @@ static PyObject *
 _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
 /*[clinic end generated code: output=006fa74ce3b5cfbf input=845c47ebbc3a2f67]*/
 {
+    if (self->fd < 0)
+        return err_closed();
     return PyLong_FromLong(self->fd);
 }
 
