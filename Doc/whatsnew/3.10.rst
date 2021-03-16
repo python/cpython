@@ -167,6 +167,14 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
+PEP 626: Precise line numbers for debugging and other tools
+-----------------------------------------------------------
+
+PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
+Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
+
+The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+
 
 PEP 634: Structural Pattern Matching
 ------------------------------------
