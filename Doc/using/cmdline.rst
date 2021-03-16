@@ -453,6 +453,9 @@ Miscellaneous options
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
+   * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when
+     an ``encoding`` option is omitted and the default encoding is locale-specific.
+     See also :envvar:`PYTHONWARNDEFAULTENCODING`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -481,6 +484,9 @@ Miscellaneous options
       string encoding and decoding operations.
 
       The ``-X showalloccount`` option has been removed.
+
+   .. versionadded:: 3.10
+      The ``-X warn_default_encoding`` option.
 
    .. deprecated-removed:: 3.9 3.10
       The ``-X oldparser`` option.
@@ -906,6 +912,27 @@ conflict.
    initialisation.
 
    .. versionadded:: 3.7
+
+.. envvar:: PYTHONWARNDEFAULTENCODING
+
+   If this environment variable is set to a non-empty string, issue a
+   :class:`EncodingWarning` when an ``encoding`` option is omitted and
+   the default encoding is locale-specific.
+
+   This option can be used to find bugs caused by not passing
+   ``encoding="utf8"`` option. For example::
+
+      # This code may cause UnicodeDecodeError on Windows.
+      # encoding="utf8" or "b" mode must be used.
+      with open(path) as f:
+          data = json.load(f)
+
+   ``encoding="locale"`` option can be used to specify locale-specific
+   encoding explicitly since Python 3.10.
+
+   See :pep:`597` for detail.
+
+   .. versionadded:: 3.10
 
 
 Debug-mode variables
