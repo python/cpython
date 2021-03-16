@@ -323,7 +323,7 @@ class QueryTestCase(unittest.TestCase):
      '1 '
      '2']]]]]""")
 
-    def test_numbers(self):
+    def test_integer(self):
         self.assertEqual(pprint.pformat(1234567), '1_234_567')
         self.assertEqual(pprint.pformat(1234567, underscore_numbers=False), '1234567')
 
