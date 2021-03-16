@@ -3360,7 +3360,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
         (s->v.Assert.test->kind == Constant_kind &&
          PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
-         PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0)) 
+         PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
     {
         if (!compiler_warn(c, "assertion is always true, "
                               "perhaps remove parentheses?"))
