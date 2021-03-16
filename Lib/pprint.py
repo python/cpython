@@ -34,6 +34,7 @@ saferepr()
 
 """
 
+import builtins
 import collections as _collections
 import re
 import sys as _sys
@@ -530,7 +531,7 @@ class PrettyPrinter:
 
         if issubclass(typ, int):
             if self._underscore_numbers:
-                return "{:_d}".format(object), True, False
+                return builtins.format(object, "_d"), True, False
             else:
                 return repr(object), True, False
 
