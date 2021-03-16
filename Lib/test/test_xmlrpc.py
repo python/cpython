@@ -648,7 +648,7 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
             serv.handle_request()
             numrequests -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.socket.close()
@@ -713,7 +713,7 @@ def http_multi_server(evt, numrequests, requestHandler=None):
             serv.handle_request()
             numrequests -= 1
 
-    except socket.timeout:
+    except TimeoutError:
         pass
     finally:
         serv.socket.close()

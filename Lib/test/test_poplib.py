@@ -501,7 +501,7 @@ class TestTimeouts(TestCase):
             conn, addr = serv.accept()
             conn.send(b"+ Hola mundo\n")
             conn.close()
-        except socket.timeout:
+        except TimeoutError:
             pass
         finally:
             serv.close()

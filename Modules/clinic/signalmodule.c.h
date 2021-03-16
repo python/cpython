@@ -2,6 +2,42 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(signal_default_int_handler__doc__,
+"default_int_handler($module, signalnum, frame, /)\n"
+"--\n"
+"\n"
+"The default handler for SIGINT installed by Python.\n"
+"\n"
+"It raises KeyboardInterrupt.");
+
+#define SIGNAL_DEFAULT_INT_HANDLER_METHODDEF    \
+    {"default_int_handler", (PyCFunction)(void(*)(void))signal_default_int_handler, METH_FASTCALL, signal_default_int_handler__doc__},
+
+static PyObject *
+signal_default_int_handler_impl(PyObject *module, int signalnum,
+                                PyObject *frame);
+
+static PyObject *
+signal_default_int_handler(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int signalnum;
+    PyObject *frame;
+
+    if (!_PyArg_CheckPositional("default_int_handler", nargs, 2, 2)) {
+        goto exit;
+    }
+    signalnum = _PyLong_AsInt(args[0]);
+    if (signalnum == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    frame = args[1];
+    return_value = signal_default_int_handler_impl(module, signalnum, frame);
+
+exit:
+    return return_value;
+}
+
 #if defined(HAVE_ALARM)
 
 PyDoc_STRVAR(signal_alarm__doc__,
@@ -662,4 +698,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=dff93c869101f043 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59c33f0af42aebb5 input=a9049054013a1b77]*/

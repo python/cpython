@@ -35,6 +35,7 @@ class Loader(metaclass=abc.ABCMeta):
         """
         if not hasattr(self, 'exec_module'):
             raise ImportError
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
 
     def module_repr(self, module):

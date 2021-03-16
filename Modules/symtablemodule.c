@@ -71,56 +71,60 @@ static PyMethodDef symtable_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static int
+symtable_init_stentry_type(PyObject *m)
+{
+    return PyType_Ready(&PySTEntry_Type);
+}
+
+static int
+symtable_init_constants(PyObject *m)
+{
+    if (PyModule_AddIntMacro(m, USE) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_GLOBAL) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_NONLOCAL) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_LOCAL) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_PARAM) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_FREE) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_FREE_CLASS) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_IMPORT) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_BOUND) < 0) return -1;
+    if (PyModule_AddIntMacro(m, DEF_ANNOT) < 0) return -1;
+
+    if (PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock) < 0)
+        return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock) < 0) return -1;
+    if (PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock) < 0)
+        return -1;
+
+    if (PyModule_AddIntMacro(m, LOCAL) < 0) return -1;
+    if (PyModule_AddIntMacro(m, GLOBAL_EXPLICIT) < 0) return -1;
+    if (PyModule_AddIntMacro(m, GLOBAL_IMPLICIT) < 0) return -1;
+    if (PyModule_AddIntMacro(m, FREE) < 0) return -1;
+    if (PyModule_AddIntMacro(m, CELL) < 0) return -1;
+
+    if (PyModule_AddIntConstant(m, "SCOPE_OFF", SCOPE_OFFSET) < 0) return -1;
+    if (PyModule_AddIntMacro(m, SCOPE_MASK) < 0) return -1;
+
+    return 0;
+}
+
+static PyModuleDef_Slot symtable_slots[] = {
+    {Py_mod_exec, symtable_init_stentry_type},
+    {Py_mod_exec, symtable_init_constants},
+    {0, NULL}
+};
+
 static struct PyModuleDef symtablemodule = {
     PyModuleDef_HEAD_INIT,
-    "_symtable",
-    NULL,
-    -1,
-    symtable_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "_symtable",
+    .m_size = 0,
+    .m_methods = symtable_methods,
+    .m_slots = symtable_slots,
 };
 
 PyMODINIT_FUNC
 PyInit__symtable(void)
 {
-    PyObject *m;
-
-    if (PyType_Ready(&PySTEntry_Type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&symtablemodule);
-    if (m == NULL)
-        return NULL;
-    PyModule_AddIntMacro(m, USE);
-    PyModule_AddIntMacro(m, DEF_GLOBAL);
-    PyModule_AddIntMacro(m, DEF_NONLOCAL);
-    PyModule_AddIntMacro(m, DEF_LOCAL);
-    PyModule_AddIntMacro(m, DEF_PARAM);
-    PyModule_AddIntMacro(m, DEF_FREE);
-    PyModule_AddIntMacro(m, DEF_FREE_CLASS);
-    PyModule_AddIntMacro(m, DEF_IMPORT);
-    PyModule_AddIntMacro(m, DEF_BOUND);
-    PyModule_AddIntMacro(m, DEF_ANNOT);
-
-    PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock);
-    PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock);
-    PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock);
-
-    PyModule_AddIntMacro(m, LOCAL);
-    PyModule_AddIntMacro(m, GLOBAL_EXPLICIT);
-    PyModule_AddIntMacro(m, GLOBAL_IMPLICIT);
-    PyModule_AddIntMacro(m, FREE);
-    PyModule_AddIntMacro(m, CELL);
-
-    PyModule_AddIntConstant(m, "SCOPE_OFF", SCOPE_OFFSET);
-    PyModule_AddIntMacro(m, SCOPE_MASK);
-
-    if (PyErr_Occurred()) {
-        Py_DECREF(m);
-        m = 0;
-    }
-    return m;
+    return PyModuleDef_Init(&symtablemodule);
 }

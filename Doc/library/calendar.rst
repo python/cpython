@@ -349,7 +349,7 @@ For simple text calendars this module provides the following functions.
 .. function:: monthcalendar(year, month)
 
    Returns a matrix representing a month's calendar.  Each row represents a week;
-   days outside of the month a represented by zeros. Each week begins with Monday
+   days outside of the month are represented by zeros. Each week begins with Monday
    unless set by :func:`setfirstweekday`.
 
 

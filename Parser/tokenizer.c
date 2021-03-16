@@ -51,11 +51,14 @@ static const char* type_comment_prefix = "# type: ";
 static struct tok_state *
 tok_new(void)
 {
-    struct tok_state *tok = (struct tok_state *)PyMem_MALLOC(
+    struct tok_state *tok = (struct tok_state *)PyMem_Malloc(
                                             sizeof(struct tok_state));
     if (tok == NULL)
         return NULL;
     tok->buf = tok->cur = tok->inp = NULL;
+    tok->fp_interactive = 0;
+    tok->interactive_src_start = NULL;
+    tok->interactive_src_end = NULL;
     tok->start = NULL;
     tok->end = NULL;
     tok->done = E_OK;
@@ -64,7 +67,6 @@ tok_new(void)
     tok->tabsize = TABSIZE;
     tok->indent = 0;
     tok->indstack[0] = 0;
-
     tok->atbol = 1;
     tok->pendin = 0;
     tok->prompt = tok->nextprompt = NULL;
@@ -81,7 +83,6 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
     tok->type_comments = 0;
-
     tok->async_hacks = 0;
     tok->async_def = 0;
     tok->async_def_indent = 0;
@@ -93,7 +94,7 @@ tok_new(void)
 static char *
 new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
 {
-    char* result = (char *)PyMem_MALLOC(len + 1);
+    char* result = (char *)PyMem_Malloc(len + 1);
     if (!result) {
         tok->done = E_NOMEM;
         return NULL;
@@ -108,7 +109,7 @@ error_ret(struct tok_state *tok) /* XXX */
 {
     tok->decoding_erred = 1;
     if (tok->fp != NULL && tok->buf != NULL) /* see PyTokenizer_Free */
-        PyMem_FREE(tok->buf);
+        PyMem_Free(tok->buf);
     tok->buf = tok->cur = tok->inp = NULL;
     tok->start = NULL;
     tok->end = NULL;
@@ -184,7 +185,7 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
                     return 0;
                 q = get_normal_name(r);
                 if (r != q) {
-                    PyMem_FREE(r);
+                    PyMem_Free(r);
                     r = new_string(q, strlen(q), tok);
                     if (!r)
                         return 0;
@@ -244,7 +245,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
             else {
                 PyErr_Format(PyExc_SyntaxError,
                              "encoding problem: %s", cs);
-                PyMem_FREE(cs);
+                PyMem_Free(cs);
             }
         }
     } else {                /* then, compare cs with BOM */
@@ -252,7 +253,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
         if (!r)
             PyErr_Format(PyExc_SyntaxError,
                          "encoding problem: %s with BOM", cs);
-        PyMem_FREE(cs);
+        PyMem_Free(cs);
     }
     return r;
 }
@@ -315,13 +316,42 @@ check_bom(int get_char(struct tok_state *),
         return 1;
     }
     if (tok->encoding != NULL)
-        PyMem_FREE(tok->encoding);
+        PyMem_Free(tok->encoding);
     tok->encoding = new_string("utf-8", 5, tok);
     if (!tok->encoding)
         return 0;
     /* No need to set_readline: input is already utf-8 */
     return 1;
 }
+
+static int tok_concatenate_interactive_new_line(struct tok_state* tok, char* line) {
+    assert(tok->fp_interactive);
+
+    if (!line) {
+        return 0;
+    }
+
+    Py_ssize_t current_size = tok->interactive_src_end - tok->interactive_src_start;
+    Py_ssize_t line_size = strlen(line);
+    char* new_str = tok->interactive_src_start;
+
+    new_str = PyMem_Realloc(new_str, current_size + line_size + 1);
+    if (!new_str) {
+        if (tok->interactive_src_start) {
+            PyMem_Free(tok->interactive_src_start);
+        }
+        tok->interactive_src_start = NULL;
+        tok->interactive_src_end = NULL;
+        tok->done = E_NOMEM;
+        return -1;
+    }
+    strcpy(new_str + current_size, line);
+
+    tok->interactive_src_start = new_str;
+    tok->interactive_src_end = new_str + current_size + line_size;
+    return 0;
+}
+
 
 /* Read a line of text from TOK into S, using the stream in TOK.
    Return NULL on failure, else S.
@@ -552,6 +582,12 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
                 badchar, tok->filename, tok->lineno + 1);
         return error_ret(tok);
     }
+
+    if (tok->fp_interactive &&
+        tok_concatenate_interactive_new_line(tok, line) == -1) {
+        return NULL;
+    }
+
     return line;
 }
 
@@ -620,7 +656,7 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     size_t needed_length = strlen(s) + 2, final_length;
     char *buf, *current;
     char c = '\0';
-    buf = PyMem_MALLOC(needed_length);
+    buf = PyMem_Malloc(needed_length);
     if (buf == NULL) {
         tok->done = E_NOMEM;
         return NULL;
@@ -651,9 +687,9 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     final_length = current - buf + 1;
     if (final_length < needed_length && final_length) {
         /* should never fail */
-        char* result = PyMem_REALLOC(buf, final_length);
+        char* result = PyMem_Realloc(buf, final_length);
         if (result == NULL) {
-            PyMem_FREE(buf);
+            PyMem_Free(buf);
         }
         buf = result;
     }
@@ -757,7 +793,7 @@ PyTokenizer_FromUTF8(const char *str, int exec_input)
     tok->read_coding_spec = 1;
     tok->enc = NULL;
     tok->str = translated;
-    tok->encoding = (char *)PyMem_MALLOC(6);
+    tok->encoding = (char *)PyMem_Malloc(6);
     if (!tok->encoding) {
         PyTokenizer_Free(tok);
         return NULL;
@@ -778,7 +814,7 @@ PyTokenizer_FromFile(FILE *fp, const char* enc,
     struct tok_state *tok = tok_new();
     if (tok == NULL)
         return NULL;
-    if ((tok->buf = (char *)PyMem_MALLOC(BUFSIZ)) == NULL) {
+    if ((tok->buf = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
         PyTokenizer_Free(tok);
         return NULL;
     }
@@ -790,7 +826,7 @@ PyTokenizer_FromFile(FILE *fp, const char* enc,
     if (enc != NULL) {
         /* Must copy encoding declaration since it
            gets copied into the parse tree. */
-        tok->encoding = PyMem_MALLOC(strlen(enc)+1);
+        tok->encoding = PyMem_Malloc(strlen(enc)+1);
         if (!tok->encoding) {
             PyTokenizer_Free(tok);
             return NULL;
@@ -807,16 +843,22 @@ PyTokenizer_FromFile(FILE *fp, const char* enc,
 void
 PyTokenizer_Free(struct tok_state *tok)
 {
-    if (tok->encoding != NULL)
-        PyMem_FREE(tok->encoding);
+    if (tok->encoding != NULL) {
+        PyMem_Free(tok->encoding);
+    }
     Py_XDECREF(tok->decoding_readline);
     Py_XDECREF(tok->decoding_buffer);
     Py_XDECREF(tok->filename);
-    if (tok->fp != NULL && tok->buf != NULL)
-        PyMem_FREE(tok->buf);
-    if (tok->input)
-        PyMem_FREE(tok->input);
-    PyMem_FREE(tok);
+    if (tok->fp != NULL && tok->buf != NULL) {
+        PyMem_Free(tok->buf);
+    }
+    if (tok->input) {
+        PyMem_Free(tok->input);
+    }
+    if (tok->interactive_src_start != NULL) {
+        PyMem_Free(tok->interactive_src_start);
+    }
+    PyMem_Free(tok);
 }
 
 /* Get next char, updating state; error code goes into tok->done */
@@ -852,7 +894,7 @@ tok_nextc(struct tok_state *tok)
             char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
             if (newtok != NULL) {
                 char *translated = translate_newlines(newtok, 0, tok);
-                PyMem_FREE(newtok);
+                PyMem_Free(newtok);
                 if (translated == NULL)
                     return EOF;
                 newtok = translated;
@@ -862,14 +904,14 @@ tok_nextc(struct tok_state *tok)
                 Py_ssize_t buflen;
                 const char* buf;
                 PyObject *u = translate_into_utf8(newtok, tok->encoding);
-                PyMem_FREE(newtok);
+                PyMem_Free(newtok);
                 if (!u) {
                     tok->done = E_DECODE;
                     return EOF;
                 }
                 buflen = PyBytes_GET_SIZE(u);
                 buf = PyBytes_AS_STRING(u);
-                newtok = PyMem_MALLOC(buflen+1);
+                newtok = PyMem_Malloc(buflen+1);
                 if (newtok == NULL) {
                     Py_DECREF(u);
                     tok->done = E_NOMEM;
@@ -878,12 +920,16 @@ tok_nextc(struct tok_state *tok)
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }
+            if (tok->fp_interactive &&
+                tok_concatenate_interactive_new_line(tok, newtok) == -1) {
+                return EOF;
+            }
             if (tok->nextprompt != NULL)
                 tok->prompt = tok->nextprompt;
             if (newtok == NULL)
                 tok->done = E_INTR;
             else if (*newtok == '\0') {
-                PyMem_FREE(newtok);
+                PyMem_Free(newtok);
                 tok->done = E_EOF;
             }
             else if (tok->start != NULL) {
@@ -892,12 +938,12 @@ tok_nextc(struct tok_state *tok)
                 size_t newlen = oldlen + strlen(newtok);
                 Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
                 char *buf = tok->buf;
-                buf = (char *)PyMem_REALLOC(buf, newlen+1);
+                buf = (char *)PyMem_Realloc(buf, newlen+1);
                 tok->lineno++;
                 if (buf == NULL) {
-                    PyMem_FREE(tok->buf);
+                    PyMem_Free(tok->buf);
                     tok->buf = NULL;
-                    PyMem_FREE(newtok);
+                    PyMem_Free(newtok);
                     tok->done = E_NOMEM;
                     return EOF;
                 }
@@ -906,7 +952,7 @@ tok_nextc(struct tok_state *tok)
                 tok->multi_line_start = tok->buf + cur_multi_line_start;
                 tok->line_start = tok->cur;
                 strcpy(tok->buf + oldlen, newtok);
-                PyMem_FREE(newtok);
+                PyMem_Free(newtok);
                 tok->inp = tok->buf + newlen;
                 tok->end = tok->inp + 1;
                 tok->start = tok->buf + start;
@@ -914,7 +960,7 @@ tok_nextc(struct tok_state *tok)
             else {
                 tok->lineno++;
                 if (tok->buf != NULL)
-                    PyMem_FREE(tok->buf);
+                    PyMem_Free(tok->buf);
                 tok->buf = newtok;
                 tok->cur = tok->buf;
                 tok->line_start = tok->buf;
@@ -929,7 +975,7 @@ tok_nextc(struct tok_state *tok)
             if (tok->start == NULL) {
                 if (tok->buf == NULL) {
                     tok->buf = (char *)
-                        PyMem_MALLOC(BUFSIZ);
+                        PyMem_Malloc(BUFSIZ);
                     if (tok->buf == NULL) {
                         tok->done = E_NOMEM;
                         return EOF;
@@ -938,7 +984,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 if (decoding_fgets(tok->buf, (int)(tok->end - tok->buf),
                           tok) == NULL) {
-                    if (!tok->decoding_erred)
+                    if (!tok->decoding_erred && !(tok->done == E_NOMEM))
                         tok->done = E_EOF;
                     done = 1;
                 }
@@ -966,7 +1012,7 @@ tok_nextc(struct tok_state *tok)
                 Py_ssize_t curvalid = tok->inp - tok->buf;
                 Py_ssize_t newsize = curvalid + BUFSIZ;
                 char *newbuf = tok->buf;
-                newbuf = (char *)PyMem_REALLOC(newbuf,
+                newbuf = (char *)PyMem_Realloc(newbuf,
                                                newsize);
                 if (newbuf == NULL) {
                     tok->done = E_NOMEM;
@@ -1375,6 +1421,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
 
     /* Check for EOF and errors now */
     if (c == EOF) {
+        if (tok->level) {
+            return ERRORTOKEN;
+        }
         return tok->done == E_EOF ? ENDMARKER : ERRORTOKEN;
     }
 
@@ -1716,20 +1765,26 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         /* Get rest of string */
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
-            if (c == EOF) {
+            if (c == EOF || (quote_size == 1 && c == '\n')) {
+                // shift the tok_state's location into
+                // the start of string, and report the error
+                // from the initial quote character
+                tok->cur = (char *)tok->start;
+                tok->cur++;
+                tok->line_start = tok->multi_line_start;
+                int start = tok->lineno;
+                tok->lineno = tok->first_lineno;
+
                 if (quote_size == 3) {
-                    tok->done = E_EOFS;
+                    return syntaxerror(tok,
+                                       "unterminated triple-quoted string literal"
+                                       " (detected at line %d)", start);
                 }
                 else {
-                    tok->done = E_EOLS;
+                    return syntaxerror(tok,
+                                       "unterminated string literal (detected at"
+                                       " line %d)", start);
                 }
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
-            }
-            if (quote_size == 1 && c == '\n') {
-                tok->done = E_EOLS;
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
             }
             if (c == quote) {
                 end_quote_size += 1;
@@ -1797,6 +1852,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
+        tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
         tok->level++;
         break;
     case ')':
@@ -1851,7 +1907,7 @@ PyTokenizer_Get(struct tok_state *tok, const char **p_start, const char **p_end)
    encoding in the first or second line of the file (in which case the encoding
    should be assumed to be UTF-8).
 
-   The char* returned is malloc'ed via PyMem_MALLOC() and thus must be freed
+   The char* returned is malloc'ed via PyMem_Malloc() and thus must be freed
    by the caller. */
 
 char *
@@ -1894,7 +1950,7 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     }
     fclose(fp);
     if (tok->encoding) {
-        encoding = (char *)PyMem_MALLOC(strlen(tok->encoding) + 1);
+        encoding = (char *)PyMem_Malloc(strlen(tok->encoding) + 1);
         if (encoding)
             strcpy(encoding, tok->encoding);
     }

@@ -141,7 +141,7 @@ class Message:
         header.  For backward compatibility reasons, if maxheaderlen is
         not specified it defaults to 0, so you must override it explicitly
         if you want a different maxheaderlen.  'policy' is passed to the
-        Generator instance used to serialize the mesasge; if it is not
+        Generator instance used to serialize the message; if it is not
         specified the policy associated with the message instance is used.
 
         If the message object contains binary data that is not encoded
@@ -958,7 +958,7 @@ class MIMEPart(Message):
         header.  maxheaderlen is retained for backward compatibility with the
         base Message class, but defaults to None, meaning that the policy value
         for max_line_length controls the header maximum length.  'policy' is
-        passed to the Generator instance used to serialize the mesasge; if it
+        passed to the Generator instance used to serialize the message; if it
         is not specified the policy associated with the message instance is
         used.
         """

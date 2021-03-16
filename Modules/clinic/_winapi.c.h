@@ -195,8 +195,8 @@ _winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t na
     LPCWSTR name;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkku:CreateFileMapping",
-        &file_handle, &security_attributes, &protect, &max_size_high, &max_size_low, &name)) {
+    if (!_PyArg_ParseStack(args, nargs, "" F_HANDLE "" F_POINTER "kkkO&:CreateFileMapping",
+        &file_handle, &security_attributes, &protect, &max_size_high, &max_size_low, _PyUnicode_WideCharString_Converter, &name)) {
         goto exit;
     }
     _return_value = _winapi_CreateFileMapping_impl(module, file_handle, security_attributes, protect, max_size_high, max_size_low, name);
@@ -209,6 +209,11 @@ _winapi_CreateFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t na
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -221,23 +226,55 @@ PyDoc_STRVAR(_winapi_CreateJunction__doc__,
     {"CreateJunction", (PyCFunction)(void(*)(void))_winapi_CreateJunction, METH_FASTCALL, _winapi_CreateJunction__doc__},
 
 static PyObject *
-_winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
-                            LPWSTR dst_path);
+_winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
+                            LPCWSTR dst_path);
 
 static PyObject *
 _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPWSTR src_path;
-    LPWSTR dst_path;
+    LPCWSTR src_path;
+    LPCWSTR dst_path;
 
-    if (!_PyArg_ParseStack(args, nargs, "uu:CreateJunction",
-        &src_path, &dst_path)) {
+    if (!_PyArg_CheckPositional("CreateJunction", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("CreateJunction", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    #if USE_UNICODE_WCHAR_CACHE
+    src_path = _PyUnicode_AsUnicode(args[0]);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    src_path = PyUnicode_AsWideCharString(args[0], NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (src_path == NULL) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("CreateJunction", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    #if USE_UNICODE_WCHAR_CACHE
+    dst_path = _PyUnicode_AsUnicode(args[1]);
+    #else /* USE_UNICODE_WCHAR_CACHE */
+    dst_path = PyUnicode_AsWideCharString(args[1], NULL);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    if (dst_path == NULL) {
         goto exit;
     }
     return_value = _winapi_CreateJunction_impl(module, src_path, dst_path);
 
 exit:
+    /* Cleanup for src_path */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)src_path);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for dst_path */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)dst_path);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -715,8 +752,8 @@ _winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPCWSTR name;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "kiu:OpenFileMapping",
-        &desired_access, &inherit_handle, &name)) {
+    if (!_PyArg_ParseStack(args, nargs, "kiO&:OpenFileMapping",
+        &desired_access, &inherit_handle, _PyUnicode_WideCharString_Converter, &name)) {
         goto exit;
     }
     _return_value = _winapi_OpenFileMapping_impl(module, desired_access, inherit_handle, name);
@@ -729,6 +766,11 @@ _winapi_OpenFileMapping(PyObject *module, PyObject *const *args, Py_ssize_t narg
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for name */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)name);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+
     return return_value;
 }
 
@@ -1106,4 +1148,4 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db87076a32fa7abe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f10e03f64ff9777 input=a9049054013a1b77]*/

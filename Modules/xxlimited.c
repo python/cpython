@@ -3,47 +3,103 @@
    also declares object types. All occurrences of 'Xxo' should be changed
    to something reasonable for your objects. After that, all other
    occurrences of 'xx' should be changed to something reasonable for your
-   module. If your module is named foo your sourcefile should be named
-   foomodule.c.
+   module. If your module is named foo your source file should be named
+   foo.c or foomodule.c.
 
    You will probably want to delete all references to 'x_attr' and add
    your own types of attributes instead.  Maybe you want to name your
    local variables other than 'self'.  If your object type is needed in
    other files, you'll have to create a file "foobarobject.h"; see
-   floatobject.h for an example. */
+   floatobject.h for an example.
 
-/* Xxo objects */
+   This module roughly corresponds to::
+
+      class Xxo:
+         """A class that explicitly stores attributes in an internal dict"""
+
+          def __init__(self):
+              # In the C class, "_x_attr" is not accessible from Python code
+              self._x_attr = {}
+
+          def __getattr__(self, name):
+              return self._x_attr[name]
+
+          def __setattr__(self, name, value):
+              self._x_attr[name] = value
+
+          def __delattr__(self, name):
+              del self._x_attr[name]
+
+          def demo(o, /):
+              if isinstance(o, str):
+                  return o
+              elif isinstance(o, Xxo):
+                  return o
+              else:
+                  raise Error('argument must be str or Xxo')
+
+      class Error(Exception):
+          """Exception raised by the xxlimited module"""
+
+      def foo(i: int, j: int, /):
+          """Return the sum of i and j."""
+          # Unlike this pseudocode, the C function will *only* work with
+          # integers and perform C long int arithmetic
+          return i + j
+
+      def new():
+          return Xxo()
+
+      def Str(str):
+          # A trivial subclass of a built-in type
+          pass
+   */
 
 #include "Python.h"
 
-static PyObject *ErrorObject;
+// Module state
+typedef struct {
+    PyObject *Xxo_Type;    // Xxo class
+    PyObject *Error_Type;       // Error class
+} xx_state;
 
+
+/* Xxo objects */
+
+// Instance state
 typedef struct {
     PyObject_HEAD
     PyObject            *x_attr;        /* Attributes dictionary */
 } XxoObject;
 
-static PyObject *Xxo_Type;
-
-#define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
+// XXX: no good way to do this yet
+// #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
-newXxoObject(PyObject *arg)
+newXxoObject(PyObject *module)
 {
-    XxoObject *self;
-    self = PyObject_GC_New(XxoObject, (PyTypeObject*)Xxo_Type);
-    if (self == NULL)
+    xx_state *state = PyModule_GetState(module);
+    if (state == NULL) {
         return NULL;
+    }
+    XxoObject *self;
+    self = PyObject_GC_New(XxoObject, (PyTypeObject*)state->Xxo_Type);
+    if (self == NULL) {
+        return NULL;
+    }
     self->x_attr = NULL;
     return self;
 }
 
-/* Xxo methods */
+/* Xxo finalization */
 
 static int
 Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
 {
+    // Visit the type
     Py_VISIT(Py_TYPE(self));
+
+    // Visit the attribute dict
     Py_VISIT(self->x_attr);
     return 0;
 }
@@ -54,26 +110,18 @@ Xxo_finalize(XxoObject *self)
     Py_CLEAR(self->x_attr);
 }
 
-static PyObject *
-Xxo_demo(XxoObject *self, PyObject *args)
+static void
+Xxo_dealloc(XxoObject *self)
 {
-    PyObject *o = NULL;
-    if (!PyArg_ParseTuple(args, "|O:demo", &o))
-        return NULL;
-    /* Test availability of fast type checks */
-    if (o != NULL && PyUnicode_Check(o)) {
-        Py_INCREF(o);
-        return o;
-    }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Xxo_finalize(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    freefunc free = PyType_GetSlot(tp, Py_tp_free);
+    free(self);
+    Py_DECREF(tp);
 }
 
-static PyMethodDef Xxo_methods[] = {
-    {"demo",            (PyCFunction)Xxo_demo,  METH_VARARGS,
-        PyDoc_STR("demo() -> None")},
-    {NULL,              NULL}           /* sentinel */
-};
+
+/* Xxo attribute handling */
 
 static PyObject *
 Xxo_getattro(XxoObject *self, PyObject *name)
@@ -92,45 +140,109 @@ Xxo_getattro(XxoObject *self, PyObject *name)
 }
 
 static int
-Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
+Xxo_setattro(XxoObject *self, PyObject *name, PyObject *v)
 {
     if (self->x_attr == NULL) {
+        // prepare the attribute dict
         self->x_attr = PyDict_New();
-        if (self->x_attr == NULL)
+        if (self->x_attr == NULL) {
             return -1;
+        }
     }
     if (v == NULL) {
-        int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        // delete an attribute
+        int rv = PyDict_DelItem(self->x_attr, name);
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Xxo attribute");
+            return -1;
+        }
         return rv;
     }
-    else
-        return PyDict_SetItemString(self->x_attr, name, v);
+    else {
+        // set an attribute
+        return PyDict_SetItem(self->x_attr, name, v);
+    }
 }
 
+/* Xxo methods */
+
+static PyObject *
+Xxo_demo(XxoObject *self, PyTypeObject *defining_class,
+         PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (kwnames != NULL && PyObject_Length(kwnames)) {
+        PyErr_SetString(PyExc_TypeError, "demo() takes no keyword arguments");
+        return NULL;
+    }
+    if (nargs != 1) {
+        PyErr_SetString(PyExc_TypeError, "demo() takes exactly 1 argument");
+        return NULL;
+    }
+
+    PyObject *o = args[0];
+
+    /* Test if the argument is "str" */
+    if (PyUnicode_Check(o)) {
+        Py_INCREF(o);
+        return o;
+    }
+
+    /* test if the argument is of the Xxo class */
+    if (PyObject_TypeCheck(o, defining_class)) {
+        Py_INCREF(o);
+        return o;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyMethodDef Xxo_methods[] = {
+    {"demo",            (PyCFunction)(void(*)(void))Xxo_demo,
+     METH_METHOD | METH_FASTCALL | METH_KEYWORDS, PyDoc_STR("demo(o) -> o")},
+    {NULL,              NULL}           /* sentinel */
+};
+
+/* Xxo type definition */
+
+PyDoc_STRVAR(Xxo_doc,
+             "A class that explicitly stores attributes in an internal dict");
+
 static PyType_Slot Xxo_Type_slots[] = {
-    {Py_tp_doc, "The Xxo type"},
+    {Py_tp_doc, (char *)Xxo_doc},
     {Py_tp_traverse, Xxo_traverse},
     {Py_tp_finalize, Xxo_finalize},
+    {Py_tp_dealloc, Xxo_dealloc},
     {Py_tp_getattro, Xxo_getattro},
-    {Py_tp_setattr, Xxo_setattr},
+    {Py_tp_setattro, Xxo_setattro},
     {Py_tp_methods, Xxo_methods},
-    {0, 0},
+    {0, 0},  /* sentinel */
 };
 
 static PyType_Spec Xxo_Type_spec = {
-    "xxlimited.Xxo",
-    sizeof(XxoObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    Xxo_Type_slots
+    .name = "xxlimited.Xxo",
+    .basicsize = sizeof(XxoObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = Xxo_Type_slots,
 };
 
-/* --------------------------------------------------------------------- */
 
-/* Function of two integers returning integer */
+/* Str type definition*/
+
+static PyType_Slot Str_Type_slots[] = {
+    {0, 0},  /* sentinel */
+};
+
+static PyType_Spec Str_Type_spec = {
+    .name = "xxlimited.Str",
+    .basicsize = 0,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = Str_Type_slots,
+};
+
+
+/* Function of two integers returning integer (with C "long int" arithmetic) */
 
 PyDoc_STRVAR(xx_foo_doc,
 "foo(i,j)\n\
@@ -138,7 +250,7 @@ PyDoc_STRVAR(xx_foo_doc,
 Return the sum of i and j.");
 
 static PyObject *
-xx_foo(PyObject *self, PyObject *args)
+xx_foo(PyObject *module, PyObject *args)
 {
     long i, j;
     long res;
@@ -152,83 +264,30 @@ xx_foo(PyObject *self, PyObject *args)
 /* Function of no arguments returning new Xxo object */
 
 static PyObject *
-xx_new(PyObject *self, PyObject *args)
+xx_new(PyObject *module, PyObject *Py_UNUSED(unused))
 {
     XxoObject *rv;
 
-    if (!PyArg_ParseTuple(args, ":new"))
-        return NULL;
-    rv = newXxoObject(args);
+    rv = newXxoObject(module);
     if (rv == NULL)
         return NULL;
     return (PyObject *)rv;
 }
 
-/* Test bad format character */
 
-static PyObject *
-xx_roj(PyObject *self, PyObject *args)
-{
-    PyObject *a;
-    long b;
-    if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
-        return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-/* ---------- */
-
-static PyType_Slot Str_Type_slots[] = {
-    {Py_tp_base, NULL}, /* filled out in module init function */
-    {0, 0},
-};
-
-static PyType_Spec Str_Type_spec = {
-    "xxlimited.Str",
-    0,
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    Str_Type_slots
-};
-
-/* ---------- */
-
-static PyObject *
-null_richcompare(PyObject *self, PyObject *other, int op)
-{
-    Py_RETURN_NOTIMPLEMENTED;
-}
-
-static PyType_Slot Null_Type_slots[] = {
-    {Py_tp_base, NULL}, /* filled out in module init */
-    {Py_tp_new, NULL},
-    {Py_tp_richcompare, null_richcompare},
-    {0, 0}
-};
-
-static PyType_Spec Null_Type_spec = {
-    "xxlimited.Null",
-    0,               /* basicsize */
-    0,               /* itemsize */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    Null_Type_slots
-};
-
-/* ---------- */
 
 /* List of functions defined in the module */
 
 static PyMethodDef xx_methods[] = {
-    {"roj",             xx_roj,         METH_VARARGS,
-        PyDoc_STR("roj(a,b) -> None")},
     {"foo",             xx_foo,         METH_VARARGS,
         xx_foo_doc},
-    {"new",             xx_new,         METH_VARARGS,
+    {"new",             xx_new,         METH_NOARGS,
         PyDoc_STR("new() -> new Xx object")},
     {NULL,              NULL}           /* sentinel */
 };
+
+
+/* The module itself */
 
 PyDoc_STRVAR(module_doc,
 "This is a template module just for instruction.");
@@ -236,68 +295,78 @@ PyDoc_STRVAR(module_doc,
 static int
 xx_modexec(PyObject *m)
 {
-    PyObject *o;
+    xx_state *state = PyModule_GetState(m);
 
-    /* Due to cross platform compiler issues the slots must be filled
-     * here. It's required for portability to Windows without requiring
-     * C++. */
-    Null_Type_slots[0].pfunc = &PyBaseObject_Type;
-    Null_Type_slots[1].pfunc = PyType_GenericNew;
-    Str_Type_slots[0].pfunc = &PyUnicode_Type;
-
-    Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
-    if (Xxo_Type == NULL)
-        goto fail;
-
-    /* Add some symbolic constants to the module */
-    if (ErrorObject == NULL) {
-        ErrorObject = PyErr_NewException("xxlimited.error", NULL, NULL);
-        if (ErrorObject == NULL)
-            goto fail;
+    state->Error_Type = PyErr_NewException("xxlimited.Error", NULL, NULL);
+    if (state->Error_Type == NULL) {
+        return -1;
     }
-    Py_INCREF(ErrorObject);
-    PyModule_AddObject(m, "error", ErrorObject);
+    if (PyModule_AddType(m, (PyTypeObject*)state->Error_Type) < 0) {
+        return -1;
+    }
 
-    /* Add Xxo */
-    o = PyType_FromSpec(&Xxo_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Xxo", o);
+    state->Xxo_Type = PyType_FromModuleAndSpec(m, &Xxo_Type_spec, NULL);
+    if (state->Xxo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, (PyTypeObject*)state->Xxo_Type) < 0) {
+        return -1;
+    }
 
-    /* Add Str */
-    o = PyType_FromSpec(&Str_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Str", o);
+    // Add the Str type. It is not needed from C code, so it is only
+    // added to the module dict.
+    // It does not inherit from "object" (PyObject_Type), but from "str"
+    // (PyUnincode_Type).
+    PyObject *Str_Type = PyType_FromModuleAndSpec(
+        m, &Str_Type_spec, (PyObject *)&PyUnicode_Type);
+    if (Str_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, (PyTypeObject*)Str_Type) < 0) {
+        return -1;
+    }
+    Py_DECREF(Str_Type);
 
-    /* Add Null */
-    o = PyType_FromSpec(&Null_Type_spec);
-    if (o == NULL)
-        goto fail;
-    PyModule_AddObject(m, "Null", o);
     return 0;
- fail:
-    Py_XDECREF(m);
-    return -1;
 }
-
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
     {0, NULL}
 };
 
+static int
+xx_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    xx_state *state = PyModule_GetState(module);
+    Py_VISIT(state->Xxo_Type);
+    Py_VISIT(state->Error_Type);
+    return 0;
+}
+
+static int
+xx_clear(PyObject *module)
+{
+    xx_state *state = PyModule_GetState(module);
+    Py_CLEAR(state->Xxo_Type);
+    Py_CLEAR(state->Error_Type);
+    return 0;
+}
+
 static struct PyModuleDef xxmodule = {
     PyModuleDef_HEAD_INIT,
-    "xxlimited",
-    module_doc,
-    0,
-    xx_methods,
-    xx_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "xxlimited",
+    .m_doc = module_doc,
+    .m_size = sizeof(xx_state),
+    .m_methods = xx_methods,
+    .m_slots = xx_slots,
+    .m_traverse = xx_traverse,
+    .m_clear = xx_clear,
+    /* m_free is not necessary here: xx_clear clears all references,
+     * and the module state is deallocated along with the module.
+     */
 };
+
 
 /* Export function for the module (*must* be called PyInit_xx) */
 

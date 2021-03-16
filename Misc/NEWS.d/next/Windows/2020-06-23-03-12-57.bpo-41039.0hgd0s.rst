@@ -1,2 +1,0 @@
-Stable ABI redirection DLL (python3.dll) now uses ``#pragma
-comment(linker)`` for re-exporting.

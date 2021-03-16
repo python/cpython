@@ -1,11 +1,103 @@
-All about co_lnotab, the line number table.
+Description of the internal format of the line number table
 
-Code objects store a field named co_lnotab.  This is an array of unsigned bytes
-disguised as a Python bytes object.  It is used to map bytecode offsets to
-source code line #s for tracebacks and to identify line number boundaries for
-line tracing. Because of internals of the peephole optimizer, it's possible
-for lnotab to contain bytecode offsets that are no longer valid (for example
-if the optimizer removed the last line in a function).
+Conceptually, the line number table consists of a sequence of triples:
+    start-offset (inclusive), end-offset (exclusive), line-number.
+
+Note that note all byte codes have a line number so we need handle `None` for the line-number.
+
+However, storing the above sequence directly would be very inefficient as we would need 12 bytes per entry.
+
+First of all, we can note that the end of one entry is the same as the start of the next, so we can overlap entries.
+Secondly we also note that we don't really need arbitrary access to the sequence, so we can store deltas.
+
+We just need to store (end - start, line delta) pairs. The start offset of the first entry is always zero.
+
+Thirdly, most deltas are small, so we can use a single byte for each value, as long we allow several entries for the same line.
+
+Consider the following table
+     Start    End     Line
+      0       6       1
+      6       50      2
+      50      350     7
+      350     360     No line number
+      360     376     8
+      376     380     208
+
+Stripping the redundant ends gives:
+
+   End-Start  Line-delta
+      6         +1
+      44        +1
+      300       +5
+      10        No line number
+      16        +1
+      4         +200
+
+
+Note that the end - start value is always positive.
+
+Finally in order, to fit into a single byte we need to convert start deltas to the range 0 <= delta <= 254,
+and line deltas to the range -127  <= delta <= 127.
+A line delta of -128 is used to indicate no line number.
+A start delta of 255 is used as a sentinel to mark the end of the table.
+Also note that a delta of zero indicates that there are no bytecodes in the given range,
+which means can use an invalidate line number for that range.
+
+Final form:
+
+   Start delta   Line delta
+    6               +1
+    44              +1
+    254             +5
+    46              0
+    10              -128 (No line number, treated as a delta of zero)
+    16              +1
+    0               +127 (line 135, but the range is empty as no bytecodes are at line 135)
+    4               +73
+    255 (end mark)  ---
+
+Iterating over the table.
+-------------------------
+
+For the `co_lines` attribute we want to emit the full form, omitting the (350, 360, No line number) and empty entries.
+
+The code is as follows:
+
+def co_lines(code):
+    line = code.co_firstlineno
+    end = 0
+    table_iter = iter(code.internal_line_table):
+    for sdelta, ldelta in table_iter:
+        if sdelta == 255:
+            break
+        if ldelta == 0: # No change to line number, just accumulate changes to end
+            end += odelta
+            continue
+        start = end
+        end = start + sdelta
+        if ldelta == -128: # No valid line number -- skip entry
+            continue
+        line += ldelta
+        if end == start: # Empty range, omit.
+            continue
+        yield start, end, line
+
+
+
+
+The historical co_lnotab format
+-------------------------------
+
+prior to 3.10 code objects stored a field named co_lnotab.
+This was an array of unsigned bytes disguised as a Python bytes object.
+
+The old co_lnotab did not account for the presence of bytecodes without a line number,
+nor was it well suited to tracing as a number of workarounds were required.
+
+The old format can still be accessed via `code.co_lnotab`, which is lazily computed from the new format.
+
+Below is the description of the old co_lnotab format:
+
 
 The array is conceptually a compressed list of
     (bytecode offset increment, line number increment)

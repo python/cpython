@@ -1,5 +1,6 @@
 import unittest
 from test import support
+from test.support import warnings_helper
 import gc
 import weakref
 import operator
@@ -953,7 +954,7 @@ class TestBasicOpsBytes(TestBasicOps, unittest.TestCase):
 
 class TestBasicOpsMixedStringBytes(TestBasicOps, unittest.TestCase):
     def setUp(self):
-        self._warning_filters = support.check_warnings()
+        self._warning_filters = warnings_helper.check_warnings()
         self._warning_filters.__enter__()
         warnings.simplefilter('ignore', BytesWarning)
         self.case   = "string and bytes set"

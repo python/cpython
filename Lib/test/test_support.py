@@ -391,14 +391,14 @@ class TestSupport(unittest.TestCase):
 
     def test_check__all__(self):
         extra = {'tempdir'}
-        blacklist = {'template'}
+        not_exported = {'template'}
         support.check__all__(self,
                              tempfile,
                              extra=extra,
-                             blacklist=blacklist)
+                             not_exported=not_exported)
 
         extra = {'TextTestResult', 'installHandler'}
-        blacklist = {'load_tests', "TestProgram", "BaseTestSuite"}
+        not_exported = {'load_tests', "TestProgram", "BaseTestSuite"}
 
         support.check__all__(self,
                              unittest,
@@ -407,7 +407,7 @@ class TestSupport(unittest.TestCase):
                               "unittest.main", "unittest.runner",
                               "unittest.signals", "unittest.async_case"),
                              extra=extra,
-                             blacklist=blacklist)
+                             not_exported=not_exported)
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 

@@ -23,7 +23,7 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     int (*func)(void *),
     void *arg);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -31,8 +31,14 @@ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);
 
-/* Private function */
 void _PyEval_Fini(void);
+
+
+extern PyObject* _PyEval_GetBuiltins(PyThreadState *tstate);
+extern PyObject *_PyEval_BuiltinsFromGlobals(
+    PyThreadState *tstate,
+    PyObject *globals);
+
 
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
@@ -40,15 +46,11 @@ _PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     return tstate->interp->eval_frame(tstate, f, throwflag);
 }
 
-extern PyObject *_PyEval_EvalCode(
-    PyThreadState *tstate,
-    PyObject *_co, PyObject *globals, PyObject *locals,
-    PyObject *const *args, Py_ssize_t argcount,
-    PyObject *const *kwnames, PyObject *const *kwargs,
-    Py_ssize_t kwcount, int kwstep,
-    PyObject *const *defs, Py_ssize_t defcount,
-    PyObject *kwdefs, PyObject *closure,
-    PyObject *name, PyObject *qualname);
+extern PyObject *
+_PyEval_Vector(PyThreadState *tstate,
+            PyFrameConstructor *desc, PyObject *locals,
+            PyObject* const* args, size_t argcount,
+            PyObject *kwnames);
 
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
 extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
@@ -56,14 +58,14 @@ extern int _PyEval_ThreadsInitialized(PyInterpreterState *interp);
 extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
 #endif
 extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
-extern void _PyEval_FiniGIL(PyThreadState *tstate);
+extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 
+extern void _PyEval_DeactivateOpCache(void);
+
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
-
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK
 /* With USE_STACKCHECK macro defined, trigger stack checks in
@@ -94,24 +96,8 @@ static inline int _Py_EnterRecursiveCall_inline(const char *where) {
 
 #define Py_EnterRecursiveCall(where) _Py_EnterRecursiveCall_inline(where)
 
-/* Compute the "lower-water mark" for a recursion limit. When
- * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
- * the overflowed flag is reset to 0. */
-static inline int _Py_RecursionLimitLowerWaterMark(int limit) {
-    if (limit > 200) {
-        return (limit - 50);
-    }
-    else {
-        return (3 * (limit >> 2));
-    }
-}
-
 static inline void _Py_LeaveRecursiveCall(PyThreadState *tstate)  {
     tstate->recursion_depth--;
-    int limit = tstate->interp->ceval.recursion_limit;
-    if (tstate->recursion_depth < _Py_RecursionLimitLowerWaterMark(limit)) {
-        tstate->overflowed = 0;
-    }
 }
 
 static inline void _Py_LeaveRecursiveCall_inline(void)  {

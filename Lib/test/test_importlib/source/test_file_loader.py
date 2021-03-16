@@ -17,7 +17,7 @@ import types
 import unittest
 import warnings
 
-from test.support import make_legacy_pyc, unload
+from test.support.import_helper import make_legacy_pyc, unload
 
 from test.test_py_compile import without_source_date_epoch
 from test.test_py_compile import SourceDateEpochTestMeta

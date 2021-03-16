@@ -229,9 +229,40 @@ SyntaxError: cannot assign to function call
 
 >>> with a as b
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: expected ':'
 
 >>> p = p =
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+Comprehensions creating tuples without parentheses
+should produce a specialized error message:
+
+>>> [x,y for x,y in range(100)]
+Traceback (most recent call last):
+SyntaxError: did you forget parentheses around the comprehension target?
+
+>>> {x,y for x,y in range(100)}
+Traceback (most recent call last):
+SyntaxError: did you forget parentheses around the comprehension target?
+
+# Missing commas in literals collections should not
+# produce special error messages regarding missing
+# parentheses
+
+>>> [1, 2 3]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> {1, 2 3}
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> {1:2, 2:5 3:12}
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> (1, 2 3)
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
@@ -316,7 +347,7 @@ SyntaxError: Generator expression must be parenthesized
 >>> class C(x for x in L):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: expected ':'
 
 >>> def g(*args, **kwargs):
 ...     print(args, sorted(kwargs.items()))
@@ -693,6 +724,107 @@ leading to spurious errors.
      ...
    SyntaxError: cannot assign to function call
 
+    Missing ':' before suites:
+
+    >>> def f()
+    ...     pass
+    Traceback (most recent call last):
+    SyntaxError: expected ':'
+
+    >>> class A
+    ...     pass
+    Traceback (most recent call last):
+    SyntaxError: expected ':'
+
+   >>> if 1
+   ...   pass
+   ... elif 1:
+   ...   pass
+   ... else:
+   ...   x() = 1
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> if 1:
+   ...   pass
+   ... elif 1
+   ...   pass
+   ... else:
+   ...   x() = 1
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   pass
+   ... else
+   ...   x() = 1
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> for x in range(10)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> while True
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech as something
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech, block as something
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech, block as something, bluch
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech as something)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech, block as something)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech, block as something, bluch)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> try
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> try:
+   ...   pass
+   ... except
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -702,6 +834,39 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
    Traceback (most recent call last):
      ...
    SyntaxError: invalid syntax
+
+Check that an exception group with missing parentheses
+raise a custom exception
+
+   >>> try:
+   ...   pass
+   ... except A, B:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except A, B, C:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except A, B, C as blech:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except A, B, C as blech:
+   ...   pass
+   ... finally:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
 
 
 >>> f(a=23, a=234)
@@ -749,14 +914,6 @@ SyntaxError: only single target (not list) can be annotated
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
-    Traceback (most recent call last):
-    SyntaxError: cannot assign to __debug__
-
-    >>> def f(*args:(lambda __debug__:0)): pass
-    Traceback (most recent call last):
-    SyntaxError: cannot assign to __debug__
-
-    >>> def f(**kwargs:(lambda __debug__:0)): pass
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
@@ -809,6 +966,16 @@ class SyntaxTestCase(unittest.TestCase):
                 self.assertEqual(err.offset, offset)
         else:
             self.fail("compile() did not raise SyntaxError")
+
+    def test_expression_with_assignment(self):
+        self._check_error(
+            "print(end1 + end2 = ' ')",
+            'expression cannot contain assignment, perhaps you meant "=="?',
+            offset=19
+        )
+
+    def test_curly_brace_after_primary_raises_immediately(self):
+        self._check_error("f{", "invalid syntax", mode="single")
 
     def test_assign_call(self):
         self._check_error("f() = 1", "assign")
@@ -949,6 +1116,48 @@ pass
             compile(s, '<string>', 'exec')
         except SyntaxError:
             self.fail("Empty line after a line continuation character is valid.")
+
+    @support.cpython_only
+    def test_nested_named_except_blocks(self):
+        code = ""
+        for i in range(12):
+            code += f"{'    '*i}try:\n"
+            code += f"{'    '*(i+1)}raise Exception\n"
+            code += f"{'    '*i}except Exception as e:\n"
+        code += f"{' '*4*12}pass"
+        self._check_error(code, "too many statically nested blocks")
+
+    def test_barry_as_flufl_with_syntax_errors(self):
+        # The "barry_as_flufl" rule can produce some "bugs-at-a-distance" if
+        # is reading the wrong token in the presence of syntax errors later
+        # in the file. See bpo-42214 for more information.
+        code = """
+def func1():
+    if a != b:
+        raise ValueError
+
+def func2():
+    try
+        return 1
+    finally:
+        pass
+"""
+        self._check_error(code, "expected ':'")
+
+    def test_invalid_line_continuation_left_recursive(self):
+        # Check bpo-42218: SyntaxErrors following left-recursive rules
+        # (t_primary_raw in this case) need to be tested explicitly
+        self._check_error("A.\u018a\\ ",
+                          "unexpected character after line continuation character")
+        self._check_error("A.\u03bc\\\n",
+                          "unexpected EOF while parsing")
+
+    def test_error_parenthesis(self):
+        for paren in "([{":
+            self._check_error(paren + "1 + 2", f"\\{paren}' was never closed")
+
+        for paren in ")]}":
+            self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 
 
 def test_main():
