@@ -39,6 +39,7 @@ class object "PyObject *" "&PyBaseObject_Type"
         PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
+// bpo-42745: next_version_tag remains shared by all interpreters because of static types
 // Used to set PyTypeObject.tp_version_tag
 static unsigned int next_version_tag = 0;
 
@@ -252,8 +253,9 @@ _PyType_InitCache(PyInterpreterState *interp)
 
 
 static unsigned int
-_PyType_ClearCache(struct type_cache *cache)
+_PyType_ClearCache(PyInterpreterState *interp)
 {
+    struct type_cache *cache = &interp->type_cache;
 #if MCACHE_STATS
     size_t total = cache->hits + cache->collisions + cache->misses;
     fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
@@ -267,7 +269,10 @@ _PyType_ClearCache(struct type_cache *cache)
 #endif
 
     unsigned int cur_version_tag = next_version_tag - 1;
-    next_version_tag = 0;
+    if (_Py_IsMainInterpreter(interp)) {
+        next_version_tag = 0;
+    }
+
     type_cache_clear(cache, 0);
 
     return cur_version_tag;
@@ -277,16 +282,16 @@ _PyType_ClearCache(struct type_cache *cache)
 unsigned int
 PyType_ClearCache(void)
 {
-    struct type_cache *cache = get_type_cache();
-    return _PyType_ClearCache(cache);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _PyType_ClearCache(interp);
 }
 
 
 void
-_PyType_Fini(PyThreadState *tstate)
+_PyType_Fini(PyInterpreterState *interp)
 {
-    _PyType_ClearCache(&tstate->interp->type_cache);
-    if (_Py_IsMainInterpreter(tstate)) {
+    _PyType_ClearCache(interp);
+    if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
 }
@@ -2888,6 +2893,23 @@ error:
     return NULL;
 }
 
+static PyObject *
+type_vectorcall(PyObject *metatype, PyObject *const *args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs == 1 && metatype == (PyObject *)&PyType_Type){
+        if (!_PyArg_NoKwnames("type", kwnames)) {
+            return NULL;
+        }
+        return Py_NewRef(Py_TYPE(args[0]));
+    }
+    /* In other (much less common) cases, fall back to
+       more flexible calling conventions. */
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_MakeTpCall(tstate, metatype, args, nargs, kwnames);
+}
+
 /* An array of type slot offsets corresponding to Py_tp_* constants,
   * for use in e.g. PyType_Spec and PyType_GetSlot.
   * Each entry has two offsets: "slot_offset" and "subslot_offset".
@@ -3896,6 +3918,7 @@ PyTypeObject PyType_Type = {
     type_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     (inquiry)type_is_gc,                        /* tp_is_gc */
+    .tp_vectorcall = type_vectorcall,
 };
 
 
@@ -5243,6 +5266,10 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+
+    if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
+        type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
+    }
 }
 
 static int

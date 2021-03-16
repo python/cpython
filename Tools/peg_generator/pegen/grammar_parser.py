@@ -13,6 +13,7 @@ from ast import literal_eval
 from pegen.grammar import (
     Alt,
     Cut,
+    Forced,
     Gather,
     Group,
     Item,
@@ -402,7 +403,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def named_item(self) -> Optional[NamedItem]:
-        # named_item: NAME '[' NAME '*' ']' '=' ~ item | NAME '[' NAME ']' '=' ~ item | NAME '=' ~ item | item | lookahead
+        # named_item: NAME '[' NAME '*' ']' '=' ~ item | NAME '[' NAME ']' '=' ~ item | NAME '=' ~ item | item | forced_atom | lookahead
         mark = self.mark()
         cut = False
         if (
@@ -466,9 +467,35 @@ class GeneratedParser(Parser):
         if cut: return None
         cut = False
         if (
+            (it := self.forced_atom())
+        ):
+            return NamedItem ( None , it )
+        self.reset(mark)
+        if cut: return None
+        cut = False
+        if (
             (it := self.lookahead())
         ):
             return NamedItem ( None , it )
+        self.reset(mark)
+        if cut: return None
+        return None
+
+    @memoize
+    def forced_atom(self) -> Optional[NamedItem]:
+        # forced_atom: '&' '&' ~ atom
+        mark = self.mark()
+        cut = False
+        if (
+            (literal := self.expect('&'))
+            and
+            (literal_1 := self.expect('&'))
+            and
+            (cut := True)
+            and
+            (atom := self.atom())
+        ):
+            return Forced ( atom )
         self.reset(mark)
         if cut: return None
         return None

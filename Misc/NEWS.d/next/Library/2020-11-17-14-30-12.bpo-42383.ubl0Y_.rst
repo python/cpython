@@ -1,2 +1,0 @@
-Fix pdb: previously pdb would fail to restart the debugging target if it was
-specified using a relative path and the current directory changed.

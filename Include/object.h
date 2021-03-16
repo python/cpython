@@ -235,8 +235,11 @@ PyAPI_FUNC(void *) PyType_GetModuleState(struct _typeobject *);
 
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
-#define PyObject_TypeCheck(ob, tp) \
-    (Py_IS_TYPE(ob, tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
+
+static inline int _PyObject_TypeCheck(PyObject *ob, PyTypeObject *type) {
+    return Py_IS_TYPE(ob, type) || PyType_IsSubtype(Py_TYPE(ob), type);
+}
+#define PyObject_TypeCheck(ob, type) _PyObject_TypeCheck(_PyObject_CAST(ob), type)
 
 PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
@@ -355,6 +358,11 @@ given type object has a specified feature.
 /* Type has am_send entry in tp_as_async slot */
 #define Py_TPFLAGS_HAVE_AM_SEND (1UL << 21)
 #endif
+
+// This undocumented flag gives certain built-ins their unique pattern-matching
+// behavior, which allows a single positional subpattern to match against the
+// subject itself (rather than a mapped attribute on it):
+#define _Py_TPFLAGS_MATCH_SELF (1UL << 22)
 
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)

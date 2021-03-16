@@ -16,10 +16,14 @@ import time
 import unittest
 
 from unittest import mock, skipUnless
+from concurrent.futures import ProcessPoolExecutor
 try:
-    from concurrent.futures import ProcessPoolExecutor
+    # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
+    # and it can function.
+    from concurrent.futures.process import _check_system_limits
+    _check_system_limits()
     _have_multiprocessing = True
-except ImportError:
+except NotImplementedError:
     _have_multiprocessing = False
 
 from test import support
@@ -188,6 +192,7 @@ class CompileallTestsBase:
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
@@ -198,11 +203,13 @@ class CompileallTestsBase:
                                     "workers must be greater or equal to 0"):
             compileall.compile_dir(self.directory, workers=-1)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_workers_cpu_count(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=0)
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 
+    @skipUnless(_have_multiprocessing, "requires multiprocessing")
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     @mock.patch('compileall.compile_file')
     def test_compile_one_worker(self, compile_file_mock, pool_mock):

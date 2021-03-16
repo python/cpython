@@ -309,12 +309,27 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_exprs(exp->v.Tuple.elts, ctx, 0);
     case NamedExpr_kind:
         return validate_expr(exp->v.NamedExpr.value, Load);
+    case MatchAs_kind:
+        PyErr_SetString(PyExc_ValueError,
+                        "MatchAs is only valid in match_case patterns");
+        return 0;
+    case MatchOr_kind:
+        PyErr_SetString(PyExc_ValueError,
+                        "MatchOr is only valid in match_case patterns");
+        return 0;
     /* This last case doesn't have any checking. */
     case Name_kind:
         return 1;
     }
     PyErr_SetString(PyExc_SystemError, "unexpected expression");
     return 0;
+}
+
+static int
+validate_pattern(expr_ty p)
+{
+    // Coming soon (thanks Batuhan)!
+    return 1;
 }
 
 static int
@@ -415,6 +430,20 @@ validate_stmt(stmt_ty stmt)
                 return 0;
         }
         return validate_body(stmt->v.AsyncWith.body, "AsyncWith");
+    case Match_kind:
+        if (!validate_expr(stmt->v.Match.subject, Load)
+            || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
+            return 0;
+        }
+        for (i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
+            match_case_ty m = asdl_seq_GET(stmt->v.Match.cases, i);
+            if (!validate_pattern(m->pattern)
+                || (m->guard && !validate_expr(m->guard, Load))
+                || !validate_body(m->body, "match_case")) {
+                return 0;
+            }
+        }
+        return 1;
     case Raise_kind:
         if (stmt->v.Raise.exc) {
             return validate_expr(stmt->v.Raise.exc, Load) &&

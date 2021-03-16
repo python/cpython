@@ -14,13 +14,10 @@ extern "C" {
 // Don't call this function but _PyLong_GetZero() and _PyLong_GetOne()
 static inline PyObject* __PyLong_GetSmallInt_internal(int value)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-#ifdef Py_DEBUG
-    _Py_EnsureTstateNotNULL(tstate);
-#endif
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(-_PY_NSMALLNEGINTS <= value && value < _PY_NSMALLPOSINTS);
     size_t index = _PY_NSMALLNEGINTS + value;
-    PyObject *obj = (PyObject*)tstate->interp->small_ints[index];
+    PyObject *obj = (PyObject*)interp->small_ints[index];
     // _PyLong_GetZero() and _PyLong_GetOne() must not be called
     // before _PyLong_Init() nor after _PyLong_Fini()
     assert(obj != NULL);

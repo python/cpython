@@ -526,7 +526,8 @@ are always available.  They are listed here in alphabetical order.
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
    the code that's executed is expected to be valid as file input (see the
    section "File input" in the Reference Manual). Be aware that the
-   :keyword:`return` and :keyword:`yield` statements may not be used outside of
+   :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
+   statements may not be used outside of
    function definitions even within the context of code passed to the
    :func:`exec` function. The return value is ``None``.
 
@@ -692,6 +693,13 @@ are always available.  They are listed here in alphabetical order.
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
+
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, one must manually mangle a private attribute's
+      (attributes with two leading underscores) name in order to retrieve it with
+      :func:`getattr`.
 
 
 .. function:: globals()
@@ -862,9 +870,13 @@ are always available.  They are listed here in alphabetical order.
    class>`) subclass thereof.  If *object* is not
    an object of the given type, the function always returns ``False``.
    If *classinfo* is a tuple of type objects (or recursively, other such
-   tuples), return ``True`` if *object* is an instance of any of the types.
+   tuples) or a :ref:`types-union` of multiple types, return ``True`` if
+   *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
+
+   .. versionchanged:: 3.10
+      *classinfo* can be a :ref:`types-union`.
 
 
 .. function:: issubclass(class, classinfo)
@@ -872,8 +884,12 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects, in which case every entry in *classinfo* will be checked. In any other
+   objects or a :ref:`types-union`, in which case every entry in *classinfo*
+   will be checked. In any other
    case, a :exc:`TypeError` exception is raised.
+
+   .. versionchanged:: 3.10
+      *classinfo* can be a :ref:`types-union`.
 
 
 .. function:: iter(object[, sentinel])
@@ -1512,6 +1528,13 @@ are always available.  They are listed here in alphabetical order.
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
 
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, one must manually mangle a private attribute's
+      (attributes with two leading underscores) name in order to set it with
+      :func:`setattr`.
+
 
 .. class:: slice(stop)
            slice(start, stop[, step])
@@ -1690,7 +1713,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: type(object)
-           type(name, bases, dict)
+           type(name, bases, dict, **kwds)
 
    .. index:: object: type
 
@@ -1718,6 +1741,13 @@ are always available.  They are listed here in alphabetical order.
       >>> X = type('X', (), dict(a=1))
 
    See also :ref:`bltin-type-objects`.
+
+   Keyword arguments provided to the three argument form are passed to the
+   appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
+   in the same way that keywords in a class
+   definition (besides *metaclass*) would.
+
+   See also :ref:`class-customization`.
 
    .. versionchanged:: 3.6
       Subclasses of :class:`type` which don't override ``type.__new__`` may no

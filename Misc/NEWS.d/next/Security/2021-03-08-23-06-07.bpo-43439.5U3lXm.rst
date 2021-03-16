@@ -1,0 +1,2 @@
+Add audit hooks for :func:`gc.get_objects`, :func:`gc.get_referrers` and
+:func:`gc.get_referents`. Patch by Pablo Galindo.

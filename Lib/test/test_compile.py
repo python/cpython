@@ -632,6 +632,17 @@ if 1:
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
+    # Merging equal co_linetable and co_code is not a strict requirement
+    # for the Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_merge_code_attrs(self):
+        # See https://bugs.python.org/issue42217
+        f1 = lambda x: x.y.z
+        f2 = lambda a: a.b.c
+
+        self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
+        self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
+
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
     # that peephole optimization was actually done though that isn't an
@@ -775,6 +786,14 @@ if 1:
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_lineno_procedure_call(self):
+        def call():
+            (
+                print()
+            )
+        line1 = call.__code__.co_firstlineno + 1
+        assert line1 not in [line for (_, _, line) in call.__code__.co_lines()]
+
     def test_lineno_after_implicit_return(self):
         TRUE = True
         # Don't use constant True or False, as compiler will remove test
@@ -825,6 +844,51 @@ if 1:
                 self.assertEqual(start, 0)
                 self.assertEqual(end, len(code.co_code))
                 self.assertEqual(line, code.co_firstlineno)
+
+    def test_lineno_attribute(self):
+        def load_attr():
+            return (
+                o.
+                a
+            )
+        load_attr_lines = [ 2, 3, 1 ]
+
+        def load_method():
+            return (
+                o.
+                m(
+                    0
+                )
+            )
+        load_method_lines = [ 2, 3, 4, 3, 1 ]
+
+        def store_attr():
+            (
+                o.
+                a
+            ) = (
+                v
+            )
+        store_attr_lines = [ 5, 2, 3 ]
+
+        def aug_store_attr():
+            (
+                o.
+                a
+            ) += (
+                v
+            )
+        aug_store_attr_lines = [ 2, 3, 5, 1, 3 ]
+
+        funcs = [ load_attr, load_method, store_attr, aug_store_attr]
+        func_lines = [ load_attr_lines, load_method_lines,
+                 store_attr_lines, aug_store_attr_lines]
+
+        for func, lines in zip(funcs, func_lines, strict=True):
+            with self.subTest(func=func):
+                code_lines = [ line-func.__code__.co_firstlineno
+                              for (_, _, line) in func.__code__.co_lines() ]
+                self.assertEqual(lines, code_lines)
 
 
     def test_big_dict_literal(self):

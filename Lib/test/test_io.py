@@ -3767,6 +3767,33 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         with self.assertRaises(AttributeError):
             del t._CHUNK_SIZE
 
+    def test_internal_buffer_size(self):
+        # bpo-43260: TextIOWrapper's internal buffer should not store
+        # data larger than chunk size.
+        chunk_size = 8192  # default chunk size, updated later
+
+        class MockIO(self.MockRawIO):
+            def write(self, data):
+                if len(data) > chunk_size:
+                    raise RuntimeError
+                return super().write(data)
+
+        buf = MockIO()
+        t = self.TextIOWrapper(buf, encoding="ascii")
+        chunk_size = t._CHUNK_SIZE
+        t.write("abc")
+        t.write("def")
+        # default chunk size is 8192 bytes so t don't write data to buf.
+        self.assertEqual([], buf._write_stack)
+
+        with self.assertRaises(RuntimeError):
+            t.write("x"*(chunk_size+1))
+
+        self.assertEqual([b"abcdef"], buf._write_stack)
+        t.write("ghi")
+        t.write("x"*chunk_size)
+        self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio

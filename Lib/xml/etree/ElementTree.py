@@ -1560,7 +1560,6 @@ class XMLParser:
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        parser.specified_attributes = 1
         self._doctype = None
         self.entity = {}
         try:
@@ -1580,7 +1579,6 @@ class XMLParser:
         for event_name in events_to_report:
             if event_name == "start":
                 parser.ordered_attributes = 1
-                parser.specified_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
                             start=self._start):
                     append((event, start(tag, attrib_in)))

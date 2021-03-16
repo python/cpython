@@ -41,7 +41,13 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
+/* PyCFunction_New is declared as a function for stable ABI (declaration is
+ * needed for e.g. GCC with -fvisibility=hidden), but redefined as a macro
+ * that calls PyCFunction_NewEx. */
+PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
+
+/* PyCFunction_NewEx is similar: on 3.9+, this calls PyCMethod_New. */
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 

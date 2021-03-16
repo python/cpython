@@ -54,8 +54,8 @@ def spawn(cmd, search_path=1, verbose=0, dry_run=0):
         global _cfg_target, _cfg_target_split
         if _cfg_target is None:
             from distutils import sysconfig
-            _cfg_target = str(sysconfig.get_config_var(
-                                  'MACOSX_DEPLOYMENT_TARGET') or '')
+            _cfg_target = sysconfig.get_config_var(
+                                  'MACOSX_DEPLOYMENT_TARGET') or ''
             if _cfg_target:
                 _cfg_target_split = [int(x) for x in _cfg_target.split('.')]
         if _cfg_target:

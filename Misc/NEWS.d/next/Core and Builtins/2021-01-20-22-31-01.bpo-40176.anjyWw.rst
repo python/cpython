@@ -1,2 +1,0 @@
-Syntax errors for unterminated string literals now point to the start
-of the string instead of reporting EOF/EOL.

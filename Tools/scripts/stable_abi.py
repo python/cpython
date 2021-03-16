@@ -2,8 +2,9 @@
 
 import argparse
 import glob
-import re
+import os.path
 import pathlib
+import re
 import subprocess
 import sys
 import sysconfig
@@ -21,10 +22,7 @@ EXCLUDED_HEADERS = {
     "genobject.h",
     "longintrepr.h",
     "parsetok.h",
-    "pyarena.h",
     "pyatomic.h",
-    "pyctype.h",
-    "pydebug.h",
     "pytime.h",
     "symtable.h",
     "token.h",
@@ -213,7 +211,8 @@ def check_symbols(parser_args):
         LIBRARY = sysconfig.get_config_var("LIBRARY")
         if not LIBRARY:
             raise Exception("failed to get LIBRARY variable from sysconfig")
-        check_library(parser_args.stable_abi_file, LIBRARY, abi_funcs)
+        if os.path.exists(LIBRARY):
+            check_library(parser_args.stable_abi_file, LIBRARY, abi_funcs)
 
         # dynamic library
         LDLIBRARY = sysconfig.get_config_var("LDLIBRARY")

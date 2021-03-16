@@ -324,7 +324,7 @@ PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
    returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 
-/* Returns 1 if the object 'obj' provides iterator protocols, and 0 otherwise.
+/* Returns non-zero if the object 'obj' provides iterator protocols, and 0 otherwise.
 
    This function always succeeds. */
 PyAPI_FUNC(int) PyIter_Check(PyObject *);

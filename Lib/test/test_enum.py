@@ -18,7 +18,7 @@ from datetime import timedelta
 
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
-    if os.path.exists('../../Doc/library/enum.rst'):
+    if os.path.exists('Doc/library/enum.rst'):
         tests.addTests(doctest.DocFileSuite(
                 '../../Doc/library/enum.rst',
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
@@ -2184,6 +2184,29 @@ class TestEnum(unittest.TestCase):
             __major_ = 'Hoolihan'
         self.assertEqual(Private._Private__corporal, 'Radar')
         self.assertEqual(Private._Private__major_, 'Hoolihan')
+
+    @unittest.skipUnless(
+            sys.version_info[:2] < (3, 12),
+            'member-member access now raises an exception',
+            )
+    def test_warning_for_member_from_member_access(self):
+        with self.assertWarns(DeprecationWarning):
+            class Di(Enum):
+                YES = 1
+                NO = 0
+            nope = Di.YES.NO
+        self.assertIs(Di.NO, nope)
+
+    @unittest.skipUnless(
+            sys.version_info[:2] >= (3, 12),
+            'member-member access currently issues a warning',
+            )
+    def test_exception_for_member_from_member_access(self):
+        with self.assertRaisesRegex(AttributeError, "Di: no instance attribute .NO."):
+            class Di(Enum):
+                YES = 1
+                NO = 0
+            nope = Di.YES.NO
 
     def test_strenum_auto(self):
         class Strings(StrEnum):

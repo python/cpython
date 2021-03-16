@@ -610,7 +610,7 @@
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
-/* Define if you have the readline library (-lreadline). */
+/* Define to build the readline module. */
 #undef HAVE_LIBREADLINE
 
 /* Define to 1 if you have the `resolv' library (-lresolv). */
@@ -1553,6 +1553,9 @@
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
    Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
+
+/* Define to build the readline module against Editline. */
+#undef WITH_EDITLINE
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
