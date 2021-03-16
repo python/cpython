@@ -1450,3 +1450,12 @@ Removed
   ``PyNullImporter_Type``, ``PyCmpWrapper_Type``, ``PySortWrapper_Type``,
   ``PyNoArgsFunction``.
   (Contributed by Pablo Galindo Salgado in :issue:`39372`.)
+
+Notable changes in Python 3.9.3
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp servers IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :issue:`43285`)
