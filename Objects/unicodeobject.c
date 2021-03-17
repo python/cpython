@@ -94,7 +94,8 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 extern "C" {
 #endif
 
-/* Maximum code point of Unicode 6.0: 0x10ffff (1,114,111) */
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+// The value must be the same in fileutils.c.
 #define MAX_UNICODE 0x10ffff
 
 #ifdef Py_DEBUG
@@ -1784,8 +1785,8 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
             *maxchar = ch;
             if (*maxchar > MAX_UNICODE) {
                 PyErr_Format(PyExc_ValueError,
-                             "character U+%x is not in range [U+0000; U+10ffff]",
-                             ch);
+                             "character U+%x is not in range [U+0000; U+%x]",
+                             ch, MAX_UNICODE);
                 return -1;
             }
         }
@@ -14089,7 +14090,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     {
     case PyUnicode_1BYTE_KIND: maxchar = 0xff; break;
     case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
-    case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
+    case PyUnicode_4BYTE_KIND: maxchar = MAX_UNICODE; break;
     default:
         Py_UNREACHABLE();
     }
