@@ -12,6 +12,7 @@ import tempfile
 import threading
 import unittest
 import socketserver
+import multiprocessing
 
 import test.support
 from test.support import reap_children, verbose
@@ -70,6 +71,22 @@ def simple_subprocess(testcase):
     finally:
         test.support.wait_process(pid, exitcode=72)
 
+class EchoingStreamRequestHandler(socketserver.StreamRequestHandler):
+    """Request Handler that echos back to the client the data it received."""
+    def handle(self):
+        line = self.rfile.readline()
+        self.wfile.write(line)
+
+class EchoingDatagramRequestHandler(socketserver.DatagramRequestHandler):
+    """Request Handler that echos back to the client the data it received."""
+    def handle(self):
+        line = self.rfile.readline()
+        self.wfile.write(line)
+
+def _handle_error(self, request, client_address):
+    """Handler that closes the client's connection, then raises an error."""
+    self.close_request(request)
+    raise
 
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
@@ -102,19 +119,10 @@ class SocketServerTest(unittest.TestCase):
             return fn
 
     def make_server(self, addr, svrcls, hdlrbase):
-        class MyServer(svrcls):
-            def handle_error(self, request, client_address):
-                self.close_request(request)
-                raise
-
-        class MyHandler(hdlrbase):
-            def handle(self):
-                line = self.rfile.readline()
-                self.wfile.write(line)
-
         if verbose: print("creating server")
         try:
-            server = MyServer(addr, MyHandler)
+            server = svrcls(addr, hdlrbase)
+            server.handle_error = _handle_error
         except PermissionError as e:
             # Issue 29184: cannot bind() a Unix socket on Android.
             self.skipTest('Cannot create server (%s, %s): %s' %
@@ -180,31 +188,36 @@ class SocketServerTest(unittest.TestCase):
 
     def test_TCPServer(self):
         self.run_server(socketserver.TCPServer,
-                        socketserver.StreamRequestHandler,
+                        EchoingStreamRequestHandler,
                         self.stream_examine)
 
     def test_ThreadingTCPServer(self):
         self.run_server(socketserver.ThreadingTCPServer,
-                        socketserver.StreamRequestHandler,
+                        EchoingStreamRequestHandler,
                         self.stream_examine)
 
     @requires_forking
     def test_ForkingTCPServer(self):
         with simple_subprocess(self):
             self.run_server(socketserver.ForkingTCPServer,
-                            socketserver.StreamRequestHandler,
+                            EchoingStreamRequestHandler,
                             self.stream_examine)
+
+    def test_ProcessingTCPServer(self):
+        self.run_server(socketserver.ProcessingTCPServer,
+                        EchoingStreamRequestHandler,
+                        self.stream_examine)
 
     @requires_unix_sockets
     def test_UnixStreamServer(self):
         self.run_server(socketserver.UnixStreamServer,
-                        socketserver.StreamRequestHandler,
+                        EchoingStreamRequestHandler,
                         self.stream_examine)
 
     @requires_unix_sockets
     def test_ThreadingUnixStreamServer(self):
         self.run_server(socketserver.ThreadingUnixStreamServer,
-                        socketserver.StreamRequestHandler,
+                        EchoingStreamRequestHandler,
                         self.stream_examine)
 
     @requires_unix_sockets
@@ -212,43 +225,48 @@ class SocketServerTest(unittest.TestCase):
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
             self.run_server(ForkingUnixStreamServer,
-                            socketserver.StreamRequestHandler,
+                            EchoingStreamRequestHandler,
                             self.stream_examine)
 
     def test_UDPServer(self):
         self.run_server(socketserver.UDPServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     def test_ThreadingUDPServer(self):
         self.run_server(socketserver.ThreadingUDPServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_forking
     def test_ForkingUDPServer(self):
         with simple_subprocess(self):
             self.run_server(socketserver.ForkingUDPServer,
-                            socketserver.DatagramRequestHandler,
+                            EchoingDatagramRequestHandler,
                             self.dgram_examine)
+
+    def test_ProcessingUDPServer(self):
+        self.run_server(socketserver.ProcessingUDPServer,
+                        EchoingDatagramRequestHandler,
+                        self.dgram_examine)
 
     @requires_unix_sockets
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
         self.run_server(ForkingUnixDatagramServer,
-                        socketserver.DatagramRequestHandler,
+                        EchoingDatagramRequestHandler,
                         self.dgram_examine)
 
     @threading_helper.reap_threads
@@ -385,7 +403,17 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        pass
+        def __init__(self, *pos, **kw):
+            self.done = multiprocessing.Event()
+            super().__init__(*pos, **kw)
+
+        def shutdown_request(self, *pos, **kw):
+            super().shutdown_request(*pos, **kw)
+            self.collect_children()
+            self.done.set()
+
+        def wait_done(self):
+            self.done.wait()
 
 
 class SocketWriterTest(unittest.TestCase):

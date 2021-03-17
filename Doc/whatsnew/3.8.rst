@@ -1977,6 +1977,13 @@ Changes in the Python API
 
 * :class:`asyncio.BufferedProtocol` has graduated to the stable API.
 
+* New :mod:`socketserver` classes were added called
+  :class:`ProcessingUDPServer`, :class:`ProcessingTCPServer`, and
+  :class:`ProcessingMixIn` to handle client connections in sub-processes
+  spawned from :mod:`multiprocessing`.  This also enabled multiple process
+  client connection handling on non-POSIX systems that do not support
+  :func:`os.fork`. (Contributed by rbprogrammer in :issue:`32608`.)
+
 .. _bpo-36085-whatsnew:
 
 * DLL dependencies for extension modules and DLLs loaded with :mod:`ctypes` on
@@ -2133,7 +2140,6 @@ Changes in the C API
   :file:`libs` directory under your Python installation.
 
   (Contributed by Steve Dower in :issue:`37351`.)
-
 
 CPython bytecode changes
 ------------------------
