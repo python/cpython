@@ -4,7 +4,6 @@
 """Fraction, infinite-precision, real numbers."""
 
 from decimal import Decimal
-import functools
 import math
 import numbers
 import operator
@@ -449,27 +448,36 @@ class Fraction(numbers.Rational):
     # and g2 == 1 for same reason.  That happens also for multiplying
     # rationals, obtained from floats.
 
-    def _add_sub_(a, b, pm=int.__add__):
+    def _add(a, b):
+        """a + b"""
         na, da = a.numerator, a.denominator
         nb, db = b.numerator, b.denominator
         g = math.gcd(da, db)
         if g == 1:
-            return Fraction(pm(na * db, da * nb), da * db, _normalize=False)
-        else:
-            s = da // g
-            t = pm(na * (db // g), nb * s)
-            g2 = math.gcd(t, g)
-            if g2 == 1:
-                return Fraction(t, s * db, _normalize=False)
-            else:
-                return Fraction(t // g2, s * (db // g2), _normalize=False)
+            return Fraction(na * db + da * nb, da * db, _normalize=False)
+        s = da // g
+        t = na * (db // g) + nb * s
+        g2 = math.gcd(t, g)
+        if g2 == 1:
+            return Fraction(t, s * db, _normalize=False)
+        return Fraction(t // g2, s * (db // g2), _normalize=False)
 
-    _add = functools.partial(_add_sub_)
-    _add.__doc__ = 'a + b'
     __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
-    _sub = functools.partial(_add_sub_, pm=int.__sub__)
-    _sub.__doc__ = 'a - b'
+    def _sub(a, b):
+        """a - b"""
+        na, da = a.numerator, a.denominator
+        nb, db = b.numerator, b.denominator
+        g = math.gcd(da, db)
+        if g == 1:
+            return Fraction(na * db - da * nb, da * db, _normalize=False)
+        s = da // g
+        t = na * (db // g) - nb * s
+        g2 = math.gcd(t, g)
+        if g2 == 1:
+            return Fraction(t, s * db, _normalize=False)
+        return Fraction(t // g2, s * (db // g2), _normalize=False)
+
     __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
     def _mul(a, b):
