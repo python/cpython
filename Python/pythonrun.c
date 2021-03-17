@@ -23,7 +23,6 @@
 #include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
-#include "symtable.h"             // PySymtable_BuildObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
 
 #ifdef MS_WINDOWS
@@ -1367,48 +1366,6 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
         return NULL;
     }
     return str;
-}
-
-struct symtable *
-Py_SymtableStringObject(const char *str, PyObject *filename, int start)
-{
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
-}
-
-struct symtable *
-_Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, PyCompilerFlags *flags)
-{
-    struct symtable *st;
-    mod_ty mod;
-    PyArena *arena;
-
-    arena = PyArena_New();
-    if (arena == NULL)
-        return NULL;
-
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
-    if (mod == NULL) {
-        PyArena_Free(arena);
-        return NULL;
-    }
-    st = PySymtable_BuildObject(mod, filename, 0);
-    PyArena_Free(arena);
-    return st;
-}
-
-struct symtable *
-Py_SymtableString(const char *str, const char *filename_str, int start)
-{
-    PyObject *filename;
-    struct symtable *st;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    st = Py_SymtableStringObject(str, filename, start);
-    Py_DECREF(filename);
-    return st;
 }
 
 #if defined(USE_STACKCHECK)
