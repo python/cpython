@@ -33,7 +33,7 @@ from multiple threads, it is necessary to protect it with a lock.
 Reading and writing compressed files
 ------------------------------------
 
-.. function:: open(filename, mode="rb", \*, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode="rb", *, format=None, check=-1, preset=None, filters=None, encoding=None, errors=None, newline=None)
 
    Open an LZMA-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -69,7 +69,7 @@ Reading and writing compressed files
       Accepts a :term:`path-like object`.
 
 
-.. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
+.. class:: LZMAFile(filename=None, mode="r", *, format=None, check=-1, preset=None, filters=None)
 
    Open an LZMA-compressed file in binary mode.
 
@@ -313,7 +313,7 @@ Miscellaneous
 
 .. function:: is_check_supported(check)
 
-   Returns true if the given integrity check is supported on this system.
+   Return ``True`` if the given integrity check is supported on this system.
 
    :const:`CHECK_NONE` and :const:`CHECK_CRC32` are always supported.
    :const:`CHECK_CRC64` and :const:`CHECK_SHA256` may be unavailable if you are

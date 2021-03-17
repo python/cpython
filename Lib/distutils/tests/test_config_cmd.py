@@ -44,6 +44,10 @@ class ConfigTestCase(support.LoggingSilencer,
             self.skipTest('The %r command is not found' % cmd)
         pkg_dir, dist = self.create_dist()
         cmd = config(dist)
+        cmd._check_compiler()
+        compiler = cmd.compiler
+        if sys.platform[:3] == "aix" and "xlc" in compiler.preprocessor[0].lower():
+            self.skipTest('xlc: The -E option overrides the -P, -o, and -qsyntaxonly options')
 
         # simple pattern searches
         match = cmd.search_cpp(pattern='xxx', body='/* xxx */')

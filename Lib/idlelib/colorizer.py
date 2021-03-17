@@ -31,15 +31,16 @@ def make_pat():
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
 
-def color_config(text):  # Called from htest, Editor, and Turtle Demo.
-    '''Set color opitons of Text widget.
+def color_config(text):
+    """Set color options of Text widget.
 
-    Should be called whenever ColorDelegator is called.
-    '''
+    If ColorDelegator is used, this should be called first.
+    """
+    # Called from htest, TextFrame, Editor, and Turtledemo.
     # Not automatic because ColorDelegator does not know 'text'.
     theme = idleConf.CurrentTheme()
     normal_colors = idleConf.GetHighlight(theme, 'normal')
-    cursor_color = idleConf.GetHighlight(theme, 'cursor', fgBg='fg')
+    cursor_color = idleConf.GetHighlight(theme, 'cursor')['foreground']
     select_colors = idleConf.GetHighlight(theme, 'hilite')
     text.config(
         foreground=normal_colors['foreground'],
@@ -50,15 +51,48 @@ def color_config(text):  # Called from htest, Editor, and Turtle Demo.
         inactiveselectbackground=select_colors['background'],  # new in 8.5
     )
 
+
 class ColorDelegator(Delegator):
+    """Delegator for syntax highlighting (text coloring).
+
+    Instance variables:
+        delegate: Delegator below this one in the stack, meaning the
+                one this one delegates to.
+
+        Used to track state:
+        after_id: Identifier for scheduled after event, which is a
+                timer for colorizing the text.
+        allow_colorizing: Boolean toggle for applying colorizing.
+        colorizing: Boolean flag when colorizing is in process.
+        stop_colorizing: Boolean flag to end an active colorizing
+                process.
+    """
 
     def __init__(self):
         Delegator.__init__(self)
+        self.init_state()
         self.prog = prog
         self.idprog = idprog
         self.LoadTagDefs()
 
+    def init_state(self):
+        "Initialize variables that track colorizing state."
+        self.after_id = None
+        self.allow_colorizing = True
+        self.stop_colorizing = False
+        self.colorizing = False
+
     def setdelegate(self, delegate):
+        """Set the delegate for this instance.
+
+        A delegate is an instance of a Delegator class and each
+        delegate points to the next delegator in the stack.  This
+        allows multiple delegators to be chained together for a
+        widget.  The bottom delegate for a colorizer is a Text
+        widget.
+
+        If there is a delegate, also start the colorizing process.
+        """
         if self.delegate is not None:
             self.unbind("<<toggle-auto-coloring>>")
         Delegator.setdelegate(self, delegate)
@@ -67,17 +101,18 @@ class ColorDelegator(Delegator):
             self.bind("<<toggle-auto-coloring>>", self.toggle_colorize_event)
             self.notify_range("1.0", "end")
         else:
-            # No delegate - stop any colorizing
+            # No delegate - stop any colorizing.
             self.stop_colorizing = True
             self.allow_colorizing = False
 
     def config_colors(self):
+        "Configure text widget tags with colors from tagdefs."
         for tag, cnf in self.tagdefs.items():
-            if cnf:
-                self.tag_configure(tag, **cnf)
+            self.tag_configure(tag, **cnf)
         self.tag_raise('sel')
 
     def LoadTagDefs(self):
+        "Create dictionary of tag names to text colors."
         theme = idleConf.CurrentTheme()
         self.tagdefs = {
             "COMMENT": idleConf.GetHighlight(theme, "comment"),
@@ -95,20 +130,19 @@ class ColorDelegator(Delegator):
         if DEBUG: print('tagdefs',self.tagdefs)
 
     def insert(self, index, chars, tags=None):
+        "Insert chars into widget at index and mark for colorizing."
         index = self.index(index)
         self.delegate.insert(index, chars, tags)
         self.notify_range(index, index + "+%dc" % len(chars))
 
     def delete(self, index1, index2=None):
+        "Delete chars between indexes and mark for colorizing."
         index1 = self.index(index1)
         self.delegate.delete(index1, index2)
         self.notify_range(index1)
 
-    after_id = None
-    allow_colorizing = True
-    colorizing = False
-
     def notify_range(self, index1, index2=None):
+        "Mark text changes for processing and restart colorizing, if active."
         self.tag_add("TODO", index1, index2)
         if self.after_id:
             if DEBUG: print("colorizing already scheduled")
@@ -119,10 +153,9 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing:
             if DEBUG: print("schedule colorizing")
             self.after_id = self.after(1, self.recolorize)
+        return
 
-    close_when_done = None # Window to be closed when done colorizing
-
-    def close(self, close_when_done=None):
+    def close(self):
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
@@ -130,13 +163,15 @@ class ColorDelegator(Delegator):
             self.after_cancel(after_id)
         self.allow_colorizing = False
         self.stop_colorizing = True
-        if close_when_done:
-            if not self.colorizing:
-                close_when_done.destroy()
-            else:
-                self.close_when_done = close_when_done
 
-    def toggle_colorize_event(self, event):
+    def toggle_colorize_event(self, event=None):
+        """Toggle colorizing on and off.
+
+        When toggling off, if colorizing is scheduled or is in
+        process, it will be cancelled and/or stopped.
+
+        When toggling on, colorizing will be scheduled.
+        """
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
@@ -154,6 +189,15 @@ class ColorDelegator(Delegator):
         return "break"
 
     def recolorize(self):
+        """Timer event (every 1ms) to colorize text.
+
+        Colorizing is only attempted when the text widget exists,
+        when colorizing is toggled on, and when the colorizing
+        process is not already running.
+
+        After colorizing is complete, some cleanup is done to
+        make sure that all the text has been colorized.
+        """
         self.after_id = None
         if not self.delegate:
             if DEBUG: print("no delegate")
@@ -177,12 +221,9 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
             if DEBUG: print("reschedule colorizing")
             self.after_id = self.after(1, self.recolorize)
-        if self.close_when_done:
-            top = self.close_when_done
-            self.close_when_done = None
-            top.destroy()
 
     def recolorize_main(self):
+        "Evaluate text and apply colorizing tags."
         next = "1.0"
         while True:
             item = self.tag_nextrange("TODO", next)
@@ -248,6 +289,7 @@ class ColorDelegator(Delegator):
                     return
 
     def removecolors(self):
+        "Remove all colorizing tags."
         for tag in self.tagdefs:
             self.tag_remove(tag, "1.0", "end")
 
@@ -271,7 +313,7 @@ def _color_delegator(parent):  # htest #
         "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
         "r'x', u'x', R'x', U'x', f'x', F'x'\n"
         "fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'\n"
-        "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x'.rB'x',Rb'x',RB'x'\n"
+        "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'\n"
         "# Invalid combinations of legal characters should be half colored.\n"
         "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'\n"
         )
@@ -285,10 +327,10 @@ def _color_delegator(parent):  # htest #
     d = ColorDelegator()
     p.insertfilter(d)
 
+
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_colorizer',
-                  verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_colorizer', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_color_delegator)

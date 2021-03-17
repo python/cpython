@@ -14,6 +14,7 @@ __author__ = "Guido van Rossum <guido@python.org>"
 # Python imports
 import io
 import os
+import pkgutil
 import sys
 import logging
 import operator
@@ -30,13 +31,12 @@ from . import btm_matcher as bm
 def get_all_fix_names(fixer_pkg, remove_prefix=True):
     """Return a sorted list of all available fix names in the given package."""
     pkg = __import__(fixer_pkg, [], [], ["*"])
-    fixer_dir = os.path.dirname(pkg.__file__)
     fix_names = []
-    for name in sorted(os.listdir(fixer_dir)):
-        if name.startswith("fix_") and name.endswith(".py"):
+    for finder, name, ispkg in pkgutil.iter_modules(pkg.__path__):
+        if name.startswith("fix_"):
             if remove_prefix:
                 name = name[4:]
-            fix_names.append(name[:-3])
+            fix_names.append(name)
     return fix_names
 
 
@@ -155,6 +155,7 @@ class FixerError(Exception):
 class RefactoringTool(object):
 
     _default_options = {"print_function" : False,
+                        "exec_function": False,
                         "write_unchanged_files" : False}
 
     CLASS_PREFIX = "Fix" # The prefix for fixer classes
@@ -173,10 +174,13 @@ class RefactoringTool(object):
         self.options = self._default_options.copy()
         if options is not None:
             self.options.update(options)
-        if self.options["print_function"]:
-            self.grammar = pygram.python_grammar_no_print_statement
-        else:
-            self.grammar = pygram.python_grammar
+        self.grammar = pygram.python_grammar.copy()
+
+        if self.options['print_function']:
+            del self.grammar.keywords["print"]
+        elif self.options['exec_function']:
+            del self.grammar.keywords["exec"]
+
         # When this is True, the refactor*() methods will call write_file() for
         # files processed even if they were not changed during refactoring. If
         # and only if the refactor method's write parameter was True.
@@ -514,7 +518,7 @@ class RefactoringTool(object):
         set.
         """
         try:
-            fp = io.open(filename, "w", encoding=encoding)
+            fp = io.open(filename, "w", encoding=encoding, newline='')
         except OSError as err:
             self.log_error("Can't create %s: %s", filename, err)
             return

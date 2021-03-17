@@ -12,7 +12,7 @@ database keys are tuples (config-type, section, item).  As implemented,
 there are  separate dicts for default and user values.  Each has
 config-type keys 'main', 'extensions', 'highlight', and 'keys'.  The
 value for each key is a ConfigParser instance that maps section and item
-to values.  For 'main' and 'extenstons', user values override
+to values.  For 'main' and 'extensions', user values override
 default values.  For 'highlight' and 'keys', user sections augment the
 default sections (and must, therefore, have distinct names).
 
@@ -34,7 +34,6 @@ import idlelib
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
-class InvalidFgBg(Exception): pass
 class InvalidTheme(Exception): pass
 
 class IdleConfParser(ConfigParser):
@@ -124,20 +123,14 @@ class IdleUserConfParser(IdleConfParser):
         self.RemoveEmptySections()
         return not self.sections()
 
-    def RemoveFile(self):
-        "Remove user config file self.file from disk if it exists."
-        if os.path.exists(self.file):
-            os.remove(self.file)
-
     def Save(self):
         """Update user configuration file.
 
         If self not empty after removing empty sections, write the file
         to disk. Otherwise, remove the file from disk if it exists.
-
         """
         fname = self.file
-        if fname:
+        if fname and fname[0] != '#':
             if not self.IsEmpty():
                 try:
                     cfgFile = open(fname, 'w')
@@ -146,8 +139,8 @@ class IdleUserConfParser(IdleConfParser):
                     cfgFile = open(fname, 'w')
                 with cfgFile:
                     self.write(cfgFile)
-            else:
-                self.RemoveFile()
+            elif os.path.exists(self.file):
+                os.remove(self.file)
 
 class IdleConf:
     """Hold config parsers for all idle config files in singleton instance.
@@ -165,6 +158,8 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        # self.blink_off_time = <first editor text>['insertofftime']
+        # See https:/bugs.python.org/issue4630, msg356516.
 
         if not _utest:
             self.CreateConfigHandlers()
@@ -172,24 +167,13 @@ class IdleConf:
 
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
-        #build idle install path
-        if __name__ != '__main__': # we were imported
-            idleDir = os.path.dirname(__file__)
-        else: # we were exec'ed (for testing only)
-            idleDir = os.path.abspath(sys.path[0])
-        self.userdir = userDir = self.GetUserCfgDir()
-
-        defCfgFiles = {}
-        usrCfgFiles = {}
-        # TODO eliminate these temporaries by combining loops
-        for cfgType in self.config_types: #build config file names
-            defCfgFiles[cfgType] = os.path.join(
-                    idleDir, 'config-' + cfgType + '.def')
-            usrCfgFiles[cfgType] = os.path.join(
-                    userDir, 'config-' + cfgType + '.cfg')
-        for cfgType in self.config_types: #create config parsers
-            self.defaultCfg[cfgType] = IdleConfParser(defCfgFiles[cfgType])
-            self.userCfg[cfgType] = IdleUserConfParser(usrCfgFiles[cfgType])
+        idledir = os.path.dirname(__file__)
+        self.userdir = userdir = '' if idlelib.testing else self.GetUserCfgDir()
+        for cfg_type in self.config_types:
+            self.defaultCfg[cfg_type] = IdleConfParser(
+                os.path.join(idledir, f'config-{cfg_type}.def'))
+            self.userCfg[cfg_type] = IdleUserConfParser(
+                os.path.join(userdir or '#', f'config-{cfg_type}.cfg'))
 
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.
@@ -200,12 +184,13 @@ class IdleConf:
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
-                        userDir + ',\n but the path does not exist.')
-                try:
-                    print(warn, file=sys.stderr)
-                except OSError:
-                    pass
+                if not idlelib.testing:
+                    warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
+                            userDir + ',\n but the path does not exist.')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -215,10 +200,13 @@ class IdleConf:
             try:
                 os.mkdir(userDir)
             except OSError:
-                warn = ('\n Warning: unable to create user config directory\n' +
-                        userDir + '\n Check path and permissions.\n Exiting!\n')
                 if not idlelib.testing:
-                    print(warn, file=sys.stderr)
+                    warn = ('\n Warning: unable to create user config directory\n' +
+                            userDir + '\n Check path and permissions.\n Exiting!\n')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
@@ -283,34 +271,20 @@ class IdleConf:
             raise InvalidConfigSet('Invalid configSet specified')
         return cfgParser.sections()
 
-    def GetHighlight(self, theme, element, fgBg=None):
-        """Return individual theme element highlight color(s).
+    def GetHighlight(self, theme, element):
+        """Return dict of theme element highlight colors.
 
-        fgBg - string ('fg' or 'bg') or None.
-        If None, return a dictionary containing fg and bg colors with
-        keys 'foreground' and 'background'.  Otherwise, only return
-        fg or bg color, as specified.  Colors are intended to be
-        appropriate for passing to Tkinter in, e.g., a tag_config call).
+        The keys are 'foreground' and 'background'.  The values are
+        tkinter color strings for configuring backgrounds and tags.
         """
-        if self.defaultCfg['highlight'].has_section(theme):
-            themeDict = self.GetThemeDict('default', theme)
-        else:
-            themeDict = self.GetThemeDict('user', theme)
-        fore = themeDict[element + '-foreground']
-        if element == 'cursor':  # There is no config value for cursor bg
-            back = themeDict['normal-background']
-        else:
-            back = themeDict[element + '-background']
-        highlight = {"foreground": fore, "background": back}
-        if not fgBg:  # Return dict of both colors
-            return highlight
-        else:  # Return specified color only
-            if fgBg == 'fg':
-                return highlight["foreground"]
-            if fgBg == 'bg':
-                return highlight["background"]
-            else:
-                raise InvalidFgBg('Invalid fgBg specified')
+        cfg = ('default' if self.defaultCfg['highlight'].has_section(theme)
+               else 'user')
+        theme_dict = self.GetThemeDict(cfg, theme)
+        fore = theme_dict[element + '-foreground']
+        if element == 'cursor':
+            element = 'normal'
+        back = theme_dict[element + '-background']
+        return {"foreground": fore, "background": back}
 
     def GetThemeDict(self, type, themeName):
         """Return {option:value} dict for elements in themeName.
@@ -351,6 +325,10 @@ class IdleConf:
                 'hit-background':'#000000',
                 'error-foreground':'#ffffff',
                 'error-background':'#000000',
+                'context-foreground':'#000000',
+                'context-background':'#ffffff',
+                'linenumber-foreground':'#000000',
+                'linenumber-background':'#ffffff',
                 #cursor (only foreground can be set)
                 'cursor-foreground':'#000000',
                 #shell window
@@ -360,11 +338,11 @@ class IdleConf:
                 'stderr-background':'#ffffff',
                 'console-foreground':'#000000',
                 'console-background':'#ffffff',
-                'context-foreground':'#000000',
-                'context-background':'#ffffff',
                 }
         for element in theme:
-            if not cfgParser.has_option(themeName, element):
+            if not (cfgParser.has_option(themeName, element) or
+                    # Skip warning for new elements.
+                    element.startswith(('context-', 'linenumber-'))):
                 # Print warning that will return a default color
                 warning = ('\n Warning: config.IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'
@@ -562,12 +540,11 @@ class IdleConf:
         result = self.GetKeySet(self.CurrentKeys())
 
         if sys.platform == "darwin":
-            # OS X Tk variants do not support the "Alt" keyboard modifier.
-            # So replace all keybingings that use "Alt" with ones that
-            # use the "Option" keyboard modifier.
-            # TODO (Ned?): the "Option" modifier does not work properly for
-            #        Cocoa Tk and XQuartz Tk so we should not use it
-            #        in default OS X KeySets.
+            # macOS (OS X) Tk variants do not support the "Alt"
+            # keyboard modifier.  Replace it with "Option".
+            # TODO (Ned?): the "Option" modifier does not work properly
+            #     for Cocoa Tk and XQuartz Tk so we should not use it
+            #     in the default 'OSX' keyset.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:
@@ -607,7 +584,9 @@ class IdleConf:
     former_extension_events = {  #  Those with user-configurable keys.
         '<<force-open-completions>>', '<<expand-word>>',
         '<<force-open-calltip>>', '<<flash-paren>>', '<<format-paragraph>>',
-         '<<run-module>>', '<<check-module>>', '<<zoom-height>>'}
+         '<<run-module>>', '<<check-module>>', '<<zoom-height>>',
+         '<<run-custom>>',
+         }
 
     def GetCoreKeys(self, keySetName=None):
         """Return dict of core virtual-key keybindings for keySetName.
@@ -674,6 +653,7 @@ class IdleConf:
             '<<flash-paren>>': ['<Control-Key-0>'],
             '<<format-paragraph>>': ['<Alt-Key-q>'],
             '<<run-module>>': ['<Key-F5>'],
+            '<<run-custom>>': ['<Shift-Key-F5>'],
             '<<check-module>>': ['<Alt-Key-x>'],
             '<<zoom-height>>': ['<Alt-Key-2>'],
             }
@@ -925,7 +905,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_config',
-                  verbosity=2, exit=False)
-    #_dump()
+    from unittest import main
+    main('idlelib.idle_test.test_config', verbosity=2, exit=False)
+
+    # Run revised _dump() as htest?

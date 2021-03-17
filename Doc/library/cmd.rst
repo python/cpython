@@ -61,6 +61,10 @@ A :class:`Cmd` instance has the following methods:
 
    An end-of-file on input is passed back as the string ``'EOF'``.
 
+   .. index::
+      single: ? (question mark); in a command interpreter
+      single: ! (exclamation); in a command interpreter
+
    An interpreter instance will recognize a command name ``foo`` if and only if it
    has a method :meth:`do_foo`.  As a special case, a line beginning with the
    character ``'?'`` is dispatched to the method :meth:`do_help`.  As another

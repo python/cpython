@@ -47,10 +47,10 @@ def printsum(filename, out=sys.stdout):
     except IOError as msg:
         sys.stderr.write('%s: Can\'t open: %s\n' % (filename, msg))
         return 1
-    if fnfilter:
-        filename = fnfilter(filename)
-    sts = printsumfp(fp, filename, out)
-    fp.close()
+    with fp:
+        if fnfilter:
+            filename = fnfilter(filename)
+        sts = printsumfp(fp, filename, out)
     return sts
 
 def printsumfp(fp, filename, out=sys.stdout):

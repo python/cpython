@@ -1,1 +1,0 @@
-Optimize asyncio.ensure_future() by reordering if checks: 1.17x faster.

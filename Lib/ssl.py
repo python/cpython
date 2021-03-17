@@ -119,32 +119,32 @@ from _ssl import (
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
 
-_IntEnum._convert(
+_IntEnum._convert_(
     '_SSLMethod', __name__,
     lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'Options', __name__,
     lambda name: name.startswith('OP_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'AlertDescription', __name__,
     lambda name: name.startswith('ALERT_DESCRIPTION_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'SSLErrorNumber', __name__,
     lambda name: name.startswith('SSL_ERROR_'),
     source=_ssl)
 
-_IntFlag._convert(
+_IntFlag._convert_(
     'VerifyFlags', __name__,
     lambda name: name.startswith('VERIFY_'),
     source=_ssl)
 
-_IntEnum._convert(
+_IntEnum._convert_(
     'VerifyMode', __name__,
     lambda name: name.startswith('CERT_'),
     source=_ssl)
@@ -165,10 +165,94 @@ class TLSVersion(_IntEnum):
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
+class _TLSContentType(_IntEnum):
+    """Content types (record layer)
+
+    See RFC 8446, section B.1
+    """
+    CHANGE_CIPHER_SPEC = 20
+    ALERT = 21
+    HANDSHAKE = 22
+    APPLICATION_DATA = 23
+    # pseudo content types
+    HEADER = 0x100
+    INNER_CONTENT_TYPE = 0x101
+
+
+class _TLSAlertType(_IntEnum):
+    """Alert types for TLSContentType.ALERT messages
+
+    See RFC 8466, section B.2
+    """
+    CLOSE_NOTIFY = 0
+    UNEXPECTED_MESSAGE = 10
+    BAD_RECORD_MAC = 20
+    DECRYPTION_FAILED = 21
+    RECORD_OVERFLOW = 22
+    DECOMPRESSION_FAILURE = 30
+    HANDSHAKE_FAILURE = 40
+    NO_CERTIFICATE = 41
+    BAD_CERTIFICATE = 42
+    UNSUPPORTED_CERTIFICATE = 43
+    CERTIFICATE_REVOKED = 44
+    CERTIFICATE_EXPIRED = 45
+    CERTIFICATE_UNKNOWN = 46
+    ILLEGAL_PARAMETER = 47
+    UNKNOWN_CA = 48
+    ACCESS_DENIED = 49
+    DECODE_ERROR = 50
+    DECRYPT_ERROR = 51
+    EXPORT_RESTRICTION = 60
+    PROTOCOL_VERSION = 70
+    INSUFFICIENT_SECURITY = 71
+    INTERNAL_ERROR = 80
+    INAPPROPRIATE_FALLBACK = 86
+    USER_CANCELED = 90
+    NO_RENEGOTIATION = 100
+    MISSING_EXTENSION = 109
+    UNSUPPORTED_EXTENSION = 110
+    CERTIFICATE_UNOBTAINABLE = 111
+    UNRECOGNIZED_NAME = 112
+    BAD_CERTIFICATE_STATUS_RESPONSE = 113
+    BAD_CERTIFICATE_HASH_VALUE = 114
+    UNKNOWN_PSK_IDENTITY = 115
+    CERTIFICATE_REQUIRED = 116
+    NO_APPLICATION_PROTOCOL = 120
+
+
+class _TLSMessageType(_IntEnum):
+    """Message types (handshake protocol)
+
+    See RFC 8446, section B.3
+    """
+    HELLO_REQUEST = 0
+    CLIENT_HELLO = 1
+    SERVER_HELLO = 2
+    HELLO_VERIFY_REQUEST = 3
+    NEWSESSION_TICKET = 4
+    END_OF_EARLY_DATA = 5
+    HELLO_RETRY_REQUEST = 6
+    ENCRYPTED_EXTENSIONS = 8
+    CERTIFICATE = 11
+    SERVER_KEY_EXCHANGE = 12
+    CERTIFICATE_REQUEST = 13
+    SERVER_DONE = 14
+    CERTIFICATE_VERIFY = 15
+    CLIENT_KEY_EXCHANGE = 16
+    FINISHED = 20
+    CERTIFICATE_URL = 21
+    CERTIFICATE_STATUS = 22
+    SUPPLEMENTAL_DATA = 23
+    KEY_UPDATE = 24
+    NEXT_PROTO = 67
+    MESSAGE_HASH = 254
+    CHANGE_CIPHER_SPEC = 0x0101
+
+
 if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
-from socket import socket, AF_INET, SOCK_STREAM, create_connection
+from socket import socket, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE
 import socket as _socket
 import base64        # for DER-to-PEM translation
@@ -243,12 +327,22 @@ def _inet_paton(ipname):
     Supports IPv4 addresses on all platforms and IPv6 on platforms with IPv6
     support.
     """
-    # inet_aton() also accepts strings like '1'
-    if ipname.count('.') == 3:
-        try:
-            return _socket.inet_aton(ipname)
-        except OSError:
-            pass
+    # inet_aton() also accepts strings like '1', '127.1', some also trailing
+    # data like '127.0.0.1 whatever'.
+    try:
+        addr = _socket.inet_aton(ipname)
+    except OSError:
+        # not an IPv4 address
+        pass
+    else:
+        if _socket.inet_ntoa(addr) == ipname:
+            # only accept injective ipnames
+            return addr
+        else:
+            # refuse for short IPv4 notation and additional trailing data
+            raise ValueError(
+                "{!r} is not a quad-dotted IPv4 address.".format(ipname)
+            )
 
     try:
         return _socket.inet_pton(_socket.AF_INET6, ipname)
@@ -262,14 +356,15 @@ def _inet_paton(ipname):
     raise ValueError("{!r} is not an IPv4 address.".format(ipname))
 
 
-def _ipaddress_match(ipname, host_ip):
+def _ipaddress_match(cert_ipaddress, host_ip):
     """Exact matching of IP addresses.
 
     RFC 6125 explicitly doesn't define an algorithm for this
     (section 1.7.2 - "Out of Scope").
     """
-    # OpenSSL may add a trailing newline to a subjectAltName's IP address
-    ip = _inet_paton(ipname.rstrip())
+    # OpenSSL may add a trailing newline to a subjectAltName's IP address,
+    # commonly woth IPv6 addresses. Strip off trailing \n.
+    ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
 
 
@@ -524,6 +619,83 @@ class SSLContext(_SSLContext):
             return True
 
     @property
+    def _msg_callback(self):
+        """TLS message callback
+
+        The message callback provides a debugging hook to analyze TLS
+        connections. The callback is called for any TLS protocol message
+        (header, handshake, alert, and more), but not for application data.
+        Due to technical  limitations, the callback can't be used to filter
+        traffic or to abort a connection. Any exception raised in the
+        callback is delayed until the handshake, read, or write operation
+        has been performed.
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            pass
+
+        conn
+            :class:`SSLSocket` or :class:`SSLObject` instance
+        direction
+            ``read`` or ``write``
+        version
+            :class:`TLSVersion` enum member or int for unknown version. For a
+            frame header, it's the header version.
+        content_type
+            :class:`_TLSContentType` enum member or int for unsupported
+            content type.
+        msg_type
+            Either a :class:`_TLSContentType` enum number for a header
+            message, a :class:`_TLSAlertType` enum member for an alert
+            message, a :class:`_TLSMessageType` enum member for other
+            messages, or int for unsupported message types.
+        data
+            Raw, decrypted message content as bytes
+        """
+        inner = super()._msg_callback
+        if inner is not None:
+            return inner.user_function
+        else:
+            return None
+
+    @_msg_callback.setter
+    def _msg_callback(self, callback):
+        if callback is None:
+            super(SSLContext, SSLContext)._msg_callback.__set__(self, None)
+            return
+
+        if not hasattr(callback, '__call__'):
+            raise TypeError(f"{callback} is not callable.")
+
+        def inner(conn, direction, version, content_type, msg_type, data):
+            try:
+                version = TLSVersion(version)
+            except ValueError:
+                pass
+
+            try:
+                content_type = _TLSContentType(content_type)
+            except ValueError:
+                pass
+
+            if content_type == _TLSContentType.HEADER:
+                msg_enum = _TLSContentType
+            elif content_type == _TLSContentType.ALERT:
+                msg_enum = _TLSAlertType
+            else:
+                msg_enum = _TLSMessageType
+            try:
+                msg_type = msg_enum(msg_type)
+            except ValueError:
+                pass
+
+            return callback(conn, direction, version,
+                            content_type, msg_type, data)
+
+        inner.user_function = callback
+
+        super(SSLContext, SSLContext)._msg_callback.__set__(self, inner)
+
+    @property
     def protocol(self):
         return _SSLMethod(super().protocol)
 
@@ -576,6 +748,11 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         # CERT_OPTIONAL or CERT_REQUIRED. Let's try to load default system
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
+    # OpenSSL 1.1.1 keylog file
+    if hasattr(context, 'keylog_filename'):
+        keylogfile = os.environ.get('SSLKEYLOGFILE')
+        if keylogfile and not sys.flags.ignore_environment:
+            context.keylog_filename = keylogfile
     return context
 
 def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
@@ -617,7 +794,11 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
         # CERT_OPTIONAL or CERT_REQUIRED. Let's try to load default system
         # root CA certificates for the given purpose. This may fail silently.
         context.load_default_certs(purpose)
-
+    # OpenSSL 1.1.1 keylog file
+    if hasattr(context, 'keylog_filename'):
+        keylogfile = os.environ.get('SSLKEYLOGFILE')
+        if keylogfile and not sys.flags.ignore_environment:
+            context.keylog_filename = keylogfile
     return context
 
 # Used by http.client if no context is explicitly passed.
@@ -640,7 +821,7 @@ class SSLObject:
 
     When compared to ``SSLSocket``, this object lacks the following features:
 
-     * Any form of network IO incluging methods such as ``recv`` and ``send``.
+     * Any form of network IO, including methods such as ``recv`` and ``send``.
      * The ``do_handshake_on_connect`` and ``suppress_ragged_eofs`` machinery.
     """
     def __init__(self, *args, **kwargs):
@@ -692,7 +873,7 @@ class SSLObject:
     @property
     def server_hostname(self):
         """The currently set server hostname (for SNI), or ``None`` if no
-        server hostame is set."""
+        server hostname is set."""
         return self._sslobj.server_hostname
 
     def read(self, len=1024, buffer=None):
@@ -777,6 +958,15 @@ class SSLObject:
         current SSL channel. """
         return self._sslobj.version()
 
+    def verify_client_post_handshake(self):
+        return self._sslobj.verify_client_post_handshake()
+
+
+def _sslcopydoc(func):
+    """Copy docstring from SSLObject to SSLSocket"""
+    func.__doc__ = getattr(SSLObject, func.__name__).__doc__
+    return func
+
 
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
@@ -854,6 +1044,7 @@ class SSLSocket(socket):
         return self
 
     @property
+    @_sslcopydoc
     def context(self):
         return self._context
 
@@ -863,8 +1054,8 @@ class SSLSocket(socket):
         self._sslobj.context = ctx
 
     @property
+    @_sslcopydoc
     def session(self):
-        """The SSLSession for client socket."""
         if self._sslobj is not None:
             return self._sslobj.session
 
@@ -875,14 +1066,14 @@ class SSLSocket(socket):
             self._sslobj.session = session
 
     @property
+    @_sslcopydoc
     def session_reused(self):
-        """Was the client session reused during handshake"""
         if self._sslobj is not None:
             return self._sslobj.session_reused
 
     def dup(self):
-        raise NotImplemented("Can't dup() %s instances" %
-                             self.__class__.__name__)
+        raise NotImplementedError("Can't dup() %s instances" %
+                                  self.__class__.__name__)
 
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes
@@ -926,16 +1117,13 @@ class SSLSocket(socket):
             raise ValueError("Write on closed or unwrapped SSL socket.")
         return self._sslobj.write(data)
 
+    @_sslcopydoc
     def getpeercert(self, binary_form=False):
-        """Returns a formatted version of the data in the
-        certificate provided by the other end of the SSL channel.
-        Return None if no certificate was provided, {} if a
-        certificate was provided, but not validated."""
-
         self._checkClosed()
         self._check_connected()
         return self._sslobj.getpeercert(binary_form)
 
+    @_sslcopydoc
     def selected_npn_protocol(self):
         self._checkClosed()
         if self._sslobj is None or not _ssl.HAS_NPN:
@@ -943,6 +1131,7 @@ class SSLSocket(socket):
         else:
             return self._sslobj.selected_npn_protocol()
 
+    @_sslcopydoc
     def selected_alpn_protocol(self):
         self._checkClosed()
         if self._sslobj is None or not _ssl.HAS_ALPN:
@@ -950,6 +1139,7 @@ class SSLSocket(socket):
         else:
             return self._sslobj.selected_alpn_protocol()
 
+    @_sslcopydoc
     def cipher(self):
         self._checkClosed()
         if self._sslobj is None:
@@ -957,6 +1147,7 @@ class SSLSocket(socket):
         else:
             return self._sslobj.cipher()
 
+    @_sslcopydoc
     def shared_ciphers(self):
         self._checkClosed()
         if self._sslobj is None:
@@ -964,6 +1155,7 @@ class SSLSocket(socket):
         else:
             return self._sslobj.shared_ciphers()
 
+    @_sslcopydoc
     def compression(self):
         self._checkClosed()
         if self._sslobj is None:
@@ -1074,6 +1266,7 @@ class SSLSocket(socket):
         raise NotImplementedError("recvmsg_into not allowed on instances of "
                                   "%s" % self.__class__)
 
+    @_sslcopydoc
     def pending(self):
         self._checkClosed()
         if self._sslobj is not None:
@@ -1086,6 +1279,7 @@ class SSLSocket(socket):
         self._sslobj = None
         super().shutdown(how)
 
+    @_sslcopydoc
     def unwrap(self):
         if self._sslobj:
             s = self._sslobj.shutdown()
@@ -1094,12 +1288,19 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    @_sslcopydoc
+    def verify_client_post_handshake(self):
+        if self._sslobj:
+            return self._sslobj.verify_client_post_handshake()
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
     def _real_close(self):
         self._sslobj = None
         super()._real_close()
 
+    @_sslcopydoc
     def do_handshake(self, block=False):
-        """Perform a TLS/SSL handshake."""
         self._check_connected()
         timeout = self.gettimeout()
         try:
@@ -1157,11 +1358,8 @@ class SSLSocket(socket):
                     server_side=True)
         return newsock, addr
 
+    @_sslcopydoc
     def get_channel_binding(self, cb_type="tls-unique"):
-        """Get channel binding data for current connection.  Raise ValueError
-        if the requested `cb_type` is not supported.  Return bytes of the data
-        or None if the data is not available (e.g. before the handshake).
-        """
         if self._sslobj is not None:
             return self._sslobj.get_channel_binding(cb_type)
         else:
@@ -1171,11 +1369,8 @@ class SSLSocket(socket):
                 )
             return None
 
+    @_sslcopydoc
     def version(self):
-        """
-        Return a string identifying the protocol version used by the
-        current SSL channel, or None if there is no established channel.
-        """
         if self._sslobj is not None:
             return self._sslobj.version()
         else:

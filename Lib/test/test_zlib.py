@@ -1,12 +1,15 @@
 import unittest
 from test import support
+from test.support import import_helper
 import binascii
+import copy
 import pickle
 import random
 import sys
 from test.support import bigmemtest, _1G, _4G
 
-zlib = support.import_module('zlib')
+
+zlib = import_helper.import_module('zlib')
 
 requires_Compress_copy = unittest.skipUnless(
         hasattr(zlib.compressobj(), "copy"),
@@ -133,8 +136,7 @@ class BaseCompressTestCase(object):
         # Generate 10 MiB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
-        data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')
-                        for i in range(10)])
+        data = random.randbytes(_1M * 10)
         data = data * (size // len(data) + 1)
         try:
             compress_func(data)
@@ -435,18 +437,29 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test flush() with the various options, using all the
         # different levels in order to provide more variations.
         sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
-                    'Z_PARTIAL_FLUSH', 'Z_BLOCK']
+                    'Z_PARTIAL_FLUSH']
+
+        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
+        # Z_BLOCK has a known failure prior to 1.2.5.3
+        if ver >= (1, 2, 5, 3):
+            sync_opt.append('Z_BLOCK')
+
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
                     if hasattr(zlib, opt)]
         data = HAMLET_SCENE * 8
 
         for sync in sync_opt:
             for level in range(10):
-                obj = zlib.compressobj( level )
-                a = obj.compress( data[:3000] )
-                b = obj.flush( sync )
-                c = obj.compress( data[3000:] )
-                d = obj.flush()
+                try:
+                    obj = zlib.compressobj( level )
+                    a = obj.compress( data[:3000] )
+                    b = obj.flush( sync )
+                    c = obj.compress( data[3000:] )
+                    d = obj.flush()
+                except:
+                    print("Error for flush mode={}, level={}"
+                          .format(sync, level))
+                    raise
                 self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
                                  data, ("Decompress failed: flush "
                                         "mode=%i, level=%i") % (sync, level))
@@ -476,7 +489,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                 # others might simply have a single RNG
                 gen = random
         gen.seed(1)
-        data = genblock(1, 17 * 1024, generator=gen)
+        data = gen.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)
@@ -626,23 +639,24 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test copying a compression object
         data0 = HAMLET_SCENE
         data1 = bytes(str(HAMLET_SCENE, "ascii").swapcase(), "ascii")
-        c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
-        bufs0 = []
-        bufs0.append(c0.compress(data0))
+        for func in lambda c: c.copy(), copy.copy, copy.deepcopy:
+            c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
+            bufs0 = []
+            bufs0.append(c0.compress(data0))
 
-        c1 = c0.copy()
-        bufs1 = bufs0[:]
+            c1 = func(c0)
+            bufs1 = bufs0[:]
 
-        bufs0.append(c0.compress(data0))
-        bufs0.append(c0.flush())
-        s0 = b''.join(bufs0)
+            bufs0.append(c0.compress(data0))
+            bufs0.append(c0.flush())
+            s0 = b''.join(bufs0)
 
-        bufs1.append(c1.compress(data1))
-        bufs1.append(c1.flush())
-        s1 = b''.join(bufs1)
+            bufs1.append(c1.compress(data1))
+            bufs1.append(c1.flush())
+            s1 = b''.join(bufs1)
 
-        self.assertEqual(zlib.decompress(s0),data0+data0)
-        self.assertEqual(zlib.decompress(s1),data0+data1)
+            self.assertEqual(zlib.decompress(s0),data0+data0)
+            self.assertEqual(zlib.decompress(s1),data0+data1)
 
     @requires_Compress_copy
     def test_badcompresscopy(self):
@@ -651,6 +665,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         c.compress(HAMLET_SCENE)
         c.flush()
         self.assertRaises(ValueError, c.copy)
+        self.assertRaises(ValueError, copy.copy, c)
+        self.assertRaises(ValueError, copy.deepcopy, c)
 
     @requires_Decompress_copy
     def test_decompresscopy(self):
@@ -660,21 +676,22 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test type of return value
         self.assertIsInstance(comp, bytes)
 
-        d0 = zlib.decompressobj()
-        bufs0 = []
-        bufs0.append(d0.decompress(comp[:32]))
+        for func in lambda c: c.copy(), copy.copy, copy.deepcopy:
+            d0 = zlib.decompressobj()
+            bufs0 = []
+            bufs0.append(d0.decompress(comp[:32]))
 
-        d1 = d0.copy()
-        bufs1 = bufs0[:]
+            d1 = func(d0)
+            bufs1 = bufs0[:]
 
-        bufs0.append(d0.decompress(comp[32:]))
-        s0 = b''.join(bufs0)
+            bufs0.append(d0.decompress(comp[32:]))
+            s0 = b''.join(bufs0)
 
-        bufs1.append(d1.decompress(comp[32:]))
-        s1 = b''.join(bufs1)
+            bufs1.append(d1.decompress(comp[32:]))
+            s1 = b''.join(bufs1)
 
-        self.assertEqual(s0,s1)
-        self.assertEqual(s0,data)
+            self.assertEqual(s0,s1)
+            self.assertEqual(s0,data)
 
     @requires_Decompress_copy
     def test_baddecompresscopy(self):
@@ -684,6 +701,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         d.decompress(data)
         d.flush()
         self.assertRaises(ValueError, d.copy)
+        self.assertRaises(ValueError, copy.copy, d)
+        self.assertRaises(ValueError, copy.deepcopy, d)
 
     def test_compresspickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -807,27 +826,12 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
 
-def genblock(seed, length, step=1024, generator=random):
-    """length-byte stream of random data from a seed (in step-byte blocks)."""
-    if seed is not None:
-        generator.seed(seed)
-    randint = generator.randint
-    if length < step or step < 2:
-        step = length
-    blocks = bytes()
-    for i in range(0, length, step):
-        blocks += bytes(randint(0, 255) for x in range(step))
-    return blocks
-
-
-
 def choose_lines(source, number, seed=None, generator=random):
     """Return a list of number lines randomly chosen from the source"""
     if seed is not None:
         generator.seed(seed)
     sources = source.split('\n')
     return [generator.choice(sources) for n in range(number)]
-
 
 
 HAMLET_SCENE = b"""
@@ -896,7 +900,7 @@ LAERTES
 
 
 class CustomInt:
-    def __int__(self):
+    def __index__(self):
         return 100
 
 

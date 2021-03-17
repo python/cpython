@@ -32,6 +32,7 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
 
 from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
+from types import GenericAlias
 
 Match = _namedtuple('Match', 'a b size')
 
@@ -129,7 +130,7 @@ class SequenceMatcher:
     set_seq2(b)
         Set the second sequence to be compared.
 
-    find_longest_match(alo, ahi, blo, bhi)
+    find_longest_match(alo=0, ahi=None, blo=0, bhi=None)
         Find longest matching block in a[alo:ahi] and b[blo:bhi].
 
     get_matching_blocks()
@@ -333,8 +334,10 @@ class SequenceMatcher:
             for elt in popular: # ditto; as fast for 1% deletion
                 del b2j[elt]
 
-    def find_longest_match(self, alo, ahi, blo, bhi):
+    def find_longest_match(self, alo=0, ahi=None, blo=0, bhi=None):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
+
+        By default it will find the longest match in the entirety of a and b.
 
         If isjunk is not defined:
 
@@ -390,6 +393,10 @@ class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
+        if ahi is None:
+            ahi = len(a)
+        if bhi is None:
+            bhi = len(b)
         besti, bestj, bestsize = alo, blo, 0
         # find longest junk-free match
         # during an iteration of the loop, j2len[j] = length of longest
@@ -685,6 +692,9 @@ class SequenceMatcher:
         # shorter sequence
         return _calculate_ratio(min(la, lb), la + lb)
 
+    __class_getitem__ = classmethod(GenericAlias)
+
+
 def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
@@ -733,20 +743,15 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     # Strip scores for the best n matches
     return [x for score, x in result]
 
-def _count_leading(line, ch):
-    """
-    Return number of `ch` characters at the start of `line`.
 
-    Example:
+def _keep_original_ws(s, tag_s):
+    """Replace whitespace with the original whitespace characters in `s`"""
+    return ''.join(
+        c if tag_c == " " and c.isspace() else tag_c
+        for c, tag_c in zip(s, tag_s)
+    )
 
-    >>> _count_leading('   abc', ' ')
-    3
-    """
 
-    i, n = 0, len(line)
-    while i < n and line[i] == ch:
-        i += 1
-    return i
 
 class Differ:
     r"""
@@ -1033,7 +1038,7 @@ class Differ:
 
     def _qformat(self, aline, bline, atags, btags):
         r"""
-        Format "?" output and deal with leading tabs.
+        Format "?" output and deal with tabs.
 
         Example:
 
@@ -1047,22 +1052,16 @@ class Differ:
         '+ \tabcdefGhijkl\n'
         '? \t ^ ^  ^\n'
         """
-
-        # Can hurt, but will probably help most of the time.
-        common = min(_count_leading(aline, "\t"),
-                     _count_leading(bline, "\t"))
-        common = min(common, _count_leading(atags[:common], " "))
-        common = min(common, _count_leading(btags[:common], " "))
-        atags = atags[common:].rstrip()
-        btags = btags[common:].rstrip()
+        atags = _keep_original_ws(aline, atags).rstrip()
+        btags = _keep_original_ws(bline, btags).rstrip()
 
         yield "- " + aline
         if atags:
-            yield "? %s%s\n" % ("\t" * common, atags)
+            yield f"? {atags}\n"
 
         yield "+ " + bline
         if btags:
-            yield "? %s%s\n" % ("\t" * common, btags)
+            yield f"? {btags}\n"
 
 # With respect to junk, an earlier version of ndiff simply refused to
 # *start* a match with a junk element.  The result was cases like this:
@@ -1085,7 +1084,7 @@ import re
 
 def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     r"""
-    Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: iff `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1101,7 +1100,7 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
-    Return 1 for ignorable character: iff `ch` is a space or tab.
+    Return True for ignorable character: iff `ch` is a space or tab.
 
     Examples:
 

@@ -52,7 +52,7 @@ will be set as :attr:`__cause__` on the raised exception. Setting
 :attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
 attribute to ``True``, so that using ``raise new_exc from None``
 effectively replaces the old exception with the new one for display
-purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`, while
+purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`), while
 leaving the old exception available in :attr:`__context__` for introspection
 when debugging.
 
@@ -90,8 +90,13 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. method:: with_traceback(tb)
 
       This method sets *tb* as the new traceback for the exception and returns
-      the exception object.  It is usually used in exception handling code like
-      this::
+      the exception object.  It was more commonly used before the exception
+      chaining features of :pep:`3134` became available.  The following example
+      shows how we can convert an instance of ``SomeException`` into an
+      instance of ``OtherException`` while preserving the traceback.  Once
+      raised, the current frame is pushed onto the traceback of the
+      ``OtherException``, as would have happened to the traceback of the
+      original ``SomeException`` had we allowed it to propagate to the caller.
 
          try:
              ...
@@ -313,8 +318,8 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.4
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
-      filesystem encoding.  Also, the *filename2* constructor argument and
-      attribute was added.
+      :term:`filesystem encoding and error handler`. Also, the *filename2*
+      constructor argument and attribute was added.
 
 
 .. exception:: OverflowError
@@ -525,7 +530,7 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: ValueError
 
-   Raised when a built-in operation or function receives an argument that has the
+   Raised when an operation or function receives an argument that has the
    right type but an inappropriate value, and the situation is not described by a
    more precise exception such as :exc:`IndexError`.
 
@@ -688,11 +693,23 @@ The following exceptions are used as warning categories; see the
    Base class for warnings about deprecated features when those warnings are
    intended for other Python developers.
 
+   Ignored by the default warning filters, except in the ``__main__`` module
+   (:pep:`565`). Enabling the :ref:`Python Development Mode <devmode>` shows
+   this warning.
+
 
 .. exception:: PendingDeprecationWarning
 
-   Base class for warnings about features which will be deprecated in the
-   future.
+   Base class for warnings about features which are obsolete and
+   expected to be deprecated in the future, but are not deprecated
+   at the moment.
+
+   This class is rarely used as emitting a warning about a possible
+   upcoming deprecation is unusual, and :exc:`DeprecationWarning`
+   is preferred for already active deprecations.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
 
 .. exception:: SyntaxWarning
@@ -715,6 +732,9 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about probable mistakes in module imports.
 
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
+
 
 .. exception:: UnicodeWarning
 
@@ -728,8 +748,10 @@ The following exceptions are used as warning categories; see the
 
 .. exception:: ResourceWarning
 
-   Base class for warnings related to resource usage. Ignored by the default
-   warning filters.
+   Base class for warnings related to resource usage.
+
+   Ignored by the default warning filters. Enabling the :ref:`Python
+   Development Mode <devmode>` shows this warning.
 
    .. versionadded:: 3.2
 

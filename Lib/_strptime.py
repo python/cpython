@@ -182,7 +182,7 @@ class TimeRE(dict):
             self.locale_time = LocaleTime()
         base = super()
         base.__init__({
-            # The " \d" part of the regex is to make %c from ANSI C work
+            # The " [1-9]" part of the regex is to make %c from ANSI C work
             'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
@@ -201,7 +201,7 @@ class TimeRE(dict):
             #XXX: Does 'Y' need to worry about having less or more than
             #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|Z)",
+            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),

@@ -1,19 +1,33 @@
+import math
 import os.path
+import sys
 import textwrap
+from test import support
 
 
 def format_duration(seconds):
-    if seconds < 1.0:
-        return '%.0f ms' % (seconds * 1e3)
-    if seconds < 60.0:
-        return '%.0f sec' % seconds
+    ms = math.ceil(seconds * 1e3)
+    seconds, ms = divmod(ms, 1000)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
 
-    minutes, seconds = divmod(seconds, 60.0)
-    hours, minutes = divmod(minutes, 60.0)
+    parts = []
     if hours:
-        return '%.0f hour %.0f min' % (hours, minutes)
-    else:
-        return '%.0f min %.0f sec' % (minutes, seconds)
+        parts.append('%s hour' % hours)
+    if minutes:
+        parts.append('%s min' % minutes)
+    if seconds:
+        if parts:
+            # 2 min 1 sec
+            parts.append('%s sec' % seconds)
+        else:
+            # 1.0 sec
+            parts.append('%.1f sec' % (seconds + ms / 1000))
+    if not parts:
+        return '%s ms' % ms
+
+    parts = parts[:2]
+    return ' '.join(parts)
 
 
 def removepy(names):
@@ -45,3 +59,28 @@ def printlist(x, width=70, indent=4, file=None):
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
                         initial_indent=blanks, subsequent_indent=blanks),
           file=file)
+
+
+def print_warning(msg):
+    support.print_warning(msg)
+
+
+orig_unraisablehook = None
+
+
+def regrtest_unraisable_hook(unraisable):
+    global orig_unraisablehook
+    support.environment_altered = True
+    print_warning("Unraisable exception")
+    old_stderr = sys.stderr
+    try:
+        sys.stderr = sys.__stderr__
+        orig_unraisablehook(unraisable)
+    finally:
+        sys.stderr = old_stderr
+
+
+def setup_unraisable_hook():
+    global orig_unraisablehook
+    orig_unraisablehook = sys.unraisablehook
+    sys.unraisablehook = regrtest_unraisable_hook

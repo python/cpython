@@ -24,7 +24,7 @@ For request-based servers (including socket-based):
 
 The classes in this module favor the server type that is simplest to
 write: a synchronous TCP/IP server.  This is bad class design, but
-save some typing.  (There's also the issue that a deep class hierarchy
+saves some typing.  (There's also the issue that a deep class hierarchy
 slows down method lookups.)
 
 There are five classes in an inheritance diagram, four of which represent
@@ -233,6 +233,9 @@ class BaseServer:
 
                 while not self.__shutdown_request:
                     ready = selector.select(poll_interval)
+                    # bpo-35017: shutdown() called during select(), exit immediately.
+                    if self.__shutdown_request:
+                        break
                     if ready:
                         self._handle_request_noblock()
 
@@ -374,7 +377,7 @@ class BaseServer:
 
         """
         print('-'*40, file=sys.stderr)
-        print('Exception happened during processing of request from',
+        print('Exception occurred during processing of request from',
             client_address, file=sys.stderr)
         import traceback
         traceback.print_exc()
@@ -630,7 +633,6 @@ if hasattr(os, "fork"):
                     pid, _ = os.waitpid(active_pid, os.WNOHANG)
                     if pid:
                         return pid
-
                 # If not blocking, return after the first pass of not finding
                 # anything ready.
                 if not blocking:
@@ -711,6 +713,39 @@ class ProcessingUDPServer(ProcessingMixIn, UDPServer): pass
 class ProcessingTCPServer(ProcessingMixIn, TCPServer): pass
 
 
+class _Threads(list):
+    """
+    Joinable list of all non-daemon threads.
+    """
+    def append(self, thread):
+        self.reap()
+        if thread.daemon:
+            return
+        super().append(thread)
+
+    def pop_all(self):
+        self[:], result = [], self[:]
+        return result
+
+    def join(self):
+        for thread in self.pop_all():
+            thread.join()
+
+    def reap(self):
+        self[:] = (thread for thread in self if thread.is_alive())
+
+
+class _NoThreads:
+    """
+    Degenerate version of _Threads.
+    """
+    def append(self, thread):
+        pass
+
+    def join(self):
+        pass
+
+
 class ThreadingMixIn:
     """Mix-in class to handle each request in a new thread."""
 
@@ -719,9 +754,9 @@ class ThreadingMixIn:
     daemon_threads = False
     # If true, server_close() waits until all non-daemonic threads terminate.
     block_on_close = True
-    # For non-daemonic threads, list of threading.Threading objects
+    # Threads object
     # used by server_close() to wait for all threads completion.
-    _threads = None
+    _threads = _NoThreads()
 
     def process_request_thread(self, request, client_address):
         """Same as in BaseServer but as a thread.
@@ -738,23 +773,17 @@ class ThreadingMixIn:
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
+        if self.block_on_close:
+            vars(self).setdefault('_threads', _Threads())
         t = threading.Thread(target = self.process_request_thread,
                              args = (request, client_address))
         t.daemon = self.daemon_threads
-        if not t.daemon and self.block_on_close:
-            if self._threads is None:
-                self._threads = []
-            self._threads.append(t)
+        self._threads.append(t)
         t.start()
 
     def server_close(self):
         super().server_close()
-        if self.block_on_close:
-            threads = self._threads
-            self._threads = None
-            if threads:
-                for thread in threads:
-                    thread.join()
+        self._threads.join()
 
 
 if hasattr(os, "fork"):

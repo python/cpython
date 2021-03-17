@@ -1,2 +1,0 @@
-Dataclasses: If a field has a default value that's a MemberDescriptorType,
-then it's from that field being in __slots__, not an actual default value.

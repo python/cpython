@@ -58,6 +58,9 @@ import linecache
 from contextlib import contextmanager
 from itertools import islice, repeat
 import test.support
+from test.support import import_helper
+from test.support import os_helper
+
 
 class BdbException(Exception): pass
 class BdbError(BdbException): """Error raised by the Bdb instance."""
@@ -531,7 +534,7 @@ def run_test(modules, set_list, skip=None):
 
 @contextmanager
 def create_modules(modules):
-    with test.support.temp_cwd():
+    with os_helper.temp_cwd():
         sys.path.append(os.getcwd())
         try:
             for m in modules:
@@ -543,17 +546,17 @@ def create_modules(modules):
             yield
         finally:
             for m in modules:
-                test.support.forget(m)
+                import_helper.forget(m)
             sys.path.pop()
 
 def break_in_func(funcname, fname=__file__, temporary=False, cond=None):
     return 'break', (fname, None, temporary, cond, funcname)
 
-TEST_MODULE = 'test_module'
+TEST_MODULE = 'test_module_for_bdb'
 TEST_MODULE_FNAME = TEST_MODULE + '.py'
 def tfunc_import():
-    import test_module
-    test_module.main()
+    import test_module_for_bdb
+    test_module_for_bdb.main()
 
 def tfunc_main():
     lno = 2
@@ -726,9 +729,16 @@ class StateTestCase(BaseTestCase):
                 ('line', 2, 'tfunc_import'), ('step', ),
                 ('line', 3, 'tfunc_import'), ('quit', ),
             ]
-            skip = ('importlib*', TEST_MODULE)
+            skip = ('importlib*', 'zipimport', 'encodings.*', TEST_MODULE)
             with TracerRun(self, skip=skip) as tracer:
                 tracer.runcall(tfunc_import)
+
+    def test_skip_with_no_name_module(self):
+        # some frames have `globals` with no `__name__`
+        # for instance the second frame in this traceback
+        # exec(compile('raise ValueError()', '', 'exec'), {})
+        bdb = Bdb(skip=['anything*'])
+        self.assertIs(bdb.is_skipped_module(None), False)
 
     def test_down(self):
         # Check that set_down() raises BdbError at the newest frame.
@@ -971,9 +981,9 @@ class RunTestCase(BaseTestCase):
                 ('return', 3, 'main'),     ('step', ),
                 ('return', 1, '<module>'), ('quit', ),
             ]
-            import test_module
+            import test_module_for_bdb
             with TracerRun(self) as tracer:
-                tracer.runeval('test_module.main()', globals(), locals())
+                tracer.runeval('test_module_for_bdb.main()', globals(), locals())
 
 class IssuesTestCase(BaseTestCase):
     """Test fixed bdb issues."""
@@ -983,7 +993,7 @@ class IssuesTestCase(BaseTestCase):
         # Check that the tracer does step into the caller frame when the
         # trace function is not set in that frame.
         code_1 = """
-            from test_module_2 import func
+            from test_module_for_bdb_2 import func
             def main():
                 func()
                 lno = 5
@@ -994,12 +1004,12 @@ class IssuesTestCase(BaseTestCase):
         """
         modules = {
             TEST_MODULE: code_1,
-            'test_module_2': code_2,
+            'test_module_for_bdb_2': code_2,
         }
         with create_modules(modules):
             self.expect_set = [
                 ('line', 2, 'tfunc_import'),
-                    break_in_func('func', 'test_module_2.py'),
+                    break_in_func('func', 'test_module_for_bdb_2.py'),
                 ('None', 2, 'tfunc_import'),      ('continue', ),
                 ('line', 3, 'func', ({1:1}, [])), ('step', ),
                 ('return', 3, 'func'),            ('step', ),

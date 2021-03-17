@@ -1,14 +1,15 @@
 /* Iterator objects */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
 
 typedef struct {
     PyObject_HEAD
     Py_ssize_t it_index;
     PyObject *it_seq; /* Set to NULL when iterator is exhausted */
 } seqiterobject;
+
+_Py_IDENTIFIER(iter);
 
 PyObject *
 PySeqIter_New(PyObject *seq)
@@ -104,10 +105,10 @@ static PyObject *
 iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_seq != NULL)
-        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
@@ -142,10 +143,10 @@ PyTypeObject PySeqIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)iter_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -243,10 +244,10 @@ static PyObject *
 calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 {
     if (it->it_callable != NULL && it->it_sentinel != NULL)
-        return Py_BuildValue("N(OO)", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(OO)", _PyEval_GetBuiltinId(&PyId_iter),
                              it->it_callable, it->it_sentinel);
     else
-        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
+        return Py_BuildValue("N(())", _PyEval_GetBuiltinId(&PyId_iter));
 }
 
 static PyMethodDef calliter_methods[] = {
@@ -261,10 +262,10 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)calliter_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

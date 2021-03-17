@@ -48,7 +48,7 @@ The simplest possible invocation is::
 
 This invocation will install ``pip`` if it is not already installed,
 but otherwise does nothing. To ensure the installed version of ``pip``
-is at least as recent as the one bundled with ``ensurepip``, pass the
+is at least as recent as the one available in ``ensurepip``, pass the
 ``--upgrade`` option::
 
     python -m ensurepip --upgrade
@@ -74,7 +74,7 @@ options:
   script will *not* be installed.
 
 * ``--default-pip``: if a "default pip" installation is requested, the
-   ``pip`` script will be installed in addition to the two regular scripts.
+  ``pip`` script will be installed in addition to the two regular scripts.
 
 Providing both of the script selection options will trigger an exception.
 
@@ -86,7 +86,7 @@ Module API
 
 .. function:: version()
 
-   Returns a string specifying the bundled version of pip that will be
+   Returns a string specifying the available version of pip that will be
    installed when bootstrapping an environment.
 
 .. function:: bootstrap(root=None, upgrade=False, user=False, \
@@ -100,7 +100,7 @@ Module API
    for the current environment.
 
    *upgrade* indicates whether or not to upgrade an existing installation
-   of an earlier version of ``pip`` to the bundled version.
+   of an earlier version of ``pip`` to the available version.
 
    *user* indicates whether to use the user scheme rather than installing
    globally.
@@ -118,6 +118,8 @@ Module API
 
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
+
+   .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
 
    .. note::
 
