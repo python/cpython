@@ -1,7 +1,6 @@
 /* AST Optimizer */
 #include "Python.h"
-#include "Python-ast.h"
-#include "ast.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
 
 
 static int
