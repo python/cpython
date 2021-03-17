@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "pycore_ast.h"           // _PyAST_Validate()
 #include <errcode.h>
 #include "tokenizer.h"
 
@@ -1271,7 +1272,7 @@ _PyPegen_run_parser(Parser *p)
         p->start_rule == Py_file_input ||
         p->start_rule == Py_eval_input)
     {
-        if (!PyAST_Validate(res)) {
+        if (!_PyAST_Validate(res)) {
             return NULL;
         }
     }
