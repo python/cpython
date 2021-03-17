@@ -857,7 +857,7 @@ invalid_except_block:
     | 'except' &&':' 
 
 invalid_match_stmt:
-    | "match" subject_expr !':' { RAISE_SYNTAX_ERROR("expected ':'") }
+    | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
 
 invalid_case_block:
-    | "case" patterns guard=guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
+    | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }

@@ -18603,7 +18603,7 @@ invalid_match_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_match_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"match\" subject_expr !':'"));
-            _res = RAISE_SYNTAX_ERROR ( "expected ':'" );
+            _res = CHECK_VERSION ( void * , 10 , "Pattern matching is" , RAISE_SYNTAX_ERROR ( "expected ':'" ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18639,14 +18639,15 @@ invalid_case_block_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> invalid_case_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"case\" patterns guard? !':'"));
         expr_ty _keyword;
-        void *guard;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
         expr_ty patterns_var;
         if (
             (_keyword = _PyPegen_expect_soft_keyword(p, "case"))  // soft_keyword='"case"'
             &&
             (patterns_var = patterns_rule(p))  // patterns
             &&
-            (guard = guard_rule(p), 1)  // guard?
+            (_opt_var = guard_rule(p), 1)  // guard?
             &&
             _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 11)  // token=':'
         )
