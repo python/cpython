@@ -22,16 +22,15 @@
  */
 
 #include "Python.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 
-#include "Python-ast.h"
-#include "ast.h"
-#include "code.h"
-#include "symtable.h"
+#include "symtable.h"             // struct symtable
 #define NEED_OPCODE_JUMP_TABLES
-#include "opcode.h"
-#include "wordcode_helpers.h"
+#include "opcode.h"               // EXTENDED_ARG
+#include "wordcode_helpers.h"     // instrsize()
+
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
