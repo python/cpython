@@ -217,6 +217,16 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
 
+Note that a string containing a leading '`/`' character will be considered
+an absolute path, making the last to be taken as the anchor for the new
+path object (mimicking :func:`os.path.join`'s behaviour)::
+
+   >>> p = PurePath('/usr')
+   >>> p / '/bin'
+   PurePosixPath('/bin')
+   >>> p / '/bin' / '/python'
+   PurePosixPath('/python')
+
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
 
