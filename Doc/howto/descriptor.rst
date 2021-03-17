@@ -1205,7 +1205,7 @@ example calls are unexciting:
 Using the non-data descriptor protocol, a pure Python version of
 :func:`staticmethod` would look like this:
 
-.. doctest::
+.. testcode::
 
     class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
