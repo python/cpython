@@ -8,16 +8,13 @@ The C API is divided into three sections:
 3. ``Include/internal/``
 
 
-Include: Limited API and Stable ABI
-===================================
+Include: Limited API
+====================
 
 ``Include/``, excluding the ``cpython`` and ``internal`` subdirectories,
-contains the public Limited API (Application Programming Interface) and
-the Stable ABI (Application Binary Interface).  :pep:`384` defined the
-Stable ABI and the Limited API; two related, but distinct concepts.
-The Stable ABI promises binary compatibility across subsequent versions of
-CPython 3.x, given that the source code restricts itself to the Limited
-API.  The Limited API is a subset of the C API.
+contains the public Limited API (Application Programming Interface).
+The Limited API is a subset of the C API, designed to guarantee ABI
+stability across Python 3 versions, and is defined in :pep:`384`.
 
 Guidelines for expanding the Limited API:
 
