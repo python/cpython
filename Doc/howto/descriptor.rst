@@ -1279,7 +1279,7 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            if hasattr(obj, '__get__'):
+            if hasattr(self.f, '__get__'):
                 return self.f.__get__(cls)
             return MethodType(self.f, cls)
 
