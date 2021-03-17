@@ -143,6 +143,32 @@ High-level Module Interface
    .. versionadded:: 3.8
 
 
+.. function:: text_encoding(encoding, stacklevel=1)
+
+   This is a helper function for functions that use :func:`open` or
+   :class:`TextIOWrapper` and take ``encoding=None`` option.
+
+   This function returns *encoding* if it is not ``None`` and "locale" if
+   *encoding* is ``None``.
+
+   This function emits an :class:`EncodingWarning` if
+   ``sys.flags.warn_default_encoding`` is true. *stacklevel* specifies where
+   the warning is emit for. For example::
+
+      def read_text(path, encoding=None):
+          encoding = io.text_encoding(encoding)  # stacklevel=1
+          with open(path, encoding) as f:
+              return f.read()
+
+   In this example, an :class:`EncodingWarning` is emit for the caller of the
+   ``read_text()``. If *stacklevel* is greater than 1, more stack frames are
+   skipped.
+
+   See :envvar:`PYTHONWARNDEFAULTENCODING` and :pep:`597` for more information.
+
+   .. versionadded:: 3.10
+
+
 .. exception:: BlockingIOError
 
    This is a compatibility alias for the builtin :exc:`BlockingIOError`
@@ -880,6 +906,11 @@ Text I/O
    encoded with.  It defaults to
    :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
 
+   If ``sys.flags.warn_default_encoding`` is true and the default encoding
+   is used, this function emits an :class:`EncodingWarning`. You can suppress
+   the warning by using ``encoding="locale"`` option.
+   See :envvar:`PYTHONWARNDEFAULTENCODING` and :pep:`597` for more information.
+
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
    exception if there is an encoding error (the default of ``None`` has the same
@@ -929,6 +960,9 @@ Text I/O
       instead of ``locale.getpreferredencoding()``. Don't change temporary the
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
+
+   .. versionchanged:: 3.10
+      *encoding* option now supports ``"locale"`` dummy encoding name.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:

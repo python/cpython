@@ -928,7 +928,8 @@ conflict.
           data = json.load(f)
 
    ``encoding="locale"`` option can be used to specify locale-specific
-   encoding explicitly since Python 3.10.
+   encoding explicitly since Python 3.10. Python won't issue a
+   :class:`EncodingWarning` for it.
 
    See :pep:`597` for detail.
 
