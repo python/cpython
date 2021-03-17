@@ -6,7 +6,7 @@
 #include "Python.h"
 
 #ifdef Py_BUILD_CORE
-#  include "pycore_ast.h"           // struct ast_state
+#  include "pycore_ast_state.h"     // struct ast_state
 #  include "pycore_interp.h"        // _PyInterpreterState.ast
 #  include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #else

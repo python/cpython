@@ -1429,7 +1429,7 @@ def generate_module_def(mod, f, internal_h):
 
     print(textwrap.dedent(f"""
         #ifdef Py_BUILD_CORE
-        #  include "pycore_ast.h"           // struct ast_state
+        #  include "pycore_ast_state.h"     // struct ast_state
         #  include "pycore_interp.h"        // _PyInterpreterState.ast
         #  include "pycore_pystate.h"       // _PyInterpreterState_GET()
         #else
@@ -1522,8 +1522,8 @@ def write_header(mod, f):
 
 def write_internal_h_header(mod, f):
     print(textwrap.dedent("""
-        #ifndef Py_INTERNAL_AST_H
-        #define Py_INTERNAL_AST_H
+        #ifndef Py_INTERNAL_AST_STATE_H
+        #define Py_INTERNAL_AST_STATE_H
         #ifdef __cplusplus
         extern "C" {
         #endif
@@ -1540,7 +1540,7 @@ def write_internal_h_footer(mod, f):
         #ifdef __cplusplus
         }
         #endif
-        #endif /* !Py_INTERNAL_AST_H */
+        #endif /* !Py_INTERNAL_AST_STATE_H */
     """), file=f)
 
 
