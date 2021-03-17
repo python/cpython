@@ -30,9 +30,7 @@ Include/cpython: CPython implementation details
 ===============================================
 
 ``Include/cpython/`` contains the public API that is excluded from the
-Limited API and the Stable ABI.  When a new function or macro is
-introduced, it has to be explicitly excluded from the Limited API using
-``#ifndef Py_LIMITED_API``.
+Limited API and the Stable ABI.
 
 Guidelines for expanding the public API:
 
