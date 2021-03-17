@@ -1,1 +1,1 @@
-Add ``--with-openssl-rpath`` configure option.
+The ``configure`` script now supports ``--with-openssl-rpath`` option.
