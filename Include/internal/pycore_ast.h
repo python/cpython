@@ -10,6 +10,8 @@ extern "C" {
 
 #include "Python-ast.h"           // expr_ty
 
+extern int _PyAST_Validate(mod_ty);
+
 /* _PyAST_ExprAsUnicode is defined in ast_unparse.c */
 extern PyObject* _PyAST_ExprAsUnicode(expr_ty);
 

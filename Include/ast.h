@@ -7,8 +7,6 @@ extern "C" {
 
 #include "Python-ast.h"   /* mod_ty */
 
-PyAPI_FUNC(int) PyAST_Validate(mod_ty);
-
 #ifdef __cplusplus
 }
 #endif
