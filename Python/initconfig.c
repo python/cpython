@@ -701,7 +701,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->parse_argv = 0;
     config->site_import = -1;
     config->bytes_warning = -1;
-    config->warn_default_encoding = -1;
+    config->warn_default_encoding = 0;
     config->inspect = -1;
     config->interactive = -1;
     config->optimization_level = -1;
@@ -732,7 +732,6 @@ config_init_defaults(PyConfig *config)
     config->use_environment = 1;
     config->site_import = 1;
     config->bytes_warning = 0;
-    config->warn_default_encoding = 0;
     config->inspect = 0;
     config->interactive = 0;
     config->optimization_level = 0;
@@ -2142,10 +2141,6 @@ config_read(PyConfig *config, int compute_path_config)
     // Only parse arguments once.
     if (config->parse_argv == 1) {
         config->parse_argv = 2;
-    }
-
-    if (config->warn_default_encoding < 0) {
-        config->warn_default_encoding = 0;
     }
 
     return _PyStatus_OK();

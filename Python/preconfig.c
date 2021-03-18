@@ -259,14 +259,10 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
     }
 
     // warn_default_encoding
-    if ((cmdline->warn_default_encoding < 0)
-        && (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
-            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING")))
+    if (_Py_get_xoption(&cmdline->xoptions, L"warn_default_encoding")
+            || _Py_GetEnv(cmdline->use_environment, "PYTHONWARNDEFAULTENCODING"))
     {
         cmdline->warn_default_encoding = 1;
-    }
-    if (cmdline->warn_default_encoding < 0) {
-        cmdline->warn_default_encoding = 0;
     }
 
     assert(cmdline->use_environment >= 0);
