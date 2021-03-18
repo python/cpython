@@ -66,9 +66,6 @@ SEEK_SET = 0
 SEEK_CUR = 1
 SEEK_END = 2
 
-# PEP 597
-LOCALE_ENCODING = "locale"
-
 # Declaring ABCs in C is tricky so we do it here.
 # Method descriptions and default implementations are inherited from the C
 # version however.
