@@ -273,7 +273,7 @@ exit:
 }
 
 PyDoc_STRVAR(_io_text_encoding__doc__,
-"text_encoding($module, encoding=<unrepresentable>, stacklevel=1, /)\n"
+"text_encoding($module, encoding, stacklevel=1, /)\n"
 "--\n"
 "\n"
 "Helper function to choose the text encoding.\n"
@@ -297,14 +297,11 @@ static PyObject *
 _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *encoding = NULL;
+    PyObject *encoding;
     int stacklevel = 1;
 
-    if (!_PyArg_CheckPositional("text_encoding", nargs, 0, 2)) {
+    if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
         goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
     }
     encoding = args[0];
     if (nargs < 2) {
@@ -362,4 +359,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c8b593b834aeff7b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=556347a99a2e2a66 input=a9049054013a1b77]*/

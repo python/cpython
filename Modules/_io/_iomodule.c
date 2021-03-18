@@ -509,7 +509,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
 /*[clinic input]
 _io.text_encoding
-    encoding: object = NULL
+    encoding: object
     stacklevel: int = 1
     /
 
@@ -527,7 +527,7 @@ But please consider encoding="utf-8" for new APIs.
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=31cd163789637f39]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=1c86ec2f6e77f4fb]*/
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
