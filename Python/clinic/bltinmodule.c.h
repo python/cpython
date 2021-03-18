@@ -11,6 +11,17 @@ PyDoc_STRVAR(builtin_abs__doc__,
 #define BUILTIN_ABS_METHODDEF    \
     {"abs", (PyCFunction)builtin_abs, METH_O, builtin_abs__doc__},
 
+PyDoc_STRVAR(builtin_samesame__doc__,
+"samesame($module, iterable, /)\n"
+"--\n"
+"\n"
+"Return True if all values x in the iterable are equal.\n"
+"\n"
+"If the iterable is empty, return True.");
+
+#define BUILTIN_SAMESAME_METHODDEF    \
+    {"samesame", (PyCFunction)builtin_samesame, METH_O, builtin_samesame__doc__},
+
 PyDoc_STRVAR(builtin_all__doc__,
 "all($module, iterable, /)\n"
 "--\n"

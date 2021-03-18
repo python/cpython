@@ -317,6 +317,70 @@ builtin_abs(PyObject *module, PyObject *x)
 }
 
 /*[clinic input]
+samesame as builtin_samesame
+
+    iterable: object
+    /
+
+Return True if bool(x) is True for all values x in the iterable.
+
+If the iterable is empty, return True.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_samesame(PyObject *module, PyObject *iterable)
+/*[clinic end generated code: output=ca2a7127276f79b3 input=1a7c5d1bc3438a21]*/
+{
+    PyObject *it, *item, *firstitem;
+    PyObject *(*iternext)(PyObject *);
+
+    it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+    iternext = *Py_TYPE(it)->tp_iternext;
+
+    firstitem = iternext(it);
+    if (firstitem == NULL) {
+        Py_DECREF(it);
+        Py_RETURN_TRUE;
+    }
+
+    for (;;) {
+        item = iternext(it);
+        if (item == NULL)
+            break;
+        if (Py_TYPE(firstitem)->tp_richcompare != NULL) {
+            PyObject *res;
+            res = (*Py_TYPE(firstitem)->tp_richcompare)(firstitem, item, Py_NE);
+            if (res != Py_False) {
+                Py_DECREF(firstitem);
+                Py_DECREF(item);
+                Py_DECREF(res);
+                Py_DECREF(it);
+                Py_RETURN_FALSE;
+            }
+            Py_DECREF(res);
+        }
+        else if (item != firstitem) {
+            Py_DECREF(firstitem);
+            Py_DECREF(item);
+            Py_DECREF(it);
+            Py_RETURN_FALSE;
+        }
+        Py_DECREF(item);
+    }
+    Py_DECREF(firstitem);
+    Py_DECREF(it);
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else
+            return NULL;
+    }
+    Py_RETURN_TRUE;
+}
+
+/*[clinic input]
 all as builtin_all
 
     iterable: object
@@ -2826,6 +2890,7 @@ static PyMethodDef builtin_methods[] = {
     {"__import__",      (PyCFunction)(void(*)(void))builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
+    BUILTIN_SAMESAME_METHODDEF
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
