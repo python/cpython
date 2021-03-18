@@ -384,7 +384,7 @@ class Fraction(numbers.Rational):
     #
     # Assume input fractions a and b are normalized.
     #
-    # 1) Consider addition/substraction.
+    # 1) Consider addition/subtraction.
     #
     # Let g = gcd(da, db). Then
     #
@@ -444,7 +444,7 @@ class Fraction(numbers.Rational):
     # fractions are normalized.  It's also coprime with (db//g1), because
     # common factors are removed by g1 == gcd(na, db).
     #
-    # As for addition/substraction, we should special-case g1 == 1
+    # As for addition/subtraction, we should special-case g1 == 1
     # and g2 == 1 for same reason.  That happens also for multiplying
     # rationals, obtained from floats.
 
