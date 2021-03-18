@@ -8,9 +8,12 @@ try:
     import _hashlib as _hashopenssl
 except ImportError:
     _hashopenssl = None
+    _functype = None
     from _operator import _compare_digest as compare_digest
 else:
     compare_digest = _hashopenssl.compare_digest
+    _functype = type(_hashopenssl.openssl_sha256)  # builtin type
+
 import hashlib as _hashlib
 
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
@@ -29,7 +32,7 @@ class HMAC:
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
     __slots__ = (
-        "_hmac", "_inner", "_outer", "_name", "block_size", "digest_size"
+        "_hmac", "_inner", "_outer", "block_size", "digest_size"
     )
 
     def __init__(self, key, msg=None, digestmod=''):
@@ -52,19 +55,13 @@ class HMAC:
         if not digestmod:
             raise TypeError("Missing required parameter 'digestmod'.")
 
-        if (
-            _hashopenssl is not None and
-            (digestname := _hashlib._digestmod_to_name(digestmod))
-        ):
-            self._init_hmac(key, msg, digestname)
-            self._inner = self._outer = None
+        if _hashopenssl is not None and isinstance(digestmod, (str, _functype)):
+            self._init_hmac(key, msg, digestmod)
         else:
             self._init_old(key, msg, digestmod)
-            self._hmac = None
 
-    def _init_hmac(self, key, msg, digestname):
-        self._hmac = _hashopenssl.hmac_new(key, msg, digestmod=digestname)
-        self._name = digestname
+    def _init_hmac(self, key, msg, digestmod):
+        self._hmac = _hashopenssl.hmac_new(key, msg, digestmod=digestmod)
         self.digest_size = self._hmac.digest_size
         self.block_size = self._hmac.block_size
 
@@ -76,6 +73,7 @@ class HMAC:
         else:
             digest_cons = lambda d=b'': digestmod.new(d)
 
+        self._hmac = None
         self._outer = digest_cons()
         self._inner = digest_cons()
         self.digest_size = self._inner.digest_size
@@ -108,7 +106,10 @@ class HMAC:
 
     @property
     def name(self):
-        return "hmac-" + self._name
+        if self._hmac:
+            return self._hmac.name
+        else:
+            return f"hmac-{self._inner.name}"
 
     def update(self, msg):
         """Feed data from msg into this hashing object."""
@@ -125,7 +126,6 @@ class HMAC:
         # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
         other.digest_size = self.digest_size
-        other._name = self._name
         if self._hmac is not None:
             other._hmac = self._hmac.copy()
             other._inner = other._outer = None
@@ -195,11 +195,8 @@ def digest(key, msg, digest):
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
     """
-    if (
-        _hashopenssl is not None and
-        (digestname := _hashlib._digestmod_to_name(digest))
-    ):
-        return _hashopenssl.hmac_digest(key, msg, digestname)
+    if _hashopenssl is not None and isinstance(digest, (str, _functype)):
+        return _hashopenssl.hmac_digest(key, msg, digest)
 
     if callable(digest):
         digest_cons = digest
