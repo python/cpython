@@ -25,6 +25,11 @@ Guidelines for expanding the Limited API:
 - Please start a public discussion before expanding the API
 - Functions or macros with a ``_Py`` prefix do not belong in ``Include/``.
 
+It is possible to add a function or macro to the Limited API from a
+given Python version.  For example, to add a function to the Limited API
+from Python 3.10 and onwards, wrap it with
+`#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000`.
+
 
 Include/cpython: CPython implementation details
 ===============================================
