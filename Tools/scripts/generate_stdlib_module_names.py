@@ -11,14 +11,16 @@ SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 STDLIB_PATH = os.path.join(SRC_DIR, 'Lib')
 MODULES_SETUP = os.path.join(SRC_DIR, 'Modules', 'Setup')
 SETUP_PY = os.path.join(SRC_DIR, 'setup.py')
+TEST_EMBED = os.path.join(SRC_DIR, 'Programs', '_testembed')
 
 IGNORE = {
     '__init__',
     '__pycache__',
     'site-packages',
 
-    # test modules
-    '__phello__.foo',
+    # Test modules and packages
+    '__hello__',
+    '__phello__',
     '_ctypes_test',
     '_testbuffer',
     '_testcapi',
@@ -26,6 +28,7 @@ IGNORE = {
     '_testimportmultiple',
     '_testinternalcapi',
     '_testmultiphase',
+    '_xxsubinterpreters',
     '_xxtestfuzz',
     'distutils.tests',
     'idlelib.idle_test',
@@ -103,13 +106,40 @@ def list_modules_setup_extensions(names):
             names.add(name)
 
 
+# List frozen modules of the PyImport_FrozenModules list (Python/frozen.c).
+# Use the "./Programs/_testembed list_frozen" command.
+def list_frozen(names):
+    args = [TEST_EMBED, 'list_frozen']
+    proc = subprocess.run(args, stdout=subprocess.PIPE, text=True)
+    exitcode = proc.returncode
+    if exitcode:
+        cmd = ' '.join(args)
+        print(f"{cmd} failed with exitcode {exitcode}")
+        sys.exit(exitcode)
+    for line in proc.stdout.splitlines():
+        name = line.strip()
+        names.add(name)
+
+
 def list_modules():
     names = set(sys.builtin_module_names) | set(WINDOWS_MODULES)
     list_modules_setup_extensions(names)
     list_setup_extensions(names)
     list_packages(names)
     list_python_modules(names)
-    names -= set(IGNORE)
+    list_frozen(names)
+
+    # Remove ignored packages and modules
+    for name in list(names):
+        package_name = name.split('.')[0]
+        # package_name can be equal to name
+        if package_name in IGNORE:
+            names.discard(name)
+
+    for name in names:
+        if "." in name:
+            raise Exception("sub-modules must not be listed")
+
     return names
 
 

@@ -3,6 +3,7 @@ import json
 import pickle
 import textwrap
 import unittest
+import warnings
 import importlib.metadata
 
 try:
@@ -58,13 +59,11 @@ class ImportTests(fixtures.DistInfoPkg, unittest.TestCase):
             importlib.import_module('does_not_exist')
 
     def test_resolve(self):
-        entries = dict(entry_points()['entries'])
-        ep = entries['main']
+        ep = entry_points(group='entries')['main']
         self.assertEqual(ep.load().__name__, "main")
 
     def test_entrypoint_with_colon_in_name(self):
-        entries = dict(entry_points()['entries'])
-        ep = entries['ns:sub']
+        ep = entry_points(group='entries')['ns:sub']
         self.assertEqual(ep.value, 'mod:main')
 
     def test_resolve_without_attr(self):
@@ -250,7 +249,8 @@ class TestEntryPoints(unittest.TestCase):
         json should not expect to be able to dump an EntryPoint
         """
         with self.assertRaises(Exception):
-            json.dumps(self.ep)
+            with warnings.catch_warnings(record=True):
+                json.dumps(self.ep)
 
     def test_module(self):
         assert self.ep.module == 'value'

@@ -36,6 +36,7 @@ PyCFunction_Call
 PyCFunction_GetFlags
 PyCFunction_GetFunction
 PyCFunction_GetSelf
+PyCFunction_New
 PyCFunction_NewEx
 PyCFunction_Type
 PyCMethod_New
@@ -144,6 +145,7 @@ PyErr_SetFromErrnoWithFilenameObjects
 PyErr_SetImportError
 PyErr_SetImportErrorSubclass
 PyErr_SetInterrupt
+PyErr_SetInterruptEx
 PyErr_SetNone
 PyErr_SetObject
 PyErr_SetString

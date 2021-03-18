@@ -207,6 +207,7 @@ static int symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args
 static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
+static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
@@ -239,6 +240,7 @@ symtable_new(void)
         goto fail;
     st->st_cur = NULL;
     st->st_private = NULL;
+    st->in_pattern = 0;
     return st;
  fail:
     PySymtable_Free(st);
@@ -1294,6 +1296,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.If.orelse)
             VISIT_SEQ(st, stmt, s->v.If.orelse);
         break;
+    case Match_kind:
+        VISIT(st, expr, s->v.Match.subject);
+        VISIT_SEQ(st, match_case, s->v.Match.cases);
+        break;
     case Raise_kind:
         if (s->v.Raise.exc) {
             VISIT(st, expr, s->v.Raise.exc);
@@ -1648,6 +1654,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step)
         break;
     case Name_kind:
+        // Don't make "_" a local when used in a pattern:
+        if (st->in_pattern &&
+            e->v.Name.ctx == Store &&
+            _PyUnicode_EqualToASCIIString(e->v.Name.id, "_"))
+        {
+            break;
+        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
@@ -1666,6 +1679,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Tuple_kind:
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
+        break;
+    case MatchAs_kind:
+        VISIT(st, expr, e->v.MatchAs.pattern);
+        symtable_add_def(st, e->v.MatchAs.name, DEF_LOCAL);
+        break;
+    case MatchOr_kind:
+        VISIT_SEQ(st, expr, e->v.MatchOr.patterns);
         break;
     }
     VISIT_QUIT(st, 1);
@@ -1785,6 +1805,20 @@ symtable_visit_withitem(struct symtable *st, withitem_ty item)
     return 1;
 }
 
+static int
+symtable_visit_match_case(struct symtable *st, match_case_ty m)
+{
+    assert(!st->in_pattern);
+    st->in_pattern = 1;
+    VISIT(st, expr, m->pattern);
+    assert(st->in_pattern);
+    st->in_pattern = 0;
+    if (m->guard) {
+        VISIT(st, expr, m->guard);
+    }
+    VISIT_SEQ(st, stmt, m->body);
+    return 1;
+}
 
 static int
 symtable_visit_alias(struct symtable *st, alias_ty a)

@@ -872,9 +872,10 @@ make_type(struct ast_state *state, const char *type, PyObject* base,
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,
                     state->_fields, fnames,
+                    state->__match_args__, fnames,
                     state->__module__,
                     state->ast,
                     state->__doc__, doc);
@@ -1005,6 +1006,7 @@ static int add_ast_fields(struct ast_state *state)
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple ||
         PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "__match_args__", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
         return -1;
@@ -1371,17 +1373,13 @@ def generate_ast_fini(module_state, f):
     f.write(textwrap.dedent("""
             void _PyAST_Fini(PyInterpreterState *interp)
             {
-            #ifdef Py_BUILD_CORE
                 struct ast_state *state = &interp->ast;
-            #else
-                struct ast_state *state = &global_ast_state;
-            #endif
 
     """))
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-            #if defined(Py_BUILD_CORE) && !defined(NDEBUG)
+            #if !defined(NDEBUG)
                 state->initialized = -1;
             #else
                 state->initialized = 0;
@@ -1405,6 +1403,7 @@ def generate_module_def(mod, f, internal_h):
     state_strings = {
         "ast",
         "_fields",
+        "__match_args__",
         "__doc__",
         "__dict__",
         "__module__",
@@ -1425,24 +1424,15 @@ def generate_module_def(mod, f, internal_h):
     generate_ast_state(module_state, internal_h)
 
     print(textwrap.dedent(f"""
-        #ifdef Py_BUILD_CORE
-        #  include "pycore_ast.h"           // struct ast_state
-        #  include "pycore_interp.h"        // _PyInterpreterState.ast
-        #  include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #else
-    """).strip(), file=f)
-
-    generate_ast_state(module_state, f)
-
-    print(textwrap.dedent(f"""
-        #endif   // Py_BUILD_CORE
+        #include "pycore_ast_state.h"       // struct ast_state
+        #include "pycore_interp.h"          // _PyInterpreterState.ast
+        #include "pycore_pystate.h"         // _PyInterpreterState_GET()
     """).rstrip(), file=f)
 
     f.write("""
 // Forward declaration
 static int init_types(struct ast_state *state);
 
-#ifdef Py_BUILD_CORE
 static struct ast_state*
 get_ast_state(void)
 {
@@ -1453,19 +1443,6 @@ get_ast_state(void)
     }
     return state;
 }
-#else
-static struct ast_state global_ast_state;
-
-static struct ast_state*
-get_ast_state(void)
-{
-    struct ast_state *state = &global_ast_state;
-    if (!init_types(state)) {
-        return NULL;
-    }
-    return state;
-}
-#endif   // Py_BUILD_CORE
 """)
 
     # f-string for {mod.name}
@@ -1519,8 +1496,8 @@ def write_header(mod, f):
 
 def write_internal_h_header(mod, f):
     print(textwrap.dedent("""
-        #ifndef Py_INTERNAL_AST_H
-        #define Py_INTERNAL_AST_H
+        #ifndef Py_INTERNAL_AST_STATE_H
+        #define Py_INTERNAL_AST_STATE_H
         #ifdef __cplusplus
         extern "C" {
         #endif
@@ -1537,7 +1514,7 @@ def write_internal_h_footer(mod, f):
         #ifdef __cplusplus
         }
         #endif
-        #endif /* !Py_INTERNAL_AST_H */
+        #endif /* !Py_INTERNAL_AST_STATE_H */
     """), file=f)
 
 

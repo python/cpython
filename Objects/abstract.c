@@ -882,10 +882,8 @@ static PyObject *
 ternary_op(PyObject *v,
            PyObject *w,
            PyObject *z,
-           const int op_slot
-#ifndef NDEBUG
-           , const char *op_name
-#endif
+           const int op_slot,
+           const char *op_name
            )
 {
     PyNumberMethods *mv = Py_TYPE(v)->tp_as_number;
@@ -955,29 +953,24 @@ ternary_op(PyObject *v,
     if (z == Py_None) {
         PyErr_Format(
             PyExc_TypeError,
-            "unsupported operand type(s) for ** or pow(): "
+            "unsupported operand type(s) for %.100s: "
             "'%.100s' and '%.100s'",
+            op_name,
             Py_TYPE(v)->tp_name,
             Py_TYPE(w)->tp_name);
     }
     else {
         PyErr_Format(
             PyExc_TypeError,
-            "unsupported operand type(s) for pow(): "
+            "unsupported operand type(s) for %.100s: "
             "'%.100s', '%.100s', '%.100s'",
+            op_name,
             Py_TYPE(v)->tp_name,
             Py_TYPE(w)->tp_name,
             Py_TYPE(z)->tp_name);
     }
     return NULL;
 }
-
-#ifdef NDEBUG
-#  define TERNARY_OP(v, w, z, op_slot, op_name) ternary_op(v, w, z, op_slot)
-#else
-#  define TERNARY_OP(v, w, z, op_slot, op_name) ternary_op(v, w, z, op_slot, op_name)
-#endif
-
 
 #define BINARY_FUNC(func, op, op_name) \
     PyObject * \
@@ -1077,7 +1070,7 @@ PyNumber_Remainder(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 {
-    return TERNARY_OP(v, w, z, NB_SLOT(nb_power), "** or pow()");
+    return ternary_op(v, w, z, NB_SLOT(nb_power), "** or pow()");
 }
 
 /* Binary in-place operators */
@@ -1138,6 +1131,24 @@ binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
         return binop_type_error(v, w, op_name);
     }
     return result;
+}
+
+static PyObject *
+ternary_iop(PyObject *v, PyObject *w, PyObject *z, const int iop_slot, const int op_slot,
+                const char *op_name)
+{
+    PyNumberMethods *mv = Py_TYPE(v)->tp_as_number;
+    if (mv != NULL) {
+        ternaryfunc slot = NB_TERNOP(mv, iop_slot);
+        if (slot) {
+            PyObject *x = (slot)(v, w, z);
+            if (x != Py_NotImplemented) {
+                return x;
+            }
+            Py_DECREF(x);
+        }
+    }
+    return ternary_op(v, w, z, op_slot, op_name);
 }
 
 #define INPLACE_BINOP(func, iop, op, op_name) \
@@ -1237,13 +1248,8 @@ PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
-    if (Py_TYPE(v)->tp_as_number &&
-        Py_TYPE(v)->tp_as_number->nb_inplace_power != NULL) {
-        return TERNARY_OP(v, w, z, NB_SLOT(nb_inplace_power), "**=");
-    }
-    else {
-        return TERNARY_OP(v, w, z, NB_SLOT(nb_power), "**=");
-    }
+    return ternary_iop(v, w, z, NB_SLOT(nb_inplace_power),
+                                NB_SLOT(nb_power), "**=");
 }
 
 

@@ -1,0 +1,2 @@
+Build :mod:`sqlite3` with the ``R*Tree`` module enabled. Patch by Erlend E.
+Aasland.
