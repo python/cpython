@@ -42,12 +42,6 @@
     <ClInclude Include="..\Include\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\asdl.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\ast.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\boolobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -208,9 +202,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pystrhex.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\Python-ast.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Python.h">
@@ -487,6 +478,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_accu.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_asdl.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ast.h">

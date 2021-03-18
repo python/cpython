@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "Python-ast.h"   /* mod_ty */
+struct _mod;   // Type defined in pycore_ast.h
 
 typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
     _Py_block_ty;
@@ -74,7 +74,7 @@ extern PyTypeObject PySTEntry_Type;
 extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
 
 extern struct symtable* _PySymtable_Build(
-    mod_ty mod,
+    struct _mod *mod,
     PyObject *filename,
     PyFutureFeatures *future);
 PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);

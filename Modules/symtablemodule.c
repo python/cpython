@@ -1,6 +1,4 @@
 #include "Python.h"
-
-#include "Python-ast.h"
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"

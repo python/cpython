@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_ast.h"           // identifier, stmt_ty
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
 #undef Yield   /* undefine macro conflicting with <winbase.h> */

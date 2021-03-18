@@ -5,7 +5,6 @@
 
 #include "pegen.h"
 #include "string_parser.h"
-#include "ast.h"
 
 PyObject *
 _PyPegen_new_type_comment(Parser *p, char *s)
