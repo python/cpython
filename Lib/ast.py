@@ -1199,8 +1199,13 @@ class _Unparser(NodeVisitor):
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
-            # Substitute overflowing decimal literal for AST infinities.
-            self.write(repr(value).replace("inf", _INFSTR))
+            # Substitute overflowing decimal literal for AST infinities,
+            # and inf - inf for NaNs.
+            self.write(
+                repr(value)
+                .replace("inf", _INFSTR)
+                .replace("nan", f"({_INFSTR}-{_INFSTR})")
+            )
         elif self._avoid_backslashes and isinstance(value, str):
             self._write_str_avoiding_backslashes(value)
         else:
@@ -1273,10 +1278,13 @@ class _Unparser(NodeVisitor):
             self.traverse(node.orelse)
 
     def visit_Set(self, node):
-        if not node.elts:
-            raise ValueError("Set node should have at least one item")
-        with self.delimit("{", "}"):
-            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+        if node.elts:
+            with self.delimit("{", "}"):
+                self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+        else:
+            # `{}` would be interpreted as a dictionary literal, and
+            # `set` might be shadowed. Thus:
+            self.write('{*()}')
 
     def visit_Dict(self, node):
         def write_key_value_pair(k, v):
