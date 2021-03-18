@@ -115,7 +115,7 @@ class Dialog(Toplevel):
         if title:
             self.title(title)
 
-        self.parent = parent
+        self.parent = master
 
         self.result = None
 
@@ -130,7 +130,7 @@ class Dialog(Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
 
-        _place_window(self, parent)
+        _place_window(self, master)
 
         self.initial_focus.focus_set()
 
@@ -195,7 +195,7 @@ class Dialog(Toplevel):
     def cancel(self, event=None):
 
         # put focus back to the parent window
-        if self.parent is not None:
+        if self.parent is not None and self.parent.winfo_viewable():
             self.parent.focus_set()
         self.destroy()
 
