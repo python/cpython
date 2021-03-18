@@ -1353,3 +1353,8 @@ Removed
   Python already implicitly installs signal handlers: see
   :c:member:`PyConfig.install_signal_handlers`.
   (Contributed by Victor Stinner in :issue:`41713`.)
+
+* Remove the ``PyAST_Validate()`` function. It is no longer possible to build a
+  AST object (``mod_ty`` type) with the public C API. The function was already
+  excluded from the limited C API (:pep:`384`).
+  (Contributed by Victor Stinner in :issue:`43244`.)
