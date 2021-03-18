@@ -1,0 +1,1 @@
+Fixes a regression with simpledialog which caused dialogs to not be transient to the default root.
