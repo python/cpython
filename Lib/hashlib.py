@@ -173,6 +173,7 @@ try:
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
 except ImportError:
+    _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
 
@@ -255,6 +256,33 @@ for __func_name in __always_supported:
     except ValueError:
         import logging
         logging.exception('code for hash %s was not found.', __func_name)
+
+
+def _digestmod_to_name(digestmod, from_instance=False):
+    """Convert a string, callable or digest module to a digest name
+    """
+    if isinstance(digestmod, str):
+        # assumes name is a valid digestmod name
+        return digestmod
+    elif callable(digestmod):
+        # it's a callable object, check if it's an _hashopenssl.c object
+        dundername = getattr(digestmod, "__name__", None)
+        if (
+            dundername and dundername.startswith("openssl_") and
+            getattr(_hashlib, dundername, None) is digestmod
+        ):
+            # it's a hash constructor from _hashopenssl.c, chop of prefix
+            return dundername[8:]
+        elif from_instance:
+            # it's some other callable, get PEP 452 name
+            return digestmod().name
+        else:
+            return None
+    else:
+        # it has to be a module with "new" function
+        if from_instance:
+            return digestmod.new().name
+    return None
 
 
 # Cleanup locals()
