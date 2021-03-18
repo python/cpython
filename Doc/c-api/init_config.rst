@@ -585,8 +585,10 @@ PyConfig
 
    .. c:member:: int warn_default_encoding
 
-      If equals to 1, emit a ``EncodingWarning`` when ``TextIOWrapper``
-      used its default encoding. See :pep:`597` for detail.
+      If non-zero, emit a :exc:`EncodingWarning` warning when :class:`io.TextIOWrapper`
+      uses its default encoding. See :pep:`597` for detail.
+      
+      Default: ``0``.
 
       .. versionadded:: 3.10
 
