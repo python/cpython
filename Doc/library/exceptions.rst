@@ -690,8 +690,11 @@ The following exceptions are used as warning categories; see the
 
 .. exception:: EncodingWarning
 
-   Base class for warnings about encodings when those warnings are intended for
-   other Python developers.
+   Base class for warnings about encodings.
+
+   :class:`io.TextIOWrapper`, :func:`open`, and other functions having
+   ``encoding=None`` option and locale specific default encoding may emit this
+   warning. See :pep:`597` for more details.
 
    .. versionadded:: 3.10
 
