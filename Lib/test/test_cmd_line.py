@@ -200,38 +200,72 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows has a native unicode API')
+    def test_invalid_utf8_arg(self):
+        # bpo-35883: Py_DecodeLocale() must escape b'\xfd\xbf\xbf\xbb\xba\xba'
+        # byte sequence with surrogateescape rather than decoding it as the
+        # U+7fffbeba character which is outside the [U+0000; U+10ffff] range of
+        # Python Unicode characters.
+        #
+        # Test with default config, in the C locale, in the Python UTF-8 Mode.
+        code = 'import sys, os; s=os.fsencode(sys.argv[1]); print(ascii(s))'
+        base_cmd = [sys.executable, '-c', code]
+
+        def run_default(arg):
+            cmd = [sys.executable, '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
+        def run_c_locale(arg):
+            cmd = [sys.executable, '-c', code, arg]
+            env = dict(os.environ)
+            env['LC_ALL'] = 'C'
+            return subprocess.run(cmd, stdout=subprocess.PIPE,
+                                  text=True, env=env)
+
+        def run_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
+        valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
+        # invalid UTF-8 byte sequences with a valid UTF-8 sequence
+        # in the middle.
+        invalid_utf8 = (
+            b'\xff'                      # invalid byte
+            b'\xc3\xff'                  # invalid byte sequence
+            b'\xc3\xa9'                  # valid utf-8: U+00E9 character
+            b'\xed\xa0\x80'              # lone surrogate character (invalid)
+            b'\xfd\xbf\xbf\xbb\xba\xba'  # character outside [U+0000; U+10ffff]
+        )
+        test_args = [valid_utf8, invalid_utf8]
+
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+            with self.subTest(run_cmd=run_cmd):
+                for arg in test_args:
+                    proc = run_cmd(arg)
+                    self.assertEqual(proc.stdout.rstrip(), ascii(arg))
+
     @unittest.skipUnless((sys.platform == 'darwin' or
                 support.is_android), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
-        def check_output(text):
-            decoded = text.decode('utf-8', 'surrogateescape')
-            expected = ascii(decoded).encode('ascii') + b'\n'
-
-            env = os.environ.copy()
-            # C locale gives ASCII locale encoding, but Python uses UTF-8
-            # to parse the command line arguments on Mac OS X and Android.
-            env['LC_ALL'] = 'C'
-
-            p = subprocess.Popen(
-                (sys.executable, "-c", "import sys; print(ascii(sys.argv[1]))", text),
-                stdout=subprocess.PIPE,
-                env=env)
-            stdout, stderr = p.communicate()
-            self.assertEqual(stdout, expected)
-            self.assertEqual(p.returncode, 0)
-
-        # test valid utf-8
         text = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
-        check_output(text)
+        code = "import sys; print(ascii(sys.argv[1]))"
 
-        # test invalid utf-8
-        text = (
-            b'\xff'         # invalid byte
-            b'\xc3\xa9'     # valid utf-8 character
-            b'\xc3\xff'     # invalid byte sequence
-            b'\xed\xa0\x80' # lone surrogate character (invalid)
-        )
-        check_output(text)
+        decoded = text.decode('utf-8', 'surrogateescape')
+        expected = ascii(decoded).encode('ascii') + b'\n'
+
+        env = os.environ.copy()
+        # C locale gives ASCII locale encoding, but Python uses UTF-8
+        # to parse the command line arguments on Mac OS X and Android.
+        env['LC_ALL'] = 'C'
+
+        p = subprocess.Popen(
+            (sys.executable, "-c", code, text),
+            stdout=subprocess.PIPE,
+            env=env)
+        stdout, stderr = p.communicate()
+        self.assertEqual(stdout, expected)
+        self.assertEqual(p.returncode, 0)
 
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""

@@ -634,6 +634,13 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: VERIFY_ALLOW_PROXY_CERTS
+
+   Possible value for :attr:`SSLContext.verify_flags` to enables proxy
+   certificate verification.
+
+   .. versionadded:: 3.10
+
 .. data:: VERIFY_X509_TRUSTED_FIRST
 
    Possible value for :attr:`SSLContext.verify_flags`. It instructs OpenSSL to

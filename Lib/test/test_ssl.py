@@ -1305,6 +1305,8 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_flags, ssl.VERIFY_CRL_CHECK_CHAIN)
         ctx.verify_flags = ssl.VERIFY_DEFAULT
         self.assertEqual(ctx.verify_flags, ssl.VERIFY_DEFAULT)
+        ctx.verify_flags = ssl.VERIFY_ALLOW_PROXY_CERTS
+        self.assertEqual(ctx.verify_flags, ssl.VERIFY_ALLOW_PROXY_CERTS)
         # supports any value
         ctx.verify_flags = ssl.VERIFY_CRL_CHECK_LEAF | ssl.VERIFY_X509_STRICT
         self.assertEqual(ctx.verify_flags,

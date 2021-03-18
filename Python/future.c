@@ -1,9 +1,5 @@
 #include "Python.h"
-#include "Python-ast.h"
-#include "token.h"
-#include "code.h"
-#include "symtable.h"
-#include "ast.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 #define ERR_LATE_FUTURE \

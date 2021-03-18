@@ -847,7 +847,7 @@ PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
         return NULL;
     }
