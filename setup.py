@@ -732,7 +732,8 @@ class PyBuildExt(build_ext):
         tmpfile = os.path.join(self.build_temp, 'ccpaths')
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        ret = run_command('%s -E -v - </dev/null 2>%s 1>/dev/null' % (cc, tmpfile))
+        ret = run_command('LC_ALL=C %s -E -v - </dev/null 2>%s 1>/dev/null'
+                          % (cc, tmpfile))
         is_gcc = False
         is_clang = False
         in_incdirs = False

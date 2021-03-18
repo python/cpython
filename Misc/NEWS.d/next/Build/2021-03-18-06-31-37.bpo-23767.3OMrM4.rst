@@ -1,0 +1,2 @@
+Force the use of the default locale in the ``add_gcc_paths()`` function in
+setup.py when parsing the output of ``gcc -v -E``.
