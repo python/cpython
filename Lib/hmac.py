@@ -55,8 +55,11 @@ class HMAC:
         if not digestmod:
             raise TypeError("Missing required parameter 'digestmod'.")
 
-        if _hashopenssl is not None and isinstance(digestmod, (str, _functype)):
-            self._init_hmac(key, msg, digestmod)
+        if _hashopenssl and isinstance(digestmod, (str, _functype)):
+            try:
+                self._init_hmac(key, msg, digestmod)
+            except ValueError:
+                self._init_old(key, msg, digestmod)
         else:
             self._init_old(key, msg, digestmod)
 
@@ -113,10 +116,8 @@ class HMAC:
 
     def update(self, msg):
         """Feed data from msg into this hashing object."""
-        obj = self._hmac
-        if obj is None:
-            obj = self._inner
-        obj.update(msg)
+        inst = self._hmac or self._inner
+        inst.update(msg)
 
     def copy(self):
         """Return a separate copy of this hashing object.
@@ -126,7 +127,7 @@ class HMAC:
         # Call __new__ directly to avoid the expensive __init__.
         other = self.__class__.__new__(self.__class__)
         other.digest_size = self.digest_size
-        if self._hmac is not None:
+        if self._hmac:
             other._hmac = self._hmac.copy()
             other._inner = other._outer = None
         else:
@@ -140,9 +141,12 @@ class HMAC:
 
         To be used only internally with digest() and hexdigest().
         """
-        h = self._outer.copy()
-        h.update(self._inner.digest())
-        return h
+        if self._hmac:
+            return self._hmac
+        else:
+            h = self._outer.copy()
+            h.update(self._inner.digest())
+            return h
 
     def digest(self):
         """Return the hash value of this hashing object.
@@ -151,20 +155,14 @@ class HMAC:
         not altered in any way by this function; you can continue
         updating the object after calling this function.
         """
-        if self._hmac is not None:
-            return self._hmac.digest()
-        else:
-            h = self._current()
-            return h.digest()
+        h = self._current()
+        return h.digest()
 
     def hexdigest(self):
         """Like digest(), but returns a string of hexadecimal digits instead.
         """
-        if self._hmac is not None:
-            return self._hmac.hexdigest()
-        else:
-            h = self._current()
-            return h.hexdigest()
+        h = self._current()
+        return h.hexdigest()
 
 def new(key, msg=None, digestmod=''):
     """Create a new hashing object and return it.
@@ -196,7 +194,10 @@ def digest(key, msg, digest):
             A module supporting PEP 247.
     """
     if _hashopenssl is not None and isinstance(digest, (str, _functype)):
-        return _hashopenssl.hmac_digest(key, msg, digest)
+        try:
+            return _hashopenssl.hmac_digest(key, msg, digest)
+        except ValueError:
+            pass
 
     if callable(digest):
         digest_cons = digest
