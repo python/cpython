@@ -1127,7 +1127,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
     if (locals == NULL) {
         locals = globals;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
         return NULL;
     }
@@ -5140,12 +5140,11 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     if (defaults == NULL) {
         return NULL;
     }
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
         Py_DECREF(defaults);
         return NULL;
     }
-    assert ((((PyCodeObject *)_co)->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 0);
     if (locals == NULL) {
         locals = globals;
     }
@@ -5208,7 +5207,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     }
 fail:
     Py_DECREF(defaults);
-    Py_DECREF(builtins);
     return res;
 }
 
