@@ -510,7 +510,7 @@ class Fraction(numbers.Rational):
             da //= g2
             db //= g2
         n, d = na * db, nb * da
-        if nb < 0:
+        if d < 0:
             n, d = -n, -d
         return Fraction(n, d, _normalize=False)
 
