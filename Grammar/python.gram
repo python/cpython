@@ -211,6 +211,7 @@ finally_block[asdl_stmt_seq*]: 'finally' ':' a=block { a }
 match_stmt[stmt_ty]:
     | "match" subject=subject_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
         CHECK_VERSION(stmt_ty, 10, "Pattern matching is", _Py_Match(subject, cases, EXTRA)) }
+    | invalid_match_stmt
 subject_expr[expr_ty]:
     | value=star_named_expression ',' values=star_named_expressions? {
         _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
@@ -218,6 +219,7 @@ subject_expr[expr_ty]:
 case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {
         _Py_match_case(pattern, guard, body, p->arena) }
+    | invalid_case_block
 guard[expr_ty]: 'if' guard=named_expression { guard }
 
 patterns[expr_ty]:
@@ -853,3 +855,9 @@ invalid_except_block:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "exception group must be parenthesized") }
     | 'except' expression ['as' NAME ] &&':'
     | 'except' &&':' 
+
+invalid_match_stmt:
+    | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
+
+invalid_case_block:
+    | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
