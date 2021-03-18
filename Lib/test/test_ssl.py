@@ -155,8 +155,9 @@ OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
 # see https://bugs.python.org/issue41561#msg389003
 def is_ubuntu():
     try:
-        # assume that any references of "ubuntu" implies Ubuntu-like distro
-        with open("/etc/os-release") as f:
+        # Assume that any references of "ubuntu" implies Ubuntu-like distro
+        # The workaround is not required for 18.04, but doesn't hurt either.
+        with open("/etc/os-release", encoding="utf-8") as f:
             return "ubuntu" in f.read()
     except FileNotFoundError:
         return False
