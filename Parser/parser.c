@@ -2,10 +2,9 @@
 #include "pegen.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
-extern int Py_DebugFlag;
-#define D(x) if (Py_DebugFlag) x;
+#  define D(x) if (Py_DebugFlag) x;
 #else
-#define D(x)
+#  define D(x)
 #endif
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
