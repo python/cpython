@@ -826,7 +826,7 @@ class TurtleScreenBase(object):
         >>> screen.textinput("NIM", "Name of first player:")
 
         """
-        return simpledialog.askstring(title, prompt)
+        return simpledialog.askstring(title, prompt, parent=self.cv)
 
     def numinput(self, title, prompt, default=None, minval=None, maxval=None):
         """Pop up a dialog window for input of a number.

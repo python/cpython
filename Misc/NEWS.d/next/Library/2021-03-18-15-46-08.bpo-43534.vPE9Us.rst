@@ -1,0 +1,2 @@
+:func:`turtle.textinput` creates now a transient window working on behalf of
+the canvas window.
