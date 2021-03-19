@@ -58,7 +58,7 @@ class HMAC:
         if _hashopenssl and isinstance(digestmod, (str, _functype)):
             try:
                 self._init_hmac(key, msg, digestmod)
-            except ValueError:
+            except _hashopenssl.UnsupportedDigestmodError:
                 self._init_old(key, msg, digestmod)
         else:
             self._init_old(key, msg, digestmod)
@@ -196,7 +196,7 @@ def digest(key, msg, digest):
     if _hashopenssl is not None and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
-        except ValueError:
+        except _hashopenssl.UnsupportedDigestmodError:
             pass
 
     if callable(digest):

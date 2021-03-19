@@ -87,6 +87,7 @@ typedef struct {
     PyTypeObject *EVPXOFtype;
 #endif
     PyObject *constructs;
+    PyObject *unsupported_digestmod_error;
 } _hashlibstate;
 
 static inline _hashlibstate*
@@ -290,6 +291,11 @@ py_digest_by_name(const char *name)
 #endif
     }
 
+    if (digest == NULL) {
+        PyErr_Format(PyExc_ValueError, "unsupported hash type %s", name);
+        return NULL;
+    }
+
     return digest;
 }
 
@@ -314,8 +320,11 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod) {
         name_obj = PyDict_GetItem(state->constructs, digestmod);
     }
     if (name_obj == NULL) {
+        _hashlibstate *state = get_hashlib_state(module);
         PyErr_Clear();
-        PyErr_Format(PyExc_ValueError, "Unsupported digestmod %R", digestmod);
+        PyErr_Format(
+            state->unsupported_digestmod_error,
+            "Unsupported digestmod %R", digestmod);
         return NULL;
     }
 
@@ -326,7 +335,6 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod) {
 
     evp = py_digest_by_name(name);
     if (evp == NULL) {
-        PyErr_Format(PyExc_ValueError, "unsupported hash type %s", name);
         return NULL;
     }
 
@@ -870,6 +878,9 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
     digest = py_digest_by_name(name);
+    if (digest == NULL) {
+        return NULL;
+    }
 
     ret_obj = EVPnew(module, digest,
                      (unsigned char*)view.buf, view.len,
@@ -1165,7 +1176,6 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     digest = py_digest_by_name(hash_name);
     if (digest == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
         goto end;
     }
 
@@ -2026,6 +2036,7 @@ hashlib_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->EVPXOFtype);
 #endif
     Py_VISIT(state->constructs);
+    Py_VISIT(state->unsupported_digestmod_error);
     return 0;
 }
 
@@ -2039,6 +2050,7 @@ hashlib_clear(PyObject *m)
     Py_CLEAR(state->EVPXOFtype);
 #endif
     Py_CLEAR(state->constructs);
+    Py_CLEAR(state->unsupported_digestmod_error);
     return 0;
 }
 
@@ -2158,7 +2170,23 @@ hashlib_init_constructors(PyObject *module)
     if (proxy == NULL) {
         return -1;
     }
-    if (PyModule_AddObjectRef(module, "constructors", proxy) < 0) {
+    if (PyModule_AddObjectRef(module, "_constructors", proxy) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+hashlib_exception(PyObject *module)
+{
+    _hashlibstate *state = get_hashlib_state(module);
+    state->unsupported_digestmod_error = PyErr_NewException(
+        "_hashlib.UnsupportedDigestmodError", PyExc_ValueError, NULL);
+    if (state->unsupported_digestmod_error == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "UnsupportedDigestmodError",
+                              state->unsupported_digestmod_error) < 0) {
         return -1;
     }
     return 0;
@@ -2173,6 +2201,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_init_hmactype},
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
+    {Py_mod_exec, hashlib_exception},
     {0, NULL}
 };
 
