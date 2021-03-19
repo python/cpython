@@ -40,7 +40,7 @@ _IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mo
 _CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
 
 
-def text_encoding(encoding, stacklevel=1):
+def text_encoding(encoding, stacklevel=2):
     """
     Helper function to choose the text encoding.
 
@@ -57,7 +57,7 @@ def text_encoding(encoding, stacklevel=1):
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn("'encoding' argument is not specified.",
-                          EncodingWarning, stacklevel + 2)
+                          EncodingWarning, stacklevel + 1)
         encoding = "locale"
     return encoding
 

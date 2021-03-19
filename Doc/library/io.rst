@@ -191,7 +191,7 @@ High-level Module Interface
    .. versionadded:: 3.8
 
 
-.. function:: text_encoding(encoding, stacklevel=1)
+.. function:: text_encoding(encoding, stacklevel=2)
 
    This is a helper function for functions that use :func:`open` or
    :class:`TextIOWrapper` and take ``encoding=None`` argument.
@@ -200,17 +200,16 @@ High-level Module Interface
    *encoding* is ``None``.
 
    This function emits an :class:`EncodingWarning` if
-   :data:`sys.flags.warn_default_encoding <sys.flags>` is true. *stacklevel* specifies where
-   the warning is emit for. For example::
+   :data:`sys.flags.warn_default_encoding <sys.flags>` is true.
+   *stacklevel* specifies where the warning is emit for. For example::
 
       def read_text(path, encoding=None):
-          encoding = io.text_encoding(encoding)  # stacklevel=1
+          encoding = io.text_encoding(encoding)  # stacklevel=2
           with open(path, encoding) as f:
               return f.read()
 
    In this example, an :class:`EncodingWarning` is emit for the caller of the
-   ``read_text()``. If *stacklevel* is greater than 1, more stack frames are
-   skipped.
+   ``read_text()``.
 
    See :ref:`io-default-encoding` for more information.
 
