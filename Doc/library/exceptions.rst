@@ -692,9 +692,7 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about encodings.
 
-   :class:`io.TextIOWrapper`, :func:`open`, and other functions having
-   ``encoding=None`` option and locale specific default encoding may emit this
-   warning. See :pep:`597` for more details.
+   See :ref:`io-encoding-warning` for details.
 
    .. versionadded:: 3.10
 

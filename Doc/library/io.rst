@@ -106,6 +106,54 @@ stream by opening a file in binary mode with buffering disabled::
 The raw stream API is described in detail in the docs of :class:`RawIOBase`.
 
 
+.. _io-text-encoding:
+
+Text Encoding
+-------------
+
+The default encoding of :class:`TextIOWrapper` and :func:`open` is
+locale-specific. (:func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`)
+
+But many developers forget to specify encoding when opening text files
+encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
+platforms uses UTF-8 locale by default. It cause a bug because locale-specific
+encoding is not UTF-8 for most Windows users. For example::
+
+   # may not work on Windows when non-ASCII characters in the file.
+   with open("README.md") as f:
+       long_description = f.read()
+
+Additionally, Python may change the default text encoding to UTF-8 in the
+future, although there is no plan yet.
+
+So it is highly recommended to specify encoding explicitly when opening text
+files. If you want to use UTF-8, specify ``encoding="utf-8"``. If you need to
+use locale-specific encoding, ``encoding="locale"`` is supported since Python
+3.10.
+
+When you need to run code using the default encoding to open UTF-8 files on
+Windows, you can enable the UTF-8 mode. See also the
+:ref:`UTF-8 mode on Windows <win-utf8-mode>`
+
+.. _io-encoding-warning:
+
+Opt-in EncodingWarning
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.10
+   See :pep:`597` for more details.
+
+To find where the default encoding is used, you can use
+a ``-X warn_default_encoding`` command line argument or a
+:envvar:`PYTHONWARNDEFAULTENCODING` environment variable to emit
+an :exc:`EncodingWarning` when the defaut encoding is used.
+
+If you are providing APIs using :func:`open` or :class:`TextIOWrapper` and
+having ``encoding=None`` parameter, you can use :func:`text_encoding` to emit
+an :exc:`EncodingWarning` to the user too. But please consider using UTF-8
+by default (i.e. ``encoding="utf-8"``).
+
+
 High-level Module Interface
 ---------------------------
 
@@ -146,7 +194,7 @@ High-level Module Interface
 .. function:: text_encoding(encoding, stacklevel=1)
 
    This is a helper function for functions that use :func:`open` or
-   :class:`TextIOWrapper` and take ``encoding=None`` option.
+   :class:`TextIOWrapper` and take ``encoding=None`` argument.
 
    This function returns *encoding* if it is not ``None`` and "locale" if
    *encoding* is ``None``.
@@ -164,7 +212,7 @@ High-level Module Interface
    ``read_text()``. If *stacklevel* is greater than 1, more stack frames are
    skipped.
 
-   See :envvar:`PYTHONWARNDEFAULTENCODING` and :pep:`597` for more information.
+   See :ref:`io-default-encoding` for more information.
 
    .. versionadded:: 3.10
 
@@ -905,11 +953,8 @@ Text I/O
    *encoding* gives the name of the encoding that the stream will be decoded or
    encoded with.  It defaults to
    :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
-
-   If ``sys.flags.warn_default_encoding`` is true and the default encoding
-   is used, this function emits an :class:`EncodingWarning`. You can suppress
-   the warning by using ``encoding="locale"`` option.
-   See :envvar:`PYTHONWARNDEFAULTENCODING` and :pep:`597` for more information.
+   ``encoding="locale"`` can be used to specify the locale specific encoding
+   explicitly. See :ref:`io-text-encoding` for more information.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
