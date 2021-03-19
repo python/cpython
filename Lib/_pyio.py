@@ -54,11 +54,11 @@ def text_encoding(encoding, stacklevel=2):
     But please consider encoding="utf-8" for new APIs.
     """
     if encoding is None:
+        encoding = "locale"
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn("'encoding' argument is not specified.",
                           EncodingWarning, stacklevel + 1)
-        encoding = "locale"
     return encoding
 
 
