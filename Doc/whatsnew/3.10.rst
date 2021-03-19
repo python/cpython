@@ -1181,6 +1181,12 @@ Build Changes
   and ``--with-tcltk-libs`` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
+* Add ``--with-openssl-rpath`` option to ``configure`` script. The option
+  simplifies building Python with a custom OpenSSL installation, e.g.
+  ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
+  (Contributed by Christian Heimes in :issue:`43466`.)
+
+
 
 C API Changes
 =============
