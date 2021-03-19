@@ -1744,26 +1744,29 @@ PyImport_ReloadModule(PyObject *m)
 PyObject *
 PyImport_Import(PyObject *module_name)
 {
+    _Py_IDENTIFIER(__import__);
+    _Py_IDENTIFIER(__builtins__);
+
     PyThreadState *tstate = _PyThreadState_GET();
-    static PyObject *silly_list = NULL;
-    static PyObject *builtins_str = NULL;
-    static PyObject *import_str = NULL;
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
-    if (silly_list == NULL) {
-        import_str = PyUnicode_InternFromString("__import__");
-        if (import_str == NULL)
-            return NULL;
-        builtins_str = PyUnicode_InternFromString("__builtins__");
-        if (builtins_str == NULL)
-            return NULL;
-        silly_list = PyList_New(0);
-        if (silly_list == NULL)
-            return NULL;
+    PyObject *import_str = _PyUnicode_FromId(&PyId___import__); // borrowed ref
+    if (import_str == NULL) {
+        return NULL;
+    }
+
+    PyObject *builtins_str = _PyUnicode_FromId(&PyId___builtins__); // borrowed ref
+    if (builtins_str == NULL) {
+        return NULL;
+    }
+
+    PyObject *from_list = PyList_New(0);
+    if (from_list == NULL) {
+        goto err;
     }
 
     /* Get the builtins from current globals */
@@ -1778,8 +1781,9 @@ PyImport_Import(PyObject *module_name)
         /* No globals -- use standard builtins, and fake globals */
         builtins = PyImport_ImportModuleLevel("builtins",
                                               NULL, NULL, NULL, 0);
-        if (builtins == NULL)
-            return NULL;
+        if (builtins == NULL) {
+            goto err;
+        }
         globals = Py_BuildValue("{OO}", builtins_str, builtins);
         if (globals == NULL)
             goto err;
@@ -1801,7 +1805,7 @@ PyImport_Import(PyObject *module_name)
        Always use absolute import here.
        Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
-                              globals, silly_list, 0, NULL);
+                              globals, from_list, 0, NULL);
     if (r == NULL)
         goto err;
     Py_DECREF(r);
@@ -1815,6 +1819,7 @@ PyImport_Import(PyObject *module_name)
     Py_XDECREF(globals);
     Py_XDECREF(builtins);
     Py_XDECREF(import);
+    Py_XDECREF(from_list);
 
     return r;
 }
