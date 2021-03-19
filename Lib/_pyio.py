@@ -56,7 +56,7 @@ def text_encoding(encoding, stacklevel=1):
     if encoding is None:
         if sys.flags.warn_default_encoding:
             import warnings
-            warnings.warn("'encoding' option is not specified.",
+            warnings.warn("'encoding' argument is not specified.",
                           EncodingWarning, stacklevel + 2)
         encoding = "locale"
     return encoding
