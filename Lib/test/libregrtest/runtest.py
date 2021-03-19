@@ -211,6 +211,10 @@ def _test_module(the_module):
     support.run_unittest(tests)
 
 
+def save_env(ns, test_name):
+    return saved_test_environment(test_name, ns.verbose, ns.quiet, pgo=ns.pgo)
+
+
 def _runtest_inner2(ns, test_name):
     # Load the test function, run the test function, handle huntrleaks
     # and findleaks to detect leaks
@@ -229,12 +233,13 @@ def _runtest_inner2(ns, test_name):
         test_runner = functools.partial(_test_module, the_module)
 
     try:
-        if ns.huntrleaks:
-            # Return True if the test leaked references
-            refleak = dash_R(ns, test_name, test_runner)
-        else:
-            test_runner()
-            refleak = False
+        with save_env(ns, test_name):
+            if ns.huntrleaks:
+                # Return True if the test leaked references
+                refleak = dash_R(ns, test_name, test_runner)
+            else:
+                test_runner()
+                refleak = False
     finally:
         cleanup_test_droppings(test_name, ns.verbose)
 
@@ -268,7 +273,7 @@ def _runtest_inner(ns, test_name, display_failure=True):
     try:
         clear_caches()
 
-        with saved_test_environment(test_name, ns.verbose, ns.quiet, pgo=ns.pgo) as environment:
+        with save_env(ns, test_name):
             refleak = _runtest_inner2(ns, test_name)
     except support.ResourceDenied as msg:
         if not ns.quiet and not ns.pgo:
@@ -298,7 +303,7 @@ def _runtest_inner(ns, test_name, display_failure=True):
 
     if refleak:
         return FAILED
-    if environment.changed:
+    if support.environment_altered:
         return ENV_CHANGED
     return PASSED
 
