@@ -200,8 +200,9 @@ High-level Module Interface
    *encoding* is ``None``.
 
    This function emits an :class:`EncodingWarning` if
-   :data:`sys.flags.warn_default_encoding <sys.flags>` is true.
-   *stacklevel* specifies where the warning is emit for. For example::
+   :data:`sys.flags.warn_default_encoding <sys.flags>` is true and *encoding*
+   is None. *stacklevel* specifies where the warning is emit for. For
+   example::
 
       def read_text(path, encoding=None):
           encoding = io.text_encoding(encoding)  # stacklevel=2
