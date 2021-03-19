@@ -1,10 +1,5 @@
 #ifndef Py_CPYTHON_COMPILE_H
-#define Py_CPYTHON_COMPILE_H
-
-#ifndef Py_LIMITED_API
-
-#ifdef __cplusplus
-extern "C" {
+#  error "this header file must not be included directly"
 #endif
 
 /* Public interface */
@@ -26,7 +21,6 @@ extern "C" {
 #define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
                            PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT)
 
-#ifndef Py_LIMITED_API
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
     int cf_feature_version;  /* minor Python version (PyCF_ONLY_AST) */
@@ -34,7 +28,6 @@ typedef struct {
 
 #define _PyCompilerFlags_INIT \
     (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
-#endif
 
 /* Future feature support */
 
@@ -90,10 +83,3 @@ typedef struct {
 } _PyASTOptimizeState;
 
 PyAPI_FUNC(int) _PyAST_Optimize(struct _mod *, PyArena *arena, _PyASTOptimizeState *state);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* !Py_LIMITED_API */
-#endif /* !Py_CPYTHON_COMPILE_H */

@@ -6,7 +6,9 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
+#  define Py_CPYTHON_COMPILE_H
 #  include  "cpython/compile.h"
+#  undef Py_CPYTHON_COMPILE_H
 #endif
 
 #ifdef __cplusplus

@@ -1,3 +1,0 @@
-Move the non-limited C API of include/compile.h into the include/cpython
-directory. They must not be included directly, as they are already included by
-Python.h: :ref:`Include Files <api-includes>`.
