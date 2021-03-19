@@ -621,20 +621,43 @@ def resetlocale(category=LC_ALL):
 
 
 try:
+    from _locale import get_current_locale_encoding
+except ImportError:
+    try:
+        from _locale import nl_langinfo, CODESET
+
+        # nl_langinfo(CODESET) implementation
+        def get_current_locale_encoding():
+            result = _locale.nl_langinfo(_locale.CODESET)
+            if not result:
+                # On macOS, nl_langinfo(CODESET) can return an empty string
+                # when the setting has an invalid value.  Default to UTF-8 in
+                # that case because UTF-8 is the default charset on macOS and
+                # the caller expects a non-empty string.
+                result = 'UTF-8'
+            return result
+    except ImportError:
+        # getdefaultlocale() implementation.
+        # On Windows, _locale.getdefaultlocale()[1] is the ANSI code page.
+        def get_current_locale_encoding():
+            encoding = getdefaultlocale()[1]
+            if encoding is None:
+                # LANG not set, default conservatively to ASCII
+                encoding = 'ascii'
+            return encoding
+
+try:
     from _locale import _get_locale_encoding
 except ImportError:
     def _get_locale_encoding():
-        if hasattr(sys, 'getandroidapilevel'):
+        if hasattr(sys, 'getandroidapilevel') or sys.platform == 'vxworks':
             # On Android langinfo.h and CODESET are missing, and UTF-8 is
             # always used in mbstowcs() and wcstombs().
+            # Always use UTF-8 on VxWorks.
             return 'UTF-8'
         if sys.flags.utf8_mode:
             return 'UTF-8'
-        encoding = getdefaultlocale()[1]
-        if encoding is None:
-            # LANG not set, default conservatively to ASCII
-            encoding = 'ascii'
-        return encoding
+        return get_current_locale_encoding()
 
 try:
     CODESET

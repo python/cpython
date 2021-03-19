@@ -857,30 +857,19 @@ _Py_EncodeLocaleEx(const wchar_t *text, char **str,
 }
 
 
-// Get the current locale encoding name:
+// Get the current locale encoding:
 //
-// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
-// - Return "UTF-8" if the UTF-8 Mode is enabled
-// - On Windows, return the ANSI code page (ex: "cp1250")
-// - Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
-// - Otherwise, return nl_langinfo(CODESET).
+// * On Windows, return the current ANSI code page (ex: ``"cp1252"``)
+//   for the operating system.
+// * Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+// * Otherwise, return nl_langinfo(CODESET) result.
 //
 // Return NULL on memory allocation failure.
 //
-// See also config_get_locale_encoding()
+// Result must be freed by PyMem_RawFree().
 wchar_t*
-_Py_GetLocaleEncoding(void)
+_Py_GetCurrentLocaleEncoding(void)
 {
-#ifdef _Py_FORCE_UTF8_LOCALE
-    // On Android langinfo.h and CODESET are missing,
-    // and UTF-8 is always used in mbstowcs() and wcstombs().
-    return _PyMem_RawWcsdup(L"UTF-8");
-#else
-    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
-    if (preconfig->utf8_mode) {
-        return _PyMem_RawWcsdup(L"UTF-8");
-    }
-
 #ifdef MS_WINDOWS
     wchar_t encoding[23];
     unsigned int ansi_codepage = GetACP();
@@ -904,6 +893,34 @@ _Py_GetLocaleEncoding(void)
     return wstr;
 #endif  // !MS_WINDOWS
 
+}
+
+
+// Get the locale encoding:
+//
+// - Return "UTF-8" if _Py_FORCE_UTF8_LOCALE macro is defined (ex: on Android)
+// - Return "UTF-8" if the UTF-8 Mode is enabled
+// - Return _Py_GetCurrentLocaleEncoding() otherwise.
+//
+// Return NULL on memory allocation failure.
+//
+// Result must be freed by PyMem_RawFree().
+//
+// See also config_get_locale_encoding()
+wchar_t*
+_Py_GetLocaleEncoding(void)
+{
+#ifdef _Py_FORCE_UTF8_LOCALE
+    // On Android langinfo.h and CODESET are missing,
+    // and UTF-8 is always used in mbstowcs() and wcstombs().
+    return _PyMem_RawWcsdup(L"UTF-8");
+#else
+    const PyPreConfig *preconfig = &_PyRuntime.preconfig;
+    if (preconfig->utf8_mode) {
+        return _PyMem_RawWcsdup(L"UTF-8");
+    }
+
+    return _Py_GetCurrentLocaleEncoding();
 #endif  // !_Py_FORCE_UTF8_LOCALE
 }
 

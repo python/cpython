@@ -705,12 +705,15 @@ Glossary
       This issue can be solved with locks or by using the EAFP approach.
 
    locale encoding
-      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
+      On Unix, it is the encoding of the :const:`LC_CTYPE <locale.LC_CTYPE>`
+      locale. It can be set with ``locale.setlocale(locale.LC_CTYPE,
+      new_locale)``.
 
       On Windows, it is is the ANSI code page (ex: ``cp1252``).
 
-      ``locale.getpreferredencoding(False)`` can be used to get the locale
+      Use :func:`locale.getpreferredencoding(False)
+      <locale.getpreferredencoding>` to get the locale encoding and
+      :func:`locale.get_current_locale_encoding` to get the *current* locale
       encoding.
 
       Python uses the :term:`filesystem encoding and error handler` to convert

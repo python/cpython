@@ -51,6 +51,7 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
 PyAPI_FUNC(void) _Py_closerange(int first, int last);
 
 PyAPI_FUNC(wchar_t*) _Py_GetLocaleEncoding(void);
+PyAPI_FUNC(wchar_t*) _Py_GetCurrentLocaleEncoding(void);
 PyAPI_FUNC(PyObject*) _Py_GetLocaleEncodingObject(void);
 
 #ifdef __cplusplus

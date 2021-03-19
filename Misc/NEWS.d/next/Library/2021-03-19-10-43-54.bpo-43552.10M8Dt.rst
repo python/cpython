@@ -1,0 +1,2 @@
+Added :func:`locale.get_current_locale_encoding` to get the current
+:term:`locale encoding`. Patch by Victor Stinner.

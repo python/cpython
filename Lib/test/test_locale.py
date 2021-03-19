@@ -536,6 +536,12 @@ class TestMiscellaneous(unittest.TestCase):
             # If encoding non-empty, make sure it is valid
             codecs.lookup(enc)
 
+    def test_get_current_locale_encoding(self):
+        encoding = locale.get_current_locale_encoding()
+        self.assertIsInstance(encoding, str)
+        self.assertGreater(len(encoding), 0, encoding)
+        codecs.lookup(encoding)
+
     def test_strcoll_3303(self):
         # test crasher from bug #3303
         self.assertRaises(TypeError, locale.strcoll, "a", None)

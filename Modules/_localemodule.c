@@ -773,14 +773,46 @@ _locale_bind_textdomain_codeset_impl(PyObject *module, const char *domain,
 
 
 /*[clinic input]
+_locale.get_current_locale_encoding
+
+Get the current locale encoding:
+
+* On Windows, return the current ANSI code page (ex: ``"cp1252"``)
+  for the operating system.
+* Return "UTF-8" if nl_langinfo(CODESET) returns an empty string.
+* Otherwise, return nl_langinfo(CODESET) result.
+[clinic start generated code]*/
+
+static PyObject *
+_locale_get_current_locale_encoding_impl(PyObject *module)
+/*[clinic end generated code: output=fce82957b117a446 input=2c7a800e7cf93287]*/
+{
+    wchar_t *encoding = _Py_GetCurrentLocaleEncoding();
+    if (encoding == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(encoding, -1);
+    PyMem_RawFree(encoding);
+    return str;
+}
+
+
+/*[clinic input]
 _locale._get_locale_encoding
 
-Get the current locale encoding.
+Get the locale encoding:
+
+* "UTF-8" on Android and VxWorks;
+* "UTF-8" if the Python UTF-8 Mode is enabled;
+* ANSI code page on Windows;
+* nl_langinfo(CODESET) otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 _locale__get_locale_encoding_impl(PyObject *module)
-/*[clinic end generated code: output=e8e2f6f6f184591a input=513d9961d2f45c76]*/
+/*[clinic end generated code: output=e8e2f6f6f184591a input=4d3ed54cd5278cf2]*/
 {
     return _Py_GetLocaleEncodingObject();
 }
@@ -812,6 +844,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
 #endif
 #endif
     _LOCALE__GET_LOCALE_ENCODING_METHODDEF
+    _LOCALE_GET_CURRENT_LOCALE_ENCODING_METHODDEF
   {NULL, NULL}
 };
 

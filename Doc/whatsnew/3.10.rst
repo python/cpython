@@ -728,6 +728,13 @@ linecache
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
+locale
+------
+
+Added :func:`locale.get_current_locale_encoding` to get the current
+:term:`locale encoding`.
+(Contributed by Victor Stinner in :issue:`43552`.)
+
 os
 --
 

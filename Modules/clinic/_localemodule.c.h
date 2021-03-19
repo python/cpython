@@ -545,11 +545,39 @@ exit:
 
 #endif /* defined(HAVE_LIBINTL_H) && defined(HAVE_BIND_TEXTDOMAIN_CODESET) */
 
+PyDoc_STRVAR(_locale_get_current_locale_encoding__doc__,
+"get_current_locale_encoding($module, /)\n"
+"--\n"
+"\n"
+"Get the current locale encoding:\n"
+"\n"
+"* On Windows, return the current ANSI code page (ex: ``\"cp1252\"``)\n"
+"  for the operating system.\n"
+"* Return \"UTF-8\" if nl_langinfo(CODESET) returns an empty string.\n"
+"* Otherwise, return nl_langinfo(CODESET) result.");
+
+#define _LOCALE_GET_CURRENT_LOCALE_ENCODING_METHODDEF    \
+    {"get_current_locale_encoding", (PyCFunction)_locale_get_current_locale_encoding, METH_NOARGS, _locale_get_current_locale_encoding__doc__},
+
+static PyObject *
+_locale_get_current_locale_encoding_impl(PyObject *module);
+
+static PyObject *
+_locale_get_current_locale_encoding(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _locale_get_current_locale_encoding_impl(module);
+}
+
 PyDoc_STRVAR(_locale__get_locale_encoding__doc__,
 "_get_locale_encoding($module, /)\n"
 "--\n"
 "\n"
-"Get the current locale encoding.");
+"Get the locale encoding:\n"
+"\n"
+"* \"UTF-8\" on Android and VxWorks;\n"
+"* \"UTF-8\" if the Python UTF-8 Mode is enabled;\n"
+"* ANSI code page on Windows;\n"
+"* nl_langinfo(CODESET) otherwise.");
 
 #define _LOCALE__GET_LOCALE_ENCODING_METHODDEF    \
     {"_get_locale_encoding", (PyCFunction)_locale__get_locale_encoding, METH_NOARGS, _locale__get_locale_encoding__doc__},
@@ -602,4 +630,4 @@ _locale__get_locale_encoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=cd703c8a3a75fcf4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6cdf44f74449afae input=a9049054013a1b77]*/

@@ -302,6 +302,24 @@ The :mod:`locale` module defines the following exception and functions:
    determined.
 
 
+.. function:: get_current_locale_encoding()
+
+   Get the current :term:`locale encoding`:
+
+   * On Windows, return the current ANSI code page (ex: ``"cp1252"``) for the
+     operating system.
+   * Return ``"UTF-8"`` if ``nl_langinfo(CODESET)`` returns an empty string.
+   * Otherwise, return ``nl_langinfo(CODESET)`` result.
+
+   On Unix, the current locale encoding is the encoding of the
+   :const:`LC_CTYPE` locale.
+
+   Use :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`
+   to get the locale encoding.
+
+   .. versionadded:: 3.10
+
+
 .. function:: getlocale(category=LC_CTYPE)
 
    Returns the current setting for the given locale category as sequence containing
@@ -330,6 +348,9 @@ The :mod:`locale` module defines the following exception and functions:
 
    The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
    locale. See also the :term:`filesystem encoding and error handler`.
+
+   Use :func:`locale.get_current_locale_encoding` to get the *current* locale
+   encoding.
 
    .. versionchanged:: 3.7
       The function now always returns ``UTF-8`` on Android or if the
