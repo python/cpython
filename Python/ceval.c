@@ -1231,6 +1231,41 @@ eval_frame_handle_pending(PyThreadState *tstate)
     return 0;
 }
 
+static inline PyObject *
+_PySuperLookupMethodOrAttr(PyThreadState *tstate,
+                           PyObject *global_super,
+                           PyTypeObject *type,
+                           PyObject *self,
+                           PyObject *name,
+                           int call_no_args,
+                           int *meth_found)
+{
+    if (global_super == (PyObject *)&PySuper_Type) {
+        return _PySuper_Lookup(type, self, name, NULL, meth_found);
+    }
+
+    PyObject *super_instance;
+    if (call_no_args) {
+        super_instance = _PyObject_VectorcallTstate(tstate, global_super, NULL, 0, NULL);
+    }
+    else {
+        PyObject *args[] = { (PyObject *)type, self };
+        super_instance = _PyObject_VectorcallTstate(tstate, global_super, args, 2, NULL);
+    }
+    if (super_instance == NULL) {
+        return NULL;
+    }
+    PyObject *result = PyObject_GetAttr(super_instance, name);
+    Py_DECREF(super_instance);
+    if (result == NULL) {
+        return NULL;
+    }
+    if (meth_found) {
+        *meth_found = 0;
+    }
+    return result;
+}
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
@@ -4211,6 +4246,68 @@ main_loop:
                 Py_DECREF(obj);
                 PUSH(meth);
             }
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_METHOD_SUPER): {
+            PyObject *pair = GETITEM(consts, oparg);
+            PyObject *name_obj = PyTuple_GET_ITEM(pair, 0);
+            int name_idx = _PyLong_AsInt(name_obj);
+            PyObject *name = GETITEM(names, name_idx);
+
+            assert (PyBool_Check(PyTuple_GET_ITEM(pair, 1)));
+            int call_no_args = PyTuple_GET_ITEM(pair, 1) == Py_True;
+
+            PyObject *self = POP();
+            PyObject *type = POP();
+            PyObject *global_super = POP();
+
+            int meth_found = 0;
+            PyObject *attr = _PySuperLookupMethodOrAttr(
+                tstate, global_super, (PyTypeObject *)type, self, name, call_no_args, &meth_found);
+            Py_DECREF(type);
+            Py_DECREF(global_super);
+
+            if (attr == NULL) {
+                Py_DECREF(self);
+                goto error;
+            }
+            if (meth_found) {
+                PUSH(attr);
+                PUSH(self);
+            }
+            else {
+                Py_DECREF(self);
+
+                PUSH(NULL);
+                PUSH(attr);
+            }
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_SUPER): {
+            PyObject *pair = GETITEM(consts, oparg);
+            PyObject *name_obj = PyTuple_GET_ITEM(pair, 0);
+            int name_idx = _PyLong_AsInt(name_obj);
+            PyObject *name = GETITEM(names, name_idx);
+
+            assert (PyBool_Check(PyTuple_GET_ITEM(pair, 1)));
+
+            int call_no_args = PyTuple_GET_ITEM(pair, 1) == Py_True;
+
+            PyObject *self = POP();
+            PyObject *type = POP();
+            PyObject *global_super = POP();
+            PyObject *attr = _PySuperLookupMethodOrAttr(
+                tstate, global_super, (PyTypeObject *)type, self, name, call_no_args, NULL);
+            Py_DECREF(type);
+            Py_DECREF(self);
+            Py_DECREF(global_super);
+
+            if (attr == NULL) {
+                goto error;
+            }
+            PUSH(attr);
             DISPATCH();
         }
 

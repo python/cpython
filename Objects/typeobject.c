@@ -8026,15 +8026,25 @@ super_repr(PyObject *self)
             su->type ? su->type->tp_name : "NULL");
 }
 
+/* Forward */
+static int
+super_init_common(superobject *su, PyTypeObject *type, PyObject *obj);
+
+static PyTypeObject *
+supercheck(PyTypeObject *type, PyObject *obj);
+
 static PyObject *
-super_getattro(PyObject *self, PyObject *name)
+_do_super_lookup(PyTypeObject *type,
+                 PyObject *obj,
+                 PyTypeObject *starttype,
+                 PyObject *name,
+                 PyObject *super_instance,
+                 int *meth_found)
 {
-    superobject *su = (superobject *)self;
-    PyTypeObject *starttype;
     PyObject *mro;
     Py_ssize_t i, n;
+    PyObject *s = super_instance;
 
-    starttype = su->obj_type;
     if (starttype == NULL)
         goto skip;
 
@@ -8054,7 +8064,7 @@ super_getattro(PyObject *self, PyObject *name)
 
     /* No need to check the last one: it's gonna be skipped anyway.  */
     for (i = 0; i+1 < n; i++) {
-        if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
+        if ((PyObject *)type == PyTuple_GET_ITEM(mro, i))
             break;
     }
     i++;  /* skip su->type (if any)  */
@@ -8077,16 +8087,20 @@ super_getattro(PyObject *self, PyObject *name)
         res = PyDict_GetItemWithError(dict, name);
         if (res != NULL) {
             Py_INCREF(res);
-
-            f = Py_TYPE(res)->tp_descr_get;
-            if (f != NULL) {
-                tmp = f(res,
-                    /* Only pass 'obj' param if this is instance-mode super
-                       (See SF ID #743627)  */
-                    (su->obj == (PyObject *)starttype) ? NULL : su->obj,
-                    (PyObject *)starttype);
-                Py_DECREF(res);
-                res = tmp;
+            if (meth_found && PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+                *meth_found = 1;
+            }
+            else {
+                f = Py_TYPE(res)->tp_descr_get;
+                if (f != NULL) {
+                    tmp = f(res,
+                        /* Only pass 'obj' param if this is instance-mode super
+                        (See SF ID #743627)  */
+                        (obj == (PyObject *)starttype) ? NULL : obj,
+                        (PyObject *)starttype);
+                    Py_DECREF(res);
+                    res = tmp;
+                }
             }
 
             Py_DECREF(mro);
@@ -8102,7 +8116,43 @@ super_getattro(PyObject *self, PyObject *name)
     Py_DECREF(mro);
 
   skip:
-    return PyObject_GenericGetAttr(self, name);
+    if (s == NULL) {
+        // create new instance of PySuper_Type to be used for PyObject_GenericGetAttr
+        s = PySuper_Type.tp_new(&PySuper_Type, NULL, NULL);
+        if (s == NULL) {
+            return NULL;
+        }
+
+        if (super_init_common((superobject *)s, type, obj) < 0) {
+            Py_DECREF(s);
+            return NULL;
+        }
+    }
+
+    PyObject *result = PyObject_GenericGetAttr(s, name);
+    if (s != super_instance) {
+        Py_DECREF(s);
+    }
+    return result;
+}
+
+static PyObject *
+super_getattro(PyObject *self, PyObject *name)
+{
+    superobject *su = (superobject *)self;
+    return _do_super_lookup(su->type, su->obj, su->obj_type, name, (PyObject *)su, NULL);
+}
+
+PyObject *
+_PySuper_Lookup(PyTypeObject *type, PyObject *obj, PyObject *name, PyObject *super_instance, int *meth_found)
+{
+    PyTypeObject *starttype = supercheck(type, obj);
+    if (starttype == NULL) {
+        return NULL;
+    }
+    PyObject *res = _do_super_lookup(type, obj, starttype, name, super_instance, meth_found);
+    Py_DECREF(starttype);
+    return res;
 }
 
 static PyTypeObject *
@@ -8271,18 +8321,9 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 }
 
 static int
-super_init(PyObject *self, PyObject *args, PyObject *kwds)
+super_init_common(superobject *su, PyTypeObject *type, PyObject *obj)
 {
-    superobject *su = (superobject *)self;
-    PyTypeObject *type = NULL;
-    PyObject *obj = NULL;
     PyTypeObject *obj_type = NULL;
-
-    if (!_PyArg_NoKeywords("super", kwds))
-        return -1;
-    if (!PyArg_ParseTuple(args, "|O!O:super", &PyType_Type, &type, &obj))
-        return -1;
-
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
            and first local variable on the stack. */
@@ -8317,6 +8358,20 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_XSETREF(su->obj, obj);
     Py_XSETREF(su->obj_type, obj_type);
     return 0;
+}
+
+static int
+super_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    PyTypeObject *type = NULL;
+    PyObject *obj = NULL;
+
+    if (!_PyArg_NoKeywords("super", kwds))
+        return -1;
+    if (!PyArg_ParseTuple(args, "|O!O:super", &PyType_Type, &type, &obj))
+        return -1;
+
+    return super_init_common((superobject *)self, type, obj);
 }
 
 PyDoc_STRVAR(super_doc,

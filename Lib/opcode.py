@@ -211,5 +211,9 @@ def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
+name_op('LOAD_METHOD_SUPER', 166)
+hasconst.append(166)
+name_op('LOAD_ATTR_SUPER', 167)
+hasconst.append(167)
 
 del def_op, name_op, jrel_op, jabs_op
