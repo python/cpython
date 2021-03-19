@@ -208,6 +208,7 @@
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
+    <ClInclude Include="..\Include\internal\pycore_symtable.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
