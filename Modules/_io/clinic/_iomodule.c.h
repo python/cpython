@@ -273,7 +273,7 @@ exit:
 }
 
 PyDoc_STRVAR(_io_text_encoding__doc__,
-"text_encoding($module, encoding, stacklevel=1, /)\n"
+"text_encoding($module, encoding, stacklevel=2, /)\n"
 "--\n"
 "\n"
 "Helper function to choose the text encoding.\n"
@@ -298,7 +298,7 @@ _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *encoding;
-    int stacklevel = 1;
+    int stacklevel = 2;
 
     if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
         goto exit;
@@ -359,4 +359,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=556347a99a2e2a66 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0debb6d44de1be64 input=a9049054013a1b77]*/

@@ -527,7 +527,7 @@ But please consider encoding="utf-8" for new APIs.
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=1c86ec2f6e77f4fb]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=2f8639413d4a6e1a]*/
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
