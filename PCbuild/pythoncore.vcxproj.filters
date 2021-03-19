@@ -585,6 +585,9 @@
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_symtable.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_traceback.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
