@@ -776,7 +776,6 @@ Py_SetPath
 Py_SetProgramName
 Py_SetPythonHome
 Py_SetRecursionLimit
-Py_SymtableString
 Py_UTF8Mode
 Py_VaBuildValue
 Py_XNewRef

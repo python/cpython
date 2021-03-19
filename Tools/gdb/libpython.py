@@ -358,7 +358,6 @@ class PyObjectPtr(object):
             # Handle any kind of error e.g. NULL ptrs by simply using the base
             # class
             return cls
-
         #print('tp_flags = 0x%08x' % tp_flags)
         #print('tp_name = %r' % tp_name)
 
@@ -370,6 +369,7 @@ class PyObjectPtr(object):
                     'frozenset' : PySetObjectPtr,
                     'builtin_function_or_method' : PyCFunctionObjectPtr,
                     'method-wrapper': wrapperobject,
+                    'wrapper_descriptor': wrapperdescrobject,
                     }
         if tp_name in name_map:
             return name_map[tp_name]
@@ -1401,6 +1401,24 @@ class wrapperobject(PyObjectPtr):
         proxy = self.proxyval(visited)
         out.write(proxy)
 
+class wrapperdescrobject(PyObjectPtr):
+    _typename = 'wrapperdescrobject'
+
+    def safe_name(self):
+        try:
+            name = self.field('d_base')['name'].string()
+            return repr(name)
+        except (NullPyObjectPtr, RuntimeError, UnicodeDecodeError):
+            return '<unknown name>'
+
+    def proxyval(self, visited):
+        name = self.safe_name()
+        return ("<methoddescr-wrapper %s>"
+                % (name,))
+
+    def write_repr(self, out, visited):
+        proxy = self.proxyval(visited)
+        out.write(proxy)
 
 def int_from_int(gdbval):
     return int(gdbval)
@@ -1439,7 +1457,7 @@ def pretty_printer_lookup(gdbval):
 
     type = type.target().unqualified()
     t = str(type)
-    if t in ("PyObject", "PyFrameObject", "PyUnicodeObject", "wrapperobject"):
+    if t in ("PyObject", "PyFrameObject", "PyUnicodeObject", "wrapperobject", "PyWrapperDescrObject"):
         return PyObjectPtrPrinter(gdbval)
 
 """
@@ -1573,7 +1591,6 @@ class Frame(object):
         caller = frame.name()
         if not caller:
             return False
-
         if (caller.startswith('cfunction_vectorcall_') or
             caller == 'cfunction_call'):
             arg_name = 'func'
@@ -1602,6 +1619,17 @@ class Frame(object):
                         'missing debuginfos?)>' % arg_name)
             except RuntimeError:
                 return '<wrapper_call invocation (unable to read %s)>' % arg_name
+
+        if caller == 'wrapperdescr_call':
+            arg_name = 'descr'
+            try:
+                func = frame.read_var(arg_name)
+                return str(func)
+            except ValueError:
+                return ('<wrapperdescr_call invocation (unable to read %s: '
+                        'missing debuginfos?)>' % arg_name)
+            except RuntimeError:
+                return '<wrapperdescr_call invocation (unable to read %s)>' % arg_name
 
         # This frame isn't worth reporting:
         return False

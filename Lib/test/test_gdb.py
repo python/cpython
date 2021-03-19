@@ -928,12 +928,12 @@ id(42)
         cmd = textwrap.dedent('''
             class MyList(list):
                 def __init__(self):
-                    super().__init__()   # wrapper_call()
+                    super().__init__()   # wrapperdescr_call()
 
             id("first break point")
             l = MyList()
         ''')
-        cmds_after_breakpoint = ['break wrapper_call', 'continue']
+        cmds_after_breakpoint = ['break wrapperdescr_call', 'continue']
         if CET_PROTECTION:
             # bpo-32962: same case as in get_stack_trace():
             # we need an additional 'next' command in order to read
@@ -945,7 +945,7 @@ id(42)
         gdb_output = self.get_stack_trace(cmd,
                                           cmds_after_breakpoint=cmds_after_breakpoint)
         self.assertRegex(gdb_output,
-                         r"<method-wrapper u?'__init__' of MyList object at ")
+                         r"methoddescr-wrapper '__init__'>, args=\(<MyList at ")
 
 
 class PyPrintTests(DebuggerTests):

@@ -809,6 +809,31 @@ Free variables:
    0: __class__"""
         self.assertEqual(dedent(dis.code_info(g["C"].f)), expected_dis_info)
 
+    def test_super_attr_load_self_cell(self):
+        src = """
+        class C:
+            def f(self):
+                lambda: self
+                return super().x
+        """
+        expected = """\
+  4           0 LOAD_CLOSURE             0 (self)
+              2 BUILD_TUPLE              1
+              4 LOAD_CONST               1 (<code object <lambda> at 0x..., file "<string>", line 4>)
+              6 LOAD_CONST               2 ('C.f.<locals>.<lambda>')
+              8 MAKE_FUNCTION            8 (closure)
+             10 POP_TOP
+
+  5          12 LOAD_GLOBAL              0 (super)
+             14 LOAD_DEREF               1 (__class__)
+             16 LOAD_DEREF               0 (self)
+             18 LOAD_ATTR_SUPER          3 ((1, True))
+             20 RETURN_VALUE
+"""
+        g = {}
+        exec(dedent(src), g)
+        self.do_disassembly_test(g["C"].f, expected)
+
     def test_super_attr_store(self):
         src = """
         class C:
