@@ -211,7 +211,7 @@ High-level Module Interface
    In this example, an :class:`EncodingWarning` is emit for the caller of the
    ``read_text()``.
 
-   See :ref:`io-default-encoding` for more information.
+   See :ref:`io-text-encoding` for more information.
 
    .. versionadded:: 3.10
 
