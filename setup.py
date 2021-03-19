@@ -549,6 +549,8 @@ class PyBuildExt(build_ext):
                   "libssl with X509_VERIFY_PARAM_set1_host().")
             print("LibreSSL 2.6.4 and earlier do not provide the necessary "
                   "APIs, https://github.com/libressl-portable/portable/issues/381")
+            if sysconfig.get_config_var("OPENSSL_LDFLAGS"):
+                print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
 
     def build_extension(self, ext):
@@ -2416,6 +2418,7 @@ class PyBuildExt(build_ext):
         openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
         openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
+        openssl_rpath = config_vars.get('OPENSSL_RPATH')
         if not openssl_libs:
             # libssl and libcrypto not found
             self.missing.extend(['_ssl', '_hashlib'])
@@ -2437,12 +2440,20 @@ class PyBuildExt(build_ext):
         if krb5_h:
             ssl_incs.extend(krb5_h)
 
+        if openssl_rpath == 'auto':
+            runtime_library_dirs = openssl_libdirs[:]
+        elif not openssl_rpath:
+            runtime_library_dirs = []
+        else:
+            runtime_library_dirs = [openssl_rpath]
+
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
             self.add(Extension(
                 '_ssl', ['_ssl.c'],
                 include_dirs=openssl_includes,
                 library_dirs=openssl_libdirs,
                 libraries=openssl_libs,
+                runtime_library_dirs=runtime_library_dirs,
                 depends=['socketmodule.h', '_ssl/debughelpers.c'])
             )
         else:
@@ -2452,6 +2463,7 @@ class PyBuildExt(build_ext):
                            depends=['hashlib.h'],
                            include_dirs=openssl_includes,
                            library_dirs=openssl_libdirs,
+                           runtime_library_dirs=runtime_library_dirs,
                            libraries=openssl_libs))
 
     def detect_hash_builtins(self):
