@@ -940,6 +940,8 @@ here is a pure Python equivalent:
             self._name = name
 
         def __get__(self, obj, objtype=None):
+            if obj is None and objtype is None:
+                raise TypeError('__get__(None, None) is invalid')
             if obj is None:
                 return self
             if self.fget is None:
@@ -1087,6 +1089,8 @@ during dotted lookup from an instance.  Here's how it works:
 
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
+            if obj is None and objtype is None:
+                raise TypeError('__get__(None, None) is invalid')
             if obj is None:
                 return self
             return MethodType(self, obj)
@@ -1214,6 +1218,8 @@ Using the non-data descriptor protocol, a pure Python version of
             self.f = f
 
         def __get__(self, obj, objtype=None):
+            if obj is None and objtype is None:
+                raise TypeError('__get__(None, None) is invalid')
             return self.f
 
 
@@ -1277,6 +1283,8 @@ Using the non-data descriptor protocol, a pure Python version of
             self.f = f
 
         def __get__(self, obj, cls=None):
+            if obj is None and cls is None:
+                raise TypeError('__get__(None, None) is invalid')
             if cls is None:
                 cls = type(obj)
             if hasattr(self.f, '__get__'):
@@ -1432,6 +1440,8 @@ by member descriptors:
         def __get__(self, obj, objtype=None):
             'Emulate member_get() in Objects/descrobject.c'
             # Also see PyMember_GetOne() in Python/structmember.c
+            if obj is None and objtype is None:
+                raise TypeError('__get__(None, None) is invalid')
             value = obj._slotvalues[self.offset]
             if value is null:
                 raise AttributeError(self.name)
