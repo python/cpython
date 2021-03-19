@@ -21,6 +21,11 @@ except ImportError:
     c_hmac_new = None
     openssl_compare_digest = None
 
+try:
+    import _sha256 as sha256_module
+except ImportError:
+    sha256_module = None
+
 
 def ignore_warning(func):
     @functools.wraps(func)
@@ -438,6 +443,15 @@ class ConstructorTestCase(unittest.TestCase):
             TypeError, "cannot create 'HMAC' instance"
         ):
             C_HMAC()
+
+    @unittest.skipUnless(sha256_module is not None, 'need _sha256')
+    def test_with_sha256_module(self):
+        h = hmac.HMAC(b"key", b"hash this!", digestmod=sha256_module.sha256)
+        self.assertEqual(h.hexdigest(), self.expected)
+        self.assertEqual(h.name, "hmac-sha256")
+
+        digest = hmac.digest(b"key", b"hash this!", sha256_module.sha256)
+        self.assertEqual(digest, binascii.unhexlify(self.expected))
 
 
 class SanityTestCase(unittest.TestCase):
