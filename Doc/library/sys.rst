@@ -614,7 +614,7 @@ always available.
 .. function:: getdefaultencoding()
 
    Return the name of the current default string encoding used by the Unicode
-   implementation.
+   implementation: ``"utf-8"``.
 
 
 .. function:: getdlopenflags()
