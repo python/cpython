@@ -3860,7 +3860,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
         no_signature |= needs_groups
-        # These have unpresentable parameter default values of NULL
+        # These have unrepresentable parameter default values of NULL
         needs_null = {"aiter", "anext"}
         no_signature |= needs_null
         # These need PEP 457 groups or a signature change to accept None

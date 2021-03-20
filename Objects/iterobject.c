@@ -301,8 +301,8 @@ typedef struct {
     PyObject *wrapped_iter; /*
         The iterator returned by the callable, unwrapped via __await__.
 
-        If NULL this means that the iterator is already exhausted and when
-        iterated it should raise StopAsyncIteration.
+        If NULL, this means that the iterator is already exhausted,
+        and when iterated, it should raise StopAsyncIteration.
     */
     callasynciterobject *it; /* The iterator object, in order to clear it when done. */
 } callasynciterawaitableobject;
@@ -365,8 +365,6 @@ callasynciter_anext(callasynciterobject *it)
     callasynciterawaitableobject *awaitable;
 
     if (it->it_callable == NULL) {
-        /* Can we raise this at this point, or do we need to return an awaitable
-         * that raises it? */
         PyErr_SetNone(PyExc_StopAsyncIteration);
         return NULL;
     }
