@@ -20,5 +20,8 @@ jobs:
         with:
           name: python-binary
           path: build_binary
+      - name: 'Install hub'
+        run: sudo apt update
+      - run: sudo apt install hub
       - name: 'Create a release'
         run: hub release create -m "TestRel" 
