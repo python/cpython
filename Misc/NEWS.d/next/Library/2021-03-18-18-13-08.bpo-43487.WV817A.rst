@@ -1,2 +1,2 @@
-Add a fixer to the 2to3 library that converts `__unicode__` methods to
-`__str__`, if this can be done safely.
+Add a fixer to the 2to3 library that converts ``__unicode__`` methods 
+to ``__str__``, if this can be done safely.
