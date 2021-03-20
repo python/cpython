@@ -533,7 +533,7 @@ The match statement is used for pattern matching.  Syntax:
    match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
    subject_expr: `star_named_expression` "," `star_named_expressions`?
                : | `named_expression`
-   case_block: 'case' `patterns` [`guard`] ':' `block`
+   case_block: 'case' `patterns` [`guard`] ":" `block`
 
 .. note::
    This section uses single quotes to denote
@@ -861,7 +861,7 @@ emphasize the intended grouping.  Otherwise, it has no additional syntax.
 Syntax:
 
 .. productionlist:: python-grammar
-   group_pattern: '(' `pattern` ')'
+   group_pattern: "(" `pattern` ")"
 
 In simple terms ``(P)`` has the same effect as ``P``.
 
