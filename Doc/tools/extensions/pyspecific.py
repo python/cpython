@@ -223,6 +223,8 @@ class AuditEvent(Directive):
 
         info['source'].append((env.docname, target))
 
+        if self.content:
+            text = '\n'.join(self.content)
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
         pnode.line = self.lineno
         if self.content:
