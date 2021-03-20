@@ -800,6 +800,9 @@ socket
 The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 (Contributed by Christian Heimes in :issue:`42413`.)
 
+Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
+(Contributed by Rui Cunha in :issue:`43571`.)
+
 sys
 ---
 
