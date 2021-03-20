@@ -32,8 +32,7 @@ class object "PyObject *" "&PyBaseObject_Type"
          & ((1 << MCACHE_SIZE_EXP) - 1))
 
 #define MCACHE_HASH_METHOD(type, name)                                  \
-        MCACHE_HASH((type)->tp_version_tag,                     \
-                    ((PyASCIIObject *)(name))->hash)
+    MCACHE_HASH((type)->tp_version_tag, ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
         PyUnicode_CheckExact(name) &&                           \
         PyUnicode_IS_READY(name) &&                             \
@@ -338,6 +337,7 @@ PyType_Modified(PyTypeObject *type)
         }
     }
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
 
 static void
@@ -396,6 +396,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     Py_XDECREF(type_mro_meth);
     type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
                         Py_TPFLAGS_VALID_VERSION_TAG);
+    type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
 
 static int
@@ -3351,18 +3352,15 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     PyObject *res;
     int error;
 
-    if (MCACHE_CACHEABLE_NAME(name) &&
-        _PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-        /* fast path */
-        unsigned int h = MCACHE_HASH_METHOD(type, name);
-        struct type_cache *cache = get_type_cache();
-        struct type_cache_entry *entry = &cache->hashtable[h];
-        if (entry->version == type->tp_version_tag && entry->name == name) {
+    unsigned int h = MCACHE_HASH_METHOD(type, name);
+    struct type_cache *cache = get_type_cache();
+    struct type_cache_entry *entry = &cache->hashtable[h];
+    if (entry->version == type->tp_version_tag &&
+        entry->name == name) {
 #if MCACHE_STATS
-            cache->hits++;
+        cache->hits++;
 #endif
-            return entry->value;
-        }
+        return entry->value;
     }
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
@@ -3385,24 +3383,21 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
-    if (MCACHE_CACHEABLE_NAME(name)) {
-        struct type_cache *cache = get_type_cache();
-        if (assign_version_tag(cache, type)) {
-            unsigned int h = MCACHE_HASH_METHOD(type, name);
-            struct type_cache_entry *entry = &cache->hashtable[h];
-            entry->version = type->tp_version_tag;
-            entry->value = res;  /* borrowed */
-            assert(((PyASCIIObject *)(name))->hash != -1);
+    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(cache, type)) {
+        h = MCACHE_HASH_METHOD(type, name);
+        struct type_cache_entry *entry = &cache->hashtable[h];
+        entry->version = type->tp_version_tag;
+        entry->value = res;  /* borrowed */
+        assert(((PyASCIIObject *)(name))->hash != -1);
 #if MCACHE_STATS
-            if (entry->name != Py_None && entry->name != name) {
-                cache->collisions++;
-            }
-            else {
-                cache->misses++;
-            }
-#endif
-            Py_SETREF(entry->name, Py_NewRef(name));
+        if (entry->name != Py_None && entry->name != name) {
+            cache->collisions++;
         }
+        else {
+            cache->misses++;
+        }
+#endif
+        Py_SETREF(entry->name, Py_NewRef(name));
     }
     return res;
 }
