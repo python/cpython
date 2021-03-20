@@ -3157,8 +3157,13 @@ then
   then
     AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
   fi
-  TCLTK_INCLUDES=""
-  TCLTK_LIBS=""
+  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
+    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
+    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
+  else
+    TCLTK_INCLUDES=""
+    TCLTK_LIBS=""
+  fi
 else
   TCLTK_INCLUDES="$with_tcltk_includes"
   TCLTK_LIBS="$with_tcltk_libs"
@@ -5803,6 +5808,30 @@ if test "$have_openssl" = yes; then
     LIBS="$save_LIBS"
 fi
 
+# rpath to libssl and libcrypto
+AC_MSG_CHECKING(for --with-openssl-rpath)
+AC_ARG_WITH(openssl-rpath,
+    AS_HELP_STRING([--with-openssl-rpath=@<:@DIR|auto|no@:>@],
+                   [Set runtime library directory (rpath) for OpenSSL libraries,
+                    no (default): don't set rpath,
+                    auto: auto-detect rpath from --with-openssl and pkg-config,
+                    DIR: set an explicit rpath
+                   ]),
+    [],
+    [with_openssl_rpath=no]
+)
+AS_CASE($with_openssl_rpath,
+    [auto|yes],[OPENSSL_RPATH=auto],
+    [no],[OPENSSL_RPATH=],
+    [AS_IF(
+        [test -d "$with_openssl_rpath"],
+        [OPENSSL_RPATH="$with_openssl_rpath"],
+        AC_MSG_ERROR([--with-openssl-rpath "$with_openssl_rpath" is not a directory]))
+    ]
+)
+AC_MSG_RESULT($OPENSSL_RPATH)
+AC_SUBST([OPENSSL_RPATH])
+
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
   [Default cipher suites list for ssl module.
@@ -5898,7 +5927,7 @@ else
 fi],
 [AC_MSG_RESULT(yes)])
 LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
-if test "$PY_ENABLE_SHARED" = 1; then
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
     LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
     if test "$STATIC_LIBPYTHON" = 1; then
         LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"

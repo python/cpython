@@ -110,7 +110,20 @@ class DeclTypesTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
         self.cur = self.con.cursor()
-        self.cur.execute("create table test(i int, s str, f float, b bool, u unicode, foo foo, bin blob, n1 number, n2 number(5), bad bad)")
+        self.cur.execute("""
+            create table test(
+                i int,
+                s str,
+                f float,
+                b bool,
+                u unicode,
+                foo foo,
+                bin blob,
+                n1 number,
+                n2 number(5),
+                bad bad,
+                cbin cblob)
+        """)
 
         # override float, make them always return the same number
         sqlite.converters["FLOAT"] = lambda x: 47.2
@@ -121,6 +134,7 @@ class DeclTypesTests(unittest.TestCase):
         sqlite.converters["BAD"] = DeclTypesTests.BadConform
         sqlite.converters["WRONG"] = lambda x: "WRONG"
         sqlite.converters["NUMBER"] = float
+        sqlite.converters["CBLOB"] = lambda x: b"blobish"
 
     def tearDown(self):
         del sqlite.converters["FLOAT"]
@@ -129,6 +143,7 @@ class DeclTypesTests(unittest.TestCase):
         del sqlite.converters["BAD"]
         del sqlite.converters["WRONG"]
         del sqlite.converters["NUMBER"]
+        del sqlite.converters["CBLOB"]
         self.cur.close()
         self.con.close()
 
@@ -236,6 +251,12 @@ class DeclTypesTests(unittest.TestCase):
         value = self.cur.execute("select n2 from test").fetchone()[0]
         # if the converter is not used, it's an int instead of a float
         self.assertEqual(type(value), float)
+
+    def test_convert_zero_sized_blob(self):
+        self.con.execute("insert into test(cbin) values (?)", (b"",))
+        cur = self.con.execute("select cbin from test")
+        self.assertEqual(cur.fetchone()[0], b"blobish")
+
 
 class ColNamesTests(unittest.TestCase):
     def setUp(self):

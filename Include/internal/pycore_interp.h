@@ -9,10 +9,11 @@ extern "C" {
 #endif
 
 #include "pycore_atomic.h"        // _Py_atomic_address
-#include "pycore_ast.h"           // struct ast_state
+#include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
+#include "pycore_dtoa.h"
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -253,6 +254,10 @@ struct _is {
     // importlib module
     PyObject *importlib;
 
+    // Kept handy for pattern matching:
+    PyObject *map_abc;  // _collections_abc.Mapping
+    PyObject *seq_abc;  // _collections_abc.Sequence
+
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
     /* Support for runtime thread stack size tuning.
@@ -317,6 +322,9 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
+#ifndef PY_NO_SHORT_FLOAT_REPR
+    struct _PyDtoa_Bigint *dtoa_freelist[_PyDtoa_Kmax + 1];
+#endif
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
@@ -347,4 +355,3 @@ PyAPI_FUNC(void) _PyInterpreterState_IDDecref(struct _is *);
 }
 #endif
 #endif /* !Py_INTERNAL_INTERP_H */
-

@@ -1,3 +1,0 @@
-:c:func:`PyExceptionClass_Name` is now always declared as a function, in
-order to hide implementation details. The macro accessed
-:c:member:`PyTypeObject.tp_name` directly.  Patch by Erlend E. Aasland.

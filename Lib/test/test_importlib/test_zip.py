@@ -41,7 +41,7 @@ class TestZip(unittest.TestCase):
             version('definitely-not-installed')
 
     def test_zip_entry_points(self):
-        scripts = dict(entry_points()['console_scripts'])
+        scripts = entry_points(group='console_scripts')
         entry_point = scripts['example']
         self.assertEqual(entry_point.value, 'example:main')
         entry_point = scripts['Example']

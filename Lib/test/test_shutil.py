@@ -34,6 +34,8 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 
 TESTFN2 = TESTFN + "2"
+TESTFN_SRC = TESTFN + "_SRC"
+TESTFN_DST = TESTFN + "_DST"
 MACOS = sys.platform.startswith("darwin")
 AIX = sys.platform[:3] == 'aix'
 try:
@@ -2083,6 +2085,41 @@ class TestMove(BaseTest, unittest.TestCase):
             self.assertTrue(os.path.isdir(dst_dir))
         finally:
             os.rmdir(dst_dir)
+
+
+    @unittest.skipUnless(hasattr(os, 'geteuid') and os.geteuid() == 0
+                         and hasattr(os, 'lchflags')
+                         and hasattr(stat, 'SF_IMMUTABLE')
+                         and hasattr(stat, 'UF_OPAQUE'),
+                         'root privileges required')
+    def test_move_dir_permission_denied(self):
+        # bpo-42782: shutil.move should not create destination directories
+        # if the source directory cannot be removed.
+        try:
+            os.mkdir(TESTFN_SRC)
+            os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
+
+            # Testing on an empty immutable directory
+            # TESTFN_DST should not exist if shutil.move failed
+            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
+            self.assertFalse(TESTFN_DST in os.listdir())
+
+            # Create a file and keep the directory immutable
+            os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
+            os_helper.create_empty_file(os.path.join(TESTFN_SRC, 'child'))
+            os.lchflags(TESTFN_SRC, stat.SF_IMMUTABLE)
+
+            # Testing on a non-empty immutable directory
+            # TESTFN_DST should not exist if shutil.move failed
+            self.assertRaises(PermissionError, shutil.move, TESTFN_SRC, TESTFN_DST)
+            self.assertFalse(TESTFN_DST in os.listdir())
+        finally:
+            if os.path.exists(TESTFN_SRC):
+                os.lchflags(TESTFN_SRC, stat.UF_OPAQUE)
+                os_helper.rmtree(TESTFN_SRC)
+            if os.path.exists(TESTFN_DST):
+                os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
+                os_helper.rmtree(TESTFN_DST)
 
 
 class TestCopyFile(unittest.TestCase):

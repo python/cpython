@@ -67,7 +67,6 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 
 def_op('UNARY_INVERT', 15)
-
 def_op('BINARY_MATRIX_MULTIPLY', 16)
 def_op('INPLACE_MATRIX_MULTIPLY', 17)
 
@@ -82,6 +81,11 @@ def_op('BINARY_FLOOR_DIVIDE', 26)
 def_op('BINARY_TRUE_DIVIDE', 27)
 def_op('INPLACE_FLOOR_DIVIDE', 28)
 def_op('INPLACE_TRUE_DIVIDE', 29)
+def_op('GET_LEN', 30)
+def_op('MATCH_MAPPING', 31)
+def_op('MATCH_SEQUENCE', 32)
+def_op('MATCH_KEYS', 33)
+def_op('COPY_DICT_WITHOUT_KEYS', 34)
 
 def_op('WITH_EXCEPT_START', 49)
 def_op('GET_AITER', 50)
@@ -104,7 +108,6 @@ def_op('BINARY_OR', 66)
 def_op('INPLACE_POWER', 67)
 def_op('GET_ITER', 68)
 def_op('GET_YIELD_FROM_ITER', 69)
-
 def_op('PRINT_EXPR', 70)
 def_op('LOAD_BUILD_CLASS', 71)
 def_op('YIELD_FROM', 72)
@@ -136,6 +139,7 @@ name_op('STORE_ATTR', 95)       # Index in name list
 name_op('DELETE_ATTR', 96)      # ""
 name_op('STORE_GLOBAL', 97)     # ""
 name_op('DELETE_GLOBAL', 98)    # ""
+
 def_op('LOAD_CONST', 100)       # Index in const list
 hasconst.append(100)
 name_op('LOAD_NAME', 101)       # Index in name list
@@ -148,16 +152,13 @@ def_op('COMPARE_OP', 107)       # Comparison operator
 hascompare.append(107)
 name_op('IMPORT_NAME', 108)     # Index in name list
 name_op('IMPORT_FROM', 109)     # Index in name list
-
 jrel_op('JUMP_FORWARD', 110)    # Number of bytes to skip
 jabs_op('JUMP_IF_FALSE_OR_POP', 111) # Target byte offset from beginning of code
 jabs_op('JUMP_IF_TRUE_OR_POP', 112)  # ""
 jabs_op('JUMP_ABSOLUTE', 113)        # ""
 jabs_op('POP_JUMP_IF_FALSE', 114)    # ""
 jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
-
 name_op('LOAD_GLOBAL', 116)     # Index in name list
-
 def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
@@ -176,6 +177,7 @@ def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('CALL_FUNCTION', 131)    # #args
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
+
 def_op('LOAD_CLOSURE', 135)
 hasfree.append(135)
 def_op('LOAD_DEREF', 136)
@@ -187,28 +189,24 @@ hasfree.append(138)
 
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
-
 jrel_op('SETUP_WITH', 143)
-
+def_op('EXTENDED_ARG', 144)
+EXTENDED_ARG = 144
 def_op('LIST_APPEND', 145)
 def_op('SET_ADD', 146)
 def_op('MAP_ADD', 147)
-
 def_op('LOAD_CLASSDEREF', 148)
 hasfree.append(148)
 
-def_op('EXTENDED_ARG', 144)
-EXTENDED_ARG = 144
+def_op('MATCH_CLASS', 152)
 
 jrel_op('SETUP_ASYNC_WITH', 154)
-
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
-
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
 def_op('DICT_MERGE', 164)

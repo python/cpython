@@ -583,7 +583,7 @@ def main():
                 g = sys.stdout.buffer
             else:
                 if arg[-3:] != ".gz":
-                    sys.exit("filename doesn't end in .gz:", repr(arg))
+                    sys.exit(f"filename doesn't end in .gz: {arg!r}")
                 f = open(arg, "rb")
                 g = builtins.open(arg[:-3], "wb")
         else:
@@ -595,7 +595,7 @@ def main():
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
         while True:
-            chunk = f.read(1024)
+            chunk = f.read(io.DEFAULT_BUFFER_SIZE)
             if not chunk:
                 break
             g.write(chunk)

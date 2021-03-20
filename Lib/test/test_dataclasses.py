@@ -3375,5 +3375,21 @@ class TestAbstract(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, Date)
 
 
+class TestMatchArgs(unittest.TestCase):
+    def test_match_args(self):
+        @dataclass
+        class C:
+            a: int
+        self.assertEqual(C(42).__match_args__, ('a',))
+
+    def test_explicit_match_args(self):
+        ma = []
+        @dataclass
+        class C:
+            a: int
+            __match_args__ = ma
+        self.assertIs(C(42).__match_args__, ma)
+
+
 if __name__ == '__main__':
     unittest.main()

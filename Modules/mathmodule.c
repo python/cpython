@@ -1875,7 +1875,7 @@ math_isqrt(PyObject *module, PyObject *n)
  *        (1) *
  *        (1) *
  *        (1 * 3 * 5) *
- *        (1 * 3 * 5 * 7 * 9)
+ *        (1 * 3 * 5 * 7 * 9) *
  *        (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
  *
  * Here i goes from large to small: the first term corresponds to i=4 (any

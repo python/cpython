@@ -1,0 +1,2 @@
+Add frozen modules to :data:`sys.stdlib_module_names`. For example, add
+``"_frozen_importlib"`` and ``"_frozen_importlib_external"`` names.

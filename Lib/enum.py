@@ -148,7 +148,7 @@ class property(DynamicClassAttribute):
                     import warnings
                     warnings.warn(
                             "accessing one member from another is not supported, "
-                            " and will be disabled in 3.11",
+                            " and will be disabled in 3.12",
                             DeprecationWarning,
                             stacklevel=2,
                             )

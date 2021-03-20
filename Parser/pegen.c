@@ -1,4 +1,5 @@
 #include <Python.h>
+#include "pycore_ast.h"           // _PyAST_Validate()
 #include <errcode.h>
 #include "tokenizer.h"
 
@@ -397,7 +398,8 @@ get_error_line(Parser *p, Py_ssize_t lineno)
        are stored in p->tok->stdin_content */
     assert(p->tok->fp == NULL || p->tok->fp == stdin);
 
-    char *cur_line = p->tok->fp == NULL ? p->tok->str : p->tok->stdin_content;
+    char *cur_line = p->tok->fp_interactive ? p->tok->interactive_src_start : p->tok->str;
+
     for (int i = 0; i < lineno - 1; i++) {
         cur_line = strchr(cur_line, '\n') + 1;
     }
@@ -440,7 +442,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
-    if (p->start_rule == Py_file_input) {
+    if (p->tok->fp_interactive) {
+        error_line = get_error_line(p, lineno);
+    }
+    else if (p->start_rule == Py_file_input) {
         error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
@@ -1232,7 +1237,7 @@ _PyPegen_run_parser(Parser *p)
         if (p->fill == 0) {
             RAISE_SYNTAX_ERROR("error at start before reading any input");
         }
-       else if (p->tok->done == E_EOF) {
+        else if (p->tok->done == E_EOF) {
             if (p->tok->level) {
                 raise_unclosed_parentheses_error(p);
             } else {
@@ -1261,12 +1266,13 @@ _PyPegen_run_parser(Parser *p)
         return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
-#if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
+    // test_peg_generator defines _Py_TEST_PEGEN to not call PyAST_Validate()
+#if defined(Py_DEBUG) && !defined(_Py_TEST_PEGEN)
     if (p->start_rule == Py_single_input ||
         p->start_rule == Py_file_input ||
         p->start_rule == Py_eval_input)
     {
-        if (!PyAST_Validate(res)) {
+        if (!_PyAST_Validate(res)) {
             return NULL;
         }
     }
@@ -1286,6 +1292,10 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
             return NULL;
         }
         return NULL;
+    }
+    if (!tok->fp || ps1 != NULL || ps2 != NULL ||
+        PyUnicode_CompareWithASCIIString(filename_ob, "<stdin>") == 0) {
+        tok->fp_interactive = 1;
     }
     // This transfers the ownership to the tokenizer
     tok->filename = filename_ob;

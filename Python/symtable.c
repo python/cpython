@@ -1,6 +1,6 @@
 #include "Python.h"
-#include "pycore_pystate.h"   // _PyThreadState_GET()
-#include "symtable.h"
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_symtable.h"      // PySTEntryObject
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "structmember.h"         // PyMemberDef
 
@@ -207,6 +207,7 @@ static int symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args
 static int symtable_implicit_arg(struct symtable *st, int pos);
 static int symtable_visit_annotations(struct symtable *st, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
+static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
@@ -239,9 +240,10 @@ symtable_new(void)
         goto fail;
     st->st_cur = NULL;
     st->st_private = NULL;
+    st->in_pattern = 0;
     return st;
  fail:
-    PySymtable_Free(st);
+    _PySymtable_Free(st);
     return NULL;
 }
 
@@ -258,7 +260,7 @@ symtable_new(void)
 #define COMPILER_STACK_FRAME_SCALE 3
 
 struct symtable *
-PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
+_PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
@@ -270,7 +272,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     if (st == NULL)
         return NULL;
     if (filename == NULL) {
-        PySymtable_Free(st);
+        _PySymtable_Free(st);
         return NULL;
     }
     Py_INCREF(filename);
@@ -280,7 +282,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     /* Setup recursion depth check counters */
     tstate = _PyThreadState_GET();
     if (!tstate) {
-        PySymtable_Free(st);
+        _PySymtable_Free(st);
         return NULL;
     }
     /* Be careful here to prevent overflow. */
@@ -293,7 +295,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     /* Make the initial symbol information gathering pass */
     if (!GET_IDENTIFIER(top) ||
         !symtable_enter_block(st, top, ModuleBlock, (void *)mod, 0, 0)) {
-        PySymtable_Free(st);
+        _PySymtable_Free(st);
         return NULL;
     }
 
@@ -323,7 +325,7 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st)) {
-        PySymtable_Free(st);
+        _PySymtable_Free(st);
         return NULL;
     }
     /* Check that the recursion depth counting balanced correctly */
@@ -331,35 +333,23 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         PyErr_Format(PyExc_SystemError,
             "symtable analysis recursion depth mismatch (before=%d, after=%d)",
             starting_recursion_depth, st->recursion_depth);
-        PySymtable_Free(st);
+        _PySymtable_Free(st);
         return NULL;
     }
     /* Make the second symbol analysis pass */
     if (symtable_analyze(st))
         return st;
-    PySymtable_Free(st);
+    _PySymtable_Free(st);
     return NULL;
  error:
     (void) symtable_exit_block(st);
-    PySymtable_Free(st);
+    _PySymtable_Free(st);
     return NULL;
 }
 
-struct symtable *
-PySymtable_Build(mod_ty mod, const char *filename_str, PyFutureFeatures *future)
-{
-    PyObject *filename;
-    struct symtable *st;
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    st = PySymtable_BuildObject(mod, filename, future);
-    Py_DECREF(filename);
-    return st;
-}
 
 void
-PySymtable_Free(struct symtable *st)
+_PySymtable_Free(struct symtable *st)
 {
     Py_XDECREF(st->st_filename);
     Py_XDECREF(st->st_blocks);
@@ -400,7 +390,7 @@ _PyST_GetSymbol(PySTEntryObject *ste, PyObject *name)
 }
 
 int
-PyST_GetScope(PySTEntryObject *ste, PyObject *name)
+_PyST_GetScope(PySTEntryObject *ste, PyObject *name)
 {
     long symbol = _PyST_GetSymbol(ste, name);
     return (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
@@ -1294,6 +1284,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.If.orelse)
             VISIT_SEQ(st, stmt, s->v.If.orelse);
         break;
+    case Match_kind:
+        VISIT(st, expr, s->v.Match.subject);
+        VISIT_SEQ(st, match_case, s->v.Match.cases);
+        break;
     case Raise_kind:
         if (s->v.Raise.exc) {
             VISIT(st, expr, s->v.Raise.exc);
@@ -1648,6 +1642,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step)
         break;
     case Name_kind:
+        // Don't make "_" a local when used in a pattern:
+        if (st->in_pattern &&
+            e->v.Name.ctx == Store &&
+            _PyUnicode_EqualToASCIIString(e->v.Name.id, "_"))
+        {
+            break;
+        }
         if (!symtable_add_def(st, e->v.Name.id,
                               e->v.Name.ctx == Load ? USE : DEF_LOCAL))
             VISIT_QUIT(st, 0);
@@ -1666,6 +1667,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         break;
     case Tuple_kind:
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
+        break;
+    case MatchAs_kind:
+        VISIT(st, expr, e->v.MatchAs.pattern);
+        symtable_add_def(st, e->v.MatchAs.name, DEF_LOCAL);
+        break;
+    case MatchOr_kind:
+        VISIT_SEQ(st, expr, e->v.MatchOr.patterns);
         break;
     }
     VISIT_QUIT(st, 1);
@@ -1785,6 +1793,20 @@ symtable_visit_withitem(struct symtable *st, withitem_ty item)
     return 1;
 }
 
+static int
+symtable_visit_match_case(struct symtable *st, match_case_ty m)
+{
+    assert(!st->in_pattern);
+    st->in_pattern = 1;
+    VISIT(st, expr, m->pattern);
+    assert(st->in_pattern);
+    st->in_pattern = 0;
+    if (m->guard) {
+        VISIT(st, expr, m->guard);
+    }
+    VISIT_SEQ(st, stmt, m->body);
+    return 1;
+}
 
 static int
 symtable_visit_alias(struct symtable *st, alias_ty a)
@@ -1936,4 +1958,27 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
+}
+
+
+struct symtable *
+_Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
+                              int start, PyCompilerFlags *flags)
+{
+    struct symtable *st;
+    mod_ty mod;
+    PyArena *arena;
+
+    arena = PyArena_New();
+    if (arena == NULL)
+        return NULL;
+
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    if (mod == NULL) {
+        PyArena_Free(arena);
+        return NULL;
+    }
+    st = _PySymtable_Build(mod, filename, 0);
+    PyArena_Free(arena);
+    return st;
 }
