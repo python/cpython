@@ -68,6 +68,7 @@ simple_stmt[stmt_ty] (memo):
     | e=star_expressions { _Py_Expr(e, EXTRA) }
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
+    | &('accio' | 'from') accio_stmt
     | &'raise' raise_stmt
     | 'pass' { _Py_Pass(EXTRA) }
     | &'del' del_stmt
@@ -152,6 +153,16 @@ import_from_as_name[alias_ty]:
     | a=NAME b=['as' z=NAME { z }] { _Py_alias(a->v.Name.id,
                                                (b) ? ((expr_ty) b)->v.Name.id : NULL,
                                                p->arena) }
+
+accio_stmt[stmt_ty]: accio_name | accio_from
+accio_name[stmt_ty]: 'accio' a=dotted_as_names { _Py_Import(a, EXTRA) }
+# note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
+accio_from[stmt_ty]:
+    | 'from' a=('.' | '...')* b=dotted_name 'accio' c=import_from_targets {
+        _Py_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
+    | 'from' a=('.' | '...')+ 'accio' b=import_from_targets {
+        _Py_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
+
 dotted_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.dotted_as_name+ { a }
 dotted_as_name[alias_ty]:
