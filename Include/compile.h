@@ -1,18 +1,7 @@
 #ifndef Py_COMPILE_H
 #define Py_COMPILE_H
-
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef Py_LIMITED_API
-#  define Py_CPYTHON_COMPILE_H
-#  include  "cpython/compile.h"
-#  undef Py_CPYTHON_COMPILE_H
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 /* These definitions must match corresponding definitions in graminit.h. */
@@ -24,4 +13,13 @@ extern "C" {
 /* This doesn't need to match anything */
 #define Py_fstring_input 800
 
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_COMPILE_H
+#  include "cpython/compile.h"
+#  undef Py_CPYTHON_COMPILE_H
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* !Py_COMPILE_H */
