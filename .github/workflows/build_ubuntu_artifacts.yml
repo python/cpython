@@ -20,3 +20,5 @@ jobs:
         with:
           name: python-binary
           path: build_binary
+      - name: 'Create a release'
+        run: hub release create -m "TestRel" 
