@@ -1,2 +1,2 @@
 Improve performance of class:`fractions.Fraction` arithmetics for large
-components.
+components.  Contributed by Sergey B. Kirpichev.
