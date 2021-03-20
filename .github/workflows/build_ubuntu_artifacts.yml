@@ -1,0 +1,22 @@
+name: build-ubuntu-artifacts
+on:
+  push:
+    branches:
+      - master
+jobs:
+  name: 'Build Python Binaries'
+  runs-on: ubuntu-latest
+  steps:
+    - name: 'checkout the branch'
+      uses: actions/checkout@v2
+    - name: 'configure'
+      run: ./configure
+    - name: 'build Python'
+      run: make
+    - name: 'Install Python'
+      run: make install DESTDIR=build_binary
+    - name: 'Uplaod the build artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: python-binary
+        path: build_binary
