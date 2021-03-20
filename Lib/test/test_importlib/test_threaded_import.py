@@ -16,7 +16,7 @@ import unittest
 from unittest import mock
 from test.support import (
     verbose, run_unittest, TESTFN, reap_threads,
-    forget, unlink, rmtree, start_threads)
+    forget, unlink, rmtree, start_threads, script_helper)
 
 def task(N, done, done_tasks, errors):
     try:
@@ -243,6 +243,18 @@ class ThreadedImportTests(unittest.TestCase):
         importlib.invalidate_caches()
         __import__(TESTFN)
         del sys.modules[TESTFN]
+
+    def test_concurrent_futures_circular_import(self):
+        # Regression test for bpo-43515
+        fn = os.path.join(os.path.dirname(__file__),
+                          'partial', 'cfimport.py')
+        script_helper.assert_python_ok(fn)
+
+    def test_multiprocessing_pool_circular_import(self):
+        # Regression test for bpo-41567
+        fn = os.path.join(os.path.dirname(__file__),
+                          'partial', 'pool_in_threads.py')
+        script_helper.assert_python_ok(fn)
 
 
 @reap_threads
