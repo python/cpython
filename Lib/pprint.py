@@ -177,7 +177,9 @@ class PrettyPrinter:
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
-            elif _dataclasses.is_dataclass(object) and not isinstance(object, type):
+            elif (_dataclasses.is_dataclass(object) and
+                  not isinstance(object, type) and
+                  object.__dataclass_params__.repr):
                 context[objid] = 1
                 self._pprint_dataclass(object, stream, indent, allowance, context, level + 1)
                 del context[objid]
@@ -187,10 +189,9 @@ class PrettyPrinter:
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
         cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
-        items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object)]
+        items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object) if f.repr]
         stream.write(cls_name + '(')
-        if items:
-            self._format_namespace_items(items, stream, indent, allowance, context, level)
+        self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(')')
 
     _dispatch = {}
@@ -361,8 +362,7 @@ class PrettyPrinter:
         indent += len(cls_name) + 1
         items = object.__dict__.items()
         stream.write(cls_name + '(')
-        if items:
-            self._format_namespace_items(items, stream, indent, allowance, context, level)
+        self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(')')
 
     _dispatch[_types.SimpleNamespace.__repr__] = _pprint_simplenamespace

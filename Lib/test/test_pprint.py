@@ -72,6 +72,17 @@ class dataclass1:
     field1: str
     field2: int
     field3: bool = False
+    field4: int = dataclasses.field(default=1, repr=False)
+
+@dataclasses.dataclass
+class dataclass2:
+    a: int = 1
+    def __repr__(self):
+        return "custom repr that doesn't fit within pprint width"
+
+@dataclasses.dataclass(repr=False)
+class dataclass3:
+    a: int = 1
 
 class Unorderable:
     def __repr__(self):
@@ -479,6 +490,16 @@ AdvancedNamespace(the=0,
     dataclass1(field1='some fairly long text',
                field2=10000000000,
                field3=True)]""")
+
+    def test_dataclass_with_repr(self):
+        dc = dataclass2()
+        formatted = pprint.pformat(dc, width=20)
+        self.assertEqual(formatted, "custom repr that doesn't fit within pprint width")
+
+    def test_dataclass_no_repr(self):
+        dc = dataclass3()
+        formatted = pprint.pformat(dc, width=10)
+        self.assertRegex(formatted, r"<test.test_pprint.dataclass3 object at \w+>")
 
     def test_subclassing(self):
         # length(repr(obj)) > width
