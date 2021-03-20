@@ -167,6 +167,14 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
+PEP 626: Precise line numbers for debugging and other tools
+-----------------------------------------------------------
+
+PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
+Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
+
+The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+
 
 PEP 634: Structural Pattern Matching
 ------------------------------------
@@ -689,6 +697,19 @@ glob
 Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
+
+importlib.metadata
+------------------
+
+Feature parity with ``importlib_metadata`` 3.7.
+
+:func:`importlib.metadata.entry_points` now provides a nicer experience
+for selecting entry points by group and name through a new
+:class:`importlib.metadata.EntryPoints` class.
+
+Added :func:`importlib.metadata.packages_distributions` for resolving
+top-level Python modules and packages to their
+:class:`importlib.metadata.Distribution`.
 
 inspect
 -------

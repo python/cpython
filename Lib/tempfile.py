@@ -768,7 +768,7 @@ class SpooledTemporaryFile:
         return rv
 
 
-class TemporaryDirectory(object):
+class TemporaryDirectory:
     """Create and return a temporary directory.  This has the same
     behavior as mkdtemp but can be used as a context manager.  For
     example:
@@ -780,14 +780,17 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix=None, prefix=None, dir=None):
+    def __init__(self, suffix=None, prefix=None, dir=None,
+                 ignore_cleanup_errors=False):
         self.name = mkdtemp(suffix, prefix, dir)
+        self._ignore_cleanup_errors = ignore_cleanup_errors
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
-            warn_message="Implicitly cleaning up {!r}".format(self))
+            warn_message="Implicitly cleaning up {!r}".format(self),
+            ignore_errors=self._ignore_cleanup_errors)
 
     @classmethod
-    def _rmtree(cls, name):
+    def _rmtree(cls, name, ignore_errors=False):
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
                 def resetperms(path):
@@ -806,19 +809,20 @@ class TemporaryDirectory(object):
                         _os.unlink(path)
                     # PermissionError is raised on FreeBSD for directories
                     except (IsADirectoryError, PermissionError):
-                        cls._rmtree(path)
+                        cls._rmtree(path, ignore_errors=ignore_errors)
                 except FileNotFoundError:
                     pass
             elif issubclass(exc_info[0], FileNotFoundError):
                 pass
             else:
-                raise
+                if not ignore_errors:
+                    raise
 
         _shutil.rmtree(name, onerror=onerror)
 
     @classmethod
-    def _cleanup(cls, name, warn_message):
-        cls._rmtree(name)
+    def _cleanup(cls, name, warn_message, ignore_errors=False):
+        cls._rmtree(name, ignore_errors=ignore_errors)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -831,7 +835,7 @@ class TemporaryDirectory(object):
         self.cleanup()
 
     def cleanup(self):
-        if self._finalizer.detach():
-            self._rmtree(self.name)
+        if self._finalizer.detach() or _os.path.exists(self.name):
+            self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
 
     __class_getitem__ = classmethod(_types.GenericAlias)

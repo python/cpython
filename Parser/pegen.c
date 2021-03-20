@@ -1265,7 +1265,8 @@ _PyPegen_run_parser(Parser *p)
         return RAISE_SYNTAX_ERROR("multiple statements found while compiling a single statement");
     }
 
-#if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
+    // test_peg_generator defines _Py_TEST_PEGEN to not call PyAST_Validate()
+#if defined(Py_DEBUG) && !defined(_Py_TEST_PEGEN)
     if (p->start_rule == Py_single_input ||
         p->start_rule == Py_file_input ||
         p->start_rule == Py_eval_input)

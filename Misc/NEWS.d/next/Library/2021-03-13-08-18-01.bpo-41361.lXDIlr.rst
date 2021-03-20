@@ -1,0 +1,1 @@
+:meth:`~collections.deque.rotate` calls are now slightly faster due to faster argument parsing.
