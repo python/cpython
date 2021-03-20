@@ -400,11 +400,9 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
     def test_async_gen_aiter_class(self):
         results = []
-        loop = self.loop
         class Gen:
             async def __aiter__(self):
                 yield 1
-                await asyncio.sleep(0.01)
                 yield 2
         g = Gen()
         async def consume():

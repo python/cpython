@@ -279,7 +279,7 @@ Other Language Changes
 
 * Assignment expressions can now be used unparenthesized within set literals
   and set comprehensions, as well as in sequence indexes (but not slices).
-  
+
 * Functions have a new ``__builtins__`` attribute which is used to look for
   builtin symbols when a function is executed, instead of looking into
   ``__globals__['__builtins__']``. The attribute is initialized from
@@ -289,7 +289,7 @@ Other Language Changes
 * Two new builtin functions -- :func:`aiter` and :func:`anext` have been added
   to provide asynchronous counterparts to :func:`iter` and :func:`next`,
   respectively.
-  (Contributed by Joshua Bronson, Justin Wang and Daniel Pope in :issue:`31861`)
+  (Contributed by Josh Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
 
 New Modules
