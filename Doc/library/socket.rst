@@ -610,6 +610,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.9
        The CAN_J1939 protocol was added.
 
+   .. versionchanged:: 3.10
+       The IPPROTO_MPTCP protocol was added.
+
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
