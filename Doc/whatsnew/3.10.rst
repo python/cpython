@@ -992,11 +992,9 @@ Deprecated
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
-* The use of :meth:`~importlib.abc.Loader.module_repr` by the `__repr__` method
-  of :class:`types.ModuleType` now triggers an :exc:`ImportWarning`. Current
-  plans are to remove usage by the import system of `module_repr()` in Python
-  3.12 instead of starting to raise :exc:`DeprecationWarning` as its use is
-  already optional.
+* The import system now uses the ``__spec__`` attribute on modules over
+  :meth:`~importlib.abc.Loader.module_repr` by the ``__repr__()`` method.
+  Removal of the use of ``module_repr()`` method is scheduled for Python 3.12.
   (Contributed by Brett Cannon in :issue:`42137`.)
 
 * ``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python

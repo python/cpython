@@ -294,21 +294,13 @@ def _load_module_shim(self, fullname):
 def _module_repr(module):
     # The implementation of ModuleType.__repr__().
     loader = getattr(module, '__loader__', None)
-    try:
-        spec = module.__spec__
-    except AttributeError:
-        if hasattr(loader, 'module_repr'):
+    if (spec := getattr(module, "__spec__", None)):
+        return _module_repr_from_spec(spec)
+    elif hasattr(loader, 'module_repr'):
             try:
-                msg = (f"__spec__ not found on the {module.__name__} module;"
-                        "falling back to {type(loader).__qualname__}.module_repr()")
-                _warnings.warn(msg, ImportWarning)
                 return loader.module_repr(module)
             except Exception:
                 pass
-    else:
-        if spec is not None:
-            return _module_repr_from_spec(spec)
-
     # We could use module.__class__.__name__ instead of 'module' in the
     # various repr permutations.
     try:
