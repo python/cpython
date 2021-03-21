@@ -118,12 +118,12 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
+.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False)
 
    This function securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
    :ref:`tempfile-examples`).  On completion of the context or destruction
-   of the temporary directory object the newly created temporary directory
+   of the temporary directory object, the newly created temporary directory
    and all its contents are removed from the filesystem.
 
    The directory name can be retrieved from the :attr:`name` attribute of the
@@ -132,11 +132,20 @@ The module defines the following user-callable items:
    the :keyword:`with` statement, if there is one.
 
    The directory can be explicitly cleaned up by calling the
-   :func:`cleanup` method.
+   :func:`cleanup` method. If *ignore_cleanup_errors* is true, any unhandled
+   exceptions during explicit or implicit cleanup (such as a
+   :exc:`PermissionError` removing open files on Windows) will be ignored,
+   and the remaining removable items deleted on a "best-effort" basis.
+   Otherwise, errors will be raised in whatever context cleanup occurs
+   (the :func:`cleanup` call, exiting the context manager, when the object
+   is garbage-collected or during interpreter shutdown).
 
    .. audit-event:: tempfile.mkdtemp fullpath tempfile.TemporaryDirectory
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.10
+      Added *ignore_cleanup_errors* parameter.
 
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)

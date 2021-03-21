@@ -1,15 +1,14 @@
-#ifndef Py_LIMITED_API
-#ifndef Py_SYMTABLE_H
-#define Py_SYMTABLE_H
+#ifndef Py_INTERNAL_SYMTABLE_H
+#define Py_INTERNAL_SYMTABLE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "Python-ast.h"   /* mod_ty */
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
-/* XXX(ncoghlan): This is a weird mix of public names and interpreter internal
- *                names.
- */
+#include "Python-ast.h"   /* mod_ty */
 
 typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
     _Py_block_ty;
@@ -68,23 +67,19 @@ typedef struct _symtable_entry {
     struct symtable *ste_table;
 } PySTEntryObject;
 
-PyAPI_DATA(PyTypeObject) PySTEntry_Type;
+extern PyTypeObject PySTEntry_Type;
 
 #define PySTEntry_Check(op) Py_IS_TYPE(op, &PySTEntry_Type)
 
-PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
+extern int _PyST_GetScope(PySTEntryObject *, PyObject *);
 
-PyAPI_FUNC(struct symtable *) PySymtable_Build(
-    mod_ty mod,
-    const char *filename,       /* decoded from the filesystem encoding */
-    PyFutureFeatures *future);
-PyAPI_FUNC(struct symtable *) PySymtable_BuildObject(
+extern struct symtable* _PySymtable_Build(
     mod_ty mod,
     PyObject *filename,
     PyFutureFeatures *future);
 PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
-PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
+extern void _PySymtable_Free(struct symtable *);
 
 /* Flags for def-use information */
 
@@ -117,8 +112,14 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define GENERATOR 1
 #define GENERATOR_EXPRESSION 2
 
+// Used by symtablemodule.c
+extern struct symtable* _Py_SymtableStringObjectFlags(
+    const char *str,
+    PyObject *filename,
+    int start,
+    PyCompilerFlags *flags);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_SYMTABLE_H */
-#endif /* !Py_LIMITED_API */
+#endif /* !Py_INTERNAL_SYMTABLE_H */

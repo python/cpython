@@ -1,0 +1,5 @@
+Use ``_freeze_importlib`` to generate code for the ``__hello__`` module.
+This approach ensures the code matches the interpreter version.  Previously,
+PYTHON_FOR_REGEN was used to generate the code, which might be wrong.  The
+marshal format for code objects has changed with bpo-42246, commit 877df851.
+Update the code and the expected code sizes in ctypes test_frozentable.

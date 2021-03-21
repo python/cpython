@@ -62,6 +62,8 @@ extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_ReleaseLock(PyThreadState *tstate);
 
+extern void _PyEval_DeactivateOpCache(void);
+
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 

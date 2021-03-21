@@ -505,6 +505,8 @@ def _default_mime_types():
         '.jpg'    : 'image/jpeg',
         '.jpe'    : 'image/jpeg',
         '.jpeg'   : 'image/jpeg',
+        '.heic'   : 'image/heic',
+        '.heif'   : 'image/heif',
         '.png'    : 'image/png',
         '.svg'    : 'image/svg+xml',
         '.tiff'   : 'image/tiff',

@@ -23,6 +23,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
     assert(PySSLSocket_Check(ssl_obj));
     if (ssl_obj->ctx->msg_cb == NULL) {
+        PyGILState_Release(threadstate);
         return;
     }
 
