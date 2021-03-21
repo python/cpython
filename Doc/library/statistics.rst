@@ -51,7 +51,7 @@ or sample.
 :func:`median_high`      High median of data.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
-:func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+:func:`multimode`        List of modes (most common values) of discrete or nominal data.
 :func:`quantiles`        Divide data into intervals with equal probability.
 =======================  ===============================================================
 

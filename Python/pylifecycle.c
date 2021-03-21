@@ -577,7 +577,7 @@ init_interp_create_gil(PyThreadState *tstate)
     _PyEval_FiniGIL(tstate->interp);
 
     /* Auto-thread-state API */
-    status = _PyGILState_Init(tstate);
+    status = _PyGILState_SetTstate(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -597,12 +597,19 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *config,
                           PyThreadState **tstate_p)
 {
+    /* Auto-thread-state API */
+    PyStatus status = _PyGILState_Init(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(_Py_IsMainInterpreter(interp));
 
-    PyStatus status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

@@ -127,7 +127,7 @@ jobs:
 
   build_ubuntu:
     name: 'Ubuntu'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:

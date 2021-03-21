@@ -1280,11 +1280,16 @@ class StressTest(unittest.TestCase):
 
         old_handler = signal.signal(signum, custom_handler)
         self.addCleanup(signal.signal, signum, old_handler)
+
         t = threading.Thread(target=set_interrupts)
-        t.start()
         try:
+            ignored = False
             with support.catch_unraisable_exception() as cm:
+                t.start()
                 cycle_handlers()
+                do_stop = True
+                t.join()
+
                 if cm.unraisable is not None:
                     # An unraisable exception may be printed out when
                     # a signal is ignored due to the aforementioned
@@ -1293,8 +1298,13 @@ class StressTest(unittest.TestCase):
                     self.assertIn(
                         f"Signal {signum} ignored due to race condition",
                         str(cm.unraisable.exc_value))
-            # Sanity check that some signals were received, but not all
-            self.assertGreater(num_received_signals, 0)
+                    ignored = True
+
+            # bpo-43406: Even if it is unlikely, it's technically possible that
+            # all signals were ignored because of race conditions.
+            if not ignored:
+                # Sanity check that some signals were received, but not all
+                self.assertGreater(num_received_signals, 0)
             self.assertLess(num_received_signals, num_sent_signals)
         finally:
             do_stop = True

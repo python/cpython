@@ -1365,13 +1365,17 @@ class NulledModules:
             d.clear()
             d.update(c)
 
+
 class TestTemporaryDirectory(BaseTestCase):
     """Test TemporaryDirectory()."""
 
-    def do_create(self, dir=None, pre="", suf="", recurse=1, dirs=1, files=1):
+    def do_create(self, dir=None, pre="", suf="", recurse=1, dirs=1, files=1,
+                  ignore_cleanup_errors=False):
         if dir is None:
             dir = tempfile.gettempdir()
-        tmp = tempfile.TemporaryDirectory(dir=dir, prefix=pre, suffix=suf)
+        tmp = tempfile.TemporaryDirectory(
+            dir=dir, prefix=pre, suffix=suf,
+            ignore_cleanup_errors=ignore_cleanup_errors)
         self.nameCheck(tmp.name, dir, pre, suf)
         self.do_create2(tmp.name, recurse, dirs, files)
         return tmp
@@ -1410,6 +1414,30 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    def test_explict_cleanup_ignore_errors(self):
+        """Test that cleanup doesn't return an error when ignoring them."""
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(
+                dir=working_dir, ignore_cleanup_errors=True)
+            temp_path = pathlib.Path(temp_dir.name)
+            self.assertTrue(temp_path.exists(),
+                            f"TemporaryDirectory {temp_path!s} does not exist")
+            with open(temp_path / "a_file.txt", "w+t") as open_file:
+                open_file.write("Hello world!\n")
+                temp_dir.cleanup()
+            self.assertEqual(len(list(temp_path.glob("*"))),
+                             int(sys.platform.startswith("win")),
+                             "Unexpected number of files in "
+                             f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(
+                temp_path.exists(),
+                sys.platform.startswith("win"),
+                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+            temp_dir.cleanup()
+            self.assertFalse(
+                temp_path.exists(),
+                f"TemporaryDirectory {temp_path!s} exists after cleanup")
+
     @os_helper.skip_unless_symlink
     def test_cleanup_with_symlink_to_a_directory(self):
         # cleanup() should not follow symlinks to directories (issue #12464)
@@ -1444,6 +1472,27 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @support.cpython_only
+    def test_del_on_collection_ignore_errors(self):
+        """Test that ignoring errors works when TemporaryDirectory is gced."""
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(
+                dir=working_dir, ignore_cleanup_errors=True)
+            temp_path = pathlib.Path(temp_dir.name)
+            self.assertTrue(temp_path.exists(),
+                            f"TemporaryDirectory {temp_path!s} does not exist")
+            with open(temp_path / "a_file.txt", "w+t") as open_file:
+                open_file.write("Hello world!\n")
+                del temp_dir
+            self.assertEqual(len(list(temp_path.glob("*"))),
+                             int(sys.platform.startswith("win")),
+                             "Unexpected number of files in "
+                             f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(
+                temp_path.exists(),
+                sys.platform.startswith("win"),
+                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+
     def test_del_on_shutdown(self):
         # A TemporaryDirectory may be cleaned up during shutdown
         with self.do_create() as dir:
@@ -1475,6 +1524,43 @@ class TestTemporaryDirectory(BaseTestCase):
                 err = err.decode('utf-8', 'backslashreplace')
                 self.assertNotIn("Exception ", err)
                 self.assertIn("ResourceWarning: Implicitly cleaning up", err)
+
+    def test_del_on_shutdown_ignore_errors(self):
+        """Test ignoring errors works when a tempdir is gc'ed on shutdown."""
+        with tempfile.TemporaryDirectory() as working_dir:
+            code = """if True:
+                import pathlib
+                import sys
+                import tempfile
+                import warnings
+
+                temp_dir = tempfile.TemporaryDirectory(
+                    dir={working_dir!r}, ignore_cleanup_errors=True)
+                sys.stdout.buffer.write(temp_dir.name.encode())
+
+                temp_dir_2 = pathlib.Path(temp_dir.name) / "test_dir"
+                temp_dir_2.mkdir()
+                with open(temp_dir_2 / "test0.txt", "w") as test_file:
+                    test_file.write("Hello world!")
+                open_file = open(temp_dir_2 / "open_file.txt", "w")
+                open_file.write("Hello world!")
+
+                warnings.filterwarnings("always", category=ResourceWarning)
+                """.format(working_dir=working_dir)
+            __, out, err = script_helper.assert_python_ok("-c", code)
+            temp_path = pathlib.Path(out.decode().strip())
+            self.assertEqual(len(list(temp_path.glob("*"))),
+                             int(sys.platform.startswith("win")),
+                             "Unexpected number of files in "
+                             f"TemporaryDirectory {temp_path!s}")
+            self.assertEqual(
+                temp_path.exists(),
+                sys.platform.startswith("win"),
+                f"TemporaryDirectory {temp_path!s} existance state unexpected")
+            err = err.decode('utf-8', 'backslashreplace')
+            self.assertNotIn("Exception", err)
+            self.assertNotIn("Error", err)
+            self.assertIn("ResourceWarning: Implicitly cleaning up", err)
 
     def test_exit_on_shutdown(self):
         # Issue #22427
