@@ -297,10 +297,10 @@ def _module_repr(module):
     if (spec := getattr(module, "__spec__", None)):
         return _module_repr_from_spec(spec)
     elif hasattr(loader, 'module_repr'):
-            try:
-                return loader.module_repr(module)
-            except Exception:
-                pass
+        try:
+            return loader.module_repr(module)
+        except Exception:
+            pass
     # We could use module.__class__.__name__ instead of 'module' in the
     # various repr permutations.
     try:
