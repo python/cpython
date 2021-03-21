@@ -294,18 +294,17 @@ def _load_module_shim(self, fullname):
 def _module_repr(module):
     # The implementation of ModuleType.__repr__().
     loader = getattr(module, '__loader__', None)
-    if hasattr(loader, 'module_repr'):
-        # As soon as BuiltinImporter, FrozenImporter, and NamespaceLoader
-        # drop their implementations for module_repr. we can add a
-        # deprecation warning here.
-        try:
-            return loader.module_repr(module)
-        except Exception:
-            pass
     try:
         spec = module.__spec__
     except AttributeError:
-        pass
+        if hasattr(loader, 'module_repr'):
+            try:
+                msg = (f"__spec__ not found on the {module.__name__} module;"
+                        "falling back to {type(loader).__qualname__}.module_repr()")
+                _warnings.warn(msg, ImportWarning)
+                return loader.module_repr(module)
+            except Exception:
+                pass
     else:
         if spec is not None:
             return _module_repr_from_spec(spec)
