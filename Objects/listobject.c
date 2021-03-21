@@ -75,8 +75,9 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize))
         new_allocated = ((size_t)newsize + 3) & ~(size_t)3;
 
-    if (newsize == 0)
-        new_allocated = 0;
+    /* Don't overallocate for lists that start empty or are set to empty. */
+    if (newsize == 0 || Py_SIZE(self) == 0)
+        new_allocated = newsize;
     num_allocated_bytes = new_allocated * sizeof(PyObject *);
     items = (PyObject **)PyMem_Realloc(self->ob_item, num_allocated_bytes);
     if (items == NULL) {
