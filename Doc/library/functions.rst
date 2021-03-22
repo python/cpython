@@ -63,13 +63,11 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: aiter(async_iterable)
 
+   Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
    Equivalent to calling ``x.__aiter__()``.
 
-   ``aiter(aiter(x))`` is the same as ``aiter(x)``.
-   (``aiter(x)`` itself has an ``__aiter__()`` method that returns ``self``.)
-
-   Formally, given an :term:`asynchronous iterable`,
-   return an :term:`asynchronous iterator`.
+   ``aiter(x)`` itself has an ``__aiter__()`` method that returns ``self``,
+   so ``aiter(aiter(x))`` is the same as ``aiter(x)``.
 
    Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
 
