@@ -1926,6 +1926,15 @@ expression support in the :mod:`re` module).
    :func:`repr` is invoked on a string.  It has no bearing on the handling of
    strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
 
+   For example::
+
+      >>> ''.isprintable()
+      True
+      >>> ' '.isprintable()
+      True
+      >>> '\t\n'.isprintable() # TAB and BREAK LINE
+      False
+
 
 .. method:: str.isspace()
 
