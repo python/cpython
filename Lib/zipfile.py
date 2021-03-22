@@ -1182,7 +1182,7 @@ class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
     z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                compresslevel=None)
+                compresslevel=None, zeroed=False)
 
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
@@ -1198,6 +1198,8 @@ class ZipFile:
                    When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
+    zeroed: if True ZipFile will create files with zeroed out date,
+            external_attr and create_system.
 
     """
 
@@ -1205,7 +1207,7 @@ class ZipFile:
     _windows_illegal_name_trans_table = None
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True,
-                 compresslevel=None, *, strict_timestamps=True):
+                 compresslevel=None, zeroed=False, *, strict_timestamps=True):
         """Open the ZIP file with mode read 'r', write 'w', exclusive create 'x',
         or append 'a'."""
         if mode not in ('r', 'w', 'x', 'a'):
@@ -1220,6 +1222,7 @@ class ZipFile:
         self.filelist = []      # List of ZipInfo instances for archive
         self.compression = compression  # Method of compression
         self.compresslevel = compresslevel
+        self.zeroed = zeroed
         self.mode = mode
         self.pwd = None
         self._comment = b''
@@ -1831,9 +1834,17 @@ class ZipFile:
 
     def _write_end_record(self):
         for zinfo in self.filelist:         # write central directory
-            dt = zinfo.date_time
-            dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
-            dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
+            if self.zeroed:
+                dosdate = 0
+                dostime = 0
+                external_attr = 0
+                create_system = 0
+            else:
+                dt = zinfo.date_time
+                dosdate = (dt[0] - 1980) << 9 | dt[1] << 5 | dt[2]
+                dostime = dt[3] << 11 | dt[4] << 5 | (dt[5] // 2)
+                external_attr = zinfo.external_attr
+                create_system = zinfo.create_system
             extra = []
             if zinfo.file_size > ZIP64_LIMIT \
                or zinfo.compress_size > ZIP64_LIMIT:
@@ -1872,11 +1883,11 @@ class ZipFile:
             filename, flag_bits = zinfo._encodeFilenameFlags()
             centdir = struct.pack(structCentralDir,
                                   stringCentralDir, create_version,
-                                  zinfo.create_system, extract_version, zinfo.reserved,
+                                  create_system, extract_version, zinfo.reserved,
                                   flag_bits, zinfo.compress_type, dostime, dosdate,
                                   zinfo.CRC, compress_size, file_size,
                                   len(filename), len(extra_data), len(zinfo.comment),
-                                  0, zinfo.internal_attr, zinfo.external_attr,
+                                  0, zinfo.internal_attr, external_attr,
                                   header_offset)
             self.fp.write(centdir)
             self.fp.write(filename)
