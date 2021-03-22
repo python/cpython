@@ -2123,6 +2123,8 @@ expression support in the :mod:`re` module).
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
 
+.. _meth-str-isprintable:
+
 .. method:: str.isprintable()
 
    Return ``True`` if all characters in the string are printable, ``False`` if it
@@ -2138,6 +2140,15 @@ expression support in the :mod:`re` module).
    Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
    Nonprintable characters are those in group Separator or Other (Z or C),
    except the ASCII space.
+
+   For example:
+
+   .. doctest::
+
+      >>> ''.isprintable(), ' '.isprintable()
+      (True, True)
+      >>> '\t'.isprintable(), '\n'.isprintable() # TAB and BREAK LINE
+      (False, False)
 
 
 .. method:: str.isspace()
