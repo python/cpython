@@ -253,7 +253,7 @@ Accessing individual parts
 To access the individual "parts" (components) of a path, use the following
 property:
 
-.. data:: PurePath.parts
+.. attribute:: PurePath.parts
 
    A tuple giving access to the path's various components::
 
@@ -277,7 +277,7 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. data:: PurePath.drive
+.. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::
 
@@ -293,7 +293,7 @@ Pure paths provide the following methods and properties:
       >>> PureWindowsPath('//host/share/foo.txt').drive
       '\\\\host\\share'
 
-.. data:: PurePath.root
+.. attribute:: PurePath.root
 
    A string representing the (local or global) root, if any::
 
@@ -309,7 +309,7 @@ Pure paths provide the following methods and properties:
       >>> PureWindowsPath('//host/share').root
       '\\'
 
-.. data:: PurePath.anchor
+.. attribute:: PurePath.anchor
 
    The concatenation of the drive and root::
 
@@ -323,7 +323,7 @@ Pure paths provide the following methods and properties:
       '\\\\host\\share\\'
 
 
-.. data:: PurePath.parents
+.. attribute:: PurePath.parents
 
    An immutable sequence providing access to the logical ancestors of
    the path::
@@ -339,7 +339,7 @@ Pure paths provide the following methods and properties:
    .. versionchanged:: 3.10
       The parents sequence now supports :term:`slices <slice>` and negative index values.
 
-.. data:: PurePath.parent
+.. attribute:: PurePath.parent
 
    The logical parent of the path::
 
@@ -368,7 +368,7 @@ Pure paths provide the following methods and properties:
       symlinks and eliminate `".."` components.
 
 
-.. data:: PurePath.name
+.. attribute:: PurePath.name
 
    A string representing the final path component, excluding the drive and
    root, if any::
@@ -384,7 +384,7 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffix
+.. attribute:: PurePath.suffix
 
    The file extension of the final component, if any::
 
@@ -396,7 +396,7 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffixes
+.. attribute:: PurePath.suffixes
 
    A list of the path's file extensions::
 
@@ -408,7 +408,7 @@ Pure paths provide the following methods and properties:
       []
 
 
-.. data:: PurePath.stem
+.. attribute:: PurePath.stem
 
    The final path component, without its suffix::
 
