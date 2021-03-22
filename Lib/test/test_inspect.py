@@ -3861,7 +3861,7 @@ class TestSignatureDefinitions(unittest.TestCase):
                         "next", "iter", "vars"}
         no_signature |= needs_groups
         # These have unrepresentable parameter default values of NULL
-        needs_null = {"aiter", "anext"}
+        needs_null = {"anext"}
         no_signature |= needs_null
         # These need PEP 457 groups or a signature change to accept None
         needs_semantic_update = {"round"}
