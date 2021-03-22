@@ -58,7 +58,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
         return 0;
     }
 
-    if (newsize == 0 || Py_SIZE(self) == 0) {
+    if (Py_SIZE(self) == 0 || newsize == 0) {
         /* Don't overallocate for lists that start empty or are set to empty. */
         new_allocated = newsize;
     }
