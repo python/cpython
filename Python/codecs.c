@@ -954,8 +954,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     return Py_BuildValue("(Nn)", res, end);
 }
 
-static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
-
 PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
 {
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
@@ -976,13 +974,11 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
+        /* load the unicode data module */
+        _PyUnicode_Name_CAPI *ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                                        PyUnicodeData_CAPSULE_NAME, 1);
         if (!ucnhash_capi) {
-            /* load the unicode data module */
-            ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
-                                            PyUnicodeData_CAPSULE_NAME, 1);
-            if (!ucnhash_capi) {
-                return NULL;
-            }
+            return NULL;
         }
         for (i = start, ressize = 0; i < end; ++i) {
             /* object is guaranteed to be "ready" */
