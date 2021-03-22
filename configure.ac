@@ -3097,10 +3097,13 @@ fi
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
     LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
+    LIBFFI_LIBDIR="`"$PKG_CONFIG" libffi --libs-only-L 2>/dev/null | sed -e 's/^-L//;s/ *$//'`"
 else
     LIBFFI_INCLUDEDIR=""
+    LIBFFI_LIBDIR=""
 fi
 AC_SUBST(LIBFFI_INCLUDEDIR)
+AC_SUBST(LIBFFI_LIBDIR)
 
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)

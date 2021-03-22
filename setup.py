@@ -2236,7 +2236,9 @@ class PyBuildExt(build_ext):
                                libraries=['m']))
 
         ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
-        ffi_lib = None
+
+        # Potential names of the library (e.g. libNAME.{so,dylib})
+        ffi_libname_candidates = ('ffi', 'ffi_pic')
 
         ffi_inc_dirs = self.inc_dirs.copy()
         if MACOS:
@@ -2246,7 +2248,7 @@ class PyBuildExt(build_ext):
                 if os.path.exists(ffi_in_sdk):
                     ext.extra_compile_args.append("-DUSING_APPLE_OS_LIBFFI=1")
                     ffi_inc = ffi_in_sdk
-                    ffi_lib = 'ffi'
+                    ffi_libname_candidates = ('ffi',)
                 else:
                     # OS X 10.5 comes with libffi.dylib; the include files are
                     # in /usr/include/ffi
@@ -2261,10 +2263,21 @@ class PyBuildExt(build_ext):
             if not os.path.exists(ffi_h):
                 ffi_inc = None
                 print('Header file {} does not exist'.format(ffi_h))
-        if ffi_lib is None and ffi_inc:
-            for lib_name in ('ffi', 'ffi_pic'):
-                if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
+
+        ffi_lib = None
+        # Then we probably also need to figure out the path to the
+        # library too.
+        if ffi_inc:
+            # A list containing nothing or the directory from the
+            # configure script.
+            maybe_ffi_libdir = [d for d in [sysconfig.get_config_var("LIBFFI_LIBDIR")]
+                                    if os.path.isdir(d)]
+
+            for lib_name in ffi_libname_candidates:
+                fullpath = self.compiler.find_library_file(self.lib_dirs + maybe_ffi_libdir, lib_name)
+                if fullpath:
                     ffi_lib = lib_name
+                    ffi_libdir = os.path.normpath(os.path.dirname(fullpath))
                     break
 
         if ffi_inc and ffi_lib:
@@ -2278,6 +2291,8 @@ class PyBuildExt(build_ext):
 
             ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
+            if ffi_libdir not in self.lib_dirs:
+                ext.library_dirs.append(ffi_libdir)
             self.use_system_libffi = True
 
         if sysconfig.get_config_var('HAVE_LIBDL'):
