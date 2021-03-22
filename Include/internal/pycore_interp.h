@@ -14,6 +14,43 @@ extern "C" {
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 #include "pycore_dtoa.h"
+#include "obmalloc.h"
+
+#ifdef WITH_PYMALLOC
+struct _Py_pymalloc_state {
+    /* Array of objects used to track chunks of memory (arenas). */
+    struct _obmalloc_arena_object* arenas;
+    /* Number of slots currently allocated in the `arenas` vector. */
+    _obmalloc_uint maxarenas;
+
+    /* The head of the singly-linked, NULL-terminated list of available
+     * arena_objects.
+     */
+    struct _obmalloc_arena_object* unused_arena_objects;
+
+    /* The head of the doubly-linked, NULL-terminated at each end, list of
+     * arena_objects associated with arenas that have pools available.
+     */
+    struct _obmalloc_arena_object* usable_arenas;
+
+    /* nfp2lasta[nfp] is the last arena in usable_arenas with nfp free pools */
+    struct _obmalloc_arena_object* nfp2lasta[PYMALLOC_MAX_POOLS_IN_ARENA + 1];
+
+    /* Number of arenas allocated that haven't been free()'d. */
+    size_t narenas_currently_allocated;
+
+    /* Total number of times malloc() called to allocate an arena. */
+    size_t ntimes_arena_allocated;
+    /* High water mark (max value ever seen) for narenas_currently_allocated. */
+    size_t narenas_highwater;
+    
+    struct _obmalloc_pool_header* usedpools[2 * ((PYMALLOC_NB_SMALL_SIZE_CLASSES + 7) / 8) * 8];
+
+    int usedpools_initialized;
+    
+    Py_ssize_t raw_allocated_blocks;
+};
+#endif
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -325,6 +362,11 @@ struct _is {
 #ifndef PY_NO_SHORT_FLOAT_REPR
     struct _PyDtoa_Bigint *dtoa_freelist[_PyDtoa_Kmax + 1];
 #endif
+    
+#ifdef WITH_PYMALLOC
+    struct _Py_pymalloc_state pymalloc_state;
+#endif
+    
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
