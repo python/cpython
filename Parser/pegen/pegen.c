@@ -313,6 +313,7 @@ tokenizer_error(Parser *p)
 
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
+    Py_ssize_t col_offset = -1;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -346,16 +347,14 @@ tokenizer_error(Parser *p)
             msg = "too many levels of indentation";
             break;
         case E_LINECONT:
+            col_offset = strlen(strtok(p->tok->buf, "\n")) - 1;
             msg = "unexpected character after line continuation character";
             break;
         default:
             msg = "unknown parsing error";
     }
 
-    PyErr_Format(errtype, msg);
-    // There is no reliable column information for this error
-    PyErr_SyntaxLocationObject(p->tok->filename, p->tok->lineno, 0);
-
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, msg);
     return -1;
 }
 
