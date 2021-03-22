@@ -1868,14 +1868,14 @@ compiler_body(struct compiler *c, asdl_stmt_seq *stmts)
 static PyCodeObject *
 compiler_mod(struct compiler *c, mod_ty mod)
 {
+    _Py_static_string(_module, "<module>");
     PyCodeObject *co;
     int addNone = 1;
-    static PyObject *module;
-    if (!module) {
-        module = PyUnicode_InternFromString("<module>");
-        if (!module)
-            return NULL;
+    PyObject *module = _PyUnicode_FromId(&_module); // borrowed ref
+    if (module == NULL) {
+        return NULL;
     }
+
     /* Use 0 for firstlineno initially, will fixup in assemble(). */
     if (!compiler_enter_scope(c, module, COMPILER_SCOPE_MODULE, mod, 1))
         return NULL;
