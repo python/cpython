@@ -13,7 +13,7 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
-from test.libregrtest.refleak import dash_R, clear_caches
+from test.libregrtest.utils import clear_caches
 from test.libregrtest.save_env import saved_test_environment
 from test.libregrtest.utils import format_duration, print_warning
 
@@ -225,6 +225,9 @@ def _runtest_inner2(ns, test_name):
     import_helper.unload(abstest)
 
     the_module = importlib.import_module(abstest)
+
+    if ns.huntrleaks:
+        from test.libregrtest.refleak import dash_R
 
     # If the test has a test_main, that will run the appropriate
     # tests.  If not, use normal unittest test loading.
