@@ -1987,6 +1987,20 @@ expression support in the :mod:`re` module).
    Return ``True`` if all cased characters [4]_ in the string are lowercase and
    there is at least one cased character, ``False`` otherwise.
 
+   For example::
+
+      >>> 'BANANA'.islower()
+      False
+      >>> 'banana'.islower()
+      True
+      >>> 'baNana'.islower()
+      False
+      >>> ' '.islower()
+      False
+      >>> ''.islower()
+      False
+
+   See also :meth:`isupper`.
 
 .. method:: str.isnumeric()
 
@@ -2040,8 +2054,10 @@ expression support in the :mod:`re` module).
       False
       >>> ' '.isupper()
       False
+      >>> ''.isupper()
+      False
 
-
+   See also :meth:`islower`.
 
 .. _meth-str-join:
 
