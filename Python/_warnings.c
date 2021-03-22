@@ -757,27 +757,21 @@ warn_explicit(PyObject *category, PyObject *message,
 static int
 is_internal_frame(PyFrameObject *frame)
 {
-    static PyObject *importlib_string = NULL;
-    static PyObject *bootstrap_string = NULL;
     int contains;
+    int ret = 0;
 
+    PyObject *importlib_string = PyUnicode_FromString("importlib");
     if (importlib_string == NULL) {
-        importlib_string = PyUnicode_FromString("importlib");
-        if (importlib_string == NULL) {
-            return 0;
-        }
+        goto err;
+    }
 
-        bootstrap_string = PyUnicode_FromString("_bootstrap");
-        if (bootstrap_string == NULL) {
-            Py_DECREF(importlib_string);
-            return 0;
-        }
-        Py_INCREF(importlib_string);
-        Py_INCREF(bootstrap_string);
+    PyObject *bootstrap_string = PyUnicode_FromString("_bootstrap");
+    if (bootstrap_string == NULL) {
+        goto err;
     }
 
     if (frame == NULL) {
-        return 0;
+        goto err;
     }
 
     PyCodeObject *code = PyFrame_GetCode(frame);
@@ -785,27 +779,30 @@ is_internal_frame(PyFrameObject *frame)
     Py_DECREF(code);
 
     if (filename == NULL) {
-        return 0;
+        goto err;
     }
     if (!PyUnicode_Check(filename)) {
-        return 0;
+        goto err;
     }
 
     contains = PyUnicode_Contains(filename, importlib_string);
     if (contains < 0) {
-        return 0;
+        goto err;
     }
     else if (contains > 0) {
         contains = PyUnicode_Contains(filename, bootstrap_string);
         if (contains < 0) {
-            return 0;
+            goto err;
         }
         else if (contains > 0) {
-            return 1;
+            ret = 1;
         }
     }
 
-    return 0;
+err:
+    Py_XDECREF(importlib_string);
+    Py_XDECREF(bootstrap_string);
+    return ret;
 }
 
 static PyFrameObject *
