@@ -949,8 +949,8 @@ Optimizations
   by Dennis Sweeney in :issue:`41972`)
 
 * Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
-  performance in the common case of cache hits. (Contributed by Dino Viehland
-  in :issue:`43452`)
+  performance in the common case of cache hits. This makes the interpreter 1.04 times faster
+  in average (Contributed by Dino Viehland in :issue:`43452`)
 
 Deprecated
 ==========
