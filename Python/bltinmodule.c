@@ -1573,17 +1573,17 @@ In the second form, the callable is called until it returns the sentinel.");
 /*[clinic input]
 aiter as builtin_aiter
 
-    aiterable: object
+    async_iterable: object
     /
 
-Return an async iterator for an AsyncIterable object.
+Return an AsyncIterator for an AsyncIterable object.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_aiter(PyObject *module, PyObject *aiterable)
-/*[clinic end generated code: output=0acd83729a7081e9 input=9311745fdf3f9f1b]*/
+builtin_aiter(PyObject *module, PyObject *async_iterable)
+/*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
 {
-    return PyObject_GetAiter(aiterable);
+    return PyObject_GetAiter(async_iterable);
 }
 
 

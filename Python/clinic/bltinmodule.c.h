@@ -531,7 +531,7 @@ PyDoc_STRVAR(builtin_hex__doc__,
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
 PyDoc_STRVAR(builtin_aiter__doc__,
-"aiter($module, aiterable, /)\n"
+"aiter($module, async_iterable, /)\n"
 "--\n"
 "\n"
 "Return an AsyncIterator for an AsyncIterable object.");
@@ -874,4 +874,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2b8d3a868450f2fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da9ae459e9233259 input=a9049054013a1b77]*/
