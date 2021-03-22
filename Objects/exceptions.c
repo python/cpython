@@ -2984,13 +2984,14 @@ _set_legacy_print_statement_msg(PySyntaxErrorObject *self, Py_ssize_t start)
 static int
 _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
 {
+    _Py_static_string(_print_prefix, "print ");
+    _Py_static_string(_exec_prefix, "exec ");
+
     /* Return values:
      *   -1: an error occurred
      *    0: nothing happened
      *    1: the check triggered & the error message was changed
      */
-    static PyObject *print_prefix = NULL;
-    static PyObject *exec_prefix = NULL;
     Py_ssize_t text_len = PyUnicode_GET_LENGTH(self->text), match;
     int kind = PyUnicode_KIND(self->text);
     const void *data = PyUnicode_DATA(self->text);
@@ -3008,12 +3009,11 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
 
     /* Check for legacy print statements */
+    PyObject *print_prefix =  _PyUnicode_FromId(&_print_prefix); // borrowed ref
     if (print_prefix == NULL) {
-        print_prefix = PyUnicode_InternFromString("print ");
-        if (print_prefix == NULL) {
-            return -1;
-        }
+        return -1;
     }
+
     match = PyUnicode_Tailmatch(self->text, print_prefix,
                                 start, text_len, -1);
     if (match == -1) {
@@ -3024,12 +3024,11 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
 
     /* Check for legacy exec statements */
+    PyObject *exec_prefix = _PyUnicode_FromId(&_exec_prefix); // borrowed ref
     if (exec_prefix == NULL) {
-        exec_prefix = PyUnicode_InternFromString("exec ");
-        if (exec_prefix == NULL) {
-            return -1;
-        }
+        return -1;
     }
+
     match = PyUnicode_Tailmatch(self->text, exec_prefix, start, text_len, -1);
     if (match == -1) {
         return -1;
