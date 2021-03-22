@@ -1828,6 +1828,10 @@ expression support in the :mod:`re` module).
       True
       >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal() #ARABIC-INDIC DIGIT ZERO TO NINE
       True
+      >>> '²'.isdecimal(), '²'.isdigit()
+      (False, True)
+
+   See also :meth:`isdigit`. Decimal numbers is a digit numbers subset.
 
 .. method:: str.isdigit()
 
@@ -1837,6 +1841,17 @@ expression support in the :mod:`re` module).
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
+   For example::
+
+      >>> '0123456789'.isdigit()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit() #ARABIC-INDIC DIGIT ZERO TO NINE
+      True
+      >>> '²'.isdigit(), '²'.isdecimal()
+      (True, False)
+
+   See also :meth:`isdecimal`. Digit numbers is a decimal numbers superset.
 
 .. method:: str.isidentifier()
 
