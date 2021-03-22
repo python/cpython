@@ -695,7 +695,6 @@ sys_displayhook(PyObject *module, PyObject *o)
 {
     PyObject *outf;
     PyObject *builtins;
-    static PyObject *newline = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
@@ -736,11 +735,13 @@ sys_displayhook(PyObject *module, PyObject *o)
             return NULL;
         }
     }
-    if (newline == NULL) {
-        newline = PyUnicode_FromString("\n");
-        if (newline == NULL)
-            return NULL;
+
+    PyObject *newline = PyUnicode_FromString("\n");
+    if (newline == NULL)
+    {
+        return NULL;
     }
+
     if (PyFile_WriteObject(newline, outf, Py_PRINT_RAW) != 0)
         return NULL;
     if (_PyObject_SetAttrId(builtins, &PyId__, o) != 0)
