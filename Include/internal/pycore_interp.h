@@ -13,7 +13,6 @@ extern "C" {
 #include "pycore_gil.h"           // struct _gil_runtime_state
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
-#include "pycore_dtoa.h"
 
 struct _pending_calls {
     PyThread_type_lock lock;
@@ -322,9 +321,6 @@ struct _is {
 
     struct ast_state ast;
     struct type_cache type_cache;
-#ifndef PY_NO_SHORT_FLOAT_REPR
-    struct _PyDtoa_Bigint *dtoa_freelist[_PyDtoa_Kmax + 1];
-#endif
 };
 
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
