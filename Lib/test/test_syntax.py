@@ -973,6 +973,11 @@ def func2():
 """
         self._check_error(code, "invalid syntax")
 
+    def test_invalid_line_continuation_error_position(self):
+        self._check_error(r"a = 3 \ 4",
+                          "unexpected character after line continuation character",
+                          lineno=1, offset=9)
+
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
         # (t_primary_raw in this case) need to be tested explicitly
