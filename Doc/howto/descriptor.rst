@@ -795,7 +795,7 @@ afterwards, :meth:`__set_name__` will need to be called manually.
 ORM example
 -----------
 
-The following code is simplified skeleton showing how data descriptors could
+The following code is a simplified skeleton showing how data descriptors could
 be used to implement an `object relational mapping
 <https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping>`_.
 
