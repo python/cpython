@@ -36,7 +36,7 @@ The :mod:`pprint` module defines one class:
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, underscore_numbers=True)
+                         compact=False, sort_dicts=True, underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.  An output stream may be set using the *stream*
@@ -56,9 +56,9 @@ The :mod:`pprint` module defines one class:
    as will fit within the *width* will be formatted on each output line. If
    *sort_dicts* is true (the default), dictionaries will be formatted with their
    keys sorted, otherwise they will display in insertion order.  If
-   *underscore_numbers* is true (the default), integers will be formatted with
+   *underscore_numbers* is true, integers will be formatted with
    ```_``` character for a thousands separator, otherwise underscores are not
-   displayed.
+   displayed (the default).
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
@@ -96,7 +96,7 @@ The :mod:`pprint` module defines one class:
 The :mod:`pprint` module also provides several shortcut functions:
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, underscore_numbers=True)
+                      compact=False, sort_dicts=True, underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
    *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* will be passed to the
@@ -124,7 +124,7 @@ The :mod:`pprint` module also provides several shortcut functions:
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=True)
+                     compact=False, sort_dicts=True, underscore_numbers=False)
 
    Prints the formatted representation of *object* on *stream*, followed by a
    newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
