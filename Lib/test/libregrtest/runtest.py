@@ -11,7 +11,6 @@ import traceback
 import unittest
 
 from test import support
-from test.support import import_helper
 from test.support import os_helper
 from test.libregrtest.utils import clear_caches
 from test.libregrtest.save_env import saved_test_environment
@@ -222,7 +221,10 @@ def _runtest_inner2(ns, test_name):
     abstest = get_abs_module(ns, test_name)
 
     # remove the module from sys.module to reload it if it was already imported
-    import_helper.unload(abstest)
+    try:
+        del sys.modules[abstest]
+    except KeyError:
+        pass
 
     the_module = importlib.import_module(abstest)
 
