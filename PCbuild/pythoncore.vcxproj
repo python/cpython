@@ -131,6 +131,7 @@
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
     <ClInclude Include="..\Include\cpython\ceval.h" />
     <ClInclude Include="..\Include\cpython\code.h" />
+    <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
     <ClInclude Include="..\Include\cpython\fileutils.h" />
