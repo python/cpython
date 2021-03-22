@@ -2156,6 +2156,20 @@ expression support in the :mod:`re` module).
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
+   For example::
+
+      >>> '0123456789'.isnumeric()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() #ARABIC-INDIC DIGIT ZERO TO NINE
+      True
+      >>> '⅕'.isnumeric() # VULGAR FRACTION ONE FIFTH
+      True
+      >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
+      (True, False, True)
+
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters is a
+   decimal numbers superset.
+
 
 .. method:: str.isprintable()
 
