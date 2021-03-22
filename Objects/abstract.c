@@ -2770,10 +2770,10 @@ int
 PyAiter_Check(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    return (tp->tp_as_async != NULL && \
-            tp->tp_as_async->am_aiter != NULL && \
-            tp->tp_as_async->am_aiter != &_PyObject_NextNotImplemented && \
-            tp->tp_as_async->am_anext != NULL && \
+    return (tp->tp_as_async != NULL &&
+            tp->tp_as_async->am_aiter != NULL &&
+            tp->tp_as_async->am_aiter != &_PyObject_NextNotImplemented &&
+            tp->tp_as_async->am_anext != NULL &&
             tp->tp_as_async->am_anext != &_PyObject_NextNotImplemented);
 }
 

@@ -63,17 +63,15 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: aiter(async_iterable)
 
-   Return an :term:`asynchronous iterator`. This is the async variant
-   of the :func:`iter` builtin, and behaves similarly.
+   Equivalent to calling ``x.__aiter__()``.
 
-   *async_iterable* must be an :term:`asynchronous iterable`,
-   and :func:`aiter` returns an asynchronous iterator for it.
+   ``aiter(aiter(x))`` is the same as ``aiter(x)``.
+   (``aiter(x)`` itself has an ``__aiter__()`` method that returns ``self``.)
 
-   Unlike the :func:`iter` builtin, :func:`aiter` has no 2-argument variant.
-   Often, this variant can be replaced with assignment expressions::
+   Formally, given an :term:`asynchronous iterable`,
+   return an :term:`asynchronous iterator`.
 
-      while chunk := await sock.read(CHUNK_SIZE):
-         ...
+   Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
 
 
 .. function:: all(iterable)
