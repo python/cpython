@@ -12,6 +12,8 @@
 #include <sys/types.h>          /* For size_t */
 #endif
 
+_Py_static_string(_indexerr, "list index out of range");
+
 /*[clinic input]
 class list "PyListObject *" "&PyList_Type"
 [clinic start generated code]*/
@@ -218,8 +220,6 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
-static PyObject *indexerr = NULL;
-
 PyObject *
 PyList_GetItem(PyObject *op, Py_ssize_t i)
 {
@@ -228,11 +228,10 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     if (!valid_index(i, Py_SIZE(op))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
+        PyObject *indexerr = _PyUnicode_FromId(&_indexerr); // borrowed ref
+        if (indexerr == NULL)
+        {
+            return NULL;
         }
         PyErr_SetObject(PyExc_IndexError, indexerr);
         return NULL;
@@ -439,11 +438,10 @@ static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
+        PyObject *indexerr = _PyUnicode_FromId(&_indexerr); // borrowed ref
+        if (indexerr == NULL)
+        {
+            return NULL;
         }
         PyErr_SetObject(PyExc_IndexError, indexerr);
         return NULL;
