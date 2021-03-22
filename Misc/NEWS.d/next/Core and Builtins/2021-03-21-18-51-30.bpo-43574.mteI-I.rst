@@ -1,0 +1,2 @@
+Restores previous list memory behavior where lists initialized from literals
+aren't over-allocated.
