@@ -331,21 +331,22 @@ _PyCode_InitOpcache(PyCodeObject *co)
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    static PyObject *emptystring = NULL;
-    static PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
-    if (emptystring == NULL) {
-        emptystring = PyBytes_FromString("");
-        if (emptystring == NULL)
-            goto failed;
+
+    PyObject *emptystring = PyBytes_FromString("");
+    if (emptystring == NULL)
+    {
+        goto failed;
     }
-    if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL)
-            goto failed;
+
+    PyObject *nulltuple = PyTuple_New(0);
+    if (nulltuple == NULL)
+    {
+        goto failed;
     }
+
     funcname_ob = PyUnicode_FromString(funcname);
     if (funcname_ob == NULL)
         goto failed;
@@ -375,6 +376,9 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 failed:
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
+    Py_XDECREF(emptystring);
+    Py_XDECREF(nulltuple);
+
     return result;
 }
 
