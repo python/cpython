@@ -317,6 +317,34 @@ class TestSuper(unittest.TestCase):
         for i in range(1000):
             super.__init__(sp, int, i)
 
+    def test_replaced_super(self):
+        src = """
+class A:
+    def f(self): pass
+
+class B(A):
+    def f(self): super().f()
+        """
+        g = {}
+        exec(src, g)
+
+        my_super_called = False
+        my_super_f_called = False
+
+        class MySuper:
+            def __init__(self):
+                nonlocal my_super_called
+                my_super_called = True
+
+            def f(self):
+                nonlocal my_super_f_called
+                my_super_f_called = True
+
+        g['super'] = MySuper
+        g['B']().f()
+        self.assertTrue(my_super_called)
+        self.assertTrue(my_super_f_called)
+
 
 if __name__ == "__main__":
     unittest.main()
