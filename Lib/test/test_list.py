@@ -198,12 +198,46 @@ class ListTest(list_tests.CommonTest):
 
     @cpython_only
     def test_overallocation(self):
-        iterable = [1,2]
-        self.assertEqual(sys.getsizeof(iterable), sys.getsizeof(list(iterable)))
+        # bpo-33234: Don't overallocate when initialized from known lengths
+        # bpo-38373: Allows list over-allocation to be zero for some lengths
+        # bpo-43574: Don't overallocate for list-literals
+        sizeof = sys.getsizeof
 
-        # bpo-43574: Don't overallocate for list literals
-        iterable = [1,2,3]
-        self.assertEqual(sys.getsizeof(iterable), sys.getsizeof(list(iterable)))
+        # First handle empty list and empty list-literal cases.  Should have no
+        # overallocation, including init from iterable of unknown length.
+        self.assertEqual(sizeof([]), sizeof(list()))
+        self.assertEqual(sizeof([]), sizeof(list(tuple())))
+        self.assertEqual(sizeof([]), sizeof(list(x for x in [])))
+
+        # Must use actual list-literals to test the overallocation behavior of
+        # compiled list-literals as well as those initialized from them.
+        test_literals = [
+                [1],
+                [1,2],
+                [1,2,3],  # Literals of length > 2 are special-cased in compile
+                [1,2,3,4],
+                [1,2,3,4,5,6,7],
+                [1,2,3,4,5,6,7,8], # bpo-38373: Length 8 init won't over-alloc
+                [1,2,3,4,5,6,7,8,9],
+                ]
+
+        overalloc_amts = []
+        for literal in test_literals:
+            # Ensure that both list literals, and lists made from an iterable
+            # of known size use the same amount of allocation.
+            self.assertEqual(sizeof(literal), sizeof(list(literal)))
+            self.assertEqual(sizeof(literal), sizeof(list(tuple(literal))))
+
+            # By contrast, confirm that non-empty lists initialized from an
+            # iterable where the length is unknown at the time of
+            # initialization, can be overallocated.
+            iterated_list = list(x for x in literal)
+            overalloc_amts.append(sizeof(iterated_list) - sizeof(literal))
+            self.assertGreaterEqual(sizeof(iterated_list), sizeof(literal))
+
+        # bpo-38373: initialized or grown lists are not always over-allocated.
+        # Confirm that over-allocation occurs at least some of the time.
+        self.assertEqual(True, any(x>0 for x in overalloc_amts))
 
     def test_count_index_remove_crashes(self):
         # bpo-38610: The count(), index(), and remove() methods were not
