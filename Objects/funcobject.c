@@ -50,7 +50,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     }
     Py_XINCREF(module);
 
-    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals);
+    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
         goto error;
     }

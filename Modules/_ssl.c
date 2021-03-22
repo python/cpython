@@ -2202,6 +2202,11 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
         Py_INCREF(value);
         Py_SETREF(self->ctx, (PySSLContext *)value);
         SSL_set_SSL_CTX(self->ssl, self->ctx->ctx);
+        /* Set SSL* internal msg_callback to state of new context's state */
+        SSL_set_msg_callback(
+            self->ssl,
+            self->ctx->msg_cb ? _PySSL_msg_callback : NULL
+        );
 #endif
     } else {
         PyErr_SetString(PyExc_TypeError, "The value must be a SSLContext");
@@ -6181,6 +6186,8 @@ sslmodule_init_constants(PyObject *m)
                             X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
     PyModule_AddIntConstant(m, "VERIFY_X509_STRICT",
                             X509_V_FLAG_X509_STRICT);
+    PyModule_AddIntConstant(m, "VERIFY_ALLOW_PROXY_CERTS",
+                            X509_V_FLAG_ALLOW_PROXY_CERTS);
 #ifdef X509_V_FLAG_TRUSTED_FIRST
     PyModule_AddIntConstant(m, "VERIFY_X509_TRUSTED_FIRST",
                             X509_V_FLAG_TRUSTED_FIRST);

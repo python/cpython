@@ -167,6 +167,16 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
+PEP 626: Precise line numbers for debugging and other tools
+-----------------------------------------------------------
+
+PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
+Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
+
+The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+
+The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
+Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
 
 PEP 634: Structural Pattern Matching
 ------------------------------------
@@ -790,6 +800,9 @@ socket
 The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 (Contributed by Christian Heimes in :issue:`42413`.)
 
+Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
+(Contributed by Rui Cunha in :issue:`43571`.)
+
 sys
 ---
 
@@ -1173,6 +1186,12 @@ Build Changes
   and ``--with-tcltk-libs`` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
+* Add ``--with-openssl-rpath`` option to ``configure`` script. The option
+  simplifies building Python with a custom OpenSSL installation, e.g.
+  ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
+  (Contributed by Christian Heimes in :issue:`43466`.)
+
+
 
 C API Changes
 =============
@@ -1345,3 +1364,24 @@ Removed
   Python already implicitly installs signal handlers: see
   :c:member:`PyConfig.install_signal_handlers`.
   (Contributed by Victor Stinner in :issue:`41713`.)
+
+* Remove the ``PyAST_Validate()`` function. It is no longer possible to build a
+  AST object (``mod_ty`` type) with the public C API. The function was already
+  excluded from the limited C API (:pep:`384`).
+  (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove the ``symtable.h`` header file and the undocumented functions:
+
+  * ``PyST_GetScope()``
+  * ``PySymtable_Build()``
+  * ``PySymtable_BuildObject()``
+  * ``PySymtable_Free()``
+  * ``Py_SymtableString()``
+  * ``Py_SymtableStringObject()``
+
+  The ``Py_SymtableString()`` function was part the stable ABI by mistake but
+  it could not be used, because the ``symtable.h`` header file was excluded
+  from the limited C API.
+
+  The Python :mod:`symtable` module remains available and is unchanged.
+  (Contributed by Victor Stinner in :issue:`43244`.)

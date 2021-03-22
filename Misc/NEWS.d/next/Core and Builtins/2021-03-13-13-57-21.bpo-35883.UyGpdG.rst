@@ -1,0 +1,4 @@
+Python no longer fails at startup with a fatal error if a command line
+argument contains an invalid Unicode character. The
+:c:func:`Py_DecodeLocale` function now escapes byte sequences which would be
+decoded as Unicode characters outside the [U+0000; U+10ffff] range.

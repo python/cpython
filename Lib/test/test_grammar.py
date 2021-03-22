@@ -279,6 +279,7 @@ class GrammarTests(unittest.TestCase):
 
     from test.support import check_syntax_error
     from test.support.warnings_helper import check_syntax_warning
+    from test.support.warnings_helper import check_no_warnings
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -1194,7 +1195,7 @@ class GrammarTests(unittest.TestCase):
 
     # these tests fail if python is run with -O, so check __debug__
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
-    def testAssert2(self):
+    def test_assert_failures(self):
         try:
             assert 0, "msg"
         except AssertionError as e:
@@ -1209,11 +1210,36 @@ class GrammarTests(unittest.TestCase):
         else:
             self.fail("AssertionError not raised by 'assert False'")
 
+    def test_assert_syntax_warnings(self):
+        # Ensure that we warn users if they provide a non-zero length tuple as
+        # the assertion test.
         self.check_syntax_warning('assert(x, "msg")',
                                   'assertion is always true')
+        self.check_syntax_warning('assert(False, "msg")',
+                                  'assertion is always true')
+        self.check_syntax_warning('assert(False,)',
+                                  'assertion is always true')
+
+        with self.check_no_warnings(category=SyntaxWarning):
+            compile('assert x, "msg"', '<testcase>', 'exec')
+            compile('assert False, "msg"', '<testcase>', 'exec')
+
+    def test_assert_warning_promotes_to_syntax_error(self):
+        # If SyntaxWarning is configured to be an error, it actually raises a
+        # SyntaxError.
+        # https://bugs.python.org/issue35029
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
-            compile('assert x, "msg"', '<testcase>', 'exec')
+            try:
+                compile('assert x, "msg" ', '<testcase>', 'exec')
+            except SyntaxError:
+                self.fail('SyntaxError incorrectly raised for \'assert x, "msg"\'')
+            with self.assertRaises(SyntaxError):
+                compile('assert(x, "msg")', '<testcase>', 'exec')
+            with self.assertRaises(SyntaxError):
+                compile('assert(False, "msg")', '<testcase>', 'exec')
+            with self.assertRaises(SyntaxError):
+                compile('assert(False,)', '<testcase>', 'exec')
 
 
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef

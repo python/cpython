@@ -22,16 +22,15 @@
  */
 
 #include "Python.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_symtable.h"      // PySTEntryObject
 
-#include "Python-ast.h"
-#include "ast.h"
-#include "code.h"
-#include "symtable.h"
 #define NEED_OPCODE_JUMP_TABLES
-#include "opcode.h"
-#include "wordcode_helpers.h"
+#include "opcode.h"               // EXTENDED_ARG
+#include "wordcode_helpers.h"     // instrsize()
+
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
@@ -395,7 +394,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         goto finally;
     }
 
-    c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
+    c.c_st = _PySymtable_Build(mod, filename, c.c_future);
     if (c.c_st == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError, "no symtable");
@@ -429,7 +428,7 @@ static void
 compiler_free(struct compiler *c)
 {
     if (c->c_st)
-        PySymtable_Free(c->c_st);
+        _PySymtable_Free(c->c_st);
     if (c->c_future)
         PyObject_Free(c->c_future);
     Py_XDECREF(c->c_filename);
@@ -730,7 +729,7 @@ compiler_set_qualname(struct compiler *c)
             mangled = _Py_Mangle(parent->u_private, u->u_name);
             if (!mangled)
                 return 0;
-            scope = PyST_GetScope(parent->u_ste, mangled);
+            scope = _PyST_GetScope(parent->u_ste, mangled);
             Py_DECREF(mangled);
             assert(scope != GLOBAL_IMPLICIT);
             if (scope == GLOBAL_EXPLICIT)
@@ -1921,10 +1920,10 @@ get_ref_type(struct compiler *c, PyObject *name)
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
         _PyUnicode_EqualToASCIIString(name, "__class__"))
         return CELL;
-    scope = PyST_GetScope(c->u->u_ste, name);
+    scope = _PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
-                     "PyST_GetScope(name=%R) failed: "
+                     "_PyST_GetScope(name=%R) failed: "
                      "unknown scope in unit %S (%R); "
                      "symbols: %R; locals: %R; globals: %R",
                      name,
@@ -3355,10 +3354,12 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     basicblock *end;
 
-    if (c->c_optimize)
-        return 1;
-    if (s->v.Assert.test->kind == Tuple_kind &&
-        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0)
+    /* Always emit a warning if the test is a non-zero length tuple */
+    if ((s->v.Assert.test->kind == Tuple_kind &&
+        asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) ||
+        (s->v.Assert.test->kind == Constant_kind &&
+         PyTuple_Check(s->v.Assert.test->v.Constant.value) &&
+         PyTuple_Size(s->v.Assert.test->v.Constant.value) > 0))
     {
         if (!compiler_warn(c, "assertion is always true, "
                               "perhaps remove parentheses?"))
@@ -3366,6 +3367,8 @@ compiler_assert(struct compiler *c, stmt_ty s)
             return 0;
         }
     }
+    if (c->c_optimize)
+        return 1;
     end = compiler_new_block(c);
     if (end == NULL)
         return 0;
@@ -3605,7 +3608,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 
     op = 0;
     optype = OP_NAME;
-    scope = PyST_GetScope(c->u->u_ste, mangled);
+    scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
     case FREE:
         dict = c->u->u_freevars;

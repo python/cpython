@@ -551,7 +551,7 @@ validate_exprs(asdl_expr_seq *exprs, expr_context_ty ctx, int null_ok)
 }
 
 int
-PyAST_Validate(mod_ty mod)
+_PyAST_Validate(mod_ty mod)
 {
     int res = 0;
 
