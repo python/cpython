@@ -1264,8 +1264,48 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     lz->iters = iters;
     func = PyTuple_GET_ITEM(args, 0);
-    Py_INCREF(func);
-    lz->func = func;
+    lz->func = Py_NewRef(func);
+
+    return (PyObject *)lz;
+}
+
+static PyObject *
+map_vectorcall(PyObject *type, PyObject * const*args,
+                size_t nargsf, PyObject *kwnames)
+{
+    PyTypeObject *tp = (PyTypeObject *)type;
+    if (tp == &PyMap_Type && !_PyArg_NoKwnames("map", kwnames)) {
+        return NULL;
+    }
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs < 2) {
+        PyErr_SetString(PyExc_TypeError,
+           "map() must have at least two arguments.");
+        return NULL;
+    }
+
+    PyObject *iters = PyTuple_New(nargs-1);
+    if (iters == NULL) {
+        return NULL;
+    }
+
+    for (int i=1; i<nargs; i++) {
+        PyObject *it = PyObject_GetIter(args[i]);
+        if (it == NULL) {
+            Py_DECREF(iters);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(iters, i-1, it);
+    }
+
+    mapobject *lz = (mapobject *)tp->tp_alloc(tp, 0);
+    if (lz == NULL) {
+        Py_DECREF(iters);
+        return NULL;
+    }
+    lz->iters = iters;
+    lz->func = Py_NewRef(args[0]);
 
     return (PyObject *)lz;
 }
@@ -1403,6 +1443,7 @@ PyTypeObject PyMap_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     map_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
+    .tp_vectorcall = (vectorcallfunc)map_vectorcall
 };
 
 
