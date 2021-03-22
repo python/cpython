@@ -4,22 +4,25 @@
 #include "longintrepr.h"
 
 /* We define bool_repr to return "False" or "True" */
-
-static PyObject *false_str = NULL;
-static PyObject *true_str = NULL;
-
 static PyObject *
 bool_repr(PyObject *self)
 {
+    _Py_IDENTIFIER(True);
+    _Py_IDENTIFIER(False);
+
     PyObject *s;
 
     if (self == Py_True)
-        s = true_str ? true_str :
-            (true_str = PyUnicode_InternFromString("True"));
-    else
-        s = false_str ? false_str :
-            (false_str = PyUnicode_InternFromString("False"));
-    Py_XINCREF(s);
+    {
+        s = _PyUnicode_FromId(&PyId_True); // borrowed ref
+    } else {
+        s = _PyUnicode_FromId(&PyId_False); // borrowed ref
+    }
+
+    if (s != NULL) {
+        return Py_NewRef(s);
+    }
+
     return s;
 }
 
