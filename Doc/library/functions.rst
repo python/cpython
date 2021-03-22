@@ -61,20 +61,19 @@ are always available.  They are listed here in alphabetical order.
    If the argument is a complex number, its magnitude is returned.
 
 
-.. function:: aiter(object, [sentinel])
+.. function:: aiter(async_iterable)
 
-   Return an :term:`asynchronous iterator` object. This is the async variant
+   Return an :term:`asynchronous iterator`. This is the async variant
    of the :func:`iter` builtin, and behaves similarly.
 
-   If sentinel is omitted, then *object* must be an
-   :term:`asynchronous iterable` object, and :func:`aiter` returns an iterator
-   for it.
+   *async_iterable* must be an :term:`asynchronous iterable`,
+   and :func:`aiter` returns an asynchronous iterator for it.
 
-   Otherwise, *object* must be an :term:`asynchronous callable`. When the
-   resulting async iterator is async iterated, the passed callable is
-   called and awaited and the values returned become the values produced
-   by the iterator. When the awaited return value is equal to sentinel,
-   the async iterator terminates with :exc:`StopAsyncIteration`.
+   Unlike the :func:`iter` builtin, :func:`aiter` has no 2-argument variant.
+   Often, this variant can be replaced with assignment expressions::
+
+      while chunk := await sock.read(CHUNK_SIZE):
+         ...
 
 
 .. function:: all(iterable)

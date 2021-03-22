@@ -1574,26 +1574,16 @@ In the second form, the callable is called until it returns the sentinel.");
 aiter as builtin_aiter
 
     aiterable: object
-    sentinel: object = NULL
     /
 
-Return an async iterator for an async iterable object.
+Return an async iterator for an AsyncIterable object.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_aiter_impl(PyObject *module, PyObject *aiterable, PyObject *sentinel)
-/*[clinic end generated code: output=ea120e90169d9f32 input=a12efceda1863b3c]*/
+builtin_aiter(PyObject *module, PyObject *aiterable)
+/*[clinic end generated code: output=0acd83729a7081e9 input=9311745fdf3f9f1b]*/
 {
-    if (sentinel == NULL) {
-        return PyObject_GetAiter(aiterable);
-    }
-
-    if (!PyCallable_Check(aiterable)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "aiter(v, w): v must be async callable");
-        return NULL;
-    }
-    return PyCallAsyncIter_New(aiterable, sentinel);
+    return PyObject_GetAiter(aiterable);
 }
 
 

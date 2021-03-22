@@ -2744,13 +2744,13 @@ PyObject_GetAiter(PyObject *o) {
     unaryfunc f;
 
     if (t->tp_as_async == NULL || t->tp_as_async->am_aiter == NULL) {
-        return type_error("'%.200s' object is not async-iterable", o);
+        return type_error("'%.200s' object is not an AsyncIterable", o);
     }
     f = t->tp_as_async->am_aiter;
     PyObject *it = (*f)(o);
     if (it != NULL && !PyAiter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-                     "aiter() returned non-async-iterator of type '%.100s'",
+                     "aiter() returned non-AsyncIterator of type '%.100s'",
                      Py_TYPE(it)->tp_name);
         Py_DECREF(it);
         it = NULL;

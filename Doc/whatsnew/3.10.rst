@@ -591,7 +591,7 @@ Other Language Changes
 * Two new builtin functions -- :func:`aiter` and :func:`anext` have been added
   to provide asynchronous counterparts to :func:`iter` and :func:`next`,
   respectively.
-  (Contributed by Josh Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
+  (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
 
 New Modules

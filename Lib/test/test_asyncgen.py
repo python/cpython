@@ -415,51 +415,37 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(consume())
         self.assertEqual(results, [1, 2])
 
-    def test_async_gen_aiter_2_arg(self):
+    def test_anext_bad_args(self):
         async def gen():
             yield 1
-            yield 2
-            yield 3
-        g = gen()
-        async def foo():
-            return await anext(g)
-        async def consume():
-            return [i async for i in aiter(foo, 3)]
-        res = self.loop.run_until_complete(consume())
-        self.assertEqual(res, [1, 2])
-
-    def test_async_aiter_callable(self):
-        v = 0
-        async def foo():
-            nonlocal v
-            v += 1
-            return v
-        async def consume():
-            return [i async for i in aiter(foo, 3)]
-        res = self.loop.run_until_complete(consume())
-        self.assertEqual(res, [1, 2])
-
-    def test_anext_bad_args(self):
-        self._test_bad_args(anext)
+        async def call_with_too_few_args():
+            await anext()
+        async def call_with_too_many_args():
+            await anext(gen(), 1, 3)
+        async def call_with_wrong_type_args():
+            await anext(1, gen())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_too_few_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_too_many_args())
+        with self.assertRaises(TypeError):
+            self.loop.run_until_complete(call_with_wrong_type_args())
 
     def test_aiter_bad_args(self):
-        self._test_bad_args(aiter)
-
-    def _test_bad_args(self, afn):
         async def gen():
             yield 1
-        async def call_with_no_args():
-            await afn()
-        async def call_with_3_args():
-            await afn(gen(), 1, 2)
-        async def call_with_bad_args():
-            await afn(1, gen())
+        async def call_with_too_few_args():
+            await aiter()
+        async def call_with_too_many_args():
+            await aiter(gen(), 1)
+        async def call_with_wrong_type_arg():
+            await aiter(1)
         with self.assertRaises(TypeError):
-            self.loop.run_until_complete(call_with_no_args())
+            self.loop.run_until_complete(call_with_too_few_args())
         with self.assertRaises(TypeError):
-            self.loop.run_until_complete(call_with_3_args())
+            self.loop.run_until_complete(call_with_too_many_args())
         with self.assertRaises(TypeError):
-            self.loop.run_until_complete(call_with_bad_args())
+            self.loop.run_until_complete(call_with_wrong_type_arg())
 
     async def to_list(self, gen):
         res = []
