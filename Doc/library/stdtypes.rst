@@ -1858,8 +1858,8 @@ expression support in the :mod:`re` module).
    Return ``True`` if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
-   Call :func:`keyword.iskeyword` to test whether string ``s`` is a reserved
-   identifier, such as :keyword:`def` and :keyword:`class`.
+   You can to call :func:`keyword.iskeyword` to test whether string ``s`` is a
+   reserved identifier, such as :keyword:`def` and :keyword:`class`.
 
    Example:
    ::
@@ -1867,9 +1867,9 @@ expression support in the :mod:`re` module).
       >>> from keyword import iskeyword
 
       >>> 'hello'.isidentifier(), iskeyword('hello')
-      True, False
+      (True, False)
       >>> 'def'.isidentifier(), iskeyword('def')
-      True, True
+      (True, True)
 
 
 .. method:: str.islower()
