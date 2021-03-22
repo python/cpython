@@ -54,8 +54,6 @@ _unpack_uint32 = _bootstrap_external._unpack_uint32
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
 
-import warnings
-
 
 # Public API #########################################################
 
@@ -78,6 +76,7 @@ def find_loader(name, path=None):
     This function is deprecated in favor of importlib.util.find_spec().
 
     """
+    import warnings
     warnings.warn('Deprecated since Python 3.4. '
                   'Use importlib.util.find_spec() instead.',
                   DeprecationWarning, stacklevel=2)

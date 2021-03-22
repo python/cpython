@@ -16,7 +16,6 @@ import _imp
 import functools
 import sys
 import types
-import warnings
 
 
 def source_hash(source_bytes):
@@ -149,6 +148,7 @@ def set_package(fxn):
     """
     @functools.wraps(fxn)
     def set_package_wrapper(*args, **kwargs):
+        import warnings
         warnings.warn('The import system now takes care of this automatically.',
                       DeprecationWarning, stacklevel=2)
         module = fxn(*args, **kwargs)
@@ -168,6 +168,7 @@ def set_loader(fxn):
     """
     @functools.wraps(fxn)
     def set_loader_wrapper(self, *args, **kwargs):
+        import warnings
         warnings.warn('The import system now takes care of this automatically.',
                       DeprecationWarning, stacklevel=2)
         module = fxn(self, *args, **kwargs)
@@ -195,6 +196,7 @@ def module_for_loader(fxn):
     the second argument.
 
     """
+    import warnings
     warnings.warn('The import system now takes care of this automatically.',
                   DeprecationWarning, stacklevel=2)
     @functools.wraps(fxn)
