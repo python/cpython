@@ -948,7 +948,7 @@ Optimizations
   algorithm to avoid quadratic behavior on long strings.  (Contributed
   by Dennis Sweeney in :issue:`41972`)
 
-* Added micro-optimizations to ``_PyType_Lookup()`` to improve cache lookup
+* Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
   performance in the common case of cache hits. (Contributed by Dino Viehland
   in :issue:`43452`)
 
