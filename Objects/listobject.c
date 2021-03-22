@@ -61,7 +61,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     if (newsize == 0 || Py_SIZE(self) == 0) {
         /* Don't overallocate for lists that start empty or are set to empty. */
         new_allocated = newsize;
-    } else {
+    }
+    else {
         /* This over-allocates proportional to the list size, making room
          * for additional growth.  The over-allocation is mild, but is
          * enough to give linear-time amortized behavior over a long
@@ -76,8 +77,9 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
         /* Do not overallocate if the new size is closer to overallocated size
          * than to the old size.
          */
-        if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize))
+        if (newsize - Py_SIZE(self) > (Py_ssize_t)(new_allocated - newsize)) {
             new_allocated = ((size_t)newsize + 3) & ~(size_t)3;
+        }
     }
 
     num_allocated_bytes = new_allocated * sizeof(PyObject *);
