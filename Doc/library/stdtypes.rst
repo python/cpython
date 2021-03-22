@@ -2044,7 +2044,10 @@ expression support in the :mod:`re` module).
       True
       >>> '\t\n'.isprintable() # TAB and BREAK LINE
       False
+      >>> '\u3000'.isprintable() # IDEOGRAPHIC SPACE
+      False
 
+   See also :meth:`isspace`.
 
 .. method:: str.isspace()
 
@@ -2056,6 +2059,18 @@ expression support in the :mod:`re` module).
    ("Separator, space"), or its bidirectional class is one of ``WS``,
    ``B``, or ``S``.
 
+   For example::
+
+      >>> ''.isspace()
+      False
+      >>> ' '.isspace()
+      True
+      >>> '\t\n'.isspace() # TAB and BREAK LINE
+      True
+      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+      True
+
+   See also :meth:`isprintable`.
 
 .. method:: str.istitle()
 
