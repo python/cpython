@@ -123,8 +123,8 @@ encoding is not UTF-8 for most Windows users. For example::
    with open("README.md") as f:
        long_description = f.read()
 
-Additionally, Python may change the default text encoding to UTF-8 in the
-future, although there is no plan yet.
+Additionally, while there is no concrete plan as of yet, Python may change
+the default text file encoding to UTF-8 in the future.
 
 So it is highly recommended to specify encoding explicitly when opening text
 files. If you want to use UTF-8, specify ``encoding="utf-8"``. If you need to
