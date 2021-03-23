@@ -54,14 +54,6 @@ from time import monotonic as _time
 import types
 
 try:
-    import pwd
-except ImportError:
-    pwd = None
-try:
-    import grp
-except ImportError:
-    grp = None
-try:
     import fcntl
 except ImportError:
     fcntl = None
@@ -875,7 +867,9 @@ class Popen(object):
                                  "current platform")
 
             elif isinstance(group, str):
-                if grp is None:
+                try:
+                    import grp
+                except ImportError:
                     raise ValueError("The group parameter cannot be a string "
                                      "on systems without the grp module")
 
@@ -901,7 +895,9 @@ class Popen(object):
             gids = []
             for extra_group in extra_groups:
                 if isinstance(extra_group, str):
-                    if grp is None:
+                    try:
+                        import grp
+                    except ImportError:
                         raise ValueError("Items in extra_groups cannot be "
                                          "strings on systems without the "
                                          "grp module")
@@ -927,10 +923,11 @@ class Popen(object):
                                  "the current platform")
 
             elif isinstance(user, str):
-                if pwd is None:
+                try:
+                    import pwd
+                except ImportError:
                     raise ValueError("The user parameter cannot be a string "
                                      "on systems without the pwd module")
-
                 uid = pwd.getpwnam(user).pw_uid
             elif isinstance(user, int):
                 uid = user
