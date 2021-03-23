@@ -13,6 +13,7 @@
 #include "pycore_ast.h"           // PyAST_mod2obj
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 
+#include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch
@@ -1224,7 +1225,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyCodeObject *co = PyAST_CompileObject(mod, filename, flags, -1, arena);
+    PyCodeObject *co = _PyAST_Compile(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
 
@@ -1301,7 +1302,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         PyArena_Free(arena);
         return result;
     }
-    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
+    co = _PyAST_Compile(mod, filename, flags, optimize, arena);
     PyArena_Free(arena);
     return (PyObject *)co;
 }
