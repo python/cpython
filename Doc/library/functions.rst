@@ -71,6 +71,7 @@ are always available.  They are listed here in alphabetical order.
 
    Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
 
+   .. versionadded:: 3.10
 
 .. function:: all(iterable)
 
@@ -97,6 +98,7 @@ are always available.  They are listed here in alphabetical order.
    iterator. If *default* is given, it is returned if the iterator is exhausted,
    otherwise :exc:`StopAsyncIteration` is raised.
 
+   .. versionadded:: 3.10
 
 .. function:: any(iterable)
 
