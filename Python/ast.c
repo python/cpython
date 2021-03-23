@@ -3,8 +3,7 @@
  * of the given abstract syntax tree (potentially constructed manually).
  */
 #include "Python.h"
-#include "Python-ast.h"
-#include "ast.h"
+#include "pycore_ast.h"           // asdl_stmt_seq
 
 #include <assert.h>
 
