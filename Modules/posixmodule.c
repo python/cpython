@@ -3930,31 +3930,41 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #else
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LINKAT
-    if ((src_dir_fd != DEFAULT_DIR_FD) ||
-        (dst_dir_fd != DEFAULT_DIR_FD) ||
-        (!follow_symlinks)) {
-
-        if (HAVE_LINKAT_RUNTIME) {
-
-            result = linkat(src_dir_fd, src->narrow,
-                dst_dir_fd, dst->narrow,
-                follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
-
-        }
-#ifdef __APPLE__
-        else {
-            if (src_dir_fd == DEFAULT_DIR_FD && dst_dir_fd == DEFAULT_DIR_FD) {
-                /* See issue 41355: This matches the behaviour of !HAVE_LINKAT */
-                result = link(src->narrow, dst->narrow);
-            } else {
-                linkat_unavailable = 1;
-            }
-        }
-#endif
+    if (HAVE_LINKAT_RUNTIME) {
+        result = linkat(src_dir_fd, src->narrow,
+            dst_dir_fd, dst->narrow,
+            follow_symlinks ? AT_SYMLINK_FOLLOW : 0);
     }
-    else
-#endif /* HAVE_LINKAT */
+#ifdef __APPLE__
+    else {
+        if (src_dir_fd == DEFAULT_DIR_FD && dst_dir_fd == DEFAULT_DIR_FD && follow_symlinks) {
+            /* See issue 41355: This matches the behaviour of !HAVE_LINKAT */
+            result = link(src->narrow, dst->narrow);
+        } else {
+            linkat_unavailable = 1;
+        }
+    }
+#endif
+
+#else  /* linkat not available */
+/* See issue 41355: link() on Linux works like linkat without AT_SYMLINK_FOLLOW,
+   but on Mac it works like linkat *with* AT_SYMLINK_FOLLOW. */
+#ifdef __APPLE__
+    if (!follow_symlinks) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                    "link: follow_symlinks=False unavailable on this platform");
+        return NULL;
+    } else {
+#else
+    if (follow_symlinks) {
+        PyErr_SetString(PyExc_NotImplementedError,
+                    "link: follow_symlinks=True unavailable on this platform");
+        return NULL;
+    } else {
+#endif /* __APPLE__ */
         result = link(src->narrow, dst->narrow);
+    }
+#endif /* HAVE_LINKAT */
     Py_END_ALLOW_THREADS
 
 #ifdef HAVE_LINKAT
