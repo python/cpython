@@ -1399,3 +1399,15 @@ Removed
   ``Yield`` macro which was conflict with the ``Yield`` name used by the
   Windows ``<winbase.h>`` header. Use the Python :mod:`ast` module instead.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove the compiler functions using ``struct _mod`` type, because the public
+  AST C API was removed:
+
+  * ``PyAST_Compile()``
+  * ``PyAST_CompileEx()``
+  * ``PyAST_CompileObject()``
+  * ``PyFuture_FromAST()``
+  * ``PyFuture_FromASTObject()``
+
+  These functions were undocumented and excluded from the limited C API.
+  (Contributed by Victor Stinner in :issue:`43244`.)
