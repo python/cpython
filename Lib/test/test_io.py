@@ -4251,7 +4251,7 @@ class MiscIOTest(unittest.TestCase):
 
     def test_check_encoding_warning(self):
         # PEP 597: Raise warning when encoding is not specified
-        # and dev mode is enabled.
+        # and sys.flags.warn_default_encoding is set.
         mod = self.io.__name__
         filename = __file__
         code = textwrap.dedent(f'''\
