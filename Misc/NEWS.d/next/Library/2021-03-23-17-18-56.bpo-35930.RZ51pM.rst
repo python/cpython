@@ -1,0 +1,2 @@
+Raising an exception raised in a "future" instance will create reference
+cycles.
