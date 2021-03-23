@@ -116,7 +116,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 
 
 PyFutureFeatures *
-PyFuture_FromASTObject(mod_ty mod, PyObject *filename)
+_PyFuture_FromAST(mod_ty mod, PyObject *filename)
 {
     PyFutureFeatures *ff;
 
@@ -132,20 +132,5 @@ PyFuture_FromASTObject(mod_ty mod, PyObject *filename)
         PyObject_Free(ff);
         return NULL;
     }
-    return ff;
-}
-
-
-PyFutureFeatures *
-PyFuture_FromAST(mod_ty mod, const char *filename_str)
-{
-    PyFutureFeatures *ff;
-    PyObject *filename;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    ff = PyFuture_FromASTObject(mod, filename);
-    Py_DECREF(filename);
     return ff;
 }
