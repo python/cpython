@@ -276,16 +276,16 @@ PyDoc_STRVAR(_io_text_encoding__doc__,
 "text_encoding($module, encoding, stacklevel=2, /)\n"
 "--\n"
 "\n"
-"Helper function to choose the text encoding.\n"
+"A helper function to choose the text encoding.\n"
 "\n"
 "When encoding is not None, just return it.\n"
 "Otherwise, return the default text encoding (i.e. \"locale\").\n"
 "\n"
-"This function emits EncodingWarning if *encoding* is None and\n"
+"This function emits an EncodingWarning if encoding is None and\n"
 "sys.flags.warn_default_encoding is true.\n"
 "\n"
-"This function can be used in APIs having encoding=None option.\n"
-"But please consider encoding=\"utf-8\" for new APIs.");
+"This can be used in APIs with an encoding=None parameter.\n"
+"However, please consider using encoding=\"utf-8\" for new APIs.");
 
 #define _IO_TEXT_ENCODING_METHODDEF    \
     {"text_encoding", (PyCFunction)(void(*)(void))_io_text_encoding, METH_FASTCALL, _io_text_encoding__doc__},
@@ -359,4 +359,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0debb6d44de1be64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06e055d1d80b835d input=a9049054013a1b77]*/

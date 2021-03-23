@@ -513,21 +513,21 @@ _io.text_encoding
     stacklevel: int = 2
     /
 
-Helper function to choose the text encoding.
+A helper function to choose the text encoding.
 
 When encoding is not None, just return it.
 Otherwise, return the default text encoding (i.e. "locale").
 
-This function emits EncodingWarning if *encoding* is None and
+This function emits an EncodingWarning if encoding is None and
 sys.flags.warn_default_encoding is true.
 
-This function can be used in APIs having encoding=None option.
-But please consider encoding="utf-8" for new APIs.
+This can be used in APIs with an encoding=None parameter.
+However, please consider using encoding="utf-8" for new APIs.
 [clinic start generated code]*/
 
 static PyObject *
 _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
-/*[clinic end generated code: output=91b2cfea6934cc0c input=2f8639413d4a6e1a]*/
+/*[clinic end generated code: output=91b2cfea6934cc0c input=bf70231213e2a7b4]*/
 {
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
