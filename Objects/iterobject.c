@@ -296,19 +296,6 @@ typedef struct {
     PyObject *default_value;
 } anextawaitableobject;
 
-
-PyObject *
-PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
-{
-    anextawaitableobject *anext = PyObject_GC_New(anextawaitableobject, &PyAnextAwaitable_Type);
-    Py_INCREF(awaitable);
-    anext->wrapped = awaitable;
-    Py_INCREF(default_value);
-    anext->default_value = default_value;
-    _PyObject_GC_TRACK(anext);
-    return (PyObject *)anext;
-}
-
 static void
 anextawaitable_dealloc(anextawaitableobject *obj)
 {
@@ -338,7 +325,6 @@ anextawaitable_iternext(anextawaitableobject *obj)
     }
     return NULL;
 }
-
 
 static PyAsyncMethods anextawaitable_as_async = {
     PyObject_SelfIter,                          /* am_await */
@@ -378,3 +364,15 @@ PyTypeObject PyAnextAwaitable_Type = {
     (unaryfunc)anextawaitable_iternext,         /* tp_iternext */
     0,                                          /* tp_methods */
 };
+
+PyObject *
+PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
+{
+    anextawaitableobject *anext = PyObject_GC_New(anextawaitableobject, &PyAnextAwaitable_Type);
+    Py_INCREF(awaitable);
+    anext->wrapped = awaitable;
+    Py_INCREF(default_value);
+    anext->default_value = default_value;
+    _PyObject_GC_TRACK(anext);
+    return (PyObject *)anext;
+}

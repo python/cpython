@@ -1586,6 +1586,7 @@ builtin_aiter(PyObject *module, PyObject *async_iterable)
     return PyObject_GetAiter(async_iterable);
 }
 
+PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
 
 /*[clinic input]
 anext as builtin_anext
