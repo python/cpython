@@ -143,10 +143,10 @@ Opt-in EncodingWarning
 .. versionadded:: 3.10
    See :pep:`597` for more details.
 
-To find where the default encoding is used, you can use
-a ``-X warn_default_encoding`` command line argument or a
-:envvar:`PYTHONWARNDEFAULTENCODING` environment variable to emit
-an :exc:`EncodingWarning` when the defaut encoding is used.
+To find where the default locale encoding is used, you can enable
+the ``-X warn_default_encoding`` command line option or set the
+:envvar:`PYTHONWARNDEFAULTENCODING` environment variable, which will
+emit an :exc:`EncodingWarning` when the default encoding is used.
 
 If you are providing APIs using :func:`open` or :class:`TextIOWrapper` and
 having ``encoding=None`` parameter, you can use :func:`text_encoding` to emit
