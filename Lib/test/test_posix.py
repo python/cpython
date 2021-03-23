@@ -1190,6 +1190,24 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
             os_helper.unlink(os_helper.TESTFN + 'link')
 
+    @unittest.skipUnless(os.link in os.supports_follow_symlinks, "test needs follow_symlinks support in os.link()")
+    def test_link_follow_symlinks(self):
+        symlink_fn = os_helper.TESTFN + 'symlink'
+        link_following = os_helper.TESTFN + 'link_following'
+        link_nofollow = os_helper.TESTFN + 'link_nofollow'
+        posix.symlink(os_helper.TESTFN, symlink_fn)
+        self.teardown_files.append(symlink_fn)
+
+        # follow_symlinks=False -> duplicate the symlink itself
+        posix.link(symlink_fn, link_nofollow, follow_symlinks=False)
+        self.teardown_files.append(link_nofollow)
+        self.assertEqual(posix.lstat(link_nofollow), posix.lstat(symlink_fn))
+
+        # follow_symlinks=True -> duplicate the target file
+        posix.link(symlink_fn, link_following, follow_symlinks=True)
+        self.teardown_files.append(link_following)
+        self.assertEqual(posix.lstat(link_following), posix.lstat(os_helper.TESTFN))
+
     @unittest.skipUnless(os.mkdir in os.supports_dir_fd, "test needs dir_fd support in os.mkdir()")
     def test_mkdir_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
