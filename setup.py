@@ -2447,7 +2447,7 @@ class PyBuildExt(build_ext):
         else:
             runtime_library_dirs = [openssl_rpath]
 
-        kw = dict(
+        openssl_extension_kwargs = dict(
             include_dirs=openssl_includes,
             library_dirs=openssl_libdirs,
             libraries=openssl_libs,
@@ -2459,16 +2459,18 @@ class PyBuildExt(build_ext):
         # falls back to libcrypto.a if the library search directories do not
         # contain libcrypto.so.
         if sysconfig.get_config_var("PY_LINKER_EXCLUDE_LIBS"):
-            kw["extra_link_args"] = [
-                f"-Wl,--exclude-libs,lib{lib}.a" for lib in kw["libraries"]
+            openssl_extension_kwargs["extra_link_args"] = [
+                f"-Wl,--exclude-libs,lib{lib}.a"
+                for lib in openssl_extension_kwargs["libraries"]
             ]
 
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
             self.add(
                 Extension(
-                    '_ssl', ['_ssl.c'],
+                    '_ssl',
+                    ['_ssl.c'],
                     depends=['socketmodule.h', '_ssl/debughelpers.c'],
-                    **kw
+                    **openssl_extension_kwargs
                 )
             )
         else:
@@ -2476,9 +2478,10 @@ class PyBuildExt(build_ext):
 
         self.add(
             Extension(
-                '_hashlib', ['_hashopenssl.c'],
+                '_hashlib',
+                ['_hashopenssl.c'],
                 depends=['hashlib.h'],
-                **kw,
+                **openssl_extension_kwargs,
             )
         )
 
