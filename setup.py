@@ -2447,24 +2447,40 @@ class PyBuildExt(build_ext):
         else:
             runtime_library_dirs = [openssl_rpath]
 
+        kw = dict(
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+            runtime_library_dirs=runtime_library_dirs,
+        )
+        # Don't re-export OpenSSL symbols from statically linked libs if
+        # OpenSSL is built with "./config no-shared -fPIC".
+        # Note: gcc -shared -lcrypto -L/path/to/openssl/lib automatically
+        # falls back to libcrypto.a if the library search directories do not
+        # contain libcrypto.so.
+        if sysconfig.get_config_var("PY_LINKER_EXCLUDE_LIBS"):
+            kw["extra_link_args"] = [
+                f"-Wl,--exclude-libs,lib{lib}.a" for lib in kw["libraries"]
+            ]
+
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(Extension(
-                '_ssl', ['_ssl.c'],
-                include_dirs=openssl_includes,
-                library_dirs=openssl_libdirs,
-                libraries=openssl_libs,
-                runtime_library_dirs=runtime_library_dirs,
-                depends=['socketmodule.h', '_ssl/debughelpers.c'])
+            self.add(
+                Extension(
+                    '_ssl', ['_ssl.c'],
+                    depends=['socketmodule.h', '_ssl/debughelpers.c'],
+                    **kw
+                )
             )
         else:
             self.missing.append('_ssl')
 
-        self.add(Extension('_hashlib', ['_hashopenssl.c'],
-                           depends=['hashlib.h'],
-                           include_dirs=openssl_includes,
-                           library_dirs=openssl_libdirs,
-                           runtime_library_dirs=runtime_library_dirs,
-                           libraries=openssl_libs))
+        self.add(
+            Extension(
+                '_hashlib', ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                **kw,
+            )
+        )
 
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available

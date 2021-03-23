@@ -626,6 +626,7 @@ ac_subst_vars='LTLIBOBJS
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
+PY_LINKER_EXCLUDE_LIBS
 OPENSSL_RPATH
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -17719,6 +17720,45 @@ fi
 esac
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPENSSL_RPATH" >&5
 $as_echo "$OPENSSL_RPATH" >&6; }
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the linker accepts -Wl,--exclude-libs,ALL" >&5
+$as_echo_n "checking whether the linker accepts -Wl,--exclude-libs,ALL... " >&6; }
+if ${ax_cv_check_ldflags___Wl___exclude_libs_ALL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$LDFLAGS
+  LDFLAGS="$LDFLAGS  -Wl,--exclude-libs,ALL"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_check_ldflags___Wl___exclude_libs_ALL=yes
+else
+  ax_cv_check_ldflags___Wl___exclude_libs_ALL=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LDFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_ldflags___Wl___exclude_libs_ALL" >&5
+$as_echo "$ax_cv_check_ldflags___Wl___exclude_libs_ALL" >&6; }
+if test "x$ax_cv_check_ldflags___Wl___exclude_libs_ALL" = xyes; then :
+  PY_LINKER_EXCLUDE_LIBS="1"
+
+else
+  :
+fi
+
 
 
 # ssl module default cipher suite string

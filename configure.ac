@@ -5832,6 +5832,12 @@ AS_CASE($with_openssl_rpath,
 AC_MSG_RESULT($OPENSSL_RPATH)
 AC_SUBST([OPENSSL_RPATH])
 
+AX_CHECK_LINK_FLAG(
+    [-Wl,--exclude-libs,ALL],
+    [PY_LINKER_EXCLUDE_LIBS="1"]
+)
+AC_SUBST([PY_LINKER_EXCLUDE_LIBS])
+
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
   [Default cipher suites list for ssl module.
