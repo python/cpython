@@ -56,10 +56,10 @@ class RobotFileParser:
         self.url = url
         self.host, self.path = urllib.parse.urlparse(url)[1:3]
 
-    def read(self):
+    def read(self, sslcontext=None):
         """Reads the robots.txt URL and feeds it to the parser."""
         try:
-            f = urllib.request.urlopen(self.url)
+            f = urllib.request.urlopen(self.url, context=sslcontext) if sslcontext else urllib.request.urlopen(self.url)
         except urllib.error.HTTPError as err:
             if err.code in (401, 403):
                 self.disallow_all = True
