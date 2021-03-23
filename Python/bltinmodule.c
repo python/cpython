@@ -1611,6 +1611,59 @@ In the second form, the callable is called until it returns the sentinel.");
 
 
 /*[clinic input]
+aiter as builtin_aiter
+
+    async_iterable: object
+    /
+
+Return an AsyncIterator for an AsyncIterable object.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_aiter(PyObject *module, PyObject *async_iterable)
+/*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
+{
+    return PyObject_GetAiter(async_iterable);
+}
+
+PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
+
+/*[clinic input]
+anext as builtin_anext
+
+    aiterator: object
+    default: object = NULL
+    /
+
+Return the next item from the async iterator.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value)
+/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
+{
+    PyTypeObject *t;
+    PyObject *awaitable;
+
+    t = Py_TYPE(aiterator);
+    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+        PyErr_Format(PyExc_TypeError,
+            "'%.200s' object is not an async iterator",
+            t->tp_name);
+        return NULL;
+    }
+
+    awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (default_value == NULL) {
+        return awaitable;
+    }
+
+    return PyAnextAwaitable_New(awaitable, default_value);
+}
+
+
+/*[clinic input]
 len as builtin_len
 
     obj: object
@@ -2890,11 +2943,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
+    BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
+    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF
