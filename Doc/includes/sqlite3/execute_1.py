@@ -10,9 +10,17 @@ age = 72
 # This is the qmark style:
 cur.execute("insert into people values (?, ?)", (who, age))
 
-# And this is the named style:
-cur.execute("select * from people where name_last=:who and age=:age", {"who": who, "age": age})
+# The qmark style used with executemany():
+people = [
+    ('Chirac', 70),
+    ('Finnbogadóttir', 72),
+    ('Schröder', 58),
+]
+cur.executemany("insert into people values (?, ?)", people)
 
-print(cur.fetchone())
+# And this is the named style:
+cur.execute("select * from people where name_last=:who and age=:age",
+            {"who": who, "age": age})
+print(cur.fetchall())
 
 con.close()
