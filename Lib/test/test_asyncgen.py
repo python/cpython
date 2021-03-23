@@ -415,6 +415,13 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.loop.run_until_complete(consume())
         self.assertEqual(results, [1, 2])
 
+    def test_aiter_idempotent(self):
+        async def gen():
+            yield 1
+        applied_once = aiter(gen())
+        applied_twice = aiter(applied_once)
+        self.assertIs(applied_once, applied_twice)
+
     def test_anext_bad_args(self):
         async def gen():
             yield 1
