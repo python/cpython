@@ -444,6 +444,24 @@ For the full specification see :pep:`634`.  Motivation and rationale
 are in :pep:`635`, and a longer tutorial is in :pep:`636`.
 
 
+.. _whatsnew310-pep597
+
+Optional ``EncodingWarning`` and ``encoding="locale"`` option
+-------------------------------------------------------------
+
+The default encoding of :class:`TextIOWrapper` and :func:`open` is
+platform and locale dependent. Since UTF-8 is used on most Unix
+platforms, omitting ``encoding`` option when opening UTF-8 files
+(e.g. JSON, YAML, TOML, Markdown) is very common bug. For example::
+
+   # BUG: "b" mode or encoding="utf-8" should be used.
+   with open("data.json") as f:
+       data = json.laod(f)
+
+To find this type of bugs, optional ``EncodingWarning`` is added.
+
+
+
 New Features Related to Type Annotations
 ========================================
 
