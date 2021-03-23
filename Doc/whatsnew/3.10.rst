@@ -922,9 +922,10 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`41334`.)
 
 * The :mod:`runpy` module now imports fewer modules.
-  The ``python3 -m module-name`` command startup time is 1.3x faster in
-  average.
-  (Contributed by Victor Stinner in :issue:`41006`.)
+  The ``python3 -m module-name`` command startup time is 1.4x faster in
+  average. On Linux, ``python3 -I -m module-name`` imports 69 modules on Python
+  3.9, whereas it only imports 51 modules (-18) on Python 3.10.
+  (Contributed by Victor Stinner in :issue:`41006` and :issue:`41718`.)
 
 * The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.  It
   is about 36% faster now for regular attributes and 44% faster for slots.
