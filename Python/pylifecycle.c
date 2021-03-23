@@ -2,9 +2,6 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()

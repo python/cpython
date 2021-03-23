@@ -4,7 +4,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <token.h>
-#include <Python-ast.h>
+#include <pycore_ast.h>
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
@@ -101,7 +101,7 @@ typedef struct {
     arg_ty kwarg;
 } StarEtc;
 
-typedef struct { operator_ty kind; } AugOperator; 
+typedef struct { operator_ty kind; } AugOperator;
 typedef struct {
     void *element;
     int is_keyword;
