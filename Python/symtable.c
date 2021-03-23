@@ -2,6 +2,7 @@
 #include "pycore_ast.h"           // identifier, stmt_ty
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
 #include "structmember.h"         // PyMemberDef
@@ -1975,7 +1976,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
