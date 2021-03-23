@@ -131,9 +131,9 @@ files. If you want to use UTF-8, specify ``encoding="utf-8"``. If you need to
 use locale-specific encoding, ``encoding="locale"`` is supported since Python
 3.10.
 
-When you need to run code using the default encoding to open UTF-8 files on
-Windows, you can enable the UTF-8 mode. See also the
-:ref:`UTF-8 mode on Windows <win-utf8-mode>`
+When you need to run existing code on Windows that attempts to opens
+UTF-8 files using the default locale encoding, you can enable the UTF-8
+mode. See :ref:`UTF-8 mode on Windows <win-utf8-mode>`.
 
 .. _io-encoding-warning:
 
