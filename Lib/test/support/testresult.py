@@ -9,8 +9,6 @@ import time
 import traceback
 import unittest
 
-from datetime import datetime
-
 class RegressionTestResult(unittest.TextTestResult):
     separator1 = '=' * 70 + '\n'
     separator2 = '-' * 70 + '\n'
@@ -21,6 +19,7 @@ class RegressionTestResult(unittest.TextTestResult):
         self.buffer = True
         if self.USE_XML:
             from xml.etree import ElementTree as ET
+            from datetime import datetime
             self.__ET = ET
             self.__suite = ET.Element('testsuite')
             self.__suite.set('start', datetime.utcnow().isoformat(' '))
