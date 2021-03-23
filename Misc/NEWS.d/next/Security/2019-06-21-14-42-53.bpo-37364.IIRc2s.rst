@@ -1,1 +1,0 @@
-:func:`io.open_code` is now used when reading :file:`.pth` files.

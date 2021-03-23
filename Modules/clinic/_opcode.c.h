@@ -32,11 +32,6 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!args) {
         goto exit;
     }
-    if (PyFloat_Check(args[0])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     opcode = _PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
@@ -61,4 +56,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7bc08f2835b2cf89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bcf66d25c2624197 input=a9049054013a1b77]*/

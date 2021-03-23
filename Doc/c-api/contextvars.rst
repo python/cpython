@@ -60,17 +60,17 @@ Type-check macros:
 .. c:function:: int PyContext_CheckExact(PyObject *o)
 
    Return true if *o* is of type :c:data:`PyContext_Type`. *o* must not be
-   *NULL*.  This function always succeeds.
+   ``NULL``.  This function always succeeds.
 
 .. c:function:: int PyContextVar_CheckExact(PyObject *o)
 
    Return true if *o* is of type :c:data:`PyContextVar_Type`. *o* must not be
-   *NULL*.  This function always succeeds.
+   ``NULL``.  This function always succeeds.
 
 .. c:function:: int PyContextToken_CheckExact(PyObject *o)
 
    Return true if *o* is of type :c:data:`PyContextToken_Type`.
-   *o* must not be *NULL*.  This function always succeeds.
+   *o* must not be ``NULL``.  This function always succeeds.
 
 
 Context object management functions:
@@ -100,11 +100,6 @@ Context object management functions:
    Deactivate the *ctx* context and restore the previous context as the
    current context for the current thread.  Returns ``0`` on success,
    and ``-1`` on error.
-
-.. c:function:: int PyContext_ClearFreeList()
-
-   Clear the context variable free list. Return the total number of
-   freed items.  This function always succeeds.
 
 
 Context variable functions:

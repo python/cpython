@@ -12,7 +12,7 @@ HelpSource htests.  These are run by running query.py.
 from idlelib import query
 import unittest
 from test.support import requires
-from tkinter import Tk
+from tkinter import Tk, END
 
 import sys
 from unittest import mock
@@ -135,6 +135,36 @@ class ModuleNameTest(unittest.TestCase):
     def test_good_module_name(self):
         dialog = self.Dummy_ModuleName('idlelib')
         self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
+        self.assertEqual(dialog.entry_error['text'], '')
+        dialog = self.Dummy_ModuleName('os.path')
+        self.assertTrue(dialog.entry_ok().endswith('path.py'))
+        self.assertEqual(dialog.entry_error['text'], '')
+
+
+class GotoTest(unittest.TestCase):
+    "Test Goto subclass of Query."
+
+    class Dummy_ModuleName:
+        entry_ok = query.Goto.entry_ok  # Function being tested.
+        def __init__(self, dummy_entry):
+            self.entry = Var(value=dummy_entry)
+            self.entry_error = {'text': ''}
+        def showerror(self, message):
+            self.entry_error['text'] = message
+
+    def test_bogus_goto(self):
+        dialog = self.Dummy_ModuleName('a')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('not a base 10 integer', dialog.entry_error['text'])
+
+    def test_bad_goto(self):
+        dialog = self.Dummy_ModuleName('0')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('not a positive integer', dialog.entry_error['text'])
+
+    def test_good_goto(self):
+        dialog = self.Dummy_ModuleName('1')
+        self.assertEqual(dialog.entry_ok(), 1)
         self.assertEqual(dialog.entry_error['text'], '')
 
 
@@ -363,6 +393,22 @@ class ModulenameGuiTest(unittest.TestCase):
         root.destroy()
 
 
+class GotoGuiTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+    def test_click_module_name(self):
+        root = Tk()
+        root.withdraw()
+        dialog =  query.Goto(root, 'T', 't', _utest=True)
+        dialog.entry.insert(0, '22')
+        dialog.button_ok.invoke()
+        self.assertEqual(dialog.result, 22)
+        root.destroy()
+
+
 class HelpsourceGuiTest(unittest.TestCase):
 
     @classmethod
@@ -392,10 +438,12 @@ class CustomRunGuiTest(unittest.TestCase):
     def test_click_args(self):
         root = Tk()
         root.withdraw()
-        dialog =  query.CustomRun(root, 'Title', _utest=True)
-        dialog.entry.insert(0, 'okay')
+        dialog =  query.CustomRun(root, 'Title',
+                                  cli_args=['a', 'b=1'], _utest=True)
+        self.assertEqual(dialog.entry.get(), 'a b=1')
+        dialog.entry.insert(END, ' c')
         dialog.button_ok.invoke()
-        self.assertEqual(dialog.result, (['okay'], True))
+        self.assertEqual(dialog.result, (['a', 'b=1', 'c'], True))
         root.destroy()
 
 

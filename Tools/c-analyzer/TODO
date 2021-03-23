@@ -1,0 +1,1067 @@
+
+# allocator (16)
+Objects/obmalloc.c:_PyMem                                        static PyMemAllocatorEx _PyMem
+Objects/obmalloc.c:_PyMem_Debug                                  static struct { debug_alloc_api_t raw; debug_alloc_api_t mem; debug_alloc_api_t obj; } _PyMem_Debug
+Objects/obmalloc.c:_PyMem_Raw                                    static PyMemAllocatorEx _PyMem_Raw
+Objects/obmalloc.c:_PyObject                                     static PyMemAllocatorEx _PyObject
+Objects/obmalloc.c:_PyObject_Arena                               static PyObjectArenaAllocator _PyObject_Arena
+Objects/obmalloc.c:_Py_tracemalloc_config                        struct _PyTraceMalloc_Config _Py_tracemalloc_config
+Objects/obmalloc.c:arenas                                        static struct arena_object* arenas
+Objects/obmalloc.c:maxarenas                                     static uint maxarenas
+Objects/obmalloc.c:narenas_currently_allocated                   static size_t narenas_currently_allocated
+Objects/obmalloc.c:narenas_highwater                             static size_t narenas_highwater
+Objects/obmalloc.c:nfp2lasta                                     static struct arena_object* nfp2lasta[MAX_POOLS_IN_ARENA + 1]
+Objects/obmalloc.c:ntimes_arena_allocated                        static size_t ntimes_arena_allocated
+Objects/obmalloc.c:unused_arena_objects                          static struct arena_object* unused_arena_objects
+Objects/obmalloc.c:usable_arenas                                 static struct arena_object* usable_arenas
+Objects/obmalloc.c:usedpools                                     static poolp usedpools[2 * ((NB_SMALL_SIZE_CLASSES + 7) / 8) * 8]
+Objects/obmalloc.c:new_arena():debug_stats                       static int debug_stats
+
+
+# counters
+Modules/_abc.c:abc_invalidation_counter                          static unsigned long long abc_invalidation_counter
+Objects/bytesobject.c:_Py_null_strings                           Py_ssize_t _Py_null_strings
+Objects/bytesobject.c:_Py_onel_strings                           Py_ssize_t _Py_one_strings
+
+
+# constants (effectively)
+Objects/dictobject.c:empty_keys_struct                           static PyDictKeysObject empty_keys_struct
+
+
+# "initialized"
+Python/fileutils.c:_Py_open_cloexec_works                        int _Py_open_cloexec_works
+
+
+# freelists
+Objects/dictobject.c:keys_free_list                              static PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST]
+Objects/dictobject.c:numfreekeys                                 static int numfreekeys
+
+
+# other non-object (43)
+Modules/_tracemalloc.c:allocators                                static struct { PyMemAllocatorEx mem; PyMemAllocatorEx raw; PyMemAllocatorEx obj; } allocators
+Modules/_tracemalloc.c:tables_lock                               static PyThread_type_lock tables_lock
+Modules/_tracemalloc.c:tracemalloc_filenames                     static _Py_hashtable_t *tracemalloc_filenames
+Modules/_tracemalloc.c:tracemalloc_peak_traced_memory            static size_t tracemalloc_peak_traced_memory
+Modules/_tracemalloc.c:tracemalloc_reentrant_key                 static Py_tss_t tracemalloc_reentrant_key
+Modules/_tracemalloc.c:tracemalloc_tracebacks                    static _Py_hashtable_t *tracemalloc_tracebacks
+Modules/_tracemalloc.c:tracemalloc_traced_memory                 static size_t tracemalloc_traced_memory
+Modules/_tracemalloc.c:tracemalloc_traces                        static _Py_hashtable_t *tracemalloc_traces
+Modules/faulthandler.c:old_stack                                 static stack_t old_stack
+Modules/faulthandler.c:stack                                     static stack_t stack
+Modules/faulthandler.c:faulthandler_dump_traceback():reentrant   static volatile int reentrant
+Modules/posixmodule.c:initialized                                static int initialized
+Modules/signalmodule.c:initialized                               static int initialized
+Modules/timemodule.c:initialized                                 static int initialized
+Objects/dictobject.c:pydict_global_version                       static uint64_t pydict_global_version
+Objects/floatobject.c:detected_double_format                     static float_format_type detected_double_format
+Objects/floatobject.c:detected_float_format                      static float_format_type detected_float_format
+Objects/floatobject.c:double_format                              static float_format_type double_format
+Objects/floatobject.c:float_format                               static float_format_type
+Objects.longobject.c:_Py_quick_int_allocs                        Py_ssize_t _Py_quick_int_allocs
+Objects.longobject.c:_Py_quick_neg_int_allocs                    Py_ssize_t _Py_quick_neg_int_allocs
+Objects/moduleobject.c:max_module_number                         static Py_ssize_t max_module_number
+Objects/object.c:_Py_RefTotal                                    Py_ssize_t _Py_RefTotal
+Objects/tupleobject.c:_Py_fast_tuple_allocs                      Py_ssize_t _Py_fast_tuple_allocs
+Objects/tupleobject.c:_Py_tuple_zero_allocs                      Py_ssize_t _Py_tuple_zero_allocs
+Objects/typeobject.c:next_version_tag                            static unsigned int next_version_tag
+Python/Python-ast.c:init_types():initialized                     static int initialized
+Python/bootstrap_hash.c:urandom_cache                            static struct { int fd; dev_t st_dev; ino_t st_ino; } urandom_cache
+Python/ceval.c:lltrace                                           static int lltrace
+Python/ceval.c:make_pending_calls():busy                         static int busy
+Python/dynload_shlib.c:handles                                   static struct { dev_t dev; ino_t ino; void *handle; } handles[128]
+Python/dynload_shlib.c:nhandles                                  static int nhandles
+Python/import.c:import_lock                                      static PyThread_type_lock import_lock
+Python/import.c:import_lock_level                                static int import_lock_level
+Python/import.c:import_lock_thread                               static unsigned long import_lock_thread
+Python/import.c:import_find_and_load():accumulated               static _PyTime_t accumulated
+Python/import.c:import_find_and_load():header                    static int header
+Python/import.c:import_find_and_load():import_level              static int import_level
+Python/pylifecycle.c:_Py_UnhandledKeyboardInterrupt              int _Py_UnhandledKeyboardInterrupt
+Python/pylifecycle.c:fatal_error():reentrant                     static int reentrant
+
+
+#######################################
+# PyObject (960)
+
+# freelists (10 + 10)
+Modules/_collectionsmodule.c:freeblocks                          static block *freeblocks[MAXFREEBLOCKS]
+Modules/_collectionsmodule.c:numfreeblocks                       static Py_ssize_t numfreeblocks
+Objects/dictobject.c:free_list                                   static PyDictObject *free_list[PyDict_MAXFREELIST]
+Objects/dictobject.c:numfree                                     static int numfree
+Objects/exceptions.c:memerrors_freelist                          static PyBaseExceptionObject *memerrors_freelist
+Objects/exceptions.c:memerrors_numfree                           static int memerrors_numfree
+Objects/floatobject.c:free_list                                  static PyFloatObject *free_list
+Objects/floatobject.c:numfree                                    static int numfree
+Objects/frameobject.c:free_list                                  static PyFrameObject *free_list
+Objects/frameobject.c:numfree                                    static int numfree
+Objects/genobject.c:ag_asend_freelist                            static PyAsyncGenASend *ag_asend_freelist[_PyAsyncGen_MAXFREELIST]
+Objects/genobject.c:ag_asend_freelist_free                       static int ag_asend_freelist_free
+Objects/genobject.c:ag_value_freelist                            static _PyAsyncGenWrappedValue *ag_value_freelist[_PyAsyncGen_MAXFREELIST]
+Objects/genobject.c:ag_value_freelist_free                       static int ag_value_freelist_free
+Objects/listobject.c:free_list                                   static PyListObject *free_list[PyList_MAXFREELIST]
+Objects/listobject.c:numfree                                     static int numfree
+Objects/tupleobject.c:free_list                                  static PyTupleObject *free_list[PyTuple_MAXSAVESIZE]
+Objects/tupleobject.c:numfree                                    static int numfree[PyTuple_MAXSAVESIZE]
+Python/context.c:ctx_freelist                                    static PyContext *ctx_freelist
+Python/context.c:ctx_freelist_len                                static int ctx_freelist_len
+
+
+# singletons (7)
+Objects/boolobject.c:_Py_FalseStruct                             static struct _longobject _Py_FalseStruct
+Objects/boolobject.c:_Py_TrueStruct                              static struct _longobject _Py_TrueStruct
+Objects/boolobject.c:false_str                                   static PyObject *false_str
+Objects/boolobject.c:true_str                                    static PyObject *true_str
+Objects/object.c:_Py_NoneStruct                                  PyObject _Py_NoneStruct
+Objects/object.c:_Py_NotImplementedStruct                        PyObject _Py_NotImplementedStruct
+Objects/sliceobject.c:_Py_EllipsisObject                         PyObject _Py_EllipsisObject
+
+
+# module vars (9)
+Modules/_functoolsmodule.c:kwd_mark                              static PyObject *kwd_mark
+Modules/_localemodule.c:Error                                    static PyObject *Error
+Modules/_threadmodule.c:ThreadError                              static PyObject *ThreadError
+Modules/_tracemalloc.c:unknown_filename                          static PyObject *unknown_filename
+Modules/signalmodule.c:DefaultHandler                            static PyObject *DefaultHandler
+Modules/signalmodule.c:IgnoreHandler                             static PyObject *IgnoreHandler
+Modules/signalmodule.c:IntHandler                                static PyObject *IntHandler
+Modules/signalmodule.c:ItimerError                               static PyObject *ItimerError
+Objects/exceptions.c:errnomap                                    static PyObject *errnomap
+
+
+# other (non-cache) (5)
+Modules/_tracemalloc.c:tracemalloc_traceback                     static traceback_t *tracemalloc_traceback
+Modules/faulthandler.c:fatal_error                               static struct { int enabled; PyObject *file; int fd; int all_threads; PyInterpreterState *interp; void *exc_handler; } fatal_error
+Modules/faulthandler.c:thread                                    static struct { PyObject *file; int fd; PY_TIMEOUT_T timeout_us; int repeat; PyInterpreterState *interp; int exit; char *header; size_t header_len; PyThread_type_lock cancel_event; PyThread_type_lock running; } thread
+Modules/signalmodule.c:Handlers                                  static volatile struct { _Py_atomic_int tripped; PyObject *func; } Handlers[NSIG]
+Objects/setobject.c:_dummy_struct                                static PyObject _dummy_struct
+
+
+# caches (5)
+Modules/posixmodule.c:posix_putenv_garbage                       static PyObject *posix_putenv_garbage
+Objects/sliceobject.c:slice_cache                                static PySliceObject *slice_cache
+Objects/typeobject.c:method_cache                                static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP]
+Objects/unicodeobject.c:interned                                 static PyObject *interned
+Python/import.c:extensions                                       static PyObject *extensions
+
+
+# cached constants - non-str (15)
+Modules/_io/_iomodule.c:_PyIO_empty_bytes                        PyObject *_PyIO_empty_bytes
+Modules/_io/bufferedio.c:_PyIO_trap_eintr():eintr_int            static PyObject *eintr_int
+Modules/posixmodule.c:billion                                    static PyObject *billion
+Modules/posixmodule.c:wait_helper():struct_rusage                static PyObject *struct_rusage
+Objects/bytesobject.c:characters                                 static PyBytesObject *characters[UCHAR_MAX + 1]
+Objects/bytesobject.c:nullstring                                 static PyBytesObject *nullstring
+Objects/codeobject.c:PyCode_NewEmpty():nulltuple                 static PyObject *nulltuple
+Objects/dictobject.c:empty_values                                static PyObject *empty_values[1]
+Objects/listobject.c:indexerr                                    static PyObject *indexerr
+Objects/longobject.c:small_ints                                  static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS]
+Objects/setobject.c:emptyfrozenset                               static PyObject *emptyfrozenset
+Python/context.c:_token_missing                                  static PyObject *_token_missing
+Python/hamt.c:_empty_hamt                                        static PyHamtObject *_empty_hamt
+
+
+# cached constants - str (441)
+Modules/_io/_iomodule.c:_PyIO_empty_str                          PyObject *_PyIO_empty_str
+Modules/_io/_iomodule.c:_PyIO_str_close                          PyObject *_PyIO_str_close
+Modules/_io/_iomodule.c:_PyIO_str_closed                         PyObject *_PyIO_str_closed
+Modules/_io/_iomodule.c:_PyIO_str_decode                         PyObject *_PyIO_str_decode
+Modules/_io/_iomodule.c:_PyIO_str_encode                         PyObject *_PyIO_str_encode
+Modules/_io/_iomodule.c:_PyIO_str_fileno                         PyObject *_PyIO_str_fileno
+Modules/_io/_iomodule.c:_PyIO_str_flush                          PyObject *_PyIO_str_flush
+Modules/_io/_iomodule.c:_PyIO_str_getstate                       PyObject *_PyIO_str_getstate
+Modules/_io/_iomodule.c:_PyIO_str_isatty                         PyObject *_PyIO_str_isatty
+Modules/_io/_iomodule.c:_PyIO_str_newlines                       PyObject *_PyIO_str_newlines
+Modules/_io/_iomodule.c:_PyIO_str_nl                             PyObject *_PyIO_str_nl
+Modules/_io/_iomodule.c:_PyIO_str_peek                           PyObject *_PyIO_str_peek
+Modules/_io/_iomodule.c:_PyIO_str_read                           PyObject *_PyIO_str_read
+Modules/_io/_iomodule.c:_PyIO_str_read1                          PyObject *_PyIO_str_read1
+Modules/_io/_iomodule.c:_PyIO_str_readable                       PyObject *_PyIO_str_readable
+Modules/_io/_iomodule.c:_PyIO_str_readall                        PyObject *_PyIO_str_readall
+Modules/_io/_iomodule.c:_PyIO_str_readinto                       PyObject *_PyIO_str_readinto
+Modules/_io/_iomodule.c:_PyIO_str_readline                       PyObject *_PyIO_str_readline
+Modules/_io/_iomodule.c:_PyIO_str_reset                          PyObject *_PyIO_str_reset
+Modules/_io/_iomodule.c:_PyIO_str_seek                           PyObject *_PyIO_str_seek
+Modules/_io/_iomodule.c:_PyIO_str_seekable                       PyObject *_PyIO_str_seekable
+Modules/_io/_iomodule.c:_PyIO_str_setstate                       PyObject *_PyIO_str_setstate
+Modules/_io/_iomodule.c:_PyIO_str_tell                           PyObject *_PyIO_str_tell
+Modules/_io/_iomodule.c:_PyIO_str_truncate                       PyObject *_PyIO_str_truncate
+Modules/_io/_iomodule.c:_PyIO_str_writable                       PyObject *_PyIO_str_writable
+Modules/_io/_iomodule.c:_PyIO_str_write                          PyObject *_PyIO_str_write
+Modules/_threadmodule.c:str_dict                                 static PyObject *str_dict
+Modules/gcmodule.c:gc_str                                        static PyObject *gc_str
+Objects/classobject.c:instancemethod_get_doc():docstr            static PyObject *docstr
+Objects/classobject.c:method_get_doc():docstr                    static PyObject *docstr
+Objects/codeobject.c:PyCode_NewEmpty():emptystring               static PyObject *emptystring
+Objects/exceptions.c:_check_for_legacy_statements():exec_prefix  static PyObject *exec_prefix
+Objects/exceptions.c:_check_for_legacy_statements():print_prefix static PyObject *print_prefix
+Objects/funcobject.c:PyFunction_NewWithQualName():__name__       static PyObject *__name__
+Objects/typeobject.c:object___reduce_ex___impl():objreduce       static PyObject *objreduce
+Objects/typeobject.c:resolve_slotdups():pname                    static PyObject *pname
+Objects/unicodeobject.c:unicode_empty                            static PyObject *unicode_empty
+Objects/unicodeobject.c:unicode_latin1                           static PyObject *unicode_latin1[256]
+Python/_warnings.c:is_internal_frame():bootstrap_string          static PyObject *bootstrap_string
+Python/_warnings.c:is_internal_frame():importlib_string          static PyObject *importlib_string
+Python/ast.c:u_kind                                              static PyObject *u_kind
+Python/ast_unparse.c:_str_close_br                               static PyObject *_str_close_br
+Python/ast_unparse.c:_str_dbl_close_br                           static PyObject *_str_dbl_close_br
+Python/ast_unparse.c:_str_dbl_open_br                            static PyObject *_str_dbl_open_br
+Python/ast_unparse.c:_str_open_br                                static PyObject *_str_open_br
+Python/compile.c:__annotations__                                 static PyObject *__annotations__
+Python/compile.c:__doc__                                         static PyObject *__doc__
+Python/compile.c:compiler_dictcomp():name                        static identifier name
+Python/compile.c:compiler_from_import():empty_string             static PyObject *empty_string
+Python/compile.c:compiler_genexp():name                          static identifier name
+Python/compile.c:compiler_lambda():name                          static identifier name
+Python/compile.c:compiler_listcomp():name                        static identifier name
+Python/compile.c:compiler_setcomp():name                         static identifier name
+Python/compile.c:compiler_visit_annotations():return_str         static identifier return_str
+Python/import.c:PyImport_Import():builtins_str                   static PyObject *builtins_str
+Python/import.c:PyImport_Import():import_str                     static PyObject *import_str
+Python/import.c:PyImport_Import():silly_list                     static PyObject *silly_list
+Python/sysmodule.c:whatstrings                                   static PyObject *whatstrings[8]
+Python/sysmodule.c:sys_displayhook():newline                     static PyObject *newline
+Objects/typeobject.c:object_new():comma_id                       _Py_static_string(comma_id, "", "")
+Objects/typeobject.c:slot_nb_add():op_id                         _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_add():rop_id                        _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_and():op_id                         _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_and():rop_id                        _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_divmod():op_id                      _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_divmod():rop_id                     _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_floor_divide():op_id                _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_floor_divide():rop_id               _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_lshift():op_id                      _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_lshift():rop_id                     _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_matrix_multiply():op_id             _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_matrix_multiply():rop_id            _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_multiply():op_id                    _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_multiply():rop_id                   _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_or():op_id                          _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_or():rop_id                         _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_power_binary():op_id                _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_power_binary():rop_id               _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_remainder():op_id                   _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_remainder():rop_id                  _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_rshift():op_id                      _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_rshift():rop_id                     _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_subtract():op_id                    _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_subtract():rop_id                   _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_true_divide():op_id                 _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_true_divide():rop_id                _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_xor():op_id                         _Py_static_string(op_id, OPSTR)
+Objects/typeobject.c:slot_nb_xor():rop_id                        _Py_static_string(op_id, OPSTR)
+Python/compile.c:compiler_set_qualname():dot                     _Py_static_string(dot, ""."")
+Python/compile.c:compiler_set_qualname():dot_locals              _Py_static_string(dot_locals, "".<locals>"")
+Python/pythonrun.c:PyId_string                                   _Py_static_string(PyId_string, ""<string>"")
+Modules/_abc.c:PyId___abstractmethods__                          _Py_IDENTIFIER(__abstractmethods__)
+Modules/_abc.c:PyId___bases__                                    _Py_IDENTIFIER(__bases__)
+Modules/_abc.c:PyId___class__                                    _Py_IDENTIFIER(__class__)
+Modules/_abc.c:PyId___dict__                                     _Py_IDENTIFIER(__dict__)
+Modules/_abc.c:PyId___subclasscheck__                            _Py_IDENTIFIER(__subclasscheck__)
+Modules/_abc.c:PyId___subclasshook__                             _Py_IDENTIFIER(__subclasshook__)
+Modules/_abc.c:PyId__abc_impl                                    _Py_IDENTIFIER(_abc_impl)
+Modules/_collectionsmodule.c:_count_elements():PyId___setitem__  _Py_IDENTIFIER(__setitem__)
+Modules/_collectionsmodule.c:_count_elements():PyId_get          _Py_IDENTIFIER(get)
+Modules/_collectionsmodule.c:defdict_reduce():PyId_items         _Py_IDENTIFIER(items)
+Modules/_dbmmodule.c:dbm__exit__():PyId_close                    _Py_IDENTIFIER(close)
+Modules/_gdbmmodule.c:dbm__exit__():PyId_close                   _Py_IDENTIFIER(close)
+Modules/_io/_iomodule.c:_io_open_impl():PyId__blksize            _Py_IDENTIFIER(_blksize)
+Modules/_io/_iomodule.c:_io_open_impl():PyId_isatty              _Py_IDENTIFIER(isatty)
+Modules/_io/_iomodule.c:_io_open_impl():PyId_mode                _Py_IDENTIFIER(mode)
+Modules/_io/bufferedio.c:PyId__dealloc_warn                      _Py_IDENTIFIER(_dealloc_warn)
+Modules/_io/bufferedio.c:PyId_close                              _Py_IDENTIFIER(close)
+Modules/_io/bufferedio.c:PyId_flush                              _Py_IDENTIFIER(flush)
+Modules/_io/bufferedio.c:PyId_isatty                             _Py_IDENTIFIER(isatty)
+Modules/_io/bufferedio.c:PyId_mode                               _Py_IDENTIFIER(mode)
+Modules/_io/bufferedio.c:PyId_name                               _Py_IDENTIFIER(name)
+Modules/_io/bufferedio.c:PyId_peek                               _Py_IDENTIFIER(peek)
+Modules/_io/bufferedio.c:PyId_read                               _Py_IDENTIFIER(read)
+Modules/_io/bufferedio.c:PyId_read1                              _Py_IDENTIFIER(read1)
+Modules/_io/bufferedio.c:PyId_readable                           _Py_IDENTIFIER(readable)
+Modules/_io/bufferedio.c:PyId_readinto                           _Py_IDENTIFIER(readinto)
+Modules/_io/bufferedio.c:PyId_readinto1                          _Py_IDENTIFIER(readinto1)
+Modules/_io/bufferedio.c:PyId_writable                           _Py_IDENTIFIER(writable)
+Modules/_io/bufferedio.c:PyId_write                              _Py_IDENTIFIER(write)
+Modules/_io/fileio.c:PyId_name                                   _Py_IDENTIFIER(name)
+Modules/_io/iobase.c:PyId___IOBase_closed                        _Py_IDENTIFIER(__IOBase_closed)
+Modules/_io/iobase.c:PyId_read                                   _Py_IDENTIFIER(read)
+Modules/_io/iobase.c:_io__IOBase_tell_impl():PyId_seek           _Py_IDENTIFIER(seek)
+Modules/_io/iobase.c:_io__RawIOBase_read_impl():PyId_readall     _Py_IDENTIFIER(readall)
+Modules/_io/iobase.c:iobase_finalize():PyId__finalizing          _Py_IDENTIFIER(_finalizing)
+Modules/_io/textio.c:PyId__dealloc_warn                          _Py_IDENTIFIER(_dealloc_warn)
+Modules/_io/textio.c:PyId_close                                  _Py_IDENTIFIER(close)
+Modules/_io/textio.c:PyId_decode                                 _Py_IDENTIFIER(decode)
+Modules/_io/textio.c:PyId_fileno                                 _Py_IDENTIFIER(fileno)
+Modules/_io/textio.c:PyId_flush                                  _Py_IDENTIFIER(flush)
+Modules/_io/textio.c:PyId_getpreferredencoding                   _Py_IDENTIFIER(getpreferredencoding)
+Modules/_io/textio.c:PyId_isatty                                 _Py_IDENTIFIER(isatty)
+Modules/_io/textio.c:PyId_mode                                   _Py_IDENTIFIER(mode)
+Modules/_io/textio.c:PyId_name                                   _Py_IDENTIFIER(name)
+Modules/_io/textio.c:PyId_raw                                    _Py_IDENTIFIER(raw)
+Modules/_io/textio.c:PyId_read                                   _Py_IDENTIFIER(read)
+Modules/_io/textio.c:PyId_readable                               _Py_IDENTIFIER(readable)
+Modules/_io/textio.c:PyId_replace                                _Py_IDENTIFIER(replace)
+Modules/_io/textio.c:PyId_reset                                  _Py_IDENTIFIER(reset)
+Modules/_io/textio.c:PyId_seek                                   _Py_IDENTIFIER(seek)
+Modules/_io/textio.c:PyId_seekable                               _Py_IDENTIFIER(seekable)
+Modules/_io/textio.c:PyId_setstate                               _Py_IDENTIFIER(setstate)
+Modules/_io/textio.c:PyId_strict                                 _Py_IDENTIFIER(strict)
+Modules/_io/textio.c:PyId_tell                                   _Py_IDENTIFIER(tell)
+Modules/_io/textio.c:PyId_writable                               _Py_IDENTIFIER(writable)
+Modules/_operator.c:methodcaller_reduce():PyId_partial           _Py_IDENTIFIER(partial)
+Modules/_pickle.c:do_append():PyId_extend                        _Py_IDENTIFIER(extend)
+Modules/_pickle.c:load_build():PyId___setstate__                 _Py_IDENTIFIER(__setstate__)
+Modules/_threadmodule.c:PyId_flush                               _Py_IDENTIFIER(flush)
+Modules/_threadmodule.c:PyId_stderr                              _Py_IDENTIFIER(stderr)
+Modules/arraymodule.c:array_arrayiterator___reduce___impl():PyId_iter _Py_IDENTIFIER(iter)
+Modules/faulthandler.c:PyId_enable                               _Py_IDENTIFIER(enable)
+Modules/faulthandler.c:PyId_fileno                               _Py_IDENTIFIER(fileno)
+Modules/faulthandler.c:PyId_flush                                _Py_IDENTIFIER(flush)
+Modules/faulthandler.c:PyId_stderr                               _Py_IDENTIFIER(stderr)
+Modules/itertoolsmodule.c:itertools_tee_impl():PyId___copy__     _Py_IDENTIFIER(__copy__)
+Modules/itertoolsmodule.c:zip_longest_new():PyId_fillvalue       _Py_IDENTIFIER(fillvalue)
+Modules/main.c:pymain_sys_path_add_path0():PyId_path             _Py_IDENTIFIER(path)
+Modules/posixmodule.c:DirEntry_test_mode():PyId_st_mode          _Py_IDENTIFIER(st_mode)
+Modules/posixmodule.c:PyOS_FSPath():PyId___fspath__              _Py_IDENTIFIER(__fspath__)
+Modules/posixmodule.c:path_converter():PyId___fspath__           _Py_IDENTIFIER(__fspath__)
+Modules/posixmodule.c:wait_helper():PyId_struct_rusage           _Py_IDENTIFIER(struct_rusage)
+Modules/timemodule.c:time_strptime():PyId__strptime_time         _Py_IDENTIFIER(_strptime_time)
+Objects/abstract.c:PyMapping_Items():PyId_items                  _Py_IDENTIFIER(items)
+Objects/abstract.c:PyMapping_Keys():PyId_keys                    _Py_IDENTIFIER(keys)
+Objects/abstract.c:PyMapping_Values():PyId_values                _Py_IDENTIFIER(values)
+Objects/abstract.c:PyNumber_Long():PyId___trunc__                _Py_IDENTIFIER(__trunc__)
+Objects/abstract.c:PyObject_Format():PyId___format__             _Py_IDENTIFIER(__format__)
+Objects/abstract.c:PyObject_GetItem():PyId___class_getitem__     _Py_IDENTIFIER(__class_getitem__)
+Objects/abstract.c:PyObject_IsInstance():PyId___instancecheck__  _Py_IDENTIFIER(__instancecheck__)
+Objects/abstract.c:PyObject_IsSubclass():PyId___subclasscheck__  _Py_IDENTIFIER(__subclasscheck__)
+Objects/abstract.c:PyObject_LengthHint():PyId___length_hint__    _Py_IDENTIFIER(__length_hint__)
+Objects/abstract.c:abstract_get_bases():PyId___bases__           _Py_IDENTIFIER(__bases__)
+Objects/abstract.c:recursive_isinstance():PyId___class__         _Py_IDENTIFIER(__class__)
+Objects/bytearrayobject.c:_common_reduce():PyId___dict__         _Py_IDENTIFIER(__dict__)
+Objects/bytearrayobject.c:bytearrayiter_reduce():PyId_iter       _Py_IDENTIFIER(iter)
+Objects/bytesobject.c:bytes_new():PyId___bytes__                 _Py_IDENTIFIER(__bytes__)
+Objects/bytesobject.c:format_obj():PyId___bytes__                _Py_IDENTIFIER(__bytes__)
+Objects/bytesobject.c:striter_reduce():PyId_iter                 _Py_IDENTIFIER(iter)
+Objects/classobject.c:PyId___name__                              _Py_IDENTIFIER(__name__)
+Objects/classobject.c:PyId___qualname__                          _Py_IDENTIFIER(__qualname__)
+Objects/classobject.c:method_reduce():PyId_getattr               _Py_IDENTIFIER(getattr)
+Objects/complexobject.c:try_complex_special_method():PyId___complex__ _Py_IDENTIFIER(__complex__)
+Objects/descrobject.c:calculate_qualname():PyId___qualname__     _Py_IDENTIFIER(__qualname__)
+Objects/descrobject.c:descr_reduce():PyId_getattr                _Py_IDENTIFIER(getattr)
+Objects/descrobject.c:mappingproxy_copy():PyId_copy              _Py_IDENTIFIER(copy)
+Objects/descrobject.c:mappingproxy_get():PyId_get                _Py_IDENTIFIER(get)
+Objects/descrobject.c:mappingproxy_items():PyId_items            _Py_IDENTIFIER(items)
+Objects/descrobject.c:mappingproxy_keys():PyId_keys              _Py_IDENTIFIER(keys)
+Objects/descrobject.c:mappingproxy_values():PyId_values          _Py_IDENTIFIER(values)
+Objects/descrobject.c:property_init_impl():PyId___doc__          _Py_IDENTIFIER(__doc__)
+Objects/descrobject.c:wrapper_reduce():PyId_getattr              _Py_IDENTIFIER(getattr)
+Objects/dictobject.c:_PyDictView_Intersect():PyId_intersection_update _Py_IDENTIFIER(intersection_update)
+Objects/dictobject.c:dict_subscript():PyId___missing__           _Py_IDENTIFIER(__missing__)
+Objects/dictobject.c:dict_update_common():PyId_keys              _Py_IDENTIFIER(keys)
+Objects/dictobject.c:dictiter_reduce():PyId_iter                 _Py_IDENTIFIER(iter)
+Objects/dictobject.c:dictviews_or():PyId_update                  _Py_IDENTIFIER(update)
+Objects/dictobject.c:dictviews_sub():PyId_difference_update      _Py_IDENTIFIER(difference_update)
+Objects/dictobject.c:dictviews_xor():PyId_symmetric_difference_update _Py_IDENTIFIER(symmetric_difference_update)
+Objects/enumobject.c:reversed_new_impl():PyId___reversed__       _Py_IDENTIFIER(__reversed__)
+Objects/exceptions.c:ImportError_getstate():PyId_name            _Py_IDENTIFIER(name)
+Objects/exceptions.c:ImportError_getstate():PyId_path            _Py_IDENTIFIER(path)
+Objects/fileobject.c:PyFile_FromFd():PyId_open                   _Py_IDENTIFIER(open)
+Objects/fileobject.c:PyFile_GetLine():PyId_readline              _Py_IDENTIFIER(readline)
+Objects/fileobject.c:PyFile_OpenCodeObject():PyId_open           _Py_IDENTIFIER(open)
+Objects/fileobject.c:PyFile_WriteObject():PyId_write             _Py_IDENTIFIER(write)
+Objects/fileobject.c:PyObject_AsFileDescriptor():PyId_fileno     _Py_IDENTIFIER(fileno)
+Objects/frameobject.c:PyId___builtins__                          _Py_IDENTIFIER(__builtins__)
+Objects/genobject.c:_gen_throw():PyId_throw                      _Py_IDENTIFIER(throw)
+Objects/genobject.c:gen_close_iter():PyId_close                  _Py_IDENTIFIER(close)
+Objects/iterobject.c:calliter_reduce():PyId_iter                 _Py_IDENTIFIER(iter)
+Objects/iterobject.c:iter_reduce():PyId_iter                     _Py_IDENTIFIER(iter)
+Objects/listobject.c:listiter_reduce_general():PyId_iter         _Py_IDENTIFIER(iter)
+Objects/listobject.c:listiter_reduce_general():PyId_reversed     _Py_IDENTIFIER(reversed)
+Objects/longobject.c:PyId_big                                    _Py_IDENTIFIER(big)
+Objects/longobject.c:PyId_little                                 _Py_IDENTIFIER(little)
+Objects/methodobject.c:meth_get__qualname__():PyId___qualname__  _Py_IDENTIFIER(__qualname__)
+Objects/methodobject.c:meth_reduce():PyId_getattr                _Py_IDENTIFIER(getattr)
+Objects/moduleobject.c:PyModule_GetFilenameObject():PyId___file__ _Py_IDENTIFIER(__file__)
+Objects/moduleobject.c:PyModule_GetNameObject():PyId___name__    _Py_IDENTIFIER(__name__)
+Objects/moduleobject.c:PyModule_SetDocString():PyId___doc__      _Py_IDENTIFIER(__doc__)
+Objects/moduleobject.c:_PyModuleSpec_IsInitializing():PyId__initializing _Py_IDENTIFIER(_initializing)
+Objects/moduleobject.c:module_dir():PyId___dict__                _Py_IDENTIFIER(__dict__)
+Objects/moduleobject.c:module_dir():PyId___dir__                 _Py_IDENTIFIER(__dir__)
+Objects/moduleobject.c:module_getattro():PyId___getattr__        _Py_IDENTIFIER(__getattr__)
+Objects/moduleobject.c:module_getattro():PyId___name__           _Py_IDENTIFIER(__name__)
+Objects/moduleobject.c:module_getattro():PyId___spec__           _Py_IDENTIFIER(__spec__)
+Objects/moduleobject.c:module_init_dict():PyId___doc__           _Py_IDENTIFIER(__doc__)
+Objects/moduleobject.c:module_init_dict():PyId___loader__        _Py_IDENTIFIER(__loader__)
+Objects/moduleobject.c:module_init_dict():PyId___name__          _Py_IDENTIFIER(__name__)
+Objects/moduleobject.c:module_init_dict():PyId___package__       _Py_IDENTIFIER(__package__)
+Objects/moduleobject.c:module_init_dict():PyId___spec__          _Py_IDENTIFIER(__spec__)
+Objects/object.c:PyId_Py_Repr                                    _Py_IDENTIFIER(Py_Repr)
+Objects/object.c:PyId___bytes__                                  _Py_IDENTIFIER(__bytes__)
+Objects/object.c:PyId___dir__                                    _Py_IDENTIFIER(__dir__)
+Objects/object.c:PyId___isabstractmethod__                       _Py_IDENTIFIER(__isabstractmethod__)
+Objects/odictobject.c:mutablemapping_update():PyId_items         _Py_IDENTIFIER(items)
+Objects/odictobject.c:mutablemapping_update():PyId_keys          _Py_IDENTIFIER(keys)
+Objects/odictobject.c:odict_reduce():PyId___dict__               _Py_IDENTIFIER(__dict__)
+Objects/odictobject.c:odict_reduce():PyId_items                  _Py_IDENTIFIER(items)
+Objects/odictobject.c:odict_repr():PyId_items                    _Py_IDENTIFIER(items)
+Objects/odictobject.c:odictiter_reduce():PyId_iter               _Py_IDENTIFIER(iter)
+Objects/rangeobject.c:longrangeiter_reduce():PyId_iter           _Py_IDENTIFIER(iter)
+Objects/rangeobject.c:rangeiter_reduce():PyId_iter               _Py_IDENTIFIER(iter)
+Objects/setobject.c:set_reduce():PyId___dict__                   _Py_IDENTIFIER(__dict__)
+Objects/setobject.c:setiter_reduce():PyId_iter                   _Py_IDENTIFIER(iter)
+Objects/structseq.c:PyId_n_fields                                _Py_IDENTIFIER(n_fields)
+Objects/structseq.c:PyId_n_sequence_fields                       _Py_IDENTIFIER(n_sequence_fields)
+Objects/structseq.c:PyId_n_unnamed_fields                        _Py_IDENTIFIER(n_unnamed_fields)
+Objects/tupleobject.c:tupleiter_reduce():PyId_iter               _Py_IDENTIFIER(iter)
+Objects/typeobject.c:PyId___abstractmethods__                    _Py_IDENTIFIER(__abstractmethods__)
+Objects/typeobject.c:PyId___class__                              _Py_IDENTIFIER(__class__)
+Objects/typeobject.c:PyId___class_getitem__                      _Py_IDENTIFIER(__class_getitem__)
+Objects/typeobject.c:PyId___delitem__                            _Py_IDENTIFIER(__delitem__)
+Objects/typeobject.c:PyId___dict__                               _Py_IDENTIFIER(__dict__)
+Objects/typeobject.c:PyId___doc__                                _Py_IDENTIFIER(__doc__)
+Objects/typeobject.c:PyId___getattribute__                       _Py_IDENTIFIER(__getattribute__)
+Objects/typeobject.c:PyId___getitem__                            _Py_IDENTIFIER(__getitem__)
+Objects/typeobject.c:PyId___hash__                               _Py_IDENTIFIER(__hash__)
+Objects/typeobject.c:PyId___init_subclass__                      _Py_IDENTIFIER(__init_subclass__)
+Objects/typeobject.c:PyId___len__                                _Py_IDENTIFIER(__len__)
+Objects/typeobject.c:PyId___module__                             _Py_IDENTIFIER(__module__)
+Objects/typeobject.c:PyId___name__                               _Py_IDENTIFIER(__name__)
+Objects/typeobject.c:PyId___new__                                _Py_IDENTIFIER(__new__)
+Objects/typeobject.c:PyId___set_name__                           _Py_IDENTIFIER(__set_name__)
+Objects/typeobject.c:PyId___setitem__                            _Py_IDENTIFIER(__setitem__)
+Objects/typeobject.c:PyId_builtins                               _Py_IDENTIFIER(builtins)
+Objects/typeobject.c:_PyObject_GetItemsIter():PyId_items         _Py_IDENTIFIER(items)
+Objects/typeobject.c:_PyObject_GetNewArguments():PyId___getnewargs__ _Py_IDENTIFIER(__getnewargs__)
+Objects/typeobject.c:_PyObject_GetNewArguments():PyId___getnewargs_ex__ _Py_IDENTIFIER(__getnewargs_ex__)
+Objects/typeobject.c:_PyObject_GetState():PyId___getstate__      _Py_IDENTIFIER(__getstate__)
+Objects/typeobject.c:_PyType_GetSlotNames():PyId___slotnames__   _Py_IDENTIFIER(__slotnames__)
+Objects/typeobject.c:_PyType_GetSlotNames():PyId__slotnames      _Py_IDENTIFIER(_slotnames)
+Objects/typeobject.c:import_copyreg():PyId_copyreg               _Py_IDENTIFIER(copyreg)
+Objects/typeobject.c:merge_class_dict():PyId___bases__           _Py_IDENTIFIER(__bases__)
+Objects/typeobject.c:mro_invoke():PyId_mro                       _Py_IDENTIFIER(mro)
+Objects/typeobject.c:object___reduce_ex___impl():PyId___reduce__ _Py_IDENTIFIER(__reduce__)
+Objects/typeobject.c:overrides_hash():PyId___eq__                _Py_IDENTIFIER(__eq__)
+Objects/typeobject.c:reduce_newobj():PyId___newobj__             _Py_IDENTIFIER(__newobj__)
+Objects/typeobject.c:reduce_newobj():PyId___newobj_ex__          _Py_IDENTIFIER(__newobj_ex__)
+Objects/typeobject.c:slot_am_aiter():PyId___aiter__              _Py_IDENTIFIER(__aiter__)
+Objects/typeobject.c:slot_am_anext():PyId___anext__              _Py_IDENTIFIER(__anext__)
+Objects/typeobject.c:slot_am_await():PyId___await__              _Py_IDENTIFIER(__await__)
+Objects/typeobject.c:slot_nb_bool():PyId___bool__                _Py_IDENTIFIER(__bool__)
+Objects/typeobject.c:slot_nb_index():PyId___index__              _Py_IDENTIFIER(__index__)
+Objects/typeobject.c:slot_nb_inplace_power():PyId___ipow__       _Py_IDENTIFIER(__ipow__)
+Objects/typeobject.c:slot_nb_power():PyId___pow__                _Py_IDENTIFIER(__pow__)
+Objects/typeobject.c:slot_sq_contains():PyId___contains__        _Py_IDENTIFIER(__contains__)
+Objects/typeobject.c:slot_tp_call():PyId___call__                _Py_IDENTIFIER(__call__)
+Objects/typeobject.c:slot_tp_descr_get():PyId___get__            _Py_IDENTIFIER(__get__)
+Objects/typeobject.c:slot_tp_descr_set():PyId___delete__         _Py_IDENTIFIER(__delete__)
+Objects/typeobject.c:slot_tp_descr_set():PyId___set__            _Py_IDENTIFIER(__set__)
+Objects/typeobject.c:slot_tp_finalize():PyId___del__             _Py_IDENTIFIER(__del__)
+Objects/typeobject.c:slot_tp_getattr_hook():PyId___getattr__     _Py_IDENTIFIER(__getattr__)
+Objects/typeobject.c:slot_tp_init():PyId___init__                _Py_IDENTIFIER(__init__)
+Objects/typeobject.c:slot_tp_iter():PyId___iter__                _Py_IDENTIFIER(__iter__)
+Objects/typeobject.c:slot_tp_iternext():PyId___next__            _Py_IDENTIFIER(__next__)
+Objects/typeobject.c:slot_tp_repr():PyId___repr__                _Py_IDENTIFIER(__repr__)
+Objects/typeobject.c:slot_tp_setattro():PyId___delattr__         _Py_IDENTIFIER(__delattr__)
+Objects/typeobject.c:slot_tp_setattro():PyId___setattr__         _Py_IDENTIFIER(__setattr__)
+Objects/typeobject.c:type_mro_modified():PyId_mro                _Py_IDENTIFIER(mro)
+Objects/typeobject.c:type_new():PyId___classcell__               _Py_IDENTIFIER(__classcell__)
+Objects/typeobject.c:type_new():PyId___mro_entries__             _Py_IDENTIFIER(__mro_entries__)
+Objects/typeobject.c:type_new():PyId___qualname__                _Py_IDENTIFIER(__qualname__)
+Objects/typeobject.c:type_new():PyId___slots__                   _Py_IDENTIFIER(__slots__)
+Objects/unicodeobject.c:unicodeiter_reduce():PyId_iter           _Py_IDENTIFIER(iter)
+Objects/weakrefobject.c:proxy_bytes():PyId___bytes__             _Py_IDENTIFIER(__bytes__)
+Objects/weakrefobject.c:weakref_repr():PyId___name__             _Py_IDENTIFIER(__name__)
+Parser/tokenizer.c:fp_setreadl():PyId_open                       _Py_IDENTIFIER(open)
+Parser/tokenizer.c:fp_setreadl():PyId_readline                   _Py_IDENTIFIER(readline)
+Python/Python-ast.c:ast_type_reduce():PyId___dict__              _Py_IDENTIFIER(__dict__)
+Python/Python-ast.c:make_type():PyId___module__                  _Py_IDENTIFIER(__module__)
+Python/_warnings.c:PyId_stderr                                   _Py_IDENTIFIER(stderr)
+Python/_warnings.c:_PyErr_WarnUnawaitedCoroutine():PyId__warn_unawaited_coroutine _Py_IDENTIFIER(_warn_unawaited_coroutine)
+Python/_warnings.c:already_warned():PyId_version                 _Py_IDENTIFIER(version)
+Python/_warnings.c:call_show_warning():PyId_WarningMessage       _Py_IDENTIFIER(WarningMessage)
+Python/_warnings.c:call_show_warning():PyId__showwarnmsg         _Py_IDENTIFIER(_showwarnmsg)
+Python/_warnings.c:check_matched():PyId_match                    _Py_IDENTIFIER(match)
+Python/_warnings.c:get_default_action():PyId_defaultaction       _Py_IDENTIFIER(defaultaction)
+Python/_warnings.c:get_filter():PyId_filters                     _Py_IDENTIFIER(filters)
+Python/_warnings.c:get_once_registry():PyId_onceregistry         _Py_IDENTIFIER(onceregistry)
+Python/_warnings.c:get_source_line():PyId___loader__             _Py_IDENTIFIER(__loader__)
+Python/_warnings.c:get_source_line():PyId___name__               _Py_IDENTIFIER(__name__)
+Python/_warnings.c:get_source_line():PyId_get_source             _Py_IDENTIFIER(get_source)
+Python/_warnings.c:get_warnings_attr():PyId_warnings             _Py_IDENTIFIER(warnings)
+Python/_warnings.c:setup_context():PyId___name__                 _Py_IDENTIFIER(__name__)
+Python/_warnings.c:setup_context():PyId___warningregistry__      _Py_IDENTIFIER(__warningregistry__)
+Python/_warnings.c:show_warning():PyId___name__                  _Py_IDENTIFIER(__name__)
+Python/bltinmodule.c:PyId___builtins__                           _Py_IDENTIFIER(__builtins__)
+Python/bltinmodule.c:PyId___dict__                               _Py_IDENTIFIER(__dict__)
+Python/bltinmodule.c:PyId___mro_entries__                        _Py_IDENTIFIER(__mro_entries__)
+Python/bltinmodule.c:PyId___prepare__                            _Py_IDENTIFIER(__prepare__)
+Python/bltinmodule.c:PyId___round__                              _Py_IDENTIFIER(__round__)
+Python/bltinmodule.c:PyId_encoding                               _Py_IDENTIFIER(encoding)
+Python/bltinmodule.c:PyId_errors                                 _Py_IDENTIFIER(errors)
+Python/bltinmodule.c:PyId_fileno                                 _Py_IDENTIFIER(fileno)
+Python/bltinmodule.c:PyId_flush                                  _Py_IDENTIFIER(flush)
+Python/bltinmodule.c:PyId_metaclass                              _Py_IDENTIFIER(metaclass)
+Python/bltinmodule.c:PyId_sort                                   _Py_IDENTIFIER(sort)
+Python/bltinmodule.c:PyId_stderr                                 _Py_IDENTIFIER(stderr)
+Python/bltinmodule.c:PyId_stdin                                  _Py_IDENTIFIER(stdin)
+Python/bltinmodule.c:PyId_stdout                                 _Py_IDENTIFIER(stdout)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___aenter__        _Py_IDENTIFIER(__aenter__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___aexit__         _Py_IDENTIFIER(__aexit__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___annotations__   _Py_IDENTIFIER(__annotations__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___build_class__   _Py_IDENTIFIER(__build_class__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___enter__         _Py_IDENTIFIER(__enter__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___exit__          _Py_IDENTIFIER(__exit__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId___ltrace__        _Py_IDENTIFIER(__ltrace__)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId_displayhook       _Py_IDENTIFIER(displayhook)
+Python/ceval.c:_PyEval_EvalFrameDefault():PyId_send              _Py_IDENTIFIER(send)
+Python/ceval.c:import_all_from():PyId___all__                    _Py_IDENTIFIER(__all__)
+Python/ceval.c:import_all_from():PyId___dict__                   _Py_IDENTIFIER(__dict__)
+Python/ceval.c:import_all_from():PyId___name__                   _Py_IDENTIFIER(__name__)
+Python/ceval.c:import_from():PyId___name__                       _Py_IDENTIFIER(__name__)
+Python/ceval.c:import_name():PyId___import__                     _Py_IDENTIFIER(__import__)
+Python/codecs.c:_PyCodec_LookupTextEncoding():PyId__is_text_encoding _Py_IDENTIFIER(_is_text_encoding)
+Python/compile.c:compiler_enter_scope():PyId___class__           _Py_IDENTIFIER(__class__)
+Python/errors.c:PyId_builtins                                    _Py_IDENTIFIER(builtins)
+Python/errors.c:PyId_flush                                       _Py_IDENTIFIER(flush)
+Python/errors.c:PyId_stderr                                      _Py_IDENTIFIER(stderr)
+Python/errors.c:PyErr_NewException():PyId___module__             _Py_IDENTIFIER(__module__)
+Python/errors.c:PyErr_SyntaxLocationObject():PyId_filename       _Py_IDENTIFIER(filename)
+Python/errors.c:PyErr_SyntaxLocationObject():PyId_lineno         _Py_IDENTIFIER(lineno)
+Python/errors.c:PyErr_SyntaxLocationObject():PyId_msg            _Py_IDENTIFIER(msg)
+Python/errors.c:PyErr_SyntaxLocationObject():PyId_offset         _Py_IDENTIFIER(offset)
+Python/errors.c:PyErr_SyntaxLocationObject():PyId_print_file_and_line _Py_IDENTIFIER(print_file_and_line)
+Python/errors.c:PyErr_SyntaxLocationObject():PyId_text           _Py_IDENTIFIER(text)
+Python/errors.c:_PyErr_WriteUnraisableMsg():PyId_unraisablehook  _Py_IDENTIFIER(unraisablehook)
+Python/import.c:PyImport_Cleanup():PyId_clear                    _Py_IDENTIFIER(clear)
+Python/import.c:PyImport_ExecCodeModuleObject():PyId__fix_up_module _Py_IDENTIFIER(_fix_up_module)
+Python/import.c:PyImport_ExecCodeModuleWithPathnames():PyId__get_sourcefile _Py_IDENTIFIER(_get_sourcefile)
+Python/import.c:PyImport_ImportModuleLevelObject():PyId___path__ _Py_IDENTIFIER(__path__)
+Python/import.c:PyImport_ImportModuleLevelObject():PyId___spec__ _Py_IDENTIFIER(__spec__)
+Python/import.c:PyImport_ImportModuleLevelObject():PyId__handle_fromlist _Py_IDENTIFIER(_handle_fromlist)
+Python/import.c:PyImport_ImportModuleLevelObject():PyId__lock_unlock_module _Py_IDENTIFIER(_lock_unlock_module)
+Python/import.c:PyImport_ReloadModule():PyId_imp                 _Py_IDENTIFIER(imp)
+Python/import.c:PyImport_ReloadModule():PyId_reload              _Py_IDENTIFIER(reload)
+Python/import.c:_PyImportZip_Init():PyId_zipimporter             _Py_IDENTIFIER(zipimporter)
+Python/import.c:import_find_and_load():PyId__find_and_load       _Py_IDENTIFIER(_find_and_load)
+Python/import.c:module_dict_for_exec():PyId___builtins__         _Py_IDENTIFIER(__builtins__)
+Python/import.c:resolve_name():PyId___name__                     _Py_IDENTIFIER(__name__)
+Python/import.c:resolve_name():PyId___package__                  _Py_IDENTIFIER(__package__)
+Python/import.c:resolve_name():PyId___path__                     _Py_IDENTIFIER(__path__)
+Python/import.c:resolve_name():PyId___spec__                     _Py_IDENTIFIER(__spec__)
+Python/import.c:resolve_name():PyId_parent                       _Py_IDENTIFIER(parent)
+Python/importdl.c:get_encoded_name():PyId_replace                _Py_IDENTIFIER(replace)
+Python/marshal.c:marshal_dump_impl():PyId_write                  _Py_IDENTIFIER(write)
+Python/marshal.c:marshal_load():PyId_read                        _Py_IDENTIFIER(read)
+Python/marshal.c:r_string():PyId_readinto                        _Py_IDENTIFIER(readinto)
+Python/pylifecycle.c:PyId_flush                                  _Py_IDENTIFIER(flush)
+Python/pylifecycle.c:PyId_name                                   _Py_IDENTIFIER(name)
+Python/pylifecycle.c:PyId_stderr                                 _Py_IDENTIFIER(stderr)
+Python/pylifecycle.c:PyId_stdin                                  _Py_IDENTIFIER(stdin)
+Python/pylifecycle.c:PyId_stdout                                 _Py_IDENTIFIER(stdout)
+Python/pylifecycle.c:PyId_threading                              _Py_IDENTIFIER(threading)
+Python/pylifecycle.c:create_stdio():PyId_TextIOWrapper           _Py_IDENTIFIER(TextIOWrapper)
+Python/pylifecycle.c:create_stdio():PyId_isatty                  _Py_IDENTIFIER(isatty)
+Python/pylifecycle.c:create_stdio():PyId_mode                    _Py_IDENTIFIER(mode)
+Python/pylifecycle.c:create_stdio():PyId_open                    _Py_IDENTIFIER(open)
+Python/pylifecycle.c:create_stdio():PyId_raw                     _Py_IDENTIFIER(raw)
+Python/pylifecycle.c:wait_for_thread_shutdown():PyId__shutdown   _Py_IDENTIFIER(_shutdown)
+Python/pythonrun.c:PyId_builtins                                 _Py_IDENTIFIER(builtins)
+Python/pythonrun.c:PyId_excepthook                               _Py_IDENTIFIER(excepthook)
+Python/pythonrun.c:PyId_flush                                    _Py_IDENTIFIER(flush)
+Python/pythonrun.c:PyId_last_traceback                           _Py_IDENTIFIER(last_traceback)
+Python/pythonrun.c:PyId_last_type                                _Py_IDENTIFIER(last_type)
+Python/pythonrun.c:PyId_last_value                               _Py_IDENTIFIER(last_value)
+Python/pythonrun.c:PyId_ps1                                      _Py_IDENTIFIER(ps1)
+Python/pythonrun.c:PyId_ps2                                      _Py_IDENTIFIER(ps2)
+Python/pythonrun.c:PyId_stderr                                   _Py_IDENTIFIER(stderr)
+Python/pythonrun.c:PyId_stdin                                    _Py_IDENTIFIER(stdin)
+Python/pythonrun.c:PyId_stdout                                   _Py_IDENTIFIER(stdout)
+Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId___main__  _Py_IDENTIFIER(__main__)
+Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId_encoding  _Py_IDENTIFIER(encoding)
+Python/pythonrun.c:_Py_HandleSystemExit():PyId_code              _Py_IDENTIFIER(code)
+Python/pythonrun.c:parse_syntax_error():PyId_filename            _Py_IDENTIFIER(filename)
+Python/pythonrun.c:parse_syntax_error():PyId_lineno              _Py_IDENTIFIER(lineno)
+Python/pythonrun.c:parse_syntax_error():PyId_msg                 _Py_IDENTIFIER(msg)
+Python/pythonrun.c:parse_syntax_error():PyId_offset              _Py_IDENTIFIER(offset)
+Python/pythonrun.c:parse_syntax_error():PyId_text                _Py_IDENTIFIER(text)
+Python/pythonrun.c:print_exception():PyId___module__             _Py_IDENTIFIER(__module__)
+Python/pythonrun.c:print_exception():PyId_print_file_and_line    _Py_IDENTIFIER(print_file_and_line)
+Python/sysmodule.c:PyId__                                        _Py_IDENTIFIER(_)
+Python/sysmodule.c:PyId___sizeof__                               _Py_IDENTIFIER(__sizeof__)
+Python/sysmodule.c:PyId__xoptions                                _Py_IDENTIFIER(_xoptions)
+Python/sysmodule.c:PyId_buffer                                   _Py_IDENTIFIER(buffer)
+Python/sysmodule.c:PyId_builtins                                 _Py_IDENTIFIER(builtins)
+Python/sysmodule.c:PyId_encoding                                 _Py_IDENTIFIER(encoding)
+Python/sysmodule.c:PyId_path                                     _Py_IDENTIFIER(path)
+Python/sysmodule.c:PyId_stderr                                   _Py_IDENTIFIER(stderr)
+Python/sysmodule.c:PyId_stdout                                   _Py_IDENTIFIER(stdout)
+Python/sysmodule.c:PyId_warnoptions                              _Py_IDENTIFIER(warnoptions)
+Python/sysmodule.c:PyId_write                                    _Py_IDENTIFIER(write)
+Python/traceback.c:PyId_TextIOWrapper                            _Py_IDENTIFIER(TextIOWrapper)
+Python/traceback.c:PyId_close                                    _Py_IDENTIFIER(close)
+Python/traceback.c:PyId_open                                     _Py_IDENTIFIER(open)
+Python/traceback.c:PyId_path                                     _Py_IDENTIFIER(path)
+Objects/typeobject.c:name_op                                     static _Py_Identifier name_op[]
+Objects/unicodeobject.c:static_strings                           static _Py_Identifier *static_strings
+
+
+# PyTypeObject (311)
+Modules/_abc.c:_abc_data_type                                    static PyTypeObject _abc_data_type
+Modules/_blake2/blake2b_impl.c:PyBlake2_BLAKE2bType              PyTypeObject PyBlake2_BLAKE2bType
+Modules/_blake2/blake2s_impl.c:PyBlake2_BLAKE2sType              PyTypeObject PyBlake2_BLAKE2sType
+Modules/_collectionsmodule.c:defdict_type                        static PyTypeObject defdict_type
+Modules/_collectionsmodule.c:deque_type                          static PyTypeObject deque_type
+Modules/_collectionsmodule.c:dequeiter_type                      static PyTypeObject dequeiter_type
+Modules/_collectionsmodule.c:dequereviter_type                   static PyTypeObject dequereviter_type
+Modules/_collectionsmodule.c:tuplegetter_type                    static PyTypeObject tuplegetter_type
+Modules/_functoolsmodule.c:keyobject_type                        static PyTypeObject keyobject_type
+Modules/_functoolsmodule.c:lru_cache_type                        static PyTypeObject lru_cache_type
+Modules/_functoolsmodule.c:lru_list_elem_type                    static PyTypeObject lru_list_elem_type
+Modules/_functoolsmodule.c:partial_type                          static PyTypeObject partial_type
+Modules/_io/bufferedio.c:PyBufferedIOBase_Type                   PyTypeObject PyBufferedIOBase_Type
+Modules/_io/bufferedio.c:PyBufferedRWPair_Type                   PyTypeObject PyBufferedRWPair_Type
+Modules/_io/bufferedio.c:PyBufferedRandom_Type                   PyTypeObject PyBufferedRandom_Type
+Modules/_io/bufferedio.c:PyBufferedReader_Type                   PyTypeObject PyBufferedReader_Type
+Modules/_io/bufferedio.c:PyBufferedWriter_Type                   PyTypeObject PyBufferedWriter_Type
+Modules/_io/bytesio.c:PyBytesIO_Type                             PyTypeObject PyBytesIO_Type
+Modules/_io/bytesio.c:_PyBytesIOBuffer_Type                      PyTypeObject _PyBytesIOBuffer_Type
+Modules/_io/fileio.c:PyFileIO_Type                               PyTypeObject PyFileIO_Type
+Modules/_io/iobase.c:PyIOBase_Type                               PyTypeObject PyIOBase_Type
+Modules/_io/iobase.c:PyRawIOBase_Type                            PyTypeObject PyRawIOBase_Type
+Modules/_io/stringio.c:PyStringIO_Type                           PyTypeObject PyStringIO_Type
+Modules/_io/textio.c:PyIncrementalNewlineDecoder_Type            PyTypeObject PyIncrementalNewlineDecoder_Type
+Modules/_io/textio.c:PyTextIOBase_Type                           PyTypeObject PyTextIOBase_Type
+Modules/_io/textio.c:PyTextIOWrapper_Type                        PyTypeObject PyTextIOWrapper_Type
+Modules/_operator.c:attrgetter_type                              static PyTypeObject attrgetter_type
+Modules/_operator.c:itemgetter_type                              static PyTypeObject itemgetter_type
+Modules/_operator.c:methodcaller_type                            static PyTypeObject methodcaller_type
+Modules/_sre.c:Match_Type                                        static PyTypeObject Match_Type
+Modules/_sre.c:Pattern_Type                                      static PyTypeObject Pattern_Type
+Modules/_sre.c:Scanner_Type                                      static PyTypeObject Scanner_Type
+Modules/_threadmodule.c:ExceptHookArgsType                       static PyTypeObject ExceptHookArgsType
+Modules/_threadmodule.c:Locktype                                 static PyTypeObject Locktype
+Modules/_threadmodule.c:RLocktype                                static PyTypeObject RLocktype
+Modules/_threadmodule.c:localdummytype                           static PyTypeObject localdummytype
+Modules/_threadmodule.c:localtype                                static PyTypeObject localtype
+Modules/itertoolsmodule.c:_grouper_type                          static PyTypeObject _grouper_type
+Modules/itertoolsmodule.c:accumulate_type                        static PyTypeObject accumulate_type
+Modules/itertoolsmodule.c:chain_type                             static PyTypeObject chain_type
+Modules/itertoolsmodule.c:combinations_type                      static PyTypeObject combinations_type
+Modules/itertoolsmodule.c:compress_type                          static PyTypeObject compress_type
+Modules/itertoolsmodule.c:count_type                             static PyTypeObject count_type
+Modules/itertoolsmodule.c:cwr_type                               static PyTypeObject cwr_type
+Modules/itertoolsmodule.c:cycle_type                             static PyTypeObject cycle_type
+Modules/itertoolsmodule.c:dropwhile_type                         static PyTypeObject dropwhile_type
+Modules/itertoolsmodule.c:filterfalse_type                       static PyTypeObject filterfalse_type
+Modules/itertoolsmodule.c:groupby_type                           static PyTypeObject groupby_type
+Modules/itertoolsmodule.c:islice_type                            static PyTypeObject islice_type
+Modules/itertoolsmodule.c:permutations_type                      static PyTypeObject permutations_type
+Modules/itertoolsmodule.c:product_type                           static PyTypeObject product_type
+Modules/itertoolsmodule.c:repeat_type                            static PyTypeObject repeat_type
+Modules/itertoolsmodule.c:starmap_type                           static PyTypeObject starmap_type
+Modules/itertoolsmodule.c:takewhile_type                         static PyTypeObject takewhile_type
+Modules/itertoolsmodule.c:tee_type                               static PyTypeObject tee_type
+Modules/itertoolsmodule.c:teedataobject_type                     static PyTypeObject teedataobject_type
+Modules/itertoolsmodule.c:ziplongest_type                        static PyTypeObject ziplongest_type
+Modules/posixmodule.c:DirEntryType                               static PyTypeObject DirEntryType
+Modules/posixmodule.c:ScandirIteratorType                        static PyTypeObject ScandirIteratorType
+Modules/posixmodule.c:SchedParamType                             static PyTypeObject* SchedParamType
+Modules/posixmodule.c:StatResultType                             static PyTypeObject* StatResultType
+Modules/posixmodule.c:StatVFSResultType                          static PyTypeObject* StatVFSResultType
+Modules/posixmodule.c:TerminalSizeType                           static PyTypeObject* TerminalSizeType
+Modules/posixmodule.c:TimesResultType                            static PyTypeObject* TimesResultType
+Modules/posixmodule.c:UnameResultType                            static PyTypeObject* UnameResultType
+Modules/posixmodule.c:WaitidResultType                           static PyTypeObject* WaitidResultType
+Modules/signalmodule.c:SiginfoType                               static PyTypeObject SiginfoType
+Modules/timemodule.c:StructTimeType                              static PyTypeObject StructTimeType
+Modules/xxsubtype.c:spamdict_type                                static PyTypeObject spamdict_type
+Modules/xxsubtype.c:spamlist_type                                static PyTypeObject spamlist_type
+Objects/boolobject.c:PyBool_Type                                 PyTypeObject PyBool_Type
+Objects/bytearrayobject.c:PyByteArrayIter_Type                   PyTypeObject PyByteArrayIter_Type
+Objects/bytearrayobject.c:PyByteArray_Type                       PyTypeObject PyByteArray_Type
+Objects/bytesobject.c:PyBytesIter_Type                           PyTypeObject PyBytesIter_Type
+Objects/bytesobject.c:PyBytes_Type                               PyTypeObject PyBytes_Type
+Objects/capsule.c:PyCapsule_Type                                 PyTypeObject PyCapsule_Type
+Objects/cellobject.c:PyCell_Type                                 PyTypeObject PyCell_Type
+Objects/classobject.c:PyInstanceMethod_Type                      PyTypeObject PyInstanceMethod_Type
+Objects/classobject.c:PyMethod_Type                              PyTypeObject PyMethod_Type
+Objects/codeobject.c:PyCode_Type                                 PyTypeObject PyCode_Type
+Objects/complexobject.c:PyComplex_Type                           PyTypeObject PyComplex_Type
+Objects/descrobject.c:PyClassMethodDescr_Type                    PyTypeObject PyClassMethodDescr_Type
+Objects/descrobject.c:PyDictProxy_Type                           PyTypeObject PyDictProxy_Type
+Objects/descrobject.c:PyGetSetDescr_Type                         PyTypeObject PyGetSetDescr_Type
+Objects/descrobject.c:PyMemberDescr_Type                         PyTypeObject PyMemberDescr_Type
+Objects/descrobject.c:PyMethodDescr_Type                         PyTypeObject PyMethodDescr_Type
+Objects/descrobject.c:PyProperty_Type                            PyTypeObject PyProperty_Type
+Objects/descrobject.c:PyWrapperDescr_Type                        PyTypeObject PyWrapperDescr_Type
+Objects/descrobject.c:_PyMethodWrapper_Type                      PyTypeObject _PyMethodWrapper_Type
+Objects/dictobject.c:PyDictItems_Type                            PyTypeObject PyDictItems_Type
+Objects/dictobject.c:PyDictIterItem_Type                         PyTypeObject PyDictIterItem_Type
+Objects/dictobject.c:PyDictIterKey_Type                          PyTypeObject PyDictIterKey_Type
+Objects/dictobject.c:PyDictIterValue_Type                        PyTypeObject PyDictIterValue_Type
+Objects/dictobject.c:PyDictKeys_Type                             PyTypeObject PyDictKeys_Type
+Objects/dictobject.c:PyDictRevIterItem_Type                      PyTypeObject PyDictRevIterItem_Type
+Objects/dictobject.c:PyDictRevIterKey_Type                       PyTypeObject PyDictRevIterKey_Type
+Objects/dictobject.c:PyDictRevIterValue_Type                     PyTypeObject PyDictRevIterValue_Type
+Objects/dictobject.c:PyDictValues_Type                           PyTypeObject PyDictValues_Type
+Objects/dictobject.c:PyDict_Type                                 PyTypeObject PyDict_Type
+Objects/enumobject.c:PyEnum_Type                                 PyTypeObject PyEnum_Type
+Objects/enumobject.c:PyReversed_Type                             PyTypeObject PyReversed_Type
+Objects/exceptions.c:PyExc_ArithmeticError                       static PyTypeObject PyExc_ArithmeticError
+Objects/exceptions.c:PyExc_AssertionError                        static PyTypeObject PyExc_AssertionError
+Objects/exceptions.c:PyExc_AttributeError                        static PyTypeObject PyExc_AttributeError
+Objects/exceptions.c:PyExc_BaseException                         static PyTypeObject PyExc_BaseException
+Objects/exceptions.c:PyExc_BlockingIOError                       static PyTypeObject PyExc_BlockingIOError
+Objects/exceptions.c:PyExc_BrokenPipeError                       static PyTypeObject PyExc_BrokenPipeError
+Objects/exceptions.c:PyExc_BufferError                           static PyTypeObject PyExc_BufferError
+Objects/exceptions.c:PyExc_BytesWarning                          static PyTypeObject PyExc_BytesWarning
+Objects/exceptions.c:PyExc_ChildProcessError                     static PyTypeObject PyExc_ChildProcessError
+Objects/exceptions.c:PyExc_ConnectionAbortedError                static PyTypeObject PyExc_ConnectionAbortedError
+Objects/exceptions.c:PyExc_ConnectionError                       static PyTypeObject PyExc_ConnectionError
+Objects/exceptions.c:PyExc_ConnectionRefusedError                static PyTypeObject PyExc_ConnectionRefusedError
+Objects/exceptions.c:PyExc_ConnectionResetError                  static PyTypeObject PyExc_ConnectionResetError
+Objects/exceptions.c:PyExc_DeprecationWarning                    static PyTypeObject PyExc_DeprecationWarning
+Objects/exceptions.c:PyExc_EOFError                              static PyTypeObject PyExc_EOFError
+Objects/exceptions.c:PyExc_EnvironmentError                      static PyTypeObject PyExc_EnvironmentError
+Objects/exceptions.c:PyExc_Exception                             static PyTypeObject PyExc_Exception
+Objects/exceptions.c:PyExc_FileExistsError                       static PyTypeObject PyExc_FileExistsError
+Objects/exceptions.c:PyExc_FileNotFoundError                     static PyTypeObject PyExc_FileNotFoundError
+Objects/exceptions.c:PyExc_FloatingPointError                    static PyTypeObject PyExc_FloatingPointError
+Objects/exceptions.c:PyExc_FutureWarning                         static PyTypeObject PyExc_FutureWarning
+Objects/exceptions.c:PyExc_GeneratorExit                         static PyTypeObject PyExc_GeneratorExit
+Objects/exceptions.c:PyExc_IOError                               static PyTypeObject PyExc_IOError
+Objects/exceptions.c:PyExc_ImportError                           static PyTypeObject PyExc_ImportError
+Objects/exceptions.c:PyExc_ImportWarning                         static PyTypeObject PyExc_ImportWarning
+Objects/exceptions.c:PyExc_IndentationError                      static PyTypeObject PyExc_IndentationError
+Objects/exceptions.c:PyExc_IndexError                            static PyTypeObject PyExc_IndexError
+Objects/exceptions.c:PyExc_InterruptedError                      static PyTypeObject PyExc_InterruptedError
+Objects/exceptions.c:PyExc_IsADirectoryError                     static PyTypeObject PyExc_IsADirectoryError
+Objects/exceptions.c:PyExc_KeyError                              static PyTypeObject PyExc_KeyError
+Objects/exceptions.c:PyExc_KeyboardInterrupt                     static PyTypeObject PyExc_KeyboardInterrupt
+Objects/exceptions.c:PyExc_LookupError                           static PyTypeObject PyExc_LookupError
+Objects/exceptions.c:PyExc_MemoryError                           static PyTypeObject PyExc_MemoryError
+Objects/exceptions.c:PyExc_ModuleNotFoundError                   static PyTypeObject PyExc_ModuleNotFoundError
+Objects/exceptions.c:PyExc_NameError                             static PyTypeObject PyExc_NameError
+Objects/exceptions.c:PyExc_NotADirectoryError                    static PyTypeObject PyExc_NotADirectoryError
+Objects/exceptions.c:PyExc_NotImplementedError                   static PyTypeObject PyExc_NotImplementedError
+Objects/exceptions.c:PyExc_OSError                               static PyTypeObject PyExc_OSError
+Objects/exceptions.c:PyExc_OverflowError                         static PyTypeObject PyExc_OverflowError
+Objects/exceptions.c:PyExc_PendingDeprecationWarning             static PyTypeObject PyExc_PendingDeprecationWarning
+Objects/exceptions.c:PyExc_PermissionError                       static PyTypeObject PyExc_PermissionError
+Objects/exceptions.c:PyExc_ProcessLookupError                    static PyTypeObject PyExc_ProcessLookupError
+Objects/exceptions.c:PyExc_RecursionError                        static PyTypeObject PyExc_RecursionError
+Objects/exceptions.c:PyExc_ReferenceError                        static PyTypeObject PyExc_ReferenceError
+Objects/exceptions.c:PyExc_ResourceWarning                       static PyTypeObject PyExc_ResourceWarning
+Objects/exceptions.c:PyExc_RuntimeError                          static PyTypeObject PyExc_RuntimeError
+Objects/exceptions.c:PyExc_RuntimeWarning                        static PyTypeObject PyExc_RuntimeWarning
+Objects/exceptions.c:PyExc_StopAsyncIteration                    static PyTypeObject PyExc_StopAsyncIteration
+Objects/exceptions.c:PyExc_StopIteration                         static PyTypeObject PyExc_StopIteration
+Objects/exceptions.c:PyExc_SyntaxError                           static PyTypeObject PyExc_SyntaxError
+Objects/exceptions.c:PyExc_SyntaxWarning                         static PyTypeObject PyExc_SyntaxWarning
+Objects/exceptions.c:PyExc_SystemError                           static PyTypeObject PyExc_SystemError
+Objects/exceptions.c:PyExc_SystemExit                            static PyTypeObject PyExc_SystemExit
+Objects/exceptions.c:PyExc_TabError                              static PyTypeObject PyExc_TabError
+Objects/exceptions.c:PyExc_TimeoutError                          static PyTypeObject PyExc_TimeoutError
+Objects/exceptions.c:PyExc_TypeError                             static PyTypeObject PyExc_TypeError
+Objects/exceptions.c:PyExc_UnboundLocalError                     static PyTypeObject PyExc_UnboundLocalError
+Objects/exceptions.c:PyExc_UnicodeDecodeError                    static PyTypeObject PyExc_UnicodeDecodeError
+Objects/exceptions.c:PyExc_UnicodeEncodeError                    static PyTypeObject PyExc_UnicodeEncodeError
+Objects/exceptions.c:PyExc_UnicodeError                          static PyTypeObject PyExc_UnicodeError
+Objects/exceptions.c:PyExc_UnicodeTranslateError                 static PyTypeObject PyExc_UnicodeTranslateError
+Objects/exceptions.c:PyExc_UnicodeWarning                        static PyTypeObject PyExc_UnicodeWarning
+Objects/exceptions.c:PyExc_UserWarning                           static PyTypeObject PyExc_UserWarning
+Objects/exceptions.c:PyExc_ValueError                            static PyTypeObject PyExc_ValueError
+Objects/exceptions.c:PyExc_Warning                               static PyTypeObject PyExc_Warning
+Objects/exceptions.c:PyExc_ZeroDivisionError                     static PyTypeObject PyExc_ZeroDivisionError
+Objects/exceptions.c:_PyExc_ArithmeticError                      static PyTypeObject _PyExc_ArithmeticError
+Objects/exceptions.c:_PyExc_AssertionError                       static PyTypeObject _PyExc_AssertionError
+Objects/exceptions.c:_PyExc_AttributeError                       static PyTypeObject _PyExc_AttributeError
+Objects/exceptions.c:_PyExc_BaseException                        static PyTypeObject _PyExc_BaseException
+Objects/exceptions.c:_PyExc_BlockingIOError                      static PyTypeObject _PyExc_BlockingIOError
+Objects/exceptions.c:_PyExc_BrokenPipeError                      static PyTypeObject _PyExc_BrokenPipeError
+Objects/exceptions.c:_PyExc_BufferError                          static PyTypeObject _PyExc_BufferError
+Objects/exceptions.c:_PyExc_BytesWarning                         static PyTypeObject _PyExc_BytesWarning
+Objects/exceptions.c:_PyExc_ChildProcessError                    static PyTypeObject _PyExc_ChildProcessError
+Objects/exceptions.c:_PyExc_ConnectionAbortedError               static PyTypeObject _PyExc_ConnectionAbortedError
+Objects/exceptions.c:_PyExc_ConnectionError                      static PyTypeObject _PyExc_ConnectionError
+Objects/exceptions.c:_PyExc_ConnectionRefusedError               static PyTypeObject _PyExc_ConnectionRefusedError
+Objects/exceptions.c:_PyExc_ConnectionResetError                 static PyTypeObject _PyExc_ConnectionResetError
+Objects/exceptions.c:_PyExc_DeprecationWarning                   static PyTypeObject _PyExc_DeprecationWarning
+Objects/exceptions.c:_PyExc_EOFError                             static PyTypeObject _PyExc_EOFError
+Objects/exceptions.c:_PyExc_Exception                            static PyTypeObject _PyExc_Exception
+Objects/exceptions.c:_PyExc_FileExistsError                      static PyTypeObject _PyExc_FileExistsError
+Objects/exceptions.c:_PyExc_FileNotFoundError                    static PyTypeObject _PyExc_FileNotFoundError
+Objects/exceptions.c:_PyExc_FloatingPointError                   static PyTypeObject _PyExc_FloatingPointError
+Objects/exceptions.c:_PyExc_FutureWarning                        static PyTypeObject _PyExc_FutureWarning
+Objects/exceptions.c:_PyExc_GeneratorExit                        static PyTypeObject _PyExc_GeneratorExit
+Objects/exceptions.c:_PyExc_ImportError                          static PyTypeObject _PyExc_ImportError
+Objects/exceptions.c:_PyExc_ImportWarning                        static PyTypeObject _PyExc_ImportWarning
+Objects/exceptions.c:_PyExc_IndentationError                     static PyTypeObject _PyExc_IndentationError
+Objects/exceptions.c:_PyExc_IndexError                           static PyTypeObject _PyExc_IndexError
+Objects/exceptions.c:_PyExc_InterruptedError                     static PyTypeObject _PyExc_InterruptedError
+Objects/exceptions.c:_PyExc_IsADirectoryError                    static PyTypeObject _PyExc_IsADirectoryError
+Objects/exceptions.c:_PyExc_KeyError                             static PyTypeObject _PyExc_KeyError
+Objects/exceptions.c:_PyExc_KeyboardInterrupt                    static PyTypeObject _PyExc_KeyboardInterrupt
+Objects/exceptions.c:_PyExc_LookupError                          static PyTypeObject _PyExc_LookupError
+Objects/exceptions.c:_PyExc_MemoryError                          static PyTypeObject _PyExc_MemoryError
+Objects/exceptions.c:_PyExc_ModuleNotFoundError                  static PyTypeObject _PyExc_ModuleNotFoundError
+Objects/exceptions.c:_PyExc_NameError                            static PyTypeObject _PyExc_NameError
+Objects/exceptions.c:_PyExc_NotADirectoryError                   static PyTypeObject _PyExc_NotADirectoryError
+Objects/exceptions.c:_PyExc_NotImplementedError                  static PyTypeObject _PyExc_NotImplementedError
+Objects/exceptions.c:_PyExc_OSError                              static PyTypeObject _PyExc_OSError
+Objects/exceptions.c:_PyExc_OverflowError                        static PyTypeObject _PyExc_OverflowError
+Objects/exceptions.c:_PyExc_PendingDeprecationWarning            static PyTypeObject _PyExc_PendingDeprecationWarning
+Objects/exceptions.c:_PyExc_PermissionError                      static PyTypeObject _PyExc_PermissionError
+Objects/exceptions.c:_PyExc_ProcessLookupError                   static PyTypeObject _PyExc_ProcessLookupError
+Objects/exceptions.c:_PyExc_RecursionError                       static PyTypeObject _PyExc_RecursionError
+Objects/exceptions.c:_PyExc_ReferenceError                       static PyTypeObject _PyExc_ReferenceError
+Objects/exceptions.c:_PyExc_ResourceWarning                      static PyTypeObject _PyExc_ResourceWarning
+Objects/exceptions.c:_PyExc_RuntimeError                         static PyTypeObject _PyExc_RuntimeError
+Objects/exceptions.c:_PyExc_RuntimeWarning                       static PyTypeObject _PyExc_RuntimeWarning
+Objects/exceptions.c:_PyExc_StopAsyncIteration                   static PyTypeObject _PyExc_StopAsyncIteration
+Objects/exceptions.c:_PyExc_StopIteration                        static PyTypeObject _PyExc_StopIteration
+Objects/exceptions.c:_PyExc_SyntaxError                          static PyTypeObject _PyExc_SyntaxError
+Objects/exceptions.c:_PyExc_SyntaxWarning                        static PyTypeObject _PyExc_SyntaxWarning
+Objects/exceptions.c:_PyExc_SystemError                          static PyTypeObject _PyExc_SystemError
+Objects/exceptions.c:_PyExc_SystemExit                           static PyTypeObject _PyExc_SystemExit
+Objects/exceptions.c:_PyExc_TabError                             static PyTypeObject _PyExc_TabError
+Objects/exceptions.c:_PyExc_TimeoutError                         static PyTypeObject _PyExc_TimeoutError
+Objects/exceptions.c:_PyExc_TypeError                            static PyTypeObject _PyExc_TypeError
+Objects/exceptions.c:_PyExc_UnboundLocalError                    static PyTypeObject _PyExc_UnboundLocalError
+Objects/exceptions.c:_PyExc_UnicodeDecodeError                   static PyTypeObject _PyExc_UnicodeDecodeError
+Objects/exceptions.c:_PyExc_UnicodeEncodeError                   static PyTypeObject _PyExc_UnicodeEncodeError
+Objects/exceptions.c:_PyExc_UnicodeError                         static PyTypeObject _PyExc_UnicodeError
+Objects/exceptions.c:_PyExc_UnicodeTranslateError                static PyTypeObject _PyExc_UnicodeTranslateError
+Objects/exceptions.c:_PyExc_UnicodeWarning                       static PyTypeObject _PyExc_UnicodeWarning
+Objects/exceptions.c:_PyExc_UserWarning                          static PyTypeObject _PyExc_UserWarning
+Objects/exceptions.c:_PyExc_ValueError                           static PyTypeObject _PyExc_ValueError
+Objects/exceptions.c:_PyExc_Warning                              static PyTypeObject _PyExc_Warning
+Objects/exceptions.c:_PyExc_ZeroDivisionError                    static PyTypeObject _PyExc_ZeroDivisionError
+Objects/fileobject.c:PyStdPrinter_Type                           PyTypeObject PyStdPrinter_Type
+Objects/floatobject.c:FloatInfoType                              static PyTypeObject FloatInfoType
+Objects/floatobject.c:PyFloat_Type                               PyTypeObject PyFloat_Type
+Objects/frameobject.c:PyFrame_Type                               PyTypeObject PyFrame_Type
+Objects/funcobject.c:PyClassMethod_Type                          PyTypeObject PyClassMethod_Type
+Objects/funcobject.c:PyFunction_Type                             PyTypeObject PyFunction_Type
+Objects/funcobject.c:PyStaticMethod_Type                         PyTypeObject PyStaticMethod_Type
+Objects/genobject.c:PyAsyncGen_Type                              PyTypeObject PyAsyncGen_Type
+Objects/genobject.c:PyCoro_Type                                  PyTypeObject PyCoro_Type
+Objects/genobject.c:PyGen_Type                                   PyTypeObject PyGen_Type
+Objects/genobject.c:_PyAsyncGenASend_Type                        PyTypeObject _PyAsyncGenASend_Type
+Objects/genobject.c:_PyAsyncGenAThrow_Type                       PyTypeObject _PyAsyncGenAThrow_Type
+Objects/genobject.c:_PyAsyncGenWrappedValue_Type                 PyTypeObject _PyAsyncGenWrappedValue_Type
+Objects/genobject.c:_PyCoroWrapper_Type                          PyTypeObject _PyCoroWrapper_Type
+Objects/interpreteridobject.c:_PyInterpreterID_Type              PyTypeObject _PyInterpreterID_Type
+Objects/iterobject.c:PyCallIter_Type                             PyTypeObject PyCallIter_Type
+Objects/iterobject.c:PySeqIter_Type                              PyTypeObject PySeqIter_Type
+Objects/listobject.c:PyListIter_Type                             PyTypeObject PyListIter_Type
+Objects/listobject.c:PyListRevIter_Type                          PyTypeObject PyListRevIter_Type
+Objects/listobject.c:PyList_Type                                 PyTypeObject PyList_Type
+Objects/longobject.c:Int_InfoType                                static PyTypeObject Int_InfoType
+Objects/longobject.c:PyLong_Type                                 PyTypeObject PyLong_Type
+Objects/memoryobject.c:PyMemoryView_Type                         PyTypeObject PyMemoryView_Type
+Objects/memoryobject.c:_PyManagedBuffer_Type                     PyTypeObject _PyManagedBuffer_Type
+Objects/methodobject.c:PyCFunction_Type                          PyTypeObject PyCFunction_Type
+Objects/moduleobject.c:PyModuleDef_Type                          PyTypeObject PyModuleDef_Type
+Objects/moduleobject.c:PyModule_Type                             PyTypeObject PyModule_Type
+Objects/namespaceobject.c:_PyNamespace_Type                      PyTypeObject _PyNamespace_Type
+Objects/object.c:_PyNone_Type                                    PyTypeObject _PyNone_Type
+Objects/object.c:_PyNotImplemented_Type                          PyTypeObject _PyNotImplemented_Type
+Objects/odictobject.c:PyODictItems_Type                          PyTypeObject PyODictItems_Type
+Objects/odictobject.c:PyODictIter_Type                           PyTypeObject PyODictIter_Type
+Objects/odictobject.c:PyODictKeys_Type                           PyTypeObject PyODictKeys_Type
+Objects/odictobject.c:PyODictValues_Type                         PyTypeObject PyODictValues_Type
+Objects/odictobject.c:PyODict_Type                               PyTypeObject PyODict_Type
+Objects/picklebufobject.c:PyPickleBuffer_Type                    PyTypeObject PyPickleBuffer_Type
+Objects/rangeobject.c:PyLongRangeIter_Type                       PyTypeObject PyLongRangeIter_Type
+Objects/rangeobject.c:PyRangeIter_Type                           PyTypeObject PyRangeIter_Type
+Objects/rangeobject.c:PyRange_Type                               PyTypeObject PyRange_Type
+Objects/setobject.c:PyFrozenSet_Type                             PyTypeObject PyFrozenSet_Type
+Objects/setobject.c:PySetIter_Type                               PyTypeObject PySetIter_Type
+Objects/setobject.c:PySet_Type                                   PyTypeObject PySet_Type
+Objects/setobject.c:_PySetDummy_Type                             static PyTypeObject _PySetDummy_Type
+Objects/sliceobject.c:PyEllipsis_Type                            PyTypeObject PyEllipsis_Type
+Objects/sliceobject.c:PySlice_Type                               PyTypeObject PySlice_Type
+Objects/stringlib/unicode_format.h:PyFieldNameIter_Type          static PyTypeObject PyFieldNameIter_Type
+Objects/stringlib/unicode_format.h:PyFormatterIter_Type          static PyTypeObject PyFormatterIter_Type
+Objects/tupleobject.c:PyTupleIter_Type                           PyTypeObject PyTupleIter_Type
+Objects/tupleobject.c:PyTuple_Type                               PyTypeObject PyTuple_Type
+Objects/typeobject.c:PyBaseObject_Type                           PyTypeObject PyBaseObject_Type
+Objects/typeobject.c:PySuper_Type                                PyTypeObject PySuper_Type
+Objects/typeobject.c:PyType_Type                                 PyTypeObject PyType_Type
+Objects/unicodeobject.c:EncodingMapType                          static PyTypeObject EncodingMapType
+Objects/unicodeobject.c:PyUnicodeIter_Type                       PyTypeObject PyUnicodeIter_Type
+Objects/unicodeobject.c:PyUnicode_Type                           PyTypeObject PyUnicode_Type
+Objects/weakrefobject.c:_PyWeakref_CallableProxyType             PyTypeObject _PyWeakref_CallableProxyType
+Objects/weakrefobject.c:_PyWeakref_ProxyType                     PyTypeObject _PyWeakref_ProxyType
+Objects/weakrefobject.c:_PyWeakref_RefType                       PyTypeObject _PyWeakref_RefType
+Python/bltinmodule.c:PyFilter_Type                               PyTypeObject PyFilter_Type
+Python/bltinmodule.c:PyMap_Type                                  PyTypeObject PyMap_Type
+Python/bltinmodule.c:PyZip_Type                                  PyTypeObject PyZip_Type
+Python/context.c:PyContextTokenMissing_Type                      PyTypeObject PyContextTokenMissing_Type
+Python/context.c:PyContextToken_Type                             PyTypeObject PyContextToken_Type
+Python/context.c:PyContextVar_Type                               PyTypeObject PyContextVar_Type
+Python/context.c:PyContext_Type                                  PyTypeObject PyContext_Type
+Python/errors.c:UnraisableHookArgsType                           static PyTypeObject UnraisableHookArgsType
+Python/hamt.c:_PyHamtItems_Type                                  PyTypeObject _PyHamtItems_Type
+Python/hamt.c:_PyHamtKeys_Type                                   PyTypeObject _PyHamtKeys_Type
+Python/hamt.c:_PyHamtValues_Type                                 PyTypeObject _PyHamtValues_Type
+Python/hamt.c:_PyHamt_ArrayNode_Type                             PyTypeObject _PyHamt_ArrayNode_Type
+Python/hamt.c:_PyHamt_BitmapNode_Type                            PyTypeObject _PyHamt_BitmapNode_Type
+Python/hamt.c:_PyHamt_CollisionNode_Type                         PyTypeObject _PyHamt_CollisionNode_Type
+Python/hamt.c:_PyHamt_Type                                       PyTypeObject _PyHamt_Type
+Python/symtable.c:PySTEntry_Type                                 PyTypeObject PySTEntry_Type
+Python/sysmodule.c:AsyncGenHooksType                             static PyTypeObject AsyncGenHooksType
+Python/sysmodule.c:FlagsType                                     static PyTypeObject FlagsType
+Python/sysmodule.c:Hash_InfoType                                 static PyTypeObject Hash_InfoType
+Python/sysmodule.c:VersionInfoType                               static PyTypeObject VersionInfoType
+Python/thread.c:ThreadInfoType                                   static PyTypeObject ThreadInfoType
+Python/traceback.c:PyTraceBack_Type                              PyTypeObject PyTraceBack_Type
+
+
+# _PyArg_Parser (147)
+Modules/_blake2/clinic/blake2b_impl.c.h:py_blake2b_new():_parser static _PyArg_Parser _parser
+Modules/_blake2/clinic/blake2s_impl.c.h:py_blake2s_new():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/_iomodule.c.h:_io_open():_parser              static _PyArg_Parser _parser
+Modules/_io/clinic/_iomodule.c.h:_io_open_code():_parser         static _PyArg_Parser _parser
+Modules/_io/clinic/bufferedio.c.h:_io_BufferedRandom___init__():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/bufferedio.c.h:_io_BufferedReader___init__():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/bufferedio.c.h:_io_BufferedWriter___init__():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/bytesio.c.h:_io_BytesIO___init__():_parser    static _PyArg_Parser _parser
+Modules/_io/clinic/fileio.c.h:_io_FileIO___init__():_parser      static _PyArg_Parser _parser
+Modules/_io/clinic/stringio.c.h:_io_StringIO___init__():_parser  static _PyArg_Parser _parser
+Modules/_io/clinic/textio.c.h:_io_IncrementalNewlineDecoder___init__():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/textio.c.h:_io_IncrementalNewlineDecoder_decode():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/textio.c.h:_io_TextIOWrapper___init__():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/textio.c.h:_io_TextIOWrapper_reconfigure():_parser static _PyArg_Parser _parser
+Modules/_io/clinic/winconsoleio.c.h:_io__WindowsConsoleIO___init__():_parser static _PyArg_Parser _parser
+Modules/_multiprocessing/clinic/posixshmem.c.h:_posixshmem_shm_open():_parser static _PyArg_Parser _parser
+Modules/_multiprocessing/clinic/posixshmem.c.h:_posixshmem_shm_unlink():_parser static _PyArg_Parser _parser
+Modules/cjkcodecs/clinic/multibytecodec.c.h:_multibytecodec_MultibyteCodec_decode():_parser static _PyArg_Parser _parser
+Modules/cjkcodecs/clinic/multibytecodec.c.h:_multibytecodec_MultibyteCodec_encode():_parser static _PyArg_Parser _parser
+Modules/cjkcodecs/clinic/multibytecodec.c.h:_multibytecodec_MultibyteIncrementalDecoder_decode():_parser static _PyArg_Parser _parser
+Modules/cjkcodecs/clinic/multibytecodec.c.h:_multibytecodec_MultibyteIncrementalEncoder_encode():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Future___init__():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Future_add_done_callback():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Task___init__():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Task_all_tasks():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Task_current_task():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Task_get_stack():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio_Task_print_stack():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio__enter_task():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio__leave_task():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio__register_task():_parser static _PyArg_Parser _parser
+Modules/clinic/_asynciomodule.c.h:_asyncio__unregister_task():_parser static _PyArg_Parser _parser
+Modules/clinic/_bz2module.c.h:_bz2_BZ2Decompressor_decompress():_parser static _PyArg_Parser _parser
+Modules/clinic/_codecsmodule.c.h:_codecs_decode():_parser        static _PyArg_Parser _parser
+Modules/clinic/_codecsmodule.c.h:_codecs_encode():_parser        static _PyArg_Parser _parser
+Modules/clinic/_cursesmodule.c.h:_curses_setupterm():_parser     static _PyArg_Parser _parser
+Modules/clinic/_datetimemodule.c.h:datetime_datetime_now():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_find():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_findall():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_findtext():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_get():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_getiterator():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_iter():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_Element_iterfind():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_TreeBuilder___init__():_parser static _PyArg_Parser _parser
+Modules/clinic/_elementtree.c.h:_elementtree_XMLParser___init__():_parser static _PyArg_Parser _parser
+Modules/clinic/_hashopenssl.c.h:EVP_new():_parser                static _PyArg_Parser _parser
+Modules/clinic/_hashopenssl.c.h:_hashlib_hmac_digest():_parser   static _PyArg_Parser _parser
+Modules/clinic/_hashopenssl.c.h:_hashlib_scrypt():_parser        static _PyArg_Parser _parser
+Modules/clinic/_hashopenssl.c.h:pbkdf2_hmac():_parser            static _PyArg_Parser _parser
+Modules/clinic/_lzmamodule.c.h:_lzma_LZMADecompressor___init__():_parser static _PyArg_Parser _parser
+Modules/clinic/_lzmamodule.c.h:_lzma_LZMADecompressor_decompress():_parser static _PyArg_Parser _parser
+Modules/clinic/_opcode.c.h:_opcode_stack_effect():_parser        static _PyArg_Parser _parser
+Modules/clinic/_pickle.c.h:_pickle_Pickler___init__():_parser    static _PyArg_Parser _parser
+Modules/clinic/_pickle.c.h:_pickle_Unpickler___init__():_parser  static _PyArg_Parser _parser
+Modules/clinic/_pickle.c.h:_pickle_dump():_parser                static _PyArg_Parser _parser
+Modules/clinic/_pickle.c.h:_pickle_dumps():_parser               static _PyArg_Parser _parser
+Modules/clinic/_pickle.c.h:_pickle_load():_parser                static _PyArg_Parser _parser
+Modules/clinic/_pickle.c.h:_pickle_loads():_parser               static _PyArg_Parser _parser
+Modules/clinic/_queuemodule.c.h:_queue_SimpleQueue_get():_parser static _PyArg_Parser _parser
+Modules/clinic/_queuemodule.c.h:_queue_SimpleQueue_put():_parser static _PyArg_Parser _parser
+Modules/clinic/_queuemodule.c.h:_queue_SimpleQueue_put_nowait():_parser static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Match_expand():_parser          static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Match_groupdict():_parser       static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Match_groups():_parser          static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_findall():_parser       static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_finditer():_parser      static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_fullmatch():_parser     static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_match():_parser         static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_scanner():_parser       static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_search():_parser        static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_split():_parser         static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_sub():_parser           static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_SRE_Pattern_subn():_parser          static _PyArg_Parser _parser
+Modules/clinic/_sre.c.h:_sre_compile():_parser                   static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl__SSLContext__wrap_bio():_parser     static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl__SSLContext__wrap_socket():_parser  static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl__SSLContext_get_ca_certs():_parser  static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl__SSLContext_load_cert_chain():_parser static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl__SSLContext_load_verify_locations():_parser static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl__SSLSocket_get_channel_binding():_parser static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl_enum_certificates():_parser         static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl_enum_crls():_parser                 static _PyArg_Parser _parser
+Modules/clinic/_ssl.c.h:_ssl_txt2obj():_parser                   static _PyArg_Parser _parser
+Modules/clinic/_struct.c.h:Struct___init__():_parser             static _PyArg_Parser _parser
+Modules/clinic/_struct.c.h:Struct_unpack_from():_parser          static _PyArg_Parser _parser
+Modules/clinic/_struct.c.h:unpack_from():_parser                 static _PyArg_Parser _parser
+Modules/clinic/_winapi.c.h:_winapi_ConnectNamedPipe():_parser    static _PyArg_Parser _parser
+Modules/clinic/_winapi.c.h:_winapi_GetFileType():_parser         static _PyArg_Parser _parser
+Modules/clinic/_winapi.c.h:_winapi_ReadFile():_parser            static _PyArg_Parser _parser
+Modules/clinic/_winapi.c.h:_winapi_WriteFile():_parser           static _PyArg_Parser _parser
+Modules/clinic/binascii.c.h:binascii_a2b_qp():_parser            static _PyArg_Parser _parser
+Modules/clinic/binascii.c.h:binascii_b2a_base64():_parser        static _PyArg_Parser _parser
+Modules/clinic/binascii.c.h:binascii_b2a_hex():_parser           static _PyArg_Parser _parser
+Modules/clinic/binascii.c.h:binascii_b2a_qp():_parser            static _PyArg_Parser _parser
+Modules/clinic/binascii.c.h:binascii_b2a_uu():_parser            static _PyArg_Parser _parser
+Modules/clinic/binascii.c.h:binascii_hexlify():_parser           static _PyArg_Parser _parser
+Modules/clinic/cmathmodule.c.h:cmath_isclose():_parser           static _PyArg_Parser _parser
+Modules/clinic/gcmodule.c.h:gc_collect():_parser                 static _PyArg_Parser _parser
+Modules/clinic/gcmodule.c.h:gc_get_objects():_parser             static _PyArg_Parser _parser
+Modules/clinic/grpmodule.c.h:grp_getgrgid():_parser              static _PyArg_Parser _parser
+Modules/clinic/grpmodule.c.h:grp_getgrnam():_parser              static _PyArg_Parser _parser
+Objects/clinic/bytearrayobject.c.h:bytearray_decode():_parser    static _PyArg_Parser _parser
+Objects/clinic/bytearrayobject.c.h:bytearray_hex():_parser       static _PyArg_Parser _parser
+Objects/clinic/bytearrayobject.c.h:bytearray_rsplit():_parser    static _PyArg_Parser _parser
+Objects/clinic/bytearrayobject.c.h:bytearray_split():_parser     static _PyArg_Parser _parser
+Objects/clinic/bytearrayobject.c.h:bytearray_splitlines():_parser static _PyArg_Parser _parser
+Objects/clinic/bytearrayobject.c.h:bytearray_translate():_parser static _PyArg_Parser _parser
+Objects/clinic/bytesobject.c.h:bytes_decode():_parser            static _PyArg_Parser _parser
+Objects/clinic/bytesobject.c.h:bytes_hex():_parser               static _PyArg_Parser _parser
+Objects/clinic/bytesobject.c.h:bytes_rsplit():_parser            static _PyArg_Parser _parser
+Objects/clinic/bytesobject.c.h:bytes_split():_parser             static _PyArg_Parser _parser
+Objects/clinic/bytesobject.c.h:bytes_splitlines():_parser        static _PyArg_Parser _parser
+Objects/clinic/bytesobject.c.h:bytes_translate():_parser         static _PyArg_Parser _parser
+Objects/clinic/codeobject.c.h:code_replace():_parser             static _PyArg_Parser _parser
+Objects/clinic/complexobject.c.h:complex_new():_parser           static _PyArg_Parser _parser
+Objects/clinic/descrobject.c.h:mappingproxy_new():_parser        static _PyArg_Parser _parser
+Objects/clinic/descrobject.c.h:property_init():_parser           static _PyArg_Parser _parser
+Objects/clinic/enumobject.c.h:enum_new():_parser                 static _PyArg_Parser _parser
+Objects/clinic/funcobject.c.h:func_new():_parser                 static _PyArg_Parser _parser
+Objects/clinic/listobject.c.h:list_sort():_parser                static _PyArg_Parser _parser
+Objects/clinic/longobject.c.h:int_from_bytes():_parser           static _PyArg_Parser _parser
+Objects/clinic/longobject.c.h:int_to_bytes():_parser             static _PyArg_Parser _parser
+Objects/clinic/longobject.c.h:long_new():_parser                 static _PyArg_Parser _parser
+Objects/clinic/memoryobject.c.h:memoryview_hex():_parser         static _PyArg_Parser _parser
+Objects/clinic/moduleobject.c.h:module___init__():_parser        static _PyArg_Parser _parser
+Objects/clinic/odictobject.c.h:OrderedDict_fromkeys():_parser    static _PyArg_Parser _parser
+Objects/clinic/odictobject.c.h:OrderedDict_move_to_end():_parser static _PyArg_Parser _parser
+Objects/clinic/odictobject.c.h:OrderedDict_popitem():_parser     static _PyArg_Parser _parser
+Objects/clinic/odictobject.c.h:OrderedDict_setdefault():_parser  static _PyArg_Parser _parser
+Objects/clinic/structseq.c.h:structseq_new():_parser             static _PyArg_Parser _parser
+Objects/clinic/unicodeobject.c.h:unicode_encode():_parser        static _PyArg_Parser _parser
+Objects/clinic/unicodeobject.c.h:unicode_expandtabs():_parser    static _PyArg_Parser _parser
+Objects/clinic/unicodeobject.c.h:unicode_rsplit():_parser        static _PyArg_Parser _parser
+Objects/clinic/unicodeobject.c.h:unicode_split():_parser         static _PyArg_Parser _parser
+Objects/clinic/unicodeobject.c.h:unicode_splitlines():_parser    static _PyArg_Parser _parser
+Objects/stringlib/clinic/transmogrify.h.h:stringlib_expandtabs():_parser static _PyArg_Parser _parser
+Python/bltinmodule.c:builtin_print():_parser                     static struct _PyArg_Parser _parser
+Python/clinic/_warnings.c.h:warnings_warn():_parser              static _PyArg_Parser _parser
+Python/clinic/bltinmodule.c.h:builtin_compile():_parser          static _PyArg_Parser _parser
+Python/clinic/bltinmodule.c.h:builtin_round():_parser            static _PyArg_Parser _parser
+Python/clinic/bltinmodule.c.h:builtin_sum():_parser              static _PyArg_Parser _parser
+Python/clinic/import.c.h:_imp_source_hash():_parser              static _PyArg_Parser _parser
+Python/clinic/sysmodule.c.h:sys_addaudithook():_parser           static _PyArg_Parser _parser
+Python/clinic/sysmodule.c.h:sys_set_coroutine_origin_tracking_depth():_parser static _PyArg_Parser _parser
+Python/clinic/traceback.c.h:tb_new():_parser                     static _PyArg_Parser _parser

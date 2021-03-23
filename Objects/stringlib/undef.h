@@ -6,6 +6,5 @@
 #undef  STRINGLIB_STR
 #undef  STRINGLIB_LEN
 #undef  STRINGLIB_NEW
-#undef  _Py_InsertThousandsGrouping
 #undef STRINGLIB_IS_UNICODE
 

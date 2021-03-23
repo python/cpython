@@ -48,7 +48,7 @@ and :meth:`flush` methods).
    .. method:: emit(record)
 
       If a formatter is specified, it is used to format the record. The record
-      is then written to the stream with a terminator. If exception information
+      is then written to the stream followed by :attr:`terminator`. If exception information
       is present, it is formatted using :func:`traceback.print_exception` and
       appended to the stream.
 
@@ -68,15 +68,19 @@ and :meth:`flush` methods).
 
       :return: the old stream, if the stream was changed, or *None* if it wasn't.
 
-   .. versionadded:: 3.7
+      .. versionadded:: 3.7
 
+   .. attribute:: terminator
 
-.. versionchanged:: 3.2
-   The ``StreamHandler`` class now has a ``terminator`` attribute, default
-   value ``'\n'``, which is used as the terminator when writing a formatted
-   record to a stream. If you don't want this newline termination, you can
-   set the handler instance's ``terminator`` attribute to the empty string.
-   In earlier versions, the terminator was hardcoded as ``'\n'``.
+      String used as the terminator when writing a formatted record to a stream.
+      Default value is ``'\n'``.
+
+      If you don't want a newline termination, you can set the handler instance's
+      ``terminator`` attribute to the empty string.
+
+      In earlier versions, the terminator was hardcoded as ``'\n'``.
+
+      .. versionadded:: 3.2
 
 
 .. _file-handler:
@@ -108,7 +112,6 @@ sends logging output to a disk file.  It inherits the output functionality from
    .. method:: close()
 
       Closes the file.
-
 
    .. method:: emit(record)
 
@@ -858,13 +861,14 @@ should, then :meth:`flush` is expected to do the flushing.
 
 .. class:: BufferingHandler(capacity)
 
-   Initializes the handler with a buffer of the specified capacity.
+   Initializes the handler with a buffer of the specified capacity. Here,
+   *capacity* means the number of logging records buffered.
 
 
    .. method:: emit(record)
 
-      Appends the record to the buffer. If :meth:`shouldFlush` returns true,
-      calls :meth:`flush` to process the buffer.
+      Append the record to the buffer. If :meth:`shouldFlush` returns true,
+      call :meth:`flush` to process the buffer.
 
 
    .. method:: flush()
@@ -875,19 +879,20 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: shouldFlush(record)
 
-      Returns true if the buffer is up to capacity. This method can be
+      Return ``True`` if the buffer is up to capacity. This method can be
       overridden to implement custom flushing strategies.
 
 
 .. class:: MemoryHandler(capacity, flushLevel=ERROR, target=None, flushOnClose=True)
 
    Returns a new instance of the :class:`MemoryHandler` class. The instance is
-   initialized with a buffer size of *capacity*. If *flushLevel* is not specified,
-   :const:`ERROR` is used. If no *target* is specified, the target will need to be
-   set using :meth:`setTarget` before this handler does anything useful. If
-   *flushOnClose* is specified as ``False``, then the buffer is *not* flushed when
-   the handler is closed. If not specified or specified as ``True``, the previous
-   behaviour of flushing the buffer will occur when the handler is closed.
+   initialized with a buffer size of *capacity* (number of records buffered).
+   If *flushLevel* is not specified, :const:`ERROR` is used. If no *target* is
+   specified, the target will need to be set using :meth:`setTarget` before this
+   handler does anything useful. If *flushOnClose* is specified as ``False``,
+   then the buffer is *not* flushed when the handler is closed. If not specified
+   or specified as ``True``, the previous behaviour of flushing the buffer will
+   occur when the handler is closed.
 
    .. versionchanged:: 3.6
       The *flushOnClose* parameter was added.
@@ -987,14 +992,21 @@ possible, while any potentially slow operations (such as sending an email via
 .. class:: QueueHandler(queue)
 
    Returns a new instance of the :class:`QueueHandler` class. The instance is
-   initialized with the queue to send messages to. The queue can be any
-   queue-like object; it's used as-is by the :meth:`enqueue` method, which needs
-   to know how to send messages to it.
+   initialized with the queue to send messages to. The *queue* can be any
+   queue-like object; it's used as-is by the :meth:`enqueue` method, which
+   needs to know how to send messages to it. The queue is not *required* to
+   have the task tracking API, which means that you can use
+   :class:`~queue.SimpleQueue` instances for *queue*.
 
 
    .. method:: emit(record)
 
-      Enqueues the result of preparing the LogRecord.
+      Enqueues the result of preparing the LogRecord. Should an exception
+      occur (e.g. because a bounded queue has filled up), the
+      :meth:`~logging.Handler.handleError` method is called to handle the
+      error. This can result in the record silently being dropped (if
+      :attr:`logging.raiseExceptions` is ``False``) or a message printed to
+      ``sys.stderr`` (if :attr:`logging.raiseExceptions` is ``True``).
 
    .. method:: prepare(record)
 
@@ -1045,14 +1057,17 @@ possible, while any potentially slow operations (such as sending an email via
    initialized with the queue to send messages to and a list of handlers which
    will handle entries placed on the queue. The queue can be any queue-like
    object; it's passed as-is to the :meth:`dequeue` method, which needs
-   to know how to get messages from it. If ``respect_handler_level`` is ``True``,
-   a handler's level is respected (compared with the level for the message) when
-   deciding whether to pass messages to that handler; otherwise, the behaviour
-   is as in previous Python versions - to always pass each message to each
-   handler.
+   to know how to get messages from it. The queue is not *required* to have the
+   task tracking API (though it's used if available), which means that you can
+   use :class:`~queue.SimpleQueue` instances for *queue*.
+
+   If ``respect_handler_level`` is ``True``, a handler's level is respected
+   (compared with the level for the message) when deciding whether to pass
+   messages to that handler; otherwise, the behaviour is as in previous Python
+   versions - to always pass each message to each handler.
 
    .. versionchanged:: 3.5
-      The ``respect_handler_levels`` argument was added.
+      The ``respect_handler_level`` argument was added.
 
    .. method:: dequeue(block)
 

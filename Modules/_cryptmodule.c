@@ -42,6 +42,9 @@ crypt_crypt_impl(PyObject *module, const char *word, const char *salt)
 #else
     crypt_result = crypt(word, salt);
 #endif
+    if (crypt_result == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
     return Py_BuildValue("s", crypt_result);
 }
 
@@ -51,14 +54,17 @@ static PyMethodDef crypt_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static PyModuleDef_Slot _crypt_slots[] = {
+    {0, NULL}
+};
 
 static struct PyModuleDef cryptmodule = {
     PyModuleDef_HEAD_INIT,
     "_crypt",
     NULL,
-    -1,
+    0,
     crypt_methods,
-    NULL,
+    _crypt_slots,
     NULL,
     NULL,
     NULL
@@ -67,5 +73,5 @@ static struct PyModuleDef cryptmodule = {
 PyMODINIT_FUNC
 PyInit__crypt(void)
 {
-    return PyModule_Create(&cryptmodule);
+    return PyModuleDef_Init(&cryptmodule);
 }

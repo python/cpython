@@ -60,24 +60,9 @@ def setup_tests(ns):
         if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
-            pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
-
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
+        sys._deactivate_opcache()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -85,7 +70,7 @@ def setup_tests(ns):
     if ns.threshold is not None:
         gc.set_threshold(ns.threshold)
 
-    suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
+    support.suppress_msvcrt_asserts(ns.verbose and ns.verbose >= 2)
 
     support.use_resources = ns.use_resources
 
@@ -97,30 +82,20 @@ def setup_tests(ns):
 
     setup_unraisable_hook()
 
+    if ns.timeout is not None:
+        # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
 
-def suppress_msvcrt_asserts(verbose):
-    try:
-        import msvcrt
-    except ImportError:
-        return
+        # If --timeout is short: reduce timeouts
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
 
-    msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                        msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                        msvcrt.SEM_NOGPFAULTERRORBOX|
-                        msvcrt.SEM_NOOPENFILEERRORBOX)
-    try:
-        msvcrt.CrtSetReportMode
-    except AttributeError:
-        # release build
-        return
-
-    for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-        if verbose:
-            msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-            msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-        else:
-            msvcrt.CrtSetReportMode(m, 0)
-
+    if ns.xmlpath:
+        from test.support.testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
 
 
 def replace_stdout():

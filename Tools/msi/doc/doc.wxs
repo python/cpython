@@ -8,7 +8,7 @@
         <PropertyRef Id="REGISTRYKEY" />
         
         <Property Id="HHExe" Value="C:\Windows\hh.exe" />
-        <CustomAction Id="SetHHExe" Property="HHCExe" Value='[WindowsFolder]\hh.exe' Execute="immediate" />
+        <CustomAction Id="SetHHExe" Property="HHExe" Value='[WindowsFolder]\hh.exe' Execute="immediate" />
         <InstallExecuteSequence>
             <Custom Action="SetHHExe" Before="CostFinalize">1</Custom>
         </InstallExecuteSequence>

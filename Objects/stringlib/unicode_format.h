@@ -828,7 +828,7 @@ output_markup(SubString *field_name, SubString *format_spec,
         tmp = NULL;
     }
 
-    /* if needed, recurively compute the format_spec */
+    /* if needed, recursively compute the format_spec */
     if (format_spec_needs_expanding) {
         tmp = build_string(format_spec, args, kwargs, recursion_depth-1,
                            auto_number);
@@ -983,7 +983,7 @@ static void
 formatteriter_dealloc(formatteriterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:
@@ -1147,7 +1147,7 @@ static void
 fieldnameiter_dealloc(fieldnameiterobject *it)
 {
     Py_XDECREF(it->str);
-    PyObject_FREE(it);
+    PyObject_Free(it);
 }
 
 /* returns a tuple:

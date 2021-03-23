@@ -128,7 +128,6 @@ PYTHON2_EXCEPTIONS = (
     "SystemError",
     "SystemExit",
     "TabError",
-    "TargetScopeError",
     "TypeError",
     "UnboundLocalError",
     "UnicodeDecodeError",

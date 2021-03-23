@@ -148,69 +148,20 @@ variables and instance variables live in two different namespaces, and you need
 to tell Python which namespace to use.
 
 
+.. _why-can-t-i-use-an-assignment-in-an-expression:
+
 Why can't I use an assignment in an expression?
 -----------------------------------------------
 
-Many people used to C or Perl complain that they want to use this C idiom:
+Starting in Python 3.8, you can!
 
-.. code-block:: c
+Assignment expressions using the walrus operator `:=` assign a variable in an
+expression::
 
-   while (line = readline(f)) {
-       // do something with line
-   }
+   while chunk := fp.read(200):
+      print(chunk)
 
-where in Python you're forced to write this::
-
-   while True:
-       line = f.readline()
-       if not line:
-           break
-       ...  # do something with line
-
-The reason for not allowing assignment in Python expressions is a common,
-hard-to-find bug in those other languages, caused by this construct:
-
-.. code-block:: c
-
-    if (x = 0) {
-        // error handling
-    }
-    else {
-        // code that only works for nonzero x
-    }
-
-The error is a simple typo: ``x = 0``, which assigns 0 to the variable ``x``,
-was written while the comparison ``x == 0`` is certainly what was intended.
-
-Many alternatives have been proposed.  Most are hacks that save some typing but
-use arbitrary or cryptic syntax or keywords, and fail the simple criterion for
-language change proposals: it should intuitively suggest the proper meaning to a
-human reader who has not yet been introduced to the construct.
-
-An interesting phenomenon is that most experienced Python programmers recognize
-the ``while True`` idiom and don't seem to be missing the assignment in
-expression construct much; it's only newcomers who express a strong desire to
-add this to the language.
-
-There's an alternative way of spelling this that seems attractive but is
-generally less robust than the "while True" solution::
-
-   line = f.readline()
-   while line:
-       ...  # do something with line...
-       line = f.readline()
-
-The problem with this is that if you change your mind about exactly how you get
-the next line (e.g. you want to change it into ``sys.stdin.readline()``) you
-have to remember to change two places in your program -- the second occurrence
-is hidden at the bottom of the loop.
-
-The best approach is to use iterators, making it possible to loop through
-objects using the ``for`` statement.  For example, :term:`file objects
-<file object>` support the iterator protocol, so you can write simply::
-
-   for line in f:
-       ...  # do something with line...
+See :pep:`572` for more information.
 
 
 
@@ -308,9 +259,8 @@ Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
 You can do this easily enough with a sequence of ``if... elif... elif... else``.
-There have been some proposals for switch statement syntax, but there is no
-consensus (yet) on whether and how to do range tests.  See :pep:`275` for
-complete details and the current status.
+For literal values, or constants within a namespace, you can also use a
+``match ... case`` statement.
 
 For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
@@ -622,8 +572,7 @@ whether an instance or a class implements a particular ABC.  The
 :class:`~collections.abc.MutableMapping`.
 
 For Python, many of the advantages of interface specifications can be obtained
-by an appropriate test discipline for components.  There is also a tool,
-PyChecker, which can be used to find problems due to subclassing.
+by an appropriate test discipline for components.
 
 A good test suite for a module can both provide a regression test and serve as a
 module interface specification and a set of examples.  Many Python modules can
@@ -641,17 +590,25 @@ to the end of some internal list; an interface specification cannot test that
 your :meth:`append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
-Writing test suites is very helpful, and you might want to design your code with
-an eye to making it easily tested.  One increasingly popular technique,
-test-directed development, calls for writing parts of the test suite first,
-before you write any of the actual code.  Of course Python allows you to be
-sloppy and not write test cases at all.
+Writing test suites is very helpful, and you might want to design your code to
+make it easily tested. One increasingly popular technique, test-driven
+development, calls for writing parts of the test suite first, before you write
+any of the actual code.  Of course Python allows you to be sloppy and not write
+test cases at all.
 
 
 Why is there no goto?
 ---------------------
 
-You can use exceptions to provide a "structured goto" that even works across
+In the 1970s people realized that unrestricted goto could lead
+to messy "spaghetti" code that was hard to understand and revise.
+In a high-level language, it is also unneeded as long as there
+are ways to branch (in Python, with ``if`` statements and ``or``,
+``and``, and ``if-else`` expressions) and loop (with ``while``
+and ``for`` statements, possibly containing ``continue`` and ``break``).
+
+One can also use exceptions to provide a "structured goto"
+that works even across
 function calls.  Many feel that exceptions can conveniently emulate all
 reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
 languages.  For example::
@@ -700,7 +657,7 @@ Why doesn't Python have a "with" statement for attribute assignments?
 ---------------------------------------------------------------------
 
 Python has a 'with' statement that wraps the execution of a block, calling code
-on the entrance and exit from the block.  Some language have a construct that
+on the entrance and exit from the block.  Some languages have a construct that
 looks like this::
 
    with obj:

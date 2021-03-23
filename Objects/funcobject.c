@@ -2,76 +2,94 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pymem.h"
-#include "pycore_pystate.h"
-#include "pycore_tupleobject.h"
-#include "code.h"
-#include "structmember.h"
+#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "structmember.h"         // PyMemberDef
 
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
-    PyFunctionObject *op;
-    PyObject *doc, *consts, *module;
-    static PyObject *__name__ = NULL;
-
-    if (__name__ == NULL) {
-        __name__ = PyUnicode_InternFromString("__name__");
-        if (__name__ == NULL)
-            return NULL;
-    }
-
-    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
-    if (op == NULL)
-        return NULL;
-
-    op->func_weakreflist = NULL;
-    Py_INCREF(code);
-    op->func_code = code;
+    assert(globals != NULL);
+    assert(PyDict_Check(globals));
     Py_INCREF(globals);
-    op->func_globals = globals;
-    op->func_name = ((PyCodeObject *)code)->co_name;
-    Py_INCREF(op->func_name);
-    op->func_defaults = NULL; /* No default arguments */
-    op->func_kwdefaults = NULL; /* No keyword only defaults */
-    op->func_closure = NULL;
-    op->vectorcall = _PyFunction_Vectorcall;
 
-    consts = ((PyCodeObject *)code)->co_consts;
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyCodeObject *code_obj = (PyCodeObject *)code;
+    Py_INCREF(code_obj);
+
+    PyObject *name = code_obj->co_name;
+    assert(name != NULL);
+    Py_INCREF(name);
+    if (!qualname) {
+        qualname = name;
+    }
+    Py_INCREF(qualname);
+
+    PyObject *consts = code_obj->co_consts;
+    assert(PyTuple_Check(consts));
+    PyObject *doc;
     if (PyTuple_Size(consts) >= 1) {
         doc = PyTuple_GetItem(consts, 0);
-        if (!PyUnicode_Check(doc))
+        if (!PyUnicode_Check(doc)) {
             doc = Py_None;
+        }
     }
-    else
+    else {
         doc = Py_None;
+    }
     Py_INCREF(doc);
+
+    // __module__: Use globals['__name__'] if it exists, or NULL.
+    _Py_IDENTIFIER(__name__);
+    PyObject *module = _PyDict_GetItemIdWithError(globals, &PyId___name__);
+    PyObject *builtins = NULL;
+    if (module == NULL && _PyErr_Occurred(tstate)) {
+        goto error;
+    }
+    Py_XINCREF(module);
+
+    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    if (builtins == NULL) {
+        goto error;
+    }
+    Py_INCREF(builtins);
+
+    PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        goto error;
+    }
+    /* Note: No failures from this point on, since func_dealloc() does not
+       expect a partially-created object. */
+
+    op->func_globals = globals;
+    op->func_builtins = builtins;
+    op->func_name = name;
+    op->func_qualname = qualname;
+    op->func_code = (PyObject*)code_obj;
+    op->func_defaults = NULL;    // No default positional arguments
+    op->func_kwdefaults = NULL;  // No default keyword arguments
+    op->func_closure = NULL;
     op->func_doc = doc;
-
     op->func_dict = NULL;
-    op->func_module = NULL;
+    op->func_weakreflist = NULL;
+    op->func_module = module;
     op->func_annotations = NULL;
-
-    /* __module__: If module name is in globals, use it.
-       Otherwise, use None. */
-    module = PyDict_GetItemWithError(globals, __name__);
-    if (module) {
-        Py_INCREF(module);
-        op->func_module = module;
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF(op);
-        return NULL;
-    }
-    if (qualname)
-        op->func_qualname = qualname;
-    else
-        op->func_qualname = op->func_name;
-    Py_INCREF(op->func_qualname);
+    op->vectorcall = _PyFunction_Vectorcall;
 
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
+
+error:
+    Py_DECREF(globals);
+    Py_DECREF(code_obj);
+    Py_DECREF(name);
+    Py_DECREF(qualname);
+    Py_DECREF(doc);
+    Py_XDECREF(module);
+    Py_XDECREF(builtins);
+    return NULL;
 }
 
 PyObject *
@@ -196,7 +214,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
     else {
         PyErr_Format(PyExc_SystemError,
                      "expected tuple for closure, got '%.100s'",
-                     closure->ob_type->tp_name);
+                     Py_TYPE(closure)->tp_name);
         return -1;
     }
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
@@ -239,12 +257,11 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure),
-     RESTRICTED|READONLY},
-    {"__doc__",       T_OBJECT,     OFF(func_doc), PY_WRITE_RESTRICTED},
-    {"__globals__",   T_OBJECT,     OFF(func_globals),
-     RESTRICTED|READONLY},
-    {"__module__",    T_OBJECT,     OFF(func_module), PY_WRITE_RESTRICTED},
+    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
+    {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
+    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
+    {"__module__",    T_OBJECT,     OFF(func_module), 0},
+    {"__builtins__",  T_OBJECT,     OFF(func_builtins), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -426,6 +443,25 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
+    if (PyTuple_CheckExact(op->func_annotations)) {
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
+
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
+
+            if (err < 0)
+                return NULL;
+        }
+        Py_SETREF(op->func_annotations, ann_dict);
+    }
     Py_INCREF(op->func_annotations);
     return op->func_annotations;
 }
@@ -541,7 +577,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
             if (!PyCell_Check(o)) {
                 return PyErr_Format(PyExc_TypeError,
                     "arg 5 (closure) expected cell, found %s",
-                                    o->ob_type->tp_name);
+                                    Py_TYPE(o)->tp_name);
             }
         }
     }
@@ -551,9 +587,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
                                                  globals);
-    if (newfunc == NULL)
+    if (newfunc == NULL) {
         return NULL;
-
+    }
     if (name != Py_None) {
         Py_INCREF(name);
         Py_SETREF(newfunc->func_name, name);
@@ -575,15 +611,16 @@ func_clear(PyFunctionObject *op)
 {
     Py_CLEAR(op->func_code);
     Py_CLEAR(op->func_globals);
-    Py_CLEAR(op->func_module);
+    Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_name);
+    Py_CLEAR(op->func_qualname);
+    Py_CLEAR(op->func_module);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
     Py_CLEAR(op->func_doc);
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
-    Py_CLEAR(op->func_qualname);
     return 0;
 }
 
@@ -610,6 +647,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->func_code);
     Py_VISIT(f->func_globals);
+    Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
     Py_VISIT(f->func_defaults);
     Py_VISIT(f->func_kwdefaults);
@@ -654,7 +692,7 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    _Py_TPFLAGS_HAVE_VECTORCALL |
+    Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_METHOD_DESCRIPTOR,               /* tp_flags */
     func_new__doc__,                            /* tp_doc */
     (traverseproc)func_traverse,                /* tp_traverse */
@@ -741,6 +779,10 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
+    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
+        return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
+                                                      NULL);
+    }
     return PyMethod_New(cm->cm_callable, type);
 }
 

@@ -64,7 +64,7 @@ The following functions are defined:
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
 
-   .. audit-event:: webbrowser.open "url"
+   .. audit-event:: webbrowser.open url webbrowser.open
 
 
 .. function:: open_new(url)

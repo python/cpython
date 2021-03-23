@@ -59,9 +59,19 @@ static PyStructSequence_Desc struct_spwd_type_desc = {
     9,
 };
 
-static int initialized;
-static PyTypeObject StructSpwdType;
+typedef struct {
+    PyTypeObject *StructSpwdType;
+} spwdmodulestate;
 
+static inline spwdmodulestate*
+get_spwd_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (spwdmodulestate *)state;
+}
+
+static struct PyModuleDef spwdmodule;
 
 static void
 sets(PyObject *v, int i, const char* val)
@@ -75,10 +85,10 @@ sets(PyObject *v, int i, const char* val)
   }
 }
 
-static PyObject *mkspent(struct spwd *p)
+static PyObject *mkspent(PyObject *module, struct spwd *p)
 {
     int setIndex = 0;
-    PyObject *v = PyStructSequence_New(&StructSpwdType);
+    PyObject *v = PyStructSequence_New(get_spwd_state(module)->StructSpwdType);
     if (v == NULL)
         return NULL;
 
@@ -144,7 +154,7 @@ spwd_getspnam_impl(PyObject *module, PyObject *arg)
             PyErr_SetString(PyExc_KeyError, "getspnam(): name not found");
         goto out;
     }
-    retval = mkspent(p);
+    retval = mkspent(module, p);
 out:
     Py_DECREF(bytes);
     return retval;
@@ -172,7 +182,7 @@ spwd_getspall_impl(PyObject *module)
         return NULL;
     setspent();
     while ((p = getspent()) != NULL) {
-        PyObject *v = mkspent(p);
+        PyObject *v = mkspent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
             Py_DECREF(d);
@@ -197,34 +207,54 @@ static PyMethodDef spwd_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static int
+spwdmodule_exec(PyObject *module)
+{
+    spwdmodulestate *state = get_spwd_state(module);
 
+    state->StructSpwdType = PyStructSequence_NewType(&struct_spwd_type_desc);
+    if (state->StructSpwdType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->StructSpwdType) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot spwdmodule_slots[] = {
+    {Py_mod_exec, spwdmodule_exec},
+    {0, NULL}
+};
+
+static int spwdmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_spwd_state(m)->StructSpwdType);
+    return 0;
+}
+
+static int spwdmodule_clear(PyObject *m) {
+    Py_CLEAR(get_spwd_state(m)->StructSpwdType);
+    return 0;
+}
+
+static void spwdmodule_free(void *m) {
+    spwdmodule_clear((PyObject *)m);
+}
 
 static struct PyModuleDef spwdmodule = {
     PyModuleDef_HEAD_INIT,
-    "spwd",
-    spwd__doc__,
-    -1,
-    spwd_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "spwd",
+    .m_doc = spwd__doc__,
+    .m_size = sizeof(spwdmodulestate),
+    .m_methods = spwd_methods,
+    .m_slots = spwdmodule_slots,
+    .m_traverse = spwdmodule_traverse,
+    .m_clear = spwdmodule_clear,
+    .m_free = spwdmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit_spwd(void)
 {
-    PyObject *m;
-    m=PyModule_Create(&spwdmodule);
-    if (m == NULL)
-        return NULL;
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructSpwdType,
-                                       &struct_spwd_type_desc) < 0)
-            return NULL;
-    }
-    Py_INCREF((PyObject *) &StructSpwdType);
-    PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
-    initialized = 1;
-    return m;
+    return PyModuleDef_Init(&spwdmodule);
 }
