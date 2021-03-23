@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "pycore_ast.h"           // _PyAST_Validate()
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -839,8 +840,8 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
                 PyArena_Free(arena);
                 goto error;
             }
-            result = (PyObject*)PyAST_CompileObject(mod, filename,
-                                                    &cf, optimize, arena);
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena);
             PyArena_Free(arena);
         }
         goto finally;

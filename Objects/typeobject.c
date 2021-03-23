@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"

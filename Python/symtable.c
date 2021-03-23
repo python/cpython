@@ -1,8 +1,9 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "structmember.h"         // PyMemberDef
 
 /* error strings used for warnings */

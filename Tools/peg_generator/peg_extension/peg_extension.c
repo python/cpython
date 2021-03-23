@@ -1,4 +1,6 @@
 #include "pegen.h"
+#include "pycore_compile.h"       // _PyAST_Compile()
+
 
 PyObject *
 _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *arena)
@@ -6,7 +8,7 @@ _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *ar
     PyObject *result = NULL;
 
     if (mode == 2) {
-        result = (PyObject *)PyAST_CompileObject(module, filename_ob, NULL, -1, arena);
+        result = (PyObject *)_PyAST_Compile(module, filename_ob, NULL, -1, arena);
     } else if (mode == 1) {
         result = PyAST_mod2obj(module);
     } else {
