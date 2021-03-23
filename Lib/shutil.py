@@ -32,16 +32,6 @@ try:
 except ImportError:
     _LZMA_SUPPORTED = False
 
-try:
-    from pwd import getpwnam
-except ImportError:
-    getpwnam = None
-
-try:
-    from grp import getgrnam
-except ImportError:
-    getgrnam = None
-
 _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
@@ -843,8 +833,14 @@ def _is_immutable(src):
 
 def _get_gid(name):
     """Returns a gid, given a group name."""
-    if getgrnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from grp import getgrnam
+    except ImportError:
+        return None
+
     try:
         result = getgrnam(name)
     except KeyError:
@@ -855,8 +851,14 @@ def _get_gid(name):
 
 def _get_uid(name):
     """Returns an uid, given a user name."""
-    if getpwnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from pwd import getpwnam
+    except ImportError:
+        return None
+
     try:
         result = getpwnam(name)
     except KeyError:
