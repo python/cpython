@@ -588,6 +588,11 @@ Other Language Changes
   ``__globals__["__builtins__"]`` if it exists, else from the current builtins.
   (Contributed by Mark Shannon in :issue:`42990`.)
 
+* Two new builtin functions -- :func:`aiter` and :func:`anext` have been added
+  to provide asynchronous counterparts to :func:`iter` and :func:`next`,
+  respectively.
+  (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
+
 
 New Modules
 ===========
