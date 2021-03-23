@@ -114,22 +114,22 @@ Text Encoding
 The default encoding of :class:`TextIOWrapper` and :func:`open` is
 locale-specific (:func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`).
 
-But many developers forget to specify encoding when opening text files
+However, many developers forget to specify the encoding when opening text files
 encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
-platforms uses UTF-8 locale by default. It cause a bug because locale-specific
+platforms use UTF-8 locale by default. This causes bugs because the locale
 encoding is not UTF-8 for most Windows users. For example::
 
-   # may not work on Windows when non-ASCII characters in the file.
+   # May not work on Windows when non-ASCII characters in the file.
    with open("README.md") as f:
        long_description = f.read()
 
 Additionally, while there is no concrete plan as of yet, Python may change
 the default text file encoding to UTF-8 in the future.
 
-So it is highly recommended to specify encoding explicitly when opening text
-files. If you want to use UTF-8, specify ``encoding="utf-8"``. If you need to
-use locale-specific encoding, ``encoding="locale"`` is supported since Python
-3.10.
+Accordingly, it is highly recommended that you specify the encoding
+explicitly when opening text files. If you want to use UTF-8, pass 
+``encoding="utf-8"``. To use the current locale encoding,
+``encoding="locale"`` is supported in Python 3.10.
 
 When you need to run existing code on Windows that attempts to opens
 UTF-8 files using the default locale encoding, you can enable the UTF-8
@@ -953,7 +953,7 @@ Text I/O
    *encoding* gives the name of the encoding that the stream will be decoded or
    encoded with.  It defaults to
    :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
-   ``encoding="locale"`` can be used to specify the locale specific encoding
+   ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
    *errors* is an optional string that specifies how encoding and decoding

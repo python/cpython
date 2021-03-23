@@ -42,22 +42,23 @@ _CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
 
 def text_encoding(encoding, stacklevel=2):
     """
-    Helper function to choose the text encoding.
+    A helper function to choose the text encoding.
 
     When encoding is not None, just return it.
     Otherwise, return the default text encoding (i.e. "locale").
 
-    This function emits EncodingWarning if *encoding* is None and
-    sys.flags.warn_default_encoding is true.
+    This function emits an EncodingWarning if *encoding* is None and
+    sys.flags.encoding_warning is True.
 
-    This function can be used in APIs having encoding=None option.
-    But please consider encoding="utf-8" for new APIs.
+    This can be used in APIs with an encoding=None parameter
+    that pass it to TextIOWrapper or open.
+    However, please consider using encoding="utf-8" for new APIs.
     """
     if encoding is None:
         encoding = "locale"
         if sys.flags.warn_default_encoding:
             import warnings
-            warnings.warn("'encoding' argument is not specified.",
+            warnings.warn("'encoding' argument not specified.",
                           EncodingWarning, stacklevel + 1)
     return encoding
 

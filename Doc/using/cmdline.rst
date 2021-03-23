@@ -454,7 +454,7 @@ Miscellaneous options
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
    * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when the
-     locale-specific default encoding is used.
+     locale-specific default encoding is used for opening files.
      See also :envvar:`PYTHONWARNDEFAULTENCODING`.
 
    It also allows passing arbitrary values and retrieving them through the
