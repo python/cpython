@@ -6,7 +6,10 @@ import urllib.robotparser
 from test import support
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import import_helper
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
+ssl = import_helper.import_module("ssl")
 
 
 class BaseRobotTest:
@@ -382,6 +385,30 @@ class NetworkTestCase(unittest.TestCase):
         self.assertEqual(parser.mtime(), 0)
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
+
+
+class SSLContextOverrideTestCase(unittest.TestCase):
+    base_url = 'https://www.pythontest.net/'
+    robots_txt = '{}elsewhere/robots.txt'.format(base_url)
+
+    @classmethod
+    def setUpClass(cls):
+        support.requires('network')
+        # The URL has a self-signed CA. Ignore validation errors.
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with socket_helper.transient_internet(cls.base_url):
+            cls.parser = urllib.robotparser.RobotFileParser(cls.robots_txt, sslcontext=ctx)
+            cls.parser.read()
+
+    def test_basic(self):
+        self.assertFalse(self.parser.disallow_all)
+        self.assertFalse(self.parser.allow_all)
+        self.assertGreater(self.parser.mtime(), 0)
+        self.assertFalse(self.parser.crawl_delay('*'))
+        self.assertFalse(self.parser.request_rate('*'))
+
 
 if __name__=='__main__':
     unittest.main()
