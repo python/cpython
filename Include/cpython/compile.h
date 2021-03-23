@@ -47,7 +47,8 @@ typedef struct {
 #define FUTURE_GENERATOR_STOP "generator_stop"
 #define FUTURE_ANNOTATIONS "annotations"
 
-struct _mod; /* Declare the existence of this type */
+struct _mod;   // Type defined in pycore_ast.h
+
 #define PyAST_Compile(mod, s, f, ar) PyAST_CompileEx(mod, s, f, -1, ar)
 PyAPI_FUNC(PyCodeObject *) PyAST_CompileEx(
     struct _mod *mod,

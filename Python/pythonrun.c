@@ -10,7 +10,7 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
+#include "pycore_ast.h"           // PyAST_mod2obj
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
 
 #include "pycore_interp.h"        // PyInterpreterState.importlib

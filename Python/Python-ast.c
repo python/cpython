@@ -24,9 +24,9 @@ get_ast_state(void)
     return state;
 }
 
-// Include Python-ast.h after pycore_interp.h to avoid conflicts
+// Include pycore_ast.h after pycore_interp.h to avoid conflicts
 // with the Yield macro redefined by <winbase.h>
-#include "Python-ast.h"
+#include "pycore_ast.h"
 #include "structmember.h"
 
 void _PyAST_Fini(PyInterpreterState *interp)

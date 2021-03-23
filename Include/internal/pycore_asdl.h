@@ -1,6 +1,12 @@
-#ifndef Py_LIMITED_API
-#ifndef Py_ASDL_H
-#define Py_ASDL_H
+#ifndef Py_INTERNAL_ASDL_H
+#define Py_INTERNAL_ASDL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
 typedef PyObject * identifier;
 typedef PyObject * string;
@@ -73,8 +79,9 @@ asdl_ ## NAME ## _seq *_Py_asdl_ ## NAME ## _seq_new(Py_ssize_t size, PyArena *a
 #define asdl_seq_GET_UNTYPED(S, I) (S)->elements[(I)]
 #define asdl_seq_GET(S, I) (S)->typed_elements[(I)]
 #define asdl_seq_LEN(S) ((S) == NULL ? 0 : (S)->size)
+
 #ifdef Py_DEBUG
-#define asdl_seq_SET(S, I, V) \
+#  define asdl_seq_SET(S, I, V) \
     do { \
         Py_ssize_t _asdl_i = (I); \
         assert((S) != NULL); \
@@ -82,11 +89,11 @@ asdl_ ## NAME ## _seq *_Py_asdl_ ## NAME ## _seq_new(Py_ssize_t size, PyArena *a
         (S)->typed_elements[_asdl_i] = (V); \
     } while (0)
 #else
-#define asdl_seq_SET(S, I, V) (S)->typed_elements[I] = (V)
+#  define asdl_seq_SET(S, I, V) (S)->typed_elements[I] = (V)
 #endif
 
 #ifdef Py_DEBUG
-#define asdl_seq_SET_UNTYPED(S, I, V) \
+#  define asdl_seq_SET_UNTYPED(S, I, V) \
     do { \
         Py_ssize_t _asdl_i = (I); \
         assert((S) != NULL); \
@@ -94,8 +101,10 @@ asdl_ ## NAME ## _seq *_Py_asdl_ ## NAME ## _seq_new(Py_ssize_t size, PyArena *a
         (S)->elements[_asdl_i] = (V); \
     } while (0)
 #else
-#define asdl_seq_SET_UNTYPED(S, I, V) (S)->elements[I] = (V)
+#  define asdl_seq_SET_UNTYPED(S, I, V) (S)->elements[I] = (V)
 #endif
 
-#endif /* !Py_ASDL_H */
-#endif /* Py_LIMITED_API */
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_INTERNAL_ASDL_H */
