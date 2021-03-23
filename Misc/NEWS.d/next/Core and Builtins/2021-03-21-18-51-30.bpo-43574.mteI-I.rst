@@ -1,2 +1,3 @@
-Restores previous list memory behavior where lists initialized from literals
-aren't over-allocated.
+``list`` objects don't overallocate when starting empty and then extended, or
+when set to be empty.  This effectively restores previous ``list`` memory
+behavior for lists initialized from literals.
