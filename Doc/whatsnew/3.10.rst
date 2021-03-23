@@ -459,7 +459,13 @@ platforms, omitting ``encoding`` option when opening UTF-8 files
        data = json.laod(f)
 
 To find this type of bugs, optional ``EncodingWarning`` is added.
+It is emitted when :data:`sys.flags.warn_default_encoding <sys.flags>`
+is true and locale-specific default encoding is used.
 
+``-X warn_default_encoding`` option and :envvar:`PYTHONWARNDEFAULTENCODING`
+are added to enable the warning.
+
+See :ref:`io-text-encoding` for more information.
 
 
 New Features Related to Type Annotations
