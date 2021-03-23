@@ -12,6 +12,12 @@ There are two functions specifically for working with iterators.
    Return non-zero if the object *o* supports the iterator protocol, and ``0``
    otherwise.  This function always succeeds.
 
+.. c:function:: int PyAiter_Check(PyObject *o)
+
+   Returns non-zero if the object 'obj' provides :class:`AsyncIterator`
+   protocols, and ``0`` otherwise.  This function always succeeds.
+
+   .. versionadded:: 3.10
 
 .. c:function:: PyObject* PyIter_Next(PyObject *o)
 

@@ -356,3 +356,14 @@ Object Protocol
    iterator for the object argument, or the object  itself if the object is already
    an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
+
+
+.. c:function:: PyObject* PyObject_GetAiter(PyObject *o)
+
+   This is the equivalent to the Python expression ``aiter(o)``. Takes an
+   :class:`AsyncIterable` object and returns an :class:`AsyncIterator` for it.
+   This is typically a new iterator but if the argument is an
+   :class:`AsyncIterator`, this returns itself. Raises :exc:`TypeError` and
+   returns ``NULL`` if the object cannot be iterated.
+
+   .. versionadded:: 3.10
