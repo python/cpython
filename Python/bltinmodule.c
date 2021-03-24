@@ -828,21 +828,21 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
             PyArena *arena;
             mod_ty mod;
 
-            arena = PyArena_New();
+            arena = _PyArena_New();
             if (arena == NULL)
                 goto error;
             mod = PyAST_obj2mod(source, arena, compile_mode);
             if (mod == NULL) {
-                PyArena_Free(arena);
+                _PyArena_Free(arena);
                 goto error;
             }
             if (!_PyAST_Validate(mod)) {
-                PyArena_Free(arena);
+                _PyArena_Free(arena);
                 goto error;
             }
             result = (PyObject*)_PyAST_Compile(mod, filename,
                                                &cf, optimize, arena);
-            PyArena_Free(arena);
+            _PyArena_Free(arena);
         }
         goto finally;
     }

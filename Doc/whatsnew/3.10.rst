@@ -1419,3 +1419,14 @@ Removed
 
   These functions were undocumented and excluded from the limited C API.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove the ``pyarena.h`` header file with functions:
+
+  * ``PyArena_New()``
+  * ``PyArena_Free()``
+  * ``PyArena_Malloc()``
+  * ``PyArena_AddPyObject()``
+
+  These functions were undocumented, excluded from the limited C API, and were
+  only used internally by the compiler.
+  (Contributed by Victor Stinner in :issue:`43244`.)

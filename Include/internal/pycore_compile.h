@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-struct _mod;   // Type defined in pycore_ast.h
+struct _arena;   // Type defined in pycore_pyarena.h
+struct _mod;     // Type defined in pycore_ast.h
 
 // Export the symbol for test_peg_generator (built as a library)
 PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
@@ -16,7 +17,7 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    PyArena *arena);
+    struct _arena *arena);
 extern PyFutureFeatures* _PyFuture_FromAST(
     struct _mod * mod,
     PyObject *filename
@@ -31,7 +32,7 @@ typedef struct {
 
 extern int _PyAST_Optimize(
     struct _mod *,
-    PyArena *arena,
+    struct _arena *arena,
     _PyASTOptimizeState *state);
 
 #ifdef __cplusplus
