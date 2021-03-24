@@ -1009,7 +1009,7 @@ Text I/O
       encoding instead of the user preferred encoding.
 
    .. versionchanged:: 3.10
-      *encoding* option now supports ``"locale"`` dummy encoding name.
+      The *encoding* argument now supports the ``"locale"`` dummy encoding name.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:
