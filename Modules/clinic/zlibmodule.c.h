@@ -17,18 +17,19 @@ PyDoc_STRVAR(zlib_compress__doc__,
     {"compress", (PyCFunction)(void(*)(void))zlib_compress, METH_FASTCALL|METH_KEYWORDS, zlib_compress__doc__},
 
 static PyObject *
-zlib_compress_impl(PyObject *module, Py_buffer *data, int level);
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits);
 
 static PyObject *
 zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"", "level", NULL};
+    static const char * const _keywords[] = {"", "level", "wbits", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "compress", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
+    int wbits = MAX_WBITS;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -44,12 +45,29 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    level = _PyLong_AsInt(args[1]);
-    if (level == -1 && PyErr_Occurred()) {
-        goto exit;
+    if (args[1]) {
+        level = _PyLong_AsInt(args[1]);
+        if (level == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    {
+        int ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = _PyLong_AsInt(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        wbits = ival;
     }
 skip_optional_pos:
-    return_value = zlib_compress_impl(module, &data, level);
+    return_value = zlib_compress_impl(module, &data, level, wbits);
 
 exit:
     /* Cleanup for data */
