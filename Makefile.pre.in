@@ -317,7 +317,7 @@ PEGEN_OBJS=		\
 
 
 PEGEN_HEADERS= \
-		$(srcdir)/Include/cpython/parser_interface.h \
+		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 

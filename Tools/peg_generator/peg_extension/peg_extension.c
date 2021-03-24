@@ -44,8 +44,17 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+        goto error;
+    }
+
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    mod_ty res = _PyPegen_run_parser_from_file(filename, Py_file_input, filename_ob, &flags, arena);
+    mod_ty res = _PyPegen_run_parser_from_file_pointer(
+                        fp, Py_file_input, filename_ob,
+                        NULL, NULL, NULL, &flags, NULL, arena);
+    fclose(fp);
     if (res == NULL) {
         goto error;
     }
