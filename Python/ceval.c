@@ -1331,7 +1331,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     TARGET_##op
 
 #ifdef LLTRACE
-#define FAST_DISPATCH() \
+#define DISPATCH() \
     { \
         if (!lltrace && !_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
@@ -1341,7 +1341,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         goto fast_next_opcode; \
     }
 #else
-#define FAST_DISPATCH() \
+#define DISPATCH() \
     { \
         if (!_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
@@ -1352,19 +1352,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 #endif
 
-#define DISPATCH() \
-    { \
-        if (!_Py_atomic_load_relaxed(eval_breaker)) { \
-            FAST_DISPATCH(); \
-        } \
-        continue; \
-    }
-
 #else
 #define TARGET(op) op
-#define FAST_DISPATCH() goto fast_next_opcode
-#define DISPATCH() continue
+#define DISPATCH() goto fast_next_opcode
+
 #endif
+
+#define CHECK_EVAL_BREAKER() \
+    if (_Py_atomic_load_relaxed(eval_breaker)) { \
+        continue; \
+    }
 
 
 /* Tuple access macros */
@@ -1857,7 +1854,7 @@ main_loop:
            and that all operation that succeed call [FAST_]DISPATCH() ! */
 
         case TARGET(NOP): {
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(LOAD_FAST): {
@@ -1870,7 +1867,7 @@ main_loop:
             }
             Py_INCREF(value);
             PUSH(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(LOAD_CONST): {
@@ -1878,20 +1875,20 @@ main_loop:
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(STORE_FAST): {
             PREDICTED(STORE_FAST);
             PyObject *value = POP();
             SETLOCAL(oparg, value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(POP_TOP): {
             PyObject *value = POP();
             Py_DECREF(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(ROT_TWO): {
@@ -1899,7 +1896,7 @@ main_loop:
             PyObject *second = SECOND();
             SET_TOP(second);
             SET_SECOND(top);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(ROT_THREE): {
@@ -1909,7 +1906,7 @@ main_loop:
             SET_TOP(second);
             SET_SECOND(third);
             SET_THIRD(top);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(ROT_FOUR): {
@@ -1921,14 +1918,14 @@ main_loop:
             SET_SECOND(third);
             SET_THIRD(fourth);
             SET_FOURTH(top);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(DUP_TOP): {
             PyObject *top = TOP();
             Py_INCREF(top);
             PUSH(top);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(DUP_TOP_TWO): {
@@ -1939,7 +1936,7 @@ main_loop:
             STACK_GROW(2);
             SET_TOP(top);
             SET_SECOND(second);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(UNARY_POSITIVE): {
@@ -2704,7 +2701,7 @@ main_loop:
                 UNWIND_EXCEPT_HANDLER(b);
                 Py_DECREF(POP());
                 JUMPBY(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             else {
                 PyObject *val = POP();
@@ -2718,7 +2715,7 @@ main_loop:
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(LOAD_BUILD_CLASS): {
@@ -3620,7 +3617,7 @@ main_loop:
             Py_DECREF(right);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(CONTAINS_OP): {
@@ -3637,7 +3634,7 @@ main_loop:
             PUSH(b);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
@@ -3734,7 +3731,7 @@ main_loop:
 
         case TARGET(JUMP_FORWARD): {
             JUMPBY(oparg);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(POP_JUMP_IF_FALSE): {
@@ -3743,12 +3740,12 @@ main_loop:
             int err;
             if (cond == Py_True) {
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_False) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
@@ -3767,12 +3764,12 @@ main_loop:
             int err;
             if (cond == Py_False) {
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_True) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
@@ -3792,11 +3789,11 @@ main_loop:
             if (cond == Py_True) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_False) {
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
@@ -3816,11 +3813,11 @@ main_loop:
             if (cond == Py_False) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_True) {
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
@@ -3838,18 +3835,8 @@ main_loop:
         case TARGET(JUMP_ABSOLUTE): {
             PREDICTED(JUMP_ABSOLUTE);
             JUMPTO(oparg);
-#if FAST_LOOPS
-            /* Enabling this path speeds-up all while and for-loops by bypassing
-               the per-loop checks for signals.  By default, this should be turned-off
-               because it prevents detection of a control-break in tight loops like
-               "while 1: pass".  Compile with this option turned-on when you need
-               the speed-up and do not need break checking inside tight loops (ones
-               that contain only instructions ending with FAST_DISPATCH).
-            */
-            FAST_DISPATCH();
-#else
+            CHECK_EVAL_BREAKER();
             DISPATCH();
-#endif
         }
 
         case TARGET(GET_LEN): {
@@ -4260,6 +4247,7 @@ main_loop:
             PUSH(res);
             if (res == NULL)
                 goto error;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4273,6 +4261,7 @@ main_loop:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4292,6 +4281,7 @@ main_loop:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4338,6 +4328,7 @@ main_loop:
             if (result == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
