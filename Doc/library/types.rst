@@ -193,7 +193,7 @@ Standard names are defined for the following types:
 
 .. data:: MethodWrapperType
 
-   The type of *bound* methods of some built-in data types and base classes.
+   The type of methods of some built-in data type and base class instances.
    For example it is the type of :code:`object().__str__`.
 
    .. versionadded:: 3.7
@@ -215,7 +215,7 @@ Standard names are defined for the following types:
 
 .. data:: ClassMethodDescriptorType
 
-   The type of *unbound* class methods of some built-in data types such as
+   The type of class methods of some built-in data types such as
    ``dict.__dict__['fromkeys']``.
 
    .. versionadded:: 3.7
