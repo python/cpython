@@ -213,7 +213,7 @@ Returns a bytes object containing compressed data.
 
 static PyObject *
 zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
-/*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
+/*[clinic end generated code: output=46bd152fadd66df2 input=c4d06ee5782a7e3f]*/
 {
     PyObject *RetVal = NULL;
     Py_ssize_t obuflen = DEF_BUF_SIZE;
