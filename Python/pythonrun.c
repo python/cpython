@@ -16,6 +16,7 @@
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -254,8 +255,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
-                                     ps1, ps2, flags, &errcode, arena);
+    mod = _PyParser_ASTFromFile(fp, filename, enc, Py_single_input,
+                                ps1, ps2, flags, &errcode, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
@@ -1102,7 +1103,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
 
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
@@ -1121,8 +1122,8 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     }
 
     mod_ty mod;
-    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, NULL, NULL,
-                                     flags, NULL, arena);
+    mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
+                                flags, NULL, arena);
 
     if (closeit) {
         fclose(fp);
@@ -1292,7 +1293,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
