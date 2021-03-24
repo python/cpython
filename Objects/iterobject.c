@@ -368,7 +368,11 @@ PyTypeObject PyAnextAwaitable_Type = {
 PyObject *
 PyAnextAwaitable_New(PyObject *awaitable, PyObject *default_value)
 {
-    anextawaitableobject *anext = PyObject_GC_New(anextawaitableobject, &PyAnextAwaitable_Type);
+    anextawaitableobject *anext = PyObject_GC_New(
+            anextawaitableobject, &PyAnextAwaitable_Type);
+    if (anext == NULL) {
+        return NULL;
+    }
     Py_INCREF(awaitable);
     anext->wrapped = awaitable;
     Py_INCREF(default_value);
