@@ -1660,7 +1660,10 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
         return awaitable;
     }
 
-    return PyAnextAwaitable_New(awaitable, default_value);
+    PyObject* new_awaitable = PyAnextAwaitable_New(
+            awaitable, default_value);
+    Py_DECREF(awaitable);
+    return new_awaitable;
 }
 
 
