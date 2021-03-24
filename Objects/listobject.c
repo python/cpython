@@ -58,8 +58,11 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
         return 0;
     }
 
-    if (Py_SIZE(self) == 0 || newsize == 0) {
-        /* Don't overallocate for lists that start empty or are set to empty. */
+    if (newsize == 0 || (Py_SIZE(self) == 0 && newsize > 1)) {
+        /* Don't overallocate empty lists that are extended by more than 1
+         * element.  This helps ensure that list-literals aren't
+         * over-allocated, but still allows it for empty-list append/insert.
+         */
         new_allocated = newsize;
     }
     else {
