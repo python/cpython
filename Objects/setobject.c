@@ -150,6 +150,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 mask = so->mask;
             }
             else if (entry->hash == -1) {
+                assert (entry->key == dummy);
                 freeslot = entry;
             }
             entry++;
