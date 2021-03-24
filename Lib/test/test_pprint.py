@@ -206,6 +206,7 @@ class QueryTestCase(unittest.TestCase):
             self.assertEqual(pprint.pformat(simple), native)
             self.assertEqual(pprint.pformat(simple, width=1, indent=0)
                              .replace('\n', ' '), native)
+            self.assertEqual(pprint.pformat(simple, underscore_numbers=True), native)
             self.assertEqual(pprint.saferepr(simple), native)
 
     def test_container_repr_override_called(self):
