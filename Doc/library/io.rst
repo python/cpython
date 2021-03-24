@@ -148,10 +148,12 @@ the ``-X warn_default_encoding`` command line option or set the
 :envvar:`PYTHONWARNDEFAULTENCODING` environment variable, which will
 emit an :exc:`EncodingWarning` when the default encoding is used.
 
-If you are providing APIs using :func:`open` or :class:`TextIOWrapper` and
-having ``encoding=None`` parameter, you can use :func:`text_encoding` to emit
-an :exc:`EncodingWarning` to the user too. But please consider using UTF-8
-by default (i.e. ``encoding="utf-8"``).
+If you are providing an API that uses :func:`open` or
+:class:`TextIOWrapper` and passes ``encoding=None`` as a parameter, you
+can use :func:`text_encoding` so that callers of the API will emit an
+:exc:`EncodingWarning` if they don't pass an ``encoding``. However,
+please consider using UTF-8 by default (i.e. ``encoding="utf-8"``) for
+new APIs.
 
 
 High-level Module Interface
