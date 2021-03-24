@@ -160,14 +160,6 @@ class LoaderTests(abc.LoaderTests):
             self.assertEqual(repr_str,
                              "<module '__hello__' (frozen)>")
 
-    def test_module_repr_indirect(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with util.uncache('__hello__'), captured_stdout():
-                module = self.machinery.FrozenImporter.load_module('__hello__')
-            self.assertEqual(repr(module),
-                            "<module '__hello__' (frozen)>")
-
     # No way to trigger an error in a frozen module.
     test_state_after_failure = None
 

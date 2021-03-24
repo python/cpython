@@ -82,7 +82,8 @@ class SingleNamespacePackage(NamespacePackageTest):
 
     def test_module_repr(self):
         import foo.one
-        self.assertEqual(repr(foo), "<module 'foo' (namespace)>")
+        self.assertEqual(foo.__spec__.loader.module_repr(foo),
+                         "<module 'foo' (namespace)>")
 
 
 class DynamicPathNamespacePackage(NamespacePackageTest):

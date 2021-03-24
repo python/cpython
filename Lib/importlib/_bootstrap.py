@@ -275,7 +275,7 @@ def _requires_frozen(fxn):
 def _load_module_shim(self, fullname):
     """Load the specified module into sys.modules and return it.
 
-    This method is deprecated.  Use loader.exec_module instead.
+    This method is deprecated.  Use loader.exec_module() instead.
 
     """
     msg = ("the load_module() method is deprecated and slated for removal in "
@@ -292,24 +292,16 @@ def _load_module_shim(self, fullname):
 # Module specifications #######################################################
 
 def _module_repr(module):
-    # The implementation of ModuleType.__repr__().
+    """The implementation of ModuleType.__repr__()."""
     loader = getattr(module, '__loader__', None)
-    if hasattr(loader, 'module_repr'):
-        # As soon as BuiltinImporter, FrozenImporter, and NamespaceLoader
-        # drop their implementations for module_repr. we can add a
-        # deprecation warning here.
+    if spec := getattr(module, "__spec__", None):
+        return _module_repr_from_spec(spec)
+    elif hasattr(loader, 'module_repr'):
         try:
             return loader.module_repr(module)
         except Exception:
             pass
-    try:
-        spec = module.__spec__
-    except AttributeError:
-        pass
-    else:
-        if spec is not None:
-            return _module_repr_from_spec(spec)
-
+    # Fall through to a catch-all which always succeeds.
     # We could use module.__class__.__name__ instead of 'module' in the
     # various repr permutations.
     try:
