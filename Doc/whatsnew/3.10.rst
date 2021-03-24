@@ -588,6 +588,11 @@ Other Language Changes
   ``__globals__["__builtins__"]`` if it exists, else from the current builtins.
   (Contributed by Mark Shannon in :issue:`42990`.)
 
+* Two new builtin functions -- :func:`aiter` and :func:`anext` have been added
+  to provide asynchronous counterparts to :func:`iter` and :func:`next`,
+  respectively.
+  (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
+
 
 New Modules
 ===========
@@ -922,9 +927,10 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`41334`.)
 
 * The :mod:`runpy` module now imports fewer modules.
-  The ``python3 -m module-name`` command startup time is 1.3x faster in
-  average.
-  (Contributed by Victor Stinner in :issue:`41006`.)
+  The ``python3 -m module-name`` command startup time is 1.4x faster in
+  average. On Linux, ``python3 -I -m module-name`` imports 69 modules on Python
+  3.9, whereas it only imports 51 modules (-18) on Python 3.10.
+  (Contributed by Victor Stinner in :issue:`41006` and :issue:`41718`.)
 
 * The ``LOAD_ATTR`` instruction now uses new "per opcode cache" mechanism.  It
   is about 36% faster now for regular attributes and 44% faster for slots.
@@ -940,7 +946,6 @@ Optimizations
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
 
-
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
   bytecode level. It is now around 2 times faster to create a function with
@@ -951,6 +956,10 @@ Optimizations
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
   algorithm to avoid quadratic behavior on long strings.  (Contributed
   by Dennis Sweeney in :issue:`41972`)
+
+* Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
+  performance in the common case of cache hits. This makes the interpreter 1.04 times faster
+  in average (Contributed by Dino Viehland in :issue:`43452`)
 
 Deprecated
 ==========
@@ -994,6 +1003,12 @@ Deprecated
   system now triggers an :exc:`ImportWarning` as
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
+
+* The import system now uses the ``__spec__`` attribute on modules before
+  falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
+  ``__repr__()`` method. Removal of the use of ``module_repr()`` is scheduled
+  for Python 3.12.
+  (Contributed by Brett Cannon in :issue:`42137`.)
 
 * ``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python
   3.3, when it was made an alias to :class:`str`.  It is now deprecated,
@@ -1383,5 +1398,41 @@ Removed
   it could not be used, because the ``symtable.h`` header file was excluded
   from the limited C API.
 
-  The Python :mod:`symtable` module remains available and is unchanged.
+  Use Python :mod:`symtable` module instead.
+  (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove ``ast.h``, ``asdl.h``, and ``Python-ast.h`` header files.
+  These functions were undocumented and excluded from the limited C API.
+  Most names defined by these header files were not prefixed by ``Py`` and so
+  could create names conflicts. For example, ``Python-ast.h`` defined a
+  ``Yield`` macro which was conflict with the ``Yield`` name used by the
+  Windows ``<winbase.h>`` header. Use the Python :mod:`ast` module instead.
+  (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove the compiler and parser functions using ``struct _mod`` type, because
+  the public AST C API was removed:
+
+  * ``PyAST_Compile()``
+  * ``PyAST_CompileEx()``
+  * ``PyAST_CompileObject()``
+  * ``PyFuture_FromAST()``
+  * ``PyFuture_FromASTObject()``
+  * ``PyParser_ASTFromFile()``
+  * ``PyParser_ASTFromFileObject()``
+  * ``PyParser_ASTFromFilename()``
+  * ``PyParser_ASTFromString()``
+  * ``PyParser_ASTFromStringObject()``
+
+  These functions were undocumented and excluded from the limited C API.
+  (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove the ``pyarena.h`` header file with functions:
+
+  * ``PyArena_New()``
+  * ``PyArena_Free()``
+  * ``PyArena_Malloc()``
+  * ``PyArena_AddPyObject()``
+
+  These functions were undocumented, excluded from the limited C API, and were
+  only used internally by the compiler.
   (Contributed by Victor Stinner in :issue:`43244`.)

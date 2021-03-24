@@ -36,7 +36,7 @@ The :mod:`pprint` module defines one class:
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True)
+                         compact=False, sort_dicts=True, underscore_numbers=False)
 
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.  An output stream may be set using the *stream*
@@ -55,7 +55,10 @@ The :mod:`pprint` module defines one class:
    will be formatted on a separate line.  If *compact* is true, as many items
    as will fit within the *width* will be formatted on each output line. If
    *sort_dicts* is true (the default), dictionaries will be formatted with their
-   keys sorted, otherwise they will display in insertion order.
+   keys sorted, otherwise they will display in insertion order.  If
+   *underscore_numbers* is true, integers will be formatted with
+   ```_``` character for a thousands separator, otherwise underscores are not
+   displayed (the default).
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
@@ -63,6 +66,8 @@ The :mod:`pprint` module defines one class:
    .. versionchanged:: 3.8
       Added the *sort_dicts* parameter.
 
+   .. versionchanged:: 3.10
+      Added the *underscore_numbers* parameter.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -91,10 +96,10 @@ The :mod:`pprint` module defines one class:
 The :mod:`pprint` module also provides several shortcut functions:
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True)
+                      compact=False, sort_dicts=True, underscore_numbers=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact* and *sort_dicts* will be passed to the
+   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* will be passed to the
    :class:`PrettyPrinter` constructor as formatting parameters.
 
    .. versionchanged:: 3.4
@@ -102,6 +107,9 @@ The :mod:`pprint` module also provides several shortcut functions:
 
    .. versionchanged:: 3.8
       Added the *sort_dicts* parameter.
+
+   .. versionchanged:: 3.10
+      Added the *underscore_numbers* parameter.
 
 
 .. function:: pp(object, *args, sort_dicts=False, **kwargs)
@@ -116,13 +124,13 @@ The :mod:`pprint` module also provides several shortcut functions:
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True)
+                     compact=False, sort_dicts=True, underscore_numbers=False)
 
    Prints the formatted representation of *object* on *stream*, followed by a
    newline.  If *stream* is ``None``, ``sys.stdout`` is used.  This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).  *indent*, *width*, *depth*, *compact* and *sort_dicts* will
+   within a scope).  *indent*, *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* will
    be passed to the :class:`PrettyPrinter` constructor as formatting parameters.
 
    .. versionchanged:: 3.4
@@ -130,6 +138,9 @@ The :mod:`pprint` module also provides several shortcut functions:
 
    .. versionchanged:: 3.8
       Added the *sort_dicts* parameter.
+
+   .. versionchanged:: 3.10
+      Added the *underscore_numbers* parameter.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']

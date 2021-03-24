@@ -2,9 +2,9 @@
 
 #include "Python.h"
 #include <ctype.h>
-#include "ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_ast.h"           // _PyAST_Validate()
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -828,21 +828,21 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
             PyArena *arena;
             mod_ty mod;
 
-            arena = PyArena_New();
+            arena = _PyArena_New();
             if (arena == NULL)
                 goto error;
             mod = PyAST_obj2mod(source, arena, compile_mode);
             if (mod == NULL) {
-                PyArena_Free(arena);
+                _PyArena_Free(arena);
                 goto error;
             }
             if (!_PyAST_Validate(mod)) {
-                PyArena_Free(arena);
+                _PyArena_Free(arena);
                 goto error;
             }
-            result = (PyObject*)PyAST_CompileObject(mod, filename,
-                                                    &cf, optimize, arena);
-            PyArena_Free(arena);
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena);
+            _PyArena_Free(arena);
         }
         goto finally;
     }
@@ -1609,6 +1609,62 @@ iter(callable, sentinel) -> iterator\n\
 Get an iterator from an object.  In the first form, the argument must\n\
 supply its own iterator, or be a sequence.\n\
 In the second form, the callable is called until it returns the sentinel.");
+
+
+/*[clinic input]
+aiter as builtin_aiter
+
+    async_iterable: object
+    /
+
+Return an AsyncIterator for an AsyncIterable object.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_aiter(PyObject *module, PyObject *async_iterable)
+/*[clinic end generated code: output=1bae108d86f7960e input=473993d0cacc7d23]*/
+{
+    return PyObject_GetAiter(async_iterable);
+}
+
+PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
+
+/*[clinic input]
+anext as builtin_anext
+
+    aiterator: object
+    default: object = NULL
+    /
+
+Return the next item from the async iterator.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value)
+/*[clinic end generated code: output=f02c060c163a81fa input=699d11f4e38eca24]*/
+{
+    PyTypeObject *t;
+    PyObject *awaitable;
+
+    t = Py_TYPE(aiterator);
+    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+        PyErr_Format(PyExc_TypeError,
+            "'%.200s' object is not an async iterator",
+            t->tp_name);
+        return NULL;
+    }
+
+    awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (default_value == NULL) {
+        return awaitable;
+    }
+
+    PyObject* new_awaitable = PyAnextAwaitable_New(
+            awaitable, default_value);
+    Py_DECREF(awaitable);
+    return new_awaitable;
+}
 
 
 /*[clinic input]
@@ -2891,11 +2947,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
     {"iter",            (PyCFunction)(void(*)(void))builtin_iter,       METH_FASTCALL, iter_doc},
+    BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max",             (PyCFunction)(void(*)(void))builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min",             (PyCFunction)(void(*)(void))builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
     {"next",            (PyCFunction)(void(*)(void))builtin_next,       METH_FASTCALL, next_doc},
+    BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
     BUILTIN_POW_METHODDEF

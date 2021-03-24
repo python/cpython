@@ -1,0 +1,16 @@
+Remove the compiler and parser functions using ``struct _mod`` type, because
+the public AST C API was removed:
+
+* ``PyAST_Compile()``
+* ``PyAST_CompileEx()``
+* ``PyAST_CompileObject()``
+* ``PyFuture_FromAST()``
+* ``PyFuture_FromASTObject()``
+* ``PyParser_ASTFromFile()``
+* ``PyParser_ASTFromFileObject()``
+* ``PyParser_ASTFromFilename()``
+* ``PyParser_ASTFromString()``
+* ``PyParser_ASTFromStringObject()``
+
+These functions were undocumented and excluded from the limited C API.
+Patch by Victor Stinner.

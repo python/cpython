@@ -12,31 +12,31 @@ are always available.  They are listed here in alphabetical order.
 +=========================+=======================+=======================+=========================+
 | |  **A**                | |  **E**              | |  **L**              | |  **R**                |
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| |  :func:`all`          | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| |  :func:`any`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`ascii`        | |                     | |                     | |  :func:`round`        |
-| |                       | |  **F**              | |  **M**              | |                       |
-| |  **B**                | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
-| |  :func:`bin`          | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| |  :func:`bool`         | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`breakpoint`   | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| |  |func-bytearray|_    | |                     | |                     | |  :func:`sorted`       |
-| |  |func-bytes|_        | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| |                       | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| |  **C**                | |  :func:`globals`    | |                     | |  :func:`sum`          |
-| |  :func:`callable`     | |                     | |  **O**              | |  :func:`super`        |
-| |  :func:`chr`          | |  **H**              | |  :func:`object`     | |                       |
-| |  :func:`classmethod`  | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| |  :func:`compile`      | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`complex`      | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| |                       | |  :func:`hex`        | |                     | |                       |
-| |  **D**                | |                     | |  **P**              | |  **V**                |
-| |  :func:`delattr`      | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| |  |func-dict|_         | |  :func:`id`         | |  :func:`print`      | |                       |
-| |  :func:`dir`          | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| |  :func:`divmod`       | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |                       | |  :func:`isinstance` | |                     | |                       |
-| |                       | |  :func:`issubclass` | |                     | |  **_**                |
+| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
+| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
+| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
+| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
+| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
+| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
+| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
+| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
+| |                       | |                     | |  **O**              | |  :func:`super`        |
+| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
+| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
+| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
+| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
+| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
+| |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
+| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
+| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
+| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
+| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
@@ -61,6 +61,18 @@ are always available.  They are listed here in alphabetical order.
    If the argument is a complex number, its magnitude is returned.
 
 
+.. function:: aiter(async_iterable)
+
+   Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
+   Equivalent to calling ``x.__aiter__()``.
+
+   ``aiter(x)`` itself has an ``__aiter__()`` method that returns ``x``,
+   so ``aiter(aiter(x))`` is the same as ``aiter(x)``.
+
+   Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
+
+   .. versionadded:: 3.10
+
 .. function:: all(iterable)
 
    Return ``True`` if all elements of the *iterable* are true (or if the iterable
@@ -72,6 +84,21 @@ are always available.  They are listed here in alphabetical order.
                   return False
           return True
 
+
+.. awaitablefunction:: anext(async_iterator[, default])
+
+   When awaited, return the next item from the given :term:`asynchronous
+   iterator`, or *default* if given and the iterator is exhausted.
+
+   This is the async variant of the :func:`next` builtin, and behaves
+   similarly.
+
+   This calls the :meth:`~object.__anext__` method of *async_iterator*,
+   returning an :term:`awaitable`. Awaiting this returns the next value of the
+   iterator. If *default* is given, it is returned if the iterator is exhausted,
+   otherwise :exc:`StopAsyncIteration` is raised.
+
+   .. versionadded:: 3.10
 
 .. function:: any(iterable)
 

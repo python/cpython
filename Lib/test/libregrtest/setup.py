@@ -93,6 +93,10 @@ def setup_tests(ns):
         support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
 
+    if ns.xmlpath:
+        from test.support.testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
+
 
 def replace_stdout():
     """Set stdout encoder error handler to backslashreplace (as stderr error

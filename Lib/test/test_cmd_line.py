@@ -851,12 +851,18 @@ class IgnoreEnvironmentTest(unittest.TestCase):
         )
 
 class SyntaxErrorTests(unittest.TestCase):
-    def test_tokenizer_error_with_stdin(self):
-        proc = subprocess.run([sys.executable, "-"], input = b"(1+2+3",
+    def check_string(self, code):
+        proc = subprocess.run([sys.executable, "-"], input=code,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.assertNotEqual(proc.returncode, 0)
         self.assertNotEqual(proc.stderr, None)
         self.assertIn(b"\nSyntaxError", proc.stderr)
+
+    def test_tokenizer_error_with_stdin(self):
+        self.check_string(b"(1+2+3")
+
+    def test_decoding_error_at_the_end_of_the_line(self):
+        self.check_string(b"'\u1f'")
 
 def test_main():
     support.run_unittest(CmdLineTest, IgnoreEnvironmentTest, SyntaxErrorTests)
