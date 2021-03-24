@@ -1322,23 +1322,6 @@ error:
 }
 
 mod_ty
-_PyPegen_run_parser_from_file(const char *filename, int start_rule,
-                     PyObject *filename_ob, PyCompilerFlags *flags, PyArena *arena)
-{
-    FILE *fp = fopen(filename, "rb");
-    if (fp == NULL) {
-        PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
-        return NULL;
-    }
-
-    mod_ty result = _PyPegen_run_parser_from_file_pointer(fp, start_rule, filename_ob,
-                                                 NULL, NULL, NULL, flags, NULL, arena);
-
-    fclose(fp);
-    return result;
-}
-
-mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
                        PyCompilerFlags *flags, PyArena *arena)
 {
