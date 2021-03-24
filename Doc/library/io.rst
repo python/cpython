@@ -127,7 +127,7 @@ Additionally, while there is no concrete plan as of yet, Python may change
 the default text file encoding to UTF-8 in the future.
 
 Accordingly, it is highly recommended that you specify the encoding
-explicitly when opening text files. If you want to use UTF-8, pass 
+explicitly when opening text files. If you want to use UTF-8, pass
 ``encoding="utf-8"``. To use the current locale encoding,
 ``encoding="locale"`` is supported in Python 3.10.
 
