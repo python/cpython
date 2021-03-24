@@ -842,6 +842,8 @@ invalid_for_target:
 invalid_group:
     | '(' a=starred_expression ')' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use starred expression here") }
+    | '(' a='**' expression ')' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use double starred expression here") }
 invalid_import_from_targets:
     | import_from_as_names ',' {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }

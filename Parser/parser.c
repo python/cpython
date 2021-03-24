@@ -18285,7 +18285,7 @@ invalid_for_target_rule(Parser *p)
     return _res;
 }
 
-// invalid_group: '(' starred_expression ')'
+// invalid_group: '(' starred_expression ')' | '(' '**' expression ')'
 static void *
 invalid_group_rule(Parser *p)
 {
@@ -18325,6 +18325,39 @@ invalid_group_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_group[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' starred_expression ')'"));
+    }
+    { // '(' '**' expression ')'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_group[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' '**' expression ')'"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * a;
+        expr_ty expression_var;
+        if (
+            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (a = _PyPegen_expect_token(p, 35))  // token='**'
+            &&
+            (expression_var = expression_rule(p))  // expression
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_group[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' '**' expression ')'"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "can't use double starred expression here" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_group[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' '**' expression ')'"));
     }
     _res = NULL;
   done:
