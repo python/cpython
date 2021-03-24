@@ -362,7 +362,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('return NULL;', 2)
                 emit('}', 1)
 
-        emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
+        emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
         emit("if (!p)", 1)
         emit("return NULL;", 2)
         if union:
@@ -946,7 +946,7 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
     if (obj == Py_None)
         obj = NULL;
     if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
+        if (_PyArena_AddPyObject(arena, obj) < 0) {
             *out = NULL;
             return -1;
         }
@@ -958,7 +958,7 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
 
 static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (PyArena_AddPyObject(arena, obj) < 0) {
+    if (_PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
         return -1;
     }

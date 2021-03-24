@@ -247,7 +247,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             }
         }
     }
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL) {
         Py_XDECREF(v);
         Py_XDECREF(w);
@@ -262,7 +262,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     Py_XDECREF(w);
     Py_XDECREF(oenc);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         if (errcode == E_EOF) {
             PyErr_Clear();
             return E_EOF;
@@ -271,12 +271,12 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     }
     m = PyImport_AddModuleObject(mod_name);
     if (m == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return -1;
     }
     d = PyModule_GetDict(m);
     v = run_mod(mod, filename, d, d, flags, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     if (v == NULL) {
         return -1;
     }
@@ -1099,7 +1099,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (filename == NULL)
         return NULL;
 
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
@@ -1107,7 +1107,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return ret;
 }
 
@@ -1116,7 +1116,7 @@ static PyObject *
 pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
            PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
@@ -1136,7 +1136,7 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     else {
         ret = NULL;
     }
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
 
     return ret;
 }
@@ -1289,22 +1289,22 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
 {
     PyCodeObject *co;
     mod_ty mod;
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
     mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         PyObject *result = PyAST_mod2obj(mod);
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return result;
     }
     co = _PyAST_Compile(mod, filename, flags, optimize, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return (PyObject *)co;
 }
 

@@ -32,7 +32,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= 2");
     }
 
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
@@ -63,7 +63,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
 
 error:
     Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return result;
 }
 
@@ -80,7 +80,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_ValueError, "Bad mode, must be 0 <= mode <= 2");
     }
 
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
@@ -102,7 +102,7 @@ parse_string(PyObject *self, PyObject *args, PyObject *kwds)
 
 error:
     Py_XDECREF(filename_ob);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return result;
 }
 
