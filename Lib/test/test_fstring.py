@@ -1275,5 +1275,14 @@ x = (
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:_,}'
 
+    def test_syntax_error_for_starred_expressions(self):
+        error_msg = re.escape("can't use starred expression here")
+        with self.assertRaisesRegex(SyntaxError, error_msg):
+            compile("f'{*a}'", "?", "exec")
+
+        error_msg = re.escape("can't use double starred expression here")
+        with self.assertRaisesRegex(SyntaxError, error_msg):
+            compile("f'{**a}'", "?", "exec")
+
 if __name__ == '__main__':
     unittest.main()
