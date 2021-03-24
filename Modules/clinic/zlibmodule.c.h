@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
-"compress($module, data, /, level=Z_DEFAULT_COMPRESSION)\n"
+"compress($module, data, /, level=Z_DEFAULT_COMPRESSION, wbits=MAX_WBITS)\n"
 "--\n"
 "\n"
 "Returns a bytes object containing compressed data.\n"
@@ -11,7 +11,9 @@ PyDoc_STRVAR(zlib_compress__doc__,
 "  data\n"
 "    Binary data to be compressed.\n"
 "  level\n"
-"    Compression level, in 0-9 or -1.");
+"    Compression level, in 0-9 or -1.\n"
+"  wbits\n"
+"    The window buffer size and container format.");
 
 #define ZLIB_COMPRESS_METHODDEF    \
     {"compress", (PyCFunction)(void(*)(void))zlib_compress, METH_FASTCALL|METH_KEYWORDS, zlib_compress__doc__},
@@ -25,13 +27,13 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"", "level", "wbits", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "compress", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
     int wbits = MAX_WBITS;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -54,17 +56,9 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    {
-        int ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = _PyLong_AsInt(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        wbits = ival;
+    wbits = _PyLong_AsInt(args[2]);
+    if (wbits == -1 && PyErr_Occurred()) {
+        goto exit;
     }
 skip_optional_pos:
     return_value = zlib_compress_impl(module, &data, level, wbits);
@@ -821,4 +815,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=6736bae59fab268b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3e8a6142ea045a7 input=a9049054013a1b77]*/
