@@ -946,7 +946,6 @@ Optimizations
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
 
-
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
   bytecode level. It is now around 2 times faster to create a function with
@@ -957,6 +956,10 @@ Optimizations
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
   algorithm to avoid quadratic behavior on long strings.  (Contributed
   by Dennis Sweeney in :issue:`41972`)
+
+* Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
+  performance in the common case of cache hits. This makes the interpreter 1.04 times faster
+  in average (Contributed by Dino Viehland in :issue:`43452`)
 
 Deprecated
 ==========
