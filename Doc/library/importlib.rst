@@ -208,7 +208,7 @@ Functions
    .. versionadded:: 3.4
    .. versionchanged:: 3.7
        :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
-       a :class:`ModuleSpec`.
+       a :class:`~importlib.machinery.ModuleSpec`.
 
 
 :mod:`importlib.abc` -- Abstract base classes related to import
@@ -1591,9 +1591,9 @@ an :term:`importer`.
 
 .. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
 
-   A factory function for creating a :class:`ModuleSpec` instance based
-   on a loader.  The parameters have the same meaning as they do for
-   ModuleSpec.  The function uses available :term:`loader` APIs, such as
+   A factory function for creating a :class:`~importlib.machinery.ModuleSpec`
+   instance based on a loader.  The parameters have the same meaning as they do
+   for ModuleSpec.  The function uses available :term:`loader` APIs, such as
    :meth:`InspectLoader.is_package`, to fill in any missing
    information on the spec.
 
@@ -1601,9 +1601,9 @@ an :term:`importer`.
 
 .. function:: spec_from_file_location(name, location, *, loader=None, submodule_search_locations=None)
 
-   A factory function for creating a :class:`ModuleSpec` instance based
-   on the path to a file.  Missing information will be filled in on the
-   spec by making use of loader APIs and by the implication that the
+   A factory function for creating a :class:`~importlib.machinery.ModuleSpec`
+   instance based on the path to a file.  Missing information will be filled in
+   on the spec by making use of loader APIs and by the implication that the
    module will be file-based.
 
    .. versionadded:: 3.4
