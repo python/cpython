@@ -48,7 +48,7 @@ def text_encoding(encoding, stacklevel=2):
     Otherwise, return the default text encoding (i.e. "locale").
 
     This function emits an EncodingWarning if *encoding* is None and
-    sys.flags.encoding_warning is True.
+    sys.flags.warn_default_encoding is true.
 
     This can be used in APIs with an encoding=None parameter
     that pass it to TextIOWrapper or open.
