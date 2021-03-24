@@ -51,7 +51,7 @@ The available exception and functions in this module are:
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
 
-    *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
+   *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
    ``1`` (Z_BEST_SPEED) is fastest and produces the least compression, ``9`` (Z_BEST_COMPRESSION)
    is slowest and produces the most.  ``0`` (Z_NO_COMPRESSION) is no compression.
    The default value is ``-1`` (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
