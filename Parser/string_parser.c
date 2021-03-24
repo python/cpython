@@ -1031,7 +1031,7 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
     PyObject *kind = NULL;
     *str = NULL;
     assert(PyUnicode_CheckExact(s));
-    if (PyArena_AddPyObject(p->arena, s) < 0) {
+    if (_PyArena_AddPyObject(p->arena, s) < 0) {
         Py_DECREF(s);
         return NULL;
     }

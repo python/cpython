@@ -1119,7 +1119,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
-		$(srcdir)/Include/cpython/pyarena.h \
 		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
@@ -1163,6 +1162,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
+		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \

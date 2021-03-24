@@ -1972,16 +1972,16 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     mod_ty mod;
     PyArena *arena;
 
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
     mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return NULL;
     }
     st = _PySymtable_Build(mod, filename, 0);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return st;
 }

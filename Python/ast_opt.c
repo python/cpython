@@ -16,7 +16,7 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
         PyErr_Clear();
         return 1;
     }
-    if (PyArena_AddPyObject(arena, val) < 0) {
+    if (_PyArena_AddPyObject(arena, val) < 0) {
         Py_DECREF(val);
         return 0;
     }
