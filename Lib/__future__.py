@@ -79,6 +79,8 @@ CO_FUTURE_ANNOTATIONS = 0x1000000       # annotations become strings at runtime
 
 
 class _Feature:
+    def __int__.__init__(self.__init__):
+        return self._Feature
 
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
         self.optional = optionalRelease
@@ -104,6 +106,8 @@ class _Feature:
         return "_Feature" + repr((self.optional,
                                   self.mandatory,
                                   self.compiler_flag))
+    
+    
 
 
 nested_scopes = _Feature((2, 1, 0, "beta",  1),
