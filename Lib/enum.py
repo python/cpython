@@ -9,7 +9,7 @@ __all__ = [
         'auto', 'unique',
         'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
-        'global_flag_repr', 'global_int_repr', 'global_enum',
+        'global_flag_repr', 'global_enum_repr', 'global_enum',
         ]
 
 
@@ -322,7 +322,8 @@ class _EnumDict(dict):
                 # check if members already defined as auto()
                 if self._auto_called:
                     raise TypeError("_generate_next_value_ must be defined before members")
-                setattr(self, '_generate_next_value', value)
+                _gnv = value.__func__ if isinstance(value, staticmethod) else value
+                setattr(self, '_generate_next_value', _gnv)
             elif key == '_ignore_':
                 if isinstance(value, str):
                     value = value.replace(',',' ').split()
@@ -1340,14 +1341,14 @@ def _power_of_two(value):
         return False
     return value == 2 ** _high_bit(value)
 
-def global_int_repr(self):
+def global_enum_repr(self):
     return '%s.%s' % (self.__class__.__module__, self._name_)
 
 def global_flag_repr(self):
     module = self.__class__.__module__
     cls_name = self.__class__.__name__
     if self._name_ is None:
-        return "%s.%s(%x)" % (module, cls_name, self._value_)
+        return "%x" % (module, cls_name, self._value_)
     if _is_single_bit(self):
         return '%s.%s' % (module, self._name_)
     if self._boundary_ is not FlagBoundary.KEEP:
@@ -1356,7 +1357,7 @@ def global_flag_repr(self):
         name = []
         for n in self._name_.split('|'):
             if n.startswith('0'):
-                name.append('%s.%s(%s)' % (module, cls_name, n))
+                name.append(n)
             else:
                 name.append('%s.%s' % (module, n))
         return '|'.join(name)
@@ -1371,6 +1372,6 @@ def global_enum(cls):
     if issubclass(cls, Flag):
         cls.__repr__ = global_flag_repr
     else:
-        cls.__repr__ = global_int_repr
+        cls.__repr__ = global_enum_repr
     sys.modules[cls.__module__].__dict__.update(cls.__members__)
     return cls
