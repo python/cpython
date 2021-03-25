@@ -1512,8 +1512,12 @@ class TestCollectionABCs(ABCTestCase):
                 return result
             def __repr__(self):
                 return "MySet(%s)" % repr(list(self))
-        s = MySet([5,43,2,1])
-        self.assertEqual(s.pop(), 1)
+        items = [5,43,2,1]
+        s = MySet(items)
+        r = s.pop()
+        self.assertEquals(len(s), len(items) - 1)
+        self.assertNotIn(r, s)
+        self.assertIn(r, items)
 
     def test_issue8750(self):
         empty = WithSet()
