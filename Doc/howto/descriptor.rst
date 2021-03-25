@@ -1500,7 +1500,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__setattr__(name, value)
 
@@ -1509,7 +1509,7 @@ Python:
             cls = type(self)
             if hasattr(cls, 'slot_names') and name not in cls.slot_names:
                 raise AttributeError(
-                    f'{type(self).__name__!r} object has no attribute {name!r}'
+                    f'{cls.__name__!r} object has no attribute {name!r}'
                 )
             super().__delattr__(name)
 
