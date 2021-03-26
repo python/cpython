@@ -1010,6 +1010,12 @@ Deprecated
   for Python 3.12.
   (Contributed by Brett Cannon in :issue:`42137`.)
 
+* :meth:`importlib.abc.Loader.module_repr`,
+  :meth:`importlib.machinery.FrozenLoader.module_repr`, and
+  :meth:`importlib.machinery.BuiltinLoader.module_repr` are deprecated and
+  slated for removal in Python 3.12.
+  (Contributed by Brett Cannon in :issue:`42136`.)
+
 * ``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python
   3.3, when it was made an alias to :class:`str`.  It is now deprecated,
   scheduled for removal in Python 3.12.

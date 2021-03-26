@@ -7,7 +7,6 @@ import sys
 import unittest
 from test import support
 from test.support import import_helper
-from distutils.util import get_platform
 from contextlib import contextmanager
 from .util import temp_module
 
@@ -17,6 +16,25 @@ from winreg import (
     SetValue, REG_SZ, KEY_ALL_ACCESS,
     EnumKey, CloseKey, DeleteKey, OpenKey
 )
+
+def get_platform():
+    # Port of distutils.util.get_platform().
+    TARGET_TO_PLAT = {
+            'x86' : 'win32',
+            'x64' : 'win-amd64',
+            'arm' : 'win-arm32',
+        }
+    if ('VSCMD_ARG_TGT_ARCH' in os.environ and
+        os.environ['VSCMD_ARG_TGT_ARCH'] in TARGET_TO_PLAT):
+        return TARGET_TO_PLAT[os.environ['VSCMD_ARG_TGT_ARCH']]
+    elif 'amd64' in sys.version.lower():
+        return 'win-amd64'
+    elif '(arm)' in sys.version.lower():
+        return 'win-arm32'
+    elif '(arm64)' in sys.version.lower():
+        return 'win-arm64'
+    else:
+        return sys.platform
 
 def delete_registry_tree(root, subkey):
     try:
@@ -101,7 +119,7 @@ class WindowsExtensionSuffixTests:
 
         self.assertIn(expected_tag, suffixes)
 
-        # Ensure the tags are in the correct order
+        # Ensure the tags are in the correct order.
         tagged_i = suffixes.index(expected_tag)
         self.assertLess(tagged_i, untagged_i)
 

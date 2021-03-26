@@ -675,6 +675,13 @@ Here are the exact rules used:
    :meth:`~importlib.abc.Loader.module_repr` method, if defined, before
    trying either approach described above.  However, the method is deprecated.
 
+.. versionchanged:: 3.10
+
+   Calling :meth:`~importlib.abc.Loader.module_repr` now occurs after trying to
+   use a module's ``__spec__`` attribute but before falling back on
+   ``__file__``. Use of :meth:`~importlib.abc.Loader.module_repr` is slated to
+   stop in Python 3.12.
+
 .. _pyc-invalidation:
 
 Cached bytecode invalidation
