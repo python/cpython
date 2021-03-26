@@ -1230,6 +1230,8 @@ class _NamespaceLoader:
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("_NamespaceLoader.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} (namespace)>'.format(module.__name__)
 
     def is_package(self, fullname):

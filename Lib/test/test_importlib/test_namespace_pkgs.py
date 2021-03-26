@@ -3,6 +3,7 @@ import importlib
 import os
 import sys
 import unittest
+import warnings
 
 from test.test_importlib import util
 
@@ -82,8 +83,10 @@ class SingleNamespacePackage(NamespacePackageTest):
 
     def test_module_repr(self):
         import foo.one
-        self.assertEqual(foo.__spec__.loader.module_repr(foo),
-                         "<module 'foo' (namespace)>")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.assertEqual(foo.__spec__.loader.module_repr(foo),
+                            "<module 'foo' (namespace)>")
 
 
 class DynamicPathNamespacePackage(NamespacePackageTest):
