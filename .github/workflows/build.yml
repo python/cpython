@@ -131,7 +131,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1f
+      OPENSSL_VER: 1.1.1k
     steps:
     - uses: actions/checkout@v2
     - name: Register gcc problem matcher
