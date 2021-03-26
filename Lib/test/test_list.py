@@ -224,7 +224,8 @@ class ListTest(list_tests.CommonTest):
         overalloc_amts = []
         for literal in test_literals:
             # Ensure that both list literals, and lists made from an iterable
-            # of known size use the same amount of allocation.
+            # of known size use the same amount of allocation. It will be
+            # verified later that no over-allocation occurs for list literals.
             self.assertEqual(sizeof(literal), sizeof(list(literal)))
             self.assertEqual(sizeof(literal), sizeof(list(tuple(literal))))
 
@@ -238,6 +239,15 @@ class ListTest(list_tests.CommonTest):
         # bpo-38373: initialized or grown lists are not always over-allocated.
         # Confirm that over-allocation occurs at least some of the time.
         self.assertEqual(True, any(x>0 for x in overalloc_amts))
+
+        # Empty lists should overallocate on initial append/insert (unlike
+        # list-literals)
+        l1 = []
+        l1.append(1)
+        self.assertGreater(sizeof(l1), sizeof([1]))
+        l2 = []
+        l2.insert(0, 1)
+        self.assertGreater(sizeof(l2), sizeof([1]))
 
     def test_count_index_remove_crashes(self):
         # bpo-38610: The count(), index(), and remove() methods were not
