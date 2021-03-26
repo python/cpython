@@ -402,11 +402,18 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 {
     PyObject *m, *d, *v;
     int set_file_name = 0, ret = -1;
+    PyObject *module_name = PyUnicode_FromString("__main__");
+    PyInterpreterState *is = _PyInterpreterState_GET();
 
-    m = PyImport_AddModule("__main__");
-    if (m == NULL)
+    m = PyModule_NewObject(module_name);
+    if (m == NULL) {
         return -1;
-    Py_INCREF(m);
+    }
+    if (PyObject_SetItem(is->modules, module_name, m) != 0) {
+        Py_DECREF(m);
+        return -1;
+    }
+    
     d = PyModule_GetDict(m);
     if (_PyDict_GetItemStringWithError(d, "__file__") == NULL) {
         if (PyErr_Occurred()) {
