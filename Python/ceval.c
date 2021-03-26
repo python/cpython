@@ -1264,6 +1264,23 @@ eval_frame_handle_pending(PyThreadState *tstate)
    -fno-crossjumping).
 */
 
+/* Use macros rather than inline functions, to make it as clear as possible
+ * to the C compiler that the tracing check is a simple test then branch.
+ * We want to be sure that the compiler knows this before it generates
+ * the CFG.
+ */
+#ifdef LLTRACE
+#define OR_LLTRACE || lltrace
+#else
+#define OR_LLTRACE
+#endif
+
+#ifdef WITH_DTRACE
+#define OR_DTRACE_LINE || PyDTrace_LINE_ENABLED()
+#else
+#define OR_DTRACE_LINE
+#endif
+
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #undef USE_COMPUTED_GOTOS
 #define USE_COMPUTED_GOTOS 0
@@ -1285,34 +1302,21 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define TARGET(op) \
     op: \
     TARGET_##op
-
-#ifdef LLTRACE
-#define DISPATCH() \
-    { \
-        if (!lltrace && !_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
-            f->f_lasti = INSTR_OFFSET(); \
-            NEXTOPARG(); \
-            goto *opcode_targets[opcode]; \
-        } \
-        goto fast_next_opcode; \
-    }
-#else
-#define DISPATCH() \
-    { \
-        if (!_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
-            f->f_lasti = INSTR_OFFSET(); \
-            NEXTOPARG(); \
-            goto *opcode_targets[opcode]; \
-        } \
-        goto fast_next_opcode; \
-    }
-#endif
-
+#define DISPATCH_GOTO goto *opcode_targets[opcode];
 #else
 #define TARGET(op) op
-#define DISPATCH() goto fast_next_opcode
-
+#define DISPATCH_GOTO goto dispatch_opcode;
 #endif
+
+#define DISPATCH() \
+    { \
+        if (_Py_TracingPossible(ceval2) OR_DTRACE_LINE OR_LLTRACE) { \
+            goto tracing_dispatch; \
+        } \
+        f->f_lasti = INSTR_OFFSET(); \
+        NEXTOPARG(); \
+        DISPATCH_GOTO \
+    }
 
 #define CHECK_EVAL_BREAKER() \
     if (_Py_atomic_load_relaxed(eval_breaker)) { \
@@ -1590,21 +1594,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #endif
     PyObject **stack_pointer;  /* Next free slot in value stack */
     const _Py_CODEUNIT *next_instr;
-    int opcode;        /* Current opcode */
+    uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     struct _ceval_state * const ceval2 = &tstate->interp->ceval;
     _Py_atomic_int * const eval_breaker = &ceval2->eval_breaker;
     PyCodeObject *co;
-
-    /* when tracing we set things up so that
-
-           not (instr_lb <= current_bytecode_offset < instr_ub)
-
-       is true when the line being executed has changed.  The
-       initial values are such as to make this false the first
-       time it is tested. */
 
     const _Py_CODEUNIT *first_instr;
     PyObject *names;
@@ -1620,7 +1616,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
     PyTraceInfo trace_info;
-    /* Mark trace_info as initialized */
+    /* Mark trace_info as uninitialized */
     trace_info.code = NULL;
 
     /* push frame */
@@ -1754,10 +1750,10 @@ main_loop:
 
         if (_Py_atomic_load_relaxed(eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
-            if (opcode == SETUP_FINALLY ||
-                opcode == SETUP_WITH ||
-                opcode == BEFORE_ASYNC_WITH ||
-                opcode == YIELD_FROM) {
+            if (opcode != SETUP_FINALLY &&
+                opcode != SETUP_WITH &&
+                opcode != BEFORE_ASYNC_WITH &&
+                opcode != YIELD_FROM) {
                 /* Few cases where we skip running signal handlers and other
                    pending calls:
                    - If we're about to enter the 'with:'. It will prevent
@@ -1774,16 +1770,15 @@ main_loop:
                      running the signal handler and raising KeyboardInterrupt
                      (see bpo-30039).
                 */
-                goto fast_next_opcode;
-            }
-
-            if (eval_frame_handle_pending(tstate) != 0) {
-                goto error;
-            }
+                if (eval_frame_handle_pending(tstate) != 0) {
+                    goto error;
+                }
+             }
         }
 
-    fast_next_opcode:
+    tracing_dispatch:
         f->f_lasti = INSTR_OFFSET();
+        NEXTOPARG();
 
         if (PyDTrace_LINE_ENABLED())
             maybe_dtrace_line(f, &trace_info);
@@ -1801,26 +1796,16 @@ main_loop:
                                         tstate->c_traceobj,
                                         tstate, f,
                                         &trace_info);
+            if (err) {
+                /* trace function raised an exception */
+                goto error;
+            }
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
             stack_pointer = f->f_valuestack+f->f_stackdepth;
             f->f_stackdepth = -1;
-            if (err)
-                /* trace function raised an exception */
-                goto error;
+            NEXTOPARG();
         }
-
-        /* Extract opcode and argument */
-
-        NEXTOPARG();
-    dispatch_opcode:
-#ifdef DYNAMIC_EXECUTION_PROFILE
-#ifdef DXPAIRS
-        dxpairs[lastopcode][opcode]++;
-        lastopcode = opcode;
-#endif
-        dxp[opcode]++;
-#endif
 
 #ifdef LLTRACE
         /* Instruction tracing */
@@ -1837,11 +1822,20 @@ main_loop:
         }
 #endif
 
+    dispatch_opcode:
+#ifdef DYNAMIC_EXECUTION_PROFILE
+#ifdef DXPAIRS
+        dxpairs[lastopcode][opcode]++;
+        lastopcode = opcode;
+#endif
+        dxp[opcode]++;
+#endif
+
         switch (opcode) {
 
         /* BEWARE!
            It is essential that any operation that fails must goto error
-           and that all operation that succeed call [FAST_]DISPATCH() ! */
+           and that all operation that succeed call DISPATCH() ! */
 
         case TARGET(NOP): {
             DISPATCH();
@@ -5426,7 +5420,6 @@ Error:
     Py_XDECREF(it);
     return 0;
 }
-
 
 #ifdef LLTRACE
 static int
