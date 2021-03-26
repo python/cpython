@@ -1231,40 +1231,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
     return 0;
 }
 
-PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
-{
-    _Py_EnsureTstateNotNULL(tstate);
-
-#ifdef DXPAIRS
-    int lastopcode = 0;
-#endif
-    PyObject **stack_pointer;  /* Next free slot in value stack */
-    const _Py_CODEUNIT *next_instr;
-    int opcode;        /* Current opcode */
-    int oparg;         /* Current opcode argument, if any */
-    PyObject **fastlocals, **freevars;
-    PyObject *retval = NULL;            /* Return value */
-    struct _ceval_state * const ceval2 = &tstate->interp->ceval;
-    _Py_atomic_int * const eval_breaker = &ceval2->eval_breaker;
-    PyCodeObject *co;
-
-    /* when tracing we set things up so that
-
-           not (instr_lb <= current_bytecode_offset < instr_ub)
-
-       is true when the line being executed has changed.  The
-       initial values are such as to make this false the first
-       time it is tested. */
-
-    const _Py_CODEUNIT *first_instr;
-    PyObject *names;
-    PyObject *consts;
-    _PyOpcache *co_opcache;
-
-#ifdef LLTRACE
-    _Py_IDENTIFIER(__ltrace__);
-#endif
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -1323,9 +1289,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #endif
 
 #if USE_COMPUTED_GOTOS
-/* Import the static jump table */
-#include "opcode_targets.h"
-
 #define TARGET(op) \
     op: \
     TARGET_##op
@@ -1619,7 +1582,46 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
 #endif
 
-/* Start of code */
+
+PyObject* _Py_HOT_FUNCTION
+_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+{
+    _Py_EnsureTstateNotNULL(tstate);
+
+#if USE_COMPUTED_GOTOS
+/* Import the static jump table */
+#include "opcode_targets.h"
+#endif
+
+#ifdef DXPAIRS
+    int lastopcode = 0;
+#endif
+    PyObject **stack_pointer;  /* Next free slot in value stack */
+    const _Py_CODEUNIT *next_instr;
+    int opcode;        /* Current opcode */
+    int oparg;         /* Current opcode argument, if any */
+    PyObject **fastlocals, **freevars;
+    PyObject *retval = NULL;            /* Return value */
+    struct _ceval_state * const ceval2 = &tstate->interp->ceval;
+    _Py_atomic_int * const eval_breaker = &ceval2->eval_breaker;
+    PyCodeObject *co;
+
+    /* when tracing we set things up so that
+
+           not (instr_lb <= current_bytecode_offset < instr_ub)
+
+       is true when the line being executed has changed.  The
+       initial values are such as to make this false the first
+       time it is tested. */
+
+    const _Py_CODEUNIT *first_instr;
+    PyObject *names;
+    PyObject *consts;
+    _PyOpcache *co_opcache;
+
+#ifdef LLTRACE
+    _Py_IDENTIFIER(__ltrace__);
+#endif
 
     if (_Py_EnterRecursiveCall(tstate, "")) {
         return NULL;

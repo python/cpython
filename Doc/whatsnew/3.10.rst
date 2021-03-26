@@ -215,7 +215,7 @@ operates by:
        match
     5. If an exact match is not confirmed, the last case, a wildcard ``_``,
        if provided, will be used as the matching case. If an exact match is
-       not confirmed and a wildcard case does not exists, the entire match
+       not confirmed and a wildcard case does not exist, the entire match
        block is a no-op.
 
 Declarative approach
