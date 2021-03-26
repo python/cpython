@@ -11,12 +11,6 @@ Enum HOWTO
 Basic Enum Tutorial
 -------------------
 
-.. note:: Case of Enum Members
-
-    Because Enums are used to represent constants we recommend using
-    UPPER_CASE names for enum members, and will be using that style
-    in our examples.
-
 An :class:`Enum` is a set of symbolic names bound to unique values.  They are
 similar to global variables, but they offer a more useful :func:`repr()`,
 grouping, type-safety, and a few other features.
@@ -37,20 +31,25 @@ selection of values.  For example, the days of the week::
 As you can see, creating an :class:`Enum` is as simple as writing a class that
 inherits from :class:`Enum` itself.
 
-Depending on the nature of the `Enum` a member's value may or may not be
+.. note:: Case of Enum Members
+
+    Because Enums are used to represent constants we recommend using
+    UPPER_CASE names for members, and will be using that style in our examples.
+
+Depending on the nature of the enum a member's value may or may not be
 important, but either way that value can be used to get the corresponding
 member::
 
     >>> Weekday(3)
     Weekday.WEDNESDAY
 
-As you can see, the ``repr()`` of a member shows the ``Enum`` name and the
+As you can see, the ``repr()`` of a member shows the enum name and the
 member name.  The ``str()`` on a member shows only its name::
 
     >>> print(Weekday.THURSDAY)
     THURSDAY
 
-The *type* of an enumeration member is the enumeration it belongs to::
+The *type* of an enumeration member is the enum it belongs to::
 
     >>> type(Weekday.MONDAY)
     <enum 'Weekday'>
@@ -73,14 +72,14 @@ Python Enums can have behavior added.  For example, :class:`datetime.date`
 has two methods for returning the weekday: :meth:`weekday` and :meth:`isoweekday`.
 The difference is that one of them counts from 0-6 and the other from 1-7.
 Rather than keep track of that ourselves we can add a method to the :class:`Weekday`
-Enum to extract the day from the :class:`date` instance and return the matching
-Enum member::
+enum to extract the day from the :class:`date` instance and return the matching
+enum member::
 
         @classmethod
         def from_date(cls, date):
             return cls(date.isoweekday())
 
-The complete :class:`Weekday` Enum now looks like this::
+The complete :class:`Weekday` enum now looks like this::
 
     >>> class Weekday(Enum):
     ...     MONDAY = 1
@@ -103,7 +102,7 @@ Now we can find out what today is!  Observe::
 
 Of course, if you're reading this on some other day, you'll see that day instead.
 
-This :class:`Weekday` Enum is great if our variable only needs one day, but
+This :class:`Weekday` enum is great if our variable only needs one day, but
 what if we need several?  Maybe we're writing a function to plot chores during
 a week, and don't want to use a :class:`list` -- we could use a different type
 of :class:`Enum`::
@@ -121,7 +120,7 @@ of :class:`Enum`::
 We've changed two things: we're inherited from :class:`Flag`, and the values are
 all powers of 2.
 
-Just like the original :class:`Weekday` Enum above, we can have a single selection::
+Just like the original :class:`Weekday` enum above, we can have a single selection::
 
     >>> first_week_day = Weekday.MONDAY
     >>> first_week_day
@@ -172,7 +171,7 @@ yourself some work and use :func:`auto()` for the values::
     ...     SUNDAY = auto()
 
 
-.. _enum-advanced_tutorial:
+.. _enum-advanced-tutorial:
 
 Programmatic access to enumeration members and their attributes
 ---------------------------------------------------------------
@@ -245,14 +244,7 @@ Ensuring unique enumeration values
 ----------------------------------
 
 By default, enumerations allow multiple names as aliases for the same value.
-When this behavior isn't desired, the following decorator can be used to
-ensure each value is used only once in the enumeration:
-
-.. decorator:: unique
-
-A :keyword:`class` decorator specifically for enumerations.  It searches an
-enumeration's :attr:`__members__` gathering any aliases it finds; if any are
-found :exc:`ValueError` is raised with the details::
+When this behavior isn't desired, you can use the :func:`unique` decorator::
 
     >>> from enum import Enum, unique
     >>> @unique
@@ -418,7 +410,7 @@ See `Planet`_ for an example.
 Restricted Enum subclassing
 ---------------------------
 
-A new :class:`Enum` class must have one base Enum class, up to one concrete
+A new :class:`Enum` class must have one base enum class, up to one concrete
 data type, and as many :class:`object`-based mixin classes as needed.  The
 order of these base classes is::
 
@@ -471,7 +463,7 @@ from that module.
     With pickle protocol version 4 it is possible to easily pickle enums
     nested in other classes.
 
-It is possible to modify how Enum members are pickled/unpickled by defining
+It is possible to modify how enum members are pickled/unpickled by defining
 :meth:`__reduce_ex__` in the enumeration class.
 
 
@@ -536,11 +528,19 @@ SomeData in the global scope::
 
 The complete signature is::
 
-    Enum(value='NewEnumName', names=<...>, *, module='...', qualname='...', type=<mixed-in class>, start=1)
+    Enum(
+        value='NewEnumName',
+        names=<...>,
+        *,
+        module='...',
+        qualname='...',
+        type=<mixed-in class>,
+        start=1,
+        )
 
-:value: What the new Enum class will record as its name.
+:value: What the new enum class will record as its name.
 
-:names: The Enum members.  This can be a whitespace or comma separated string
+:names: The enum members.  This can be a whitespace or comma separated string
   (values will start at 1 unless otherwise specified)::
 
     'RED GREEN BLUE' | 'RED,GREEN,BLUE' | 'RED, GREEN, BLUE'
@@ -557,11 +557,11 @@ The complete signature is::
 
     {'CHARTREUSE': 7, 'SEA_GREEN': 11, 'ROSEMARY': 42}
 
-:module: name of module where new Enum class can be found.
+:module: name of module where new enum class can be found.
 
-:qualname: where in module new Enum class can be found.
+:qualname: where in module new enum class can be found.
 
-:type: type to mix in to new Enum class.
+:type: type to mix in to new enum class.
 
 :start: number to start counting at if only names are passed in.
 
@@ -654,10 +654,8 @@ used.
     Any operation on an :class:`IntFlag` member besides the bit-wise operations will
     lose the :class:`IntFlag` membership.
 
-.. note::
-
     Bit-wise operations that result in invalid :class:`IntFlag` values will lose the
-    :class:`IntFlag` membership.  See :ref:`FlagBoundary <enum-flag-boundary>` for
+    :class:`IntFlag` membership.  See :class:`FlagBoundary` for
     details.
 
 .. versionadded:: 3.6
@@ -870,13 +868,285 @@ want one of them to be the value::
     >>> print(Coordinate(3))
     VY
 
-Interesting examples
---------------------
 
-While :class:`Enum`, :class:`IntEnum`, :class:`IntFlag`, and :class:`Flag` are
-expected to cover the majority of use-cases, they cannot cover them all.  Here
-are recipes for some different types of enumerations that can be used directly,
-or as examples for creating one's own.
+Finer Points
+^^^^^^^^^^^^
+
+Supported ``__dunder__`` names
+""""""""""""""""""""""""""""""
+
+:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
+items.  It is only available on the class.
+
+:meth:`__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+all the members are created it is no longer used.
+
+
+Supported ``_sunder_`` names
+""""""""""""""""""""""""""""
+
+- ``_name_`` -- name of the member
+- ``_value_`` -- value of the member; can be set / modified in ``__new__``
+
+- ``_missing_`` -- a lookup function used when a value is not found; may be
+  overridden
+- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
+  that will not be transformed into members, and will be removed from the final
+  class
+- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
+  (class attribute, removed during class creation)
+- ``_generate_next_value_`` -- used by the `Functional API`_ and by
+  :class:`auto` to get an appropriate value for an enum member; may be
+  overridden
+
+.. note::
+
+    For standard :class:`Enum` classes the next value chosen is the last value seen
+    incremented by one.
+
+    For :class:`Flag` classes the next value chosen will be the next highest
+    power-of-two, regardless of the last value seen.
+
+.. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
+.. versionadded:: 3.7 ``_ignore_``
+
+To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
+be provided.  It will be checked against the actual order of the enumeration
+and raise an error if the two do not match::
+
+    >>> class Color(Enum):
+    ...     _order_ = 'RED GREEN BLUE'
+    ...     RED = 1
+    ...     BLUE = 3
+    ...     GREEN = 2
+    ...
+    Traceback (most recent call last):
+    ...
+    TypeError: member order does not match _order_:
+    ['RED', 'BLUE', 'GREEN']
+    ['RED', 'GREEN', 'BLUE']
+
+.. note::
+
+    In Python 2 code the :attr:`_order_` attribute is necessary as definition
+    order is lost before it can be recorded.
+
+
+_Private__names
+"""""""""""""""
+
+Private names are not converted to enum members, but remain normal attributes.
+
+.. versionchanged:: 3.10
+
+
+``Enum`` member type
+""""""""""""""""""""
+
+Enum members are instances of their enum class, and are normally accessed as
+``EnumClass.member``.  In Python versions ``3.5`` to ``3.9`` you could access
+members from other members -- this practice was discouraged, and in ``3.12``
+:class:`Enum` will return to not allowing it, while in ``3.10`` and ``3.11``
+it will raise a :exc:`DeprecationWarning`::
+
+    >>> class FieldTypes(Enum):
+    ...     name = 0
+    ...     value = 1
+    ...     size = 2
+    ...
+    >>> FieldTypes.value.size       # doctest: +SKIP
+    DeprecationWarning: accessing one member from another is not supported,
+      and will be disabled in 3.12
+    <FieldTypes.size: 2>
+
+.. versionchanged:: 3.5
+.. versionchanged:: 3.10
+
+
+Creating members that are mixed with other data types
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+When subclassing other data types, such as :class:`int` or :class:`str`, with
+an :class:`Enum`, all values after the `=` are passed to that data type's
+constructor.  For example::
+
+    >>> class MyEnum(IntEnum):
+    ...     example = '11', 16      # '11' will be interpreted as a hexadecimal
+    ...                             # number
+    >>> MyEnum.example.value
+    17
+
+
+Boolean value of ``Enum`` classes and members
+"""""""""""""""""""""""""""""""""""""""""""""
+
+Enum classes that are mixed with non-:class:`Enum` types (such as
+:class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
+type's rules; otherwise, all members evaluate as :data:`True`.  To make your
+own enum's boolean evaluation depend on the member's value add the following to
+your class::
+
+    def __bool__(self):
+        return bool(self.value)
+
+Plain :class:`Enum` classes always evaluate as :data:`True`.
+
+
+``Enum`` classes with methods
+"""""""""""""""""""""""""""""
+
+If you give your enum subclass extra methods, like the `Planet`_
+class above, those methods will show up in a :func:`dir` of the member,
+but not of the class::
+
+    >>> dir(Planet)
+    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+    >>> dir(Planet.EARTH)
+    ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
+
+
+Combining members of ``Flag``
+"""""""""""""""""""""""""""""
+
+Iterating over a combination of :class:`Flag` members will only return the members that
+are comprised of a single bit::
+
+    >>> class Color(Flag):
+    ...     RED = auto()
+    ...     GREEN = auto()
+    ...     BLUE = auto()
+    ...     MAGENTA = RED | BLUE
+    ...     YELLOW = RED | GREEN
+    ...     CYAN = GREEN | BLUE
+    ...
+    >>> Color(3)  # named combination
+    Color.YELLOW
+    >>> Color(7)      # not named combination
+    Color.RED|Color.GREEN|Color.BLUE
+
+``StrEnum`` and :meth:`str.__str__`
+"""""""""""""""""""""""""""""""""""
+
+An important difference between :class:`StrEnum` and other Enums is the
+:meth:`__str__` method; because :class:`StrEnum` members are strings, some
+parts of Python will read the string data directly, while others will call
+:meth:`str()`. To make those two operations have the same result,
+:meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
+``str(StrEnum.member) == StrEnum.member`` is true.
+
+``Flag`` and ``IntFlag`` minutia
+""""""""""""""""""""""""""""""""
+
+Using the following snippet for our examples::
+
+    >>> class Color(IntFlag):
+    ...     BLACK = 0
+    ...     RED = 1
+    ...     GREEN = 2
+    ...     BLUE = 4
+    ...     PURPLE = RED | BLUE
+    ...     WHITE = RED | GREEN | BLUE
+    ...
+
+the following are true:
+
+- single-bit flags are canonical
+- multi-bit and zero-bit flags are aliases
+- only canonical flags are returned during iteration::
+
+    >>> list(Color.WHITE)
+    [Color.RED, Color.GREEN, Color.BLUE]
+
+- negating a flag or flag set returns a new flag/flag set with the
+  corresponding positive integer value::
+
+    >>> Color.BLUE
+    Color.BLUE
+
+    >>> ~Color.BLUE
+    Color.RED|Color.GREEN
+
+- names of pseudo-flags are constructed from their members' names::
+
+    >>> (Color.RED | Color.GREEN).name
+    'RED|GREEN'
+
+- multi-bit flags, aka aliases, can be returned from operations::
+
+    >>> Color.RED | Color.BLUE
+    Color.PURPLE
+
+    >>> Color(7)  # or Color(-1)
+    Color.WHITE
+
+    >>> Color(0)
+    Color.BLACK
+
+- membership / containment checking has changed slightly -- zero valued flags
+  are never considered to be contained::
+
+    >>> Color.BLACK in Color.WHITE
+    False
+
+  otherwise, if all bits of one flag are in the other flag, True is returned::
+
+    >>> Color.PURPLE in Color.WHITE
+    True
+
+There is a new boundary mechanism that controls how out-of-range / invalid
+bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
+
+  * STRICT --> raises an exception when presented with invalid values
+  * CONFORM --> discards any invalid bits
+  * EJECT --> lose Flag status and become a normal int with the given value
+  * KEEP --> keep the extra bits
+           - keeps Flag status and extra bits
+           - extra bits do not show up in iteration
+           - extra bits do show up in repr() and str()
+
+The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``EJECT``,
+and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an
+example of when ``KEEP`` is needed).
+
+
+.. _enum-class-differences:
+
+How are Enums different?
+------------------------
+
+Enums have a custom metaclass that affects many aspects of both derived :class:`Enum`
+classes and their instances (members).
+
+
+Enum Classes
+^^^^^^^^^^^^
+
+The :class:`EnumType` metaclass is responsible for providing the
+:meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
+allow one to do things with an :class:`Enum` class that fail on a typical
+class, such as `list(Color)` or `some_enum_var in Color`.  :class:`EnumType` is
+responsible for ensuring that various other methods on the final :class:`Enum`
+class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
+:meth:`__str__` and :meth:`__repr__`).
+
+
+Enum Members (aka instances)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The most interesting thing about enum members is that they are singletons.
+:class:`EnumType` creates them all while it is creating the enum class itself,
+and then puts a custom :meth:`__new__` in place to ensure that no new ones are
+ever instantiated by returning only the existing member instances.
+
+
+.. _enum-cookbook:
+
+
+While :class:`Enum`, :class:`IntEnum`, :class:`StrEnum`, :class:`Flag`, and
+:class:`IntFlag` are expected to cover the majority of use-cases, they cannot
+cover them all.  Here are recipes for some different types of enumerations
+that can be used directly, or as examples for creating one's own.
 
 
 Omitting values
@@ -895,21 +1165,13 @@ Using any of these methods signifies to the user that these values are not
 important, and also enables one to add, remove, or reorder members without
 having to renumber the remaining members.
 
-Whichever method you choose, you should provide a :meth:`repr` that also hides
-the (unimportant) value::
-
-    >>> class NoValue(Enum):
-    ...     def __repr__(self):
-    ...         return '<%s.%s>' % (self.__class__.__name__, self.name)
-    ...
-
 
 Using :class:`auto`
 """""""""""""""""""
 
 Using :class:`auto` would look like::
 
-    >>> class Color(NoValue):
+    >>> class Color(Enum):
     ...     RED = auto()
     ...     BLUE = auto()
     ...     GREEN = auto()
@@ -923,7 +1185,7 @@ Using :class:`object`
 
 Using :class:`object` would look like::
 
-    >>> class Color(NoValue):
+    >>> class Color(Enum):
     ...     RED = object()
     ...     GREEN = object()
     ...     BLUE = object()
@@ -937,7 +1199,7 @@ Using a descriptive string
 
 Using a string as the value would look like::
 
-    >>> class Color(NoValue):
+    >>> class Color(Enum):
     ...     RED = 'stop'
     ...     GREEN = 'go'
     ...     BLUE = 'too fast!'
@@ -953,7 +1215,7 @@ Using a custom :meth:`__new__`
 
 Using an auto-numbering :meth:`__new__` would look like::
 
-    >>> class AutoNumber(NoValue):
+    >>> class AutoNumber(Enum):
     ...     def __new__(cls):
     ...         value = len(cls.__members__) + 1
     ...         obj = object.__new__(cls)
@@ -972,7 +1234,7 @@ Using an auto-numbering :meth:`__new__` would look like::
 
 To make a more general purpose ``AutoNumber``, add ``*args`` to the signature::
 
-    >>> class AutoNumber(NoValue):
+    >>> class AutoNumber(Enum):
     ...     def __new__(cls, *args):      # this is the only change from above
     ...         value = len(cls.__members__) + 1
     ...         obj = object.__new__(cls)
@@ -1102,6 +1364,7 @@ will be passed to those methods::
     >>> Planet.EARTH.surface_gravity
     9.802652743337129
 
+.. _enum-time-period:
 
 TimePeriod
 ^^^^^^^^^^
@@ -1122,271 +1385,32 @@ An example to show the :attr:`_ignore_` attribute in use::
     [Period.day_365, Period.day_366]
 
 
-Finer Points
-^^^^^^^^^^^^
-
-Supported ``__dunder__`` names
-""""""""""""""""""""""""""""""
-
-:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
-items.  It is only available on the class.
-
-:meth:`__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`_value_` appropriately.  Once
-all the members are created it is no longer used.
-
-
-Supported ``_sunder_`` names
-""""""""""""""""""""""""""""
-
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
-
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used by the `Functional API`_ and by
-  :class:`auto` to get an appropriate value for an enum member; may be
-  overridden
-
-.. note::
-
-    For standard :class:`Enum` classes the next value chosen is the last value seen
-    incremented by one.
-
-    For :class:`Flag`-type classes the next value chosen will be the next highest
-    power-of-two, regardless of the last value seen.
-
-.. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
-.. versionadded:: 3.7 ``_ignore_``
-
-To help keep Python 2 / Python 3 code in sync an :attr:`_order_` attribute can
-be provided.  It will be checked against the actual order of the enumeration
-and raise an error if the two do not match::
-
-    >>> class Color(Enum):
-    ...     _order_ = 'RED GREEN BLUE'
-    ...     RED = 1
-    ...     BLUE = 3
-    ...     GREEN = 2
-    ...
-    Traceback (most recent call last):
-    ...
-    TypeError: member order does not match _order_:
-    ['RED', 'BLUE', 'GREEN']
-    ['RED', 'GREEN', 'BLUE']
-
-.. note::
-
-    In Python 2 code the :attr:`_order_` attribute is necessary as definition
-    order is lost before it can be recorded.
-
-
-_Private__names
-"""""""""""""""
-
-Private names are not converted to Enum members, but remain normal attributes.
-
-.. versionchanged:: 3.10
-
-
-``Enum`` member type
-""""""""""""""""""""
-
-:class:`Enum` members are instances of their :class:`Enum` class, and are
-normally accessed as ``EnumClass.member``.  In Python versions ``3.5`` to
-``3.9`` you could access members from other members -- this practice was
-discouraged, and in ``3.12`` :class:`Enum` will return to not allowing it,
-while in ``3.10`` and ``3.11`` it will raise a :exc:`DeprecationWarning`::
-
-    >>> class FieldTypes(Enum):
-    ...     name = 0
-    ...     value = 1
-    ...     size = 2
-    ...
-    >>> FieldTypes.value.size       # doctest: +SKIP
-    DeprecationWarning: accessing one member from another is not supported,
-      and will be disabled in 3.12
-    <FieldTypes.size: 2>
-
-.. versionchanged:: 3.5
-.. versionchanged:: 3.10
-
-
-Creating members that are mixed with other data types
-"""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-When subclassing other data types, such as :class:`int` or :class:`str`, with
-an :class:`Enum`, all values after the `=` are passed to that data type's
-constructor.  For example::
-
-    >>> class MyEnum(IntEnum):
-    ...     example = '11', 16      # '11' will be interpreted as a hexadecimal
-    ...                             # number
-    >>> MyEnum.example
-    MyEnum.example
-
-
-Boolean value of ``Enum`` classes and members
-"""""""""""""""""""""""""""""""""""""""""""""
-
-:class:`Enum` members that are mixed with non-:class:`Enum` types (such as
-:class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
-type's rules; otherwise, all members evaluate as :data:`True`.  To make your
-own Enum's boolean evaluation depend on the member's value add the following to
-your class::
-
-    def __bool__(self):
-        return bool(self.value)
-
-:class:`Enum` classes always evaluate as :data:`True`.
-
-
-``Enum`` classes with methods
-"""""""""""""""""""""""""""""
-
-If you give your :class:`Enum` subclass extra methods, like the `Planet`_
-class above, those methods will show up in a :func:`dir` of the member,
-but not of the class::
-
-    >>> dir(Planet)
-    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
-    >>> dir(Planet.EARTH)
-    ['__class__', '__doc__', '__module__', 'mass', 'name', 'radius', 'surface_gravity', 'value']
-
-
-Combining members of ``Flag``
-"""""""""""""""""""""""""""""
-
-Iterating over a combination of Flag members will only return the members that
-are comprised of a single bit::
-
-    >>> class Color(Flag):
-    ...     RED = auto()
-    ...     GREEN = auto()
-    ...     BLUE = auto()
-    ...     MAGENTA = RED | BLUE
-    ...     YELLOW = RED | GREEN
-    ...     CYAN = GREEN | BLUE
-    ...
-    >>> Color(3)  # named combination
-    Color.YELLOW
-    >>> Color(7)      # not named combination
-    Color.RED|Color.GREEN|Color.BLUE
-
-``StrEnum`` and :meth:`str.__str__`
-"""""""""""""""""""""""""""""""""""
-
-An important difference between :class:`StrEnum` and other Enums is the
-:meth:`__str__` method; because :class:`StrEnum` members are strings, some
-parts of Python will read the string data directly, while others will call
-:meth:`str()`. To make those two operations have the same result,
-:meth:`StrEnum.__str__` will be the same as :meth:`str.__str__` so that
-``str(StrEnum.member) == StrEnum.member`` is true.
-
-``Flag`` and ``IntFlag`` minutia
-""""""""""""""""""""""""""""""""
-
-The code sample::
-
-    >>> class Color(IntFlag):
-    ...     BLACK = 0
-    ...     RED = 1
-    ...     GREEN = 2
-    ...     BLUE = 4
-    ...     PURPLE = RED | BLUE
-    ...     WHITE = RED | GREEN | BLUE
-    ...
-
-- single-bit flags are canonical
-- multi-bit and zero-bit flags are aliases
-- only canonical flags are returned during iteration::
-
-    >>> list(Color.WHITE)
-    [Color.RED, Color.GREEN, Color.BLUE]
-
-- negating a flag or flag set returns a new flag/flag set with the
-  corresponding positive integer value::
-
-    >>> Color.GREEN
-    Color.GREEN
-
-    >>> ~Color.GREEN
-    Color.PURPLE
-
-- names of pseudo-flags are constructed from their members' names::
-
-    >>> (Color.RED | Color.GREEN).name
-    'RED|GREEN'
-
-- multi-bit flags, aka aliases, can be returned from operations::
-
-    >>> Color.RED | Color.BLUE
-    Color.PURPLE
-
-    >>> Color(7)  # or Color(-1)
-    Color.WHITE
-
-- membership / containment checking has changed slightly -- zero valued flags
-  are never considered to be contained::
-
-    >>> Color.BLACK in Color.WHITE
-    False
-
-  otherwise, if all bits of one flag are in the other flag, True is returned::
-
-    >>> Color.PURPLE in Color.WHITE
-    True
-
-There is a new boundary mechanism that controls how out-of-range / invalid
-bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
-
-  * STRICT --> raises an exception when presented with invalid values
-  * CONFORM --> discards any invalid bits
-  * EJECT --> lose Flag status and become a normal int with the given value
-  * KEEP --> keep the extra bits
-           - keeps Flag status and extra bits
-           - extra bits do not show up in iteration
-           - extra bits do show up in repr() and str()
-
-The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``DISCARD``,
-and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an
-example of when ``KEEP`` is needed).
-
-
-.. _enum-class-differences:
-
-How are Enums different?
-------------------------
-
-Enums have a custom metaclass that affects many aspects of both derived Enum
-classes and their instances (members).
-
-
-Enum Classes
-^^^^^^^^^^^^
-
-The :class:`EnumType` metaclass is responsible for providing the
-:meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
-allow one to do things with an :class:`Enum` class that fail on a typical
-class, such as `list(Color)` or `some_enum_var in Color`.  :class:`EnumType` is
-responsible for ensuring that various other methods on the final :class:`Enum`
-class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
-:meth:`__str__` and :meth:`__repr__`).
-
-
-Enum Members (aka instances)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The most interesting thing about Enum members is that they are singletons.
-:class:`EnumType` creates them all while it is creating the :class:`Enum`
-class itself, and then puts a custom :meth:`__new__` in place to ensure
-that no new ones are ever instantiated by returning only the existing
-member instances.
-
-
+Conforming input to Flag
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Creating a :class:`Flag` enum that is more resilient out-of-bounds results to
+mathematical operations, you can use the :attr:`FlagBoundary.CONFORM` setting::
+
+    >>> from enum import Flag, CONFORM, auto
+    >>> class Weekday(Flag, boundary=CONFORM):
+    ...     MONDAY = auto()
+    ...     TUESDAY = auto()
+    ...     WEDNESDAY = auto()
+    ...     THURSDAY = auto()
+    ...     FRIDAY = auto()
+    ...     SATURDAY = auto()
+    ...     SUNDAY = auto()
+    >>> today = Weekday.TUESDAY
+    >>> Weekday(today + 22)  # what day is three weeks from tomorrow?
+    >>> Weekday.WEDNESDAY
+
+
+.. _enumtype-examples:
+
+Subclassing EnumType
+--------------------
+
+While most enum needs can be met by customizing :class:`Enum` subclasses,
+either with class decorators or custom functions, :class:`EnumType` can be
+subclassed to provide a different Enum experience.
 

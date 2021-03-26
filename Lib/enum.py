@@ -1224,7 +1224,7 @@ class Flag(Enum, boundary=STRICT):
     def __repr__(self):
         cls_name = self.__class__.__name__
         if self._name_ is None:
-            return "%s(%x)" % (cls_name, self._value_)
+            return "0x%x" % (self._value_, )
         if _is_single_bit(self._value_):
             return '%s.%s' % (cls_name, self._name_)
         if self._boundary_ is not FlagBoundary.KEEP:
@@ -1233,7 +1233,7 @@ class Flag(Enum, boundary=STRICT):
             name = []
             for n in self._name_.split('|'):
                 if n.startswith('0'):
-                    name.append('%s(%s)' % (cls_name, n))
+                    name.append(n)
                 else:
                     name.append('%s.%s' % (cls_name, n))
             return '|'.join(name)

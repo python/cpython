@@ -2361,12 +2361,12 @@ class TestFlag(unittest.TestCase):
         self.assertEqual(repr(Perm.X), 'Perm.X')
         self.assertEqual(repr(Perm.R | Perm.W), 'Perm.R|Perm.W')
         self.assertEqual(repr(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
-        self.assertEqual(repr(Perm(0)), 'Perm(0)')
+        self.assertEqual(repr(Perm(0)), '0x0')
         self.assertEqual(repr(~Perm.R), 'Perm.W|Perm.X')
         self.assertEqual(repr(~Perm.W), 'Perm.R|Perm.X')
         self.assertEqual(repr(~Perm.X), 'Perm.R|Perm.W')
         self.assertEqual(repr(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
+        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '0x0')
         self.assertEqual(repr(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
 
         Open = self.Open
@@ -2886,13 +2886,13 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(Perm.R | Perm.W), 'Perm.R|Perm.W')
         self.assertEqual(repr(Perm.R | Perm.W | Perm.X), 'Perm.R|Perm.W|Perm.X')
         self.assertEqual(repr(Perm.R | 8), '12')
-        self.assertEqual(repr(Perm(0)), 'Perm(0)')
+        self.assertEqual(repr(Perm(0)), '0x0')
         self.assertEqual(repr(Perm(8)), '8')
         self.assertEqual(repr(~Perm.R), 'Perm.W|Perm.X')
         self.assertEqual(repr(~Perm.W), 'Perm.R|Perm.X')
         self.assertEqual(repr(~Perm.X), 'Perm.R|Perm.W')
         self.assertEqual(repr(~(Perm.R | Perm.W)), 'Perm.X')
-        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), 'Perm(0)')
+        self.assertEqual(repr(~(Perm.R | Perm.W | Perm.X)), '0x0')
         self.assertEqual(repr(~(Perm.R | 8)), '-13')
         self.assertEqual(repr(Perm(~0)), 'Perm.R|Perm.W|Perm.X')
         self.assertEqual(repr(Perm(~8)), '-9')
@@ -3364,6 +3364,8 @@ class TestUnique(unittest.TestCase):
             value = 4
 
 
+class TestEnumTypeSubclassing(unittest.TestCase):
+    pass
 
 expected_help_output_with_docs = """\
 Help on class Color in module %s:
