@@ -246,34 +246,45 @@ static PyThreadState *tcl_tstate = NULL;
 #endif
 
 #define ENTER_TCL \
-    { PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
+    { \
+        PyThreadState *tstate = PyThreadState_Get(); \
+        Py_BEGIN_ALLOW_THREADS \
         if(tcl_lock) { PyThread_acquire_lock(tcl_lock, 1); } \
         tcl_tstate = tstate;
 
 #define LEAVE_TCL \
-    tcl_tstate = NULL; \
-    if(tcl_lock) { PyThread_release_lock(tcl_lock); } \
-    Py_END_ALLOW_THREADS}
+        tcl_tstate = NULL; \
+        if(tcl_lock) { PyThread_release_lock(tcl_lock); } \
+        Py_END_ALLOW_THREADS \
+    }
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-    tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
+        tcl_tstate = NULL; \
+        if(tcl_lock) { PyThread_release_lock(tcl_lock); } \
+    }
 
 #define ENTER_PYTHON \
-    { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
+    { \
+        PyThreadState *tstate = tcl_tstate; \
+        tcl_tstate = NULL; \
         if(tcl_lock) { PyThread_release_lock(tcl_lock); } \
-        PyEval_RestoreThread((tstate)); }
+        PyEval_RestoreThread((tstate)); \
+    }
 
 #define LEAVE_PYTHON \
-    { PyThreadState *tstate = PyEval_SaveThread(); \
+    { \
+        PyThreadState *tstate = PyEval_SaveThread(); \
         if(tcl_lock) { PyThread_acquire_lock(tcl_lock, 1); } \
-        tcl_tstate = tstate; }
+        tcl_tstate = tstate; \
+    }
 
 #define CHECK_TCL_APPARTMENT \
     if (((TkappObject *)self)->threaded && \
-        ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) { \
+        ((TkappObject *)self)->thread_id != Tcl_GetCurrentThread()) \
+    { \
         PyErr_SetString(PyExc_RuntimeError, \
                         "Calling Tcl from different apartment"); \
         return 0; \
