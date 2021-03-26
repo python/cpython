@@ -210,8 +210,8 @@ Data Types
          :class:`auto` with other values.
 
    .. attribute:: Enum._ignore_
-   
-      ``_ignore_`` is only used during creation and is removed from the 
+
+      ``_ignore_`` is only used during creation and is removed from the
       enumeration once that is complete.
 
       ``_ignore_`` is a list of names that will not become members, and whose
@@ -228,7 +228,7 @@ Data Types
          :value: The value to lookup.
 
       * to use the ``cls`` enum to create a new enum:
-       
+
          :cls:   The enum class being called.
          :value: The name of the new Enum to create.
          :names: The names/values of the members for the new Enum.
@@ -242,7 +242,7 @@ Data Types
 
       Returns ``['__class__', '__doc__', '__module__', 'name', 'value']`` and
       any public methods defined on *self.__class__*::
-      
+
          >>> from datetime import date
          >>> class Weekday(Enum):
          ...     MONDAY = 1
@@ -264,7 +264,7 @@ Data Types
          :start: The start value for the Enum; the default is 1.
          :count: The number of members currently defined, not including this one.
          :last_values: A list of the previous values.
-      
+
       A *staticmethod* that is used to determine the next value returned by
       :class:`auto`::
 
@@ -355,7 +355,7 @@ Data Types
       >>> Numbers.THREE == 3
       True
 
-.. note:: 
+.. note::
 
    Using :class:`auto` with :class:`IntEnum` results in integers of increasing value,
    starting with ``1``.
@@ -568,7 +568,7 @@ Data Types
          ...     BLUE = auto()
          >>> KeepFlag(2**2 + 2**4)
          KeepFlag.BLUE|0x10
-      
+
 
 Utilites and Decorators
 -----------------------
