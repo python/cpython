@@ -310,9 +310,6 @@ the :mod:`glob` module.)
    that the result will only end in a separator if the last part is empty.  If
    a component is an absolute path, all previous components are thrown away
    and joining continues from the absolute path component.
-   
-   On Windows, the directory separator is a backslash, while on POSIX platforms
-   it is a forward slash.
 
    On Windows, the drive letter is not reset when an absolute path component
    (e.g., ``r'\foo'``) is encountered.  If a component contains a drive
