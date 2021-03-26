@@ -56,8 +56,9 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly):
             if _lexists(_join(root_dir, pathname), dir_fd):
                 yield pathname
         else:
-            # Patterns ending with a slash should match only directories
-            if _isdir(_join(root_dir, dirname), dir_fd):
+            # Empty basename means that pathname ends with a slash.
+            # It should match only directories.
+            if _isdir(_join(root_dir, pathname), dir_fd):
                 yield pathname
         return
     if not dirname:
