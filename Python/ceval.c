@@ -1894,36 +1894,6 @@ main_loop:
             FAST_DISPATCH();
         }
 
-        case TARGET(ROT_TWO): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
-            SET_TOP(second);
-            SET_SECOND(top);
-            FAST_DISPATCH();
-        }
-
-        case TARGET(ROT_THREE): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
-            PyObject *third = THIRD();
-            SET_TOP(second);
-            SET_SECOND(third);
-            SET_THIRD(top);
-            FAST_DISPATCH();
-        }
-
-        case TARGET(ROT_FOUR): {
-            PyObject *top = TOP();
-            PyObject *second = SECOND();
-            PyObject *third = THIRD();
-            PyObject *fourth = FOURTH();
-            SET_TOP(second);
-            SET_SECOND(third);
-            SET_THIRD(fourth);
-            SET_FOURTH(top);
-            FAST_DISPATCH();
-        }
-
         case TARGET(DUP_TOP): {
             PyObject *top = TOP();
             Py_INCREF(top);
@@ -4450,6 +4420,17 @@ main_loop:
 
             PUSH(result);
             DISPATCH();
+        }
+
+        case TARGET(ROTATE): {
+            PyObject *top = TOP();
+            memmove(&PEEK(oparg - 1), &PEEK(oparg),
+                    sizeof(PyObject*) * (oparg - 1));
+            // for (int i = 1; i < oparg; i++) {
+            //     PEEK(i) = PEEK(i + 1);
+            // }
+            PEEK(oparg) = top;
+            FAST_DISPATCH();
         }
 
         case TARGET(EXTENDED_ARG): {

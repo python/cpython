@@ -908,10 +908,6 @@ stack_effect(int opcode, int oparg, int jump)
         /* Stack manipulation */
         case POP_TOP:
             return -1;
-        case ROT_TWO:
-        case ROT_THREE:
-        case ROT_FOUR:
-            return 0;
         case DUP_TOP:
             return 1;
         case DUP_TOP_TWO:
@@ -1155,6 +1151,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH_KEYS:
             return 2;
+        case ROTATE:
+            return 0;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1703,7 +1701,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case FOR_LOOP:
             /* Pop the iterator */
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, ROTATE, 2);
             }
             ADDOP(c, POP_TOP);
             return 1;
@@ -1733,13 +1731,13 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case FINALLY_END:
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP_I(c, ROTATE, 4);
             }
             ADDOP(c, POP_TOP);
             ADDOP(c, POP_TOP);
             ADDOP(c, POP_TOP);
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP_I(c, ROTATE, 4);
             }
             ADDOP(c, POP_EXCEPT);
             return 1;
@@ -1748,7 +1746,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case ASYNC_WITH:
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, ROTATE, 2);
             }
             if(!compiler_call_exit_with_nones(c)) {
                 return 0;
@@ -1766,7 +1764,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 ADDOP(c, POP_BLOCK);
             }
             if (preserve_tos) {
-                ADDOP(c, ROT_FOUR);
+                ADDOP_I(c, ROTATE, 4);
             }
             ADDOP(c, POP_EXCEPT);
             if (info->fb_datum) {
@@ -1778,7 +1776,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case POP_VALUE:
             if (preserve_tos) {
-                ADDOP(c, ROT_TWO);
+                ADDOP_I(c, ROTATE, 2);
             }
             ADDOP(c, POP_TOP);
             return 1;
@@ -2609,7 +2607,7 @@ compiler_jump_if(struct compiler *c, expr_ty e, basicblock *next, int cond)
                 VISIT(c, expr,
                     (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
                 ADDOP(c, DUP_TOP);
-                ADDOP(c, ROT_THREE);
+                ADDOP_I(c, ROTATE, 3);
                 ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
                 ADDOP_JUMP(c, POP_JUMP_IF_FALSE, cleanup);
                 NEXT_BLOCK(c);
@@ -3213,7 +3211,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
             if (dot == -1) {
                 break;
             }
-            ADDOP(c, ROT_TWO);
+            ADDOP_I(c, ROTATE, 2);
             ADDOP(c, POP_TOP);
         }
         if (!compiler_nameop(c, asname, Store)) {
@@ -3979,7 +3977,7 @@ compiler_compare(struct compiler *c, expr_ty e)
             VISIT(c, expr,
                 (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
             ADDOP(c, DUP_TOP);
-            ADDOP(c, ROT_THREE);
+            ADDOP_I(c, ROTATE, 3);
             ADDOP_COMPARE(c, asdl_seq_GET(e->v.Compare.ops, i));
             ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, cleanup);
             NEXT_BLOCK(c);
@@ -3991,7 +3989,7 @@ compiler_compare(struct compiler *c, expr_ty e)
             return 0;
         ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, cleanup);
-        ADDOP(c, ROT_TWO);
+        ADDOP_I(c, ROTATE, 2);
         ADDOP(c, POP_TOP);
         compiler_use_next_block(c, end);
     }
@@ -5218,11 +5216,11 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     switch (e->kind) {
     case Attribute_kind:
         c->u->u_lineno = e->end_lineno;
-        ADDOP(c, ROT_TWO);
+        ADDOP_I(c, ROTATE, 2);
         ADDOP_NAME(c, STORE_ATTR, e->v.Attribute.attr, names);
         break;
     case Subscript_kind:
-        ADDOP(c, ROT_THREE);
+        ADDOP_I(c, ROTATE, 3);
         ADDOP(c, STORE_SUBSCR);
         break;
     case Name_kind:
@@ -5488,10 +5486,10 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     assert(!_PyUnicode_EqualToASCIIString(n, "_"));
     // Can't assign to the same name twice:
     if (pc->stores == NULL) {
-        RETURN_IF_FALSE(pc->stores = PySet_New(NULL));
+        RETURN_IF_FALSE(pc->stores = PyList_New(0));
     }
     else {
-        int duplicate = PySet_Contains(pc->stores, n);
+        int duplicate = PySequence_Contains(pc->stores, n);
         if (duplicate < 0) {
             return 0;
         }
@@ -5500,7 +5498,7 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
             return compiler_error(c, e, n);
         }
     }
-    RETURN_IF_FALSE(!PySet_Add(pc->stores, n));
+    RETURN_IF_FALSE(!PyList_Append(pc->stores, n));
     RETURN_IF_FALSE(compiler_nameop(c, n, Store));
     return 1;
 }
@@ -5851,8 +5849,9 @@ static int
 compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
-    // control is the set of names bound by the first alternative. If all of the
-    // others bind the same names (they should), then this becomes pc->stores.
+    // control is the list of names bound by the first alternative. If all of
+    // the others bind the same names (they should), then this becomes
+    // pc->stores.
     PyObject *control = NULL;
     basicblock *end, *pass_pop_1;
     RETURN_IF_FALSE(end = compiler_new_block(c));
@@ -5860,12 +5859,13 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
     // We're going to be messing with pc. Keep the original info handy:
-    PyObject *stores_init = pc->stores;
+    PyObject *stores_init;
+    RETURN_IF_FALSE(stores_init = pc->stores ? pc->stores : PyList_New(0));
     int allow_irrefutable = pc->allow_irrefutable;
     for (Py_ssize_t i = 0; i < size; i++) {
-        // NOTE: Can't use our nice returning macros in here: they'll leak sets!
+        // NOTE: Can't use our nice returning macros here: they'll leak lists!
         expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
-        pc->stores = PySet_New(stores_init);
+        pc->stores = PySequence_List(stores_init);
         // An irrefutable sub-pattern must be last, if it is allowed at all:
         int is_last = i == size - 1;
         pc->allow_irrefutable = allow_irrefutable && is_last;
@@ -5886,19 +5886,26 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             control = pc->stores;
             continue;
         }
-        if (PySet_GET_SIZE(pc->stores) || PySet_GET_SIZE(control)) {
-            // Otherwise, check to see if we differ from the control set:
-            PyObject *diff = PyNumber_InPlaceXor(pc->stores, control);
-            if (diff == NULL) {
-                goto fail;
+        if (PyList_GET_SIZE(pc->stores) != PyList_GET_SIZE(control)) {
+            goto diff;
+        }
+        if (PyList_GET_SIZE(stores_init) < PyList_GET_SIZE(pc->stores))
+        {
+            // Otherwise, check to see if we differ from the control list:
+            Py_ssize_t j, k;
+            for (j = PyList_GET_SIZE(stores_init); j < PyList_GET_SIZE(control);
+                 j++)
+            {
+                k = PySequence_Index(pc->stores, PyList_GET_ITEM(control, j));
+                if (k < 0) {
+                    PyErr_Clear();
+                    goto diff;
+                }
+                assert(j <= k);
+                while (k++ < PyList_GET_SIZE(control)) {
+                    // ADDOP_I(c, ROTATE, PyList_GET_SIZE(control) - j)
+                }
             }
-            if (PySet_GET_SIZE(diff)) {
-                // The names differ! Raise.
-                Py_DECREF(diff);
-                compiler_error(c, "alternative patterns bind different names");
-                goto fail;
-            }
-            Py_DECREF(diff);
         }
         Py_DECREF(pc->stores);
     }
@@ -5912,6 +5919,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     ADDOP_LOAD_CONST(c, Py_True);
     compiler_use_next_block(c, end);
     return 1;
+diff:
+    compiler_error(c, "alternative patterns bind different names");
 fail:
     Py_XDECREF(stores_init);
     Py_XDECREF(control);
@@ -6062,7 +6071,7 @@ compiler_match(struct compiler *c, stmt_ty s)
     // We use pc.stores to track:
     // - Repeated name assignments in the same pattern.
     // - Different name assignments in alternatives.
-    // It's a set of names, but we don't create it until it's needed:
+    // It's a list of names, but we don't create it until it's needed:
     pc.stores = NULL;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
@@ -6899,12 +6908,15 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                             bb->b_instr[i+1].i_opcode = NOP;
                             break;
                         case 2:
-                            inst->i_opcode = ROT_TWO;
+                            inst->i_opcode = ROTATE;
+                            inst->i_oparg = 2;
                             bb->b_instr[i+1].i_opcode = NOP;
                             break;
                         case 3:
-                            inst->i_opcode = ROT_THREE;
-                            bb->b_instr[i+1].i_opcode = ROT_TWO;
+                            inst->i_opcode = ROTATE;
+                            inst->i_oparg = 3;
+                            bb->b_instr[i+1].i_opcode = ROTATE;
+                            bb->b_instr[i+1].i_oparg = 2;
                     }
                     break;
                 }
