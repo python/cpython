@@ -65,7 +65,6 @@ TCL_TIMER_EVENTS  = 1 << 4
 TCL_IDLE_EVENTS   = 1 << 5
 TCL_ALL_EVENTS    = 0
 
-# Deprecation warning
 warnings.warn('the tkinter.tix module is deprecated in favour of tkinter.ttk and is set '
               'to be removed in the near-future', DeprecationWarning, stacklevel=2)
 
