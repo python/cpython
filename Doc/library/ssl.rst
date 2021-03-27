@@ -693,10 +693,6 @@ Constants
    This protocol is not available if OpenSSL is compiled with the
    ``OPENSSL_NO_SSL2`` flag.
 
-   .. warning::
-
-      SSL version 2 is insecure.  Its use is highly discouraged.
-
    .. deprecated:: 3.6
 
       OpenSSL has removed support for SSLv2.
@@ -707,10 +703,6 @@ Constants
 
    This protocol is not be available if OpenSSL is compiled with the
    ``OPENSSL_NO_SSLv3`` flag.
-
-   .. warning::
-
-      SSL version 3 is insecure.  Its use is highly discouraged.
 
    .. deprecated:: 3.6
 
