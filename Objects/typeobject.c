@@ -7039,11 +7039,18 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 static int
 slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 {
-    PyObject* stack[3];
-    PyObject *res;
+    PyObject *stack[3];
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject *delete, *set, *res;
     _Py_IDENTIFIER(__delete__);
     _Py_IDENTIFIER(__set__);
 
+    delete = _PyType_LookupId(tp, &PyId___delete__);
+    set = _PyType_LookupId(tp, &PyId___set__);
+    if ((value == NULL && delete == NULL) ||
+        (value != NULL && set == NULL)) {
+        return -2;
+    }
     stack[0] = self;
     stack[1] = target;
     if (value == NULL) {

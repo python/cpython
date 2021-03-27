@@ -1299,7 +1299,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         f = Py_TYPE(descr)->tp_descr_set;
         if (f != NULL) {
             res = f(descr, obj, value);
-            goto done;
+            if (res > -2) {
+                goto done;
+            }
         }
     }
 

@@ -4642,6 +4642,50 @@ order (MRO) for bases """
         Meta.a = Descr("a")
         self.assertEqual(X.a, 42)
 
+    def test_attr_access_with_missing_data_descr_method(self):
+        # Issue #43639.
+        class DataDescriptor1:  # missing __get__
+            def __set__(self, instance, value): pass
+            def __delete__(self, instance): pass
+
+        class DataDescriptor2:  # missing __set__
+            def __get__(self, instance, owner=None): pass
+            def __delete__(self, instance): pass
+
+        class DataDescriptor3:  # missing __delete__
+            def __get__(self, instance, owner=None): pass
+            def __set__(self, instance, value): pass
+
+        class A:
+            x = DataDescriptor1()
+            y = DataDescriptor2()
+            z = DataDescriptor3()
+
+        a = A()
+        vars(a).update({'x': 'foo', 'y': 'bar', 'z': 'baz'})
+
+        class M(type):
+            x = DataDescriptor1()
+            y = DataDescriptor2()
+            z = DataDescriptor3()
+
+        class B(metaclass=M):
+            x = 'foo'
+            y = 'bar'
+            z = 'baz'
+
+        self.assertEqual(a.x, 'foo')
+        a.y = 'qux'
+        self.assertEqual(vars(a)['y'], 'qux')
+        del a.z
+        self.assertNotIn('z', vars(a))
+
+        self.assertEqual(B.x, 'foo')
+        B.y = 'qux'
+        self.assertEqual(vars(B)['y'], 'qux')
+        del B.z
+        self.assertNotIn('z', vars(B))
+
     def test_getattr_hooks(self):
         # issue 4230
 
