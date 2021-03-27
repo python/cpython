@@ -1885,7 +1885,7 @@ to speed up repeated connections from the same clients.
 
 .. attribute:: SSLContext.check_hostname
 
-   Whether to match the peer cert's hostname with :func:`match_hostname` in
+   Whether to match the peer cert's hostname in
    :meth:`SSLSocket.do_handshake`. The context's
    :attr:`~SSLContext.verify_mode` must be set to :data:`CERT_OPTIONAL` or
    :data:`CERT_REQUIRED`, and you must pass *server_hostname* to
