@@ -496,44 +496,38 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression[, globals[, locals]])
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   This function supports the dynamic evaluation of Python expression.  The
+   first argument can be a string or a code object.  The optional arguments
+   specify the globals and locals respectively.  If provided, *globals* must be
+   a dictionary.  If provided, *locals* can be any mapping object.
 
-   The *expression* argument is parsed and evaluated as a Python expression
-   (technically speaking, a condition list) using the *globals* and *locals*
-   dictionaries as global and local namespace.  If the *globals* dictionary is
-   present and does not contain a value for the key ``__builtins__``, a
-   reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.  That way you can
-   control what builtins are available to the executed code by inserting your
-   own ``__builtins__`` dictionary into *globals* before passing it to
-   :func:`eval`.  If the *locals* dictionary is omitted it defaults to the
-   *globals* dictionary.  If both dictionaries are omitted, the expression is
-   executed with the *globals* and *locals* in the environment where
-   :func:`eval` is called.  Note, *eval()* does not have access to the
-   :term:`nested scopes <nested scope>` (non-locals) in the enclosing
-   environment.
+   In the most common case, the *expression* argument is a string, and it is
+   parsed and evaluated as a Python expression (see the section
+   ":ref:`expression-input`" in the Language Reference).  The leading and
+   trailing spaces, tabs, and newlines are stripped.
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   The evaluation is performed using the *globals* and *locals* dictionaries as
+   the global and local namespaces.  If the *globals* dictionary is present and
+   does not contain a value for the key ``"__builtins__"``, a reference to the
+   dictionary of the built-in module :mod:`builtins` is inserted under that key
+   before *expression* is parsed.  That way, you can control what builtins are
+   available to the executed code by inserting your own ``"__builtins__"``
+   dictionary into *globals* before passing it to :func:`eval`.  If the
+   *locals* dictionary is omitted, it defaults to the *globals* dictionary.  If
+   both dictionaries are omitted, the expression is executed with the globals
+   and locals in the environment where :func:`eval` is called.
+
+   The return value is the result of the evaluated expression. Syntax errors
+   are reported as exceptions.  For example:
 
       >>> x = 1
       >>> eval('x+1')
       2
 
-   This function can also be used to execute arbitrary code objects (such as
-   those created by :func:`compile`).  In this case pass a code object instead
-   of a string.  If the code object has been compiled with ``'exec'`` as the
-   *mode* argument, :func:`eval`\'s return value will be ``None``.
-
-   Hints: dynamic execution of statements is supported by the :func:`exec`
-   function.  The :func:`globals` and :func:`locals` functions
-   returns the current global and local dictionary, respectively, which may be
-   useful to pass around for use by :func:`eval` or :func:`exec`.
-
-   If the given source is a string, then leading and trailing spaces and tabs
-   are stripped.
+   The :func:`eval` function can also be used to execute code objects, such as
+   those created by :func:`compile`.  In this case, pass a code object instead
+   of a string as the first argument.  If the code object has been compiled
+   with ``'exec'`` as the *mode* argument, the return value will be ``None``.
 
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
@@ -543,36 +537,58 @@ are always available.  They are listed here in alphabetical order.
       Raises an :ref:`auditing event <auditing>` ``exec`` with the code object
       as the argument. Code compilation events may also be raised.
 
+   .. _eval_limitation_dynamic:
+   .. note::
+
+      Dynamic evaluation at run-time is not equivalent to embedding the
+      expression in a Python program and having it compiled as a part of the
+      whole program.  In particular, :func:`eval` does not have access to the
+      :term:`nested scopes <nested scope>` (non-locals) in the enclosing
+      environment (see the section ":ref:`dynamic-features`" in the Language
+      Reference chapter on name binding).  Of note are some expressions, such
+      as :term:`lambdas <lambda>`, :ref:`comprehensions <comprehensions>`, and
+      :term:`generator expressions <generator expression>`, which create an
+      inner scope of their own.  The interaction between these expressions and
+      :func:`eval` can be explicitly controlled by the parameters *globals* and
+      *locals* in the aforementioned manner.
+
+      The built-in functions :func:`globals` and :func:`locals` return the
+      current global and local dictionary, respectively, which may be useful to
+      pass around for use as the second and third argument to :func:`eval`.
+
+      Dynamic execution of *statements* is supported by the :func:`exec`
+      function (see below).
+
+
 .. index:: builtin: exec
 
 .. function:: exec(object[, globals[, locals]])
 
    This function supports dynamic execution of Python code. *object* must be
-   either a string or a code object.  If it is a string, the string is parsed as
-   a suite of Python statements which is then executed (unless a syntax error
-   occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
-   the code that's executed is expected to be valid as file input (see the
-   section "File input" in the Reference Manual). Be aware that the
-   :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
-   statements may not be used outside of
-   function definitions even within the context of code passed to the
-   :func:`exec` function. The return value is ``None``.
+   either a string or a code object.  If it is a string, the string is parsed
+   as a suite of Python statements which is then executed (unless a syntax
+   error occurs). [#]_ If it is a code object, it is simply executed.  In all
+   cases, the code that's executed is expected to be valid as file input (see
+   the section ":ref:`file-input`" in the Language Reference).  Be aware that
+   the :keyword:`nonlocal`, :keyword:`yield`, and :keyword:`return` statements
+   may not be used outside of function definitions even within the context of
+   code passed to the :func:`exec` function.  The return value is ``None``.
 
-   In all cases, if the optional parts are omitted, the code is executed in the
-   current scope.  If only *globals* is provided, it must be a dictionary
-   (and not a subclass of dictionary), which
-   will be used for both the global and the local variables.  If *globals* and
-   *locals* are given, they are used for the global and local variables,
-   respectively.  If provided, *locals* can be any mapping object.  Remember
-   that at module level, globals and locals are the same dictionary. If exec
-   gets two separate objects as *globals* and *locals*, the code will be
-   executed as if it were embedded in a class definition.
+   In all cases, if the optional arguments are omitted, the code is executed in
+   the current scope.  If only *globals* is provided, it must be a dictionary,
+   which will be used for both the global and the local variables.  If
+   *globals* and *locals* are given, they are used for the global and local
+   variables, respectively.  If provided, *locals* can be any mapping object.
+   Remember that at module level, globals and locals are the same dictionary.
+   If exec gets two separate objects as *globals* and *locals*, the code will
+   be executed as if it were embedded in a class definition.
 
    If the *globals* dictionary does not contain a value for the key
-   ``__builtins__``, a reference to the dictionary of the built-in module
+   ``"__builtins__"``, a reference to the dictionary of the built-in module
    :mod:`builtins` is inserted under that key.  That way you can control what
    builtins are available to the executed code by inserting your own
-   ``__builtins__`` dictionary into *globals* before passing it to :func:`exec`.
+   ``"__builtins__"`` dictionary into *globals* before passing it to
+   :func:`exec`.
 
    .. audit-event:: exec code_object exec
 
@@ -581,9 +597,12 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      The built-in functions :func:`globals` and :func:`locals` return the current
-      global and local dictionary, respectively, which may be useful to pass around
-      for use as the second and third argument to :func:`exec`.
+      Like :func:`eval`, :func:`exec` is :ref:`limited by constraints
+      particular to dynamic code execution and namespaces
+      <eval_limitation_dynamic>`.  The built-in functions :func:`globals` and
+      :func:`locals` return the current global and local dictionary,
+      respectively, which may be useful to pass around for use as the second
+      and third argument to :func:`exec`.
 
    .. note::
 
