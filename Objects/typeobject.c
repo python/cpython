@@ -3361,6 +3361,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #if MCACHE_STATS
         cache->hits++;
 #endif
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
         return entry->value;
     }
 
@@ -3398,6 +3399,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
             cache->misses++;
         }
 #endif
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
         Py_SETREF(entry->name, Py_NewRef(name));
     }
     return res;
