@@ -1577,7 +1577,7 @@ Optional Packages:
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
-  --with-openssl=DIR      override root of the OpenSSL directory to DIR
+  --with-openssl=DIR      root of the OpenSSL directory
   --with-ssl-default-suites=[python|openssl|STRING]
                           override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
@@ -14495,10 +14495,10 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 
-if $GREP noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest.$ac_objext >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if $GREP seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -15381,6 +15381,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 fi
+
 
 EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
