@@ -1426,6 +1426,8 @@ class ServerProxy:
             raise OSError("unsupported XML-RPC protocol")
         self.__host = p.netloc
         self.__handler = p.path or "/RPC2"
+        if p.query:
+            self.__handler += "?" + p.query
 
         if transport is None:
             if p.scheme == "https":
