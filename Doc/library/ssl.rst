@@ -2669,7 +2669,8 @@ to specify :const:`CERT_REQUIRED` and similarly check the client certificate.
 Protocol versions
 '''''''''''''''''
 
-SSL versions 2 and 3 are considered insecure and are therefore dangerous to
+SSL versions 2 and 3, TLS 1.0, and TLS 1.1 are considered insecure and are
+therefore dangerous to
 use.  If you want maximum compatibility between clients and servers, it is
 recommended to use :const:`PROTOCOL_TLS_CLIENT` or
 :const:`PROTOCOL_TLS_SERVER` as the protocol version. SSLv2 and SSLv3 are
