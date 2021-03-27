@@ -721,6 +721,10 @@ Constants
 
    Selects TLS version 1.0 as the channel encryption protocol.
 
+   .. warning::
+
+      TLS version 1.0 is insecure. Its use is highly discouraged.
+
    .. deprecated:: 3.6
 
       OpenSSL has deprecated all version specific protocols. Use the default
@@ -732,6 +736,10 @@ Constants
    Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
+
+   .. warning::
+
+      TLS version 1.1 is insecure. Its use is highly discouraged.
 
    .. deprecated:: 3.6
 
