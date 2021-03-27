@@ -1324,6 +1324,9 @@ class PathFinder:
         if hasattr(finder, 'find_loader'):
             loader, portions = finder.find_loader(fullname)
         else:
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                           "falling back to find_module()")
+            _warnings.warn(msg, ImportWarning)
             loader = finder.find_module(fullname)
             portions = []
         if loader is not None:
