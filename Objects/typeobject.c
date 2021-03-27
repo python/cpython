@@ -424,7 +424,7 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
     if (type->tp_version_tag == 0) {
         // Wrap-around or just starting Python - clear the whole cache
         type_cache_clear(cache, 1);
-        return 1;
+        return 0;
     }
 
     bases = type->tp_bases;
