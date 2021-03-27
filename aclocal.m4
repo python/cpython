@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.15 -*- Autoconf -*-
+# generated automatically by aclocal 1.16.2 -*- Autoconf -*-
 
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
+# Copyright (C) 1996-2020 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -12,9 +12,218 @@
 # PARTICULAR PURPOSE.
 
 m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])])
-dnl pkg.m4 - Macros to locate and utilise pkg-config.   -*- Autoconf -*-
-dnl serial 11 (pkg-config-0.29.1)
-dnl
+# ===============================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_c_float_words_bigendian.html
+# ===============================================================================
+#
+# SYNOPSIS
+#
+#   AX_C_FLOAT_WORDS_BIGENDIAN([ACTION-IF-TRUE], [ACTION-IF-FALSE], [ACTION-IF-UNKNOWN])
+#
+# DESCRIPTION
+#
+#   Checks the ordering of words within a multi-word float. This check is
+#   necessary because on some systems (e.g. certain ARM systems), the float
+#   word ordering can be different from the byte ordering. In a multi-word
+#   float context, "big-endian" implies that the word containing the sign
+#   bit is found in the memory location with the lowest address. This
+#   implementation was inspired by the AC_C_BIGENDIAN macro in autoconf.
+#
+#   The endianness is detected by first compiling C code that contains a
+#   special double float value, then grepping the resulting object file for
+#   certain strings of ASCII values. The double is specially crafted to have
+#   a binary representation that corresponds with a simple string. In this
+#   implementation, the string "noonsees" was selected because the
+#   individual word values ("noon" and "sees") are palindromes, thus making
+#   this test byte-order agnostic. If grep finds the string "noonsees" in
+#   the object file, the target platform stores float words in big-endian
+#   order. If grep finds "seesnoon", float words are in little-endian order.
+#   If neither value is found, the user is instructed to specify the
+#   ordering.
+#
+# LICENSE
+#
+#   Copyright (c) 2008 Daniel Amelang <dan@amelang.net>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 11
+
+AC_DEFUN([AX_C_FLOAT_WORDS_BIGENDIAN],
+  [AC_CACHE_CHECK(whether float word ordering is bigendian,
+                  ax_cv_c_float_words_bigendian, [
+
+ax_cv_c_float_words_bigendian=unknown
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+
+double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+
+]])], [
+
+if grep noonsees conftest.$ac_objext >/dev/null ; then
+  ax_cv_c_float_words_bigendian=yes
+fi
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
+  if test "$ax_cv_c_float_words_bigendian" = unknown; then
+    ax_cv_c_float_words_bigendian=no
+  else
+    ax_cv_c_float_words_bigendian=unknown
+  fi
+fi
+
+])])
+
+case $ax_cv_c_float_words_bigendian in
+  yes)
+    m4_default([$1],
+      [AC_DEFINE([FLOAT_WORDS_BIGENDIAN], 1,
+                 [Define to 1 if your system stores words within floats
+                  with the most significant word first])]) ;;
+  no)
+    $2 ;;
+  *)
+    m4_default([$3],
+      [AC_MSG_ERROR([
+
+Unknown float word ordering. You need to manually preset
+ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+
+    ])]) ;;
+esac
+
+])# AX_C_FLOAT_WORDS_BIGENDIAN
+
+# ===========================================================================
+#     https://www.gnu.org/software/autoconf-archive/ax_check_openssl.html
+# ===========================================================================
+#
+# SYNOPSIS
+#
+#   AX_CHECK_OPENSSL([action-if-found[, action-if-not-found]])
+#
+# DESCRIPTION
+#
+#   Look for OpenSSL in a number of default spots, or in a user-selected
+#   spot (via --with-openssl).  Sets
+#
+#     OPENSSL_INCLUDES to the include directives required
+#     OPENSSL_LIBS to the -l directives required
+#     OPENSSL_LDFLAGS to the -L or -R flags required
+#
+#   and calls ACTION-IF-FOUND or ACTION-IF-NOT-FOUND appropriately
+#
+#   This macro sets OPENSSL_INCLUDES such that source files should use the
+#   openssl/ directory in include directives:
+#
+#     #include <openssl/hmac.h>
+#
+# LICENSE
+#
+#   Copyright (c) 2009,2010 Zmanda Inc. <http://www.zmanda.com/>
+#   Copyright (c) 2009,2010 Dustin J. Mitchell <dustin@zmanda.com>
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 10
+
+AU_ALIAS([CHECK_SSL], [AX_CHECK_OPENSSL])
+AC_DEFUN([AX_CHECK_OPENSSL], [
+    found=false
+    AC_ARG_WITH([openssl],
+        [AS_HELP_STRING([--with-openssl=DIR],
+            [root of the OpenSSL directory])],
+        [
+            case "$withval" in
+            "" | y | ye | yes | n | no)
+            AC_MSG_ERROR([Invalid --with-openssl value])
+              ;;
+            *) ssldirs="$withval"
+              ;;
+            esac
+        ], [
+            # if pkg-config is installed and openssl has installed a .pc file,
+            # then use that information and don't search ssldirs
+            AC_CHECK_TOOL([PKG_CONFIG], [pkg-config])
+            if test x"$PKG_CONFIG" != x""; then
+                OPENSSL_LDFLAGS=`$PKG_CONFIG openssl --libs-only-L 2>/dev/null`
+                if test $? = 0; then
+                    OPENSSL_LIBS=`$PKG_CONFIG openssl --libs-only-l 2>/dev/null`
+                    OPENSSL_INCLUDES=`$PKG_CONFIG openssl --cflags-only-I 2>/dev/null`
+                    found=true
+                fi
+            fi
+
+            # no such luck; use some default ssldirs
+            if ! $found; then
+                ssldirs="/usr/local/ssl /usr/lib/ssl /usr/ssl /usr/pkg /usr/local /usr"
+            fi
+        ]
+        )
+
+
+    # note that we #include <openssl/foo.h>, so the OpenSSL headers have to be in
+    # an 'openssl' subdirectory
+
+    if ! $found; then
+        OPENSSL_INCLUDES=
+        for ssldir in $ssldirs; do
+            AC_MSG_CHECKING([for openssl/ssl.h in $ssldir])
+            if test -f "$ssldir/include/openssl/ssl.h"; then
+                OPENSSL_INCLUDES="-I$ssldir/include"
+                OPENSSL_LDFLAGS="-L$ssldir/lib"
+                OPENSSL_LIBS="-lssl -lcrypto"
+                found=true
+                AC_MSG_RESULT([yes])
+                break
+            else
+                AC_MSG_RESULT([no])
+            fi
+        done
+
+        # if the file wasn't found, well, go ahead and try the link anyway -- maybe
+        # it will just work!
+    fi
+
+    # try the preprocessor and linker with our new flags,
+    # being careful not to pollute the global LIBS, LDFLAGS, and CPPFLAGS
+
+    AC_MSG_CHECKING([whether compiling and linking against OpenSSL works])
+    echo "Trying link with OPENSSL_LDFLAGS=$OPENSSL_LDFLAGS;" \
+        "OPENSSL_LIBS=$OPENSSL_LIBS; OPENSSL_INCLUDES=$OPENSSL_INCLUDES" >&AS_MESSAGE_LOG_FD
+
+    save_LIBS="$LIBS"
+    save_LDFLAGS="$LDFLAGS"
+    save_CPPFLAGS="$CPPFLAGS"
+    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+    LIBS="$OPENSSL_LIBS $LIBS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+    AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <openssl/ssl.h>], [SSL_new(NULL)])],
+        [
+            AC_MSG_RESULT([yes])
+            $1
+        ], [
+            AC_MSG_RESULT([no])
+            $2
+        ])
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
+    LIBS="$save_LIBS"
+
+    AC_SUBST([OPENSSL_INCLUDES])
+    AC_SUBST([OPENSSL_LIBS])
+    AC_SUBST([OPENSSL_LDFLAGS])
+])
+
+# pkg.m4 - Macros to locate and utilise pkg-config.   -*- Autoconf -*-
+# serial 11 (pkg-config-0.29.1)
+
 dnl Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
 dnl Copyright © 2012-2015 Dan Nicholson <dbn.lists@gmail.com>
 dnl
@@ -288,5 +497,71 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])dnl PKG_CHECK_VAR
 
-m4_include([m4/ax_c_float_words_bigendian.m4])
-m4_include([m4/ax_check_openssl.m4])
+dnl PKG_WITH_MODULES(VARIABLE-PREFIX, MODULES,
+dnl   [ACTION-IF-FOUND],[ACTION-IF-NOT-FOUND],
+dnl   [DESCRIPTION], [DEFAULT])
+dnl ------------------------------------------
+dnl
+dnl Prepare a "--with-" configure option using the lowercase
+dnl [VARIABLE-PREFIX] name, merging the behaviour of AC_ARG_WITH and
+dnl PKG_CHECK_MODULES in a single macro.
+AC_DEFUN([PKG_WITH_MODULES],
+[
+m4_pushdef([with_arg], m4_tolower([$1]))
+
+m4_pushdef([description],
+           [m4_default([$5], [build with ]with_arg[ support])])
+
+m4_pushdef([def_arg], [m4_default([$6], [auto])])
+m4_pushdef([def_action_if_found], [AS_TR_SH([with_]with_arg)=yes])
+m4_pushdef([def_action_if_not_found], [AS_TR_SH([with_]with_arg)=no])
+
+m4_case(def_arg,
+            [yes],[m4_pushdef([with_without], [--without-]with_arg)],
+            [m4_pushdef([with_without],[--with-]with_arg)])
+
+AC_ARG_WITH(with_arg,
+     AS_HELP_STRING(with_without, description[ @<:@default=]def_arg[@:>@]),,
+    [AS_TR_SH([with_]with_arg)=def_arg])
+
+AS_CASE([$AS_TR_SH([with_]with_arg)],
+            [yes],[PKG_CHECK_MODULES([$1],[$2],$3,$4)],
+            [auto],[PKG_CHECK_MODULES([$1],[$2],
+                                        [m4_n([def_action_if_found]) $3],
+                                        [m4_n([def_action_if_not_found]) $4])])
+
+m4_popdef([with_arg])
+m4_popdef([description])
+m4_popdef([def_arg])
+
+])dnl PKG_WITH_MODULES
+
+dnl PKG_HAVE_WITH_MODULES(VARIABLE-PREFIX, MODULES,
+dnl   [DESCRIPTION], [DEFAULT])
+dnl -----------------------------------------------
+dnl
+dnl Convenience macro to trigger AM_CONDITIONAL after PKG_WITH_MODULES
+dnl check._[VARIABLE-PREFIX] is exported as make variable.
+AC_DEFUN([PKG_HAVE_WITH_MODULES],
+[
+PKG_WITH_MODULES([$1],[$2],,,[$3],[$4])
+
+AM_CONDITIONAL([HAVE_][$1],
+               [test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"])
+])dnl PKG_HAVE_WITH_MODULES
+
+dnl PKG_HAVE_DEFINE_WITH_MODULES(VARIABLE-PREFIX, MODULES,
+dnl   [DESCRIPTION], [DEFAULT])
+dnl ------------------------------------------------------
+dnl
+dnl Convenience macro to run AM_CONDITIONAL and AC_DEFINE after
+dnl PKG_WITH_MODULES check. HAVE_[VARIABLE-PREFIX] is exported as make
+dnl and preprocessor variable.
+AC_DEFUN([PKG_HAVE_DEFINE_WITH_MODULES],
+[
+PKG_HAVE_WITH_MODULES([$1],[$2],[$3],[$4])
+
+AS_IF([test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"],
+        [AC_DEFINE([HAVE_][$1], 1, [Enable ]m4_tolower([$1])[ support])])
+])dnl PKG_HAVE_DEFINE_WITH_MODULES
+
