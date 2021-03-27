@@ -173,6 +173,7 @@ try:
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
 except ImportError:
+    _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
 
