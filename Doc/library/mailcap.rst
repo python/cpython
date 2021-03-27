@@ -18,7 +18,7 @@ belonging to a temporary file) and the :program:`xmpeg` program can be
 automatically started to view the file.
 
 The mailcap format is documented in :rfc:`1524`, "A User Agent Configuration
-Mechanism For Multimedia Mail Format Information," but is not an Internet
+Mechanism For Multimedia Mail Format Information", but is not an Internet
 standard.  However, mailcap files are supported on most Unix systems.
 
 

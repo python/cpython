@@ -105,6 +105,26 @@ class DictTest(unittest.TestCase):
         self.assertRaises(TypeError, d.items, None)
         self.assertEqual(repr(dict(a=1).items()), "dict_items([('a', 1)])")
 
+    def test_views_mapping(self):
+        mappingproxy = type(type.__dict__)
+        class Dict(dict):
+            pass
+        for cls in [dict, Dict]:
+            d = cls()
+            m1 = d.keys().mapping
+            m2 = d.values().mapping
+            m3 = d.items().mapping
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
+
+            d["foo"] = "bar"
+
+            for m in [m1, m2, m3]:
+                self.assertIsInstance(m, mappingproxy)
+                self.assertEqual(m, d)
+
     def test_contains(self):
         d = {}
         self.assertNotIn('a', d)
@@ -696,6 +716,16 @@ class DictTest(unittest.TestCase):
         self.assertEqual(k1 | k2, {(1,1), (2,2), (3,3)})
         self.assertEqual(k1 ^ k2, {(3,3)})
         self.assertEqual(k1 ^ k3, {(1,1), (2,2), (4,4)})
+
+    def test_items_symmetric_difference(self):
+        rr = random.randrange
+        for _ in range(100):
+            left = {x:rr(3) for x in range(20) if rr(2)}
+            right = {x:rr(3) for x in range(20) if rr(2)}
+            with self.subTest(left=left, right=right):
+                expected = set(left.items()) ^ set(right.items())
+                actual = left.items() ^ right.items()
+                self.assertEqual(actual, expected)
 
     def test_dictview_mixed_set_operations(self):
         # Just a few for .keys()
@@ -1324,6 +1354,19 @@ class DictTest(unittest.TestCase):
         d = {0: set()}
         (0, X()) in d.items()
 
+    def test_dict_contain_use_after_free(self):
+        # bpo-40489
+        class S(str):
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+
+            def __hash__(self):
+                return hash('test')
+
+        d = {S(): 'value'}
+        self.assertFalse('test' in d)
+
     def test_init_use_after_free(self):
         class X:
             def __hash__(self):
@@ -1408,6 +1451,25 @@ class DictTest(unittest.TestCase):
 
         d = CustomReversedDict(pairs)
         self.assertEqual(pairs[::-1], list(dict(d).items()))
+
+    @support.cpython_only
+    def test_dict_items_result_gc(self):
+        # bpo-42536: dict.items's tuple-reuse speed trick breaks the GC's
+        # assumptions about what can be untracked. Make sure we re-track result
+        # tuples whenever we reuse them.
+        it = iter({None: []}.items())
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None, None). Make sure it's re-tracked
+        # when it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
+
+    @support.cpython_only
+    def test_dict_items_result_gc(self):
+        # Same as test_dict_items_result_gc above, but reversed.
+        it = reversed({None: []}.items())
+        gc.collect()
+        self.assertTrue(gc.is_tracked(next(it)))
 
 
 class CAPITest(unittest.TestCase):

@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Error objects */
 
 /* PyException_HEAD defines the initial segment of every exception class. */
@@ -75,16 +71,12 @@ typedef PyOSErrorObject PyWindowsErrorObject;
 /* Error handling definitions */
 
 PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
-_PyErr_StackItem *_PyErr_GetTopmostException(PyThreadState *tstate);
+PyAPI_FUNC(_PyErr_StackItem*) _PyErr_GetTopmostException(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
 
 /* Context manipulation (PEP 3134) */
 
 PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
-
-/* */
-
-#define PyExceptionClass_Name(x)  (((PyTypeObject*)(x))->tp_name)
 
 /* Convenience functions */
 
@@ -149,7 +141,10 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-/* Create a UnicodeEncodeError object */
+/* Create a UnicodeEncodeError object.
+ *
+ * TODO: This API will be removed in Python 3.11.
+ */
 Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
     const char *encoding,       /* UTF-8 encoded string */
     const Py_UNICODE *object,
@@ -159,7 +154,10 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
     const char *reason          /* UTF-8 encoded string */
     );
 
-/* Create a UnicodeTranslateError object */
+/* Create a UnicodeTranslateError object.
+ *
+ * TODO: This API will be removed in Python 3.11.
+ */
 Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
     const Py_UNICODE *object,
     Py_ssize_t length,
@@ -188,7 +186,3 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFormat(
     ...);
 
 #define Py_FatalError(message) _Py_FatalErrorFunc(__func__, message)
-
-#ifdef __cplusplus
-}
-#endif

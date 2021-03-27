@@ -22,8 +22,8 @@ PyAPI_DATA(struct _longobject) _Py_FalseStruct, _Py_TrueStruct;
 #define Py_True ((PyObject *) &_Py_TrueStruct)
 
 /* Macros for returning Py_True or Py_False, respectively */
-#define Py_RETURN_TRUE return Py_INCREF(Py_True), Py_True
-#define Py_RETURN_FALSE return Py_INCREF(Py_False), Py_False
+#define Py_RETURN_TRUE return Py_NewRef(Py_True)
+#define Py_RETURN_FALSE return Py_NewRef(Py_False)
 
 /* Function to return a bool from a C long */
 PyAPI_FUNC(PyObject *) PyBool_FromLong(long);

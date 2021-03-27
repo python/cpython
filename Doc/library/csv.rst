@@ -167,6 +167,9 @@ The :mod:`csv` module defines the following classes:
    All other optional or keyword arguments are passed to the underlying
    :class:`reader` instance.
 
+   .. versionchanged:: 3.6
+      Returned rows are now of type :class:`OrderedDict`.
+
    .. versionchanged:: 3.8
       Returned rows are now of type :class:`dict`.
 

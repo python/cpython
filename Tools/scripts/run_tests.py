@@ -27,6 +27,7 @@ def main(regrtest_args):
             '-bb',                # Warnings about bytes/bytearray
             '-E',                 # Ignore environment variables
             ]
+
     # Allow user-specified interpreter options to override our defaults.
     args.extend(test.support.args_from_interpreter_flags())
 

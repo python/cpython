@@ -23,6 +23,7 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
     ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
     assert(PySSLSocket_Check(ssl_obj));
     if (ssl_obj->ctx->msg_cb == NULL) {
+        PyGILState_Release(threadstate);
         return;
     }
 
@@ -125,6 +126,12 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
 
     threadstate = PyGILState_Ensure();
 
+    ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
+    assert(PySSLSocket_Check(ssl_obj));
+    if (ssl_obj->ctx->keylog_bio == NULL) {
+        return;
+    }
+
     /* Allocate a static lock to synchronize writes to keylog file.
      * The lock is neither released on exit nor on fork(). The lock is
      * also shared between all SSLContexts although contexts may write to
@@ -139,12 +146,6 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
                         &ssl_obj->exc_tb);
             return;
         }
-    }
-
-    ssl_obj = (PySSLSocket *)SSL_get_app_data(ssl);
-    assert(PySSLSocket_Check(ssl_obj));
-    if (ssl_obj->ctx->keylog_bio == NULL) {
-        return;
     }
 
     PySSL_BEGIN_ALLOW_THREADS

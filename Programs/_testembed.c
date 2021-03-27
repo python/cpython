@@ -6,10 +6,9 @@
 #undef NDEBUG
 
 #include <Python.h>
-#include "pycore_initconfig.h"   /* _PyConfig_InitCompatConfig() */
-#include "pycore_pystate.h"      /* _PyRuntime */
+#include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
+#include "pycore_runtime.h"       // _PyRuntime
 #include <Python.h>
-#include "pythread.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -546,6 +545,13 @@ static int test_init_from_config(void)
     /* FIXME: test home */
     /* FIXME: test path config: module_search_path .. dll_path */
 
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
+    status = PyConfig_SetBytesString(&config, &config.platlibdir, "my_platlibdir");
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
     config.verbose = 1;
@@ -600,6 +606,8 @@ static int test_init_from_config(void)
 
     Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
+
+    config._isolated_interpreter = 1;
 
     init_from_config_clear(&config);
 
@@ -663,6 +671,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONNOUSERSITE=1");
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
+    putenv("PYTHONPLATLIBDIR=env_platlibdir");
 }
 
 
@@ -1103,8 +1112,11 @@ static int test_open_code_hook(void)
     return result;
 }
 
+static int _audit_hook_clear_count = 0;
+
 static int _audit_hook(const char *event, PyObject *args, void *userdata)
 {
+    assert(args && PyTuple_CheckExact(args));
     if (strcmp(event, "_testembed.raise") == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Intentional error");
         return -1;
@@ -1113,6 +1125,8 @@ static int _audit_hook(const char *event, PyObject *args, void *userdata)
             return -1;
         }
         return 0;
+    } else if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
+        _audit_hook_clear_count += 1;
     }
     return 0;
 }
@@ -1158,6 +1172,9 @@ static int test_audit(void)
 {
     int result = _test_audit(42);
     Py_Finalize();
+    if (_audit_hook_clear_count != 1) {
+        return 0x1000 | _audit_hook_clear_count;
+    }
     return result;
 }
 
@@ -1321,6 +1338,7 @@ static int test_init_read_set(void)
     return 0;
 
 fail:
+    PyConfig_Clear(&config);
     Py_ExitStatusException(status);
 }
 
@@ -1508,6 +1526,55 @@ static int test_init_warnoptions(void)
 }
 
 
+static int tune_config(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        PyErr_Print();
+        return -1;
+    }
+
+    config.bytes_warning = 2;
+
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        PyConfig_Clear(&config);
+        return -1;
+    }
+    PyConfig_Clear(&config);
+    return 0;
+}
+
+
+static int test_init_set_config(void)
+{
+    // Initialize core
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    config_set_string(&config, &config.program_name, PROGRAM_NAME);
+    config._init_main = 0;
+    config.bytes_warning = 0;
+    init_from_config_clear(&config);
+
+    // Tune the configuration using _PyInterpreterState_SetConfig()
+    if (tune_config() < 0) {
+        PyErr_Print();
+        return 1;
+    }
+
+    // Finish initialization: main part
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -1579,6 +1646,96 @@ static int test_run_main(void)
 }
 
 
+static int test_get_argc_argv(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    wchar_t *argv[] = {L"python3", L"-c",
+                       (L"import sys; "
+                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
+                       L"arg2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config_set_string(&config, &config.program_name, L"./python3");
+
+    // Calling PyConfig_Read() twice must not change Py_GetArgcArgv() result.
+    // The second call is done by Py_InitializeFromConfig().
+    PyStatus status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
+    init_from_config_clear(&config);
+
+    int get_argc;
+    wchar_t **get_argv;
+    Py_GetArgcArgv(&get_argc, &get_argv);
+    printf("argc: %i\n", get_argc);
+    assert(get_argc == Py_ARRAY_LENGTH(argv));
+    for (int i=0; i < get_argc; i++) {
+        printf("argv[%i]: %ls\n", i, get_argv[i]);
+        assert(wcscmp(get_argv[i], argv[i]) == 0);
+    }
+
+    Py_Finalize();
+
+    printf("\n");
+    printf("test ok\n");
+    return 0;
+}
+
+
+static int test_unicode_id_init(void)
+{
+    // bpo-42882: Test that _PyUnicode_FromId() works
+    // when Python is initialized multiples times.
+    _Py_IDENTIFIER(test_unicode_id_init);
+
+    // Initialize Python once without using the identifier
+    _testembed_Py_Initialize();
+    Py_Finalize();
+
+    // Now initialize Python multiple times and use the identifier.
+    // The first _PyUnicode_FromId() call initializes the identifier index.
+    for (int i=0; i<3; i++) {
+        _testembed_Py_Initialize();
+
+        PyObject *str1, *str2;
+
+        str1 = _PyUnicode_FromId(&PyId_test_unicode_id_init);
+        assert(str1 != NULL);
+        assert(Py_REFCNT(str1) == 1);
+
+        str2 = PyUnicode_FromString("test_unicode_id_init");
+        assert(str2 != NULL);
+
+        assert(PyUnicode_Compare(str1, str2) == 0);
+
+        // str1 is a borrowed reference
+        Py_DECREF(str2);
+
+        Py_Finalize();
+    }
+    return 0;
+}
+
+
+// List frozen modules.
+// Command used by Tools/scripts/generate_stdlib_module_names.py script.
+static int list_frozen(void)
+{
+    const struct _frozen *p;
+    for (p = PyImport_FrozenModules; ; p++) {
+        if (p->name == NULL)
+            break;
+        printf("%s\n", p->name);
+    }
+    return 0;
+}
+
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -1635,7 +1792,9 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_init_warnoptions", test_init_warnoptions},
+    {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
+    {"test_get_argc_argv", test_get_argc_argv},
 
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
@@ -1645,6 +1804,10 @@ static struct TestCase TestCases[] = {
     {"test_audit_run_interactivehook", test_audit_run_interactivehook},
     {"test_audit_run_startup", test_audit_run_startup},
     {"test_audit_run_stdin", test_audit_run_stdin},
+
+    {"test_unicode_id_init", test_unicode_id_init},
+
+    {"list_frozen", list_frozen},
     {NULL, NULL}
 };
 

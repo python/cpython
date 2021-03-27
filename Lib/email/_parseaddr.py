@@ -65,7 +65,7 @@ def _parsedate_tz(data):
 
     """
     if not data:
-        return
+        return None
     data = data.split()
     # The FWS after the comma after the day-of-week is optional, so search and
     # adjust for this.

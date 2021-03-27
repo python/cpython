@@ -1,10 +1,11 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
-                          cpython_only, start_threads,
-                          temp_dir, TESTFN, unlink,
-                          import_module)
+                          cpython_only)
+from test.support.import_helper import import_module
+from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
+from test.support import threading_helper
 
 import gc
 import sys
@@ -415,7 +416,7 @@ class GCTests(unittest.TestCase):
             for i in range(N_THREADS):
                 t = threading.Thread(target=run_thread)
                 threads.append(t)
-            with start_threads(threads, lambda: exit.append(1)):
+            with threading_helper.start_threads(threads, lambda: exit.append(1)):
                 time.sleep(1.0)
         finally:
             sys.setswitchinterval(old_switchinterval)
@@ -581,9 +582,9 @@ class GCTests(unittest.TestCase):
         self.assertTrue(gc.is_tracked(UserInt()))
         self.assertTrue(gc.is_tracked([]))
         self.assertTrue(gc.is_tracked(set()))
-        self.assertFalse(gc.is_tracked(UserClassSlots()))
-        self.assertFalse(gc.is_tracked(UserFloatSlots()))
-        self.assertFalse(gc.is_tracked(UserIntSlots()))
+        self.assertTrue(gc.is_tracked(UserClassSlots()))
+        self.assertTrue(gc.is_tracked(UserFloatSlots()))
+        self.assertTrue(gc.is_tracked(UserIntSlots()))
 
     def test_is_finalized(self):
         # Objects not tracked by the always gc return false

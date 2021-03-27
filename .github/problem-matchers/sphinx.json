@@ -1,0 +1,40 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "sphinx-problem-matcher",
+            "pattern": [
+                {
+                    "regexp": "^(.*):(\\d+):\\s+(\\w*):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            ]
+        },
+        {
+            "owner": "sphinx-problem-matcher-loose",
+            "pattern": [
+                {
+                    "_comment": "A bit of a looser pattern, doesn't look for line numbers, just looks for file names relying on them to start with / and end with .rst",
+                    "regexp": "(\/.*\\.rst):\\s+(\\w*):\\s+(.*)$",
+                    "file": 1,
+                    "severity": 2,
+                    "message": 3
+                }
+            ]
+        },
+        {
+            "owner": "sphinx-problem-matcher-loose-no-severity",
+            "pattern": [
+                {
+                    "_comment": "Looks for file names ending with .rst and line numbers but without severity",
+                    "regexp": "^(.*\\.rst):(\\d+):(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            ]           
+        }
+    ]
+}

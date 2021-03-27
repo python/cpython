@@ -13,7 +13,7 @@ from distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
      CompileError, LibError, LinkError
 from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options
+     CCompiler, gen_lib_options
 from distutils import log
 
 _can_read_reg = False
