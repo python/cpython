@@ -432,7 +432,7 @@ The :mod:`locale` module defines the following exception and functions:
     Converts a normalized number string into a formatted string following the
     :const:`LC_NUMERIC` settings.
 
-    .. versionadded:: 3.9
+    .. versionadded:: 3.10
 
 
 .. function:: atof(string)
