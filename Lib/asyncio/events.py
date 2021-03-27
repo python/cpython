@@ -19,7 +19,6 @@ import sys
 import threading
 
 from . import format_helpers
-from . import exceptions
 
 
 class Handle:
@@ -284,7 +283,7 @@ class AbstractEventLoop:
     def call_soon_threadsafe(self, callback, *args):
         raise NotImplementedError
 
-    async def run_in_executor(self, executor, func, *args):
+    def run_in_executor(self, executor, func, *args):
         raise NotImplementedError
 
     def set_default_executor(self, executor):
@@ -397,7 +396,7 @@ class AbstractEventLoop:
         The return value is a Server object, which can be used to stop
         the service.
 
-        path is a str, representing a file systsem path to bind the
+        path is a str, representing a file system path to bind the
         server socket to.
 
         sock can optionally be specified in order to use a preexisting
@@ -416,6 +415,20 @@ class AbstractEventLoop:
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
         to make the server to start accepting connections.
+        """
+        raise NotImplementedError
+
+    async def connect_accepted_socket(
+            self, protocol_factory, sock,
+            *, ssl=None,
+            ssl_handshake_timeout=None):
+        """Handle an accepted connection.
+
+        This is used by servers that accept connections outside of
+        asyncio, but use asyncio to handle connections.
+
+        This method is a coroutine.  When completed, the coroutine
+        returns a (transport, protocol) pair.
         """
         raise NotImplementedError
 

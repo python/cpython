@@ -50,14 +50,9 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!_PyArg_CheckPositional("_tuplegetter", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
-    if (PyFloat_Check(PyTuple_GET_ITEM(args, 0))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(PyTuple_GET_ITEM(args, 0));
+        PyObject *iobj = _PyNumber_Index(PyTuple_GET_ITEM(args, 0));
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -73,4 +68,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9d2bfcc9df5faf35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=947186d369f50f1e input=a9049054013a1b77]*/

@@ -28,14 +28,13 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
-           'excepthook', 'ExceptHookArgs']
+           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
-_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -66,6 +65,10 @@ def setprofile(func):
     global _profile_hook
     _profile_hook = func
 
+def getprofile():
+    """Get the profiler function as set by threading.setprofile()."""
+    return _profile_hook
+
 def settrace(func):
     """Set a trace function for all threads started from the threading module.
 
@@ -75,6 +78,10 @@ def settrace(func):
     """
     global _trace_hook
     _trace_hook = func
+
+def gettrace():
+    """Get the trace function as set by threading.settrace()."""
+    return _trace_hook
 
 # Synchronization classes
 
@@ -122,6 +129,11 @@ class _RLock:
             self._count,
             hex(id(self))
         )
+
+    def _at_fork_reinit(self):
+        self._block._at_fork_reinit()
+        self._owner = None
+        self._count = 0
 
     def acquire(self, blocking=True, timeout=-1):
         """Acquire a lock, blocking or non-blocking.
@@ -244,6 +256,10 @@ class Condition:
         except AttributeError:
             pass
         self._waiters = _deque()
+
+    def _at_fork_reinit(self):
+        self._lock._at_fork_reinit()
+        self._waiters.clear()
 
     def __enter__(self):
         return self._lock.__enter__()
@@ -514,9 +530,9 @@ class Event:
         self._cond = Condition(Lock())
         self._flag = False
 
-    def _reset_internal_locks(self):
-        # private!  called by Thread._reset_internal_locks by _after_fork()
-        self._cond.__init__(Lock())
+    def _at_fork_reinit(self):
+        # Private method called by Thread._reset_internal_locks()
+        self._cond._at_fork_reinit()
 
     def is_set(self):
         """Return true if and only if the internal flag is true."""
@@ -737,10 +753,9 @@ class BrokenBarrierError(RuntimeError):
 
 
 # Helper to generate new thread names
-_counter = _count().__next__
-_counter() # Consume 0 so first non-main thread has id 1.
-def _newname(template="Thread-%d"):
-    return template % _counter()
+_counter = _count(1).__next__
+def _newname(name_template):
+    return name_template % _counter()
 
 # Active thread administration
 _active_limbo_lock = _allocate_lock()
@@ -792,8 +807,19 @@ class Thread:
         assert group is None, "group argument must be None for now"
         if kwargs is None:
             kwargs = {}
+        if name:
+            name = str(name)
+        else:
+            name = _newname("Thread-%d")
+            if target is not None:
+                try:
+                    target_name = target.__name__
+                    name += f" ({target_name})"
+                except AttributeError:
+                    pass
+
         self._target = target
-        self._name = str(name or _newname())
+        self._name = name
         self._args = args
         self._kwargs = kwargs
         if daemon is not None:
@@ -816,9 +842,14 @@ class Thread:
     def _reset_internal_locks(self, is_alive):
         # private!  Called by _after_fork() to reset our internal locks as
         # they may be in an invalid state leading to a deadlock or crash.
-        self._started._reset_internal_locks()
+        self._started._at_fork_reinit()
         if is_alive:
-            self._set_tstate_lock()
+            # bpo-42350: If the fork happens when the thread is already stopped
+            # (ex: after threading._shutdown() has been called), _tstate_lock
+            # is None. Do nothing in this case.
+            if self._tstate_lock is not None:
+                self._tstate_lock._at_fork_reinit()
+                self._tstate_lock.acquire()
         else:
             # The thread isn't alive after fork: it doesn't have a tstate
             # anymore.
@@ -855,10 +886,6 @@ class Thread:
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
 
-        if self.daemon and not _is_main_interpreter():
-            raise RuntimeError("daemon thread are not supported "
-                               "in subinterpreters")
-
         with _active_limbo_lock:
             _limbo[self] = self
         try:
@@ -879,7 +906,7 @@ class Thread:
 
         """
         try:
-            if self._target:
+            if self._target is not None:
                 self._target(*self._args, **self._kwargs)
         finally:
             # Avoid a refcycle if the thread is running a function with
@@ -1175,6 +1202,10 @@ except ImportError:
         _print_exception(args.exc_type, args.exc_value, args.exc_traceback,
                          file=stderr)
         stderr.flush()
+
+
+# Original value of threading.excepthook
+__excepthook__ = excepthook
 
 
 def _make_invoke_excepthook():

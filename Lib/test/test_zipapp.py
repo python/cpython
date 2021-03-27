@@ -101,7 +101,7 @@ class ZipAppTest(unittest.TestCase):
         expected_target = self.tmpdir / 'source.pyz'
         self.assertTrue(expected_target.is_file())
 
-    @requires_zlib
+    @requires_zlib()
     def test_create_archive_with_compression(self):
         # Test packing a directory into a compressed archive.
         source = self.tmpdir / 'source'

@@ -16,7 +16,6 @@ import importlib.util
 import io
 import types
 import os
-from pkgutil import read_code, get_importer
 
 __all__ = [
     "run_module", "run_path",
@@ -133,6 +132,9 @@ def _get_module_details(mod_name, error=ImportError):
         # importlib, where the latter raises other errors for cases where
         # pkgutil previously raised ImportError
         msg = "Error while finding module specification for {!r} ({}: {})"
+        if mod_name.endswith(".py"):
+            msg += (f". Try using '{mod_name[:-3]}' instead of "
+                    f"'{mod_name}' as the module name.")
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
         raise error("No module named %s" % mod_name)
@@ -230,6 +232,7 @@ def _get_main_module_details(error=ImportError):
 
 def _get_code_from_file(run_name, fname):
     # Check for a compiled file first
+    from pkgutil import read_code
     decoded_path = os.path.abspath(os.fsdecode(fname))
     with io.open_code(decoded_path) as f:
         code = read_code(f)
@@ -252,6 +255,7 @@ def run_path(path_name, init_globals=None, run_name=None):
     if run_name is None:
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
+    from pkgutil import get_importer
     importer = get_importer(path_name)
     # Trying to avoid importing imp so as to not consume the deprecation warning.
     is_NullImporter = False

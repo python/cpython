@@ -63,8 +63,6 @@ def byte(i):
 
 class TestLiterals(unittest.TestCase):
 
-    from test.support import check_syntax_warning
-
     def setUp(self):
         self.save_path = sys.path[:]
         self.tmpdir = tempfile.mkdtemp()
@@ -129,6 +127,7 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(w, [])
         self.assertEqual(exc.filename, '<string>')
         self.assertEqual(exc.lineno, 1)
+        self.assertEqual(exc.offset, 1)
 
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')

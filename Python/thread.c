@@ -6,7 +6,7 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_pystate.h"   // _PyInterpreterState_GET()
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -22,8 +22,6 @@
 #endif
 
 #include <stdlib.h>
-
-#include "pythread.h"
 
 #ifndef _POSIX_THREADS
 
@@ -92,7 +90,7 @@ PyThread_init_thread(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return _PyInterpreterState_GET_UNSAFE()->pythread_stacksize;
+    return _PyInterpreterState_GET()->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro

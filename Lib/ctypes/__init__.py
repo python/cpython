@@ -1,6 +1,7 @@
 """create and manipulate C data types in Python"""
 
 import os as _os, sys as _sys
+import types as _types
 
 __version__ = "1.1.0"
 
@@ -449,6 +450,8 @@ class LibraryLoader(object):
 
     def LoadLibrary(self, name):
         return self._dlltype(name)
+
+    __class_getitem__ = classmethod(_types.GenericAlias)
 
 cdll = LibraryLoader(CDLL)
 pydll = LibraryLoader(PyDLL)

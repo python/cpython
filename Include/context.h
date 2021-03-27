@@ -73,9 +73,6 @@ PyAPI_FUNC(int) PyContextVar_Reset(PyObject *var, PyObject *token);
 PyAPI_FUNC(PyObject *) _PyContext_NewHamtForTests(void);
 
 
-PyAPI_FUNC(int) PyContext_ClearFreeList(void);
-
-
 #endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus

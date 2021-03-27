@@ -8,9 +8,13 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import os
+import re
 import types
 import decimal
 import unittest
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_failure
 
 a_global = 'global variable'
 
@@ -328,6 +332,59 @@ non-important content
         self.assertEqual(binop.left.col_offset, 4)
         self.assertEqual(binop.right.col_offset, 7)
 
+    def test_ast_line_numbers_with_parentheses(self):
+        expr = """
+x = (
+    f" {test(t)}"
+)"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # check the test(t) location
+        call = t.body[0].value.values[1].value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 3)
+        self.assertEqual(call.end_lineno, 3)
+        self.assertEqual(call.col_offset, 8)
+        self.assertEqual(call.end_col_offset, 15)
+
+        expr = """
+x = (
+        'PERL_MM_OPT', (
+            f'wat'
+            f'some_string={f(x)} '
+            f'wat'
+        ),
+)
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # check the fstring
+        fstring = t.body[0].value.elts[1]
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 3)
+        wat1, middle, wat2 = fstring.values
+        # check the first wat
+        self.assertEqual(type(wat1), ast.Constant)
+        self.assertEqual(wat1.lineno, 4)
+        self.assertEqual(wat1.end_lineno, 6)
+        self.assertEqual(wat1.col_offset, 12)
+        self.assertEqual(wat1.end_col_offset, 18)
+        # check the call
+        call = middle.value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 5)
+        self.assertEqual(call.end_lineno, 5)
+        self.assertEqual(call.col_offset, 27)
+        self.assertEqual(call.end_col_offset, 31)
+        # check the second wat
+        self.assertEqual(type(wat2), ast.Constant)
+        self.assertEqual(wat2.lineno, 4)
+        self.assertEqual(wat2.end_lineno, 6)
+        self.assertEqual(wat2.col_offset, 12)
+        self.assertEqual(wat2.end_col_offset, 18)
+
     def test_docstring(self):
         def f():
             f'''Not a docstring'''
@@ -521,7 +578,7 @@ non-important content
                              # This looks like a nested format spec.
                              ])
 
-        self.assertAllRaise(SyntaxError, "invalid syntax",
+        self.assertAllRaise(SyntaxError, "f-string: invalid syntax",
                             [# Invalid syntax inside a nested spec.
                              "f'{4:{/5}}'",
                              ])
@@ -583,7 +640,7 @@ non-important content
                              ])
 
         # Different error message is raised for other whitespace characters.
-        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+        self.assertAllRaise(SyntaxError, r"invalid non-printable character U\+00A0",
                             ["f'''{\xa0}'''",
                              "\xa0",
                              ])
@@ -595,7 +652,7 @@ non-important content
         #  are added around it. But we shouldn't go from an invalid
         #  expression to a valid one. The added parens are just
         #  supposed to allow whitespace (including newlines).
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
                             ["f'{,}'",
                              "f'{,}'",  # this is (,), which is an error
                              ])
@@ -604,9 +661,12 @@ non-important content
                             ["f'{3)+(4}'",
                              ])
 
-        self.assertAllRaise(SyntaxError, 'EOL while scanning string literal',
+        self.assertAllRaise(SyntaxError, 'unterminated string literal',
                             ["f'{\n}'",
                              ])
+    def test_newlines_before_syntax_error(self):
+        self.assertAllRaise(SyntaxError, "invalid syntax",
+                ["f'{.}'", "\nf'{.}'", "\n\nf'{.}'"])
 
     def test_backslashes_in_string_part(self):
         self.assertEqual(f'\t', '\t')
@@ -713,7 +773,7 @@ non-important content
 
         # lambda doesn't work without parens, because the colon
         #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        self.assertAllRaise(SyntaxError, 'f-string: invalid syntax',
                             ["f'{lambda x:x}'",
                              ])
 
@@ -722,9 +782,11 @@ non-important content
         #  a function into a generator
         def fn(y):
             f'y:{yield y*2}'
+            f'{yield}'
 
         g = fn(4)
         self.assertEqual(next(g), 8)
+        self.assertEqual(next(g), None)
 
     def test_yield_send(self):
         def fn(x):
@@ -841,8 +903,7 @@ non-important content
         self.assertEqual(f'{f"{y}"*3}', '555')
 
     def test_invalid_string_prefixes(self):
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
-                            ["fu''",
+        single_quote_cases = ["fu''",
                              "uf''",
                              "Fu''",
                              "fU''",
@@ -863,8 +924,10 @@ non-important content
                              "bf''",
                              "bF''",
                              "Bf''",
-                             "BF''",
-                             ])
+                             "BF''",]
+        double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
+        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+                            single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
         self.assertEqual(f'{ 3}', '3')
@@ -1043,6 +1106,16 @@ non-important content
                              r"f'{1000:j}'",
                             ])
 
+    def test_filename_in_syntaxerror(self):
+        # see issue 38964
+        with temp_cwd() as cwd:
+            file_path = os.path.join(cwd, 't.py')
+            with open(file_path, 'w') as f:
+                f.write('f"{a b}"') # This generates a SyntaxError
+            _, _, stderr = assert_python_failure(file_path,
+                                                 PYTHONIOENCODING='ascii')
+        self.assertIn(file_path.encode('ascii', 'backslashreplace'), stderr)
+
     def test_loop(self):
         for i in range(1000):
             self.assertEqual(f'i:{i}', 'i:' + str(i))
@@ -1178,6 +1251,38 @@ non-important content
         self.assertEqual(f'{(x:=10)}', '10')
         self.assertEqual(x, 10)
 
+    def test_invalid_syntax_error_message(self):
+        with self.assertRaisesRegex(SyntaxError, "f-string: invalid syntax"):
+            compile("f'{a $ b}'", "?", "exec")
+
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify ',' with ','.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,,}'
+
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:__}'
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,_}'
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:_,}'
+
+    def test_syntax_error_for_starred_expressions(self):
+        error_msg = re.escape("can't use starred expression here")
+        with self.assertRaisesRegex(SyntaxError, error_msg):
+            compile("f'{*a}'", "?", "exec")
+
+        error_msg = re.escape("can't use double starred expression here")
+        with self.assertRaisesRegex(SyntaxError, error_msg):
+            compile("f'{**a}'", "?", "exec")
 
 if __name__ == '__main__':
     unittest.main()

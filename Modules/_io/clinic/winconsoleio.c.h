@@ -86,11 +86,6 @@ _io__WindowsConsoleIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         }
     }
     if (fastargs[2]) {
-        if (PyFloat_Check(fastargs[2])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         closefd = _PyLong_AsInt(fastargs[2]);
         if (closefd == -1 && PyErr_Occurred()) {
             goto exit;
@@ -386,4 +381,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=f5b8860a658a001a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a28b3120fa53b256 input=a9049054013a1b77]*/

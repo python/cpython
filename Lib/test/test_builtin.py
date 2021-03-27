@@ -6,6 +6,7 @@ import builtins
 import collections
 import decimal
 import fractions
+import gc
 import io
 import locale
 import os
@@ -25,10 +26,11 @@ from itertools import product
 from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType
 from operator import neg
-from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
-    maybe_get_event_loop_policy)
+from test import support
+from test.support import (swap_attr, maybe_get_event_loop_policy)
+from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.warnings_helper import check_warnings
 from unittest.mock import MagicMock, patch
 try:
     import pty, signal
@@ -369,6 +371,27 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await_no_coro(self):
+        """Make sure top level non-await codes get the correct coroutine flags"""
+        modes = ('single', 'exec')
+        code_samples = [
+            '''def f():pass\n''',
+            '''[x for x in l]''',
+            '''{x for x in l}''',
+            '''(x for x in l)''',
+            '''{x:x for x in l}''',
+        ]
+        for mode, code_sample in product(modes, code_samples):
+            source = dedent(code_sample)
+            co = compile(source,
+                            '?',
+                            mode,
+                            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+            self.assertNotEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                msg=f"source={source} mode={mode}")
+
 
     def test_compile_top_level_await(self):
         """Test whether code some top level await can be compiled.
@@ -1520,6 +1543,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, vars, 42)
         self.assertEqual(vars(self.C_get_vars()), {'a':2})
 
+    def iter_error(self, iterable, error):
+        """Collect `iterable` into a list, catching an expected `error`."""
+        items = []
+        with self.assertRaises(error):
+            for item in iterable:
+                items.append(item)
+        return items
+
     def test_zip(self):
         a = (1, 2, 3)
         b = (4, 5, 6)
@@ -1572,6 +1603,24 @@ class BuiltinTest(unittest.TestCase):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
 
+    def test_zip_pickle_strict(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b, strict=True)
+            self.check_iter_pickle(z1, t, proto)
+
+    def test_zip_pickle_strict_fail(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6, 7)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z1 = zip(a, b, strict=True)
+            z2 = pickle.loads(pickle.dumps(z1, proto))
+            self.assertEqual(self.iter_error(z1, ValueError), t)
+            self.assertEqual(self.iter_error(z2, ValueError), t)
+
     def test_zip_bad_iterable(self):
         exception = TypeError()
 
@@ -1583,6 +1632,100 @@ class BuiltinTest(unittest.TestCase):
             zip(BadIterable())
 
         self.assertIs(cm.exception, exception)
+
+    def test_zip_strict(self):
+        self.assertEqual(tuple(zip((1, 2, 3), 'abc', strict=True)),
+                         ((1, 'a'), (2, 'b'), (3, 'c')))
+        self.assertRaises(ValueError, tuple,
+                          zip((1, 2, 3, 4), 'abc', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          zip((1, 2), 'abc', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          zip((1, 2), (1, 2), 'abc', strict=True))
+
+    def test_zip_strict_iterators(self):
+        x = iter(range(5))
+        y = [0]
+        z = iter(range(5))
+        self.assertRaises(ValueError, list,
+                          (zip(x, y, z, strict=True)))
+        self.assertEqual(next(x), 2)
+        self.assertEqual(next(z), 1)
+
+    def test_zip_strict_error_handling(self):
+
+        class Error(Exception):
+            pass
+
+        class Iter:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise Error
+                return self.size
+
+        l1 = self.iter_error(zip("AB", Iter(1), strict=True), Error)
+        self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(zip("AB", Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(zip("AB", Iter(2), "ABC", strict=True), Error)
+        self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(zip("AB", Iter(3), strict=True), ValueError)
+        self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(zip(Iter(1), "AB", strict=True), Error)
+        self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(zip(Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(zip(Iter(2), "ABC", strict=True), Error)
+        self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
+        self.assertEqual(l8, [(2, "A"), (1, "B")])
+
+    def test_zip_strict_error_handling_stopiteration(self):
+
+        class Iter:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise StopIteration
+                return self.size
+
+        l1 = self.iter_error(zip("AB", Iter(1), strict=True), ValueError)
+        self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(zip("AB", Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(zip("AB", Iter(2), "ABC", strict=True), ValueError)
+        self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(zip("AB", Iter(3), strict=True), ValueError)
+        self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(zip(Iter(1), "AB", strict=True), ValueError)
+        self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(zip(Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(zip(Iter(2), "ABC", strict=True), ValueError)
+        self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(zip(Iter(3), "AB", strict=True), ValueError)
+        self.assertEqual(l8, [(2, "A"), (1, "B")])
+
+    @support.cpython_only
+    def test_zip_result_gc(self):
+        # bpo-42536: zip's tuple-reuse speed trick breaks the GC's assumptions
+        # about what can be untracked. Make sure we re-track result tuples
+        # whenever we reuse them.
+        it = zip([[]])
+        gc.collect()
+        # That GC collection probably untracked the recycled internal result
+        # tuple, which is initialized to (None,). Make sure it's re-tracked when
+        # it's mutated and returned from __next__:
+        self.assertTrue(gc.is_tracked(next(it)))
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
@@ -1836,7 +1979,21 @@ class PtyTests(unittest.TestCase):
     """Tests that use a pseudo terminal to guarantee stdin and stdout are
     terminals in the test environment"""
 
+    @staticmethod
+    def handle_sighup(signum, frame):
+        # bpo-40140: if the process is the session leader, os.close(fd)
+        # of "pid, fd = pty.fork()" can raise SIGHUP signal:
+        # just ignore the signal.
+        pass
+
     def run_child(self, child, terminal_input):
+        old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
+        try:
+            return self._run_child(child, terminal_input)
+        finally:
+            signal.signal(signal.SIGHUP, old_sighup)
+
+    def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
             pid, fd = pty.fork()
@@ -1845,6 +2002,7 @@ class PtyTests(unittest.TestCase):
             os.close(w)
             self.skipTest("pty.fork() raised {}".format(e))
             raise
+
         if pid == 0:
             # Child
             try:
@@ -1858,9 +2016,11 @@ class PtyTests(unittest.TestCase):
             finally:
                 # We don't want to return to unittest...
                 os._exit(0)
+
         # Parent
         os.close(w)
         os.write(fd, terminal_input)
+
         # Get results from the pipe
         with open(r, "r") as rpipe:
             lines = []
@@ -1870,6 +2030,7 @@ class PtyTests(unittest.TestCase):
                     # The other end was closed => the child exited
                     break
                 lines.append(line)
+
         # Check the result was got and corresponds to the user's terminal input
         if len(lines) != 2:
             # Something went wrong, try to get at stderr
@@ -1887,10 +2048,12 @@ class PtyTests(unittest.TestCase):
             child_output = child_output.decode("ascii", "ignore")
             self.fail("got %d lines in pipe but expected 2, child output was:\n%s"
                       % (len(lines), child_output))
+
+        # bpo-40155: Close the PTY before waiting for the child process
+        # completion, otherwise the child process hangs on AIX.
         os.close(fd)
 
-        # Wait until the child process completes
-        os.waitpid(pid, 0)
+        support.wait_process(pid, exitcode=0)
 
         return lines
 

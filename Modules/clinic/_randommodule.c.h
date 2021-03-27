@@ -100,11 +100,6 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int k;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     k = _PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
@@ -114,4 +109,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7feb0c9c8d1b627 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cc8a23b2757dc6ba input=a9049054013a1b77]*/

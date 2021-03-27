@@ -7,7 +7,6 @@ index).
 
 import os
 import io
-import platform
 import hashlib
 from base64 import standard_b64encode
 from urllib.request import urlopen, Request, HTTPError
@@ -16,6 +15,16 @@ from distutils.errors import DistutilsError, DistutilsOptionError
 from distutils.core import PyPIRCCommand
 from distutils.spawn import spawn
 from distutils import log
+
+
+# PyPI Warehouse supports MD5, SHA256, and Blake2 (blake2-256)
+# https://bugs.python.org/issue40698
+_FILE_CONTENT_DIGESTS = {
+    "md5_digest": getattr(hashlib, "md5", None),
+    "sha256_digest": getattr(hashlib, "sha256", None),
+    "blake2_256_digest": getattr(hashlib, "blake2b", None),
+}
+
 
 class upload(PyPIRCCommand):
 
@@ -88,6 +97,7 @@ class upload(PyPIRCCommand):
             content = f.read()
         finally:
             f.close()
+
         meta = self.distribution.metadata
         data = {
             # action
@@ -102,7 +112,6 @@ class upload(PyPIRCCommand):
             'content': (os.path.basename(filename),content),
             'filetype': command,
             'pyversion': pyversion,
-            'md5_digest': hashlib.md5(content).hexdigest(),
 
             # additional meta-data
             'metadata_version': '1.0',
@@ -123,6 +132,16 @@ class upload(PyPIRCCommand):
             }
 
         data['comment'] = ''
+
+        # file content digests
+        for digest_name, digest_cons in _FILE_CONTENT_DIGESTS.items():
+            if digest_cons is None:
+                continue
+            try:
+                data[digest_name] = digest_cons(content).hexdigest()
+            except ValueError:
+                # hash digest not available or blocked by security policy
+                pass
 
         if self.sign:
             with open(filename + ".asc", "rb") as f:
