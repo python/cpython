@@ -874,6 +874,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     if (tok->fp_interactive &&
         tok_concatenate_interactive_new_line(tok, newtok) == -1) {
+        PyMem_Free(newtok);
         return 0;
     }
     if (tok->nextprompt != NULL) {
