@@ -891,6 +891,22 @@ The following functions are available.
 
     .. versionadded:: 3.9
 
+.. function:: as_file(traversable)
+
+    Given a :class:`importlib.resources.abc.Traversable` object representing
+    a file, typically from :func:`importlib.resources.files`, return
+    a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary file created when the
+    resource was extracted from e.g. a zip file.
+
+    Use ``as_file`` when the Traversable methods
+    (``read_text``, etc) are insufficient and an actual file on
+    the file system is required.
+
+    .. versionadded:: 3.9
+
 .. function:: open_binary(package, resource)
 
     Open for binary reading the *resource* within *package*.
