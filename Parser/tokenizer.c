@@ -394,6 +394,7 @@ tok_readline_recode(struct tok_state *tok) {
     if (line == NULL) {
         line = PyObject_CallNoArgs(tok->decoding_readline);
         if (line == NULL) {
+            error_ret(tok);
             goto error;
         }
     }
@@ -402,23 +403,23 @@ tok_readline_recode(struct tok_state *tok) {
     }
     buf = PyUnicode_AsUTF8AndSize(line, &buflen);
     if (buf == NULL) {
+        error_ret(tok);
         goto error;
     }
     if (!tok_reserve_buf(tok, buflen + 1)) {
-        return 0;
+        goto error;
     }
     memcpy(tok->inp, buf, buflen);
     tok->inp += buflen;
     *tok->inp = '\0';
-    Py_DECREF(line);
     if (tok->fp_interactive &&
         tok_concatenate_interactive_new_line(tok, buf) == -1) {
-        return 0;
+        goto error;
     }
+    Py_DECREF(line);
     return 1;
 error:
     Py_XDECREF(line);
-    error_ret(tok);
     return 0;
 }
 
