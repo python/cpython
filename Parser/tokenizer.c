@@ -942,8 +942,7 @@ tok_underflow_file(struct tok_state *tok) {
             return 0;
         }
     }
-    else
-    {
+    else {
         /* We want a 'raw' read. */
         if (!tok_readline_raw(tok)) {
             return 0;
