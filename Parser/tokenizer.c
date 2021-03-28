@@ -902,9 +902,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     else {
         tok->lineno++;
-        if (tok->buf != NULL) {
-            PyMem_Free(tok->buf);
-        }
+        PyMem_Free(tok->buf);
         tok->buf = newtok;
         tok->cur = tok->buf;
         tok->line_start = tok->buf;
