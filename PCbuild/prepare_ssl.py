@@ -135,12 +135,12 @@ def copy_includes(makefile, suffix):
         os.makedirs(dir)
     except OSError:
         pass
-    copy_if_different = r'$(PERL) $(SRC_D)\util\copy-if-different.pl'
     with open(makefile) as fin:
+        copy_if_different = r'$(PERL) $(SRC_D)\util\copy-if-different.pl'
         for line in fin:
             if copy_if_different in line:
                 perl, script, src, dest = line.split()
-                if not '$(INCO_D)' in dest:
+                if '$(INCO_D)' not in dest:
                     continue
                 # We're in the root of the source tree
                 src = src.replace('$(SRC_D)', '.').strip('"')
