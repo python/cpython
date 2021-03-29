@@ -6,7 +6,7 @@ on:
 jobs:
   labels:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'NixOS'
+    if: github.repository_owner == 'kaocher82'
     steps:
     - uses: actions/labeler@v3
       with:
