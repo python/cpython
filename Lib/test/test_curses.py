@@ -1151,6 +1151,7 @@ class TestCurses(unittest.TestCase):
 
 class MiscTests(unittest.TestCase):
 
+    @requires_curses_func('update_lines_cols')
     def test_update_lines_cols(self):
         curses.update_lines_cols()
         lines, cols = curses.LINES, curses.COLS
