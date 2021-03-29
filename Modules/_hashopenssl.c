@@ -865,7 +865,7 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
 /*[clinic end generated code: output=ddd5053f92dffe90 input=c24554d0337be1b0]*/
 {
     Py_buffer view = { 0 };
-    PyObject *ret_obj;
+    PyObject *ret_obj = NULL;
     char *name;
     const EVP_MD *digest = NULL;
 
@@ -879,13 +879,14 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
 
     digest = py_digest_by_name(name);
     if (digest == NULL) {
-        return NULL;
+        goto exit;
     }
 
     ret_obj = EVPnew(module, digest,
                      (unsigned char*)view.buf, view.len,
                      usedforsecurity);
 
+exit:
     if (data_obj)
         PyBuffer_Release(&view);
     return ret_obj;
