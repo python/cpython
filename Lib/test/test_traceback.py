@@ -19,6 +19,10 @@ test_code = namedtuple('code', ['co_filename', 'co_name'])
 test_frame = namedtuple('frame', ['f_code', 'f_globals', 'f_locals'])
 test_tb = namedtuple('tb', ['tb_frame', 'tb_lineno', 'tb_next'])
 
+class Unrepresentable:
+    def __repr__(self) -> str:
+        raise Exception("Unrepresentable")
+
 
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
@@ -995,9 +999,9 @@ class TestStack(unittest.TestCase):
     def test_locals(self):
         linecache.updatecache('/foo.py', globals())
         c = test_code('/foo.py', 'method')
-        f = test_frame(c, globals(), {'something': 1})
+        f = test_frame(c, globals(), {'something': 1, "unrepresentable": Unrepresentable()})
         s = traceback.StackSummary.extract(iter([(f, 6)]), capture_locals=True)
-        self.assertEqual(s[0].locals, {'something': '1'})
+        self.assertEqual(s[0].locals, {'something': '1', "unrepresentable": "[Unrepresentable: Unrepresentable]"})
 
     def test_no_locals(self):
         linecache.updatecache('/foo.py', globals())

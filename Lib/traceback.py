@@ -223,6 +223,11 @@ def clear_frames(tb):
             pass
         tb = tb.tb_next
 
+def _try_repr(x):
+    try:
+        return repr(x)
+    except Exception as exc:
+        return "[Unrepresentable: {}]".format(exc)
 
 class FrameSummary:
     """A single frame from a traceback.
@@ -257,7 +262,8 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+        # TODO: replace repr with try_repr
+        self.locals = {k: _try_repr(v) for k, v in locals.items()} if locals else None
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
