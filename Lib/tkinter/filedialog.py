@@ -60,6 +60,7 @@ class FileDialog:
         self.directory = None
 
         self.top = Toplevel(master)
+        self.top.wm_attributes('-type', 'dialog')
         self.top.title(title)
         self.top.iconname(title)
 
