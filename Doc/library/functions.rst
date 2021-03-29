@@ -509,7 +509,7 @@ are always available.  They are listed here in alphabetical order.
 
    The evaluation is performed in the environment specified by the arguments
    *globals* and *locals*.  If both are omitted, by default it uses the
-   environment where :func`eval` is called.  If only the *globals* argument is
+   environment where :func:`eval` is called.  If only the *globals* argument is
    given, the local namespace defaults to *globals*.
 
    Before evaluation, the special key ``"__builtins__"`` is searched for in the
@@ -584,7 +584,7 @@ are always available.  They are listed here in alphabetical order.
 
    The execution is performed in the environment specified by the arguments
    *globals* and *locals*.  If both are omitted, by default it uses the
-   environment where :func`exec` is called.  If only the *globals* argument is
+   environment where :func:`exec` is called.  If only the *globals* argument is
    given, the local namespace defaults to *globals*.
 
    Before execution, the special key ``"__builtins__"`` is searched for in the
