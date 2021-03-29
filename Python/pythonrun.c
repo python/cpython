@@ -932,7 +932,9 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         seen = PySet_New(NULL);
         if (seen == NULL)
             PyErr_Clear();
+        Py_INCREF(f);
         print_exception_recursive(f, value, seen);
+        Py_DECREF(f);
         Py_XDECREF(seen);
     }
 }
