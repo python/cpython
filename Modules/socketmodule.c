@@ -8156,8 +8156,11 @@ PyInit__socket(void)
 #ifdef  TCP_CORK
     PyModule_AddIntMacro(m, TCP_CORK);
 #endif
-#ifdef  TCP_KEEPIDLE
+#if defined(TCP_KEEPIDLE)
     PyModule_AddIntMacro(m, TCP_KEEPIDLE);
+#elif defined(__APPLE__) && defined(TCP_KEEPALIVE)
+    /* TCP_KEEPALIVE is equivalent to TCP_KEEPIDLE on OSX. */
+    PyModule_AddIntConstant(m, "TCP_KEEPIDLE", TCP_KEEPALIVE);
 #endif
 #ifdef  TCP_KEEPINTVL
     PyModule_AddIntMacro(m, TCP_KEEPINTVL);
