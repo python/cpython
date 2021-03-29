@@ -2069,6 +2069,47 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(INT_ADD): {
+            PyObject *left = TOP();
+            if (PyLong_CheckExact(left)) {
+                PyLongObject *ll = (PyLongObject *)left;
+                Py_ssize_t lsum;
+                switch (ll->ob_base.ob_size) {
+                    case -1:
+                        lsum = oparg - ll->ob_digit[0];
+                        break;
+                    case 0:
+                        lsum = oparg;
+                        break;
+                    case 1:
+                        lsum = oparg + ll->ob_digit[0];
+                        break;
+                    default:
+                        goto not_a_medium_int;
+                }
+                Py_DECREF(left);
+                PyObject *sum = PyLong_FromLongLong(lsum);
+                SET_TOP(sum);
+                if (sum == NULL) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+          not_a_medium_int:
+            PyObject *right = PyLong_FromLongLong(oparg);
+            if (right == NULL) {
+                goto error;
+            }
+            // Don't optimize unicode here since right is a long
+            PyObject *sum = PyNumber_Add(left, right);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            SET_TOP(sum);
+            if (sum == NULL)
+                goto error;
+            DISPATCH();
+        }
+
         case TARGET(BINARY_ADD): {
             PyObject *right = POP();
             PyObject *left = TOP();

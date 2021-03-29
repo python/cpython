@@ -978,6 +978,10 @@ stack_effect(int opcode, int oparg, int jump)
         case INPLACE_OR:
             return -1;
 
+        /* super-instructions */
+        case INT_ADD:
+            return 0;
+
         case SETUP_WITH:
             /* 1 in the normal flow.
              * Restore the stack position and push 6 values before jumping to
@@ -6843,6 +6847,7 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
         }
         switch (inst->i_opcode) {
             /* Remove LOAD_CONST const; conditional jump */
+            /* Also optimize LOAD_CONST(small_int) + BINARY_ADD */
             case LOAD_CONST:
             {
                 PyObject* cnt;
@@ -6881,6 +6886,22 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                         else {
                             inst->i_opcode = NOP;
                             bb->b_instr[i+1].i_opcode = NOP;
+                        }
+                        break;
+                    case BINARY_ADD:
+                        cnt = PyList_GET_ITEM(consts, oparg);
+                        if (PyLong_CheckExact(cnt)) {
+                            int ovf = 0;
+                            long val = PyLong_AsLongAndOverflow(cnt, &ovf);
+                            // TODO: What about larger values?
+                            // They would cause an EXTENDED_ARG to be generated,
+                            // which may defeat any potential cost savings.
+                            if (ovf == 0 && val >= 0 && val < 256) {
+                                inst->i_opcode = INT_ADD;
+                                inst->i_oparg = val;
+                                bb->b_instr[i+1].i_opcode = NOP;
+                                break;
+                            }
                         }
                         break;
                 }
