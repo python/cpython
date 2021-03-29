@@ -212,6 +212,7 @@ PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PyLong_Rshift(PyObject *, size_t);
 PyAPI_FUNC(PyObject *) _PyLong_Lshift(PyObject *, size_t);
+PyAPI_FUNC(PyObject *) _PyLong_AddInt(PyLongObject *, int);
 #endif
 
 #ifdef __cplusplus
