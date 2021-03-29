@@ -262,7 +262,6 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        # TODO: replace repr with try_repr
         self.locals = {k: _try_repr(v) for k, v in locals.items()} if locals else None
 
     def __eq__(self, other):
