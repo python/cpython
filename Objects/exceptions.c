@@ -2465,6 +2465,13 @@ SimpleExtendsException(PyExc_Warning, BytesWarning,
 
 
 /*
+ *    EncodingWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, EncodingWarning,
+    "Base class for warnings about encodings.");
+
+
+/*
  *    ResourceWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, ResourceWarning,
@@ -2592,6 +2599,7 @@ _PyExc_Init(PyInterpreterState *interp)
     PRE_INIT(BufferError);
     PRE_INIT(Warning);
     PRE_INIT(UserWarning);
+    PRE_INIT(EncodingWarning);
     PRE_INIT(DeprecationWarning);
     PRE_INIT(PendingDeprecationWarning);
     PRE_INIT(SyntaxWarning);
@@ -2731,6 +2739,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(BufferError);
     POST_INIT(Warning);
     POST_INIT(UserWarning);
+    POST_INIT(EncodingWarning);
     POST_INIT(DeprecationWarning);
     POST_INIT(PendingDeprecationWarning);
     POST_INIT(SyntaxWarning);

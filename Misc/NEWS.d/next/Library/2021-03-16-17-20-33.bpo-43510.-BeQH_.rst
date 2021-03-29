@@ -1,0 +1,3 @@
+Implement :pep:`597`: Add ``EncodingWarning`` warning, ``-X
+warn_default_encoding`` option, :envvar:`PYTHONWARNDEFAULTENCODING`
+environment variable and ``encoding="locale"`` argument value.

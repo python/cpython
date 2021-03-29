@@ -1124,6 +1124,17 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->b2cratio = 0.0;
 
     if (encoding == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            PyErr_WarnEx(PyExc_EncodingWarning,
+                         "'encoding' argument not specified", 1);
+        }
+    }
+    else if (strcmp(encoding, "locale") == 0) {
+        encoding = NULL;
+    }
+
+    if (encoding == NULL) {
         /* Try os.device_encoding(fileno) */
         PyObject *fileno;
         state = IO_STATE();
