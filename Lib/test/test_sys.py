@@ -1526,8 +1526,8 @@ if True:
     1/0
 """
         rc, out, err = assert_python_failure('-c', code)
-        self.assertEqual(out, "")
-        self.assertEqual(err, "")
+        self.assertEqual(out, b"")
+        self.assertEqual(err, b"")
 
 if __name__ == "__main__":
     unittest.main()
