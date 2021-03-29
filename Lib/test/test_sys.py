@@ -1516,15 +1516,14 @@ class SizeofTest(unittest.TestCase):
         # If the default displayhook doesn't take a strong reference
         # to sys.stderr the following code can crash. See bpo-43660
         # for more details.
-        code = """
-if True:
-    import sys
-    class MyStderr:
-        def write(self, s):
-            sys.stderr = None
-    sys.stderr = MyStderr()
-    1/0
-"""
+        code = textwrap.dedent('''
+            import sys
+            class MyStderr:
+                def write(self, s):
+                    sys.stderr = None
+            sys.stderr = MyStderr()
+            1/0
+        ''')
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
