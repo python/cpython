@@ -1,0 +1,2 @@
+Fix reference leak in the :mod:`_hashopenssl` extension. Patch by Pablo
+Galindo.
