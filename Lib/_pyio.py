@@ -40,6 +40,29 @@ _IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mo
 _CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
 
 
+def text_encoding(encoding, stacklevel=2):
+    """
+    A helper function to choose the text encoding.
+
+    When encoding is not None, just return it.
+    Otherwise, return the default text encoding (i.e. "locale").
+
+    This function emits an EncodingWarning if *encoding* is None and
+    sys.flags.warn_default_encoding is true.
+
+    This can be used in APIs with an encoding=None parameter
+    that pass it to TextIOWrapper or open.
+    However, please consider using encoding="utf-8" for new APIs.
+    """
+    if encoding is None:
+        encoding = "locale"
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn("'encoding' argument not specified.",
+                          EncodingWarning, stacklevel + 1)
+    return encoding
+
+
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
 
@@ -248,6 +271,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         result = buffer
         if binary:
             return result
+        encoding = text_encoding(encoding)
         text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
         result = text
         text.mode = mode
@@ -2004,19 +2028,22 @@ class TextIOWrapper(TextIOBase):
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False, write_through=False):
         self._check_newline(newline)
-        if encoding is None:
+        encoding = text_encoding(encoding)
+
+        if encoding == "locale":
             try:
-                encoding = os.device_encoding(buffer.fileno())
+                encoding = os.device_encoding(buffer.fileno()) or "locale"
             except (AttributeError, UnsupportedOperation):
                 pass
-            if encoding is None:
-                try:
-                    import locale
-                except ImportError:
-                    # Importing locale may fail if Python is being built
-                    encoding = "ascii"
-                else:
-                    encoding = locale.getpreferredencoding(False)
+
+        if encoding == "locale":
+            try:
+                import locale
+            except ImportError:
+                # Importing locale may fail if Python is being built
+                encoding = "utf-8"
+            else:
+                encoding = locale.getpreferredencoding(False)
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)

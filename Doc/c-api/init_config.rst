@@ -583,6 +583,15 @@ PyConfig
 
       Default: ``0``.
 
+   .. c:member:: int warn_default_encoding
+
+      If non-zero, emit a :exc:`EncodingWarning` warning when :class:`io.TextIOWrapper`
+      uses its default encoding. See :ref:`io-encoding-warning` for details.
+
+      Default: ``0``.
+
+      .. versionadded:: 3.10
+
    .. c:member:: wchar_t* check_hash_pycs_mode
 
       Control the validation behavior of hash-based ``.pyc`` files:

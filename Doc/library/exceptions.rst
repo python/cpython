@@ -741,6 +741,15 @@ The following exceptions are used as warning categories; see the
    Base class for warnings related to Unicode.
 
 
+.. exception:: EncodingWarning
+
+   Base class for warnings related to encodings.
+
+   See :ref:`io-encoding-warning` for details.
+
+   .. versionadded:: 3.10
+
+
 .. exception:: BytesWarning
 
    Base class for warnings related to :class:`bytes` and :class:`bytearray`.
