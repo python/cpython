@@ -106,6 +106,56 @@ stream by opening a file in binary mode with buffering disabled::
 The raw stream API is described in detail in the docs of :class:`RawIOBase`.
 
 
+.. _io-text-encoding:
+
+Text Encoding
+-------------
+
+The default encoding of :class:`TextIOWrapper` and :func:`open` is
+locale-specific (:func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`).
+
+However, many developers forget to specify the encoding when opening text files
+encoded in UTF-8 (e.g. JSON, TOML, Markdown, etc...) since most Unix
+platforms use UTF-8 locale by default. This causes bugs because the locale
+encoding is not UTF-8 for most Windows users. For example::
+
+   # May not work on Windows when non-ASCII characters in the file.
+   with open("README.md") as f:
+       long_description = f.read()
+
+Additionally, while there is no concrete plan as of yet, Python may change
+the default text file encoding to UTF-8 in the future.
+
+Accordingly, it is highly recommended that you specify the encoding
+explicitly when opening text files. If you want to use UTF-8, pass
+``encoding="utf-8"``. To use the current locale encoding,
+``encoding="locale"`` is supported in Python 3.10.
+
+When you need to run existing code on Windows that attempts to opens
+UTF-8 files using the default locale encoding, you can enable the UTF-8
+mode. See :ref:`UTF-8 mode on Windows <win-utf8-mode>`.
+
+.. _io-encoding-warning:
+
+Opt-in EncodingWarning
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.10
+   See :pep:`597` for more details.
+
+To find where the default locale encoding is used, you can enable
+the ``-X warn_default_encoding`` command line option or set the
+:envvar:`PYTHONWARNDEFAULTENCODING` environment variable, which will
+emit an :exc:`EncodingWarning` when the default encoding is used.
+
+If you are providing an API that uses :func:`open` or
+:class:`TextIOWrapper` and passes ``encoding=None`` as a parameter, you
+can use :func:`text_encoding` so that callers of the API will emit an
+:exc:`EncodingWarning` if they don't pass an ``encoding``. However,
+please consider using UTF-8 by default (i.e. ``encoding="utf-8"``) for
+new APIs.
+
+
 High-level Module Interface
 ---------------------------
 
@@ -141,6 +191,32 @@ High-level Module Interface
    additional validation or preprocessing of the file.
 
    .. versionadded:: 3.8
+
+
+.. function:: text_encoding(encoding, stacklevel=2)
+
+   This is a helper function for callables that use :func:`open` or
+   :class:`TextIOWrapper` and have an ``encoding=None`` parameter.
+
+   This function returns *encoding* if it is not ``None`` and ``"locale"`` if
+   *encoding* is ``None``.
+
+   This function emits an :class:`EncodingWarning` if
+   :data:`sys.flags.warn_default_encoding <sys.flags>` is true and *encoding*
+   is None. *stacklevel* specifies where the warning is emitted.
+   For example::
+
+      def read_text(path, encoding=None):
+          encoding = io.text_encoding(encoding)  # stacklevel=2
+          with open(path, encoding) as f:
+              return f.read()
+
+   In this example, an :class:`EncodingWarning` is emitted for the caller of
+   ``read_text()``.
+
+   See :ref:`io-text-encoding` for more information.
+
+   .. versionadded:: 3.10
 
 
 .. exception:: BlockingIOError
@@ -869,6 +945,8 @@ Text I/O
    *encoding* gives the name of the encoding that the stream will be decoded or
    encoded with.  It defaults to
    :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>`.
+   ``encoding="locale"`` can be used to specify the current locale's encoding
+   explicitly. See :ref:`io-text-encoding` for more information.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled.  Pass ``'strict'`` to raise a :exc:`ValueError`
@@ -919,6 +997,9 @@ Text I/O
       instead of ``locale.getpreferredencoding()``. Don't change temporary the
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
+
+   .. versionchanged:: 3.10
+      The *encoding* argument now supports the ``"locale"`` dummy encoding name.
 
    :class:`TextIOWrapper` provides these data attributes and methods in
    addition to those from :class:`TextIOBase` and :class:`IOBase`:

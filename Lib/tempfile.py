@@ -543,6 +543,9 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     if _os.name == 'nt' and delete:
         flags |= _os.O_TEMPORARY
 
+    if "b" not in mode:
+        encoding = _io.text_encoding(encoding)
+
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
     try:
         file = _io.open(fd, mode, buffering=buffering,
@@ -582,6 +585,9 @@ else:
         name, and will cease to exist when it is closed.
         """
         global _O_TMPFILE_WORKS
+
+        if "b" not in mode:
+            encoding = _io.text_encoding(encoding)
 
         prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
@@ -638,6 +644,7 @@ class SpooledTemporaryFile:
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
+            encoding = _io.text_encoding(encoding)
             self._file = _io.TextIOWrapper(_io.BytesIO(),
                             encoding=encoding, errors=errors,
                             newline=newline)
