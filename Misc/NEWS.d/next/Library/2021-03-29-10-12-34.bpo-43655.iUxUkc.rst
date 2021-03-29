@@ -1,0 +1,1 @@
+Tkinter now sets the _NET_WM_WINDOW_TYPE when using the FileDialog as dialog.
