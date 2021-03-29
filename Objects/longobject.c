@@ -3114,6 +3114,7 @@ _PyLong_AddInt(PyLongObject *left, int iright)
     return PyLong_FromLongLong(lsum);
 
 fallback:
+    ;
     PyLongObject *right = (PyLongObject *)PyLong_FromLongLong(iright);
     if (right == NULL) {
         return NULL;
