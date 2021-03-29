@@ -1,0 +1,129 @@
+name: CI
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "**" ]
+jobs:
+  parsing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Parsing
+        run: './ci/check-nix-files.sh'
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Build
+        run: 'nix-build'
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Black
+        run: './ci/check-formatting.sh'
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Mypy
+        run: './ci/check-mypy.sh'
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Mypy
+        run: './ci/check-flake8.sh'
+  mypy-ratchet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Mypy Ratchet
+        run: './ci/mypy-ratchet.sh'
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Coverage
+        run: './ci/check-tests.sh'
+        env:
+          NIX_PATH: "nixpkgs=https://github.com/NixOS/nixpkgs/archive/nixos-unstable.tar.gz"
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+        # To use nixFlake in the next step
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Restructured Text Lint
+        run: 'nix-shell --run "nix build .#checks.x86_64-linux.doc --experimental-features \"nix-command flakes\""'
+      - name: build
+        run: 'nix-build -A docs.x86_64-linux'
+  poetry-up-to-date:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Nix
+        uses: cachix/install-nix-action@v12
+      - name: Prefetch shell.nix
+        run: 'nix-shell --run true'
+      - name: Poetry Locks Consistent
+        run: './ci/check-poetry.sh'

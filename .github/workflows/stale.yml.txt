@@ -1,0 +1,41 @@
+# Configuration for probot-stale - https://github.com/probot/stale
+# Number of days of inactivity before an issue becomes stale
+daysUntilStale: 180
+# Number of days of inactivity before a stale issue is closed
+daysUntilClose: false
+# Issues with these labels will never be considered stale
+exemptLabels:
+  - "1.severity: security"
+# Label to use when marking an issue as stale
+staleLabel: "2.status: stale"
+# Comment to post when marking an issue as stale. Set to `false` to disable
+pulls:
+  markComment: |
+    Hello, I'm a bot and I thank you in the name of the community for your contributions.
+
+    Nixpkgs is a busy repository, and unfortunately sometimes PRs get left behind for too long. Nevertheless, we'd like to help committers reach the PRs that are still important. This PR has had no activity for 180 days, and so I marked it as stale, but you can rest assured it will never be closed by a non-human.
+
+    If this is still important to you and you'd like to remove the stale label, we ask that you leave a comment. Your comment can be as simple as "still important to me".  But there's a bit more you can do:
+
+    If you received an approval by an unprivileged maintainer and you are just waiting for a merge, you can @ mention someone with merge permissions and ask them to help. You might be able to find someone relevant by using [Git blame](https://git-scm.com/docs/git-blame) on the relevant files, or via [GitHub's web interface](https://docs.github.com/en/github/managing-files-in-a-repository/tracking-changes-in-a-file). You can see if someone's a member of the [nixpkgs-committers](https://github.com/orgs/NixOS/teams/nixpkgs-committers) team, by hovering with the mouse over their username on the web interface, or by searching them directly on [the list](https://github.com/orgs/NixOS/teams/nixpkgs-committers).
+
+    If your PR wasn't reviewed at all, it might help to find someone who's perhaps a user of the package or module you are changing, or alternatively, ask once more for a review by the maintainer of the package/module this is about. If you don't know any, you can use [Git blame](https://git-scm.com/docs/git-blame) on the relevant files, or [GitHub's web interface](https://docs.github.com/en/github/managing-files-in-a-repository/tracking-changes-in-a-file) to find someone who touched the relevant files in the past.
+
+    If your PR has had reviews and nevertheless got stale, make sure you've responded to all of the reviewer's requests / questions. Usually when PR authors show responsibility and dedication, reviewers (privileged or not) show dedication as well. If you've pushed a change, it's possible the reviewer wasn't notified about your push via email, so you can always [officially request them for a review](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/requesting-a-pull-request-review), or just @ mention them and say you've addressed their comments.
+
+    Lastly, you can always ask for help at [our Discourse Forum](https://discourse.nixos.org/), or more specifically, [at this thread](https://discourse.nixos.org/t/prs-in-distress/3604) or at [#nixos' IRC channel](https://webchat.freenode.net/#nixos).
+
+issues:
+  markComment: |
+    Hello, I'm a bot and I thank you in the name of the community for opening this issue.
+
+    To help our human contributors focus on the most-relevant reports, I check up on old issues to see if they're still relevant. This issue has had no activity for 180 days, and so I marked it as stale, but you can rest assured it will never be closed by a non-human.
+
+    The community would appreciate your effort in checking if the issue is still valid. If it isn't, please close it.
+
+    If the issue persists, and you'd like to remove the stale label, you simply need to leave a comment. Your comment can be as simple as "still important to me". If you'd like it to get more attention, you can ask for help by searching for maintainers and people that previously touched related code and @ mention them in a comment. You can use [Git blame](https://git-scm.com/docs/git-blame) or [GitHub's web interface](https://docs.github.com/en/github/managing-files-in-a-repository/tracking-changes-in-a-file) on the relevant files to find them.
+
+    Lastly, you can always ask for help at [our Discourse Forum](https://discourse.nixos.org/) or at [#nixos' IRC channel](https://webchat.freenode.net/#nixos).
+
+# Comment to post when closing a stale issue. Set to `false` to disable
+closeComment: false

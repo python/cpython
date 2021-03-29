@@ -1,0 +1,20 @@
+name: "set pending status"
+
+on:
+  pull_request_target:
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+    - name: set pending status
+      if: github.repository_owner == 'NixOS'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl \
+          -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -d '{"state": "pending", "target_url": " ", "description": "This pending status will be cleared when ofborg starts eval.", "context": "Wait for ofborg"}' \
+          "https://api.github.com/repos/NixOS/nixpkgs/statuses/${{ github.event.pull_request.head.sha }}"

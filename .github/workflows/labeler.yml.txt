@@ -1,0 +1,146 @@
+"6.topic: agda":
+  - doc/languages-frameworks/agda.section.md
+  - nixos/tests/agda.nix
+  - pkgs/build-support/agda/**/*
+  - pkgs/development/libraries/agda/**/*
+  - pkgs/top-level/agda-packages.nix
+
+"6.topic: cinnamon":
+  - pkgs/desktops/cinnamon/**/*
+
+"6.topic: emacs":
+  - nixos/modules/services/editors/emacs.nix
+  - nixos/modules/services/editors/emacs.xml
+  - nixos/tests/emacs-daemon.nix
+  - pkgs/applications/editors/emacs-modes/**/*
+  - pkgs/applications/editors/emacs/**/*
+  - pkgs/build-support/emacs/**/*
+  - pkgs/top-level/emacs-packages.nix
+
+"6.topic: erlang":
+  - doc/languages-frameworks/beam.section.md
+  - pkgs/development/beam-modules/**/*
+  - pkgs/development/interpreters/elixir/**/*
+  - pkgs/development/interpreters/erlang/**/*
+  - pkgs/development/tools/build-managers/rebar/**/*
+  - pkgs/development/tools/build-managers/rebar3/**/*
+  - pkgs/development/tools/erlang/**/*
+  - pkgs/top-level/beam-packages.nix
+
+"6.topic: fetch":
+  - pkgs/build-support/fetch*/**/*
+
+"6.topic: GNOME":
+  - doc/languages-frameworks/gnome.section.md
+  - nixos/modules/services/desktops/gnome3/**/*
+  - nixos/modules/services/x11/desktop-managers/gnome3.nix
+  - nixos/tests/gnome3-xorg.nix
+  - nixos/tests/gnome3.nix
+  - pkgs/desktops/gnome-3/**/*
+
+"6.topic: golang":
+  - doc/languages-frameworks/go.section.md
+  - pkgs/development/compilers/go/**/*
+  - pkgs/development/go-modules/**/*
+  - pkgs/development/go-packages/**/*
+
+"6.topic: haskell":
+  - doc/languages-frameworks/haskell.section.md
+  - pkgs/development/compilers/ghc/**/*
+  - pkgs/development/haskell-modules/**/*
+  - pkgs/development/tools/haskell/**/*
+  - pkgs/top-level/haskell-packages.nix
+
+"6.topic: kernel":
+  - pkgs/build-support/kernel/**/*
+
+"6.topic: lua":
+  - pkgs/development/interpreters/lua-5/**/*
+  - pkgs/development/interpreters/luajit/**/*
+  - pkgs/development/lua-modules/**/*
+  - pkgs/top-level/lua-packages.nix
+
+"6.topic: nixos":
+  - nixos/**/*
+
+"6.topic: ocaml":
+  - doc/languages-frameworks/ocaml.section.md
+  - pkgs/development/compilers/ocaml/**/*
+  - pkgs/development/compilers/reason/**/*
+  - pkgs/development/ocaml-modules/**/*
+  - pkgs/development/tools/ocaml/**/*
+  - pkgs/top-level/ocaml-packages.nix
+
+"6.topic: pantheon":
+  - nixos/modules/services/desktops/pantheon/**/*
+  - nixos/modules/services/x11/desktop-managers/pantheon.nix
+  - nixos/modules/services/x11/display-managers/lightdm-greeters/pantheon.nix
+  - nixos/tests/pantheon.nix
+  - pkgs/desktops/pantheon/**/*
+
+"6.topic: policy discussion":
+  - .github/**/*
+
+"6.topic: printing":
+  - nixos/modules/services/printing/cupsd.nix
+  - pkgs/misc/cups/**/*
+
+"6.topic: python":
+  - doc/languages-frameworks/python.section.md
+  - pkgs/development/interpreters/python/**/*
+  - pkgs/development/python-modules/**/*
+  - pkgs/top-level/python-packages.nix
+
+"6.topic: qt/kde":
+  - doc/languages-frameworks/qt.section.md
+  - nixos/modules/services/x11/desktop-managers/plasma5.nix
+  - nixos/tests/plasma5.nix
+  - pkgs/applications/kde/**/*
+  - pkgs/desktops/plasma-5/**/*
+  - pkgs/development/libraries/kde-frameworks/**/*
+  - pkgs/development/libraries/qt-5/**/*
+
+"6.topic: ruby":
+  - doc/languages-frameworks/ruby.section.md
+  - pkgs/development/interpreters/ruby/**/*
+  - pkgs/development/ruby-modules/**/*
+
+"6.topic: rust":
+  - doc/languages-frameworks/rust.section.md
+  - pkgs/build-support/rust/**/*
+  - pkgs/development/compilers/rust/**/*
+
+"6.topic: stdenv":
+  - pkgs/stdenv/**/*
+
+"6.topic: steam":
+  - pkgs/games/steam/**/*
+
+"6.topic: systemd":
+  - pkgs/os-specific/linux/systemd/**/*
+  - nixos/modules/system/boot/systemd*/**/*
+
+"6.topic: TeX":
+  - doc/languages-frameworks/texlive.section.md
+  - pkgs/tools/typesetting/tex/**/*
+
+"6.topic: vim":
+  - doc/languages-frameworks/vim.section.md
+  - pkgs/applications/editors/vim/**/*
+  - pkgs/misc/vim-plugins/**/*
+
+"6.topic: xfce":
+  - nixos/doc/manual/configuration/xfce.xml
+  - nixos/modules/services/x11/desktop-managers/xfce.nix
+  - nixos/tests/xfce.nix
+  - pkgs/desktops/xfce/**/*
+
+"8.has: changelog":
+  - nixos/doc/manual/release-notes/**/*
+
+"8.has: documentation":
+  - doc/**/*
+  - nixos/doc/**/*
+
+"8.has: module (update)":
+  - nixos/modules/**/*
