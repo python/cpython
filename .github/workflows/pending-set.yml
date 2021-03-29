@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: set pending status
-      if: github.repository_owner == 'NixOS'
+      if: github.repository_owner == 'kaocher82'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -17,4 +17,4 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token $GITHUB_TOKEN" \
           -d '{"state": "pending", "target_url": " ", "description": "This pending status will be cleared when ofborg starts eval.", "context": "Wait for ofborg"}' \
-          "https://api.github.com/repos/NixOS/nixpkgs/statuses/${{ github.event.pull_request.head.sha }}"
+          "https://api.github.com/repos/kaocher82/cpython/statuses/${{ github.event.pull_request.head.sha }}"
