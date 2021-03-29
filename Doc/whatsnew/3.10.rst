@@ -1005,7 +1005,7 @@ Deprecated
   (Contributed by Brett Cannon in :issue:`26131`.)
 
 * The use of :meth:`importlib.abc.MetaPathFinder.find_module` and
-  :meth:`importlib.abc.PathEntryFinder.find_module by the import system now
+  :meth:`importlib.abc.PathEntryFinder.find_module` by the import system now
   trigger an :exc:`ImportWarning` as
   :meth:`importlib.abc.MetaPathFinder.find_spec` and
   :meth:`importlib.abc.PathEntryFinder.find_spec`
