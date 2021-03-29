@@ -813,6 +813,9 @@ tok_readline_raw(struct tok_state *tok)
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
         }
+        if (*tok->inp == '\0') {
+            return 0;
+        }
         tok->inp = strchr(tok->inp, '\0');
     } while (tok->inp[-1] != '\n');
     return 1;
@@ -963,7 +966,7 @@ tok_underflow_file(struct tok_state *tok) {
         if (tok->lineno > 2) {
             tok->decoding_state = STATE_NORMAL;
         }
-        else if (!check_coding_spec(tok->cur, tok->end - tok->cur,
+        else if (!check_coding_spec(tok->cur, strlen(tok->cur),
                                     tok, fp_setreadl))
         {
             return 0;
