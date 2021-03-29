@@ -1,0 +1,4 @@
+CVE-2021-3426: Remove the ``getfile`` feature of the :mod:`pydoc` module which
+could be abused to read arbitrary files on the disk (directory traversal
+vulnerability). Moreover, even source code of Python modules can contain
+sensitive data like passwords. Vulnerability reported by David Schwörer.
