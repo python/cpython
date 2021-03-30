@@ -6470,7 +6470,7 @@ dtrace_function_entry(PyFrameObject *f)
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(code, f->f_lasti*2);
+    lineno = PyFrame_GetLineNumber(f);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
@@ -6485,7 +6485,7 @@ dtrace_function_return(PyFrameObject *f)
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(code, f->f_lasti*2);
+    lineno = PyFrame_GetLineNumber(f);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
