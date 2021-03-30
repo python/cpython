@@ -3097,24 +3097,11 @@ long_add(PyLongObject *a, PyLongObject *b)
 PyObject *
 _PyLong_AddInt(PyLongObject *left, int iright)
 {
-    Py_ssize_t lsum;
-    switch (left->ob_base.ob_size) {
-        case -1:
-            lsum = iright - left->ob_digit[0];
-            break;
-        case 0:
-            lsum = iright;
-            break;
-        case 1:
-            lsum = iright + left->ob_digit[0];
-            break;
-        default:
-            goto fallback;
+    Py_ssize_t size = left->ob_base.ob_size;
+    if (((size_t)size + 1) < 3) {
+        Py_ssize_t lsum = iright + size * left->ob_digit[0];
+        return PyLong_FromLongLong(lsum);
     }
-    return PyLong_FromLongLong(lsum);
-
-fallback:
-    ;
     PyLongObject *right = (PyLongObject *)PyLong_FromLongLong(iright);
     if (right == NULL) {
         return NULL;
