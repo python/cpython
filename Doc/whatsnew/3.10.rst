@@ -466,7 +466,7 @@ platforms, omitting ``encoding`` option when opening UTF-8 files
 
    # BUG: "rb" mode or encoding="utf-8" should be used.
    with open("data.json") as f:
-       data = json.laod(f)
+       data = json.load(f)
 
 To find this type of bugs, optional ``EncodingWarning`` is added.
 It is emitted when :data:`sys.flags.warn_default_encoding <sys.flags>`
