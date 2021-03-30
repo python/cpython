@@ -1,1 +1,1 @@
-Add socket.TCP_KEEPIDLE support to macOS.
+Add socket.TCP_KEEPALIVE support for macOS. Patch by Shane Harvey.
