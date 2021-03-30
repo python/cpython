@@ -466,10 +466,18 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
         */
         if (this_ch == BASE64_PAD) {
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
-                /* A pad sequence means no more input.
-                ** We've already interpreted the data
-                ** from the quad at this point.
+                /* A pad sequence means we should not parse more input.
+                ** We've already interpreted the data from the quad at this point.
+                ** An error should raise if there's excess data after the padding.
                 */
+                if (i + 1 < ascii_len) {
+                    binascii_state *state = PyModule_GetState(module);
+                    if (state) {
+                        PyErr_SetString(state->Error, "Excess data after padding is not allowed");
+                    }
+                    goto error_end;
+                }
+
                 goto done;
             }
             continue;
@@ -522,6 +530,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
         } else {
             PyErr_SetString(state->Error, "Incorrect padding");
         }
+        error_end:
         _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
