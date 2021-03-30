@@ -205,20 +205,20 @@ Disassembly of g:
 
 """
 
-expr_str = "x + 1"
+expr_str = "x + 1000000"
 
 dis_expr_str = """\
   1           0 LOAD_NAME                0 (x)
-              2 LOAD_CONST               0 (1)
+              2 LOAD_CONST               0 (1000000)
               4 BINARY_ADD
               6 RETURN_VALUE
 """
 
-simple_stmt_str = "x = x + 1"
+simple_stmt_str = "x = x + 1000000"
 
 dis_simple_stmt_str = """\
   1           0 LOAD_NAME                0 (x)
-              2 LOAD_CONST               0 (1)
+              2 LOAD_CONST               0 (1000000)
               4 BINARY_ADD
               6 STORE_NAME               0 (x)
               8 LOAD_CONST               1 (None)
@@ -559,14 +559,14 @@ class DisTests(unittest.TestCase):
     def test_big_offsets(self):
         def func(count):
             namespace = {}
-            func = "def foo(x):\n " + ";".join(["x = x + 1"] * count) + "\n return x"
+            func = "def foo(x):\n " + ";".join(["x = x + 1000000"] * count) + "\n return x"
             exec(func, namespace)
             return namespace['foo']
 
         def expected(count, w):
             s = ['''\
            %*d LOAD_FAST                0 (x)
-           %*d LOAD_CONST               1 (1)
+           %*d LOAD_CONST               1 (1000000)
            %*d BINARY_ADD
            %*d STORE_FAST               0 (x)
 ''' % (w, 8*i, w, 8*i + 2, w, 8*i + 4, w, 8*i + 6)
@@ -783,7 +783,7 @@ Number of locals:  0
 Stack size:        2
 Flags:             NOFREE
 Constants:
-   0: 1
+   0: 1000000
 Names:
    0: x"""
 
@@ -797,7 +797,7 @@ Number of locals:  0
 Stack size:        2
 Flags:             NOFREE
 Constants:
-   0: 1
+   0: 1000000
    1: None
 Names:
    0: x"""
