@@ -433,12 +433,14 @@ binascii.a2b_base64
 
     data: ascii_buffer
     /
+    *
+    strict_mode: bool(accept={int}) = False
 
 Decode a line of base64 data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 /*[clinic end generated code: output=0628223f19fd3f9b input=5872acf6e1cac243]*/
 {
     assert(data->len >= 0);
@@ -468,12 +470,12 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
                 /* A pad sequence means we should not parse more input.
                 ** We've already interpreted the data from the quad at this point.
-                ** An error should raise if there's excess data after the padding.
+                ** in strict mode, an error should raise if there's excess data after the padding.
                 */
-                if (i + 1 < ascii_len) {
+                if (strict_mode && i + 1 < ascii_len) {
                     binascii_state *state = PyModule_GetState(module);
                     if (state) {
-                        PyErr_SetString(state->Error, "Excess data after padding is not allowed");
+                        PyErr_SetString(state->Error, "Excess data after padding is not allowed when using strict mode");
                     }
                     goto error_end;
                 }
@@ -485,6 +487,13 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
 
         this_ch = table_a2b_base64[this_ch];
         if (this_ch >= 64) {
+            if (strict_mode) {
+                binascii_state *state = PyModule_GetState(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Only base64 data is allowed when using strict mode");
+                }
+                goto error_end;
+            }
             continue;
         }
         pads = 0;
