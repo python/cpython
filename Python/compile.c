@@ -979,7 +979,7 @@ stack_effect(int opcode, int oparg, int jump)
             return -1;
 
         /* super-instructions */
-        case INT_ADD:
+        case ADD_INT:
             return 0;
 
         case SETUP_WITH:
@@ -6897,7 +6897,7 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                             // They would cause an EXTENDED_ARG to be generated,
                             // which may defeat any potential cost savings.
                             if (ovf == 0 && val >= 0 && val < 256) {
-                                inst->i_opcode = INT_ADD;
+                                inst->i_opcode = ADD_INT;
                                 inst->i_oparg = val;
                                 bb->b_instr[i+1].i_opcode = NOP;
                                 break;

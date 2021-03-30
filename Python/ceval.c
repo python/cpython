@@ -2069,7 +2069,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(INT_ADD): {
+        case TARGET(ADD_INT): {
             PyObject *left = TOP();
             if (PyLong_CheckExact(left)) {
                 PyObject *sum = _PyLong_AddInt((PyLongObject *)left, oparg);

@@ -165,7 +165,7 @@ static void *opcode_targets[256] = {
     &&TARGET_SET_UPDATE,
     &&TARGET_DICT_MERGE,
     &&TARGET_DICT_UPDATE,
-    &&TARGET_INT_ADD,
+    &&TARGET_ADD_INT,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
