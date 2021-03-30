@@ -6890,7 +6890,7 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                         break;
                     case BINARY_ADD:
                         cnt = PyList_GET_ITEM(consts, oparg);
-                        if (PyLong_CheckExact(cnt)) {
+                        if (PyLong_CheckExact(cnt) && inst->i_lineno == bb->b_instr[i+1].i_lineno) {
                             int ovf = 0;
                             long val = PyLong_AsLongAndOverflow(cnt, &ovf);
                             // TODO: What about larger values?
