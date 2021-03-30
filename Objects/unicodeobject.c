@@ -2194,6 +2194,15 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
     return PyUnicode_FromWideChar(u, size);
 }
 
+#if defined(__sun) && defined(__SVR4)
+/* Detect whether currently used locale uses UTF compatible encoding. */
+int codeset_is_utf8_compatible()
+{
+    char* res = nl_langinfo(CODESET);
+    return !(strcmp(res, "UTF-8") && strcmp(res, "646"));
+}
+#endif
+
 PyObject *
 PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 {
@@ -2216,6 +2225,58 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     /* Optimization for empty strings */
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
+
+#if defined(__sun) && defined(__SVR4)
+    /* Check whether current locale uses UTF to encode symbols */
+    if (!codeset_is_utf8_compatible()) {
+
+        /* Given 'u' might not be NULL terminated (size smaller than its
+           length); copy and terminate part we are interested in. */
+        wchar_t* substr = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
+        memcpy(substr, u, size * sizeof(wchar_t));
+        substr[size] = 0;
+
+        /* Convert given wide-character string to a character string */
+        size_t buffsize = wcstombs(NULL, substr, 0) + 1;
+        if (buffsize == (size_t)-1) {
+            PyMem_RawFree(substr);
+            PyErr_Format(PyExc_ValueError, "wcstombs() conversion failed");
+            return NULL;
+        }
+
+        char* buffer = PyMem_RawMalloc(buffsize * sizeof(char));
+        size_t res = wcstombs(buffer, substr, buffsize);
+        assert(res == buffsize - 1);
+
+        /* Convert character string to UTF32 encoded char32_t string.
+           Since wchar_t and char32_t have the same size on Solaris and one
+           wchar_t symbol corresponds to one UTF32 value, we can safely
+           reuse this buffer and skip additional allocation. */
+        char32_t* c32 = (char32_t*) substr;
+        mbstate_t state = {0};
+
+        int i = 0;
+        char* ptr = buffer;
+        char* end = ptr + res + 1;
+        while (res = mbrtoc32(&(c32[i]), ptr, end - ptr, &state)) {
+            if (res == (size_t)-1 || res == (size_t)-2 || res == (size_t)-3) {
+                PyMem_RawFree(c32);
+                PyMem_RawFree(buffer);
+                PyErr_Format(PyExc_ValueError,
+                             "mbrtoc32() conversion failed with error code: %d",
+                             res);
+                return NULL;
+            }
+            ptr += res;
+            i ++;
+        }
+        PyMem_RawFree(buffer);
+
+        PyObject *unicode = _PyUnicode_FromUCS4(c32, size);
+        PyMem_RawFree(c32);
+        return unicode;
+    }
+#endif
 
     /* Single character Unicode objects in the Latin-1 range are
        shared when using this constructor */

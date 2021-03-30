@@ -97,6 +97,11 @@ Copyright (c) Corporation for National Research Initiatives.
 #  include <wchar.h>
 #endif
 
+#if defined(__sun) && defined(__SVR4)
+#  include <uchar.h>
+#  include <langinfo.h>
+#endif
+
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
 typedef uint32_t Py_UCS4;
