@@ -123,12 +123,16 @@ class FinderTests:
         failing_finder.to_return = None
         path = 'testing path'
         with util.import_state(path_importer_cache={path: failing_finder}):
-            self.assertIsNone(
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.assertIsNone(
                     self.machinery.PathFinder.find_spec('whatever', [path]))
         success_finder = TestFinder()
         success_finder.to_return = __loader__
         with util.import_state(path_importer_cache={path: success_finder}):
-            spec = self.machinery.PathFinder.find_spec('whatever', [path])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                spec = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(spec.loader, __loader__)
 
     def test_finder_with_find_loader(self):
@@ -248,7 +252,9 @@ class PathEntryFinderTests:
 
         with util.import_state(path=[Finder.path_location]+sys.path[:],
                                path_hooks=[Finder]):
-            self.machinery.PathFinder.find_spec('importlib')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.machinery.PathFinder.find_spec('importlib')
 
     def test_finder_with_failing_find_module(self):
         # PathEntryFinder with find_module() defined should work.
@@ -266,7 +272,9 @@ class PathEntryFinderTests:
 
         with util.import_state(path=[Finder.path_location]+sys.path[:],
                                path_hooks=[Finder]):
-            self.machinery.PathFinder.find_module('importlib')
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.machinery.PathFinder.find_module('importlib')
 
 
 (Frozen_PEFTests,
