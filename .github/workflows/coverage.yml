@@ -25,7 +25,7 @@ jobs:
     name: 'Ubuntu (Coverage)'
     runs-on: ubuntu-latest
     env:
-      OPENSSL_VER: 1.1.1f
+      OPENSSL_VER: 1.1.1k
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
