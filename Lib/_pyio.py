@@ -324,8 +324,6 @@ class OpenWrapper:
     __doc__ = DocDescriptor()
 
     def __new__(cls, *args, **kwargs):
-        if len(args) >= 2 and "b" not in args[1]:
-            kwargs["encoding"] = text_encoding(kwargs.get("encoding"))
         return open(*args, **kwargs)
 
 
