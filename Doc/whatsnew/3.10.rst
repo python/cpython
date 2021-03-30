@@ -1028,6 +1028,15 @@ Deprecated
   :meth:`~importlib.abc.Loader.exec_module` is preferred.
   (Contributed by Brett Cannon in :issue:`26131`.)
 
+* The use of :meth:`importlib.abc.MetaPathFinder.find_module` and
+  :meth:`importlib.abc.PathEntryFinder.find_module` by the import system now
+  trigger an :exc:`ImportWarning` as
+  :meth:`importlib.abc.MetaPathFinder.find_spec` and
+  :meth:`importlib.abc.PathEntryFinder.find_spec`
+  are preferred, respectively. You can use
+  :func:`importlib.util.spec_from_loader` to help in porting.
+  (Contributed by Brett Cannon in  :issue:`42134`.)
+
 * The import system now uses the ``__spec__`` attribute on modules before
   falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
   ``__repr__()`` method. Removal of the use of ``module_repr()`` is scheduled

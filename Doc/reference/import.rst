@@ -329,6 +329,10 @@ modules, and one that knows how to import modules from an :term:`import path`
    import machinery will try it only if the finder does not implement
    ``find_spec()``.
 
+.. versionchanged:: 3.10
+   Use of :meth:`~importlib.abc.MetaPathFinder.find_module` by the import system
+   now raises :exc:`ImportWarning`.
+
 
 Loading
 =======
@@ -469,6 +473,9 @@ import machinery will create the new module itself.
 .. versionchanged:: 3.6
    An :exc:`ImportError` is raised when ``exec_module()`` is defined but
    ``create_module()`` is not.
+
+.. versionchanged:: 3.10
+   Use of ``load_module()`` will raise :exc:`ImportWarning`.
 
 Submodules
 ----------
@@ -895,6 +902,10 @@ a list containing the portion.
    namespace packages.  If both ``find_loader()`` and ``find_module()``
    exist on a path entry finder, the import system will always call
    ``find_loader()`` in preference to ``find_module()``.
+
+.. versionchanged:: 3.10
+    Calls to :meth:`~importlib.abc.PathEntryFinder.find_module` by the import
+    system will raise :exc:`ImportWarning`.
 
 
 Replacing the standard import system
