@@ -207,7 +207,7 @@ extern "C" {
 #  define OVERALLOCATE_FACTOR 4
 #endif
 
-
+static int _Py_unicode_inited = 0;
 static struct _Py_unicode_state*
 get_unicode_state(void)
 {
@@ -230,8 +230,19 @@ static inline PyObject* unicode_get_empty(void)
 // Return a strong reference to the empty string singleton.
 static inline PyObject* unicode_new_empty(void)
 {
-    PyObject *empty = unicode_get_empty();
-    Py_INCREF(empty);
+    PyObject *empty = NULL;
+    if (_Py_unicode_inited == 0) {
+        empty = PyUnicode_New(1, 0);
+        if (empty == NULL) {
+            return NULL;
+        }
+        PyUnicode_1BYTE_DATA(empty)[0] = 0;
+        _PyUnicode_LENGTH(empty) = 0;
+        assert(_PyUnicode_CheckConsistency(empty, 1));
+    } else {
+        empty = unicode_get_empty();
+        Py_INCREF(empty);
+    }
     return empty;
 }
 
@@ -15713,6 +15724,7 @@ _PyUnicode_Init(PyInterpreterState *interp)
             return _PyStatus_ERR("Can't initialize formatter iter type");
         }
     }
+    _Py_unicode_inited = 1;
     return _PyStatus_OK();
 }
 
@@ -16240,6 +16252,7 @@ _PyUnicode_Fini(PyInterpreterState *interp)
         Py_CLEAR(state->latin1[i]);
     }
     Py_CLEAR(state->empty_string);
+    _Py_unicode_inited = 0;
 }
 
 
