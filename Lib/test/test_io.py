@@ -4256,22 +4256,19 @@ class MiscIOTest(unittest.TestCase):
         filename = __file__
         code = textwrap.dedent(f'''\
             import sys
-            try:
-                from {mod} import OpenWrapper as open
-            except ImportError:
-                from {mod} import open
+            from {mod} import open
             import pathlib
 
-            with open({filename!r}) as f:           # line 8
+            with open({filename!r}) as f:           # line 5
                 pass
 
-            pathlib.Path({filename!r}).read_text()  # line 11
+            pathlib.Path({filename!r}).read_text()  # line 8
         ''')
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 2)
-        self.assertRegex(warnings[0], br"\A<string>:8: EncodingWarning: ")
-        self.assertRegex(warnings[1], br"\A<string>:11: EncodingWarning: ")
+        self.assertRegex(warnings[0], br"\A<string>:5: EncodingWarning: ")
+        self.assertRegex(warnings[1], br"\A<string>:8: EncodingWarning: ")
 
 
 class CMiscIOTest(MiscIOTest):
