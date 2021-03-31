@@ -221,7 +221,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         raise ValueError("can't have read/write/append mode at once")
     if not (creating or reading or writing or appending):
         raise ValueError("must have exactly one of read/write/append mode")
-    if binary and encoding is not None:
+    if binary and encoding is not None and encoding != "locale":
         raise ValueError("binary mode doesn't take an encoding argument")
     if binary and errors is not None:
         raise ValueError("binary mode doesn't take an errors argument")
