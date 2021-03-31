@@ -121,7 +121,7 @@ write code that handles both IP versions correctly.  Address objects are
       Leading zeros are tolerated, even in ambiguous cases that look like
       octal notation.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.8.9/3.9.3
 
       Leading zeros are no longer tolerated and are treated as an error.
       IPv4 address strings are now parsed as strict as glibc

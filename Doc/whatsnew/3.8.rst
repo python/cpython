@@ -910,6 +910,14 @@ fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
 
 
+ipaddress
+---------
+
+Starting with Python 3.8.9 and 3.9.2 the :mod:`ipaddress` module no longer
+accepts any leading zeros in IPv4 address strings.
+(Contributed by Christian Heimes in :issue:`36384`).
+
+
 itertools
 ---------
 
@@ -1847,6 +1855,13 @@ Changes in Python behavior
   or :c:func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
+* Starting with Python 3.8.9 and 3.9.2 the :mod:`ipaddress` module no longer
+  accepts any leading zeros in IPv4 address strings. Leading zeros are
+  ambiguous and interpreted as octal notation by some libraries. For example
+  the legacy function :func:`socket.inet_aton` treats leading zeros as octal
+  notatation. glibc implementation of modern :func:`~socket.inet_pton` does
+  not accept any leading zeros.
+  (Contributed by Christian Heimes in :issue:`36384`).
 
 Changes in the Python API
 -------------------------
