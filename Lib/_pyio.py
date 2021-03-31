@@ -313,19 +313,6 @@ class DocDescriptor:
                  "errors=None, newline=None, closefd=True)\n\n" +
             open.__doc__)
 
-class OpenWrapper:
-    """Wrapper for builtins.open
-
-    Trick so that open won't become a bound method when stored
-    as a class variable (as dbm.dumb does).
-
-    See initstdio() in Python/pylifecycle.c.
-    """
-    __doc__ = DocDescriptor()
-
-    def __new__(cls, *args, **kwargs):
-        return open(*args, **kwargs)
-
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
 # same object.

@@ -1,0 +1,3 @@
+Remove the undocumented ``io.OpenWrapper`` and ``_pyio.OpenWrapper``
+functions which could be used directly to define a method:
+``staticmethod(open)`` should now be used instead.

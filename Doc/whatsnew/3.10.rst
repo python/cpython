@@ -1133,6 +1133,11 @@ Removed
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
+* Remove the undocumented ``io.OpenWrapper`` and ``_pyio.OpenWrapper``
+  functions which could be used directly to define a method:
+  ``staticmethod(open)`` should now be used instead.
+  (Contributed by Victor Stinner in :issue:`43680`.)
+
 
 Porting to Python 3.10
 ======================

@@ -2213,11 +2213,11 @@ error:
     return NULL;
 }
 
-/* Set builtins.open to io.OpenWrapper */
+/* Set builtins.open to io.open */
 static PyStatus
 init_set_builtins_open(void)
 {
-    PyObject *iomod = NULL, *wrapper;
+    PyObject *iomod = NULL, *open_func;
     PyObject *bimod = NULL;
     PyStatus res = _PyStatus_OK();
 
@@ -2229,16 +2229,16 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+    if (!(open_func = PyObject_GetAttrString(iomod, "open"))) {
         goto error;
     }
 
     /* Set builtins.open */
-    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
-        Py_DECREF(wrapper);
+    if (PyObject_SetAttrString(bimod, "open", open_func) == -1) {
+        Py_DECREF(open_func);
         goto error;
     }
-    Py_DECREF(wrapper);
+    Py_DECREF(open_func);
     goto done;
 
 error:

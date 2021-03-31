@@ -4574,6 +4574,13 @@ class PySignalsTest(SignalsTest):
     test_reentrant_write_text = None
 
 
+class PyioOpenWrapper:
+    """Wrapper for pyio.open Trick so that open won't become a bound method
+    when stored as a class variable."""
+    def __new__(cls, *args, **kwargs):
+        return pyio.open(*args, **kwargs)
+
+
 def load_tests(*args):
     tests = (CIOTest, PyIOTest, APIMismatchTest,
              CBufferedReaderTest, PyBufferedReaderTest,
@@ -4599,7 +4606,7 @@ def load_tests(*args):
     c_io_ns.update((x.__name__, globs["C" + x.__name__]) for x in mocks)
     py_io_ns.update((x.__name__, globs["Py" + x.__name__]) for x in mocks)
     # Avoid turning open into a bound method.
-    py_io_ns["open"] = pyio.OpenWrapper
+    py_io_ns["open"] = PyioOpenWrapper
     for test in tests:
         if test.__name__.startswith("C"):
             for name, obj in c_io_ns.items():
