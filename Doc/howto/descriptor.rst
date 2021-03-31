@@ -1442,6 +1442,8 @@ by member descriptors:
             # Also see PyMember_GetOne() in Python/structmember.c
             if obj is None and objtype is None:
                 raise TypeError('__get__(None, None) is invalid')
+            if obj is None:
+                return self
             value = obj._slot_values[self.offset]
             if value is null:
                 raise AttributeError(self.name)
@@ -1460,7 +1462,7 @@ by member descriptors:
 
         def __repr__(self):
             'Emulate member_repr() in Objects/descrobject.c'
-            return f'<Member {self.name!r} of {self.clsname!r}>'
+            return f'<Member {self.name!r} of {self.clsname!r} objects>'
 
 The :meth:`type.__new__` method takes care of adding member objects to class
 variables:
@@ -1553,9 +1555,9 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
 
     # We test this separately because the preceding section is not
     # doctestable due to the hex memory address for the __init__ function
-    >>> isinstance(vars(H)['x'], Member)
+    >>> isinstance(H.x, Member)
     True
-    >>> isinstance(vars(H)['y'], Member)
+    >>> isinstance(H.y, Member)
     True
 
 When instances are created, they have a ``_slot_values`` list where the
