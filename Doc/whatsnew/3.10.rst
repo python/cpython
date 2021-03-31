@@ -696,7 +696,8 @@ enum
 ----
 
 :class:`Enum` :func:`__repr__` now returns ``enum_name.member_name`` and
-:func:`__str__` now returns ``member_name``.
+:func:`__str__` now returns ``member_name``.  Stdlib enums available as
+module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
 
 gc
