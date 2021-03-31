@@ -346,8 +346,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     }
 
-    if (binary && encoding != NULL
-            && strcmp(encoding, "locale") != 0) {
+    if (binary && encoding != NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "binary mode doesn't take an encoding argument");
         goto error;
