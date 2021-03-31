@@ -7,6 +7,10 @@
 
 /* Xxo objects */
 
+/* xxlimited_35 with the limited API. */
+#ifdef WITH_Py_LIMITED_API
+#  define Py_LIMITED_API 0x03050000
+#endif
 #include "Python.h"
 
 static PyObject *ErrorObject;

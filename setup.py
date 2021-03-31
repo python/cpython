@@ -1867,9 +1867,9 @@ class PyBuildExt(build_ext):
         if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
             # Non-debug mode: Build xxlimited with limited API
             self.add(Extension('xxlimited', ['xxlimited.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
+                               define_macros=[('WITH_Py_LIMITED_API', 1)]))
             self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03050000')]))
+                               define_macros=[('WITH_Py_LIMITED_API', 1)]))
         else:
             # Debug mode: Build xxlimited with the full API
             # (which is compatible with the limited one)

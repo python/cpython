@@ -55,6 +55,10 @@
           pass
    */
 
+/* xxlimited with the limited API. */
+#ifdef WITH_Py_LIMITED_API
+#  define Py_LIMITED_API 0x03100000
+#endif
 #include "Python.h"
 
 // Module state
