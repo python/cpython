@@ -1487,7 +1487,7 @@ Python:
     class Object:
         'Simulate how object.__new__() allocates memory for __slots__'
 
-        def __new__(cls, *args):
+        def __new__(cls, *args, **kwargs):
             'Emulate object_new() in Objects/typeobject.c'
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
