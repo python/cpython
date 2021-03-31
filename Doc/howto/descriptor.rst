@@ -1421,7 +1421,7 @@ It is not possible to create an exact drop-in pure Python version of
 ``__slots__`` because it requires direct access to C structures and control
 over object memory allocation.  However, we can build a mostly faithful
 simulation where the actual C structure for slots is emulated by a private
-``_slotvalues`` list.  Reads and writes to that private structure are managed
+``_slot_values`` list.  Reads and writes to that private structure are managed
 by member descriptors:
 
 .. testcode::
@@ -1442,21 +1442,21 @@ by member descriptors:
             # Also see PyMember_GetOne() in Python/structmember.c
             if obj is None and objtype is None:
                 raise TypeError('__get__(None, None) is invalid')
-            value = obj._slotvalues[self.offset]
+            value = obj._slot_values[self.offset]
             if value is null:
                 raise AttributeError(self.name)
             return value
 
         def __set__(self, obj, value):
             'Emulate member_set() in Objects/descrobject.c'
-            obj._slotvalues[self.offset] = value
+            obj._slot_values[self.offset] = value
 
         def __delete__(self, obj):
             'Emulate member_delete() in Objects/descrobject.c'
-            value = obj._slotvalues[self.offset]
+            value = obj._slot_values[self.offset]
             if value is null:
                 raise AttributeError(self.name)
-            obj._slotvalues[self.offset] = null
+            obj._slot_values[self.offset] = null
 
         def __repr__(self):
             'Emulate member_repr() in Objects/descrobject.c'
@@ -1492,8 +1492,18 @@ Python:
             inst = super().__new__(cls)
             if hasattr(cls, 'slot_names'):
                 empty_slots = [null] * len(cls.slot_names)
-                super().__setattr__(inst, '_slotvalues', empty_slots)
+                super().__setattr__(inst, '_slot_values', empty_slots)
             return inst
+
+        def __getattribute__(self, name):
+            'Emulate _PyObject_GenericGetAttrWithDict() Objects/object.c'
+            cls = type(self)
+            if (hasattr(cls, 'slot_names') and name not in cls.slot_names
+                    and name != '_slot_values'):
+                raise AttributeError(
+                    f'{cls.__name__!r} object has no attribute {name!r}'
+                )
+            return super().__getattribute__(name)
 
         def __setattr__(self, name, value):
             'Emulate _PyObject_GenericSetAttrWithDict() Objects/object.c'
@@ -1548,26 +1558,39 @@ At this point, the metaclass has loaded member objects for *x* and *y*::
     >>> isinstance(vars(H)['y'], Member)
     True
 
-When instances are created, they have a ``slot_values`` list where the
+When instances are created, they have a ``_slot_values`` list where the
 attributes are stored:
 
 .. doctest::
 
     >>> h = H(10, 20)
-    >>> vars(h)
-    {'_slotvalues': [10, 20]}
+    >>> h._slot_values
+    [10, 20]
     >>> h.x = 55
-    >>> vars(h)
-    {'_slotvalues': [55, 20]}
+    >>> h._slot_values
+    [55, 20]
 
 Misspelled or unassigned attributes will raise an exception:
 
 .. doctest::
 
-    >>> h.xz
+    >>> vars(h)
     Traceback (most recent call last):
         ...
-    AttributeError: 'H' object has no attribute 'xz'
+    TypeError: vars() argument must have __dict__ attribute
+    >>> h.__dict__
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'H' object has no attribute '__dict__'
+    >>> h.z
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'H' object has no attribute 'z'
+    >>> del h.y
+    >>> h.y
+    Traceback (most recent call last):
+        ...
+    AttributeError: 'y'
 
 .. doctest::
    :hide:
