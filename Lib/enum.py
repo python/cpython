@@ -4,17 +4,18 @@ from builtins import property as _bltin_property, bin as _bltin_bin
 
 
 __all__ = [
-        'EnumMeta',
+        'EnumType', 'EnumMeta',
         'Enum', 'IntEnum', 'StrEnum', 'Flag', 'IntFlag',
         'auto', 'unique',
         'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
+        'global_flag_repr', 'global_enum_repr', 'global_enum',
         ]
 
 
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
-# This is also why there are checks in EnumMeta like `if Enum is not None`
+# This is also why there are checks in EnumType like `if Enum is not None`
 Enum = Flag = EJECT = None
 
 def _is_descriptor(obj):
@@ -285,7 +286,7 @@ class _EnumDict(dict):
     """
     Track enum member order and ensure member names are not reused.
 
-    EnumMeta will use the names found in self._member_names as the
+    EnumType will use the names found in self._member_names as the
     enumeration member names.
     """
     def __init__(self):
@@ -321,7 +322,8 @@ class _EnumDict(dict):
                 # check if members already defined as auto()
                 if self._auto_called:
                     raise TypeError("_generate_next_value_ must be defined before members")
-                setattr(self, '_generate_next_value', value)
+                _gnv = value.__func__ if isinstance(value, staticmethod) else value
+                setattr(self, '_generate_next_value', _gnv)
             elif key == '_ignore_':
                 if isinstance(value, str):
                     value = value.replace(',',' ').split()
@@ -368,7 +370,7 @@ class _EnumDict(dict):
             self[name] = value
 
 
-class EnumMeta(type):
+class EnumType(type):
     """
     Metaclass for Enum
     """
@@ -756,9 +758,9 @@ class EnumMeta(type):
         # module;
         # also, replace the __reduce_ex__ method so unpickling works in
         # previous Python versions
-        module_globals = vars(sys.modules[module])
+        module_globals = sys.modules[module].__dict__
         if source:
-            source = vars(source)
+            source = source.__dict__
         else:
             source = module_globals
         # _value2member_map_ is populated in the same order every time
@@ -776,7 +778,7 @@ class EnumMeta(type):
             members.sort(key=lambda t: t[0])
         cls = cls(name, members, module=module, boundary=boundary or KEEP)
         cls.__reduce_ex__ = _reduce_ex_by_name
-        module_globals.update(cls.__members__)
+        global_enum(cls)
         module_globals[name] = cls
         return cls
 
@@ -881,9 +883,10 @@ class EnumMeta(type):
         else:
             use_args = True
         return __new__, save_new, use_args
+EnumMeta = EnumType
 
 
-class Enum(metaclass=EnumMeta):
+class Enum(metaclass=EnumType):
     """
     Generic enumeration.
 
@@ -958,11 +961,10 @@ class Enum(metaclass=EnumMeta):
         return None
 
     def __repr__(self):
-        return "<%s.%s: %r>" % (
-                self.__class__.__name__, self._name_, self._value_)
+        return "%s.%s" % ( self.__class__.__name__, self._name_)
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self._name_)
+        return "%s" % (self._name_, )
 
     def __dir__(self):
         """
@@ -1220,19 +1222,28 @@ class Flag(Enum, boundary=STRICT):
         return self._value_.bit_count()
 
     def __repr__(self):
-        cls = self.__class__
-        if self._name_ is not None:
-            return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
+        cls_name = self.__class__.__name__
+        if self._name_ is None:
+            return "0x%x" % (self._value_, )
+        if _is_single_bit(self._value_):
+            return '%s.%s' % (cls_name, self._name_)
+        if self._boundary_ is not FlagBoundary.KEEP:
+            return '%s.' % cls_name + ('|%s.' % cls_name).join(self.name.split('|'))
         else:
-            # only zero is unnamed by default
-            return '<%s: %r>' % (cls.__name__, self._value_)
+            name = []
+            for n in self._name_.split('|'):
+                if n.startswith('0'):
+                    name.append(n)
+                else:
+                    name.append('%s.%s' % (cls_name, n))
+            return '|'.join(name)
 
     def __str__(self):
         cls = self.__class__
-        if self._name_ is not None:
-            return '%s.%s' % (cls.__name__, self._name_)
+        if self._name_ is None:
+            return '%s(%x)' % (cls.__name__, self._value_)
         else:
-            return '%s(%s)' % (cls.__name__, self._value_)
+            return self._name_
 
     def __bool__(self):
         return bool(self._value_)
@@ -1329,3 +1340,38 @@ def _power_of_two(value):
     if value < 1:
         return False
     return value == 2 ** _high_bit(value)
+
+def global_enum_repr(self):
+    return '%s.%s' % (self.__class__.__module__, self._name_)
+
+def global_flag_repr(self):
+    module = self.__class__.__module__
+    cls_name = self.__class__.__name__
+    if self._name_ is None:
+        return "%x" % (module, cls_name, self._value_)
+    if _is_single_bit(self):
+        return '%s.%s' % (module, self._name_)
+    if self._boundary_ is not FlagBoundary.KEEP:
+        return module + module.join(self.name.split('|'))
+    else:
+        name = []
+        for n in self._name_.split('|'):
+            if n.startswith('0'):
+                name.append(n)
+            else:
+                name.append('%s.%s' % (module, n))
+        return '|'.join(name)
+
+
+def global_enum(cls):
+    """
+    decorator that makes the repr() of an enum member reference its module
+    instead of its class; also exports all members to the enum's module's
+    global namespace
+    """
+    if issubclass(cls, Flag):
+        cls.__repr__ = global_flag_repr
+    else:
+        cls.__repr__ = global_enum_repr
+    sys.modules[cls.__module__].__dict__.update(cls.__members__)
+    return cls

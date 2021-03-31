@@ -2455,9 +2455,6 @@ class _ParameterKind(enum.IntEnum):
     KEYWORD_ONLY = 3
     VAR_KEYWORD = 4
 
-    def __str__(self):
-        return self._name_
-
     @property
     def description(self):
         return _PARAM_NAME_MAPPING[self]
