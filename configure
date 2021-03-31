@@ -8644,7 +8644,7 @@ $as_echo "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 fi
 
 
-# Sizes of various common basic types
+# Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
@@ -8709,6 +8709,41 @@ $as_echo "$ac_cv_sizeof_long" >&6; }
 
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_LONG $ac_cv_sizeof_long
+_ACEOF
+
+
+# The cast to long int works around a bug in the HP C Compiler,
+# see AC_CHECK_SIZEOF for more information.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking alignment of long" >&5
+$as_echo_n "checking alignment of long... " >&6; }
+if ${ac_cv_alignof_long+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) offsetof (ac__type_alignof_, y)" "ac_cv_alignof_long"        "$ac_includes_default
+#ifndef offsetof
+# define offsetof(type, member) ((char *) &((type *) 0)->member - (char *) 0)
+#endif
+typedef struct { char x; long y; } ac__type_alignof_;"; then :
+
+else
+  if test "$ac_cv_type_long" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute alignment of long
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_alignof_long=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_alignof_long" >&5
+$as_echo "$ac_cv_alignof_long" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define ALIGNOF_LONG $ac_cv_alignof_long
 _ACEOF
 
 
@@ -8940,6 +8975,41 @@ $as_echo "$ac_cv_sizeof_size_t" >&6; }
 
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
+_ACEOF
+
+
+# The cast to long int works around a bug in the HP C Compiler,
+# see AC_CHECK_SIZEOF for more information.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking alignment of size_t" >&5
+$as_echo_n "checking alignment of size_t... " >&6; }
+if ${ac_cv_alignof_size_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) offsetof (ac__type_alignof_, y)" "ac_cv_alignof_size_t"        "$ac_includes_default
+#ifndef offsetof
+# define offsetof(type, member) ((char *) &((type *) 0)->member - (char *) 0)
+#endif
+typedef struct { char x; size_t y; } ac__type_alignof_;"; then :
+
+else
+  if test "$ac_cv_type_size_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute alignment of size_t
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_alignof_size_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_alignof_size_t" >&5
+$as_echo "$ac_cv_alignof_size_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define ALIGNOF_SIZE_T $ac_cv_alignof_size_t
 _ACEOF
 
 
