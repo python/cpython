@@ -785,9 +785,9 @@ The :mod:`socket` module also offers various network-related services:
    system if IPv6 isn't enabled)::
 
       >>> socket.getaddrinfo("example.org", 80, proto=socket.IPPROTO_TCP)
-      [(<AddressFamily.AF_INET6: 10>, <SocketType.SOCK_STREAM: 1>,
+      [(socket.AF_INET6, socket.SOCK_STREAM,
        6, '', ('2606:2800:220:1:248:1893:25c8:1946', 80, 0, 0)),
-       (<AddressFamily.AF_INET: 2>, <SocketType.SOCK_STREAM: 1>,
+       (socket.AF_INET, socket.SOCK_STREAM,
        6, '', ('93.184.216.34', 80))]
 
    .. versionchanged:: 3.2
