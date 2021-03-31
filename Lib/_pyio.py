@@ -63,6 +63,7 @@ def text_encoding(encoding, stacklevel=2):
     return encoding
 
 
+@staticmethod
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
 
@@ -304,31 +305,8 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-class DocDescriptor:
-    """Helper for builtins.open.__doc__
-    """
-    def __get__(self, obj, typ=None):
-        return (
-            "open(file, mode='r', buffering=-1, encoding=None, "
-                 "errors=None, newline=None, closefd=True)\n\n" +
-            open.__doc__)
-
-class OpenWrapper:
-    """Wrapper for builtins.open
-
-    Trick so that open won't become a bound method when stored
-    as a class variable (as dbm.dumb does).
-
-    See initstdio() in Python/pylifecycle.c.
-    """
-    __doc__ = DocDescriptor()
-
-    def __new__(cls, file, mode="r", buffering=-1, encoding=None,
-                *args, **kwargs):
-        # Emit the EncodingWarning for the caller.
-        if "b" not in mode:
-            encoding = text_encoding(encoding)
-        return open(file, mode, buffering, encoding, *args, **kwargs)
+# For backward compatibility
+OpenWrapper = open
 
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
