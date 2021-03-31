@@ -323,8 +323,12 @@ class OpenWrapper:
     """
     __doc__ = DocDescriptor()
 
-    def __new__(cls, *args, **kwargs):
-        return open(*args, **kwargs)
+    def __new__(cls, file, mode="r", buffering=-1, encoding=None,
+                *args, **kwargs):
+        # Emit the EncodingWarning for the caller.
+        if "b" not in mode:
+            encoding = text_encoding(encoding)
+        return open(file, mode, buffering, encoding, *args, **kwargs)
 
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
