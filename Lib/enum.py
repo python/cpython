@@ -10,6 +10,7 @@ __all__ = [
         'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_enum',
+        'simple_enum',
         ]
 
 
@@ -391,13 +392,16 @@ class EnumType(type):
                     )
         return enum_dict
 
-    def __new__(metacls, cls, bases, classdict, boundary=None, **kwds):
+    def __new__(metacls, cls, bases, classdict, boundary=None, _simple=False, **kwds):
         # an Enum class is final once enumeration items have been defined; it
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
         # class will fail).
         #
         # remove any keys listed in _ignore_
+        if _simple:
+            # print('classdict:', classdict)
+            return super().__new__(metacls, cls, bases, classdict, **kwds)
         classdict.setdefault('_ignore_', []).append('_ignore_')
         ignore = classdict['_ignore_']
         for key in ignore:
@@ -1383,3 +1387,92 @@ def global_enum(cls):
         cls.__repr__ = global_enum_repr
     sys.modules[cls.__module__].__dict__.update(cls.__members__)
     return cls
+
+def simple_enum(etype=Enum, boundary=None):
+    """
+    Directly converts a class into an Enum, bypassing all safety checks, etc.
+    """
+    def convert_class(cls):
+        cls_name = cls.__name__
+        attrs = {}
+        body = {}
+        body['_new_member_'] = new_member = etype._new_member_
+        print('new is %r' % (new_member, ))
+        body['_use_args_'] = use_args = etype._use_args_
+        body['_member_names_'] = member_names = []
+        body['_member_map_'] = member_map = {}
+        body['_value2member_map_'] = value2member_map = {}
+        body['_member_type_'] = etype._member_type_
+        if issubclass(etype, Flag):
+            body['_boundary_'] = boundary or etype._boundary_
+            body['_flag_mask_'] = None
+            body['_all_bits_'] = None
+            body['_inverted_'] = None
+        for name, obj in cls.__dict__.items():
+            if _is_dunder(name) or _is_private(cls_name, name) or _is_sunder(name) or _is_descriptor(obj):
+                body[name] = obj
+            else:
+                attrs[name] = obj
+        #
+        # double check that repr and friends are not the mixin's or various
+        # things break (such as pickle)
+        # however, if the method is defined in the Enum itself, don't replace
+        # it
+        for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+            if name not in body:
+                body[name] = getattr(etype, name)
+        enum_cls = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
+        if issubclass(enum_cls, Flag):
+            # Flag / IntFlag
+            flag_mask = 0
+            for order, (name, value) in enumerate(attrs.items()):
+                flag_mask |= value
+                if value in value2member_map:
+                    # an alias to an existing member
+                    member_map[name] = value2member_map[value]
+                else:
+                    # create the member
+                    if use_args:
+                        member = new_member(enum_cls, value)
+                    else:
+                        member = new_member(enum_cls)
+                    member._value_ = value
+                    member._name_ = name
+                    member._sort_order_ = order
+                    member.__objclass__ = enum_cls
+                    member_map[name] = member
+                    value2member_map[value] = member
+                    if _is_single_bit(value):
+                        # not a multi-bit alias, record in _member_names_
+                        member_names.append(name)
+                flag_mask |= value
+            enum_cls._flag_mask_ = flag_mask
+            enum_cls._all_bits_ = 2 ** ((flag_mask).bit_length()) - 1
+            # set correct __iter__
+            member_list = [m._value_ for m in enum_class]
+            if member_list != sorted(member_list):
+                enum_class._iter_member_ = enum_class._iter_member_by_def_
+        else:
+            # Enum / IntEnum / StrEnum
+            for name, value in attrs.items():
+                if value in value2member_map:
+                    # an alias to an existing member
+                    member_map[name] = value2member_map[value]
+                else:
+                    # create the member
+                    if use_args:
+                        member = new_member(enum_cls, value)
+                    else:
+                        member = new_member(enum_cls)
+                    member._value_ = value
+                    member._name_ = name
+                    member._sort_order_ = order
+                    member.__objclass__ = enum_cls
+                    member_map[name] = member
+                    value2member_map[value] = member
+                    member_names.append(name)
+        if '__new__' in body:
+            enum_cls.__new_member__ = __new__
+        enum_cls.__new__ = Enum.__new__
+        return enum_cls
+    return convert_class
