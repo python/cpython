@@ -1,0 +1,2 @@
+Document that IDLE can fail on Unix either from misconfigured IP masquerage
+rules or failure displaying complex colored (non-ascii) characters.
