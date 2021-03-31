@@ -531,6 +531,17 @@ class IOTest(unittest.TestCase):
                     self.assertRaises(OSError, obj.truncate)
                     self.assertRaises(OSError, obj.truncate, 0)
 
+    def test_open_binmode_encoding(self):
+        """open() raises ValueError when encoding is specified in bin mode"""
+        self.assertRaises(ValueError, self.open, os_helper.TESTFN,
+                          "wb", encoding="utf-8")
+
+        # encoding=None and encoding="locale" is allowed.
+        with self.open(os_helper.TESTFN, "wb", encoding=None):
+            pass
+        with self.open(os_helper.TESTFN, "wb", encoding="locale"):
+            pass
+
     def test_open_handles_NUL_chars(self):
         fn_with_NUL = 'foo\0bar'
         self.assertRaises(ValueError, self.open, fn_with_NUL, 'w')
