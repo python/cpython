@@ -427,7 +427,7 @@ def _h(y):
     return foo
 
 dis_nested_0 = """\
-%3d           0 LOAD_CLOSURE             2 (y)
+%3d           0 LOAD_FAST                2 (y)
               2 BUILD_TUPLE              1
               4 LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
               6 LOAD_CONST               2 ('_h.<locals>.foo')
@@ -444,7 +444,7 @@ dis_nested_0 = """\
 
 dis_nested_1 = """%s
 Disassembly of <code object foo at 0x..., file "%s", line %d>:
-%3d           0 LOAD_CLOSURE             1 (x)
+%3d           0 LOAD_FAST                1 (x)
               2 BUILD_TUPLE              1
               4 LOAD_CONST               1 (<code object <listcomp> at 0x..., file "%s", line %d>)
               6 LOAD_CONST               2 ('_h.<locals>.foo.<locals>.<listcomp>')
@@ -962,8 +962,8 @@ expected_jumpy_line = 1
 Instruction = dis.Instruction
 expected_opinfo_outer = [
   Instruction(opname='LOAD_CONST', opcode=100, arg=8, argval=(3, 4), argrepr='(3, 4)', offset=0, starts_line=2, is_jump_target=False),
-  Instruction(opname='LOAD_CLOSURE', opcode=135, arg=3, argval='a', argrepr='a', offset=2, starts_line=None, is_jump_target=False),
-  Instruction(opname='LOAD_CLOSURE', opcode=135, arg=4, argval='b', argrepr='b', offset=4, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_FAST', opcode=124, arg=3, argval='a', argrepr='a', offset=2, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_FAST', opcode=124, arg=4, argval='b', argrepr='b', offset=4, starts_line=None, is_jump_target=False),
   Instruction(opname='BUILD_TUPLE', opcode=102, arg=2, argval=2, argrepr='', offset=6, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=code_object_f, argrepr=repr(code_object_f), offset=8, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='outer.<locals>.f', argrepr="'outer.<locals>.f'", offset=10, starts_line=None, is_jump_target=False),
@@ -985,10 +985,10 @@ expected_opinfo_outer = [
 
 expected_opinfo_f = [
   Instruction(opname='LOAD_CONST', opcode=100, arg=5, argval=(5, 6), argrepr='(5, 6)', offset=0, starts_line=3, is_jump_target=False),
-  Instruction(opname='LOAD_CLOSURE', opcode=135, arg=5, argval='a', argrepr='a', offset=2, starts_line=None, is_jump_target=False),
-  Instruction(opname='LOAD_CLOSURE', opcode=135, arg=6, argval='b', argrepr='b', offset=4, starts_line=None, is_jump_target=False),
-  Instruction(opname='LOAD_CLOSURE', opcode=135, arg=3, argval='c', argrepr='c', offset=6, starts_line=None, is_jump_target=False),
-  Instruction(opname='LOAD_CLOSURE', opcode=135, arg=4, argval='d', argrepr='d', offset=8, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_FAST', opcode=124, arg=5, argval='a', argrepr='a', offset=2, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_FAST', opcode=124, arg=6, argval='b', argrepr='b', offset=4, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_FAST', opcode=124, arg=3, argval='c', argrepr='c', offset=6, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_FAST', opcode=124, arg=4, argval='d', argrepr='d', offset=8, starts_line=None, is_jump_target=False),
   Instruction(opname='BUILD_TUPLE', opcode=102, arg=4, argval=4, argrepr='', offset=10, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=3, argval=code_object_inner, argrepr=repr(code_object_inner), offset=12, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=4, argval='outer.<locals>.f.<locals>.inner', argrepr="'outer.<locals>.f.<locals>.inner'", offset=14, starts_line=None, is_jump_target=False),
