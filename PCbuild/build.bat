@@ -34,8 +34,7 @@ echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
 echo.  --test-marker  Enable the test marker within the build.
-echo.  --regen        Regenerate all opcodes, grammar and tokens. Add -r to
-echo.                 force regeneration.
+echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -156,10 +155,9 @@ exit /B %ERRORLEVEL%
 
 :Regen
 echo on
-if "%Target%"=="Rebuild" set FORCE_REGEN=/p:ForceRegen=true
 %MSBUILD% "%dir%\pythoncore.vcxproj" /t:Regen %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
- %FORCE_REGEN%
+ /p:ForceRegen=true
 
 @echo off
 exit /B %ERRORLEVEL%
