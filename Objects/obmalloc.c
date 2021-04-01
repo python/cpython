@@ -3049,7 +3049,7 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "Total", total);
     assert(narenas * ARENA_SIZE == total);
 
-#ifdef WITH_PYMALLOC
+#if WITH_PYMALLOC_RADIX_TREE
     fputs("\narena map counts\n", out);
 #ifdef USE_INTERIOR_NODES
     (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
