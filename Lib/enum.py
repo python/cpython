@@ -400,7 +400,6 @@ class EnumType(type):
         #
         # remove any keys listed in _ignore_
         if _simple:
-            # print('classdict:', classdict)
             return super().__new__(metacls, cls, bases, classdict, **kwds)
         classdict.setdefault('_ignore_', []).append('_ignore_')
         ignore = classdict['_ignore_']
@@ -1396,19 +1395,20 @@ def simple_enum(etype=Enum, boundary=None):
         cls_name = cls.__name__
         attrs = {}
         body = {}
-        body['_new_member_'] = new_member = etype._new_member_
-        print('new is %r' % (new_member, ))
+        body['_new_member_'] = new_member = etype._member_type_.__new__
         body['_use_args_'] = use_args = etype._use_args_
         body['_member_names_'] = member_names = []
         body['_member_map_'] = member_map = {}
         body['_value2member_map_'] = value2member_map = {}
-        body['_member_type_'] = etype._member_type_
+        body['_member_type_'] = member_type = etype._member_type_
         if issubclass(etype, Flag):
             body['_boundary_'] = boundary or etype._boundary_
             body['_flag_mask_'] = None
             body['_all_bits_'] = None
             body['_inverted_'] = None
         for name, obj in cls.__dict__.items():
+            if name in ('__dict__', '__weakref__'):
+                continue
             if _is_dunder(name) or _is_private(cls_name, name) or _is_sunder(name) or _is_descriptor(obj):
                 body[name] = obj
             else:
@@ -1418,61 +1418,83 @@ def simple_enum(etype=Enum, boundary=None):
         # things break (such as pickle)
         # however, if the method is defined in the Enum itself, don't replace
         # it
+        # for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        #     if name not in body:
+        #         body[name] = getattr(etype, name)
+        enum_class = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
         for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
-            if name not in body:
-                body[name] = getattr(etype, name)
-        enum_cls = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
-        if issubclass(enum_cls, Flag):
+            if name in body:
+                continue
+            class_method = getattr(enum_class, name)
+            obj_method = getattr(member_type, name, None)
+            enum_method = getattr(etype, name, None)
+            if obj_method is not None and obj_method is class_method:
+                setattr(enum_class, name, enum_method)
+        if issubclass(enum_class, Flag):
             # Flag / IntFlag
             flag_mask = 0
             for order, (name, value) in enumerate(attrs.items()):
                 flag_mask |= value
                 if value in value2member_map:
                     # an alias to an existing member
+                    redirect = property()
+                    redirect.__set_name__(enum_class, name)
+                    setattr(enum_class, name, redirect)
                     member_map[name] = value2member_map[value]
                 else:
                     # create the member
                     if use_args:
-                        member = new_member(enum_cls, value)
+                        member = new_member(enum_class, value)
                     else:
-                        member = new_member(enum_cls)
+                        member = new_member(enum_class)
                     member._value_ = value
                     member._name_ = name
+                    member.__objclass__ = enum_class
+                    member.__init__(value)
                     member._sort_order_ = order
-                    member.__objclass__ = enum_cls
+                    redirect = property()
+                    redirect.__set_name__(enum_class, name)
+                    setattr(enum_class, name, redirect)
                     member_map[name] = member
                     value2member_map[value] = member
                     if _is_single_bit(value):
                         # not a multi-bit alias, record in _member_names_
                         member_names.append(name)
                 flag_mask |= value
-            enum_cls._flag_mask_ = flag_mask
-            enum_cls._all_bits_ = 2 ** ((flag_mask).bit_length()) - 1
+            enum_class._flag_mask_ = flag_mask
+            enum_class._all_bits_ = 2 ** ((flag_mask).bit_length()) - 1
             # set correct __iter__
             member_list = [m._value_ for m in enum_class]
             if member_list != sorted(member_list):
                 enum_class._iter_member_ = enum_class._iter_member_by_def_
         else:
             # Enum / IntEnum / StrEnum
-            for name, value in attrs.items():
+            for order, (name, value) in enumerate(attrs.items()):
                 if value in value2member_map:
                     # an alias to an existing member
                     member_map[name] = value2member_map[value]
+                    redirect = property()
+                    redirect.__set_name__(enum_class, name)
+                    setattr(enum_class, name, redirect)
                 else:
                     # create the member
                     if use_args:
-                        member = new_member(enum_cls, value)
+                        member = new_member(enum_class, value)
                     else:
-                        member = new_member(enum_cls)
+                        member = new_member(enum_class)
                     member._value_ = value
                     member._name_ = name
+                    member.__objclass__ = enum_class
+                    member.__init__(value)
                     member._sort_order_ = order
-                    member.__objclass__ = enum_cls
+                    redirect = property()
+                    redirect.__set_name__(enum_class, name)
+                    setattr(enum_class, name, redirect)
                     member_map[name] = member
                     value2member_map[value] = member
                     member_names.append(name)
         if '__new__' in body:
-            enum_cls.__new_member__ = __new__
-        enum_cls.__new__ = Enum.__new__
-        return enum_cls
+            enum_class.__new_member__ = enum_class.__new__
+        enum_class.__new__ = Enum.__new__
+        return enum_class
     return convert_class

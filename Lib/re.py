@@ -142,9 +142,8 @@ __all__ = [
 
 __version__ = "2.2.1"
 
+@enum.global_enum
 @enum.simple_enum(enum.IntFlag, boundary=enum.KEEP)
-
-# class RegexFlag(enum.IntFlag, boundary=enum.KEEP):
 class RegexFlag:
     ASCII = A = sre_compile.SRE_FLAG_ASCII # assume ascii "locale"
     IGNORECASE = I = sre_compile.SRE_FLAG_IGNORECASE # ignore case
