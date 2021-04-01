@@ -26,31 +26,57 @@
  */
 
 
-#ifndef LIBMPDEC_VCCOMPAT_H_
-#define LIBMPDEC_VCCOMPAT_H_
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <mpdecimal.h>
 
 
-/* Visual C fixes: no snprintf ... */
-#ifdef _MSC_VER
-  #ifndef __cplusplus
-    #undef inline
-    #define inline __inline
-  #endif
-  #undef random
-  #define random rand
-  #undef srandom
-  #define srandom srand
-  #undef snprintf
-  #define snprintf sprintf_s
-  #define HAVE_SNPRINTF
-  #undef strncasecmp
-  #define strncasecmp _strnicmp
-  #undef strcasecmp
-  #define strcasecmp _stricmp
-  #undef strtoll
-  #define strtoll _strtoi64
-  #define strdup _strdup
-#endif
+int
+main(int argc, char **argv)
+{
+	mpd_context_t ctx;
+	mpd_t *a, *b;
+	mpd_t *q, *r;
+	char *qs, *rs;
+	char status_str[MPD_MAX_FLAG_STRING];
+	clock_t start_clock, end_clock;
+
+	if (argc != 3) {
+		fprintf(stderr, "divmod: usage: ./divmod x y\n");
+		exit(1);
+	}
+
+	mpd_init(&ctx, 38);
+	ctx.traps = 0;
+
+	q = mpd_new(&ctx);
+	r = mpd_new(&ctx);
+	a = mpd_new(&ctx);
+	b = mpd_new(&ctx);
+	mpd_set_string(a, argv[1], &ctx);
+	mpd_set_string(b, argv[2], &ctx);
+
+	start_clock = clock();
+	mpd_divmod(q, r, a, b, &ctx);
+	end_clock = clock();
+	fprintf(stderr, "time: %f\n\n",
+	           (double)(end_clock-start_clock)/(double)CLOCKS_PER_SEC);
+
+	qs = mpd_to_sci(q, 1);
+	rs = mpd_to_sci(r, 1);
+
+	mpd_snprint_flags(status_str, MPD_MAX_FLAG_STRING, ctx.status);
+	printf("%s  %s  %s\n", qs, rs, status_str);
+
+	mpd_del(q);
+	mpd_del(r);
+	mpd_del(a);
+	mpd_del(b);
+	mpd_free(qs);
+	mpd_free(rs);
+
+	return 0;
+}
 
 
-#endif /* LIBMPDEC_VCCOMPAT_H_ */

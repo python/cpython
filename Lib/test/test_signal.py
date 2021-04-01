@@ -872,7 +872,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         %s
 
-        blocked = %s
+        blocked = %r
         signum = signal.SIGALRM
 
         # child: block and wait the signal

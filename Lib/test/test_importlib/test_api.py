@@ -151,6 +151,7 @@ class FindLoaderTests:
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
+                    warnings.simplefilter('ignore', ImportWarning)
                     self.assertEqual((name, None), self.init.find_loader(name))
 
     def test_success_path(self):
@@ -161,6 +162,7 @@ class FindLoaderTests:
             with test_util.import_state(meta_path=[self.FakeMetaFinder]):
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', DeprecationWarning)
+                    warnings.simplefilter('ignore', ImportWarning)
                     self.assertEqual((name, path),
                                      self.init.find_loader(name, path))
 

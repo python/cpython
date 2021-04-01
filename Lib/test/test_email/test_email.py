@@ -4261,7 +4261,7 @@ class TestBase64(unittest.TestCase):
 
     def test_encode(self):
         eq = self.assertEqual
-        eq(base64mime.body_encode(b''), b'')
+        eq(base64mime.body_encode(b''), '')
         eq(base64mime.body_encode(b'hello'), 'aGVsbG8=\n')
         # Test the binary flag
         eq(base64mime.body_encode(b'hello\n'), 'aGVsbG8K\n')
@@ -4290,7 +4290,6 @@ eHh4eCB4eHh4IA==\r
         # Test the charset option
         eq(he('hello', charset='iso-8859-2'), '=?iso-8859-2?b?aGVsbG8=?=')
         eq(he('hello\nworld'), '=?iso-8859-1?b?aGVsbG8Kd29ybGQ=?=')
-
 
 
 class TestQuopri(unittest.TestCase):
