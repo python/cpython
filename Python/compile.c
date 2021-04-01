@@ -5641,7 +5641,7 @@ static int
 compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
-    basicblock *end, *fail_pop_1;
+    basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     // Need to make a copy for (possibly) storing later:
     ADDOP(c, DUP_TOP);
@@ -5871,10 +5871,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         if (pc->stores == NULL ||
             // Only copy the subject if we're *not* on the last alternative:
             (!is_last && !compiler_addop(c, DUP_TOP)) ||
-            !compiler_pattern(c, alt, pc) ||
-            // Only jump if we're *not* on the last alternative:
-            (!is_last && !compiler_addop_j(c, POP_JUMP_IF_TRUE, pass_pop_1)) ||
-            !compiler_next_block(c))
+            !compiler_pattern(c, alt, pc))
         {
             goto fail;
         }
@@ -5882,6 +5879,11 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             // If this is the first alternative, save its stores as a "control"
             // for the others (they can't bind a different set of names):
             control = pc->stores;
+            if ((!is_last && !compiler_addop_j(c, POP_JUMP_IF_TRUE, pass_pop_1)) ||
+                !compiler_next_block(c))
+            {
+                goto fail;
+            }
             continue;
         }
         if (PyList_GET_SIZE(pc->stores) != PyList_GET_SIZE(control)) {
@@ -5889,6 +5891,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         if (PyList_GET_SIZE(stores_init) < PyList_GET_SIZE(pc->stores))
         {
+            ADDOP_I(c, ROTATE, PyList_GET_SIZE(pc->stores) - PyList_GET_SIZE(stores_init) + 1);
             // Otherwise, check to see if we differ from the control list:
             Py_ssize_t j, k;
             for (j = PyList_GET_SIZE(stores_init); j < PyList_GET_SIZE(control);
@@ -5901,9 +5904,15 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
                 }
                 assert(j <= k);
                 while (k++ < PyList_GET_SIZE(control)) {
-                    // ADDOP_I(c, ROTATE, PyList_GET_SIZE(control) - j)
+                    ADDOP_I(c, ROTATE, PyList_GET_SIZE(control) - j);
                 }
             }
+        }
+        // Only jump if we're *not* on the last alternative:
+        if ((!is_last && !compiler_addop_j(c, POP_JUMP_IF_TRUE, pass_pop_1)) ||
+             !compiler_next_block(c))
+        {
+            goto fail;
         }
         Py_DECREF(pc->stores);
     }
