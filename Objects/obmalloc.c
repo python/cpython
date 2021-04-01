@@ -1397,6 +1397,12 @@ static int arena_map_bot_count;
 static arena_map_bot_t arena_map_root;
 #endif
 
+/* arena_map_cache[...] is a directly mapped cache for the result of
+ * address_in_range(pool).  The two low order bits correspond to the return
+ * value of address_in_range(), 00 == no entry, 01 == small, 10 == large.  For
+ * the cache, small means it was allocated by obmalloc, large is allocated by
+ * other malloc.  The high order bits are the pool address.
+ */
 #define CACHE_BITS 7
 #define CACHE_SIZE (1<<CACHE_BITS)
 #define CACHE_MASK (CACHE_SIZE - 1)
