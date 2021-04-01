@@ -518,7 +518,7 @@ Data Types
       Out-of-range values cause a :exc:`ValueError` to be raised.  This is the
       default for :class:`Flag`::
 
-         >>> from enum import STRICT
+         >>> from enum import Flag, STRICT
          >>> class StrictFlag(Flag, boundary=STRICT):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -535,7 +535,7 @@ Data Types
       Out-of-range values have invalid values removed, leaving a valid *Flag*
       value::
 
-         >>> from enum import CONFORM
+         >>> from enum import Flag, CONFORM
          >>> class ConformFlag(Flag, boundary=CONFORM):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -548,7 +548,7 @@ Data Types
       Out-of-range values lose their *Flag* membership and revert to :class:`int`.
       This is the default for :class:`IntFlag`::
 
-         >>> from enum import EJECT
+         >>> from enum import Flag, EJECT
          >>> class EjectFlag(Flag, boundary=EJECT):
          ...     RED = auto()
          ...     GREEN = auto()
@@ -561,7 +561,7 @@ Data Types
       Out-of-range values are kept, and the *Flag* membership is kept.  This is
       used for some stdlib flags:
 
-         >>> from enum import KEEP
+         >>> from enum import Flag, KEEP
          >>> class KeepFlag(Flag, boundary=KEEP):
          ...     RED = auto()
          ...     GREEN = auto()
