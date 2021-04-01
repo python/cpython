@@ -1443,6 +1443,19 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
 
+    def test_issue26053(self):
+        # run command of pdb prompt echoes the correct args
+        script = "print('hello')"
+        commands = """
+            continue
+            run a b c
+            run d e f
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        output = '\n'.join([x.strip() for x in stdout.splitlines()])
+        self.assertIn("Restarting main.py with arguments:\na b c", output)
+        self.assertIn("Restarting main.py with arguments:\nd e f", output)
 
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
