@@ -94,7 +94,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);Py_LIMITED_API=0x03100000</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);Py_LIMITED_API=0x030A0000</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
