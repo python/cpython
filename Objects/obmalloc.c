@@ -3027,12 +3027,6 @@ _PyObject_DebugMallocStats(FILE *out)
     (void)printone(out, "# arenas reclaimed", ntimes_arena_allocated - narenas);
     (void)printone(out, "# arenas highwater mark", narenas_highwater);
     (void)printone(out, "# arenas allocated current", narenas);
-#ifdef USE_INTERIOR_NODES
-    (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
-    (void)printone(out, "# arena map bot nodes", arena_map_bot_count);
-    fputc('\n', out);
-#endif
-
 
     PyOS_snprintf(buf, sizeof(buf),
                   "%zu arenas * %d bytes/arena",
@@ -3041,6 +3035,7 @@ _PyObject_DebugMallocStats(FILE *out)
 
     fputc('\n', out);
 
+    /* Account for what all of those arena bytes are being used for. */ 
     total = printone(out, "# bytes in allocated blocks", allocated_bytes);
     total += printone(out, "# bytes in available blocks", available_bytes);
 
@@ -3051,16 +3046,26 @@ _PyObject_DebugMallocStats(FILE *out)
     total += printone(out, "# bytes lost to pool headers", pool_header_bytes);
     total += printone(out, "# bytes lost to quantization", quantization);
     total += printone(out, "# bytes lost to arena alignment", arena_alignment);
-#ifdef WITH_PYMALLOC_RADIX_TREE
-    total += printone(out, "# bytes lost to arena map root", sizeof(arena_map_root));
+    (void)printone(out, "Total", total);
+    assert(narenas * ARENA_SIZE == total);
+
+#if WITH_PYMALLOC_RADIX_TREE
+    fputs("\narena map counts\n", out);
+#ifdef USE_INTERIOR_NODES
+    (void)printone(out, "# arena map mid nodes", arena_map_mid_count);
+    (void)printone(out, "# arena map bot nodes", arena_map_bot_count);
+    fputc('\n', out);
 #endif
+    total = printone(out, "# bytes lost to arena map root", sizeof(arena_map_root));
 #ifdef USE_INTERIOR_NODES
     total += printone(out, "# bytes lost to arena map mid",
                       sizeof(arena_map_mid_t) * arena_map_mid_count);
     total += printone(out, "# bytes lost to arena map bot",
                       sizeof(arena_map_bot_t) * arena_map_bot_count);
-#endif
     (void)printone(out, "Total", total);
+#endif
+#endif
+
     return 1;
 }
 
