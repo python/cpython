@@ -1477,7 +1477,7 @@ variables:
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             for offset, name in enumerate(dict.fromkeys(slot_names)):
-                if name in namespace:
+                if name in mapping:
                     raise ValueError(
                         f'{name!r} in __slots__ conflicts with class variable'
                     )
