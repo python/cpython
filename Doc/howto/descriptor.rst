@@ -1064,7 +1064,7 @@ roughly equivalent to:
 .. testcode::
 
     class MethodType:
-        "Emulate Py_MethodType in Objects/classobject.c"
+        "Emulate PyMethod_Type in Objects/classobject.c"
 
         def __init__(self, func, obj):
             self.__func__ = func
