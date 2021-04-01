@@ -15,7 +15,6 @@ static PyMemberDef frame_memberlist[] = {
     {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
-    {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
     {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
@@ -46,7 +45,7 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_code, f->f_lasti);
+        return PyCode_Addr2Line(f->f_code, f->f_lasti*2);
     }
 }
 
@@ -54,6 +53,15 @@ static PyObject *
 frame_getlineno(PyFrameObject *f, void *closure)
 {
     return PyLong_FromLong(PyFrame_GetLineNumber(f));
+}
+
+static PyObject *
+frame_getlasti(PyFrameObject *f, void *closure)
+{
+    if (f->f_lasti < 0) {
+        return PyLong_FromLong(-1);
+    }
+    return PyLong_FromLong(f->f_lasti*2);
 }
 
 
@@ -135,7 +143,7 @@ markblocks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case JUMP_IF_NOT_EXC_MATCH:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    j = get_arg(code, i);
                     assert(j < len);
                     if (blocks[j] == -1 && j < i) {
                         todo = 1;
@@ -145,7 +153,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[i+1] = block_stack;
                     break;
                 case JUMP_ABSOLUTE:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    j = get_arg(code, i);
                     assert(j < len);
                     if (blocks[j] == -1 && j < i) {
                         todo = 1;
@@ -154,7 +162,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[j] = block_stack;
                     break;
                 case SETUP_FINALLY:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     except_stack = push_block(block_stack, Except);
                     assert(blocks[j] == -1 || blocks[j] == except_stack);
@@ -164,7 +172,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     break;
                 case SETUP_WITH:
                 case SETUP_ASYNC_WITH:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     except_stack = push_block(block_stack, Except);
                     assert(blocks[j] == -1 || blocks[j] == except_stack);
@@ -173,7 +181,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[i+1] = block_stack;
                     break;
                 case JUMP_FORWARD:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     assert(blocks[j] == -1 || blocks[j] == block_stack);
                     blocks[j] = block_stack;
@@ -186,7 +194,7 @@ markblocks(PyCodeObject *code_obj, int len)
                 case FOR_ITER:
                     blocks[i+1] = block_stack;
                     block_stack = pop_block(block_stack);
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     assert(blocks[j] == -1 || blocks[j] == block_stack);
                     blocks[j] = block_stack;
@@ -422,7 +430,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     int64_t target_block_stack = -1;
     int64_t best_block_stack = -1;
     int best_addr = -1;
-    int64_t start_block_stack = blocks[f->f_lasti/sizeof(_Py_CODEUNIT)];
+    int64_t start_block_stack = blocks[f->f_lasti];
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
         if (lines[i] == new_lineno) {
@@ -431,7 +439,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                 msg = NULL;
                 if (target_block_stack > best_block_stack) {
                     best_block_stack = target_block_stack;
-                    best_addr = i*sizeof(_Py_CODEUNIT);
+                    best_addr = i;
                 }
             }
             else if (msg) {
@@ -511,6 +519,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_lineno",        (getter)frame_getlineno,
                     (setter)frame_setlineno, NULL},
     {"f_trace",         (getter)frame_gettrace, (setter)frame_settrace, NULL},
+    {"f_lasti",         (getter)frame_getlasti, NULL, NULL},
     {0}
 };
 

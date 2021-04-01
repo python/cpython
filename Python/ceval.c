@@ -1338,16 +1338,15 @@ eval_frame_handle_pending(PyThreadState *tstate)
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET()  \
-    (sizeof(_Py_CODEUNIT) * (int)(next_instr - first_instr))
+#define INSTR_OFFSET() ((int)(next_instr - first_instr))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
         oparg = _Py_OPARG(word); \
         next_instr++; \
     } while (0)
-#define JUMPTO(x)       (next_instr = first_instr + (x) / sizeof(_Py_CODEUNIT))
-#define JUMPBY(x)       (next_instr += (x) / sizeof(_Py_CODEUNIT))
+#define JUMPTO(x)       (next_instr = first_instr + (x))
+#define JUMPBY(x)       (next_instr += (x))
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -1699,11 +1698,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
        to the beginning of the combined pair.)
     */
     assert(f->f_lasti >= -1);
-    next_instr = first_instr;
-    if (f->f_lasti >= 0) {
-        assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
-        next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
-    }
+    next_instr = first_instr + f->f_lasti + 1;
     stack_pointer = f->f_valuestack + f->f_stackdepth;
     /* Set f->f_stackdepth to -1.
      * Update when returning or calling trace function.
@@ -2627,8 +2622,8 @@ main_loop:
             assert (gen_status == PYGEN_NEXT);
             /* receiver remains on stack, retval is value to be yielded */
             /* and repeat... */
-            assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
-            f->f_lasti -= sizeof(_Py_CODEUNIT);
+            assert(f->f_lasti > 0);
+            f->f_lasti -= 1;
             f->f_state = FRAME_SUSPENDED;
             f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
@@ -5511,7 +5506,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     else {
         initialize_trace_info(trace_info, frame);
-        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti, &trace_info->bounds);
+        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
     }
     result = func(obj, frame, what, arg);
     frame->f_lineno = 0;
@@ -5552,11 +5547,11 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     */
     initialize_trace_info(trace_info, frame);
     int lastline = trace_info->bounds.ar_line;
-    int line = _PyCode_CheckLineNumber(frame->f_lasti, &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
     if (line != -1 && frame->f_trace_lines) {
         /* Trace backward edges or first instruction of a new line */
         if (frame->f_lasti < trace_info->instr_prev ||
-            (line != lastline && frame->f_lasti == trace_info->bounds.ar_start))
+            (line != lastline && frame->f_lasti*2 == trace_info->bounds.ar_start))
         {
             result = call_trace(func, obj, tstate, frame, trace_info, PyTrace_LINE, Py_None);
         }
@@ -6475,7 +6470,7 @@ dtrace_function_entry(PyFrameObject *f)
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(code, f->f_lasti);
+    lineno = PyFrame_GetLineNumber(f);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
@@ -6490,7 +6485,7 @@ dtrace_function_return(PyFrameObject *f)
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(code, f->f_lasti);
+    lineno = PyFrame_GetLineNumber(f);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
@@ -6506,7 +6501,7 @@ maybe_dtrace_line(PyFrameObject *frame,
        instruction window, reset the window.
     */
     initialize_trace_info(trace_info, frame);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti, &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */
