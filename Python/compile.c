@@ -205,6 +205,7 @@ struct compiler {
 typedef struct {
     PyObject *stores;
     int allow_irrefutable;
+    Py_ssize_t underneath;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -5499,7 +5500,10 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
         }
     }
     RETURN_IF_FALSE(!PyList_Append(pc->stores, n));
-    RETURN_IF_FALSE(compiler_nameop(c, n, Store));
+    if (pc->underneath) {
+        ADDOP_I(c, ROTATE, pc->underneath + 1);
+    }
+    // RETURN_IF_FALSE(compiler_nameop(c, n, Store));
     return 1;
 }
 
@@ -5639,19 +5643,13 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->kind == MatchAs_kind);
     basicblock *end, *fail_pop_1;
     RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
     // Need to make a copy for (possibly) storing later:
     ADDOP(c, DUP_TOP);
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
     NEXT_BLOCK(c);
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
     ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    // Need to pop that unused copy from before:
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -6063,7 +6061,7 @@ static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
     VISIT(c, expr, s->v.Match.subject);
-    basicblock *next, *end;
+    basicblock *next, *fail_guard, *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
@@ -6079,20 +6077,29 @@ compiler_match(struct compiler *c, stmt_ty s)
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         RETURN_IF_FALSE(next = compiler_new_block(c));
+        RETURN_IF_FALSE(fail_guard = compiler_new_block(c));
         // If pc.allow_irrefutable is 0, any name captures against our subject
         // will raise. Irrefutable cases must be either guarded, last, or both:
         pc.allow_irrefutable = m->guard != NULL || i == cases - 1;
+        pc.underneath = 0;
         // Only copy the subject if we're *not* on the last case:
         if (i != cases - has_default - 1) {
             ADDOP(c, DUP_TOP);
         }
         int result = compiler_pattern(c, m->pattern, &pc);
-        Py_CLEAR(pc.stores);
+        assert(!pc.underneath);
         RETURN_IF_FALSE(result);
         ADDOP_JUMP(c, POP_JUMP_IF_FALSE, next);
         NEXT_BLOCK(c);
+        if (pc.stores) {
+            Py_ssize_t i = PyList_GET_SIZE(pc.stores);
+            while (i--) {
+                PyObject *n = PyList_GET_ITEM(pc.stores, i);
+                RETURN_IF_FALSE(compiler_nameop(c, n, Store));
+            }
+        }
         if (m->guard) {
-            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, next, 0));
+            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, fail_guard, 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -6101,6 +6108,14 @@ compiler_match(struct compiler *c, stmt_ty s)
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
         compiler_use_next_block(c, next);
+        if (pc.stores) {
+            Py_ssize_t i = PyList_GET_SIZE(pc.stores);
+            while (i--) {
+                ADDOP(c, POP_TOP);
+            }
+            Py_CLEAR(pc.stores);
+        }
+        compiler_use_next_block(c, fail_guard);
     }
     if (has_default) {
         if (cases == 1) {
