@@ -1476,7 +1476,11 @@ variables:
             'Emuluate type_new() in Objects/typeobject.c'
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
-            for offset, name in enumerate(slot_names):
+            for offset, name in enumerate(dict.fromkeys(slot_names)):
+                if name in namespace:
+                    raise ValueError(
+                        f'{name!r} in __slots__ conflicts with class variable'
+                    )
                 mapping[name] = Member(name, clsname, offset)
             return super().__new__(mcls, clsname, bases, mapping)
 
