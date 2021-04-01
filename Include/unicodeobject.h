@@ -97,7 +97,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #  include <wchar.h>
 #endif
 
-#if defined(__sun) && defined(__SVR4)
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 #  include <uchar.h>
 #  include <langinfo.h>
 #endif

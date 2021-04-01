@@ -32,6 +32,12 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     int current_locale,
     _Py_error_handler errors);
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+PyAPI_FUNC(char32_t*) _Py_convert_wchar_t_to_UTF32(
+    const wchar_t* u,
+    Py_ssize_t size);
+#endif
+
 
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
