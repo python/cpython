@@ -79,7 +79,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    Lines beginning with '``?``' attempt to guide the eye to intraline differences,
    and were not present in either input sequence. These lines can be confusing if
-   the sequences contain tab characters.
+   the sequences contain whitespace characters, such as spaces, tabs or line breaks.
 
 
 .. class:: HtmlDiff
