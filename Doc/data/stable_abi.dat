@@ -616,7 +616,6 @@ PyType_GetFlags
 PyType_GetModule
 PyType_GetModuleState
 PyType_GetSlot
-PyType_HasFeature
 PyType_IsSubtype
 PyType_Modified
 PyType_Ready
