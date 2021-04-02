@@ -5553,68 +5553,21 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
 {
     RETURN_IF_FALSE(unpack_helper(c, values));
     // We've now got a bunch of new subjects on the stack. If any of them fail
-    // to match, we need to pop everything else off, then finally push False.
-    // fails is an array of blocks that correspond to the necessary amount of
-    // popping for each element:
-    basicblock **fails;
+    // to match, we need to pop everything else off.
     Py_ssize_t size = asdl_seq_LEN(values);
-    fails = (basicblock **)PyObject_Malloc(sizeof(basicblock*) * size);
-    if (fails == NULL) {
-        PyErr_NoMemory();
-        return 0;
-    }
-    // NOTE: Can't use our nice returning macros anymore: they'll leak memory!
-    // goto error on error.
+    pc->pop_on_fail += size;
+    pc->underneath += size;
     for (Py_ssize_t i = 0; i < size; i++) {
-        fails[i] = compiler_new_block(c);
-        if (fails[i] == NULL) {
-            goto error;
-        }
-    }
-    pc->pop_on_fail += size - 1;
-    for (Py_ssize_t i = 0; i < size; i++) {
+        pc->pop_on_fail--;
+        pc->underneath--;
         expr_ty value = asdl_seq_GET(values, i);
         if (i == star) {
             assert(value->kind == Starred_kind);
             value = value->v.Starred.value;
         }
-        if (!compiler_pattern_subpattern(c, value, pc) ||
-            !compiler_addop_j(c, POP_JUMP_IF_FALSE, fails[i]) ||
-            compiler_next_block(c) == NULL)
-        {
-            goto error;
-        }
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
     }
-    // Success!
-    basicblock *end = compiler_new_block(c);
-    if (end == NULL ||
-        !compiler_addop_load_const(c, Py_True) ||
-        !compiler_addop_j(c, JUMP_FORWARD, end))
-    {
-        goto error;
-    }
-    // This is where we handle failed sub-patterns. For a sequence pattern like
-    // [a, b, c, d], this will look like:
-    // fails[0]: POP_TOP
-    // fails[1]: POP_TOP
-    // fails[2]: POP_TOP
-    // fails[3]: LOAD_CONST False
-    for (Py_ssize_t i = 0; i < size - 1; i++) {
-        compiler_use_next_block(c, fails[i]);
-        if (!compiler_addop(c, POP_TOP)) {
-            goto error;
-        }
-    }
-    compiler_use_next_block(c, fails[size - 1]);
-    if (!compiler_addop_load_const(c, Py_False)) {
-        goto error;
-    }
-    compiler_use_next_block(c, end);
-    PyObject_Free(fails);
     return 1;
-error:
-    PyObject_Free(fails);
-    return 0;
 }
 
 // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
@@ -5624,9 +5577,6 @@ static int
 pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
                                Py_ssize_t star, pattern_context *pc)
 {
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(values);
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
@@ -5650,17 +5600,14 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
             ADDOP(c, BINARY_SUBTRACT);
         }
         ADDOP(c, BINARY_SUBSCR);
+        pc->pop_on_fail++;
+        pc->underneath++;
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+        pc->pop_on_fail--;
+        pc->underneath--;
         NEXT_BLOCK(c);
     }
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -6001,18 +5948,21 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         only_wildcard &= WILDCARD_CHECK(value);
     }
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
     ADDOP(c, MATCH_SEQUENCE);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+    pc->pop_on_fail++;
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+    pc->pop_on_fail--;
     NEXT_BLOCK(c);
     if (star < 0) {
         // No star: len(subject) == size
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+        pc->pop_on_fail++;
+        pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+        pc->pop_on_fail--;
         NEXT_BLOCK(c);
     }
     else if (size > 1) {
@@ -6020,13 +5970,15 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+        pc->pop_on_fail++;
+        pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+        pc->pop_on_fail--;
         NEXT_BLOCK(c);
     }
     if (only_wildcard) {
         // Patterns like: [] / [_] / [_, _] / [*_] / [_, *_] / [_, _, *_] / etc.
         ADDOP(c, POP_TOP);
-        ADDOP_LOAD_CONST(c, Py_True);
     }
     else if (star_wildcard) {
         RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, values, star, pc));
@@ -6034,11 +5986,6 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     else {
         RETURN_IF_FALSE(pattern_helper_sequence_unpack(c, values, star, pc));
     }
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    ADDOP(c, POP_TOP)
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
