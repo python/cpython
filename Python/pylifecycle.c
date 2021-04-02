@@ -781,13 +781,13 @@ pycore_interp_init(PyThreadState *tstate)
         return status;
     }
 
-    if (_PyWarnings_InitState(interp) < 0) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-
     status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
+    }
+
+    if (_PyWarnings_InitState(interp) < 0) {
+        return _PyStatus_ERR("can't initialize warnings");
     }
 
     status = _PySys_Create(tstate, &sysmod);
