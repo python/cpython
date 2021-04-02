@@ -757,6 +757,18 @@ class ThreadTests(BaseTestCase):
                 # Daemon threads must never add it to _shutdown_locks.
                 self.assertNotIn(tstate_lock, threading._shutdown_locks)
 
+    def test_leak_without_join(self):
+        # bpo-37788: Test that no continuous memory leak occurs when multiple
+        # subthreads which are not joined are started.
+        def noop(): pass
+        for i in range(10):
+            thread = threading.Thread(target=noop)
+            thread.start()
+            self.assertIn(thread._tstate_lock, threading._shutdown_locks)
+            while thread._tstate_lock.locked():
+                pass
+        self.assertLess(len(threading._shutdown_locks), 10)
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 

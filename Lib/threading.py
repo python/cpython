@@ -896,6 +896,21 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
+    def _discard_tstate_locks(self):
+        with _shutdown_locks_lock:
+            locks = list(_shutdown_locks)
+
+        if not locks:
+            return
+
+        for lock in locks:
+            if lock.locked():
+                continue
+            lock.acquire()
+            lock.release()
+            with _shutdown_locks_lock:
+                _shutdown_locks.discard(lock)
+
     def _set_tstate_lock(self):
         """
         Set a lock object which will be released by the interpreter when
@@ -964,7 +979,10 @@ class Thread:
                 # the exception keeps the target alive past when we
                 # assert that it's dead.
                 #XXX self._exc_clear()
-                pass
+                # To prevent continuous leakage of tstate locks, try to discard at
+                # the end of each subthread.
+                if not self.daemon:
+                    self._discard_tstate_locks()
         finally:
             with _active_limbo_lock:
                 try:
