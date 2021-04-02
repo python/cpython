@@ -424,7 +424,7 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
     if (type->tp_version_tag == 0) {
         // Wrap-around or just starting Python - clear the whole cache
         type_cache_clear(cache, 1);
-        return 1;
+        return 0;
     }
 
     bases = type->tp_bases;
@@ -3361,6 +3361,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #if MCACHE_STATS
         cache->hits++;
 #endif
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
         return entry->value;
     }
 
@@ -3398,6 +3399,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
             cache->misses++;
         }
 #endif
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
         Py_SETREF(entry->name, Py_NewRef(name));
     }
     return res;

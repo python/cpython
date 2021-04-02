@@ -1246,7 +1246,7 @@ PyTypeObject PyCode_Type = {
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
-    if (addrq == -1) {
+    if (addrq < 0) {
         return co->co_firstlineno;
     }
     assert(addrq >= 0 && addrq < PyBytes_GET_SIZE(co->co_code));

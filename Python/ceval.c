@@ -1231,40 +1231,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
     return 0;
 }
 
-PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
-{
-    _Py_EnsureTstateNotNULL(tstate);
-
-#ifdef DXPAIRS
-    int lastopcode = 0;
-#endif
-    PyObject **stack_pointer;  /* Next free slot in value stack */
-    const _Py_CODEUNIT *next_instr;
-    int opcode;        /* Current opcode */
-    int oparg;         /* Current opcode argument, if any */
-    PyObject **fastlocals, **freevars;
-    PyObject *retval = NULL;            /* Return value */
-    struct _ceval_state * const ceval2 = &tstate->interp->ceval;
-    _Py_atomic_int * const eval_breaker = &ceval2->eval_breaker;
-    PyCodeObject *co;
-
-    /* when tracing we set things up so that
-
-           not (instr_lb <= current_bytecode_offset < instr_ub)
-
-       is true when the line being executed has changed.  The
-       initial values are such as to make this false the first
-       time it is tested. */
-
-    const _Py_CODEUNIT *first_instr;
-    PyObject *names;
-    PyObject *consts;
-    _PyOpcache *co_opcache;
-
-#ifdef LLTRACE
-    _Py_IDENTIFIER(__ltrace__);
-#endif
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -1323,15 +1289,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #endif
 
 #if USE_COMPUTED_GOTOS
-/* Import the static jump table */
-#include "opcode_targets.h"
-
 #define TARGET(op) \
     op: \
     TARGET_##op
 
 #ifdef LLTRACE
-#define FAST_DISPATCH() \
+#define DISPATCH() \
     { \
         if (!lltrace && !_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
@@ -1341,7 +1304,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         goto fast_next_opcode; \
     }
 #else
-#define FAST_DISPATCH() \
+#define DISPATCH() \
     { \
         if (!_Py_TracingPossible(ceval2) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
@@ -1352,19 +1315,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 #endif
 
-#define DISPATCH() \
-    { \
-        if (!_Py_atomic_load_relaxed(eval_breaker)) { \
-            FAST_DISPATCH(); \
-        } \
-        continue; \
-    }
-
 #else
 #define TARGET(op) op
-#define FAST_DISPATCH() goto fast_next_opcode
-#define DISPATCH() continue
+#define DISPATCH() goto fast_next_opcode
+
 #endif
+
+#define CHECK_EVAL_BREAKER() \
+    if (_Py_atomic_load_relaxed(eval_breaker)) { \
+        continue; \
+    }
 
 
 /* Tuple access macros */
@@ -1378,16 +1338,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET()  \
-    (sizeof(_Py_CODEUNIT) * (int)(next_instr - first_instr))
+#define INSTR_OFFSET() ((int)(next_instr - first_instr))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
         oparg = _Py_OPARG(word); \
         next_instr++; \
     } while (0)
-#define JUMPTO(x)       (next_instr = first_instr + (x) / sizeof(_Py_CODEUNIT))
-#define JUMPBY(x)       (next_instr += (x) / sizeof(_Py_CODEUNIT))
+#define JUMPTO(x)       (next_instr = first_instr + (x))
+#define JUMPBY(x)       (next_instr += (x))
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -1622,7 +1581,46 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
 #endif
 
-/* Start of code */
+
+PyObject* _Py_HOT_FUNCTION
+_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+{
+    _Py_EnsureTstateNotNULL(tstate);
+
+#if USE_COMPUTED_GOTOS
+/* Import the static jump table */
+#include "opcode_targets.h"
+#endif
+
+#ifdef DXPAIRS
+    int lastopcode = 0;
+#endif
+    PyObject **stack_pointer;  /* Next free slot in value stack */
+    const _Py_CODEUNIT *next_instr;
+    int opcode;        /* Current opcode */
+    int oparg;         /* Current opcode argument, if any */
+    PyObject **fastlocals, **freevars;
+    PyObject *retval = NULL;            /* Return value */
+    struct _ceval_state * const ceval2 = &tstate->interp->ceval;
+    _Py_atomic_int * const eval_breaker = &ceval2->eval_breaker;
+    PyCodeObject *co;
+
+    /* when tracing we set things up so that
+
+           not (instr_lb <= current_bytecode_offset < instr_ub)
+
+       is true when the line being executed has changed.  The
+       initial values are such as to make this false the first
+       time it is tested. */
+
+    const _Py_CODEUNIT *first_instr;
+    PyObject *names;
+    PyObject *consts;
+    _PyOpcache *co_opcache;
+
+#ifdef LLTRACE
+    _Py_IDENTIFIER(__ltrace__);
+#endif
 
     if (_Py_EnterRecursiveCall(tstate, "")) {
         return NULL;
@@ -1700,11 +1698,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
        to the beginning of the combined pair.)
     */
     assert(f->f_lasti >= -1);
-    next_instr = first_instr;
-    if (f->f_lasti >= 0) {
-        assert(f->f_lasti % sizeof(_Py_CODEUNIT) == 0);
-        next_instr += f->f_lasti / sizeof(_Py_CODEUNIT) + 1;
-    }
+    next_instr = first_instr + f->f_lasti + 1;
     stack_pointer = f->f_valuestack + f->f_stackdepth;
     /* Set f->f_stackdepth to -1.
      * Update when returning or calling trace function.
@@ -1857,7 +1851,7 @@ main_loop:
            and that all operation that succeed call [FAST_]DISPATCH() ! */
 
         case TARGET(NOP): {
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(LOAD_FAST): {
@@ -1870,7 +1864,7 @@ main_loop:
             }
             Py_INCREF(value);
             PUSH(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(LOAD_CONST): {
@@ -1878,27 +1872,27 @@ main_loop:
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
             PUSH(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(STORE_FAST): {
             PREDICTED(STORE_FAST);
             PyObject *value = POP();
             SETLOCAL(oparg, value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(POP_TOP): {
             PyObject *value = POP();
             Py_DECREF(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(DUP_TOP): {
             PyObject *top = TOP();
             Py_INCREF(top);
             PUSH(top);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(DUP_TOP_TWO): {
@@ -1909,7 +1903,7 @@ main_loop:
             STACK_GROW(2);
             SET_TOP(top);
             SET_SECOND(second);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(UNARY_POSITIVE): {
@@ -2598,8 +2592,8 @@ main_loop:
             assert (gen_status == PYGEN_NEXT);
             /* receiver remains on stack, retval is value to be yielded */
             /* and repeat... */
-            assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
-            f->f_lasti -= sizeof(_Py_CODEUNIT);
+            assert(f->f_lasti > 0);
+            f->f_lasti -= 1;
             f->f_state = FRAME_SUSPENDED;
             f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
@@ -2674,7 +2668,7 @@ main_loop:
                 UNWIND_EXCEPT_HANDLER(b);
                 Py_DECREF(POP());
                 JUMPBY(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             else {
                 PyObject *val = POP();
@@ -2688,7 +2682,7 @@ main_loop:
             PyObject *value = PyExc_AssertionError;
             Py_INCREF(value);
             PUSH(value);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(LOAD_BUILD_CLASS): {
@@ -3590,7 +3584,7 @@ main_loop:
             Py_DECREF(right);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(CONTAINS_OP): {
@@ -3607,7 +3601,7 @@ main_loop:
             PUSH(b);
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
@@ -3704,7 +3698,7 @@ main_loop:
 
         case TARGET(JUMP_FORWARD): {
             JUMPBY(oparg);
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(POP_JUMP_IF_FALSE): {
@@ -3713,12 +3707,12 @@ main_loop:
             int err;
             if (cond == Py_True) {
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_False) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
@@ -3737,12 +3731,12 @@ main_loop:
             int err;
             if (cond == Py_False) {
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_True) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             Py_DECREF(cond);
@@ -3762,11 +3756,11 @@ main_loop:
             if (cond == Py_True) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_False) {
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
@@ -3786,11 +3780,11 @@ main_loop:
             if (cond == Py_False) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             if (cond == Py_True) {
                 JUMPTO(oparg);
-                FAST_DISPATCH();
+                DISPATCH();
             }
             err = PyObject_IsTrue(cond);
             if (err > 0) {
@@ -3808,18 +3802,8 @@ main_loop:
         case TARGET(JUMP_ABSOLUTE): {
             PREDICTED(JUMP_ABSOLUTE);
             JUMPTO(oparg);
-#if FAST_LOOPS
-            /* Enabling this path speeds-up all while and for-loops by bypassing
-               the per-loop checks for signals.  By default, this should be turned-off
-               because it prevents detection of a control-break in tight loops like
-               "while 1: pass".  Compile with this option turned-on when you need
-               the speed-up and do not need break checking inside tight loops (ones
-               that contain only instructions ending with FAST_DISPATCH).
-            */
-            FAST_DISPATCH();
-#else
+            CHECK_EVAL_BREAKER();
             DISPATCH();
-#endif
         }
 
         case TARGET(GET_LEN): {
@@ -4230,6 +4214,7 @@ main_loop:
             PUSH(res);
             if (res == NULL)
                 goto error;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4243,6 +4228,7 @@ main_loop:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4262,6 +4248,7 @@ main_loop:
             if (res == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4308,6 +4295,7 @@ main_loop:
             if (result == NULL) {
                 goto error;
             }
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4430,7 +4418,7 @@ main_loop:
             //     PEEK(i) = PEEK(i + 1);
             // }
             PEEK(oparg) = top;
-            FAST_DISPATCH();
+            DISPATCH();
         }
 
         case TARGET(EXTENDED_ARG): {
@@ -5499,7 +5487,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     else {
         initialize_trace_info(trace_info, frame);
-        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti, &trace_info->bounds);
+        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
     }
     result = func(obj, frame, what, arg);
     frame->f_lineno = 0;
@@ -5540,11 +5528,11 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
     */
     initialize_trace_info(trace_info, frame);
     int lastline = trace_info->bounds.ar_line;
-    int line = _PyCode_CheckLineNumber(frame->f_lasti, &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
     if (line != -1 && frame->f_trace_lines) {
         /* Trace backward edges or first instruction of a new line */
         if (frame->f_lasti < trace_info->instr_prev ||
-            (line != lastline && frame->f_lasti == trace_info->bounds.ar_start))
+            (line != lastline && frame->f_lasti*2 == trace_info->bounds.ar_start))
         {
             result = call_trace(func, obj, tstate, frame, trace_info, PyTrace_LINE, Py_None);
         }
@@ -6463,7 +6451,7 @@ dtrace_function_entry(PyFrameObject *f)
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(code, f->f_lasti);
+    lineno = PyFrame_GetLineNumber(f);
 
     PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
@@ -6478,7 +6466,7 @@ dtrace_function_return(PyFrameObject *f)
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
-    lineno = PyCode_Addr2Line(code, f->f_lasti);
+    lineno = PyFrame_GetLineNumber(f);
 
     PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
@@ -6494,7 +6482,7 @@ maybe_dtrace_line(PyFrameObject *frame,
        instruction window, reset the window.
     */
     initialize_trace_info(trace_info, frame);
-    int line = _PyCode_CheckLineNumber(frame->f_lasti, &trace_info->bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */

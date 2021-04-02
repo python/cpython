@@ -381,7 +381,7 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS
-        self.assertEqual(str(proto), '_SSLMethod.PROTOCOL_TLS')
+        self.assertEqual(str(proto), 'PROTOCOL_TLS')
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
@@ -2301,6 +2301,8 @@ class NetworkedTests(unittest.TestCase):
             rc = s.connect_ex((REMOTE_HOST, 443))
             if rc == 0:
                 self.skipTest("REMOTE_HOST responded too quickly")
+            elif rc == errno.ENETUNREACH:
+                self.skipTest("Network unreachable.")
             self.assertIn(rc, (errno.EAGAIN, errno.EWOULDBLOCK))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'Needs IPv6')

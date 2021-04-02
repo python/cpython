@@ -5894,10 +5894,14 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
                     goto diff;
                 }
                 assert(j <= k);
-                // This is a really ineffiecient way of reordering the on the
-                // stack to match the order of control... but it works!
+                // Reorder the names on the stack to match the order of the
+                // names in control. This is potentially very inefficient when
+                // each alternative subpattern binds lots of names in different
+                // orders, but it's fine for reasonable cases. There's probably
+                // a better way of doing this, though.
                 while (k++ < PyList_GET_SIZE(control)) {
                     ADDOP_I(c, ROTATE, PyList_GET_SIZE(control) - j);
+                    // Perfom the same rotation on pc->stores:
                     PyList_Insert(pc->stores, j,
                                   PySequence_GetItem(pc->stores, -1));
                     PySequence_DelItem(pc->stores, -1);
@@ -6416,7 +6420,6 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     if (is_relative_jump(instr)) {
                         instr->i_oparg -= bsize;
                     }
-                    instr->i_oparg *= sizeof(_Py_CODEUNIT);
                     if (instrsize(instr->i_oparg) != isize) {
                         extended_arg_recompile = 1;
                     }

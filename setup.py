@@ -1864,17 +1864,9 @@ class PyBuildExt(build_ext):
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         self.add(Extension('xx', ['xxmodule.c']))
 
-        if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
-            # Non-debug mode: Build xxlimited with limited API
-            self.add(Extension('xxlimited', ['xxlimited.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03050000')]))
-        else:
-            # Debug mode: Build xxlimited with the full API
-            # (which is compatible with the limited one)
-            self.add(Extension('xxlimited', ['xxlimited.c']))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
+        # Limited C API
+        self.add(Extension('xxlimited', ['xxlimited.c']))
+        self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter_fromenv(self):
         # Build _tkinter using the Tcl/Tk locations specified by
@@ -2290,7 +2282,7 @@ class PyBuildExt(build_ext):
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
-            libraries = [':libmpdec.so.2']
+            libraries = ['mpdec']
             sources = ['_decimal/_decimal.c']
             depends = ['_decimal/docstrings.h']
         else:
@@ -2447,24 +2439,48 @@ class PyBuildExt(build_ext):
         else:
             runtime_library_dirs = [openssl_rpath]
 
+        openssl_extension_kwargs = dict(
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+            runtime_library_dirs=runtime_library_dirs,
+        )
+
+        # This static linking is NOT OFFICIALLY SUPPORTED.
+        # Requires static OpenSSL build with position-independent code. Some
+        # features like DSO engines or external OSSL providers don't work.
+        # Only tested on GCC and clang on X86_64.
+        if os.environ.get("PY_UNSUPPORTED_OPENSSL_BUILD") == "static":
+            extra_linker_args = []
+            for lib in openssl_extension_kwargs["libraries"]:
+                # link statically
+                extra_linker_args.append(f"-l:lib{lib}.a")
+                # don't export symbols
+                extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
+            openssl_extension_kwargs["extra_link_args"] = extra_linker_args
+            # don't link OpenSSL shared libraries.
+            openssl_extension_kwargs["libraries"] = []
+
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(Extension(
-                '_ssl', ['_ssl.c'],
-                include_dirs=openssl_includes,
-                library_dirs=openssl_libdirs,
-                libraries=openssl_libs,
-                runtime_library_dirs=runtime_library_dirs,
-                depends=['socketmodule.h', '_ssl/debughelpers.c'])
+            self.add(
+                Extension(
+                    '_ssl',
+                    ['_ssl.c'],
+                    depends=['socketmodule.h', '_ssl/debughelpers.c'],
+                    **openssl_extension_kwargs
+                )
             )
         else:
             self.missing.append('_ssl')
 
-        self.add(Extension('_hashlib', ['_hashopenssl.c'],
-                           depends=['hashlib.h'],
-                           include_dirs=openssl_includes,
-                           library_dirs=openssl_libdirs,
-                           runtime_library_dirs=runtime_library_dirs,
-                           libraries=openssl_libs))
+        self.add(
+            Extension(
+                '_hashlib',
+                ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                **openssl_extension_kwargs,
+            )
+        )
 
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available

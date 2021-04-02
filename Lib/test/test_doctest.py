@@ -2846,7 +2846,7 @@ the verbose version, and then check the output:
     >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w') as f:
+    ...     with open(fn, 'w', encoding='utf-8') as f:
     ...         _ = f.write('This is a very simple test file.\n')
     ...         _ = f.write('   >>> 1 + 1\n')
     ...         _ = f.write('   2\n')
@@ -2898,7 +2898,7 @@ text files).
     >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w') as f:
+    ...     with open(fn, 'w', encoding="utf-8") as f:
     ...         _ = f.write('This is another simple test file.\n')
     ...         _ = f.write('   >>> 1 + 1\n')
     ...         _ = f.write('   2\n')
@@ -2909,7 +2909,7 @@ text files).
     ...         _ = f.write('\n')
     ...         _ = f.write('And that is it.\n')
     ...     fn2 = os.path.join(tmpdir, 'myfile2.py')
-    ...     with open(fn2, 'w') as f:
+    ...     with open(fn2, 'w', encoding='utf-8') as f:
     ...         _ = f.write('def test_func():\n')
     ...         _ = f.write('   \"\"\"\n')
     ...         _ = f.write('   This is simple python test function.\n')

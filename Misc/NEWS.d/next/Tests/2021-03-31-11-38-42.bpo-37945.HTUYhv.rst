@@ -1,0 +1,2 @@
+Fix test_getsetlocale_issue1813() of test_locale: skip the test if
+``setlocale()`` fails. Patch by Victor Stinner.

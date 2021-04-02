@@ -1,0 +1,2 @@
+Finish updating the vendored libmpdec to version 2.5.1.  Patch by Stefan
+Krah.
