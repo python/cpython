@@ -5789,27 +5789,20 @@ compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
 static int
 compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    basicblock *end, *fail_pop_1, *fail_pop_3;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_3 = compiler_new_block(c));
     asdl_expr_seq *keys = p->v.Dict.keys;
     asdl_expr_seq *values = p->v.Dict.values;
     Py_ssize_t size = asdl_seq_LEN(values);
     // A starred pattern will be a keyless value. It is guaranteed to be last:
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
     ADDOP(c, MATCH_MAPPING);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+    pc->pop_on_fail++;
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+    pc->pop_on_fail--;
     NEXT_BLOCK(c);
     if (!size) {
         // If the pattern is just "{}", we're done!
         ADDOP(c, POP_TOP);
-        ADDOP_LOAD_CONST(c, Py_True);
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
-        compiler_use_next_block(c, fail_pop_1);
-        ADDOP(c, POP_TOP);
-        ADDOP_LOAD_CONST(c, Py_False);
-        compiler_use_next_block(c, end);
         return 1;
     }
     if (size - star) {
@@ -5817,7 +5810,10 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+        pc->pop_on_fail++;
+        pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+        pc->pop_on_fail--;
         NEXT_BLOCK(c);
     }
     if (INT_MAX < size - star - 1) {
@@ -5836,7 +5832,10 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP(c, MATCH_KEYS);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_3);
+    pc->pop_on_fail += 3;
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+    pc->pop_on_fail -= 3;
     NEXT_BLOCK(c);
     // So far so good. There's now a tuple of values on the stack to match
     // sub-patterns against:
@@ -5848,9 +5847,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
+        pc->pop_on_fail += 3;
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_3);
-        NEXT_BLOCK(c);
+        pc->pop_on_fail -= 3;
     }
     // If we get this far, it's a match! We're done with that tuple of values.
     ADDOP(c, POP_TOP);
@@ -5858,7 +5857,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         // If we had a starred name, bind a dict of remaining items to it:
         ADDOP(c, COPY_DICT_WITHOUT_KEYS);
         PyObject *id = asdl_seq_GET(values, size - 1)->v.Name.id;
+        pc->underneath++;
         RETURN_IF_FALSE(pattern_helper_store_name(c, id, pc));
+        pc->underneath--;
     }
     else {
         // Otherwise, we don't care about this tuple of keys anymore:
@@ -5866,18 +5867,6 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     // Pop the subject:
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    // The top two items are a tuple of values or None, followed by a tuple of
-    // keys. Pop them both:
-    compiler_use_next_block(c, fail_pop_3);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    compiler_use_next_block(c, fail_pop_1);
-    // Pop the subject:
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
