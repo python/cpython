@@ -539,7 +539,7 @@ def create_modules(modules):
         try:
             for m in modules:
                 fname = m + '.py'
-                with open(fname, 'w') as f:
+                with open(fname, 'w', encoding="utf-8") as f:
                     f.write(textwrap.dedent(modules[m]))
                 linecache.checkcache(fname)
             importlib.invalidate_caches()
