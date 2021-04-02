@@ -5543,6 +5543,7 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     if (pc->underneath) {
         ADDOP_I(c, ROTATE, pc->underneath + 1);
     }
+    pc->pop_on_fail++;
     return 1;
 }
 
