@@ -13,6 +13,11 @@
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
+#ifdef Py_LIMITED_API
+   // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
+#  error "Py_LIMITED_API macro must not be defined"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -134,6 +139,18 @@ void
 Py_DecRef(PyObject *o)
 {
     Py_XDECREF(o);
+}
+
+void
+_Py_IncRef(PyObject *o)
+{
+    Py_INCREF(o);
+}
+
+void
+_Py_DecRef(PyObject *o)
+{
+    Py_DECREF(o);
 }
 
 PyObject *
