@@ -45,7 +45,7 @@ class TempDirMixin(object):
 
     def create_readonly_file(self, filename):
         file_path = os.path.join(self.temp_dir, filename)
-        with open(file_path, 'w') as file:
+        with open(file_path, 'w', encoding="utf-8") as file:
             file.write(filename)
         os.chmod(file_path, stat.S_IREAD)
 
@@ -1468,7 +1468,7 @@ class TestArgumentsFromFile(TempDirMixin, ParserTestCase):
             ('invalid', '@no-such-path\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w') as file:
+            with open(path, 'w', encoding="utf-8") as file:
                 file.write(text)
 
     parser_signature = Sig(fromfile_prefix_chars='@')
@@ -1498,7 +1498,7 @@ class TestArgumentsFromFileConverter(TempDirMixin, ParserTestCase):
             ('hello', 'hello world!\n'),
         ]
         for path, text in file_texts:
-            with open(path, 'w') as file:
+            with open(path, 'w', encoding="utf-8") as file:
                 file.write(text)
 
     class FromFileConverterArgumentParser(ErrorRaisingArgumentParser):
@@ -1580,7 +1580,8 @@ class TestFileTypeR(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestFileTypeR, self).setUp()
         for file_name in ['foo', 'bar']:
-            with open(os.path.join(self.temp_dir, file_name), 'w') as file:
+            with open(os.path.join(self.temp_dir, file_name),
+                      'w', encoding="utf-8") as file:
                 file.write(file_name)
         self.create_readonly_file('readonly')
 
@@ -1601,7 +1602,7 @@ class TestFileTypeDefaults(TempDirMixin, ParserTestCase):
     """Test that a file is not created unless the default is needed"""
     def setUp(self):
         super(TestFileTypeDefaults, self).setUp()
-        file = open(os.path.join(self.temp_dir, 'good'), 'w')
+        file = open(os.path.join(self.temp_dir, 'good'), 'w', encoding="utf-8")
         file.write('good')
         file.close()
 
@@ -1620,7 +1621,8 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
     def setUp(self):
         super(TestFileTypeRB, self).setUp()
         for file_name in ['foo', 'bar']:
-            with open(os.path.join(self.temp_dir, file_name), 'w') as file:
+            with open(os.path.join(self.temp_dir, file_name),
+                      'w', encoding="utf-8") as file:
                 file.write(file_name)
 
     argument_signatures = [
