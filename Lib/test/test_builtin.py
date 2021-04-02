@@ -1197,7 +1197,9 @@ class BuiltinTest(unittest.TestCase):
 
             self.write_testfile()
             current_locale_encoding = locale.getpreferredencoding(False)
-            fp = open(TESTFN, 'w', encoding="utf-8")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", EncodingWarning)
+                fp = open(TESTFN, 'w', encoding="utf-8")
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
         finally:
