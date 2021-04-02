@@ -1,0 +1,2 @@
+Remove pyc/pyo files from the Tools and Parser directories in Windows buildbot
+clean.bat script to avoid incompatible files between builds.
