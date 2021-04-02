@@ -1,3 +1,0 @@
-The ``python -m gzip`` command line application now properly fails when
-detecting an unsupported extension. It exits with a non-zero exit code and
-prints an error message to stderr.
