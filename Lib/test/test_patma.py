@@ -2841,6 +2841,30 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, range(10))
         self.assertIs(y, None)
 
+    def test_patma_282(self):
+        def f(x):
+            match x:
+                case ((a, b, c, d, e, f, g, h, i, 9) |
+                      (h, g, i, a, b, d, e, c, f, 10) |
+                      (g, b, a, c, d, -5, e, h, i, f) |
+                      (-1, d, f, b, g, e, i, a, h, c)):
+                    pass
+            out = locals()
+            del out["x"]
+            return out
+        alts = [
+            dict(a=0, b=1, c=2, d=3, e=4, f=5, g=6, h=7, i=8),
+            dict(h=1, g=2, i=3, a=4, b=5, d=6, e=7, c=8, f=9),
+            dict(g=0, b=-1, a=-2, c=-3, d=-4, e=-6, h=-7, i=-8, f=-9),
+            dict(d=-2, f=-3, b=-4, g=-5, e=-6, i=-7, a=-8, h=-9, c=-10),
+            dict(),
+        ]
+        self.assertEqual(f(range(10)), alts[0])
+        self.assertEqual(f(range(1, 11)), alts[1])
+        self.assertEqual(f(range(0, -10, -1)), alts[2])
+        self.assertEqual(f(range(-1, -11, -1)), alts[3])
+        self.assertEqual(f(range(10, 20)), alts[4])
+
 
 class PerfPatma(TestPatma):
 
