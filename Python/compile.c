@@ -5632,8 +5632,10 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
     // Need to make a copy for (possibly) storing later:
     ADDOP(c, DUP_TOP);
     pc->pop_on_fail++;
+    pc->underneath++;
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
     pc->pop_on_fail--;
+    pc->underneath--;
     NEXT_BLOCK(c);
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
     return 1;
@@ -5796,8 +5798,10 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
         pc->pop_on_fail += 3;
+        pc->underneath += 3;
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
         pc->pop_on_fail -= 3;
+        pc->underneath -= 3;
     }
     // If we get this far, it's a match! We're done with that tuple of values.
     ADDOP(c, POP_TOP);
