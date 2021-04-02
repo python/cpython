@@ -400,7 +400,7 @@ class CmdLineTest(unittest.TestCase):
         # does not alter the value of sys.path[0]
         with os_helper.temp_dir() as script_dir:
             with os_helper.change_cwd(path=script_dir):
-                with open("-c", "w") as f:
+                with open("-c", "w", encoding="utf-8") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-c',
                         'import sys; print("sys.path[0]==%r" % sys.path[0])',
@@ -416,7 +416,7 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'other')
             with os_helper.change_cwd(path=script_dir):
-                with open("-m", "w") as f:
+                with open("-m", "w", encoding="utf-8") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-m', 'other', *example_args,
                                                     __isolated=False)
@@ -429,7 +429,7 @@ class CmdLineTest(unittest.TestCase):
         # will be failed.
         with os_helper.temp_dir() as script_dir:
             script_name = os.path.join(script_dir, "issue20884.py")
-            with open(script_name, "w", newline='\n') as f:
+            with open(script_name, "w", encoding="latin1", newline='\n') as f:
                 f.write("#coding: iso-8859-1\n")
                 f.write('"""\n')
                 for _ in range(30):
