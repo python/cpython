@@ -91,11 +91,6 @@ https://www.python.org/dev/peps/pep-0384/
 
 
 def generate_limited_api_symbols(args):
-    if hasattr(sys, "gettotalrefcount"):
-        print(
-            "Stable ABI symbols cannot be generated from a debug build", file=sys.stderr
-        )
-        sys.exit(1)
     library = sysconfig.get_config_var("LIBRARY")
     ldlibrary = sysconfig.get_config_var("LDLIBRARY")
     if ldlibrary != library:
