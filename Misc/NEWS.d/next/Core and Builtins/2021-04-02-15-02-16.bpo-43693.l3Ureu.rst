@@ -1,0 +1,4 @@
+Compute cell offsets relative to locals in compiler. Allows the interpreter
+to treats locals and cells a single array, which is slightly more efficient.
+
+Delete the LOAD_CLOSURE bytecode.
