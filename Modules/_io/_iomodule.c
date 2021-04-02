@@ -532,8 +532,10 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
     if (encoding == NULL || encoding == Py_None) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
-            PyErr_WarnEx(PyExc_EncodingWarning,
-                         "'encoding' argument not specified", stacklevel);
+            if (PyErr_WarnEx(PyExc_EncodingWarning,
+                             "'encoding' argument not specified", stacklevel)) {
+                return NULL;
+            }
         }
         Py_INCREF(_PyIO_str_locale);
         return _PyIO_str_locale;
