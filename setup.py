@@ -1865,10 +1865,8 @@ class PyBuildExt(build_ext):
 ##         self.add(Extension('xx', ['xxmodule.c']))
 
         # Limited C API
-        self.add(Extension('xxlimited', ['xxlimited.c'],
-                           define_macros=[('Py_LIMITED_API', '0x030a0000')]))
-        self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
-                           define_macros=[('Py_LIMITED_API', '0x03050000')]))
+        self.add(Extension('xxlimited', ['xxlimited.c']))
+        self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
     def detect_tkinter_fromenv(self):
         # Build _tkinter using the Tcl/Tk locations specified by
