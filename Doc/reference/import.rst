@@ -904,7 +904,8 @@ a list containing the portion.
    ``find_loader()`` in preference to ``find_module()``.
 
 .. versionchanged:: 3.10
-    Calls to :meth:`~importlib.abc.PathEntryFinder.find_module` by the import
+    Calls to :meth:`~importlib.abc.PathEntryFinder.find_module` and
+    :meth:`~importlib.abc.PathEntryFinder.find_loader` by the import
     system will raise :exc:`ImportWarning`.
 
 

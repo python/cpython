@@ -143,12 +143,16 @@ class FinderTests:
                 return self.loader, self.portions
         path = 'testing path'
         with util.import_state(path_importer_cache={path: TestFinder()}):
-            self.assertIsNone(
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                self.assertIsNone(
                     self.machinery.PathFinder.find_spec('whatever', [path]))
         success_finder = TestFinder()
         success_finder.loader = __loader__
         with util.import_state(path_importer_cache={path: success_finder}):
-            spec = self.machinery.PathFinder.find_spec('whatever', [path])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ImportWarning)
+                spec = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(spec.loader, __loader__)
 
     def test_finder_with_find_spec(self):

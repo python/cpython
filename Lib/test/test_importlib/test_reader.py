@@ -60,7 +60,6 @@ class MultiplexedPathTest(unittest.TestCase):
             path.open()
 
     def test_join_path(self):
-        print('test_join_path')
         prefix = os.path.abspath(os.path.join(__file__, '..'))
         data01 = os.path.join(prefix, 'data01')
         path = MultiplexedPath(self.folder, data01)
