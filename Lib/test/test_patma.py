@@ -2896,7 +2896,8 @@ class PerfPatma(TestPatma):
 
 
 """
-sudo ./python -m pyperf system tune && \
-     ./python -m pyperf timeit --rigorous --setup "from test.test_patma import PerfPatma; p = PerfPatma()" "p.run_perf()"; \
-sudo ./python -m pyperf system reset
+# From inside venv pointing to this Python, with pyperf installed:
+sudo $(which python) -m pyperf system tune && \
+     $(which python) -m pyperf timeit --rigorous --setup "from test.test_patma import PerfPatma; p = PerfPatma()" "p.run_perf()"; \
+sudo $(which python) -m pyperf system reset
 """
