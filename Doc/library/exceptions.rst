@@ -410,13 +410,13 @@ The following exceptions are the exceptions that are usually raised.
 
    .. attribute:: lineno
 
-      Which line number in the file the error occurred in. Note that this is
-      1-indexed, the first line in the file would have a ``lineno`` of 1.
+      Which line number in the file the error occurred in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
 
    .. attribute:: offset
 
-      The column in the line where the error occurred. Note that this is
-      1-indexed, the first character in the line has an ``offset`` of 1.
+      The column in the line where the error occurred. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
 
    .. attribute:: text
 
