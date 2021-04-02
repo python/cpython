@@ -54,9 +54,9 @@ class ExceptionTests(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, sys, "undefined_attribute")
 
         self.raise_catch(EOFError, "EOFError")
-        fp = open(TESTFN, 'w')
+        fp = open(TESTFN, 'w', encoding="utf-8")
         fp.close()
-        fp = open(TESTFN, 'r')
+        fp = open(TESTFN, 'r', encoding="utf-8")
         savestdin = sys.stdin
         try:
             try:
