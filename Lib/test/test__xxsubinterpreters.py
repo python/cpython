@@ -816,7 +816,7 @@ class RunStringTests(TestBase):
                 try:
                     os.fork()
                 except RuntimeError:
-                    with open('{file.name}', 'w') as out:
+                    with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
             interpreters.run_string(self.id, script)
