@@ -606,8 +606,8 @@ Cursor Objects
 
    .. method:: execute(sql[, parameters])
 
-      Executes an SQL statement. The SQL statement may be parameterized (that is
-      :ref:`placeholders <sqlite3-placeholders>` instead of SQL literals).
+      Executes an SQL statement. Values may be bound to the statement using
+      :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
       more than one statement with it, it will raise a :exc:`.Warning`. Use
