@@ -5670,9 +5670,6 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
         return compiler_error(c, e, p->v.Call.func);
     }
     RETURN_IF_FALSE(!validate_keywords(c, kwargs));
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
     VISIT(c, expr, p->v.Call.func);
     PyObject *kwnames;
     RETURN_IF_FALSE(kwnames = PyTuple_New(nkwargs));
@@ -5684,7 +5681,10 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+    pc->pop_on_fail++;
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+    pc->pop_on_fail--;
     NEXT_BLOCK(c);
     // TOS is now a tuple of (nargs + nkwargs) attributes.
     for (i = 0; i < nargs + nkwargs; i++) {
@@ -5704,18 +5704,15 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
+        pc->pop_on_fail++;
+        pc->underneath++;
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, arg, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
+        pc->pop_on_fail--;
+        pc->underneath--;
         NEXT_BLOCK(c);
     }
     // Success! Pop the tuple of attributes:
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
