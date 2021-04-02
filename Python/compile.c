@@ -205,6 +205,9 @@ struct compiler {
 typedef struct {
     PyObject *stores;
     int allow_irrefutable;
+    basicblock **fail_pop;
+    Py_ssize_t fail_pop_size;
+    Py_ssize_t pop_on_fail;
     Py_ssize_t underneath;
 } pattern_context;
 
@@ -5482,6 +5485,43 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 
 static int
+pattern_helper_ensure_fail_pop(struct compiler *c, pattern_context *pc,
+                               Py_ssize_t n)
+{
+    n++;
+    if (pc->fail_pop == NULL) {
+        pc->fail_pop = PyObject_Malloc(sizeof(basicblock*) * n);
+    }
+    else if (pc->fail_pop_size < n) {
+        pc->fail_pop = PyObject_Realloc(pc->fail_pop,
+                                        sizeof(basicblock*) * n);
+    }
+    RETURN_IF_FALSE(pc->fail_pop);
+    while (pc->fail_pop_size < n) {
+        pc->fail_pop[pc->fail_pop_size] = compiler_new_block(c);
+        RETURN_IF_FALSE(pc->fail_pop[pc->fail_pop_size++])
+    }
+    return 1;
+}
+
+
+static int
+pattern_helper_fail_pop_cleanup(struct compiler *c, pattern_context *pc)
+{
+    if (!pc->fail_pop_size) {
+        return 1;
+    }
+    while (--pc->fail_pop_size) {
+        compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
+        ADDOP(c, POP_TOP);
+    }
+    compiler_use_next_block(c, pc->fail_pop[0]);
+    PyObject_Free(pc->fail_pop);
+    return 1;
+}
+
+
+static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
     assert(!_PyUnicode_EqualToASCIIString(n, "_"));
@@ -5503,7 +5543,6 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     if (pc->underneath) {
         ADDOP_I(c, ROTATE, pc->underneath + 1);
     }
-    // RETURN_IF_FALSE(compiler_nameop(c, n, Store));
     return 1;
 }
 
@@ -5532,6 +5571,7 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
             goto error;
         }
     }
+    pc->pop_on_fail += size - 1;
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty value = asdl_seq_GET(values, i);
         if (i == star) {
@@ -5641,16 +5681,13 @@ static int
 compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
-    basicblock *end;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
     // Need to make a copy for (possibly) storing later:
     ADDOP(c, DUP_TOP);
+    pc->pop_on_fail++;
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
-    ADDOP_JUMP(c, JUMP_IF_FALSE_OR_POP, end);
+    pc->pop_on_fail--;
     NEXT_BLOCK(c);
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
-    ADDOP_LOAD_CONST(c, Py_True);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -5667,7 +5704,6 @@ compiler_pattern_capture(struct compiler *c, expr_ty p, pattern_context *pc)
         return compiler_error(c, e, p->v.Name.id);
     }
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.Name.id, pc));
-    ADDOP_LOAD_CONST(c, Py_True);
     return 1;
 }
 
@@ -5743,6 +5779,9 @@ compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
     // Literal True, False, and None are compared by identity. All others use
     // equality:
     ADDOP_COMPARE(c, (v == Py_None || PyBool_Check(v)) ? Is : Eq);
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -5851,22 +5890,29 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     // the others bind the same names (they should), then this becomes
     // pc->stores.
     PyObject *control = NULL;
-    basicblock *end, *pass_pop_1;
+    basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(pass_pop_1 = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
     // We're going to be messing with pc. Keep the original info handy:
     PyObject *stores_init;
     RETURN_IF_FALSE(stores_init = pc->stores ? pc->stores : PyList_New(0));
     int allow_irrefutable = pc->allow_irrefutable;
+    basicblock **fail_pop = pc->fail_pop;
+    Py_ssize_t fail_pop_size = pc->fail_pop_size;
+    Py_ssize_t pop_on_fail = pc->pop_on_fail;
+    Py_ssize_t underneath = pc->underneath;
     for (Py_ssize_t i = 0; i < size; i++) {
         // NOTE: Can't use our nice returning macros here: they'll leak lists!
         expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
-        pc->stores = PySequence_List(stores_init);
         // An irrefutable sub-pattern must be last, if it is allowed at all:
         int is_last = i == size - 1;
+        pc->stores = PySequence_List(stores_init);
         pc->allow_irrefutable = allow_irrefutable && is_last;
+        pc->fail_pop = NULL;
+        pc->fail_pop_size = 0;
+        pc->pop_on_fail = 0;
+        pc->underneath = is_last;
         SET_LOC(c, alt);
         if (pc->stores == NULL ||
             // Only copy the subject if we're *not* on the last alternative:
@@ -5879,11 +5925,13 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             // If this is the first alternative, save its stores as a "control"
             // for the others (they can't bind a different set of names):
             control = pc->stores;
-            if ((!is_last && !compiler_addop_j(c, POP_JUMP_IF_TRUE, pass_pop_1)) ||
+            ADDOP(c, POP_TOP);
+            if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
                 !compiler_next_block(c))
             {
                 goto fail;
             }
+            pattern_helper_fail_pop_cleanup(c, pc);
             continue;
         }
         if (PyList_GET_SIZE(pc->stores) != PyList_GET_SIZE(control)) {
@@ -5908,22 +5956,27 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
                 }
             }
         }
-        // Only jump if we're *not* on the last alternative:
-        if ((!is_last && !compiler_addop_j(c, POP_JUMP_IF_TRUE, pass_pop_1)) ||
-             !compiler_next_block(c))
+        Py_DECREF(pc->stores);
+        if (!is_last) {
+            ADDOP(c, POP_TOP);
+        }
+        if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
+            !compiler_next_block(c))
         {
             goto fail;
         }
-        Py_DECREF(pc->stores);
+        pattern_helper_fail_pop_cleanup(c, pc);
     }
     Py_XDECREF(stores_init);
     // Update pc->stores and restore pc->allow_irrefutable:
     pc->stores = control;
     pc->allow_irrefutable = allow_irrefutable;
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, pass_pop_1);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
+    pc->fail_pop = fail_pop;
+    pc->fail_pop_size = fail_pop_size;
+    pc->pop_on_fail = pop_on_fail;
+    pc->underneath = underneath;
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, JUMP_FORWARD, pc->fail_pop[pc->pop_on_fail]);
     compiler_use_next_block(c, end);
     return 1;
 diff:
@@ -6008,6 +6061,9 @@ compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->v.Attribute.ctx == Load);
     VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
+    pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail);
+    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, pc->fail_pop[pc->pop_on_fail]);
+    NEXT_BLOCK(c);
     return 1;
 }
 
@@ -6024,7 +6080,6 @@ compiler_pattern_wildcard(struct compiler *c, expr_ty p, pattern_context *pc)
         return compiler_error(c, e);
     }
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
     return 1;
 }
 
@@ -6070,7 +6125,7 @@ static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
     VISIT(c, expr, s->v.Match.subject);
-    basicblock *next, *fail_guard, *end;
+    basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
@@ -6085,20 +6140,20 @@ compiler_match(struct compiler *c, stmt_ty s)
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
-        RETURN_IF_FALSE(next = compiler_new_block(c));
-        RETURN_IF_FALSE(fail_guard = compiler_new_block(c));
         // If pc.allow_irrefutable is 0, any name captures against our subject
         // will raise. Irrefutable cases must be either guarded, last, or both:
         pc.allow_irrefutable = m->guard != NULL || i == cases - 1;
+        pc.fail_pop = NULL;
+        pc.fail_pop_size = 0;
+        pc.pop_on_fail = 0;
         pc.underneath = 0;
         // Only copy the subject if we're *not* on the last case:
         if (i != cases - has_default - 1) {
             ADDOP(c, DUP_TOP);
         }
         int result = compiler_pattern(c, m->pattern, &pc);
-        assert(!pc.underneath);
         RETURN_IF_FALSE(result);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, next);
+        assert(!pc.underneath);
         NEXT_BLOCK(c);
         if (pc.stores) {
             Py_ssize_t i = PyList_GET_SIZE(pc.stores);
@@ -6106,9 +6161,11 @@ compiler_match(struct compiler *c, stmt_ty s)
                 PyObject *n = PyList_GET_ITEM(pc.stores, i);
                 RETURN_IF_FALSE(compiler_nameop(c, n, Store));
             }
+            Py_CLEAR(pc.stores);
         }
         if (m->guard) {
-            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, fail_guard, 0));
+            RETURN_IF_FALSE(pattern_helper_ensure_fail_pop(c, &pc, 0));
+            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc.fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -6116,15 +6173,7 @@ compiler_match(struct compiler *c, stmt_ty s)
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
-        compiler_use_next_block(c, next);
-        if (pc.stores) {
-            Py_ssize_t i = PyList_GET_SIZE(pc.stores);
-            while (i--) {
-                ADDOP(c, POP_TOP);
-            }
-            Py_CLEAR(pc.stores);
-        }
-        compiler_use_next_block(c, fail_guard);
+        pattern_helper_fail_pop_cleanup(c, &pc);
     }
     if (has_default) {
         if (cases == 1) {
