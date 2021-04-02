@@ -1050,7 +1050,13 @@ Deprecated
   :meth:`importlib.abc.PathEntryFinder.find_spec`
   are preferred, respectively. You can use
   :func:`importlib.util.spec_from_loader` to help in porting.
-  (Contributed by Brett Cannon in  :issue:`42134`.)
+  (Contributed by Brett Cannon in :issue:`42134`.)
+
+* The use of :meth:`importlib.abc.PathEntryFinder.find_loader` by the import
+  system now triggers an :exc:`ImportWarning` as
+  :meth:`importlib.abc.PathEntryFinder.find_spec` is preferred. You can use
+  :func:`importlib.util.spec_from_loader` to help in porting.
+  (Contributed by Brett Cannon in :issue:`43672`.)
 
 * The import system now uses the ``__spec__`` attribute on modules before
   falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
