@@ -633,6 +633,13 @@ argparse
 Misleading phrase "optional arguments" was replaced with "options" in argparse help. Some tests might require adaptation if they rely on exact output match.
 (Contributed by Raymond Hettinger in :issue:`9694`.)
 
+array
+-----
+
+The :meth:`~array.array.index` method of :class:`array.array` now has
+optional *start* and *stop* parameters.
+(Contributed by Anders Lorentsen and Zackery Spytz in :issue:`31956`.)
+
 base64
 ------
 
