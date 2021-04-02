@@ -1,0 +1,1 @@
+Add threading.Thread._discard_tstate_locks() method to check whether the lock of other subthreads can be deleted from the _shutdown_locks list when the subthread task ends and prevent continuous leakage of tstate locks.
