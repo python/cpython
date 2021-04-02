@@ -54,11 +54,11 @@ whose size is determined when the object is allocated.
 
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
-#define Py_REF_DEBUG
+#  define Py_REF_DEBUG
 #endif
 
-#if defined(Py_LIMITED_API) && defined(Py_REF_DEBUG)
-#error Py_LIMITED_API is incompatible with Py_DEBUG, Py_TRACE_REFS, and Py_REF_DEBUG
+#if defined(Py_LIMITED_API) && defined(Py_TRACE_REFS)
+#  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
 #endif
 
 /* PyTypeObject structure is defined in cpython/object.h.
@@ -74,8 +74,8 @@ typedef struct _typeobject PyTypeObject;
 #define _PyObject_EXTRA_INIT 0, 0,
 
 #else
-#define _PyObject_HEAD_EXTRA
-#define _PyObject_EXTRA_INIT
+#  define _PyObject_HEAD_EXTRA
+#  define _PyObject_EXTRA_INIT
 #endif
 
 /* PyObject_HEAD defines the initial segment of every PyObject. */
@@ -427,21 +427,46 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
+/*
+These are provided as conveniences to Python runtime embedders, so that
+they can have object code that is not dependent on Python compilation flags.
+*/
+PyAPI_FUNC(void) Py_IncRef(PyObject *);
+PyAPI_FUNC(void) Py_DecRef(PyObject *);
+
+// Similar to Py_IncRef() and Py_DecRef() but the argument must be non-NULL.
+// Private functions used by Py_INCREF() and Py_DECREF().
+PyAPI_FUNC(void) _Py_IncRef(PyObject *);
+PyAPI_FUNC(void) _Py_DecRef(PyObject *);
+
 static inline void _Py_INCREF(PyObject *op)
 {
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
+    // Stable ABI for Python 3.10 built in debug mode.
+    _Py_IncRef(op);
+#else
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
     op->ob_refcnt++;
+#endif
 }
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
 static inline void _Py_DECREF(
-#ifdef Py_REF_DEBUG
+#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
     const char *filename, int lineno,
 #endif
     PyObject *op)
 {
+#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
+    // Stable ABI for Python 3.10 built in debug mode.
+    _Py_DecRef(op);
+#else
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
 #ifdef Py_REF_DEBUG
     _Py_RefTotal--;
 #endif
@@ -455,8 +480,9 @@ static inline void _Py_DECREF(
     else {
         _Py_Dealloc(op);
     }
+#endif
 }
-#ifdef Py_REF_DEBUG
+#if defined(Py_REF_DEBUG) && !(defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000)
 #  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 #else
 #  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
@@ -524,13 +550,6 @@ static inline void _Py_XDECREF(PyObject *op)
 }
 
 #define Py_XDECREF(op) _Py_XDECREF(_PyObject_CAST(op))
-
-/*
-These are provided as conveniences to Python runtime embedders, so that
-they can have object code that is not dependent on Python compilation flags.
-*/
-PyAPI_FUNC(void) Py_IncRef(PyObject *);
-PyAPI_FUNC(void) Py_DecRef(PyObject *);
 
 // Create a new strong reference to an object:
 // increment the reference count of the object and return the object.
