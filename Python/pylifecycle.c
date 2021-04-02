@@ -790,6 +790,11 @@ pycore_interp_init(PyThreadState *tstate)
         return _PyStatus_ERR("can't initialize warnings");
     }
 
+    status = _PyAtExit_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PySys_Create(tstate, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
@@ -798,11 +803,6 @@ pycore_interp_init(PyThreadState *tstate)
     status = pycore_init_builtins(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
-    }
-
-    status = _PyAtExit_Init(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
     }
 
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
