@@ -74,9 +74,7 @@ class BdbNotExpectedError(BdbException): """Unexpected result."""
 dry_run = 0
 
 def reset_Breakpoint():
-    _bdb.Breakpoint.next = 1
-    _bdb.Breakpoint.bplist = {}
-    _bdb.Breakpoint.bpbynumber = [None]
+    _bdb.Breakpoint.clearBreakpoints()
 
 def info_breakpoints():
     bp_list = [bp for  bp in _bdb.Breakpoint.bpbynumber if bp]
@@ -950,6 +948,49 @@ class BreakpointTestCase(BaseTestCase):
         ]
         with TracerRun(self) as tracer:
             self.assertRaises(BdbError, tracer.runcall, tfunc_import)
+
+    def test_load_bps_from_previous_Bdb_instance(self):
+        reset_Breakpoint()
+        db1 = Bdb()
+        fname = db1.canonic(__file__)
+        db1.set_break(__file__, 1)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+
+        db2 = Bdb()
+        db2.set_break(__file__, 2)
+        db2.set_break(__file__, 3)
+        db2.set_break(__file__, 4)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [1, 2, 3, 4]})
+        db2.clear_break(__file__, 1)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [2, 3, 4]})
+
+        db3 = Bdb()
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [2, 3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+        db2.clear_break(__file__, 2)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+
+        db4 = Bdb()
+        db4.set_break(__file__, 5)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+        self.assertEqual(db4.get_all_breaks(), {fname: [3, 4, 5]})
+        reset_Breakpoint()
+
+        db5 = Bdb()
+        db5.set_break(__file__, 6)
+        self.assertEqual(db1.get_all_breaks(), {fname: [1]})
+        self.assertEqual(db2.get_all_breaks(), {fname: [3, 4]})
+        self.assertEqual(db3.get_all_breaks(), {fname: [2, 3, 4]})
+        self.assertEqual(db4.get_all_breaks(), {fname: [3, 4, 5]})
+        self.assertEqual(db5.get_all_breaks(), {fname: [6]})
+
 
 class RunTestCase(BaseTestCase):
     """Test run, runeval and set_trace."""
