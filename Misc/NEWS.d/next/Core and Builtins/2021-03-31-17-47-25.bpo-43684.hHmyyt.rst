@@ -1,4 +1,2 @@
 Add an ``INT_ADD`` opcode. This combines ``LOAD_CONST`` for a small integer
 constant and ``BINARY_ADD`` into a single opcode. Combining this popular pair of opcodes into one saves a modest amount of bytecode size and dispatch time.
-amount of bytecode size and dispatch time, given that this is a popular pair
-of opcodes.
