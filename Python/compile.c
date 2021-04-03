@@ -978,7 +978,7 @@ stack_effect(int opcode, int oparg, int jump)
         case INPLACE_OR:
             return -1;
 
-        /* super-instructions */
+        /* Combined instructions */
         case ADD_INT:
             return 0;
 
