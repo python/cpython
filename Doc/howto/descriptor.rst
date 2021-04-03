@@ -281,7 +281,7 @@ The new class now logs access to both *name* and *age*:
     INFO:root:Updating 'name' to 'Catherine C'
     INFO:root:Updating 'age' to 20
 
-The two *Person* instances contain only the private names
+The two *Person* instances contain only the private names:
 
 .. doctest::
 
