@@ -2178,11 +2178,6 @@ class PyBuildExt(build_ext):
     def detect_ctypes(self):
         # Thomas Heller's _ctypes module
 
-        if (not sysconfig.get_config_var("LIBFFI_INCLUDEDIR") and MACOS):
-            self.use_system_libffi = True
-        else:
-            self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
-
         include_dirs = []
         extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         extra_link_args = []
@@ -2270,7 +2265,6 @@ class PyBuildExt(build_ext):
 
             ext.include_dirs.append(ffi_inc)
             ext.libraries.append(ffi_lib)
-            self.use_system_libffi = True
 
         if sysconfig.get_config_var('HAVE_LIBDL'):
             # for dlopen, see bpo-32647
