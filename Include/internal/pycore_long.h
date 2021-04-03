@@ -34,6 +34,9 @@ static inline PyObject* _PyLong_GetZero(void)
 static inline PyObject* _PyLong_GetOne(void)
 { return __PyLong_GetSmallInt_internal(1); }
 
+// Add a C int to a PyLong (for ADD_INT opcode)
+PyAPI_FUNC(PyObject *) _PyLong_AddInt(PyLongObject *, int);
+
 #ifdef __cplusplus
 }
 #endif
