@@ -1,0 +1,2 @@
+Fix ``ElementTree.extend`` not working on iterators when using the
+Python implementation

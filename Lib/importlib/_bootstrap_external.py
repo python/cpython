@@ -314,7 +314,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a2 3432 (Function annotation for MAKE_FUNCTION is changed from dict to tuple bpo-42202)
 #     Python 3.10a2 3433 (RERAISE restores f_lasti if oparg != 0)
 #     Python 3.10a6 3434 (PEP 634: Structural Pattern Matching)
-#     Python 3.10a7 3435 (super-instructions)
+#     Python 3.10a7 3435 (Use instruction offsets instead of byte offsets)
+#     Python 3.10a7 3435 (Add ADD_INT opcode)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -1322,8 +1323,14 @@ class PathFinder:
         # This would be a good place for a DeprecationWarning if
         # we ended up going that route.
         if hasattr(finder, 'find_loader'):
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_loader()")
+            _warnings.warn(msg, ImportWarning)
             loader, portions = finder.find_loader(fullname)
         else:
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_module()")
+            _warnings.warn(msg, ImportWarning)
             loader = finder.find_module(fullname)
             portions = []
         if loader is not None:

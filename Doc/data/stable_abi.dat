@@ -192,6 +192,7 @@ PyExc_ConnectionRefusedError
 PyExc_ConnectionResetError
 PyExc_DeprecationWarning
 PyExc_EOFError
+PyExc_EncodingWarning
 PyExc_EnvironmentError
 PyExc_Exception
 PyExc_FileExistsError

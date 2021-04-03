@@ -1,0 +1,13 @@
+The limited C API is now supported if Python is built in debug mode (if the
+``Py_DEBUG`` macro is defined). In the limited C API, the :c:func:`Py_INCREF`
+and :c:func:`Py_DECREF` functions are now implemented as opaque function calls,
+rather than accessing directly the :c:member:`PyObject.ob_refcnt` member, if
+Python is built in debug mode and the ``Py_LIMITED_API`` macro targets Python
+3.10 or newer. It became possible to support the limited C API in debug mode
+because the :c:type:`PyObject` structure is the same in release and debug mode
+since Python 3.8 (see :issue:`36465`).
+
+The limited C API is still not supported in the ``--with-trace-refs`` special
+build (``Py_TRACE_REFS`` macro).
+
+Patch by Victor Stinner.

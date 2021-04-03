@@ -221,13 +221,13 @@ class LoaderDefaultsTests(ABCTestHarness):
     def test_module_repr(self):
         mod = types.ModuleType('blah')
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            warnings.simplefilter("ignore", DeprecationWarning)
             with self.assertRaises(NotImplementedError):
                 self.ins.module_repr(mod)
-        original_repr = repr(mod)
-        mod.__loader__ = self.ins
-        # Should still return a proper repr.
-        self.assertTrue(repr(mod))
+            original_repr = repr(mod)
+            mod.__loader__ = self.ins
+            # Should still return a proper repr.
+            self.assertTrue(repr(mod))
 
 
 (Frozen_LDefaultTests,
