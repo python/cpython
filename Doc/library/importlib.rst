@@ -257,6 +257,10 @@ ABC hierarchy::
          Returns ``None`` when called instead of raising
          :exc:`NotImplementedError`.
 
+      .. deprecated: 3.10
+         Implement :meth:`MetaPathFinder.find_spec` or
+         :meth:`PathEntryFinder.find_spec` instead.
+
 
 .. class:: MetaPathFinder
 
@@ -1192,6 +1196,9 @@ find and load modules.
    .. method:: find_loader(fullname)
 
       Attempt to find the loader to handle *fullname* within :attr:`path`.
+
+      .. deprecated:: 3.10
+         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 

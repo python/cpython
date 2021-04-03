@@ -440,9 +440,9 @@ class StartupTests:
                 with self.subTest(name=name):
                     self.assertTrue(hasattr(module, '__loader__'),
                                     '{!r} lacks a __loader__ attribute'.format(name))
-                    if self.machinery.BuiltinImporter.find_module(name):
+                    if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
-                    elif self.machinery.FrozenImporter.find_module(name):
+                    elif self.machinery.FrozenImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
 
     def test_everyone_has___spec__(self):
@@ -450,9 +450,9 @@ class StartupTests:
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
                     self.assertTrue(hasattr(module, '__spec__'))
-                    if self.machinery.BuiltinImporter.find_module(name):
+                    if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
-                    elif self.machinery.FrozenImporter.find_module(name):
+                    elif self.machinery.FrozenImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
 
 
