@@ -1024,7 +1024,8 @@ def fdopen(fd, mode="r", buffering=-1, encoding=None, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
-    encoding = io.text_encoding(encoding)
+    if "b" not in mode:
+        encoding = io.text_encoding(encoding)
     return io.open(fd, mode, buffering, encoding, *args, **kwargs)
 
 
