@@ -5589,10 +5589,8 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     RETURN_IF_FALSE(!PyList_Append(pc->stores, n));
     // This object will be stored on success, but needs to be popped on failure:
     pc->pop_on_fail++;
-    if (pc->on_top) {
-        // Rotate this object underneath any items we need to preserve:
-        ADDOP_I(c, ROTATE, pc->on_top + 1);
-    }
+    // Rotate this object underneath any items we need to preserve:
+    ADDOP_I(c, ROTATE, pc->on_top + 1);
     return 1;
 }
 
@@ -5898,12 +5896,21 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         // An irrefutable sub-pattern must be last, if it is allowed at all:
         int is_last = i == size - 1;
         pc->stores = PySequence_List(stores_init);
-        pc->allow_irrefutable = allow_irrefutable && is_last;
-        pc->fail_pop = NULL;
-        pc->fail_pop_size = 0;
-        pc->pop_on_fail = 0;
-        pc->on_top = 0;
         SET_LOC(c, alt);
+        if (is_last) {
+            pc->allow_irrefutable = allow_irrefutable;
+            pc->fail_pop = fail_pop;
+            pc->fail_pop_size = fail_pop_size;
+            pc->pop_on_fail = pop_on_fail;
+            pc->on_top = on_top;
+        }
+        else {
+            pc->allow_irrefutable = 0;
+            pc->fail_pop = NULL;
+            pc->fail_pop_size = 0;
+            pc->pop_on_fail = 0;
+            pc->on_top = 0;
+        }
         if (pc->stores == NULL ||
             // Only copy the subject if we're *not* on the last alternative:
             (!is_last && !compiler_addop(c, DUP_TOP)) ||
@@ -5912,8 +5919,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             goto fail;
         }
         if (!is_last) {
-            // TODO: UNROTATE
             Py_ssize_t nstores = PyList_GET_SIZE(pc->stores) - PyList_GET_SIZE(stores_init);
+            // TODO: UNROTATE
             for (Py_ssize_t i = 0; i < nstores; i++) {
                 if (!compiler_addop_i(c, ROTATE, nstores + 1)) {
                     goto fail;
@@ -5952,16 +5959,19 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
                 while (k++ < PyList_GET_SIZE(control)) {
                     ADDOP_I(c, ROTATE, PyList_GET_SIZE(control) - j);
                     // Perfom the same rotation on pc->stores:
-                    PyList_Insert(pc->stores, j,
-                                  PySequence_GetItem(pc->stores, -1));
-                    PySequence_DelItem(pc->stores, -1);
+                    PyObject *last = PyList_GET_ITEM(pc->stores, PyList_GET_SIZE(pc->stores) - 1);
+                    if (PyList_Insert(pc->stores, j, last) ||
+                        PySequence_DelItem(pc->stores, -1))
+                    {
+                        goto fail;
+                    }
                 }
             }
         }
         Py_DECREF(pc->stores);
         if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
             !compiler_next_block(c) ||
-            !pattern_helper_fail_pop_cleanup(c, pc))
+            (!is_last && !pattern_helper_fail_pop_cleanup(c, pc)))
         {
             goto fail;
         }
@@ -5969,12 +5979,6 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_XDECREF(stores_init);
     // Update pc->stores and restore pc->allow_irrefutable:
     pc->stores = control;
-    pc->allow_irrefutable = allow_irrefutable;
-    pc->fail_pop = fail_pop;
-    pc->fail_pop_size = fail_pop_size;
-    pc->pop_on_fail = pop_on_fail;
-    pc->on_top = on_top;
-    RETURN_IF_FALSE(pattern_helper_jump_to_fail_pop(c, pc, JUMP_FORWARD));
     compiler_use_next_block(c, end);
     return 1;
 diff:
@@ -7117,6 +7121,12 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                             bb->b_exit = 1;
                         }
                 }
+                break;
+            case ROTATE:
+                if (inst->i_oparg < 2) {
+                    inst->i_opcode = NOP;
+                }
+                break;
         }
     }
     return 0;
