@@ -58,9 +58,8 @@ struct _ts {
     /* Borrowed reference to the current frame (it can be NULL) */
     PyFrameObject *frame;
     int recursion_depth;
-    int recursion_headroom; /* Allow 50 more calls to handle any errors. */
-    char recursion_critical; /* The current calls must not cause
-                                a stack overflow. */
+    short recursion_headroom; /* Allow 50 more calls to handle any errors. */
+
     int stackcheck_counter;
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
