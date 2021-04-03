@@ -96,7 +96,7 @@ def _get_system_version():
     if _SYSTEM_VERSION is None:
         _SYSTEM_VERSION = ''
         try:
-            f = open('/System/Library/CoreServices/SystemVersion.plist')
+            f = open('/System/Library/CoreServices/SystemVersion.plist', encoding="utf-8")
         except OSError:
             # We're on a plain darwin box, fall back to the default
             # behaviour.
