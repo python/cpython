@@ -115,9 +115,9 @@ different, updated answers each time::
     20
     >>> g.size                              # The games directory has three files
     3
-    >>> open('games/newfile').close()       # Add a fourth file to the directory
+    >>> os.remove('games/chess')            # Delete a game
     >>> g.size                              # File count is automatically updated
-    4
+    2
 
 Besides showing how descriptors can run computations, this example also
 reveals the purpose of the parameters to :meth:`__get__`.  The *self*
