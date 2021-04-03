@@ -4412,8 +4412,11 @@ main_loop:
 
         case TARGET(ROTATE): {
             PyObject *top = TOP();
-            memmove(&PEEK(oparg - 1), &PEEK(oparg),
-                    sizeof(PyObject*) * (oparg - 1));
+            // memmove(&PEEK(oparg - 1), &PEEK(oparg),
+            //         sizeof(PyObject*) * (oparg - 1));
+            for (int i = 1; i < oparg; i++) {
+                PEEK(i) = PEEK(i + 1);
+            }
             PEEK(oparg) = top;
             DISPATCH();
         }
