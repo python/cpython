@@ -5537,8 +5537,12 @@ pattern_helper_ensure_fail_pop(struct compiler *c, pattern_context *pc,
 static int
 pattern_helper_jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
 {
-    RETURN_IF_FALSE(pattern_helper_ensure_fail_pop(c, pc, pc->pop_on_fail));
-    ADDOP_JUMP(c, op, pc->fail_pop[pc->pop_on_fail]);
+    Py_ssize_t pops = pc->on_top;
+    if (pc->stores) {
+        pops += PyList_GET_SIZE(pc->stores);
+    }
+    RETURN_IF_FALSE(pattern_helper_ensure_fail_pop(c, pc, pops));
+    ADDOP_JUMP(c, op, pc->fail_pop[pops]);
     NEXT_BLOCK(c);
     return 1;
 }
