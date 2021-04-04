@@ -5502,6 +5502,7 @@ compiler_slice(struct compiler *c, expr_ty s)
 // stored *underneath* them on success. This lets us defer all names stores
 // until the *entire* pattern matches.
 
+// TODO: Routine names
 // TODO: other comments
 // TODO: check for memory leaks
 // TODO: variants of test_patma_282 with mappings, classes, stars, stores before/after
@@ -5511,76 +5512,67 @@ compiler_slice(struct compiler *c, expr_ty s)
     ((N)->kind == Name_kind && \
     _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
-// TODO
+
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
-pattern_context_ensure_fail_pop(struct compiler *c, pattern_context *pc,
-                                Py_ssize_t n)
+ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
 {
     Py_ssize_t size = n + 1;
-    if (pc->fail_pop == NULL) {
-        pc->fail_pop = PyObject_Malloc(sizeof(basicblock*) * size);
-        if (pc->fail_pop == NULL) {
-            PyErr_NoMemory();
-            return 0;
-        }
+    if (size <= pc->fail_pop_size) {
+        return 1;
     }
-    else if (pc->fail_pop_size < size) {
-        Py_ssize_t needed = sizeof(basicblock*) * size;
-        basicblock **new = PyObject_Realloc(pc->fail_pop, needed);
-        if (new == NULL) {
-            PyErr_NoMemory();
-            return 0;
-        }
-        pc->fail_pop = new;
+    Py_ssize_t needed = sizeof(basicblock*) * size;
+    basicblock **resized = PyObject_Realloc(pc->fail_pop, needed);
+    if (resized == NULL) {
+        PyErr_NoMemory();
+        return 0;
     }
+    pc->fail_pop = resized;
     while (pc->fail_pop_size < size) {
-        pc->fail_pop[pc->fail_pop_size] = compiler_new_block(c);
-        RETURN_IF_FALSE(pc->fail_pop[pc->fail_pop_size++]);
+        basicblock *new_block;
+        RETURN_IF_FALSE(new_block = compiler_new_block(c));
+        pc->fail_pop[pc->fail_pop_size++] = new_block;
     }
     return 1;
 }
 
-// TODO
+
 // Use op to jump to the correct fail_pop block.
 static int
-pattern_context_jump_to_fail_pop(struct compiler *c, pattern_context *pc,
-                                 int op)
+jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
 {
     // Pop any items on the top of the stack, plus any objects we were going to
-    // capture:
+    // capture on success:
     Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
-    RETURN_IF_FALSE(pattern_context_ensure_fail_pop(c, pc, pops));
+    RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
     ADDOP_JUMP(c, op, pc->fail_pop[pops]);
     NEXT_BLOCK(c);
     return 1;
 }
 
-// TODO
-// Build all of the fail_pop blocks and free fail_pop.
+
+// Build all of the fail_pop blocks and reset fail_pop.
 static int
-pattern_context_fail_pop_cleanup(struct compiler *c, pattern_context *pc)
+cleanup_fail_pop(struct compiler *c, pattern_context *pc)
 {
-    if (!pc->fail_pop_size) {
-        goto done;
-    }
-    while (--pc->fail_pop_size) {
-        compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
-        if (!compiler_addop(c, POP_TOP)) {
-            PyObject_Free(pc->fail_pop);
-            pc->fail_pop_size = 0;
-            pc->fail_pop = NULL;
-            return 0;
+    if (pc->fail_pop_size) {
+        while (--pc->fail_pop_size) {
+            compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
+            if (!compiler_addop(c, POP_TOP)) {
+                PyObject_Free(pc->fail_pop);
+                pc->fail_pop_size = 0;
+                pc->fail_pop = NULL;
+                return 0;
+            }
         }
+        compiler_use_next_block(c, pc->fail_pop[0]);
     }
-    compiler_use_next_block(c, pc->fail_pop[0]);
-done:
     PyObject_Free(pc->fail_pop);
     pc->fail_pop = NULL;
     return 1;
 }
 
-// TODO
+
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
@@ -5600,7 +5592,7 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
                                Py_ssize_t star, pattern_context *pc)
@@ -5623,7 +5615,7 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
     return 1;
 }
 
-// TODO
+
 // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
@@ -5664,7 +5656,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
     return 1;
 }
 
-// TODO
+
 // Like compiler_pattern, but turn off checks for irrefutability.
 static int
 compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
@@ -5676,7 +5668,7 @@ compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5691,7 +5683,7 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_capture(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5707,7 +5699,7 @@ compiler_pattern_capture(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5731,9 +5723,9 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP_LOAD_CONST_NEW(c, kwnames);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    // TOS is now a tuple of (nargs + nkwargs) attributes. Preserve them:
+    // TOS is now a tuple of (nargs + nkwargs) attributes. Preserve it:
     pc->on_top++;
-    RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     for (i = 0; i < nargs + nkwargs; i++) {
         expr_ty arg;
         if (i < nargs) {
@@ -5759,7 +5751,7 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5769,7 +5761,7 @@ compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
     // Literal True, False, and None are compared by identity. All others use
     // equality:
     ADDOP_COMPARE(c, (v == Py_None || PyBool_Check(v)) ? Is : Eq);
-    RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     NEXT_BLOCK(c);
     return 1;
 }
@@ -5785,7 +5777,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
     ADDOP(c, MATCH_MAPPING);
     pc->on_top++;
-    RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     pc->on_top--;
     if (!size) {
         // If the pattern is just "{}", we're done!
@@ -5798,7 +5790,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
         ADDOP_COMPARE(c, GtE);
         pc->on_top++;
-        RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+        RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
         pc->on_top--;
     }
     if (INT_MAX < size - star - 1) {
@@ -5818,7 +5810,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP(c, MATCH_KEYS);
     pc->on_top += 3;
-    RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     pc->on_top -= 3;
     // So far so good. There's now a tuple of values on the stack to match
     // sub-patterns against:
@@ -5954,7 +5946,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         Py_DECREF(pc->stores);
         if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
             !compiler_next_block(c) ||
-            (!is_last && !pattern_context_fail_pop_cleanup(c, pc)))
+            (!is_last && !cleanup_fail_pop(c, pc)))
         {
             goto fail;
         }
@@ -5972,12 +5964,10 @@ fail:
     return 0;
 }
 
-// TODO
+
 static int
 compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
 {
-    // We're keeping the subject around for the sequence and length checks:
-    pc->on_top++;
     assert(p->kind == List_kind || p->kind == Tuple_kind);
     asdl_expr_seq *values = (p->kind == Tuple_kind) ? p->v.Tuple.elts
                                                     : p->v.List.elts;
@@ -5999,21 +5989,23 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         only_wildcard &= WILDCARD_CHECK(value);
     }
+    // Need to keep the subject on top during the sequence and length checks:
+    pc->on_top++;
     ADDOP(c, MATCH_SEQUENCE);
-    RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     if (star < 0) {
         // No star: len(subject) == size
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
-        RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+        RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     }
     else if (size > 1) {
         // Star: len(subject) >= size - 1
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
-        RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+        RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     }
     // Whatever comes next should consume the subject:
     pc->on_top--;
@@ -6030,7 +6022,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6038,11 +6030,11 @@ compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
     assert(p->v.Attribute.ctx == Load);
     VISIT(c, expr, p);
     ADDOP_COMPARE(c, Eq);
-    RETURN_IF_FALSE(pattern_context_jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_wildcard(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6058,7 +6050,7 @@ compiler_pattern_wildcard(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6114,12 +6106,12 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             ADDOP(c, DUP_TOP);
         }
         RETURN_IF_FALSE(pc->stores = PyList_New(0));
-        // Can't use returning macros here (they'll leak pc->stores)!
         // Irrefutable cases must be either guarded, last, or both:
         pc->allow_irrefutable = m->guard != NULL || i == cases - 1;
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
+        // Can't use returning macros here (they'll leak pc->stores)!
         if (!compiler_pattern(c, m->pattern, pc)) {
             Py_DECREF(pc->stores);
             return 0;
@@ -6136,7 +6128,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         Py_DECREF(pc->stores);
         // Returning macros are safe again.
         if (m->guard) {
-            RETURN_IF_FALSE(pattern_context_ensure_fail_pop(c, pc, 0));
+            RETURN_IF_FALSE(ensure_fail_pop(c, pc, 0));
             RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
@@ -6145,7 +6137,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
-        RETURN_IF_FALSE(pattern_context_fail_pop_cleanup(c, pc));
+        RETURN_IF_FALSE(cleanup_fail_pop(c, pc));
     }
     if (has_default) {
         if (cases == 1) {
