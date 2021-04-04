@@ -4288,7 +4288,7 @@ class ThreadedTests(unittest.TestCase):
             if not any(alg in name for alg in expected_algs):
                 self.fail(name)
 
-    def test_read_write_after_close_raises_valuerror(self):
+    def test_read_write_after_close_raises_valueerror(self):
         client_context, server_context, hostname = testing_context()
         server = ThreadedEchoServer(context=server_context, chatty=False)
 

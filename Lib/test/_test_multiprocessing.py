@@ -2308,7 +2308,7 @@ def sqr(x, wait=0.0):
 def mul(x, y):
     return x*y
 
-def raise_large_valuerror(wait):
+def raise_large_valueerror(wait):
     time.sleep(wait)
     raise ValueError("x" * 1024**2)
 
@@ -2640,7 +2640,7 @@ class _TestPool(BaseTestCase):
         with self.assertRaises(ValueError):
             with self.Pool(2) as p:
                 try:
-                    p.map(raise_large_valuerror, [0, 1])
+                    p.map(raise_large_valueerror, [0, 1])
                 finally:
                     time.sleep(0.5)
                     p.close()
