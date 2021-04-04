@@ -55,9 +55,11 @@ def jabs_op(name, op):
 # Blank lines correspond to available opcodes
 
 def_op('POP_TOP', 1)
-
+def_op('ROT_TWO', 2)
+def_op('ROT_THREE', 3)
 def_op('DUP_TOP', 4)
 def_op('DUP_TOP_TWO', 5)
+def_op('ROT_FOUR', 6)
 
 def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)

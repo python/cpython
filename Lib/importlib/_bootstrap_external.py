@@ -315,7 +315,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a2 3433 (RERAISE restores f_lasti if oparg != 0)
 #     Python 3.10a6 3434 (PEP 634: Structural Pattern Matching)
 #     Python 3.10a7 3435 Use instruction offsets (as opposed to byte offsets).
-#     Python 3.10XX 3436 (replace ROT_* with ROTATE)
+#     Python 3.10XX 3436 (add ROTATE opcode)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

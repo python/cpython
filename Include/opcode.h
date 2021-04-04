@@ -8,8 +8,11 @@ extern "C" {
 
     /* Instruction opcodes for compiled code */
 #define POP_TOP                   1
+#define ROT_TWO                   2
+#define ROT_THREE                 3
 #define DUP_TOP                   4
 #define DUP_TOP_TWO               5
+#define ROT_FOUR                  6
 #define NOP                       9
 #define UNARY_POSITIVE           10
 #define UNARY_NEGATIVE           11
