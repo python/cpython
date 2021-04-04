@@ -793,22 +793,23 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         _Py_CheckRecursionLimit = recursion_limit;
     }
 #endif
-    if (tstate->recursion_headroom) {
+    if (tstate->recursion_critical)
+        /* Somebody asked that we don't check for recursion. */
+        return 0;
+    if (tstate->overflowed) {
         if (tstate->recursion_depth > recursion_limit + 50) {
             /* Overflowing while handling an overflow. Give up. */
             Py_FatalError("Cannot recover from stack overflow.");
         }
+        return 0;
     }
-    else {
-        if (tstate->recursion_depth > recursion_limit) {
-            tstate->recursion_headroom++;
-            _PyErr_Format(tstate, PyExc_RecursionError,
-                        "maximum recursion depth exceeded%s",
-                        where);
-            tstate->recursion_headroom--;
-            --tstate->recursion_depth;
-            return -1;
-        }
+    if (tstate->recursion_depth > recursion_limit) {
+        --tstate->recursion_depth;
+        tstate->overflowed = 1;
+        _PyErr_Format(tstate, PyExc_RecursionError,
+                      "maximum recursion depth exceeded%s",
+                      where);
+        return -1;
     }
     return 0;
 }
