@@ -2570,24 +2570,39 @@ class TestGetTerminalSize(unittest.TestCase):
             del env['LINES']
             del env['COLUMNS']
             actual = shutil.get_terminal_size()
+            self.assertEqual(expected, actual)
 
-        self.assertEqual(expected, actual)
+            # Falls back to stdout.
+            with support.swap_attr(sys, '__stdin__', None), \
+                    support.swap_attr(sys, '__stderr__', None):
+                actual = shutil.get_terminal_size()
+                self.assertEqual(expected, actual)
+
+            # Falls back to stderr.
+            with support.swap_attr(sys, '__stdin__', None), \
+                    support.swap_attr(sys, '__stdout__', None):
+                actual = shutil.get_terminal_size()
+                self.assertEqual(expected, actual)
 
     def test_fallback(self):
         with os_helper.EnvironmentVarGuard() as env:
             del env['LINES']
             del env['COLUMNS']
 
-            # sys.__stdout__ has no fileno()
-            with support.swap_attr(sys, '__stdout__', None):
+            # stdin/stderr/stdout have no fileno().
+            with support.swap_attr(sys, '__stdin__', None), \
+                    support.swap_attr(sys, '__stderr__', None), \
+                    support.swap_attr(sys, '__stdout__', None):
                 size = shutil.get_terminal_size(fallback=(10, 20))
             self.assertEqual(size.columns, 10)
             self.assertEqual(size.lines, 20)
 
-            # sys.__stdout__ is not a terminal on Unix
-            # or fileno() not in (0, 1, 2) on Windows
+            # stdin/stderr/stdout are not a terminal on Unix,
+            # or fileno() not in (0, 1, 2) on Windows.
             with open(os.devnull, 'w') as f, \
-                 support.swap_attr(sys, '__stdout__', f):
+                    support.swap_attr(sys, '__stdin__', f), \
+                    support.swap_attr(sys, '__stderr__', f), \
+                    support.swap_attr(sys, '__stdout__', f):
                 size = shutil.get_terminal_size(fallback=(30, 40))
             self.assertEqual(size.columns, 30)
             self.assertEqual(size.lines, 40)
