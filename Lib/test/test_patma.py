@@ -2842,6 +2842,15 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
 
     def test_patma_282(self):
+        x = {"y": 1}
+        match x:
+            case {"y": (0 as y) | (1 as y)}:
+                z = 0
+        self.assertEqual(x, {"y": 1})
+        self.assertEqual(y, 1)
+        self.assertEqual(z, 0)
+
+    def test_patma_283(self):
         def f(x):
             match x:
                 case ((a, b, c, d, e, f, g, h, i, 9) |
