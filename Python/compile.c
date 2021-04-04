@@ -5511,7 +5511,7 @@ compiler_slice(struct compiler *c, expr_ty s)
     ((N)->kind == Name_kind && \
     _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
 
-
+// TODO
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
 pattern_context_ensure_fail_pop(struct compiler *c, pattern_context *pc,
@@ -5541,7 +5541,7 @@ pattern_context_ensure_fail_pop(struct compiler *c, pattern_context *pc,
     return 1;
 }
 
-
+// TODO
 // Use op to jump to the correct fail_pop block.
 static int
 pattern_context_jump_to_fail_pop(struct compiler *c, pattern_context *pc,
@@ -5556,7 +5556,7 @@ pattern_context_jump_to_fail_pop(struct compiler *c, pattern_context *pc,
     return 1;
 }
 
-
+// TODO
 // Build all of the fail_pop blocks and free fail_pop.
 static int
 pattern_context_fail_pop_cleanup(struct compiler *c, pattern_context *pc)
@@ -5580,7 +5580,7 @@ done:
     return 1;
 }
 
-
+// TODO
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
@@ -5600,7 +5600,7 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
                                Py_ssize_t star, pattern_context *pc)
@@ -5623,6 +5623,7 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
     return 1;
 }
 
+// TODO
 // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
@@ -5663,7 +5664,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
     return 1;
 }
 
-
+// TODO
 // Like compiler_pattern, but turn off checks for irrefutability.
 static int
 compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
@@ -5675,7 +5676,7 @@ compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5690,7 +5691,7 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_capture(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5706,7 +5707,7 @@ compiler_pattern_capture(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5758,7 +5759,7 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5773,7 +5774,7 @@ compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5852,7 +5853,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5971,7 +5972,7 @@ fail:
     return 0;
 }
 
-
+// TODO
 static int
 compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6029,7 +6030,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6041,7 +6042,7 @@ compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern_wildcard(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6057,7 +6058,7 @@ compiler_pattern_wildcard(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-
+// TODO
 static int
 compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -6094,17 +6095,15 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
     }
 }
 
-
+// TODO
 static int
-compiler_match(struct compiler *c, stmt_ty s)
+compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
     VISIT(c, expr, s->v.Match.subject);
     basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases);
-    pattern_context pc;
-    pc.stores = NULL;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
@@ -6114,30 +6113,31 @@ compiler_match(struct compiler *c, stmt_ty s)
         if (i != cases - has_default - 1) {
             ADDOP(c, DUP_TOP);
         }
-        RETURN_IF_FALSE(pc.stores = PyList_New(0));
+        RETURN_IF_FALSE(pc->stores = PyList_New(0));
+        // Can't use returning macros here (they'll leak pc->stores)!
         // Irrefutable cases must be either guarded, last, or both:
-        pc.allow_irrefutable = m->guard != NULL || i == cases - 1;
-        pc.fail_pop = NULL;
-        pc.fail_pop_size = 0;
-        pc.on_top = 0;
-        int result = compiler_pattern(c, m->pattern, &pc);
-        if (!result) {
-            Py_DECREF(pc.stores);
+        pc->allow_irrefutable = m->guard != NULL || i == cases - 1;
+        pc->fail_pop = NULL;
+        pc->fail_pop_size = 0;
+        pc->on_top = 0;
+        if (!compiler_pattern(c, m->pattern, pc)) {
+            Py_DECREF(pc->stores);
             return 0;
         }
-        assert(!pc.on_top);
-        Py_ssize_t nstores = PyList_GET_SIZE(pc.stores);
+        assert(!pc->on_top);
+        Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
         while (nstores--) {
-            PyObject *name = PyList_GET_ITEM(pc.stores, nstores);
+            PyObject *name = PyList_GET_ITEM(pc->stores, nstores);
             if (!compiler_nameop(c, name, Store)) {
-                Py_DECREF(pc.stores);
+                Py_DECREF(pc->stores);
                 return 0;
             }
         }
-        Py_DECREF(pc.stores);
+        Py_DECREF(pc->stores);
+        // Returning macros are safe again.
         if (m->guard) {
-            RETURN_IF_FALSE(pattern_context_ensure_fail_pop(c, &pc, 0));
-            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc.fail_pop[0], 0));
+            RETURN_IF_FALSE(pattern_context_ensure_fail_pop(c, pc, 0));
+            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -6145,7 +6145,7 @@ compiler_match(struct compiler *c, stmt_ty s)
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
-        pattern_context_fail_pop_cleanup(c, &pc);
+        RETURN_IF_FALSE(pattern_context_fail_pop_cleanup(c, pc));
     }
     if (has_default) {
         if (cases == 1) {
@@ -6163,6 +6163,16 @@ compiler_match(struct compiler *c, stmt_ty s)
     }
     compiler_use_next_block(c, end);
     return 1;
+}
+
+
+static int
+compiler_match(struct compiler *c, stmt_ty s)
+{
+    pattern_context pc;
+    int result = compiler_match_inner(c, s, &pc);
+    PyObject_Free(pc.fail_pop);
+    return result;
 }
 
 
