@@ -512,7 +512,7 @@ class CmdLineTest(unittest.TestCase):
         # the dict whereas the module was destroyed
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
-        with open(filename, "w") as script:
+        with open(filename, "w", encoding="utf-8") as script:
             print("import sys", file=script)
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
@@ -549,9 +549,9 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
-            with open(fake, "w") as f:
+            with open(fake, "w", encoding="utf-8") as f:
                 f.write("raise RuntimeError('isolated mode test')\n")
-            with open(main, "w") as f:
+            with open(main, "w", encoding="utf-8") as f:
                 f.write("import uuid\n")
                 f.write("print('ok')\n")
             self.assertRaises(subprocess.CalledProcessError,
