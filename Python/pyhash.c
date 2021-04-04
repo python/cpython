@@ -347,16 +347,16 @@ static PyHash_FuncDef PyHash_Func = {fnv, "fnv", 8 * SIZEOF_PY_HASH_T,
 
 
 #ifdef _MSC_VER
-#  define ROTATE(x, b)  _rotl64(x, b)
+#  define ROT_N(x, b)  _rotl64(x, b)
 #else
-#  define ROTATE(x, b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) )
+#  define ROT_N(x, b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) )
 #endif
 
 #define HALF_ROUND(a,b,c,d,s,t)         \
     a += b; c += d;             \
-    b = ROTATE(b, s) ^ a;           \
-    d = ROTATE(d, t) ^ c;           \
-    a = ROTATE(a, 32);
+    b = ROT_N(b, s) ^ a;           \
+    d = ROT_N(d, t) ^ c;           \
+    a = ROT_N(a, 32);
 
 #define DOUBLE_ROUND(v0,v1,v2,v3)       \
     HALF_ROUND(v0,v1,v2,v3,13,16);      \
