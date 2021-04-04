@@ -1955,7 +1955,7 @@ Introspection helpers
    .. note::
       :pep:`585` generic types such as ``list["SomeClass"]`` will not be
       implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
-      will not be resolved to ``list[SomeClass]``.
+      will not automatically resolve to ``list[SomeClass]``.
 
    .. versionadded:: 3.7.4
 
