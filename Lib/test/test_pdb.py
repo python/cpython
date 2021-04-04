@@ -335,7 +335,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'continue',
     ... ]):
     ...    pdb.run('print()')
-    > <string>(1)<module>()
+    > <string>(1)<module>()...
     (Pdb) import test.test_pdb
     (Pdb) break test.test_pdb.do_something
     Breakpoint 1 at ...test_pdb.py:...
@@ -355,7 +355,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'continue',
     ... ]):
     ...    pdb.run('print()')
-    > <string>(1)<module>()
+    > <string>(1)<module>()...
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -378,7 +378,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     ...    'continue',
     ... ]):
     ...    pdb.run('print()')
-    > <string>(1)<module>()
+    > <string>(1)<module>()...
     (Pdb) break
     Num Type         Disp Enb   Where
     2   breakpoint   keep yes   at ...test_pdb.py:...
