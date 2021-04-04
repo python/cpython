@@ -1776,7 +1776,7 @@ to implement a method that behaves like :meth:`dict.pop`::
 
 3) Container implementations sometimes need to augment equality tests with
 identity tests.  This prevents the code from being confused by objects such as
-``float('NaN')`` that are not equal to the themselves.
+``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
 :meth:`collections.abc.Sequence.__contains__`::
