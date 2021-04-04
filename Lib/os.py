@@ -1020,11 +1020,13 @@ if sys.platform != 'vxworks':
     __all__.append("popen")
 
 # Supply os.fdopen()
-def fdopen(fd, *args, **kwargs):
+def fdopen(fd, mode="r", buffering=-1, encoding=None, *args, **kwargs):
     if not isinstance(fd, int):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
-    return io.open(fd, *args, **kwargs)
+    if "b" not in mode:
+        encoding = io.text_encoding(encoding)
+    return io.open(fd, mode, buffering, encoding, *args, **kwargs)
 
 
 # For testing purposes, make sure the function is available when the C
