@@ -5764,7 +5764,7 @@ compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
 compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
 {
@@ -5773,12 +5773,13 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_ssize_t size = asdl_seq_LEN(values);
     // A starred pattern will be a keyless value. It is guaranteed to be last:
     int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
-    ADDOP(c, MATCH_MAPPING);
+    // We need to keep the subject on top during the mapping and length checks:
     pc->on_top++;
+    ADDOP(c, MATCH_MAPPING);
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
-    pc->on_top--;
     if (!size) {
-        // If the pattern is just "{}", we're done!
+        // If the pattern is just "{}", we're done! Pop the subject:
+        pc->on_top--;
         ADDOP(c, POP_TOP);
         return 1;
     }
@@ -5787,9 +5788,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
         ADDOP_COMPARE(c, GtE);
-        pc->on_top++;
         RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
-        pc->on_top--;
     }
     if (INT_MAX < size - star - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
@@ -5807,10 +5806,10 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
     ADDOP(c, MATCH_KEYS);
-    pc->on_top += 3;
+    // There's now a tuple of keys and a tuple of values on top of the subject:
+    pc->on_top += 2;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
-    pc->on_top -= 3;
-    // So far so good. There's now a tuple of values on the stack to match
+    // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
     for (Py_ssize_t i = 0; i < size - star; i++) {
         expr_ty value = asdl_seq_GET(values, i);
@@ -5820,25 +5819,24 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
-        pc->on_top += 3;
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
-        pc->on_top -= 3;
     }
-    // If we get this far, it's a match! We're done with that tuple of values.
+    // If we get this far, it's a match! We're done with the tuple of values,
+    // and whatever happens next should consume the tuple of keys underneath it:
+    pc->on_top -= 2;
     ADDOP(c, POP_TOP);
     if (star) {
         // If we had a starred name, bind a dict of remaining items to it:
         ADDOP(c, COPY_DICT_WITHOUT_KEYS);
         PyObject *id = asdl_seq_GET(values, size - 1)->v.Name.id;
-        pc->on_top++;
         RETURN_IF_FALSE(pattern_helper_store_name(c, id, pc));
-        pc->on_top--;
     }
     else {
         // Otherwise, we don't care about this tuple of keys anymore:
         ADDOP(c, POP_TOP);
     }
     // Pop the subject:
+    pc->on_top--;
     ADDOP(c, POP_TOP);
     return 1;
 }
@@ -5848,9 +5846,6 @@ static int
 pattern_helper_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
-    // control will be is the list of names bound by the first alternative. If
-    // all of the others bind the same names (they should), then it becomes the
-    // new pc->stores.
     basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
@@ -5866,6 +5861,8 @@ pattern_helper_or(struct compiler *c, expr_ty p, pattern_context *pc)
         int is_last = i == size - 1;
         SET_LOC(c, alt);
         if (is_last) {
+            // For the last alternative, control flow is basically "back to
+            // normal". So just use pc.
             subpc = *pc;
         }
         else {
@@ -5980,7 +5977,7 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
         }
         only_wildcard &= WILDCARD_CHECK(value);
     }
-    // Need to keep the subject on top during the sequence and length checks:
+    // We need to keep the subject on top during the sequence and length checks:
     pc->on_top++;
     ADDOP(c, MATCH_SEQUENCE);
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
