@@ -756,6 +756,23 @@ regen-limited-abi: all
 	$(UPDATE_FILE) $(srcdir)/Doc/data/stable_abi.dat \
 	$(srcdir)/Doc/data/stable_abi.dat.new
 
+regen-abidump: all
+	@$(MKDIR_P) $(srcdir)/Doc/data/
+	if test "$(PY_ENABLE_SHARED)" = 1; then \
+		abidw "libpython$(LDVERSION).so" --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new ; \
+	else \
+		abidw $(PYTHON) --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new ; \
+	fi
+	@$(UPDATE_FILE) $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+
+check-abidump: all
+	if test "$(PY_ENABLE_SHARED)" = 1; then \
+		abidiff "libpython$(LDVERSION).so" $(srcdir)/Doc/data/python$(LDVERSION).abi --drop-private-types --no-architecture --no-added-syms ; \
+	else \
+		abidiff "$(PYTHON)" $(srcdir)/Doc/data/python$(LDVERSION).abi --drop-private-types --no-architecture --no-added-syms ; \
+	fi
+
+
 
 ############################################################################
 # Regenerate all generated files
