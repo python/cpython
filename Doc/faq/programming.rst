@@ -1449,7 +1449,7 @@ test for "true inheritance", scan the :term:`MRO` of the class:
 
     # Actual inheritance chain
     >>> type(c).__mro__
-    (<class '__main__.C'>, <class '__main__.P'>, <class 'object'>)
+    (<class 'C'>, <class 'P'>, <class 'object'>)
 
     # Test for "true inheritance"
     >>> Mapping in type(c).__mro__
