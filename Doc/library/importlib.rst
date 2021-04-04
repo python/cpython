@@ -257,7 +257,7 @@ ABC hierarchy::
          Returns ``None`` when called instead of raising
          :exc:`NotImplementedError`.
 
-      .. deprecated: 3.10
+      .. deprecated:: 3.10
          Implement :meth:`MetaPathFinder.find_spec` or
          :meth:`PathEntryFinder.find_spec` instead.
 
