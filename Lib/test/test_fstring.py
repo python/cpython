@@ -1110,7 +1110,7 @@ x = (
         # see issue 38964
         with temp_cwd() as cwd:
             file_path = os.path.join(cwd, 't.py')
-            with open(file_path, 'w') as f:
+            with open(file_path, 'w', encoding="utf-8") as f:
                 f.write('f"{a b}"') # This generates a SyntaxError
             _, _, stderr = assert_python_failure(file_path,
                                                  PYTHONIOENCODING='ascii')
