@@ -267,8 +267,9 @@ Basic Usage
    kwarg; otherwise :class:`JSONDecoder` is used.  Additional keyword arguments
    will be passed to the constructor of the class.
 
-   If the data being deserialized is not a valid JSON document, a
-   :exc:`JSONDecodeError` will be raised.
+   If the data being deserialized is not correctly encoded, a
+   :exc:`UnicodeDecodeError` will be raised, and if the decoded file is not a
+   valid JSON document, a :exc:`JSONDecodeError` will be raised.
 
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
