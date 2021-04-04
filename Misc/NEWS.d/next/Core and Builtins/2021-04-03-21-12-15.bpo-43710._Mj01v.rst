@@ -1,0 +1,4 @@
+Reverted the fix for https://bugs.python.org/issue42500 as it changed the
+PyThreadState struct size and broke the 3.9.x ABI in the 3.9.3 release
+(visible on 32-bit platforms using binaries compiled using an earlier
+version of Python 3.9.x headers).
