@@ -62,6 +62,7 @@ class FileDialog:
         self.top = Toplevel(master)
         self.top.title(title)
         self.top.iconname(title)
+        _setup_dialog(self.top)
 
         self.botframe = Frame(self.top)
         self.botframe.pack(side=BOTTOM, fill=X)
