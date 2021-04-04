@@ -82,7 +82,7 @@ URL = "http://www.pythontest.net/hashlib/{}.txt"
 def read_vectors(hash_name):
     url = URL.format(hash_name)
     try:
-        testdata = support.open_urlresource(url)
+        testdata = support.open_urlresource(url, encoding="utf-8")
     except (OSError, HTTPException):
         raise unittest.SkipTest("Could not retrieve {}".format(url))
     with testdata:
