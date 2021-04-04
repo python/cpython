@@ -1,0 +1,6 @@
+The following `threading` methods are now deprecated:
+`threading.currentThread`, `threading.activeCount`,
+`threading.Condition.notifyAll`, `threading.Event.isSet`,
+`threading.Thread.setName`, `threading.thread.getName`,
+`threading.Thread.isDaemon`, and `threading.Thread.setDaemon`. Patch by
+Jelle Zijlstra.
