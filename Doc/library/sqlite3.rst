@@ -84,8 +84,8 @@ is insecure; it makes your program vulnerable to an SQL injection attack
 
 Instead, use the DB-API's parameter substitution. Put a placeholder wherever
 you want to use a value, and then provide a tuple of values as the second
-argument to the cursor's :meth:`~Cursor.execute` method. A statement may use
-one of two kinds of placeholders: question marks (qmark style) or named
+argument to the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+use one of two kinds of placeholders: question marks (qmark style) or named
 placeholders (named style). For the qmark style, ``parameters`` must be a
 :term:`sequence <sequence>`. For the named style, it can be either a
 :term:`sequence <sequence>` or :class:`dict` instance. The length of the
