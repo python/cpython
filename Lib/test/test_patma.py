@@ -2851,21 +2851,28 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(z, 0)
 
     def test_patma_283(self):
+        self.assert_syntax_error("""
+        match ...:
+            case [a, [b] | [c] | [d]]:
+                pass
+        """)
+
+    def test_patma_284(self):
         def f(x):
             match x:
                 case ((a, b, c, d, e, f, g, h, i, 9) |
                       (h, g, i, a, b, d, e, c, f, 10) |
                       (g, b, a, c, d, -5, e, h, i, f) |
                       (-1, d, f, b, g, e, i, a, h, c)):
-                    pass
+                    w = 0
             out = locals()
             del out["x"]
             return out
         alts = [
-            dict(a=0, b=1, c=2, d=3, e=4, f=5, g=6, h=7, i=8),
-            dict(h=1, g=2, i=3, a=4, b=5, d=6, e=7, c=8, f=9),
-            dict(g=0, b=-1, a=-2, c=-3, d=-4, e=-6, h=-7, i=-8, f=-9),
-            dict(d=-2, f=-3, b=-4, g=-5, e=-6, i=-7, a=-8, h=-9, c=-10),
+            dict(a=0, b=1, c=2, d=3, e=4, f=5, g=6, h=7, i=8, w=0),
+            dict(h=1, g=2, i=3, a=4, b=5, d=6, e=7, c=8, f=9, w=0),
+            dict(g=0, b=-1, a=-2, c=-3, d=-4, e=-6, h=-7, i=-8, f=-9, w=0),
+            dict(d=-2, f=-3, b=-4, g=-5, e=-6, i=-7, a=-8, h=-9, c=-10, w=0),
             dict(),
         ]
         self.assertEqual(f(range(10)), alts[0])
@@ -2874,18 +2881,35 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(range(-1, -11, -1)), alts[3])
         self.assertEqual(f(range(10, 20)), alts[4])
 
-    def test_patma_284(self):
-        self.assert_syntax_error("""
-        match ...:
-            case [a, [b] | [c] | [d]]:
-                pass
-        """)
+    def test_patma_285(self):
+        def f(x):
+            match x:
+                case [y, (a, b, c, d, e, f, g, h, i, 9) |
+                         (h, g, i, a, b, d, e, c, f, 10) |
+                         (g, b, a, c, d, -5, e, h, i, f) |
+                         (-1, d, f, b, g, e, i, a, h, c), z]:
+                    w = 0
+            out = locals()
+            del out["x"]
+            return out
+        alts = [
+            dict(a=0, b=1, c=2, d=3, e=4, f=5, g=6, h=7, i=8, w=0, y=False, z=True),
+            dict(h=1, g=2, i=3, a=4, b=5, d=6, e=7, c=8, f=9, w=0, y=False, z=True),
+            dict(g=0, b=-1, a=-2, c=-3, d=-4, e=-6, h=-7, i=-8, f=-9, w=0, y=False, z=True),
+            dict(d=-2, f=-3, b=-4, g=-5, e=-6, i=-7, a=-8, h=-9, c=-10, w=0, y=False, z=True),
+            dict(),
+        ]
+        self.assertEqual(f((False, range(10), True)), alts[0])
+        self.assertEqual(f((False, range(1, 11), True)), alts[1])
+        self.assertEqual(f((False, range(0, -10, -1), True)), alts[2])
+        self.assertEqual(f((False, range(-1, -11, -1), True)), alts[3])
+        self.assertEqual(f((False, range(10, 20), True)), alts[4])
 
     @no_perf
-    def test_patma_285(self):
-        # Hunting for refleaks using -R doesn't catch refleaks in the compiler,
-        # just the code under test. This test ensures that if the pattern
-        # compiler is leaky, those runs will fail:
+    def test_patma_286(self):
+        # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
+        # just the code under test. This test ensures that if there are leaks in
+        # the pattern compiler, those runs will fail:
         with open(__file__) as file:
             compile(file.read(), __file__, "exec")
 

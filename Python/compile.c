@@ -225,6 +225,7 @@ typedef struct {
     // stack. Variable captures go beneath these. All of them will be popped on
     // failure.
     Py_ssize_t on_top;
+    Py_ssize_t adj;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -5502,7 +5503,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 // stored *underneath* them on success. This lets us defer all names stores
 // until the *entire* pattern matches.
 
-// TODO: Routine names
 // TODO: variants of test_patma_283 with mappings, classes, stars, stores before/after
 
 
@@ -5541,7 +5541,7 @@ jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
 {
     // Pop any items on the top of the stack, plus any objects we were going to
     // capture on success:
-    Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
+    Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores) + pc->adj;
     RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
     ADDOP_JUMP(c, op, pc->fail_pop[pops]);
     NEXT_BLOCK(c);
@@ -5657,8 +5657,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
 
 static int
 pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
-                  PyObject **control, Py_ssize_t old_nstores,
-                  pattern_context *pc)
+                  PyObject **control, Py_ssize_t on_top, pattern_context *pc)
 {
     // Only copy the subject if we're *not* on the last alternative:
     if (!is_last) {
@@ -5671,8 +5670,8 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
         // The duplicate copy of the subject is under the new names. Rotate it
         // back to the top and pop it off. This could probably be improved by
         // using a single "UNROT_N" instruction instead of lots of ROT_N ones:
-        for (Py_ssize_t i = 0; i < nstores - old_nstores; i++) {
-            ADDOP_I(c, ROT_N, nstores - old_nstores + 1);
+        for (Py_ssize_t i = 0; i < nstores + pc->adj; i++) {
+            ADDOP_I(c, ROT_N, nstores + pc->adj + on_top + 1);
         }
         ADDOP(c, POP_TOP);
     }
@@ -5686,9 +5685,12 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
     else if (nstores != PyList_GET_SIZE(*control)) {
         goto diff;
     }
-    else if (old_nstores < nstores) {
+    else if (-pc->adj < nstores) {
+        for (Py_ssize_t i = 0; i < on_top; i++) {
+            ADDOP_I(c, ROT_N, nstores + pc->adj + on_top);
+        }
         // There were captures. Check to see if we differ from the control list:
-        for (Py_ssize_t icontrol = old_nstores; icontrol < nstores; icontrol++)
+        for (Py_ssize_t icontrol = -pc->adj; icontrol < nstores; icontrol++)
         {
             PyObject *name = PyList_GET_ITEM(*control, icontrol);
             Py_ssize_t istores = PySequence_Index(pc->stores, name);
@@ -5721,11 +5723,13 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
                 ADDOP_I(c, ROT_N, nstores - icontrol);
             }
         }
+        for (Py_ssize_t i = 0; i < nstores + pc->adj; i++) {
+            ADDOP_I(c, ROT_N, nstores + pc->adj + on_top);
+        }
     }
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     NEXT_BLOCK(c);
     if (!is_last) {
-        // All alternatives (except the last one) jump here on failure:
         RETURN_IF_FALSE(cleanup_fail_pop(c, pc));
     }
     return 1;
@@ -5962,9 +5966,9 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             pc->fail_pop = NULL;
             pc->fail_pop_size = 0;
             pc->on_top = 0;
+            pc->adj = -old_nstores;
         }
-        if (!pattern_helper_or(c, alt, end, is_last, &control, old_nstores, pc))
-        {
+        if (!pattern_helper_or(c, alt, end, is_last, &control, old_pc.on_top, pc)) {
             if (!is_last) {
                 PyObject_Free(old_pc.fail_pop);
             }
@@ -6071,6 +6075,7 @@ static int
 compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     SET_LOC(c, p);
+    int res;
     switch (p->kind) {
         case Attribute_kind:
             return compiler_pattern_value(c, p, pc);
@@ -6101,6 +6106,7 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
         default:
             Py_UNREACHABLE();
     }
+    return res;
 }
 
 
@@ -6127,6 +6133,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
+        pc->adj = 0;
         // NOTE: Can't use returning macros here (they'll leak pc->stores)!
         if (!compiler_pattern(c, m->pattern, pc)) {
             Py_DECREF(pc->stores);
