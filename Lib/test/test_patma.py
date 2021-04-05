@@ -2874,6 +2874,21 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(range(-1, -11, -1)), alts[3])
         self.assertEqual(f(range(10, 20)), alts[4])
 
+    def test_patma_284(self):
+        self.assert_syntax_error("""
+        match ...:
+            case [a, [b] | [c] | [d]]:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_285(self):
+        # Hunting for refleaks using -R doesn't catch refleaks in the compiler,
+        # just the code under test. This test ensures that if the pattern
+        # compiler is leaky, those runs will fail:
+        with open(__file__) as file:
+            compile(file.read(), __file__, "exec")
+
 
 class PerfPatma(TestPatma):
 

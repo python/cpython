@@ -5655,6 +5655,86 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
 }
 
 
+static int
+pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
+                  PyObject **control, Py_ssize_t old_nstores,
+                  pattern_context *pc)
+{
+    // Only copy the subject if we're *not* on the last alternative:
+    if (!is_last) {
+        ADDOP(c, DUP_TOP);
+    }
+    RETURN_IF_FALSE(compiler_pattern(c, p, pc));
+    Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
+    // Success!
+    if (!is_last) {
+        // The duplicate copy of the subject is under the new names. Rotate it
+        // back to the top and pop it off. This could probably be improved by
+        // using a single "UNROT_N" instruction instead of lots of ROT_N ones:
+        for (Py_ssize_t i = 0; i < nstores - old_nstores; i++) {
+            ADDOP_I(c, ROT_N, nstores - old_nstores + 1);
+        }
+        ADDOP(c, POP_TOP);
+    }
+    if (*control == NULL) {
+        // This is the first alternative, so save its stores as a "control" for
+        // the others (they can't bind a different set of names, and might need
+        // to be reordered):
+        *control = pc->stores;
+        Py_INCREF(*control);
+    }
+    else if (nstores != PyList_GET_SIZE(*control)) {
+        goto diff;
+    }
+    else if (old_nstores < nstores) {
+        // There were captures. Check to see if we differ from the control list:
+        for (Py_ssize_t icontrol = old_nstores; icontrol < nstores; icontrol++)
+        {
+            PyObject *name = PyList_GET_ITEM(*control, icontrol);
+            Py_ssize_t istores = PySequence_Index(pc->stores, name);
+            if (istores < 0) {
+                PyErr_Clear();
+                goto diff;
+            }
+            // Reorder the names on the stack to match the order of the names in
+            // control. There's probably a better way of doing this; the current
+            // solution is potentially very inefficient when each alternative
+            // subpattern binds lots of names in different orders. It's fine for
+            // reasonable cases, though.
+            assert(icontrol <= istores);
+            // Perfom the same rotation on pc->stores:
+            PyObject *rotate = PyList_GetSlice(pc->stores, istores, nstores);
+            if (rotate == NULL ||
+                PyList_SetSlice(pc->stores, istores, nstores, NULL) ||
+                PyList_SetSlice(pc->stores, icontrol, icontrol, rotate))
+            {
+                Py_XDECREF(rotate);
+                return 0;
+            }
+            Py_DECREF(rotate);
+            // That just did:
+            // rotate = pc_stores[istores:]
+            // del pc_stores[istores:]
+            // pc_stores[icontrol:icontrol] = rotate
+            // Do the exact same thing to the stack, using several rotations:
+            while (istores++ < nstores) {
+                ADDOP_I(c, ROT_N, nstores - icontrol);
+            }
+        }
+    }
+    ADDOP_JUMP(c, JUMP_FORWARD, end);
+    NEXT_BLOCK(c);
+    if (!is_last) {
+        // All alternatives (except the last one) jump here on failure:
+        RETURN_IF_FALSE(cleanup_fail_pop(c, pc));
+    }
+    return 1;
+diff:
+    compiler_error(c, "alternative patterns bind different names");
+    return 0;
+}
+
+
 // Like compiler_pattern, but turn off checks for irrefutability.
 static int
 compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
@@ -5841,9 +5921,9 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
     return 1;
 }
 
-// TODO
+
 static int
-pattern_helper_or(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
     basicblock *end;
@@ -5851,105 +5931,53 @@ pattern_helper_or(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
     // We're going to be messing with pc. Keep the original info handy:
-    pattern_context subpc = *pc;
-    Py_ssize_t nstores_init = PyList_GET_SIZE(pc->stores);
-    Py_ssize_t ncontrol = 0;
+    pattern_context old_pc = *pc;
+    Py_INCREF(pc->stores);
+    Py_ssize_t old_nstores = PyList_GET_SIZE(pc->stores);
+    // control is the list of names bound by the first alternative. It is used
+    // for checking different name bindings in alternatives, and for correcting
+    // the order in which extracted elements are placed on the stack.
+    PyObject *control = NULL;
     for (Py_ssize_t i = 0; i < size; i++) {
-        // NOTE: Can't use our nice returning macros here: they'll leak lists!
         expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
-        // An irrefutable sub-pattern must be last, if it is allowed at all:
-        int is_last = i == size - 1;
         SET_LOC(c, alt);
+        int is_last = i == size - 1;
         if (is_last) {
-            // For the last alternative, control flow is basically "back to
-            // normal". So just use pc.
-            subpc = *pc;
+            // For the last alternative, all control flow is basically "back to
+            // normal". Just use old_pc.
+            Py_DECREF(pc->stores);
+            *pc = old_pc;
+            Py_INCREF(pc->stores);
         }
         else {
-            subpc.allow_irrefutable = 0;
-            subpc.fail_pop = NULL;
-            subpc.fail_pop_size = 0;
-            subpc.on_top = 0;
+            // Set up a "fresh" pc containing only a copy of prior stores:
+            PyObject *pc_stores = PySequence_List(old_pc.stores);
+            if (pc_stores == NULL) {
+                Py_DECREF(old_pc.stores);
+                Py_XDECREF(control);
+                return 0;
+            }
+            Py_SETREF(pc->stores, pc_stores);
+            pc->allow_irrefutable = 0;
+            pc->fail_pop = NULL;
+            pc->fail_pop_size = 0;
+            pc->on_top = 0;
         }
-        RETURN_IF_FALSE(subpc.stores = PyList_GetSlice(pc->stores, 0, nstores_init));
-        // Only copy the subject if we're *not* on the last alternative:
-        if (!is_last) {
-            ADDOP(c, DUP_TOP);
-        }
-        if (!compiler_pattern(c, alt, &subpc)) {
-            Py_DECREF(subpc.stores);
+        if (!pattern_helper_or(c, alt, end, is_last, &control, old_nstores, pc))
+        {
+            if (!is_last) {
+                PyObject_Free(old_pc.fail_pop);
+            }
+            Py_DECREF(old_pc.stores);
+            Py_XDECREF(control);
             return 0;
         }
-        Py_ssize_t nstores = PyList_GET_SIZE(subpc.stores);
-        if (!is_last) {
-            for (Py_ssize_t i = 0; i < nstores - nstores_init; i++) {
-                ADDOP_I(c, ROT_N, nstores - nstores_init + 1);
-            }
-            ADDOP(c, POP_TOP);
-        }
-        if (!i) {
-            // If this is the first alternative, save its stores as a "control"
-            // for the others (they can't bind a different set of names):
-            Py_DECREF(pc->stores);
-            pc->stores = subpc.stores;
-            Py_INCREF(pc->stores);
-            ncontrol = nstores;
-        }
-        else if (nstores != ncontrol) {
-            goto diff;
-        }
-        else if (nstores_init < nstores) {
-            // Otherwise, check to see if we differ from the control list:
-            for (Py_ssize_t j = nstores_init; j < nstores; j++) {
-                PyObject *name = PyList_GET_ITEM(pc->stores, j);
-                Py_ssize_t k = PySequence_Index(subpc.stores, name);
-                if (k < 0) {
-                    PyErr_Clear();
-                    goto diff;
-                }
-                // Reorder the names on the stack to match the order of the
-                // names in control. This is potentially very inefficient when
-                // each alternative subpattern binds lots of names in different
-                // orders, but it's fine for reasonable cases. There's probably
-                // a better way of doing this, though.
-                assert(j <= k);
-                // Perfom the same rotation on subpc.stores:
-                PyObject *rotate = PyList_GetSlice(subpc.stores, k, nstores);
-                if (rotate == NULL ||
-                    PyList_SetSlice(subpc.stores, k, nstores, NULL) ||
-                    PyList_SetSlice(subpc.stores, j, j, rotate))
-                {
-                    Py_XDECREF(rotate);
-                    return 0;
-                }
-                Py_DECREF(rotate);
-                while (k++ < ncontrol) {
-                    ADDOP_I(c, ROT_N, ncontrol - j);
-                }
-            }
-        }
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
-        NEXT_BLOCK(c);
-        if (!is_last) {
-            RETURN_IF_FALSE(cleanup_fail_pop(c, &subpc));
-            Py_DECREF(subpc.stores);
-        }
+        assert(control);
     }
-    *pc = subpc;
+    Py_DECREF(old_pc.stores);
+    Py_DECREF(control);
     compiler_use_next_block(c, end);
     return 1;
-diff:
-    Py_DECREF(subpc.stores);
-    compiler_error(c, "alternative patterns bind different names");
-    return 0;
-}
-
-
-static int
-compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
-{
-    int result = pattern_helper_or(c, p, pc);
-    return result;
 }
 
 
