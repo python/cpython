@@ -116,7 +116,7 @@ def case_insensitive_tests(test):
 
 def submodule(parent, name, pkg_dir, content=''):
     path = os.path.join(pkg_dir, name + '.py')
-    with open(path, 'w') as subfile:
+    with open(path, 'w', encoding='utf-8') as subfile:
         subfile.write(content)
     return '{}.{}'.format(parent, name), path
 
@@ -176,7 +176,7 @@ def temp_module(name, content='', *, pkg=False):
                         content = ''
                 if content is not None:
                     # not a namespace package
-                    with open(modpath, 'w') as modfile:
+                    with open(modpath, 'w', encoding='utf-8') as modfile:
                         modfile.write(content)
                 yield location
 
@@ -384,7 +384,7 @@ def create_modules(*names):
                     os.mkdir(file_path)
                     created_paths.append(file_path)
             file_path = os.path.join(file_path, name_parts[-1] + '.py')
-            with open(file_path, 'w') as file:
+            with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(source.format(name))
             created_paths.append(file_path)
             mapping[name] = file_path

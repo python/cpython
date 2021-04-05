@@ -250,7 +250,7 @@ def build_files(file_defs, prefix=pathlib.Path()):
                 with full_name.open('wb') as f:
                     f.write(contents)
             else:
-                with full_name.open('w') as f:
+                with full_name.open('w', encoding='utf-8') as f:
                     f.write(DALS(contents))
 
 
