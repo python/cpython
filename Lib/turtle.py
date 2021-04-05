@@ -847,7 +847,8 @@ class TurtleScreenBase(object):
 
         """
         return simpledialog.askfloat(title, prompt, initialvalue=default,
-                                     minvalue=minval, maxvalue=maxval)
+                                     minvalue=minval, maxvalue=maxval,
+                                     parent=self.cv)
 
 
 ##############################################################################
