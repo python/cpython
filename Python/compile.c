@@ -225,7 +225,6 @@ typedef struct {
     // stack. Variable captures go beneath these. All of them will be popped on
     // failure.
     Py_ssize_t on_top;
-    Py_ssize_t adj;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -5541,7 +5540,7 @@ jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
 {
     // Pop any items on the top of the stack, plus any objects we were going to
     // capture on success:
-    Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores) + pc->adj;
+    Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
     RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
     ADDOP_JUMP(c, op, pc->fail_pop[pops]);
     NEXT_BLOCK(c);
@@ -5570,6 +5569,13 @@ cleanup_fail_pop(struct compiler *c, pattern_context *pc)
     return 1;
 }
 
+static int
+compiler_error_duplicate_store(struct compiler *c, identifier n)
+{
+    const char *e = "multiple assignments to name %R in pattern";
+    return compiler_error(c, e, n);
+}
+
 
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
@@ -5581,8 +5587,7 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
         return 0;
     }
     if (duplicate) {
-        const char *e = "multiple assignments to name %R in pattern";
-        return compiler_error(c, e, n);
+        return compiler_error_duplicate_store(c, n);
     }
     RETURN_IF_FALSE(!PyList_Append(pc->stores, n));
     // Rotate this object underneath any items we need to preserve:
@@ -5676,15 +5681,14 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
     else if (nstores != PyList_GET_SIZE(*control)) {
         goto diff;
     }
-    else if (-pc->adj < nstores) {
+    else if (nstores) {
         // There were captures. Check to see if we differ from the control list:
         if (is_last) {
             for (Py_ssize_t i = 0; i < pc->on_top; i++) {
-                ADDOP_I(c, ROT_N, nstores + pc->adj + pc->on_top);
+                ADDOP_I(c, ROT_N, nstores + pc->on_top);
             }
         }
-        for (Py_ssize_t icontrol = -pc->adj; icontrol < nstores; icontrol++)
-        {
+        for (Py_ssize_t icontrol = 0; icontrol < nstores; icontrol++) {
             PyObject *name = PyList_GET_ITEM(*control, icontrol);
             Py_ssize_t istores = PySequence_Index(pc->stores, name);
             if (istores < 0) {
@@ -5719,17 +5723,15 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
     }
     // The duplicate copy of the subject is under the new names. Rotate it
     // back to the top and pop it off.
-    for (Py_ssize_t i = 0; i < nstores + pc->adj; i++) {
-        ADDOP_I(c, ROT_N, nstores + pc->adj + on_top + !is_last);
+    for (Py_ssize_t i = 0; i < nstores; i++) {
+        ADDOP_I(c, ROT_N, nstores + on_top + !is_last);
     }
     if (!is_last) {
         ADDOP(c, POP_TOP);
     }
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     NEXT_BLOCK(c);
-    if (!is_last) {
-        RETURN_IF_FALSE(cleanup_fail_pop(c, pc));
-    }
+    RETURN_IF_FALSE(cleanup_fail_pop(c, pc));
     return 1;
 diff:
     compiler_error(c, "alternative patterns bind different names");
@@ -5935,7 +5937,6 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
-    Py_ssize_t old_nstores = PyList_GET_SIZE(pc->stores);
     // control is the list of names bound by the first alternative. It is used
     // for checking different name bindings in alternatives, and for correcting
     // the order in which extracted elements are placed on the stack.
@@ -5944,42 +5945,50 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
         SET_LOC(c, alt);
         int is_last = i == size - 1;
-        if (is_last) {
-            // For the last alternative, all control flow is basically "back to
-            // normal". Just use old_pc.
-            Py_DECREF(pc->stores);
-            *pc = old_pc;
-            Py_INCREF(pc->stores);
+        PyObject *pc_stores = PyList_New(0);
+        if (pc_stores == NULL) {
+            goto error;
         }
-        else {
-            // Set up a "fresh" pc containing only a copy of prior stores:
-            PyObject *pc_stores = PySequence_List(old_pc.stores);
-            if (pc_stores == NULL) {
-                Py_DECREF(old_pc.stores);
-                Py_XDECREF(control);
-                return 0;
-            }
-            Py_SETREF(pc->stores, pc_stores);
-            pc->allow_irrefutable = 0;
-            pc->fail_pop = NULL;
-            pc->fail_pop_size = 0;
-            pc->on_top = 0;
-            pc->adj = -old_nstores;
-        }
+        Py_SETREF(pc->stores, pc_stores);
+        pc->allow_irrefutable = is_last && old_pc.allow_irrefutable;
+        pc->fail_pop = NULL;
+        pc->fail_pop_size = 0;
+        pc->on_top = 0;
         if (!pattern_helper_or(c, alt, end, is_last, &control, old_pc.on_top, pc)) {
-            if (!is_last) {
-                PyObject_Free(old_pc.fail_pop);
-            }
-            Py_DECREF(old_pc.stores);
-            Py_XDECREF(control);
-            return 0;
+            goto error;
         }
         assert(control);
+    }
+    Py_DECREF(pc->stores);
+    *pc = old_pc;
+    old_pc.fail_pop = NULL;
+    Py_INCREF(pc->stores);
+    if (!jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
+        goto error;
+    }
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(control); i++) {
+        PyObject *name = PyList_GET_ITEM(control, i);
+        int dupe = PySequence_Contains(old_pc.stores, name);
+        if (dupe < 0) {
+            goto error;
+        }
+        if (dupe) {
+            compiler_error_duplicate_store(c, name);
+            goto error;
+        }
+        if (PyList_Append(old_pc.stores, name)) {
+            goto error;
+        }
     }
     Py_DECREF(old_pc.stores);
     Py_DECREF(control);
     compiler_use_next_block(c, end);
     return 1;
+error:
+    PyObject_Free(old_pc.fail_pop);
+    Py_DECREF(old_pc.stores);
+    Py_XDECREF(control);
+    return 0;
 }
 
 
@@ -6131,7 +6140,6 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        pc->adj = 0;
         // NOTE: Can't use returning macros here (they'll leak pc->stores)!
         if (!compiler_pattern(c, m->pattern, pc)) {
             Py_DECREF(pc->stores);
