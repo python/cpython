@@ -1,3 +1,0 @@
-The bytecode interpreter uses instruction, rather byte, offsets internally.
-This reduces the number of EXTENDED_ARG instructions needed and streamlines
-instruction dispatch a bit.
