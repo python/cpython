@@ -617,7 +617,7 @@ Cursor Objects
 
    .. method:: executemany(sql, seq_of_parameters)
 
-      Executes a :ref:`parametrized <sqlite3-placeholders>` SQL command
+      Executes a :ref:`parameterized <sqlite3-placeholders>` SQL command
       against all parameter sequences or mappings found in the sequence
       *seq_of_parameters*. The :mod:`sqlite3` module also allows using an
       :term:`iterator` yielding parameters instead of a sequence.
