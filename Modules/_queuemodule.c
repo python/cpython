@@ -15,7 +15,7 @@ simplequeue_get_state(PyObject *module)
     return state;
 }
 static struct PyModuleDef queuemodule;
-#define simplequeue_get_state_by_type(tp) \
+#define simplequeue_get_state_by_type(type) \
     (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {

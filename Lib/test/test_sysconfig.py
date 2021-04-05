@@ -18,6 +18,10 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_scheme_names, get_config_var, _main)
 import _osx_support
 
+
+HAS_USER_BASE = sysconfig._HAS_USER_BASE
+
+
 class TestSysConfig(unittest.TestCase):
 
     def setUp(self):
@@ -230,9 +234,10 @@ class TestSysConfig(unittest.TestCase):
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_scheme_names(self):
-        wanted = ('nt', 'nt_user', 'osx_framework_user',
-                  'posix_home', 'posix_prefix', 'posix_user')
-        self.assertEqual(get_scheme_names(), wanted)
+        wanted = ['nt', 'posix_home', 'posix_prefix']
+        if HAS_USER_BASE:
+            wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
+        self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
     @skip_unless_symlink
     def test_symlink(self): # Issue 7880
@@ -244,7 +249,8 @@ class TestSysConfig(unittest.TestCase):
         # Issue #8759: make sure the posix scheme for the users
         # is similar to the global posix_prefix one
         base = get_config_var('base')
-        user = get_config_var('userbase')
+        if HAS_USER_BASE:
+            user = get_config_var('userbase')
         # the global scheme mirrors the distinction between prefix and
         # exec-prefix but not the user scheme, so we have to adapt the paths
         # before comparing (issue #9100)
@@ -259,8 +265,9 @@ class TestSysConfig(unittest.TestCase):
                 # before comparing
                 global_path = global_path.replace(sys.base_prefix, sys.prefix)
                 base = base.replace(sys.base_prefix, sys.prefix)
-            user_path = get_path(name, 'posix_user')
-            self.assertEqual(user_path, global_path.replace(base, user, 1))
+            if HAS_USER_BASE:
+                user_path = get_path(name, 'posix_user')
+                self.assertEqual(user_path, global_path.replace(base, user, 1))
 
     def test_main(self):
         # just making sure _main() runs and returns things in the stdout
@@ -360,10 +367,12 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
-    def test_SO_in_vars(self):
+    def test_EXT_SUFFIX_in_vars(self):
+        import _imp
         vars = sysconfig.get_config_vars()
         self.assertIsNotNone(vars['SO'])
         self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
+        self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
     @unittest.skipUnless(sys.platform == 'linux' and
                          hasattr(sys.implementation, '_multiarch'),

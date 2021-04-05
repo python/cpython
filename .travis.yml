@@ -10,7 +10,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1f
+    - OPENSSL=1.1.1k
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     - CFLAGS="-I${OPENSSL_DIR}/include"
@@ -172,6 +172,7 @@ before_script:
   - eval "$(pyenv init -)"
   - pyenv global 3.8
   - PYTHON_FOR_REGEN=python3.8 make -j4 regen-all
+  - make regen-stdlib-module-names
   - changes=`git status --porcelain`
   - |
       # Check for changes in regenerated files

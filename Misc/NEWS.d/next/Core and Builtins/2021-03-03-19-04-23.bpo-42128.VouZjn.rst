@@ -1,0 +1,2 @@
+Add ``__match_args__`` to :c:type:`structsequence` based classes. Patch by
+Pablo Galindo.

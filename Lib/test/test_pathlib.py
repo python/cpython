@@ -2467,6 +2467,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
     def test_expanduser(self):
         P = self.cls
         import_helper.import_module('pwd')

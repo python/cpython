@@ -56,12 +56,12 @@ created.  Socket addresses are represented as follows:
   bytes-like object can be used for either type of address when
   passing it as an argument.
 
-   .. versionchanged:: 3.3
-      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
-      encoding.
+  .. versionchanged:: 3.3
+     Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
+     encoding.
 
-   .. versionchanged:: 3.5
-      Writable :term:`bytes-like object` is now accepted.
+  .. versionchanged:: 3.5
+     Writable :term:`bytes-like object` is now accepted.
 
 .. _host_port:
 
@@ -610,6 +610,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    .. versionchanged:: 3.9
        The CAN_J1939 protocol was added.
 
+   .. versionchanged:: 3.10
+       The IPPROTO_MPTCP protocol was added.
+
 .. function:: socketpair([family[, type[, proto]]])
 
    Build a pair of connected socket objects using the given address family, socket
@@ -782,9 +785,9 @@ The :mod:`socket` module also offers various network-related services:
    system if IPv6 isn't enabled)::
 
       >>> socket.getaddrinfo("example.org", 80, proto=socket.IPPROTO_TCP)
-      [(<AddressFamily.AF_INET6: 10>, <SocketType.SOCK_STREAM: 1>,
+      [(socket.AF_INET6, socket.SOCK_STREAM,
        6, '', ('2606:2800:220:1:248:1893:25c8:1946', 80, 0, 0)),
-       (<AddressFamily.AF_INET: 2>, <SocketType.SOCK_STREAM: 1>,
+       (socket.AF_INET, socket.SOCK_STREAM,
        6, '', ('93.184.216.34', 80))]
 
    .. versionchanged:: 3.2
@@ -907,11 +910,9 @@ The :mod:`socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 2-byte swap operation.
 
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   .. versionchanged:: 3.10
+      Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
+      integer.
 
 
 .. function:: htonl(x)
@@ -927,11 +928,9 @@ The :mod:`socket` module also offers various network-related services:
    where the host byte order is the same as network byte order, this is a no-op;
    otherwise, it performs a 2-byte swap operation.
 
-   .. deprecated:: 3.7
-      In case *x* does not fit in 16-bit unsigned integer, but does fit in a
-      positive C int, it is silently truncated to 16-bit unsigned integer.
-      This silent truncation feature is deprecated, and will raise an
-      exception in future versions of Python.
+   .. versionchanged:: 3.10
+      Raises :exc:`OverflowError` if *x* does not fit in a 16-bit unsigned
+      integer.
 
 
 .. function:: inet_aton(ip_string)

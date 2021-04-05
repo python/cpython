@@ -116,15 +116,6 @@ failure, run the parser a second time with those enabled.
 
 ..
 
-.. bpo: 41910
-.. date: 2020-10-21-14-40-54
-.. nonce: CzBMit
-.. section: Core and Builtins
-
-Document the default implementation of `object.__eq__`.
-
-..
-
 .. bpo: 42093
 .. date: 2020-10-20-04-24-07
 .. nonce: ooZZNh
@@ -569,7 +560,7 @@ by Joongi Kim and John Belmonte.
 
 ..
 
-.. bpo: 16936
+.. bpo: 16396
 .. date: 2020-07-08-09-45-00
 .. nonce: z8o8Pn
 .. section: Library
@@ -650,6 +641,15 @@ dumped.
 .. section: Documentation
 
 Document __format__ functionality for IP addresses.
+
+..
+
+.. bpo: 41910
+.. date: 2020-10-21-14-40-54
+.. nonce: CzBMit
+.. section: Documentation
+
+Document the default implementation of `object.__eq__`.
 
 ..
 

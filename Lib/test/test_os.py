@@ -991,6 +991,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     # Bug 1110478
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
     def test_update2(self):
         os.environ.clear()
         os.environ.update(HELLO="World")
@@ -1000,6 +1001,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
     def test_os_popen_iter(self):
         with os.popen("%s -c 'echo \"line1\nline2\nline3\"'"
                       % unix_shell) as popen:
@@ -3878,6 +3880,33 @@ class FDInheritanceTests(unittest.TestCase):
         os.set_inheritable(fd, True)
         self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
                          0)
+
+    @unittest.skipUnless(hasattr(os, 'O_PATH'), "need os.O_PATH")
+    def test_get_set_inheritable_o_path(self):
+        fd = os.open(__file__, os.O_PATH)
+        self.addCleanup(os.close, fd)
+        self.assertEqual(os.get_inheritable(fd), False)
+
+        os.set_inheritable(fd, True)
+        self.assertEqual(os.get_inheritable(fd), True)
+
+        os.set_inheritable(fd, False)
+        self.assertEqual(os.get_inheritable(fd), False)
+
+    def test_get_set_inheritable_badf(self):
+        fd = os_helper.make_bad_fd()
+
+        with self.assertRaises(OSError) as ctx:
+            os.get_inheritable(fd)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as ctx:
+            os.set_inheritable(fd, True)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as ctx:
+            os.set_inheritable(fd, False)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
 
     def test_open(self):
         fd = os.open(__file__, os.O_RDONLY)

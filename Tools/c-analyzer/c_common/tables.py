@@ -1,4 +1,6 @@
 import csv
+import re
+import textwrap
 
 from . import NOT_SET, strutil, fsutil
 
@@ -212,3 +214,177 @@ def _normalize_table_file_props(header, sep):
         else:
             sep = None
     return header, sep
+
+
+##################################
+# stdout tables
+
+WIDTH = 20
+
+
+def resolve_columns(specs):
+    if isinstance(specs, str):
+        specs = specs.replace(',', ' ').strip().split()
+    return _resolve_colspecs(specs)
+
+
+def build_table(specs, *, sep=' ', defaultwidth=None):
+    columns = resolve_columns(specs)
+    return _build_table(columns, sep=sep, defaultwidth=defaultwidth)
+
+
+_COLSPEC_RE = re.compile(textwrap.dedent(r'''
+    ^
+    (?:
+        [[]
+        (
+            (?: [^\s\]] [^\]]* )?
+            [^\s\]]
+        )  # <label>
+        []]
+    )?
+    ( \w+ )  # <field>
+    (?:
+        (?:
+            :
+            ( [<^>] )  # <align>
+            ( \d+ )  # <width1>
+        )
+        |
+        (?:
+            (?:
+                :
+                ( \d+ )  # <width2>
+            )?
+            (?:
+                :
+                ( .*? )  # <fmt>
+            )?
+        )
+    )?
+    $
+'''), re.VERBOSE)
+
+
+def _parse_fmt(fmt):
+    if fmt.startswith(tuple('<^>')):
+        align = fmt[0]
+        width = fmt[1:]
+        if width.isdigit():
+            return int(width), align
+    return None, None
+
+
+def _parse_colspec(raw):
+    m = _COLSPEC_RE.match(raw)
+    if not m:
+        return None
+    label, field, align, width1, width2, fmt = m.groups()
+    if not label:
+        label = field
+    if width1:
+        width = None
+        fmt = f'{align}{width1}'
+    elif width2:
+        width = int(width2)
+        if fmt:
+            _width, _ = _parse_fmt(fmt)
+            if _width == width:
+                width = None
+    else:
+        width = None
+    return field, label, width, fmt
+
+
+def _normalize_colspec(spec):
+    if len(spec) == 1:
+        raw, = spec
+        return _resolve_column(raw)
+
+    if len(spec) == 4:
+        label, field, width, fmt = spec
+        if width:
+            fmt = f'{width}:{fmt}' if fmt else width
+    elif len(raw) == 3:
+        label, field, fmt = spec
+        if not field:
+            label, field = None, label
+        elif not isinstance(field, str) or not field.isidentifier():
+            fmt = f'{field}:{fmt}' if fmt else field
+            label, field = None, label
+    elif len(raw) == 2:
+        label = None
+        field, fmt = raw
+        if not field:
+            field, fmt = fmt, None
+        elif not field.isidentifier() or fmt.isidentifier():
+            label, field = field, fmt
+    else:
+        raise NotImplementedError
+
+    fmt = f':{fmt}' if fmt else ''
+    if label:
+        return _parse_colspec(f'[{label}]{field}{fmt}')
+    else:
+        return _parse_colspec(f'{field}{fmt}')
+
+
+def _resolve_colspec(raw):
+    if isinstance(raw, str):
+        spec = _parse_colspec(raw)
+    else:
+        spec = _normalize_colspec(raw)
+    if spec is None:
+        raise ValueError(f'unsupported column spec {raw!r}')
+    return spec
+
+
+def _resolve_colspecs(columns):
+    parsed = []
+    for raw in columns:
+        column = _resolve_colspec(raw)
+        parsed.append(column)
+    return parsed
+
+
+def _resolve_width(spec, defaultwidth):
+    _, label, width, fmt = spec
+    if width:
+        if not isinstance(width, int):
+            raise NotImplementedError
+        return width
+    elif width and fmt:
+        width, _ = _parse_fmt(fmt)
+        if width:
+            return width
+
+    if not defaultwidth:
+        return WIDTH
+    elif not hasattr(defaultwidth, 'get'):
+        return defaultwidth or WIDTH
+
+    defaultwidths = defaultwidth
+    defaultwidth = defaultwidths.get(None) or WIDTH
+    return defaultwidths.get(label) or defaultwidth
+
+
+def _build_table(columns, *, sep=' ', defaultwidth=None):
+    header = []
+    div = []
+    rowfmt = []
+    for spec in columns:
+        label, field, _, colfmt = spec
+        width = _resolve_width(spec, defaultwidth)
+        if colfmt:
+            colfmt = f':{colfmt}'
+        else:
+            colfmt = f':{width}'
+
+        header.append(f' {{:^{width}}} '.format(label))
+        div.append('-' * (width + 2))
+        rowfmt.append(f' {{{field}{colfmt}}} ')
+    return (
+        sep.join(header),
+        sep.join(div),
+        sep.join(rowfmt),
+    )

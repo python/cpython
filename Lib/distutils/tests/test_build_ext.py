@@ -456,7 +456,7 @@ class BuildExtTestCase(TempdirManager,
         deptarget = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
         if deptarget:
             # increment the minor version number (i.e. 10.6 -> 10.7)
-            deptarget = [int(x) for x in str(deptarget).split('.')]
+            deptarget = [int(x) for x in deptarget.split('.')]
             deptarget[-1] += 1
             deptarget = '.'.join(str(i) for i in deptarget)
             self._try_compile_deployment_target('<', deptarget)
@@ -489,7 +489,7 @@ class BuildExtTestCase(TempdirManager,
 
         # get the deployment target that the interpreter was built with
         target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-        target = tuple(map(int, str(target).split('.')[0:2]))
+        target = tuple(map(int, target.split('.')[0:2]))
         # format the target value as defined in the Apple
         # Availability Macros.  We can't use the macro names since
         # at least one value we test with will not exist yet.

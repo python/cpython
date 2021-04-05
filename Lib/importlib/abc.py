@@ -14,6 +14,7 @@ except ImportError:
 from ._abc import Loader
 import abc
 import warnings
+from typing import BinaryIO, Iterable, Text
 from typing import Protocol, runtime_checkable
 
 
@@ -297,49 +298,45 @@ _register(SourceLoader, machinery.SourceFileLoader)
 
 
 class ResourceReader(metaclass=abc.ABCMeta):
-
-    """Abstract base class to provide resource-reading support.
-
-    Loaders that support resource reading are expected to implement
-    the ``get_resource_reader(fullname)`` method and have it either return None
-    or an object compatible with this ABC.
-    """
+    """Abstract base class for loaders to provide resource reading support."""
 
     @abc.abstractmethod
-    def open_resource(self, resource):
+    def open_resource(self, resource: Text) -> BinaryIO:
         """Return an opened, file-like object for binary reading.
 
-        The 'resource' argument is expected to represent only a file name
-        and thus not contain any subdirectory components.
-
+        The 'resource' argument is expected to represent only a file name.
         If the resource cannot be found, FileNotFoundError is raised.
         """
+        # This deliberately raises FileNotFoundError instead of
+        # NotImplementedError so that if this method is accidentally called,
+        # it'll still do the right thing.
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def resource_path(self, resource):
+    def resource_path(self, resource: Text) -> Text:
         """Return the file system path to the specified resource.
 
-        The 'resource' argument is expected to represent only a file name
-        and thus not contain any subdirectory components.
-
+        The 'resource' argument is expected to represent only a file name.
         If the resource does not exist on the file system, raise
         FileNotFoundError.
         """
+        # This deliberately raises FileNotFoundError instead of
+        # NotImplementedError so that if this method is accidentally called,
+        # it'll still do the right thing.
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def is_resource(self, name):
-        """Return True if the named 'name' is consider a resource."""
+    def is_resource(self, path: Text) -> bool:
+        """Return True if the named 'path' is a resource.
+
+        Files are resources, directories are not.
+        """
         raise FileNotFoundError
 
     @abc.abstractmethod
-    def contents(self):
-        """Return an iterable of strings over the contents of the package."""
-        return []
-
-
-_register(ResourceReader, machinery.SourceFileLoader)
+    def contents(self) -> Iterable[str]:
+        """Return an iterable of entries in `package`."""
+        raise FileNotFoundError
 
 
 @runtime_checkable
@@ -355,26 +352,28 @@ class Traversable(Protocol):
         Yield Traversable objects in self
         """
 
-    @abc.abstractmethod
     def read_bytes(self):
         """
         Read contents of self as bytes
         """
+        with self.open('rb') as strm:
+            return strm.read()
 
-    @abc.abstractmethod
     def read_text(self, encoding=None):
         """
-        Read contents of self as bytes
+        Read contents of self as text
         """
+        with self.open(encoding=encoding) as strm:
+            return strm.read()
 
     @abc.abstractmethod
-    def is_dir(self):
+    def is_dir(self) -> bool:
         """
         Return True if self is a dir
         """
 
     @abc.abstractmethod
-    def is_file(self):
+    def is_file(self) -> bool:
         """
         Return True if self is a file
         """
@@ -385,11 +384,11 @@ class Traversable(Protocol):
         Return Traversable child in self
         """
 
-    @abc.abstractmethod
     def __truediv__(self, child):
         """
         Return Traversable child in self
         """
+        return self.joinpath(child)
 
     @abc.abstractmethod
     def open(self, mode='r', *args, **kwargs):
@@ -402,14 +401,18 @@ class Traversable(Protocol):
         """
 
     @abc.abstractproperty
-    def name(self):
-        # type: () -> str
+    def name(self) -> str:
         """
         The base name of this object without any parent references.
         """
 
 
 class TraversableResources(ResourceReader):
+    """
+    The required interface for providing traversable
+    resources.
+    """
+
     @abc.abstractmethod
     def files(self):
         """Return a Traversable object for the loaded package."""

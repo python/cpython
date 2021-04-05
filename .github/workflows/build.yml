@@ -28,7 +28,7 @@ jobs:
       - name: Check for source changes
         id: check
         run: |
-          if [ -z "GITHUB_BASE_REF" ]; then
+          if [ -z "$GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
@@ -63,6 +63,7 @@ jobs:
           # Build Python with the libpython dynamic library
           ./configure --with-pydebug --enable-shared
           make -j4 regen-all
+          make regen-stdlib-module-names
       - name: Check for changes
         run: |
           changes=$(git status --porcelain)
@@ -99,6 +100,8 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
     - uses: actions/checkout@v2
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
       run: .\PCbuild\build.bat -e -p x64
     - name: Display build info
@@ -124,11 +127,11 @@ jobs:
 
   build_ubuntu:
     name: 'Ubuntu'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1f
+      OPENSSL_VER: 1.1.1k
     steps:
     - uses: actions/checkout@v2
     - name: Register gcc problem matcher
@@ -137,7 +140,7 @@ jobs:
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.3
+      uses: actions/cache@v2.1.4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}

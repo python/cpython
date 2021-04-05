@@ -1,4 +1,4 @@
-This is Python version 3.10.0 alpha 2
+This is Python version 3.10.0 alpha 6
 =====================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
@@ -17,12 +17,12 @@ This is Python version 3.10.0 alpha 2
    :alt: CPython code coverage on Codecov
    :target: https://codecov.io/gh/python/cpython
 
-.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-   :alt: Python Zulip chat
-   :target: https://python.zulipchat.com
+.. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
+   :alt: Python Discourse chat
+   :target: https://discuss.python.org/
 
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -250,7 +250,7 @@ See :pep:`619` for Python 3.10 release details.
 Copyright and License Information
 ---------------------------------
 
-Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
+Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.  All rights reserved.
 

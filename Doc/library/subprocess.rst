@@ -339,7 +339,7 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 start_new_session=False, pass_fds=(), *, group=None, \
                  extra_groups=None, user=None, umask=-1, \
                  encoding=None, errors=None, text=None, pipesize=-1)
 
@@ -1187,8 +1187,9 @@ calls these functions.
    The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
    most arguments are passed directly through to that interface.
-   However, explicitly passing ``input=None`` to inherit the parent's
-   standard input file handle is not supported.
+   One API deviation from :func:`run` behavior exists: passing ``input=None``
+   will behave the same as ``input=b''`` (or ``input=''``, depending on other
+   arguments) rather than using the parent's standard input file handle.
 
    By default, this function will return the data as encoded bytes. The actual
    encoding of the output data may depend on the command being invoked, so the
@@ -1281,7 +1282,7 @@ be used directly:
 
 becomes::
 
-   output=check_output("dmesg | grep hda", shell=True)
+   output = check_output("dmesg | grep hda", shell=True)
 
 
 Replacing :func:`os.system`

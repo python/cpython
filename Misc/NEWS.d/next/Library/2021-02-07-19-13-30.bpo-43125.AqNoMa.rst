@@ -1,0 +1,1 @@
+Return empty string if base64mime.body_encode receive empty bytes

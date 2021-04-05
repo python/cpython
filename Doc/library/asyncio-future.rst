@@ -31,7 +31,7 @@ Future Functions
    .. versionadded:: 3.5
 
 
-.. function:: ensure_future(obj, \*, loop=None)
+.. function:: ensure_future(obj, *, loop=None)
 
    Return:
 
@@ -62,7 +62,7 @@ Future Functions
       and *loop* is not specified and there is no running event loop.
 
 
-.. function:: wrap_future(future, \*, loop=None)
+.. function:: wrap_future(future, *, loop=None)
 
    Wrap a :class:`concurrent.futures.Future` object in a
    :class:`asyncio.Future` object.
@@ -75,7 +75,7 @@ Future Functions
 Future Object
 =============
 
-.. class:: Future(\*, loop=None)
+.. class:: Future(*, loop=None)
 
    A Future represents an eventual result of an asynchronous
    operation.  Not thread-safe.

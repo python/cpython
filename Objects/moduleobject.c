@@ -35,6 +35,19 @@ PyTypeObject PyModuleDef_Type = {
 };
 
 
+int
+_PyModule_IsExtension(PyObject *obj)
+{
+    if (!PyModule_Check(obj)) {
+        return 0;
+    }
+    PyModuleObject *module = (PyModuleObject*)obj;
+
+    struct PyModuleDef *def = module->md_def;
+    return (def != NULL && def->m_methods != NULL);
+}
+
+
 PyObject*
 PyModuleDef_Init(struct PyModuleDef* def)
 {

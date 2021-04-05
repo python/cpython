@@ -153,9 +153,11 @@ always available.
 
 .. data:: builtin_module_names
 
-   A tuple of strings giving the names of all modules that are compiled into this
+   A tuple of strings containing the names of all modules that are compiled into this
    Python interpreter.  (This information is not available in any other way ---
    ``modules.keys()`` only lists the imported modules.)
+
+   See also the :attr:`sys.stdlib_module_names` list.
 
 
 .. function:: call_tracing(func, args)
@@ -1562,6 +1564,25 @@ always available.
        original values ``__stdin__``, ``__stdout__`` and ``__stderr__`` can be
        ``None``. It is usually the case for Windows GUI apps that aren't connected
        to a console and Python apps started with :program:`pythonw`.
+
+
+.. data:: stdlib_module_names
+
+   A frozenset of strings containing the names of standard library modules.
+
+   It is the same on all platforms. Modules which are not available on
+   some platforms and modules disabled at Python build are also listed.
+   All module kinds are listed: pure Python, built-in, frozen and extension
+   modules. Test modules are excluded.
+
+   For packages, only the main package is listed: sub-packages and sub-modules
+   are not listed. For example, the ``email`` package is listed, but the
+   ``email.mime`` sub-package and the ``email.message`` sub-module are not
+   listed.
+
+   See also the :attr:`sys.builtin_module_names` list.
+
+   .. versionadded:: 3.10
 
 
 .. data:: thread_info

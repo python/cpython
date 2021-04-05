@@ -362,7 +362,7 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('return NULL;', 2)
                 emit('}', 1)
 
-        emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
+        emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
         emit("if (!p)", 1)
         emit("return NULL;", 2)
         if union:
@@ -872,9 +872,10 @@ make_type(struct ast_state *state, const char *type, PyObject* base,
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOOOs}",
                     type, base,
                     state->_fields, fnames,
+                    state->__match_args__, fnames,
                     state->__module__,
                     state->ast,
                     state->__doc__, doc);
@@ -945,7 +946,7 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
     if (obj == Py_None)
         obj = NULL;
     if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
+        if (_PyArena_AddPyObject(arena, obj) < 0) {
             *out = NULL;
             return -1;
         }
@@ -957,7 +958,7 @@ static int obj2ast_object(struct ast_state *Py_UNUSED(state), PyObject* obj, PyO
 
 static int obj2ast_constant(struct ast_state *Py_UNUSED(state), PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (PyArena_AddPyObject(arena, obj) < 0) {
+    if (_PyArena_AddPyObject(arena, obj) < 0) {
         *out = NULL;
         return -1;
     }
@@ -1005,6 +1006,7 @@ static int add_ast_fields(struct ast_state *state)
     empty_tuple = PyTuple_New(0);
     if (!empty_tuple ||
         PyObject_SetAttrString(state->AST_type, "_fields", empty_tuple) < 0 ||
+        PyObject_SetAttrString(state->AST_type, "__match_args__", empty_tuple) < 0 ||
         PyObject_SetAttrString(state->AST_type, "_attributes", empty_tuple) < 0) {
         Py_XDECREF(empty_tuple);
         return -1;
@@ -1371,17 +1373,13 @@ def generate_ast_fini(module_state, f):
     f.write(textwrap.dedent("""
             void _PyAST_Fini(PyInterpreterState *interp)
             {
-            #ifdef Py_BUILD_CORE
                 struct ast_state *state = &interp->ast;
-            #else
-                struct ast_state *state = &global_ast_state;
-            #endif
 
     """))
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-            #if defined(Py_BUILD_CORE) && !defined(NDEBUG)
+            #if !defined(NDEBUG)
                 state->initialized = -1;
             #else
                 state->initialized = 0;
@@ -1405,6 +1403,7 @@ def generate_module_def(mod, f, internal_h):
     state_strings = {
         "ast",
         "_fields",
+        "__match_args__",
         "__doc__",
         "__dict__",
         "__module__",
@@ -1425,24 +1424,15 @@ def generate_module_def(mod, f, internal_h):
     generate_ast_state(module_state, internal_h)
 
     print(textwrap.dedent(f"""
-        #ifdef Py_BUILD_CORE
-        #  include "pycore_ast.h"           // struct ast_state
-        #  include "pycore_interp.h"        // _PyInterpreterState.ast
-        #  include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #else
-    """).strip(), file=f)
-
-    generate_ast_state(module_state, f)
-
-    print(textwrap.dedent(f"""
-        #endif   // Py_BUILD_CORE
+        #include "pycore_ast_state.h"       // struct ast_state
+        #include "pycore_interp.h"          // _PyInterpreterState.ast
+        #include "pycore_pystate.h"         // _PyInterpreterState_GET()
     """).rstrip(), file=f)
 
     f.write("""
 // Forward declaration
 static int init_types(struct ast_state *state);
 
-#ifdef Py_BUILD_CORE
 static struct ast_state*
 get_ast_state(void)
 {
@@ -1453,28 +1443,14 @@ get_ast_state(void)
     }
     return state;
 }
-#else
-static struct ast_state global_ast_state;
-
-static struct ast_state*
-get_ast_state(void)
-{
-    struct ast_state *state = &global_ast_state;
-    if (!init_types(state)) {
-        return NULL;
-    }
-    return state;
-}
-#endif   // Py_BUILD_CORE
 """)
 
-    # f-string for {mod.name}
-    f.write(f"""
-// Include {mod.name}-ast.h after pycore_interp.h to avoid conflicts
-// with the Yield macro redefined by <winbase.h>
-#include "{mod.name}-ast.h"
-#include "structmember.h"
-""")
+    print(textwrap.dedent("""
+        // Include pycore_ast.h after pycore_interp.h to avoid conflicts
+        // with the Yield macro redefined by <winbase.h>
+        #include "pycore_ast.h"
+        #include "structmember.h"
+    """).rstrip(), file=f)
 
     generate_ast_fini(module_state, f)
 
@@ -1488,39 +1464,55 @@ get_ast_state(void)
     f.write('};\n\n')
 
 def write_header(mod, f):
-    f.write('#ifndef Py_PYTHON_AST_H\n')
-    f.write('#define Py_PYTHON_AST_H\n')
-    f.write('#ifdef __cplusplus\n')
-    f.write('extern "C" {\n')
-    f.write('#endif\n')
-    f.write('\n')
-    f.write('#ifndef Py_LIMITED_API\n')
-    f.write('#include "asdl.h"\n')
-    f.write('\n')
-    f.write('#undef Yield   /* undefine macro conflicting with <winbase.h> */\n')
-    f.write('\n')
+    f.write(textwrap.dedent("""
+        #ifndef Py_INTERNAL_AST_H
+        #define Py_INTERNAL_AST_H
+        #ifdef __cplusplus
+        extern "C" {
+        #endif
+
+        #ifndef Py_BUILD_CORE
+        #  error "this header requires Py_BUILD_CORE define"
+        #endif
+
+        #include "pycore_asdl.h"
+
+        #undef Yield   /* undefine macro conflicting with <winbase.h> */
+
+    """).lstrip())
     c = ChainOfVisitors(TypeDefVisitor(f),
                         SequenceDefVisitor(f),
                         StructVisitor(f))
     c.visit(mod)
     f.write("// Note: these macros affect function definitions, not only call sites.\n")
     PrototypeVisitor(f).visit(mod)
-    f.write("\n")
-    f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
-    f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
-    f.write("int PyAST_Check(PyObject* obj);\n")
-    f.write("#endif /* !Py_LIMITED_API */\n")
-    f.write('\n')
-    f.write('#ifdef __cplusplus\n')
-    f.write('}\n')
-    f.write('#endif\n')
-    f.write('#endif /* !Py_PYTHON_AST_H */\n')
+    f.write(textwrap.dedent("""
+
+        PyObject* PyAST_mod2obj(mod_ty t);
+        mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
+        int PyAST_Check(PyObject* obj);
+
+        extern int _PyAST_Validate(mod_ty);
+
+        /* _PyAST_ExprAsUnicode is defined in ast_unparse.c */
+        extern PyObject* _PyAST_ExprAsUnicode(expr_ty);
+
+        /* Return the borrowed reference to the first literal string in the
+           sequence of statements or NULL if it doesn't start from a literal string.
+           Doesn't set exception. */
+        extern PyObject* _PyAST_GetDocString(asdl_stmt_seq *);
+
+        #ifdef __cplusplus
+        }
+        #endif
+        #endif /* !Py_INTERNAL_AST_H */
+    """))
 
 
 def write_internal_h_header(mod, f):
     print(textwrap.dedent("""
-        #ifndef Py_INTERNAL_AST_H
-        #define Py_INTERNAL_AST_H
+        #ifndef Py_INTERNAL_AST_STATE_H
+        #define Py_INTERNAL_AST_STATE_H
         #ifdef __cplusplus
         extern "C" {
         #endif
@@ -1537,7 +1529,7 @@ def write_internal_h_footer(mod, f):
         #ifdef __cplusplus
         }
         #endif
-        #endif /* !Py_INTERNAL_AST_H */
+        #endif /* !Py_INTERNAL_AST_STATE_H */
     """), file=f)
 
 

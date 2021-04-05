@@ -1121,9 +1121,11 @@ class GeneralModuleTests(unittest.TestCase):
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
         l_bad_values = [-1, -2, 1<<32, 1<<1000]
-        s_bad_values = l_bad_values + [_testcapi.INT_MIN - 1,
-                                       _testcapi.INT_MAX + 1]
-        s_deprecated_values = [1<<16, _testcapi.INT_MAX]
+        s_bad_values = (
+            l_bad_values +
+            [_testcapi.INT_MIN-1, _testcapi.INT_MAX+1] +
+            [1 << 16, _testcapi.INT_MAX]
+        )
         for k in s_good_values:
             socket.ntohs(k)
             socket.htons(k)
@@ -1136,9 +1138,6 @@ class GeneralModuleTests(unittest.TestCase):
         for k in l_bad_values:
             self.assertRaises(OverflowError, socket.ntohl, k)
             self.assertRaises(OverflowError, socket.htonl, k)
-        for k in s_deprecated_values:
-            self.assertWarns(DeprecationWarning, socket.ntohs, k)
-            self.assertWarns(DeprecationWarning, socket.htons, k)
 
     def testGetServBy(self):
         eq = self.assertEqual
@@ -1519,9 +1518,9 @@ class GeneralModuleTests(unittest.TestCase):
         infos = socket.getaddrinfo(HOST, 80, socket.AF_INET, socket.SOCK_STREAM)
         for family, type, _, _, _ in infos:
             self.assertEqual(family, socket.AF_INET)
-            self.assertEqual(str(family), 'AddressFamily.AF_INET')
+            self.assertEqual(str(family), 'AF_INET')
             self.assertEqual(type, socket.SOCK_STREAM)
-            self.assertEqual(str(type), 'SocketKind.SOCK_STREAM')
+            self.assertEqual(str(type), 'SOCK_STREAM')
         infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
@@ -1794,8 +1793,8 @@ class GeneralModuleTests(unittest.TestCase):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
         # reprs.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            self.assertEqual(str(s.family), 'AddressFamily.AF_INET')
-            self.assertEqual(str(s.type), 'SocketKind.SOCK_STREAM')
+            self.assertEqual(str(s.family), 'AF_INET')
+            self.assertEqual(str(s.type), 'SOCK_STREAM')
 
     def test_socket_consistent_sock_type(self):
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)

@@ -19,6 +19,7 @@ Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval.c                @markshannon
 Python/compile.c              @markshannon
+Python/ast_opt.c              @isidentical
 
 # Hashing
 **/*hashlib*                  @python/crypto-team @tiran
@@ -83,6 +84,12 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/peg_generator/         @pablogsal @lysnikolaou
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 /Grammar/python.gram          @pablogsal @lysnikolaou
+
+# AST
+Python/ast.c                  @isidentical
+Parser/asdl.py                @isidentical
+Parser/asdl_c.py              @isidentical
+Lib/ast.py                    @isidentical
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag

@@ -31,7 +31,7 @@ steps:
 - ${{ if eq(parameters.upload, 'true') }}:
   - task: PublishBuildArtifacts@1
     displayName: 'Publish docs'
-  
+
     inputs:
       PathToPublish: '$(build.sourcesDirectory)/Doc/build'
       ArtifactName: docs

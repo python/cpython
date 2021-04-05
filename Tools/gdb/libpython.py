@@ -468,7 +468,7 @@ class InstanceProxy(object):
     def __repr__(self):
         if isinstance(self.attrdict, dict):
             kwargs = ', '.join(["%s=%r" % (arg, val)
-                                for arg, val in self.attrdict.iteritems()])
+                                for arg, val in self.attrdict.items()])
             return '<%s(%s) at remote 0x%x>' % (self.cl_name,
                                                 kwargs, self.address)
         else:
@@ -947,7 +947,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             return self.f_lineno
 
         try:
-            return self.co.addr2line(self.f_lasti)
+            return self.co.addr2line(self.f_lasti*2)
         except Exception:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if

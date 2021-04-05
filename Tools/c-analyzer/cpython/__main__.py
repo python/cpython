@@ -3,11 +3,14 @@ import sys
 
 from c_common.fsutil import expand_filenames, iter_files_by_suffix
 from c_common.scriptutil import (
+    VERBOSITY,
     add_verbosity_cli,
     add_traceback_cli,
     add_commands_cli,
     add_kind_filtering_cli,
     add_files_cli,
+    add_progress_cli,
+    main_for_filenames,
     process_args_by_key,
     configure_logger,
     get_prog,
@@ -17,7 +20,7 @@ import c_parser.__main__ as c_parser
 import c_analyzer.__main__ as c_analyzer
 import c_analyzer as _c_analyzer
 from c_analyzer.info import UNKNOWN
-from . import _analyzer, _parser, REPO_ROOT
+from . import _analyzer, _capi, _files, _parser, REPO_ROOT
 
 
 logger = logging.getLogger(__name__)
@@ -25,9 +28,9 @@ logger = logging.getLogger(__name__)
 
 def _resolve_filenames(filenames):
     if filenames:
-        resolved = (_parser.resolve_filename(f) for f in filenames)
+        resolved = (_files.resolve_filename(f) for f in filenames)
     else:
-        resolved = _parser.iter_filenames()
+        resolved = _files.iter_filenames()
     return resolved
 
 
@@ -204,6 +207,121 @@ def cmd_data(datacmd, **kwargs):
     )
 
 
+def _cli_capi(parser):
+    parser.add_argument('--levels', action='append', metavar='LEVEL[,...]')
+    parser.add_argument(f'--public', dest='levels',
+                        action='append_const', const='public')
+    parser.add_argument(f'--no-public', dest='levels',
+                        action='append_const', const='no-public')
+    for level in _capi.LEVELS:
+        parser.add_argument(f'--{level}', dest='levels',
+                            action='append_const', const=level)
+    def process_levels(args, *, argv=None):
+        levels = []
+        for raw in args.levels or ():
+            for level in raw.replace(',', ' ').strip().split():
+                if level == 'public':
+                    levels.append('stable')
+                    levels.append('cpython')
+                elif level == 'no-public':
+                    levels.append('private')
+                    levels.append('internal')
+                elif level in _capi.LEVELS:
+                    levels.append(level)
+                else:
+                    parser.error(f'expected LEVEL to be one of {sorted(_capi.LEVELS)}, got {level!r}')
+        args.levels = set(levels)
+
+    parser.add_argument('--kinds', action='append', metavar='KIND[,...]')
+    for kind in _capi.KINDS:
+        parser.add_argument(f'--{kind}', dest='kinds',
+                            action='append_const', const=kind)
+    def process_kinds(args, *, argv=None):
+        kinds = []
+        for raw in args.kinds or ():
+            for kind in raw.replace(',', ' ').strip().split():
+                if kind in _capi.KINDS:
+                    kinds.append(kind)
+                else:
+                    parser.error(f'expected KIND to be one of {sorted(_capi.KINDS)}, got {kind!r}')
+        args.kinds = set(kinds)
+
+    parser.add_argument('--group-by', dest='groupby',
+                        choices=['level', 'kind'])
+
+    parser.add_argument('--format', default='table')
+    parser.add_argument('--summary', dest='format',
+                        action='store_const', const='summary')
+    def process_format(args, *, argv=None):
+        orig = args.format
+        args.format = _capi.resolve_format(args.format)
+        if isinstance(args.format, str):
+            if args.format not in _capi._FORMATS:
+                parser.error(f'unsupported format {orig!r}')
+
+    parser.add_argument('--show-empty', dest='showempty', action='store_true')
+    parser.add_argument('--no-show-empty', dest='showempty', action='store_false')
+    parser.set_defaults(showempty=None)
+
+    # XXX Add --sort-by, --sort and --no-sort.
+
+    parser.add_argument('--ignore', dest='ignored', action='append')
+    def process_ignored(args, *, argv=None):
+        ignored = []
+        for raw in args.ignored or ():
+            ignored.extend(raw.replace(',', ' ').strip().split())
+        args.ignored = ignored or None
+
+    parser.add_argument('filenames', nargs='*', metavar='FILENAME')
+    process_progress = add_progress_cli(parser)
+
+    return [
+        process_levels,
+        process_kinds,
+        process_format,
+        process_ignored,
+        process_progress,
+    ]
+
+
+def cmd_capi(filenames=None, *,
+             levels=None,
+             kinds=None,
+             groupby='kind',
+             format='table',
+             showempty=None,
+             ignored=None,
+             track_progress=None,
+             verbosity=VERBOSITY,
+             **kwargs
+             ):
+    render = _capi.get_renderer(format)
+
+    filenames = _files.iter_header_files(filenames, levels=levels)
+    #filenames = (file for file, _ in main_for_filenames(filenames))
+    if track_progress:
+        filenames = track_progress(filenames)
+    items = _capi.iter_capi(filenames)
+    if levels:
+        items = (item for item in items if item.level in levels)
+    if kinds:
+        items = (item for item in items if item.kind in kinds)
+
+    filter = _capi.resolve_filter(ignored)
+    if filter:
+        items = (item for item in items if filter(item, log=lambda msg: logger.log(1, msg)))
+
+    lines = render(
+        items,
+        groupby=groupby,
+        showempty=showempty,
+        verbose=verbosity > VERBOSITY,
+    )
+    print()
+    for line in lines:
+        print(line)
+
+
 # We do not define any other cmd_*() handlers here,
 # favoring those defined elsewhere.
 
@@ -227,6 +345,11 @@ COMMANDS = {
         'check/manage local data (e.g. knwon types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
+    ),
+    'capi': (
+        'inspect the C-API',
+        [_cli_capi],
+        cmd_capi,
     ),
 }
 
@@ -263,6 +386,7 @@ def parse_args(argv=sys.argv[1:], prog=None, *, subset=None):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )

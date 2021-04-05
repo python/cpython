@@ -90,8 +90,13 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. method:: with_traceback(tb)
 
       This method sets *tb* as the new traceback for the exception and returns
-      the exception object.  It is usually used in exception handling code like
-      this::
+      the exception object.  It was more commonly used before the exception
+      chaining features of :pep:`3134` became available.  The following example
+      shows how we can convert an instance of ``SomeException`` into an
+      instance of ``OtherException`` while preserving the traceback.  Once
+      raised, the current frame is pushed onto the traceback of the
+      ``OtherException``, as would have happened to the traceback of the
+      original ``SomeException`` had we allowed it to propagate to the caller.
 
          try:
              ...
@@ -397,9 +402,25 @@ The following exceptions are the exceptions that are usually raised.
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
-   Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
-   :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
-   of the exception instance returns only the message.
+   The :func:`str` of the exception instance returns only the error message.
+
+   .. attribute:: filename
+
+      The name of the file the syntax error occurred in.
+
+   .. attribute:: lineno
+
+      Which line number in the file the error occurred in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
+
+   .. attribute:: offset
+
+      The column in the line where the error occurred. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
+
+   .. attribute:: text
+
+      The source code text involved in the error.
 
 
 .. exception:: IndentationError
@@ -734,6 +755,15 @@ The following exceptions are used as warning categories; see the
 .. exception:: UnicodeWarning
 
    Base class for warnings related to Unicode.
+
+
+.. exception:: EncodingWarning
+
+   Base class for warnings related to encodings.
+
+   See :ref:`io-encoding-warning` for details.
+
+   .. versionadded:: 3.10
 
 
 .. exception:: BytesWarning

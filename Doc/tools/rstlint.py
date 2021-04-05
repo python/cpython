@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import getopt
+from string import ascii_letters
 from os.path import join, splitext, abspath, exists
 from collections import defaultdict
 
@@ -127,6 +128,81 @@ def check_leaked_markup(fn, lines):
         if leaked_markup_re.search(line):
             yield lno+1, 'possibly leaked markup: %r' % line
 
+
+def hide_literal_blocks(lines):
+    """Tool to remove literal blocks from given lines.
+
+    It yields empty lines in place of blocks, so line numbers are
+    still meaningful.
+    """
+    in_block = False
+    for line in lines:
+        if line.endswith("::\n"):
+            in_block = True
+        elif in_block:
+            if line == "\n" or line.startswith(" "):
+                line = "\n"
+            else:
+                in_block = False
+        yield line
+
+
+def type_of_explicit_markup(line):
+    if re.match(fr'\.\. {all_directives}::', line):
+        return 'directive'
+    if re.match(r'\.\. \[[0-9]+\] ', line):
+        return 'footnote'
+    if re.match(r'\.\. \[[^\]]+\] ', line):
+        return 'citation'
+    if re.match(r'\.\. _.*[^_]: ', line):
+        return 'target'
+    if re.match(r'\.\. \|[^\|]*\| ', line):
+        return 'substitution_definition'
+    return 'comment'
+
+
+def hide_comments(lines):
+    """Tool to remove comments from given lines.
+
+    It yields empty lines in place of comments, so line numbers are
+    still meaningfull.
+    """
+    in_multiline_comment = False
+    for line in lines:
+        if line == "..\n":
+            in_multiline_comment = True
+        elif in_multiline_comment:
+            if line == "\n" or line.startswith(" "):
+                line = "\n"
+            else:
+                in_multiline_comment = False
+        if line.startswith(".. ") and type_of_explicit_markup(line) == 'comment':
+            line = "\n"
+        yield line
+
+
+
+@checker(".rst", severity=2)
+def check_missing_surrogate_space_on_plural(fn, lines):
+    r"""Check for missing 'backslash-space' between a code sample a letter.
+
+    Good: ``Point``\ s
+    Bad: ``Point``s
+    """
+    in_code_sample = False
+    check_next_one = False
+    for lno, line in enumerate(hide_comments(hide_literal_blocks(lines))):
+        tokens = line.split("``")
+        for token_no, token in enumerate(tokens):
+            if check_next_one:
+                if token[0] in ascii_letters:
+                    yield lno + 1, f"Missing backslash-space between code sample and {token!r}."
+                check_next_one = False
+            if token_no == len(tokens) - 1:
+                continue
+            if in_code_sample:
+                check_next_one = True
+            in_code_sample = not in_code_sample
 
 def main(argv):
     usage = '''\

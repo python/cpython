@@ -91,7 +91,6 @@ def _set_term_winsz(fd, winsz):
 
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
-# XXX(nnorwitz):  these tests leak fds when there is an error.
 class PtyTest(unittest.TestCase):
     def setUp(self):
         old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
@@ -176,6 +175,12 @@ class PtyTest(unittest.TestCase):
             # " An optional feature could not be imported " ... ?
             raise unittest.SkipTest("Pseudo-terminals (seemingly) not functional.")
 
+        # closing master_fd can raise a SIGHUP if the process is
+        # the session leader: we installed a SIGHUP signal handler
+        # to ignore this signal.
+        self.addCleanup(os.close, master_fd)
+        self.addCleanup(os.close, slave_fd)
+
         self.assertTrue(os.isatty(slave_fd), "slave_fd is not a tty")
 
         if mode:
@@ -218,15 +223,10 @@ class PtyTest(unittest.TestCase):
         s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
-        os.close(slave_fd)
-        # closing master_fd can raise a SIGHUP if the process is
-        # the session leader: we installed a SIGHUP signal handler
-        # to ignore this signal.
-        os.close(master_fd)
-
     def test_fork(self):
         debug("calling pty.fork()")
         pid, master_fd = pty.fork()
+        self.addCleanup(os.close, master_fd)
         if pid == pty.CHILD:
             # stdout should be connected to a tty.
             if not os.isatty(1):
@@ -305,12 +305,13 @@ class PtyTest(unittest.TestCase):
             ##else:
             ##    raise TestFailed("Read from master_fd did not raise exception")
 
-        os.close(master_fd)
-
     def test_master_read(self):
+        # XXX(nnorwitz):  this test leaks fds when there is an error.
         debug("Calling pty.openpty()")
         master_fd, slave_fd = pty.openpty()
         debug(f"Got master_fd '{master_fd}', slave_fd '{slave_fd}'")
+
+        self.addCleanup(os.close, master_fd)
 
         debug("Closing slave_fd")
         os.close(slave_fd)
@@ -321,7 +322,6 @@ class PtyTest(unittest.TestCase):
         except OSError: # Linux
             data = b""
 
-        os.close(master_fd)
         self.assertEqual(data, b"")
 
 class SmallPtyTests(unittest.TestCase):

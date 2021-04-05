@@ -357,7 +357,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[(f->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
         assert(f->f_stackdepth > 0);
         yf = f->f_valuestack[f->f_stackdepth-1];
@@ -481,7 +481,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
             assert(gen->gi_frame->f_lasti >= 0);
-            gen->gi_frame->f_lasti += sizeof(_Py_CODEUNIT);
+            gen->gi_frame->f_lasti += 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -1489,9 +1489,9 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 
 void
-_PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
+_PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)
 {
-    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+    struct _Py_async_gen_state *state = &interp->async_gen;
 
     while (state->value_numfree) {
         _PyAsyncGenWrappedValue *o;
@@ -1509,11 +1509,11 @@ _PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
 }
 
 void
-_PyAsyncGen_Fini(PyThreadState *tstate)
+_PyAsyncGen_Fini(PyInterpreterState *interp)
 {
-    _PyAsyncGen_ClearFreeLists(tstate);
+    _PyAsyncGen_ClearFreeLists(interp);
 #ifdef Py_DEBUG
-    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+    struct _Py_async_gen_state *state = &interp->async_gen;
     state->value_numfree = -1;
     state->asend_numfree = -1;
 #endif

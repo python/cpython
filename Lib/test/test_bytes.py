@@ -1666,6 +1666,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # Shouldn't raise an error
         self.assertEqual(list(it), [])
 
+    def test_repeat_after_setslice(self):
+        # bpo-42924: * used to copy from the wrong memory location
+        b = bytearray(b'abc')
+        b[:2] = b'x'
+        b1 = b * 1
+        b3 = b * 3
+        self.assertEqual(b1, b'xc')
+        self.assertEqual(b1, b)
+        self.assertEqual(b3, b'xcxcxc')
+
 
 class AssortedBytesTest(unittest.TestCase):
     #

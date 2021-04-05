@@ -297,8 +297,8 @@ Object Protocol
 
 .. c:function:: int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)
 
-   Return true if the object *o* is of type *type* or a subtype of *type*.  Both
-   parameters must be non-``NULL``.
+   Return non-zero if the object *o* is of type *type* or a subtype of *type*, and
+   ``0`` otherwise.  Both parameters must be non-``NULL``.
 
 
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
@@ -356,3 +356,14 @@ Object Protocol
    iterator for the object argument, or the object  itself if the object is already
    an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
+
+
+.. c:function:: PyObject* PyObject_GetAiter(PyObject *o)
+
+   This is the equivalent to the Python expression ``aiter(o)``. Takes an
+   :class:`AsyncIterable` object and returns an :class:`AsyncIterator` for it.
+   This is typically a new iterator but if the argument is an
+   :class:`AsyncIterator`, this returns itself. Raises :exc:`TypeError` and
+   returns ``NULL`` if the object cannot be iterated.
+
+   .. versionadded:: 3.10

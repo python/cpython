@@ -212,10 +212,15 @@ The module also defines the following classes:
 :class:`TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False)
 
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
+
+   If *compact* is true, only data that is required by :class:`TracebackException`'s
+   ``format`` method is saved in the class attributes. In particular, the
+   ``__context__`` field is calculated only if ``__cause__`` is ``None`` and
+   ``__suppress_context__`` is false.
 
    Note that when locals are captured, they are also shown in the traceback.
 
@@ -293,6 +298,9 @@ capture data for later printing in a lightweight fashion.
 
       The message indicating which exception occurred is always the last
       string in the output.
+
+   .. versionchanged:: 3.10
+      Added the *compact* parameter.
 
 
 :class:`StackSummary` Objects

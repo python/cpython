@@ -1,5 +1,0 @@
-CGIHTTPRequestHandler.run_cgi() HTTP_ACCEPT improperly parsed. Replace the
-special purpose getallmatchingheaders with generic get_all method and add
-relevant tests.
-
-Original Patch by Martin Panter. Modified by Senthil Kumaran.

@@ -323,6 +323,24 @@ def test_socket():
         sock.close()
 
 
+def test_gc():
+    import gc
+
+    def hook(event, args):
+        if event.startswith("gc."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+
+    gc.get_objects(generation=1)
+
+    x = object()
+    y = [x]
+
+    gc.get_referrers(x)
+    gc.get_referents(y)
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
