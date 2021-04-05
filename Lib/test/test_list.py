@@ -2,6 +2,7 @@ import sys
 from test import list_tests
 from test.support import cpython_only
 import pickle
+import struct
 import unittest
 
 class ListTest(list_tests.CommonTest):
@@ -223,9 +224,13 @@ class ListTest(list_tests.CommonTest):
 
         overalloc_amts = []
         for literal in test_literals:
+            # Direct check that list-literals do not over-allocate, by
+            # calculating the total size of used pointers.
+            total_ptr_size = len(literal) * struct.calcsize('P')
+            self.assertEqual(sizeof(literal), sizeof([]) + total_ptr_size)
+
             # Ensure that both list literals, and lists made from an iterable
-            # of known size use the same amount of allocation. It will be
-            # verified later that no over-allocation occurs for list literals.
+            # of known size, use the same amount of allocation.
             self.assertEqual(sizeof(literal), sizeof(list(literal)))
             self.assertEqual(sizeof(literal), sizeof(list(tuple(literal))))
 
