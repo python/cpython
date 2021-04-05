@@ -1,2 +1,0 @@
-:func:`curses.window.enclose` returns now ``True`` or ``False`` (as was
-documented) instead of ``1`` or ``0``.

@@ -1,1 +1,0 @@
-Added micro-optimizations to ``_PyType_Lookup()`` to improve cache lookup performance in the common case of cache hits.
