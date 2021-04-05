@@ -24,6 +24,7 @@ from tkinter import (
 )
 from tkinter.dialog import Dialog
 from tkinter import commondialog
+from tkinter.simpledialog import _setup_dialog
 
 
 dialogstates = {}
