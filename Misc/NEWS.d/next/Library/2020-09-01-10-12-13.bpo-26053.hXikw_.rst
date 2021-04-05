@@ -1,1 +1,0 @@
-Fixed bug where the :mod:`pdb` interactive run command echoed the args from the shell command line, even if those have been overridden at the pdb prompt.

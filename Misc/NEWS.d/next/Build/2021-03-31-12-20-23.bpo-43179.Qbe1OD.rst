@@ -1,3 +1,0 @@
-Introduce and correctly use ALIGNOF_X in place of SIZEOF_X for
-alignment-related code in optimized string routines. Patch by Jessica
-Clarke.

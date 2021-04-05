@@ -1,2 +1,0 @@
-Document various stdlib deprecations in imp, pkgutil, and importlib.util for removal in Python
-3.12.
