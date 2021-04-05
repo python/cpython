@@ -1477,10 +1477,9 @@ variables:
             # type_new() calls PyTypeReady() which calls add_methods()
             slot_names = mapping.get('slot_names', [])
             if slot_names:
-                variable_length = {int, tuple, bytes}
                 for base in bases:
                     for cls in base.__mro__:
-                        if cls in variable_length:
+                        if cls.__itemsize__:
                             raise TypeError(
                                 f'nonempty __slots__ not supported for '
                                 f'subtype of {cls.__name__!r}'
