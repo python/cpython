@@ -1,1 +1,0 @@
-Fixed bug where breakpoints did not persist across multiple debugger sessions in :mod:`pdb`'s interactive mode.

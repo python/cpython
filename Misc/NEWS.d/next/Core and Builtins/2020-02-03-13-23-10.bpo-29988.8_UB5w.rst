@@ -1,3 +1,0 @@
-Only handle asynchronous exceptions and requests to drop the GIL when
-returning from a call or on the back edges of loops. Makes sure that
-:meth:`__exit__` is always called in with statements, even for interrupts.
