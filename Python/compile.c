@@ -5494,7 +5494,7 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 // To keep things simple, all compiler_pattern_* and pattern_helper_* routines
 // follow the convention of consuming TOS (the subject for the given pattern)
-// and calling pattern_context_jump_to_fail_pop on failure (no match).
+// and calling jump_to_fail_pop on failure (no match).
 
 // When calling into these routines, it's important that pc->on_top be kept
 // updated to reflect the current number of items that we are using on the top
@@ -5572,8 +5572,7 @@ cleanup_fail_pop(struct compiler *c, pattern_context *pc)
 static int
 compiler_error_duplicate_store(struct compiler *c, identifier n)
 {
-    const char *e = "multiple assignments to name %R in pattern";
-    return compiler_error(c, e, n);
+    return compiler_error(c, "multiple assignments to name %R in pattern", n);
 }
 
 
@@ -5662,7 +5661,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
 
 static int
 pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
-                  PyObject **control, Py_ssize_t on_top, pattern_context *pc)
+                  PyObject **control,  pattern_context *pc)
 {
     // Only copy the subject if we're *not* on the last alternative:
     if (!is_last) {
@@ -5683,11 +5682,6 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
     }
     else if (nstores) {
         // There were captures. Check to see if we differ from the control list:
-        if (is_last) {
-            for (Py_ssize_t i = 0; i < pc->on_top; i++) {
-                ADDOP_I(c, ROT_N, nstores + pc->on_top);
-            }
-        }
         for (Py_ssize_t icontrol = 0; icontrol < nstores; icontrol++) {
             PyObject *name = PyList_GET_ITEM(*control, icontrol);
             Py_ssize_t istores = PySequence_Index(pc->stores, name);
@@ -5724,7 +5718,7 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
     // The duplicate copy of the subject is under the new names. Rotate it
     // back to the top and pop it off.
     for (Py_ssize_t i = 0; i < nstores; i++) {
-        ADDOP_I(c, ROT_N, nstores + on_top + !is_last);
+        ADDOP_I(c, ROT_N, nstores + !is_last);
     }
     if (!is_last) {
         ADDOP(c, POP_TOP);
@@ -5950,11 +5944,12 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             goto error;
         }
         Py_SETREF(pc->stores, pc_stores);
+        // An irrefutable sub-pattern must be last, if it is allowed at all:
         pc->allow_irrefutable = is_last && old_pc.allow_irrefutable;
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!pattern_helper_or(c, alt, end, is_last, &control, old_pc.on_top, pc)) {
+        if (!pattern_helper_or(c, alt, end, is_last, &control, pc)) {
             goto error;
         }
         assert(control);
@@ -5966,7 +5961,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     if (!jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
         goto error;
     }
-    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(control); i++) {
+    Py_ssize_t nstores = PyList_GET_SIZE(control);
+    for (Py_ssize_t i = 0; i < nstores; i++) {
         PyObject *name = PyList_GET_ITEM(control, i);
         int dupe = PySequence_Contains(old_pc.stores, name);
         if (dupe < 0) {
@@ -5983,6 +5979,9 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_DECREF(old_pc.stores);
     Py_DECREF(control);
     compiler_use_next_block(c, end);
+    for (Py_ssize_t i = 0; i < nstores; i++) {
+        ADDOP_I(c, ROT_N, nstores + pc->on_top);
+    }
     return 1;
 error:
     PyObject_Free(old_pc.fail_pop);
@@ -6082,7 +6081,6 @@ static int
 compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
 {
     SET_LOC(c, p);
-    int res;
     switch (p->kind) {
         case Attribute_kind:
             return compiler_pattern_value(c, p, pc);
@@ -6113,7 +6111,6 @@ compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
         default:
             Py_UNREACHABLE();
     }
-    return res;
 }
 
 

@@ -1250,8 +1250,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: ROT_N (count)
 
-   Lift top *count* stack items one position up, and move TOS down to position
-   *count*.
+   Lift the top *count* stack items one position up, and move TOS down to
+   position *count*.
 
    .. versionadded:: 3.10
 
