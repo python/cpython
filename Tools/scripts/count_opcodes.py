@@ -12,7 +12,7 @@ def all_code_objects(code):
             yield x
 
 
-def report(code):
+def report(code, filename):
     add_int_count = total_count = 0
     for co in all_code_objects(code):
         co_code = co.co_code
@@ -22,8 +22,9 @@ def report(code):
                 add_int_count += 1
             else:
                 total_count += 1
-    print(add_int_count, "/", total_count,
-          f"{add_int_count/total_count*100:.2f}%")
+    if add_int_count:
+        print(filename + ":", add_int_count, "/", total_count,
+              f"{add_int_count/total_count*100:.2f}%")
     return add_int_count, total_count
 
 
@@ -41,8 +42,7 @@ def main(dirname):
                 except Exception as err:
                     print(full + ":", err)
                     continue
-                print(full, end=" ")
-                a, b = report(code)
+                a, b = report(code, filename=full)
                 add_int_count += a
                 total_count += b
     print("TOTAL", add_int_count, "/", total_count,
