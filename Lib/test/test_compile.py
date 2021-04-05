@@ -427,7 +427,7 @@ if 1:
         fname = __file__
         if fname.lower().endswith('pyc'):
             fname = fname[:-1]
-        with open(fname, 'r') as f:
+        with open(fname, encoding='utf-8') as f:
             fcontents = f.read()
         sample_code = [
             ['<assign>', 'x = 5'],
