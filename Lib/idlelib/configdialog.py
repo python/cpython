@@ -21,7 +21,6 @@ from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
 from tkinter import colorchooser
 import tkinter.font as tkfont
 from tkinter import messagebox
-from tkinter.simpledialog import _setup_dialog
 
 from idlelib.config import idleConf, ConfigChanges
 from idlelib.config_key import GetKeysDialog
@@ -78,7 +77,6 @@ class ConfigDialog(Toplevel):
         self.create_widgets()
         self.resizable(height=FALSE, width=FALSE)
         self.transient(parent)
-        _setup_dialog(self)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.fontpage.fontlist.focus_set()
         # XXX Decide whether to keep or delete these key bindings.
