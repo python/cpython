@@ -5666,15 +5666,6 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
     RETURN_IF_FALSE(compiler_pattern(c, p, pc));
     Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
     // Success!
-    if (!is_last) {
-        // The duplicate copy of the subject is under the new names. Rotate it
-        // back to the top and pop it off. This could probably be improved by
-        // using a single "UNROT_N" instruction instead of lots of ROT_N ones:
-        for (Py_ssize_t i = 0; i < nstores + pc->adj; i++) {
-            ADDOP_I(c, ROT_N, nstores + pc->adj + on_top + 1);
-        }
-        ADDOP(c, POP_TOP);
-    }
     if (*control == NULL) {
         // This is the first alternative, so save its stores as a "control" for
         // the others (they can't bind a different set of names, and might need
@@ -5686,10 +5677,12 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
         goto diff;
     }
     else if (-pc->adj < nstores) {
-        for (Py_ssize_t i = 0; i < on_top; i++) {
-            ADDOP_I(c, ROT_N, nstores + pc->adj + on_top);
-        }
         // There were captures. Check to see if we differ from the control list:
+        if (is_last) {
+            for (Py_ssize_t i = 0; i < pc->on_top; i++) {
+                ADDOP_I(c, ROT_N, nstores + pc->adj + pc->on_top);
+            }
+        }
         for (Py_ssize_t icontrol = -pc->adj; icontrol < nstores; icontrol++)
         {
             PyObject *name = PyList_GET_ITEM(*control, icontrol);
@@ -5723,9 +5716,14 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
                 ADDOP_I(c, ROT_N, nstores - icontrol);
             }
         }
-        for (Py_ssize_t i = 0; i < nstores + pc->adj; i++) {
-            ADDOP_I(c, ROT_N, nstores + pc->adj + on_top);
-        }
+    }
+    // The duplicate copy of the subject is under the new names. Rotate it
+    // back to the top and pop it off.
+    for (Py_ssize_t i = 0; i < nstores + pc->adj; i++) {
+        ADDOP_I(c, ROT_N, nstores + pc->adj + on_top + !is_last);
+    }
+    if (!is_last) {
+        ADDOP(c, POP_TOP);
     }
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     NEXT_BLOCK(c);
