@@ -312,7 +312,7 @@ class ReloadTests:
                                 '__file__': None,
                                 }
                     os.mkdir(name)
-                    with open(bad_path, 'w') as init_file:
+                    with open(bad_path, 'w', encoding='utf-8') as init_file:
                         init_file.write('eggs = None')
                     module = self.init.import_module(name)
                     ns = vars(module).copy()
