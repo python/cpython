@@ -533,6 +533,9 @@ def _find_module_shim(self, fullname):
     This method is deprecated in favor of finder.find_spec().
 
     """
+    _warnings.warn("find_module() is deprecated and "
+                   "slated for removal in Python 3.12; use find_spec() instead",
+                   DeprecationWarning)
     # Call find_loader(). If it returns a string (indicating this
     # is a namespace package portion), generate a warning and
     # return None.
@@ -801,9 +804,12 @@ class WindowsRegistryFinder:
     def find_module(cls, fullname, path=None):
         """Find module named in the registry.
 
-        This method is deprecated.  Use exec_module() instead.
+        This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("WindowsRegistryFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is not None:
             return spec.loader
@@ -1404,6 +1410,9 @@ class PathFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("PathFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is None:
             return None
@@ -1459,6 +1468,9 @@ class FileFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FileFinder.find_loader() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = self.find_spec(fullname)
         if spec is None:
             return None, []
