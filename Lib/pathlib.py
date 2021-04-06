@@ -13,16 +13,10 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
-supports_symlinks = True
 if os.name == 'nt':
-    import nt
-    if sys.getwindowsversion()[:2] >= (6, 0):
-        from nt import _getfinalpathname
-    else:
-        supports_symlinks = False
-        _getfinalpathname = None
+    from nt import _getfinalpathname
 else:
-    nt = None
+    _getfinalpathname = None
 
 
 __all__ = [
@@ -412,18 +406,17 @@ class _NormalAccessor(_Accessor):
     if hasattr(os, "lchmod"):
         lchmod = os.lchmod
     else:
-        def lchmod(self, pathobj, mode):
-            raise NotImplementedError("lchmod() not available on this system")
+        def lchmod(self, path, mode):
+            raise NotImplementedError("os.lchmod() not available on this system")
 
     mkdir = os.mkdir
 
     unlink = os.unlink
 
     if hasattr(os, "link"):
-        link_to = os.link
+        link = os.link
     else:
-        @staticmethod
-        def link_to(self, target):
+        def link(self, src, dst):
             raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
@@ -432,23 +425,19 @@ class _NormalAccessor(_Accessor):
 
     replace = os.replace
 
-    if nt:
-        if supports_symlinks:
-            symlink = os.symlink
-        else:
-            def symlink(a, b, target_is_directory):
-                raise NotImplementedError("symlink() not available on this system")
+    if hasattr(os, "symlink"):
+        symlink = os.symlink
     else:
-        # Under POSIX, os.symlink() takes two args
-        @staticmethod
-        def symlink(a, b, target_is_directory):
-            return os.symlink(a, b)
+        def symlink(self, src, dst, target_is_directory=False):
+            raise NotImplementedError("os.symlink() not available on this system")
 
     utime = os.utime
 
-    # Helper for resolve()
-    def readlink(self, path):
-        return os.readlink(path)
+    if hasattr(os, "readlink"):
+        readlink = os.readlink
+    else:
+        def readlink(self, path):
+            raise NotImplementedError("os.readlink() not available on this system")
 
     def owner(self, path):
         try:
@@ -1369,7 +1358,7 @@ class Path(PurePath):
         """
         Create a hard link pointing to a path named target.
         """
-        self._accessor.link_to(self, target)
+        self._accessor.link(self, target)
 
     def rename(self, target):
         """
