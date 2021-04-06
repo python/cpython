@@ -5860,11 +5860,11 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
-    // NOTE: We can't use returning macros anymore! goto error on error.
     // control is the list of names bound by the first alternative. It is used
     // for checking different name bindings in alternatives, and for correcting
     // the order in which extracted elements are placed on the stack.
     PyObject *control = NULL;
+    // NOTE: We can't use returning macros anymore! goto error on error.
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
         SET_LOC(c, alt);
