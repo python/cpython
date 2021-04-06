@@ -5715,12 +5715,13 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
             }
         }
     }
-    // The duplicate copy of the subject is under the new names. Rotate it
-    // back to the top and pop it off.
-    for (Py_ssize_t i = 0; i < nstores; i++) {
-        ADDOP_I(c, ROT_N, nstores + !is_last);
-    }
     if (!is_last) {
+        // The duplicate copy of the subject is underneath the new names. Rotate
+        // it back to the top and pop it off. This could be made more efficient
+        // by performing a single "UNROT_N" instead of a bunch of ROT_Ns.
+        for (Py_ssize_t i = 0; i < nstores; i++) {
+            ADDOP_I(c, ROT_N, nstores + 1);
+        }
         ADDOP(c, POP_TOP);
     }
     ADDOP_JUMP(c, JUMP_FORWARD, end);
@@ -6879,6 +6880,25 @@ fold_tuple_on_constants(struct instr *inst,
 }
 
 
+// Eliminate N * ROT_N.
+static void
+fold_rotations(struct instr *inst, int n)
+{
+    for (int i = 0; i < n; i++) {
+        if ((n == 2 && inst[i].i_opcode != ROT_TWO) ||
+            (n == 3 && inst[i].i_opcode != ROT_THREE) ||
+            (n == 4 && inst[i].i_opcode != ROT_FOUR) ||
+            (inst[i].i_opcode != ROT_N || inst[i].i_oparg != n))
+        {
+            return;
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        inst[i].i_opcode = NOP;
+    }
+}
+
+
 static int
 eliminate_jump_to_jump(basicblock *bb, int opcode) {
     assert (bb->b_iused > 0);
@@ -7137,6 +7157,16 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                     case 4:
                         inst->i_opcode = ROT_FOUR;
                         break;
+                }
+            case ROT_TWO:
+            case ROT_THREE:
+            case ROT_FOUR:
+                oparg = (2 * (inst->i_opcode == ROT_TWO) +
+                         3 * (inst->i_opcode == ROT_THREE) +
+                         4 * (inst->i_opcode == ROT_FOUR) +
+                         oparg * (inst->i_opcode == ROT_N));
+                if (oparg <= i) {
+                    fold_rotations(inst - oparg + 1, oparg);
                 }
                 break;
         }
