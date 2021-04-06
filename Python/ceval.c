@@ -1029,15 +1029,8 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         int match_self = 0;
         match_args = PyObject_GetAttrString(type, "__match_args__");
         if (match_args) {
-            if (PyList_CheckExact(match_args)) {
-                Py_SETREF(match_args, PyList_AsTuple(match_args));
-            }
-            if (match_args == NULL) {
-                goto fail;
-            }
             if (!PyTuple_CheckExact(match_args)) {
-                const char *e = "%s.__match_args__ must be a list or tuple "
-                                "(got %s)";
+                const char *e = "%s.__match_args__ must be a tuple (got %s)";
                 _PyErr_Format(tstate, PyExc_TypeError, e,
                               ((PyTypeObject *)type)->tp_name,
                               Py_TYPE(match_args)->tp_name);

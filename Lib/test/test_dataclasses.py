@@ -3401,7 +3401,7 @@ class TestMatchArgs(unittest.TestCase):
         self.assertEqual(C(42).__match_args__, ('a',))
 
     def test_explicit_match_args(self):
-        ma = []
+        ma = ()
         @dataclass
         class C:
             a: int
