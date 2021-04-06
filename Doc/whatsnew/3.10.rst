@@ -1000,6 +1000,10 @@ Optimizations
   performance in the common case of cache hits. This makes the interpreter 1.04 times faster
   in average (Contributed by Dino Viehland in :issue:`43452`)
 
+* Following built-in functions now support the faster :pep:`590` vectorcall calling convention:
+  :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
+  (Contributed by Dong-hee Na and Jeroen Demeyerin in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+
 Deprecated
 ==========
 
