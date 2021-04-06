@@ -2601,8 +2601,8 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.encoding, "utf-8")
         self.assertEqual(t.line_buffering, True)
         self.assertEqual("\xe9\n", t.readline())
-        self.assertRaises(TypeError, t.__init__, b, newline=42)
-        self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
+        self.assertRaises(TypeError, t.__init__, b, encoding="utf-8", newline=42)
+        self.assertRaises(ValueError, t.__init__, b, encoding="utf-8", newline='xyzzy')
 
     def test_uninitialized(self):
         t = self.TextIOWrapper.__new__(self.TextIOWrapper)
@@ -3732,7 +3732,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
         t = self.TextIOWrapper(b, encoding="utf-8")
-        self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
+        self.assertRaises(ValueError, t.__init__, b, encoding="utf-8", newline='xyzzy')
         self.assertRaises(ValueError, t.read)
 
         t = self.TextIOWrapper.__new__(self.TextIOWrapper)
