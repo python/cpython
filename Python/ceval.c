@@ -2639,6 +2639,30 @@ main_loop:
             goto exiting;
         }
 
+        case TARGET(GEN_START): {
+            PyObject *none = POP();
+            Py_DECREF(none);
+            if (none != Py_None) {
+                if (oparg > 2) {
+                    _PyErr_SetString(tstate, PyExc_SystemError,
+                        "Illegal kind for GEN_START");
+                }
+                else {
+                    static const char *gen_kind[3] = {
+                        "generator",
+                        "coroutine",
+                        "async generator"
+                    };
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                        "can't send non-None value to a "
+                                "just-started %s",
+                                gen_kind[oparg]);
+                }
+                goto error;
+            }
+            DISPATCH();
+        }
+
         case TARGET(POP_EXCEPT): {
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
