@@ -185,7 +185,7 @@ Common syntax elements for comprehensions are:
    comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
-   comp_if: "if" `expression_nocond` [`comp_iter`]
+   comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
 :keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
@@ -1707,7 +1707,6 @@ Conditional expressions
 .. productionlist:: python-grammar
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
-   expression_nocond: `or_test` | `lambda_expr_nocond`
 
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
@@ -1733,7 +1732,6 @@ Lambdas
 
 .. productionlist:: python-grammar
    lambda_expr: "lambda" [`parameter_list`] ":" `expression`
-   lambda_expr_nocond: "lambda" [`parameter_list`] ":" `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
 functions. The expression ``lambda parameters: expression`` yields a function
