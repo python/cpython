@@ -860,7 +860,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Only process classes that have been processed by our
         # decorator.  That is, they have a _FIELDS attribute.
         base_fields = getattr(b, _FIELDS, None)
-        if base_fields:
+        if base_fields is not None:
             has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
