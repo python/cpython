@@ -2565,7 +2565,7 @@ define a *__match_args__* attribute.
 
 .. data:: object.__match_args__
 
-   This class variable can be assigned a tuple or list of strings. When this class is
+   This class variable can be assigned a tuple of strings. When this class is
    used in a class pattern with positional arguments, each positional argument will
    be converted into a keyword argument, using the corresponding value in
    *__match_args__* as the keyword. The absence of this attribute is equivalent to
