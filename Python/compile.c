@@ -5569,6 +5569,7 @@ cleanup_fail_pop(struct compiler *c, pattern_context *pc)
     return 1;
 }
 
+
 static int
 compiler_error_duplicate_store(struct compiler *c, identifier n)
 {
@@ -5658,71 +5659,6 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
     pc->on_top--;
     ADDOP(c, POP_TOP);
     return 1;
-}
-
-
-static int
-pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end,
-                  PyObject **control,  pattern_context *pc)
-{
-    ADDOP(c, DUP_TOP);
-    RETURN_IF_FALSE(compiler_pattern(c, p, pc));
-    // Success!
-    Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
-    if (*control == NULL) {
-        // This is the first alternative, so save its stores as a "control" for
-        // the others (they can't bind a different set of names, and might need
-        // to be reordered):
-        *control = pc->stores;
-        Py_INCREF(*control);
-    }
-    else if (nstores != PyList_GET_SIZE(*control)) {
-        goto diff;
-    }
-    else if (nstores) {
-        // There were captures. Check to see if we differ from the control list:
-        for (Py_ssize_t icontrol = 0; icontrol < nstores; icontrol++) {
-            PyObject *name = PyList_GET_ITEM(*control, icontrol);
-            Py_ssize_t istores = PySequence_Index(pc->stores, name);
-            if (istores < 0) {
-                PyErr_Clear();
-                goto diff;
-            }
-            if (icontrol != istores) {
-                // Reorder the names on the stack to match the order of the
-                // names in control. There's probably a better way of doing
-                // this; the current solution is potentially very inefficient
-                // when each alternative subpattern binds lots of names in
-                // different orders. It's fine for reasonable cases, though.
-                assert(icontrol < istores);
-                // Perfom the same rotation on pc->stores:
-                PyObject *rotate = PyList_GetSlice(pc->stores, istores, nstores);
-                if (rotate == NULL ||
-                    PyList_SetSlice(pc->stores, istores, nstores, NULL) ||
-                    PyList_SetSlice(pc->stores, icontrol, icontrol, rotate))
-                {
-                    Py_XDECREF(rotate);
-                    return 0;
-                }
-                Py_DECREF(rotate);
-                // That just did:
-                // rotate = pc_stores[istores:]
-                // del pc_stores[istores:]
-                // pc_stores[icontrol:icontrol] = rotate
-                // Do the same thing to the stack, using several rotations:
-                while (istores++ < nstores) {
-                    ADDOP_I(c, ROT_N, nstores - icontrol);
-                }
-            }
-        }
-    }
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    NEXT_BLOCK(c);
-    RETURN_IF_FALSE(cleanup_fail_pop(c, pc));
-    return 1;
-diff:
-    compiler_error(c, "alternative patterns bind different names");
-    return 0;
 }
 
 
@@ -5924,6 +5860,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     // We're going to be messing with pc. Keep the original info handy:
     pattern_context old_pc = *pc;
     Py_INCREF(pc->stores);
+    // NOTE: We can't use returning macros anymore! goto error on error.
     // control is the list of names bound by the first alternative. It is used
     // for checking different name bindings in alternatives, and for correcting
     // the order in which extracted elements are placed on the stack.
@@ -5931,21 +5868,80 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
         SET_LOC(c, alt);
-        int is_last = i == size - 1;
         PyObject *pc_stores = PyList_New(0);
         if (pc_stores == NULL) {
             goto error;
         }
         Py_SETREF(pc->stores, pc_stores);
         // An irrefutable sub-pattern must be last, if it is allowed at all:
-        pc->allow_irrefutable = is_last && old_pc.allow_irrefutable;
+        pc->allow_irrefutable = (i == size - 1) && old_pc.allow_irrefutable;
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!pattern_helper_or(c, alt, end, &control, pc)) {
+        if (!compiler_addop(c, DUP_TOP) || !compiler_pattern(c, alt, pc)) {
             goto error;
         }
+        // Success!
+        Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
+        if (!i) {
+            // This is the first alternative, so save its stores as a "control"
+            // for the others (they can't bind a different set of names, and
+            // might need to be reordered):
+            assert(control == NULL);
+            control = pc->stores;
+            Py_INCREF(control);
+        }
+        else if (nstores != PyList_GET_SIZE(control)) {
+            goto diff;
+        }
+        else if (nstores) {
+            // There were captures. Check to see if we differ from control:
+            for (Py_ssize_t icontrol = 0; icontrol < nstores; icontrol++) {
+                PyObject *name = PyList_GET_ITEM(control, icontrol);
+                Py_ssize_t istores = PySequence_Index(pc->stores, name);
+                if (istores < 0) {
+                    PyErr_Clear();
+                    goto diff;
+                }
+                if (icontrol != istores) {
+                    // Reorder the names on the stack to match the order of the
+                    // names in control. There's probably a better way of doing
+                    // this; the current solution is potentially very
+                    // inefficient when each alternative subpattern binds lots
+                    // of names in different orders. It's fine for reasonable
+                    // cases, though.
+                    assert(icontrol < istores);
+                    // Perfom the same rotation on pc->stores:
+                    PyObject *rotate = PyList_GetSlice(pc->stores, istores,
+                                                       nstores);
+                    if (rotate == NULL ||
+                        PyList_SetSlice(pc->stores, istores, nstores, NULL) ||
+                        PyList_SetSlice(pc->stores, icontrol, icontrol, rotate))
+                    {
+                        Py_XDECREF(rotate);
+                        goto error;
+                    }
+                    Py_DECREF(rotate);
+                    // That just did:
+                    // rotate = pc_stores[istores:]
+                    // del pc_stores[istores:]
+                    // pc_stores[icontrol:icontrol] = rotate
+                    // Do the same thing to the stack, using several rotations:
+                    while (istores++ < nstores) {
+                        if (!compiler_addop_i(c, ROT_N, nstores - icontrol)) {
+                            goto error;
+                        }
+                    }
+                }
+            }
+        }
         assert(control);
+        if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
+            !compiler_next_block(c) ||
+            !cleanup_fail_pop(c, pc))
+        {
+            goto error;
+        }
     }
     Py_DECREF(pc->stores);
     *pc = old_pc;
@@ -5975,6 +5971,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     Py_DECREF(old_pc.stores);
     Py_DECREF(control);
+    // NOTE: Returning macros are safe again.
     compiler_use_next_block(c, end);
     // There is a copy of the subject underneath all of the new name stores.
     // There may also be important items under it that need to be rotated back
@@ -5985,6 +5982,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     // Pop the copy of the subject:
     ADDOP(c, POP_TOP);
     return 1;
+diff:
+    compiler_error(c, "alternative patterns bind different names");
 error:
     PyObject_Free(old_pc.fail_pop);
     Py_DECREF(old_pc.stores);
