@@ -2594,6 +2594,30 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(d.i, 0)
         self.assertEqual(d.j, 10)
 
+    def test_inherit_nonfrozen_from_empty_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit non-frozen dataclass from a frozen one'):
+            @dataclass
+            class D(C):
+                j: int
+
+    def test_inherit_nonfrozen_from_empty(self):
+        @dataclass
+        class C:
+            pass
+
+        @dataclass
+        class D(C):
+            j: int
+
+        d = D(3)
+        self.assertEqual(d.j, 3)
+        self.assertIsInstance(d, C)
+
     # Test both ways: with an intermediate normal (non-dataclass)
     #  class and without an intermediate class.
     def test_inherit_nonfrozen_from_frozen(self):
@@ -3251,6 +3275,24 @@ class TestReplace(unittest.TestCase):
         c = replace(c, x=3, y=5)
         self.assertEqual(c.x, 15)
 
+    def test_initvar_with_default_value(self):
+        @dataclass
+        class C:
+            x: int
+            y: InitVar[int] = None
+            z: InitVar[int] = 42
+
+            def __post_init__(self, y, z):
+                if y is not None:
+                    self.x += y
+                if z is not None:
+                    self.x += z
+
+        c = C(x=1, y=10, z=1)
+        self.assertEqual(replace(c), C(x=12))
+        self.assertEqual(replace(c, y=4), C(x=12, y=4, z=42))
+        self.assertEqual(replace(c, y=4, z=1), C(x=12, y=4, z=1))
+
     def test_recursive_repr(self):
         @dataclass
         class C:
@@ -3383,7 +3425,7 @@ class TestMatchArgs(unittest.TestCase):
         self.assertEqual(C(42).__match_args__, ('a',))
 
     def test_explicit_match_args(self):
-        ma = []
+        ma = ()
         @dataclass
         class C:
             a: int
