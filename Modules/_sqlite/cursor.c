@@ -287,7 +287,8 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                     goto error;
                 }
                 converted = Py_NewRef(Py_None);
-            } else {
+            }
+            else {
                 nbytes = sqlite3_column_bytes(self->statement->st, i);
                 PyObject *item = PyBytes_FromStringAndSize(blob, nbytes);
                 if (item == NULL) {
