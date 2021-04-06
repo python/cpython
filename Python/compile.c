@@ -5502,8 +5502,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 // stored *underneath* them on success. This lets us defer all names stores
 // until the *entire* pattern matches.
 
-// TODO: variants of test_patma_283 with mappings, classes, stars, stores before/after
-
 
 #define WILDCARD_CHECK(N) \
     ((N)->kind == Name_kind && \
@@ -5957,15 +5955,18 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     }
     Py_DECREF(pc->stores);
     *pc = old_pc;
-    old_pc.fail_pop = NULL;
     Py_INCREF(pc->stores);
+    // Need to NULL this for the PyObject_Free call in the error block.
+    old_pc.fail_pop = NULL;
     if (!jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
         goto error;
     }
+    // Update the list of previous stores with the names in the control list,
+    // checking for duplicates:
     Py_ssize_t nstores = PyList_GET_SIZE(control);
     for (Py_ssize_t i = 0; i < nstores; i++) {
         PyObject *name = PyList_GET_ITEM(control, i);
-        int dupe = PySequence_Contains(old_pc.stores, name);
+        int dupe = PySequence_Contains(pc->stores, name);
         if (dupe < 0) {
             goto error;
         }
@@ -5973,7 +5974,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
             compiler_error_duplicate_store(c, name);
             goto error;
         }
-        if (PyList_Append(old_pc.stores, name)) {
+        if (PyList_Append(pc->stores, name)) {
             goto error;
         }
     }
