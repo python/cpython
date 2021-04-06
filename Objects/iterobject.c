@@ -316,7 +316,10 @@ anextawaitable_traverse(anextawaitableobject *obj, visitproc visit, void *arg)
 static PyObject *
 anextawaitable_iternext(anextawaitableobject *obj)
 {
-    PyObject *result = PyIter_Next(obj->wrapped);
+    assert(obj->wrapped != NULL);
+    unaryfunc getter = Py_TYPE(obj->wrapped)->tp_iternext;
+    assert(getter != NULL);
+    PyObject *result = getter(obj->wrapped);
     if (result != NULL) {
         return result;
     }
