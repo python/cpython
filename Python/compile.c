@@ -1140,6 +1140,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LIST_TO_TUPLE:
             return 0;
+        case GEN_START:
+            return -1;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -6169,7 +6171,11 @@ stackdepth(struct compiler *c)
     }
 
     sp = stack;
-    stackdepth_push(&sp, entryblock, 0);
+    if (c->u->u_ste->ste_generator || c->u->u_ste->ste_coroutine) {
+        stackdepth_push(&sp, entryblock, 1);
+    } else {
+        stackdepth_push(&sp, entryblock, 0);
+    }
     while (sp != stack) {
         b = *--sp;
         int depth = b->b_startdepth;
@@ -6648,6 +6654,41 @@ optimize_cfg(struct assembler *a, PyObject *consts);
 static int
 ensure_exits_have_lineno(struct compiler *c);
 
+static int
+insert_generator_prefix(struct compiler *c, basicblock *entryblock) {
+
+    int flags = compute_code_flags(c);
+    if (flags < 0) {
+        return -1;
+    }
+    int kind;
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        if (flags & CO_COROUTINE) {
+            kind = 1;
+        }
+        else if (flags & CO_ASYNC_GENERATOR) {
+            kind = 2;
+        }
+        else {
+            kind = 0;
+        }
+    }
+    else {
+        return 0;
+    }
+    if (compiler_next_instr(entryblock) < 0) {
+        return -1;
+    }
+    for (int i = entryblock->b_iused-1; i > 0; i--) {
+        entryblock->b_instr[i] = entryblock->b_instr[i-1];
+    }
+    entryblock->b_instr[0].i_opcode = GEN_START;
+    entryblock->b_instr[0].i_oparg = kind;
+    entryblock->b_instr[0].i_lineno = -1;
+    entryblock->b_instr[0].i_target = NULL;
+    return 0;
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -6683,6 +6724,10 @@ assemble(struct compiler *c, int addNone)
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         nblocks++;
         entryblock = b;
+    }
+
+    if (insert_generator_prefix(c, entryblock)) {
+        goto error;
     }
 
     /* Set firstlineno if it wasn't explicitly set. */
