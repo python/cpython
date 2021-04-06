@@ -164,3 +164,10 @@ class WindowsBootstrapPathTests(unittest.TestCase):
         self.check_join(r"\\Server\Share\A\B\C", r"\\Server", r"\Share", "A", "B", "C")
         self.check_join(r"\\Server\Share", r"\\Server\Share")
         self.check_join(r"\\Server\Share\\", r"\\Server\Share\\")
+
+        # Handle edge cases with empty segments
+        self.check_join("C:\\A", "C:/A", "")
+        self.check_join("C:\\", "C:/", "")
+        self.check_join("C:", "C:", "")
+        self.check_join("//Server/Share\\", "//Server/Share/", "")
+        self.check_join("//Server/Share\\", "//Server/Share", "")

@@ -116,10 +116,11 @@ if _MS_WINDOWS:
             else:
                 root = new_root or root
                 path.append(tail)
-        if len(path) == 1 and path[0] in path_sep_tuple:
+        path = [p.rstrip(path_separators) for p in path if p]
+        if len(path) == 1 and not path[0]:
             # Avoid losing the root's trailing separator when joining with nothing
             return root + path_sep
-        return root + path_sep.join(p.rstrip(path_separators) for p in path if p)
+        return root + path_sep.join(path)
 
 else:
     def _path_join(*path_parts):
