@@ -16,9 +16,6 @@ Is there a source code level debugger with breakpoints, single-stepping, etc.?
 
 Yes.
 
-Several debuggers for Python are described below, and the built-in function
-:func:`breakpoint` allows you to drop into any of them.
-
 The pdb module is a simple but adequate console-mode debugger for Python. It is
 part of the standard Python library, and is :mod:`documented in the Library
 Reference Manual <pdb>`. You can also write your own debugger by using the code
@@ -34,6 +31,12 @@ debugging non-Pythonwin programs.  Pythonwin is available as part of the `Python
 for Windows Extensions <https://sourceforge.net/projects/pywin32/>`__ project and
 as a part of the ActivePython distribution (see
 https://www.activestate.com/activepython\ ).
+
+`Boa Constructor <http://boa-constructor.sourceforge.net/>`_ is an IDE and GUI
+builder that uses wxWidgets.  It offers visual frame creation and manipulation,
+an object inspector, many views on the source like object browsers, inheritance
+hierarchies, doc string generated html documentation, an advanced debugger,
+integrated help, and Zope support.
 
 `Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
@@ -51,19 +54,22 @@ They include:
 * PyCharm (https://www.jetbrains.com/pycharm/)
 
 
-Are there tools to help find bugs or perform static analysis?
+Is there a tool to help find bugs or perform static analysis?
 -------------------------------------------------------------
 
 Yes.
 
-`Pylint <https://www.pylint.org/>`_ and
-`Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
-help you catch bugs sooner.
+PyChecker is a static analysis tool that finds bugs in Python source code and
+warns about code complexity and style.  You can get PyChecker from
+http://pychecker.sourceforge.net/.
 
-Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
-`Pyre <https://pyre-check.org/>`_, and
-`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
-source code.
+`Pylint <https://www.pylint.org/>`_ is another tool that checks
+if a module satisfies a coding standard, and also makes it possible to write
+plug-ins to add a custom feature.  In addition to the bug checking that
+PyChecker performs, Pylint offers some additional features such as checking line
+length, whether variable names are well-formed according to your coding
+standard, whether declared interfaces are fully implemented, and more.
+https://docs.pylint.org/ provides a full list of Pylint's features.
 
 
 How can I create a stand-alone binary from a Python script?
@@ -365,8 +371,8 @@ compute, a common technique is to cache the parameters and the resulting value
 of each call to the function, and return the cached value if the same value is
 requested again.  This is called "memoizing", and can be implemented like this::
 
-   # Callers can only provide two parameters and optionally pass _cache by keyword
-   def expensive(arg1, arg2, *, _cache={}):
+   # Callers will never provide a third parameter for this function.
+   def expensive(arg1, arg2, _cache={}):
        if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
@@ -504,14 +510,14 @@ desired effect in a number of ways.
 
 1) By returning a tuple of the results::
 
-      >>> def func1(a, b):
-      ...     a = 'new-value'        # a and b are local names
-      ...     b = b + 1              # assigned to new objects
-      ...     return a, b            # return new values
-      ...
-      >>> x, y = 'old-value', 99
-      >>> func1(x, y)
-      ('new-value', 100)
+      def func2(a, b):
+          a = 'new-value'        # a and b are local names
+          b = b + 1              # assigned to new objects
+          return a, b            # return new values
+
+      x, y = 'old-value', 99
+      x, y = func2(x, y)
+      print(x, y)                # output: new-value 100
 
    This is almost always the clearest solution.
 
@@ -519,41 +525,38 @@ desired effect in a number of ways.
 
 3) By passing a mutable (changeable in-place) object::
 
-      >>> def func2(a):
-      ...     a[0] = 'new-value'     # 'a' references a mutable list
-      ...     a[1] = a[1] + 1        # changes a shared object
-      ...
-      >>> args = ['old-value', 99]
-      >>> func2(args)
-      >>> args
-      ['new-value', 100]
+      def func1(a):
+          a[0] = 'new-value'     # 'a' references a mutable list
+          a[1] = a[1] + 1        # changes a shared object
+
+      args = ['old-value', 99]
+      func1(args)
+      print(args[0], args[1])    # output: new-value 100
 
 4) By passing in a dictionary that gets mutated::
 
-      >>> def func3(args):
-      ...     args['a'] = 'new-value'     # args is a mutable dictionary
-      ...     args['b'] = args['b'] + 1   # change it in-place
-      ...
-      >>> args = {'a': 'old-value', 'b': 99}
-      >>> func3(args)
-      >>> args
-      {'a': 'new-value', 'b': 100}
+      def func3(args):
+          args['a'] = 'new-value'     # args is a mutable dictionary
+          args['b'] = args['b'] + 1   # change it in-place
+
+      args = {'a': 'old-value', 'b': 99}
+      func3(args)
+      print(args['a'], args['b'])
 
 5) Or bundle up values in a class instance::
 
-      >>> class Namespace:
-      ...     def __init__(self, /, **args):
-      ...         for key, value in args.items():
-      ...             setattr(self, key, value)
-      ...
-      >>> def func4(args):
-      ...     args.a = 'new-value'        # args is a mutable Namespace
-      ...     args.b = args.b + 1         # change object in-place
-      ...
-      >>> args = Namespace(a='old-value', b=99)
-      >>> func4(args)
-      >>> vars(args)
-      {'a': 'new-value', 'b': 100}
+      class callByRef:
+          def __init__(self, **args):
+              for (key, value) in args.items():
+                  setattr(self, key, value)
+
+      def func4(args):
+          args.a = 'new-value'        # args is a mutable callByRef
+          args.b = args.b + 1         # change object in-place
+
+      args = callByRef(a='old-value', b=99)
+      func4(args)
+      print(args.a, args.b)
 
 
    There's almost never a good reason to get this complicated.
@@ -648,7 +651,7 @@ How can my code discover the name of an object?
 -----------------------------------------------
 
 Generally speaking, it can't, because objects don't really have names.
-Essentially, assignment always binds a name to a value; the same is true of
+Essentially, assignment always binds a name to a value; The same is true of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
@@ -730,7 +733,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`lambda`.  See the following three examples, due to Ulf Bartelt::
 
    from functools import reduce
 
@@ -759,34 +762,6 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
 Don't try this at home, kids!
 
 
-.. _faq-positional-only-arguments:
-
-What does the slash(/) in the parameter list of a function mean?
-----------------------------------------------------------------
-
-A slash in the argument list of a function denotes that the parameters prior to
-it are positional-only.  Positional-only parameters are the ones without an
-externally-usable name.  Upon calling a function that accepts positional-only
-parameters, arguments are mapped to parameters based solely on their position.
-For example, :func:`divmod` is a function that accepts positional-only
-parameters. Its documentation looks like this::
-
-   >>> help(divmod)
-   Help on built-in function divmod in module builtins:
-
-   divmod(x, y, /)
-       Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
-
-The slash at the end of the parameter list means that both parameters are
-positional-only. Thus, calling :func:`divmod` with keyword arguments would lead
-to an error::
-
-   >>> divmod(x=3, y=4)
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: divmod() takes no keyword arguments
-
-
 Numbers and strings
 ===================
 
@@ -813,6 +788,8 @@ or uppercase.  For example, in the Python interpreter::
    178
 
 
+.. _faq-floordivision:
+
 Why does -22 // 10 return -3?
 -----------------------------
 
@@ -821,9 +798,12 @@ If you want that, and also want::
 
     i == (i // j) * j + (i % j)
 
-then integer division has to return the floor.  C also requires that identity to
-hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
+then integer division has to return the floor, and Floor division rounds towards -infinity.
+C also requires that identity to hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
 the same sign as ``i``.
+
+Note that the identity and the definition of floor division also means that ``(i % -j) != - (i % j)``. For example
+with i and j being 22 and -12 respectively then``22 // -12 == -2`` and therefore ``22 % -12 == -2``
 
 There are few real use cases for ``i % j`` when ``j`` is negative.  When ``j``
 is positive, there are many, and in virtually all of them it's more useful for
@@ -840,11 +820,10 @@ For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
-144`` holds true, and ``int('0x144')`` raises :exc:`ValueError`. ``int(string,
-base)`` takes the base to convert from as a second optional argument, so ``int(
-'0x144', 16) == 324``.  If the base is specified as 0, the number is interpreted
-using Python's rules: a leading '0o' indicates octal, and '0x' indicates a hex
-number.
+144`` and ``int('0x144')`` raises :exc:`ValueError`. ``int(string, base)`` takes
+the base to convert from as a second optional argument, so ``int('0x144', 16) ==
+324``.  If the base is specified as 0, the number is interpreted using Python's
+rules: a leading '0o' indicates octal, and '0x' indicates a hex number.
 
 Do not use the built-in function :func:`eval` if all you need is to convert
 strings to numbers.  :func:`eval` will be significantly slower and it presents a
@@ -942,7 +921,7 @@ There are various techniques.
      f()
 
 
-* Use :func:`locals` to resolve the function name::
+* Use :func:`locals` or :func:`eval` to resolve the function name::
 
      def myFunc():
          print("hello")
@@ -952,6 +931,12 @@ There are various techniques.
      f = locals()[fname]
      f()
 
+     f = eval(fname)
+     f()
+
+  Note: Using :func:`eval` is slow and dangerous.  If you don't have absolute
+  control over the contents of the string, someone could pass a string that
+  resulted in an arbitrary function being executed.
 
 Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
 -------------------------------------------------------------------------------------
@@ -1003,7 +988,7 @@ That's a tough one, in general.  First, here are a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
-  focuses on :term:`CPython`.
+  focusses on :term:`CPython`.
 * Behaviour can vary across operating systems, especially when talking about
   I/O or multi-threading.
 * You should always find the hot spots in your program *before* attempting to
@@ -1116,13 +1101,18 @@ trailing newline from a string.
 How do I iterate over a sequence in reverse order?
 --------------------------------------------------
 
-Use the :func:`reversed` built-in function::
+Use the :func:`reversed` built-in function, which is new in Python 2.4::
 
    for x in reversed(sequence):
        ...  # do something with x ...
 
 This won't touch your original sequence, but build a new copy with reversed
 order to iterate over.
+
+With Python 2.3, you can use an extended slice syntax::
+
+   for x in sequence[::-1]:
+       ...  # do something with x ...
 
 
 How do you remove duplicates from a list?
@@ -1153,21 +1143,6 @@ This converts the list into a set, thereby removing duplicates, and then back
 into a list.
 
 
-How do you remove multiple items from a list
---------------------------------------------
-
-As with removing duplicates, explicitly iterating in reverse with a
-delete condition is one possibility.  However, it is easier and faster
-to use slice replacement with an implicit or explicit forward iteration.
-Here are three variations.::
-
-   mylist[:] = filter(keep_function, mylist)
-   mylist[:] = (x for x in mylist if keep_condition)
-   mylist[:] = [x for x in mylist if keep_condition]
-
-The list comprehension may be fastest.
-
-
 How do you make an array in Python?
 -----------------------------------
 
@@ -1180,7 +1155,7 @@ difference is that a Python list can contain objects of many different types.
 
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
-note that NumPy and other third party packages define array-like structures with
+note that the Numeric extensions and others define array-like structures with
 various characteristics as well.
 
 To get Lisp-style linked lists, you can emulate cons cells using tuples::
@@ -1342,6 +1317,14 @@ The ``__iadd__`` succeeds, and thus the list is extended, but even though
 that final assignment still results in an error, because tuples are immutable.
 
 
+Dictionaries
+============
+
+How can I get a dictionary to store and display its keys in a consistent order?
+-------------------------------------------------------------------------------
+
+Use :class:`collections.OrderedDict`.
+
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------
 
@@ -1368,6 +1351,20 @@ out the element you want. ::
    >>> result = [x[1] for x in pairs]
    >>> result
    ['else', 'sort', 'to', 'something']
+
+
+An alternative for the last step is::
+
+   >>> result = []
+   >>> for p in pairs: result.append(p[1])
+
+If you find this more legible, you might prefer to use this instead of the final
+list comprehension.  However, it is almost twice as slow for long lists.  Why?
+First, the ``append()`` operation has to reallocate memory, and while it uses
+some tricks to avoid doing that each time, it still has to do it occasionally,
+and that costs quite a bit.  Second, the expression "result.append" requires an
+extra attribute lookup, and third, there's a speed reduction from having to make
+all those function calls.
 
 
 Objects
@@ -1419,41 +1416,6 @@ is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
 ``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
-
-Note that :func:`isinstance` also checks for virtual inheritance from an
-:term:`abstract base class`.  So, the test will return ``True`` for a
-registered class even if hasn't directly or indirectly inherited from it.  To
-test for "true inheritance", scan the :term:`MRO` of the class:
-
-.. testcode::
-
-    from collections.abc import Mapping
-
-    class P:
-         pass
-
-    class C(P):
-        pass
-
-    Mapping.register(P)
-
-.. doctest::
-
-    >>> c = C()
-    >>> isinstance(c, C)        # direct
-    True
-    >>> isinstance(c, P)        # indirect
-    True
-    >>> isinstance(c, Mapping)  # virtual
-    True
-
-    # Actual inheritance chain
-    >>> type(c).__mro__
-    (<class 'C'>, <class 'P'>, <class 'object'>)
-
-    # Test for "true inheritance"
-    >>> Mapping in type(c).__mro__
-    False
 
 Note that most programs do not use :func:`isinstance` on user-defined classes
 very often.  If you are developing the classes yourself, a more proper
@@ -1509,8 +1471,8 @@ to uppercase::
 
 Here the ``UpperOut`` class redefines the ``write()`` method to convert the
 argument string to uppercase before calling the underlying
-``self._outfile.write()`` method.  All other methods are delegated to the
-underlying ``self._outfile`` object.  The delegation is accomplished via the
+``self.__outfile.write()`` method.  All other methods are delegated to the
+underlying ``self.__outfile`` object.  The delegation is accomplished via the
 ``__getattr__`` method; consult :ref:`the language reference <attribute-access>`
 for more information about controlling attribute access.
 
@@ -1529,36 +1491,37 @@ Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
 local state for self without causing an infinite recursion.
 
 
-How do I call a method defined in a base class from a derived class that extends it?
-------------------------------------------------------------------------------------
+How do I call a method defined in a base class from a derived class that overrides it?
+--------------------------------------------------------------------------------------
 
 Use the built-in :func:`super` function::
 
    class Derived(Base):
        def meth(self):
-           super().meth()  # calls Base.meth
+           super(Derived, self).meth()
 
-In the example, :func:`super` will automatically determine the instance from
-which it was called (the ``self`` value), look up the :term:`method resolution
-order` (MRO) with ``type(self).__mro__``, and return the next in line after
-``Derived`` in the MRO: ``Base``.
+For version prior to 3.0, you may be using classic classes: For a class
+definition such as ``class Derived(Base): ...`` you can call method ``meth()``
+defined in ``Base`` (or one of ``Base``'s base classes) as ``Base.meth(self,
+arguments...)``.  Here, ``Base.meth`` is an unbound method, so you need to
+provide the ``self`` argument.
 
 
 How can I organize my code to make it easier to change the base class?
 ----------------------------------------------------------------------
 
-You could assign the base class to an alias and derive from the alias.  Then all
+You could define an alias for the base class, assign the real base class to it
+before your class definition, and use the alias throughout your class.  Then all
 you have to change is the value assigned to the alias.  Incidentally, this trick
 is also handy if you want to decide dynamically (e.g. depending on availability
 of resources) which base class to use.  Example::
 
-   class Base:
-       ...
-
-   BaseAlias = Base
+   BaseAlias = <real base class>
 
    class Derived(BaseAlias):
-       ...
+       def meth(self):
+           BaseAlias.meth(self)
+           ...
 
 
 How do I create static class data and static class methods?
@@ -1734,93 +1697,6 @@ to the object:
 13901272
 >>> id(b) # doctest: +SKIP
 13891296
-
-
-When can I rely on identity tests with the *is* operator?
----------------------------------------------------------
-
-The ``is`` operator tests for object identity.  The test ``a is b`` is
-equivalent to ``id(a) == id(b)``.
-
-The most important property of an identity test is that an object is always
-identical to itself, ``a is a`` always returns ``True``.  Identity tests are
-usually faster than equality tests.  And unlike equality tests, identity tests
-are guaranteed to return a boolean ``True`` or ``False``.
-
-However, identity tests can *only* be substituted for equality tests when
-object identity is assured.  Generally, there are three circumstances where
-identity is guaranteed:
-
-1) Assignments create new names but do not change object identity.  After the
-assignment ``new = old``, it is guaranteed that ``new is old``.
-
-2) Putting an object in a container that stores object references does not
-change object identity.  After the list assignment ``s[0] = x``, it is
-guaranteed that ``s[0] is x``.
-
-3) If an object is a singleton, it means that only one instance of that object
-can exist.  After the assignments ``a = None`` and ``b = None``, it is
-guaranteed that ``a is b`` because ``None`` is a singleton.
-
-In most other circumstances, identity tests are inadvisable and equality tests
-are preferred.  In particular, identity tests should not be used to check
-constants such as :class:`int` and :class:`str` which aren't guaranteed to be
-singletons::
-
-    >>> a = 1000
-    >>> b = 500
-    >>> c = b + 500
-    >>> a is c
-    False
-
-    >>> a = 'Python'
-    >>> b = 'Py'
-    >>> c = b + 'thon'
-    >>> a is c
-    False
-
-Likewise, new instances of mutable containers are never identical::
-
-    >>> a = []
-    >>> b = []
-    >>> a is b
-    False
-
-In the standard library code, you will see several common patterns for
-correctly using identity tests:
-
-1) As recommended by :pep:`8`, an identity test is the preferred way to check
-for ``None``.  This reads like plain English in code and avoids confusion with
-other objects that may have boolean values that evaluate to false.
-
-2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create an singleton sentinel object
-guaranteed to be distinct from other objects.  For example, here is how
-to implement a method that behaves like :meth:`dict.pop`::
-
-   _sentinel = object()
-
-   def pop(self, key, default=_sentinel):
-       if key in self:
-           value = self[key]
-           del self[key]
-           return value
-       if default is _sentinel:
-           raise KeyError(key)
-       return default
-
-3) Container implementations sometimes need to augment equality tests with
-identity tests.  This prevents the code from being confused by objects such as
-``float('NaN')`` that are not equal to themselves.
-
-For example, here is the implementation of
-:meth:`collections.abc.Sequence.__contains__`::
-
-    def __contains__(self, value):
-        for v in self:
-            if v is value or v == value:
-                return True
-        return False
 
 
 Modules
