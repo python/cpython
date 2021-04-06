@@ -17,7 +17,7 @@ def no_perf(f):
 class MyClass:
     x: int
     y: str
-    __match_args__ = ["x", "y"]
+    __match_args__ = ("x", "y")
 
 
 @dataclasses.dataclass
@@ -2018,7 +2018,7 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_200(self):
         class Class:
-            __match_args__ = ["a", "b"]
+            __match_args__ = ("a", "b")
         c = Class()
         c.a = 0
         c.b = 1
@@ -2046,7 +2046,7 @@ class TestPatma(unittest.TestCase):
         class Parent:
             __match_args__ = "a", "b"
         class Child(Parent):
-            __match_args__ = ["c", "d"]
+            __match_args__ = ("c", "d")
         c = Child()
         c.a = 0
         c.b = 1
@@ -2500,7 +2500,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_248(self):
         class Class:
-            __match_args__ = [None]
+            __match_args__ = (None,)
         x = Class()
         y = z = None
         with self.assertRaises(TypeError):
@@ -2513,7 +2513,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_249(self):
         class Class:
-            __match_args__ = []
+            __match_args__ = ()
         x = Class()
         y = z = None
         with self.assertRaises(TypeError):
@@ -2560,7 +2560,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_253(self):
         class Class:
-            __match_args__ = ["a", "a"]
+            __match_args__ = ("a", "a")
             a = None
         x = Class()
         w = y = z = None
@@ -2575,7 +2575,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_254(self):
         class Class:
-            __match_args__ = ["a"]
+            __match_args__ = ("a",)
             a = None
         x = Class()
         w = y = z = None
@@ -2841,7 +2841,23 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, range(10))
         self.assertIs(y, None)
 
+    @no_perf
     def test_patma_282(self):
+        class Class:
+            __match_args__ = ["spam", "eggs"]
+            spam = 0
+            eggs = 1
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_patma_283(self):
         x = {"y": 1}
         match x:
             case {"y": (0 as y) | (1 as y)}:
@@ -2850,14 +2866,23 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 1)
         self.assertEqual(z, 0)
 
-    def test_patma_283(self):
+    @no_perf
+    def test_patma_284(self):
         self.assert_syntax_error("""
         match ...:
             case [a, [b] | [c] | [d]]:
                 pass
         """)
 
-    def test_patma_284(self):
+    @no_perf
+    def test_patma_285(self):
+        # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
+        # just the code under test. This test ensures that if there are leaks in
+        # the pattern compiler, those runs will fail:
+        with open(__file__) as file:
+            compile(file.read(), __file__, "exec")
+
+    def test_patma_286(self):
         def f(x):
             match x:
                 case ((a, b, c, d, e, f, g, h, i, 9) |
@@ -2881,7 +2906,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(range(-1, -11, -1)), alts[3])
         self.assertEqual(f(range(10, 20)), alts[4])
 
-    def test_patma_285(self):
+    def test_patma_287(self):
         def f(x):
             match x:
                 case [y, (a, b, c, d, e, f, g, h, i, 9) |
@@ -2904,14 +2929,6 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f((False, range(0, -10, -1), True)), alts[2])
         self.assertEqual(f((False, range(-1, -11, -1), True)), alts[3])
         self.assertEqual(f((False, range(10, 20), True)), alts[4])
-
-    @no_perf
-    def test_patma_286(self):
-        # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
-        # just the code under test. This test ensures that if there are leaks in
-        # the pattern compiler, those runs will fail:
-        with open(__file__) as file:
-            compile(file.read(), __file__, "exec")
 
 
 class PerfPatma(TestPatma):
