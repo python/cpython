@@ -363,7 +363,7 @@ class GetSourceBase(unittest.TestCase):
     fodderModule = None
 
     def setUp(self):
-        with open(inspect.getsourcefile(self.fodderModule)) as fp:
+        with open(inspect.getsourcefile(self.fodderModule), encoding="utf-8") as fp:
             self.source = fp.read()
 
     def sourcerange(self, top, bottom):
@@ -773,8 +773,8 @@ class TestNoEOL(GetSourceBase):
     def setUp(self):
         self.tempdir = TESTFN + '_dir'
         os.mkdir(self.tempdir)
-        with open(os.path.join(self.tempdir,
-                               'inspect_fodder3%spy' % os.extsep), 'w') as f:
+        with open(os.path.join(self.tempdir, 'inspect_fodder3%spy' % os.extsep),
+                  'w', encoding='utf-8') as f:
             f.write("class X:\n    pass # No EOL")
         with DirsOnSysPath(self.tempdir):
             import inspect_fodder3 as mod3
@@ -1805,7 +1805,7 @@ class TestGetattrStatic(unittest.TestCase):
 
     def test_no_dict_no_slots_instance_member(self):
         # returns descriptor
-        with open(__file__) as handle:
+        with open(__file__, encoding='utf-8') as handle:
             self.assertEqual(inspect.getattr_static(handle, 'name'), type(handle).name)
 
     def test_inherited_slots(self):
@@ -4045,7 +4045,7 @@ def foo():
 
     def assertInspectEqual(self, path, source):
         inspected_src = inspect.getsource(source)
-        with open(path) as src:
+        with open(path, encoding='utf-8') as src:
             self.assertEqual(
                 src.read().splitlines(True),
                 inspected_src.splitlines(True)
@@ -4056,7 +4056,7 @@ def foo():
         with _ready_to_import('reload_bug', self.src_before) as (name, path):
             module = importlib.import_module(name)
             self.assertInspectEqual(path, module)
-            with open(path, 'w') as src:
+            with open(path, 'w', encoding='utf-8') as src:
                 src.write(self.src_after)
             self.assertInspectEqual(path, module)
 
