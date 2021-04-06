@@ -6191,6 +6191,7 @@ static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
     pattern_context pc;
+    pc.fail_pop = NULL;
     int result = compiler_match_inner(c, s, &pc);
     PyObject_Free(pc.fail_pop);
     return result;
