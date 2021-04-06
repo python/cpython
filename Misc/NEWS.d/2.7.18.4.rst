@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 2021-04-05
+.. nonce: dip*SU
+.. release date: 2020-04-05
+.. section: Library
+
+Address CVE-2020-8492 in urlparse

@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 2021-02-09
+.. nonce: yic.vi
+.. release date: 2021-02-09
+.. section: Library
+
+Address CVE-2021-3177 in ctypes
