@@ -513,7 +513,9 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="regen.targets" />
   </ImportGroup>
+  <Target Name="_TriggerRegen" BeforeTargets="PrepareForBuild" DependsOnTargets="Regen" />
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>
