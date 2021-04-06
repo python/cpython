@@ -459,11 +459,6 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.10
-      On Windows, now relies on an operating system API. This has changed the
-      results for some invalid UNC paths, but reliably supports paths with
-      special prefixes such as ``\\?\``.
-
 
 .. function:: splitext(path)
 
