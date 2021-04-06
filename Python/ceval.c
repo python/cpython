@@ -1029,15 +1029,8 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         int match_self = 0;
         match_args = PyObject_GetAttrString(type, "__match_args__");
         if (match_args) {
-            if (PyList_CheckExact(match_args)) {
-                Py_SETREF(match_args, PyList_AsTuple(match_args));
-            }
-            if (match_args == NULL) {
-                goto fail;
-            }
             if (!PyTuple_CheckExact(match_args)) {
-                const char *e = "%s.__match_args__ must be a list or tuple "
-                                "(got %s)";
+                const char *e = "%s.__match_args__ must be a tuple (got %s)";
                 _PyErr_Format(tstate, PyExc_TypeError, e,
                               ((PyTypeObject *)type)->tp_name,
                               Py_TYPE(match_args)->tp_name);
@@ -2644,6 +2637,30 @@ main_loop:
             f->f_state = FRAME_SUSPENDED;
             f->f_stackdepth = (int)(stack_pointer - f->f_valuestack);
             goto exiting;
+        }
+
+        case TARGET(GEN_START): {
+            PyObject *none = POP();
+            Py_DECREF(none);
+            if (none != Py_None) {
+                if (oparg > 2) {
+                    _PyErr_SetString(tstate, PyExc_SystemError,
+                        "Illegal kind for GEN_START");
+                }
+                else {
+                    static const char *gen_kind[3] = {
+                        "generator",
+                        "coroutine",
+                        "async generator"
+                    };
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                        "can't send non-None value to a "
+                                "just-started %s",
+                                gen_kind[oparg]);
+                }
+                goto error;
+            }
+            DISPATCH();
         }
 
         case TARGET(POP_EXCEPT): {

@@ -56,8 +56,8 @@ The :mod:`pprint` module defines one class:
    as will fit within the *width* will be formatted on each output line. If
    *sort_dicts* is true (the default), dictionaries will be formatted with their
    keys sorted, otherwise they will display in insertion order.  If
-   *underscore_numbers* is true, integers will be formatted with
-   ```_``` character for a thousands separator, otherwise underscores are not
+   *underscore_numbers* is true, integers will be formatted with the
+   ``_`` character for a thousands separator, otherwise underscores are not
    displayed (the default).
 
    .. versionchanged:: 3.4

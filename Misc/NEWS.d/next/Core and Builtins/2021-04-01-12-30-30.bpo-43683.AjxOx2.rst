@@ -1,0 +1,2 @@
+Add GEN_START opcode. Marks start of generator, including async, or coroutine and handles
+sending values to a newly created generator or coroutine.
