@@ -19,6 +19,8 @@
     <_ASTOutputs Include="$(PySourcePath)Python\Python-ast.c">
       <Argument>-C</Argument>
     </_ASTOutputs>
+    <_OpcodeSources Include="$(PySourcePath)Tools\scripts\generate_opcode_h.py;$(PySourcePath)Lib\opcode.py" />
+    <_OpcodeOutputs Include="$(PySourcePath)Include\opcode.h" />
     <_TokenSources Include="$(PySourcePath)Grammar\Tokens" />
     <_TokenOutputs Include="$(PySourcePath)Doc\library\token-list.inc">
       <Format>rst</Format>
