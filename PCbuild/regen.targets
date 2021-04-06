@@ -67,6 +67,7 @@
     <Message Text="Regenerate @(_TokenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
     <Exec Command="$(PythonForBuild) Tools\scripts\generate_token.py %(_TokenOutputs.Format) Grammar\Tokens &quot;%(_TokenOutputs.Identity)&quot;"
           WorkingDirectory="$(PySourcePath)" />
+    <Touch Files="@(_TokenOutputs)" />
   </Target>
 
   <Target Name="_RegenKeywords" Inputs="@(_KeywordSources)" Outputs="@(_KeywordOutputs)">
