@@ -388,6 +388,26 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         with self.assertRaises(StopAsyncIteration):
             self.loop.run_until_complete(consume())
 
+        async def test_2():
+            g1 = gen()
+            self.assertEqual(await anext(g1), 1)
+            self.assertEqual(await anext(g1), 2)
+            with self.assertRaises(StopAsyncIteration):
+                await anext(g1)
+            with self.assertRaises(StopAsyncIteration):
+                await anext(g1)
+
+            g2 = gen()
+            self.assertEqual(await anext(g2, "default"), 1)
+            self.assertEqual(await anext(g2, "default"), 2)
+            self.assertEqual(await anext(g2, "default"), "default")
+            self.assertEqual(await anext(g2, "default"), "default")
+
+            return "completed"
+
+        result = self.loop.run_until_complete(test_2())
+        self.assertEqual(result, "completed")
+
     def test_async_gen_aiter(self):
         async def gen():
             yield 1
