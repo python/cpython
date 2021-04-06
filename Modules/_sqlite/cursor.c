@@ -281,7 +281,6 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
          */
         if (converter != Py_None) {
             const void *blob = sqlite3_column_blob(self->statement->st, i);
-            nbytes = sqlite3_column_bytes(self->statement->st, i);
             if (blob == NULL) {
                 if (sqlite3_errcode(db) == SQLITE_NOMEM) {
                     PyErr_NoMemory();
@@ -289,6 +288,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 }
                 converted = Py_NewRef(Py_None);
             } else {
+                nbytes = sqlite3_column_bytes(self->statement->st, i);
                 PyObject *item = PyBytes_FromStringAndSize(blob, nbytes);
                 if (item == NULL) {
                     goto error;
