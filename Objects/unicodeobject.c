@@ -2220,9 +2220,10 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion to UTF first. */
-    char* codeset = nl_langinfo(CODESET);
-    if (strcmp(codeset, "UTF-8") && strcmp(codeset, "646")) {
-        char32_t* c32 = _Py_convert_wchar_t_to_UTF32(u, size);
+    if (!_Py_IsLocaleUnicodeWchar()) {
+        char32_t* c32 = _Py_convert_wchar_t_to_UCS4(u, size);
+        if (!c32)
+            return NULL;
         PyObject *unicode = _PyUnicode_FromUCS4(c32, size);
         PyMem_Free(c32);
         return unicode;

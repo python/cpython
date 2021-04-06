@@ -99,7 +99,6 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 #  include <uchar.h>
-#  include <langinfo.h>
 #endif
 
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective

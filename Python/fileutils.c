@@ -924,15 +924,25 @@ _Py_GetLocaleEncodingObject(void)
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
 
+/* Check whether current locale uses Unicode as internal wchar_t form. */
+int
+_Py_IsLocaleUnicodeWchar(void)
+{
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion to UTF first. */
+    char* codeset = nl_langinfo(CODESET);
+    return (strcmp(codeset, "UTF-8") == 0 || strcmp(codeset, "646") == 0);
+}
+
 /* Convert a wide character string to the UTF32 encoded char32_t string. This
-   is necessary on systems where internal form of wchar_t is not already
-   Unicode (e.g. Oracle Solaris).
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
 
    Return a pointer to a newly allocated char32_t string, use PyMem_Free() to
    free the memory. Return NULL and raise exception on conversion or memory
    allocation error. */
 char32_t*
-_Py_convert_wchar_t_to_UTF32(const wchar_t* u, Py_ssize_t size)
+_Py_convert_wchar_t_to_UCS4(const wchar_t* u, Py_ssize_t size)
 {
     /* Ensure we won't overflow the size. */
     if (size > ((PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t)) - 1)) {
@@ -973,7 +983,6 @@ _Py_convert_wchar_t_to_UTF32(const wchar_t* u, Py_ssize_t size)
     }
 
     size_t res = wcstombs(buffer, substr, buffsize);
-    assert(res == buffsize - 1);
 
     /* Convert character string to UTF32 encoded char32_t string.
        Since wchar_t and char32_t have the same size on Solaris and one
