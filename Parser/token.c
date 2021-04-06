@@ -77,7 +77,8 @@ const char * const _PyParser_TokenNames[] = {
 int
 PyToken_OneChar(int c1)
 {
-    switch (c1) {
+    char nc = (char) c1
+    switch (nc) {
     case '%': return PERCENT;
     case '&': return AMPER;
     case '(': return LPAR;
