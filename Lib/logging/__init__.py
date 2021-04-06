@@ -1149,6 +1149,7 @@ class FileHandler(StreamHandler):
         #may come a cropper when the current directory changes
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
+        self.encoding = encoding
         if "b" not in mode:
             self.encoding = io.text_encoding(encoding)
         self.errors = errors
