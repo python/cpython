@@ -2594,6 +2594,30 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(d.i, 0)
         self.assertEqual(d.j, 10)
 
+    def test_inherit_nonfrozen_from_empty_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit non-frozen dataclass from a frozen one'):
+            @dataclass
+            class D(C):
+                j: int
+
+    def test_inherit_nonfrozen_from_empty(self):
+        @dataclass
+        class C:
+            pass
+
+        @dataclass
+        class D(C):
+            j: int
+
+        d = D(3)
+        self.assertEqual(d.j, 3)
+        self.assertIsInstance(d, C)
+
     # Test both ways: with an intermediate normal (non-dataclass)
     #  class and without an intermediate class.
     def test_inherit_nonfrozen_from_frozen(self):
