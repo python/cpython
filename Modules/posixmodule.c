@@ -19,6 +19,7 @@
 
       FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
+#  include <pathcch.h>
 #endif
 
 #ifdef __VXWORKS__
@@ -4388,6 +4389,53 @@ exit:
     PyMem_Free(mountpath);
     return result;
 }
+
+
+/*[clinic input]
+os._path_splitroot
+
+    path: path_t
+
+Removes everything after the root on Win32.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_splitroot_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+{
+    wchar_t *buffer;
+    wchar_t *end;
+    PyObject *result = NULL;
+    HRESULT ret;
+
+    buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
+    if (!buffer) {
+        return NULL;
+    }
+    wcscpy(buffer, path->wide);
+    for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
+        *p = L'\\';
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = PathCchSkipRoot(buffer, &end);
+    Py_END_ALLOW_THREADS
+    if (FAILED(ret)) {
+        result = Py_BuildValue("sO", "", path->object);
+    } else if (end != buffer) {
+        size_t rootLen = (size_t)(end - buffer);
+        result = Py_BuildValue("NN",
+            PyUnicode_FromWideChar(path->wide, rootLen),
+            PyUnicode_FromWideChar(path->wide + rootLen, -1)
+        );
+    } else {
+        result = Py_BuildValue("Os", path->object, "");
+    }
+    PyMem_Free(buffer);
+
+    return result;
+}
+
 
 #endif /* MS_WINDOWS */
 
@@ -14749,6 +14797,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
+    OS__PATH_SPLITROOT_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF
