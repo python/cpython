@@ -5587,8 +5587,10 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
         return compiler_error_duplicate_store(c, n);
     }
     RETURN_IF_FALSE(!PyList_Append(pc->stores, n));
-    // Rotate this object underneath any items we need to preserve:
-    ADDOP_I(c, ROT_N, pc->on_top + 1);
+    if (pc->on_top) {
+        // Rotate this object underneath any items we need to preserve:
+        ADDOP_I(c, ROT_N, pc->on_top + 1);
+    }
     return 1;
 }
 
@@ -5658,16 +5660,13 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
 
 
 static int
-pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
+pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end,
                   PyObject **control,  pattern_context *pc)
 {
-    // Only copy the subject if we're *not* on the last alternative:
-    if (!is_last) {
-        ADDOP(c, DUP_TOP);
-    }
+    ADDOP(c, DUP_TOP);
     RETURN_IF_FALSE(compiler_pattern(c, p, pc));
-    Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
     // Success!
+    Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
     if (*control == NULL) {
         // This is the first alternative, so save its stores as a "control" for
         // the others (they can't bind a different set of names, and might need
@@ -5687,40 +5686,33 @@ pattern_helper_or(struct compiler *c, expr_ty p, basicblock *end, int is_last,
                 PyErr_Clear();
                 goto diff;
             }
-            // Reorder the names on the stack to match the order of the names in
-            // control. There's probably a better way of doing this; the current
-            // solution is potentially very inefficient when each alternative
-            // subpattern binds lots of names in different orders. It's fine for
-            // reasonable cases, though.
-            assert(icontrol <= istores);
-            // Perfom the same rotation on pc->stores:
-            PyObject *rotate = PyList_GetSlice(pc->stores, istores, nstores);
-            if (rotate == NULL ||
-                PyList_SetSlice(pc->stores, istores, nstores, NULL) ||
-                PyList_SetSlice(pc->stores, icontrol, icontrol, rotate))
-            {
-                Py_XDECREF(rotate);
-                return 0;
-            }
-            Py_DECREF(rotate);
-            // That just did:
-            // rotate = pc_stores[istores:]
-            // del pc_stores[istores:]
-            // pc_stores[icontrol:icontrol] = rotate
-            // Do the exact same thing to the stack, using several rotations:
-            while (istores++ < nstores) {
-                ADDOP_I(c, ROT_N, nstores - icontrol);
+            if (icontrol != istores) {
+                // Reorder the names on the stack to match the order of the
+                // names in control. There's probably a better way of doing
+                // this; the current solution is potentially very inefficient
+                // when each alternative subpattern binds lots of names in
+                // different orders. It's fine for reasonable cases, though.
+                assert(icontrol < istores);
+                // Perfom the same rotation on pc->stores:
+                PyObject *rotate = PyList_GetSlice(pc->stores, istores, nstores);
+                if (rotate == NULL ||
+                    PyList_SetSlice(pc->stores, istores, nstores, NULL) ||
+                    PyList_SetSlice(pc->stores, icontrol, icontrol, rotate))
+                {
+                    Py_XDECREF(rotate);
+                    return 0;
+                }
+                Py_DECREF(rotate);
+                // That just did:
+                // rotate = pc_stores[istores:]
+                // del pc_stores[istores:]
+                // pc_stores[icontrol:icontrol] = rotate
+                // Do the same thing to the stack, using several rotations:
+                while (istores++ < nstores) {
+                    ADDOP_I(c, ROT_N, nstores - icontrol);
+                }
             }
         }
-    }
-    if (!is_last) {
-        // The duplicate copy of the subject is underneath the new names. Rotate
-        // it back to the top and pop it off. This could be made more efficient
-        // by performing a single "UNROT_N" instead of a bunch of ROT_Ns.
-        for (Py_ssize_t i = 0; i < nstores; i++) {
-            ADDOP_I(c, ROT_N, nstores + 1);
-        }
-        ADDOP(c, POP_TOP);
     }
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     NEXT_BLOCK(c);
@@ -5948,7 +5940,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
         pc->fail_pop = NULL;
         pc->fail_pop_size = 0;
         pc->on_top = 0;
-        if (!pattern_helper_or(c, alt, end, is_last, &control, pc)) {
+        if (!pattern_helper_or(c, alt, end, &control, pc)) {
             goto error;
         }
         assert(control);
@@ -5958,7 +5950,8 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_INCREF(pc->stores);
     // Need to NULL this for the PyObject_Free call in the error block.
     old_pc.fail_pop = NULL;
-    if (!jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
+    // No match. Pop the remaining copy of the subject and fail:
+    if (!compiler_addop(c, POP_TOP) || !jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
         goto error;
     }
     // Update the list of previous stores with the names in the control list,
@@ -5981,9 +5974,14 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     Py_DECREF(old_pc.stores);
     Py_DECREF(control);
     compiler_use_next_block(c, end);
+    // There is a copy of the subject underneath all of the new name stores.
+    // There may also be important items under it that need to be rotated back
+    // up to the top:
     for (Py_ssize_t i = 0; i < nstores; i++) {
-        ADDOP_I(c, ROT_N, nstores + pc->on_top);
+        ADDOP_I(c, ROT_N, nstores + pc->on_top + 1);
     }
+    // Pop the copy of the subject:
+    ADDOP(c, POP_TOP);
     return 1;
 error:
     PyObject_Free(old_pc.fail_pop);
@@ -6886,11 +6884,7 @@ static void
 fold_rotations(struct instr *inst, int n)
 {
     for (int i = 0; i < n; i++) {
-        if ((n == 2 && inst[i].i_opcode != ROT_TWO) ||
-            (n == 3 && inst[i].i_opcode != ROT_THREE) ||
-            (n == 4 && inst[i].i_opcode != ROT_FOUR) ||
-            (inst[i].i_opcode != ROT_N || inst[i].i_oparg != n))
-        {
+        if (inst[i].i_opcode != ROT_N || inst[i].i_oparg != n) {
             return;
         }
     }
@@ -7144,29 +7138,10 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                 }
                 break;
             case ROT_N:
-                switch (oparg) {
-                    case 0:
-                    case 1:
-                        inst->i_opcode = NOP;
-                        break;
-                    case 2:
-                        inst->i_opcode = ROT_TWO;
-                        break;
-                    case 3:
-                        inst->i_opcode = ROT_THREE;
-                        break;
-                    case 4:
-                        inst->i_opcode = ROT_FOUR;
-                        break;
+                if (oparg < 2) {
+                    inst->i_opcode = NOP;
                 }
-            case ROT_TWO:
-            case ROT_THREE:
-            case ROT_FOUR:
-                oparg = (2 * (inst->i_opcode == ROT_TWO) +
-                         3 * (inst->i_opcode == ROT_THREE) +
-                         4 * (inst->i_opcode == ROT_FOUR) +
-                         oparg * (inst->i_opcode == ROT_N));
-                if (oparg <= i) {
+                else if (i >= oparg - 1) {
                     fold_rotations(inst - oparg + 1, oparg);
                 }
                 break;
