@@ -24,7 +24,7 @@ class OpcodeTest(unittest.TestCase):
     def test_setup_annotations_line(self):
         # check that SETUP_ANNOTATIONS does not create spurious line numbers
         try:
-            with open(ann_module.__file__) as f:
+            with open(ann_module.__file__, encoding="utf-8") as f:
                 txt = f.read()
             co = compile(txt, ann_module.__file__, 'exec')
             self.assertEqual(co.co_firstlineno, 1)

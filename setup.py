@@ -1864,15 +1864,8 @@ class PyBuildExt(build_ext):
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         self.add(Extension('xx', ['xxmodule.c']))
 
-        if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
-            # Non-debug mode: Build xxlimited with limited API
-            self.add(Extension('xxlimited', ['xxlimited.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03050000')]))
-        else:
-            # Debug mode: Build xxlimited with the full API
-            # (which is compatible with the limited one)
+        # The limited C API is not compatible with the Py_TRACE_REFS macro.
+        if not sysconfig.get_config_var('Py_TRACE_REFS'):
             self.add(Extension('xxlimited', ['xxlimited.c']))
             self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 

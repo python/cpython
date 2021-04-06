@@ -566,13 +566,12 @@ class TestCurses(unittest.TestCase):
     @requires_curses_window_meth('enclose')
     def test_enclose(self):
         win = curses.newwin(5, 15, 2, 5)
-        # TODO: Return bool instead of 1/0
-        self.assertTrue(win.enclose(2, 5))
-        self.assertFalse(win.enclose(1, 5))
-        self.assertFalse(win.enclose(2, 4))
-        self.assertTrue(win.enclose(6, 19))
-        self.assertFalse(win.enclose(7, 19))
-        self.assertFalse(win.enclose(6, 20))
+        self.assertIs(win.enclose(2, 5), True)
+        self.assertIs(win.enclose(1, 5), False)
+        self.assertIs(win.enclose(2, 4), False)
+        self.assertIs(win.enclose(6, 19), True)
+        self.assertIs(win.enclose(7, 19), False)
+        self.assertIs(win.enclose(6, 20), False)
 
     def test_putwin(self):
         win = curses.newwin(5, 12, 1, 2)

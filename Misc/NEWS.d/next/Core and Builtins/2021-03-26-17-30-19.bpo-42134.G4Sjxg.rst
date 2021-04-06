@@ -1,1 +1,0 @@
-Calls to find_module() by the import system now raise ImportWarning.

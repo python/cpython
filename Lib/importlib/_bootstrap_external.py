@@ -314,6 +314,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a2 3432 (Function annotation for MAKE_FUNCTION is changed from dict to tuple bpo-42202)
 #     Python 3.10a2 3433 (RERAISE restores f_lasti if oparg != 0)
 #     Python 3.10a6 3434 (PEP 634: Structural Pattern Matching)
+#     Python 3.10a7 3435 Use instruction offsets (as opposed to byte offsets).
+#     Python 3.10a7 3436 (Add GEN_START bytecode #43683)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -323,7 +325,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3434).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3435).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -531,6 +533,9 @@ def _find_module_shim(self, fullname):
     This method is deprecated in favor of finder.find_spec().
 
     """
+    _warnings.warn("find_module() is deprecated and "
+                   "slated for removal in Python 3.12; use find_spec() instead",
+                   DeprecationWarning)
     # Call find_loader(). If it returns a string (indicating this
     # is a namespace package portion), generate a warning and
     # return None.
@@ -799,9 +804,12 @@ class WindowsRegistryFinder:
     def find_module(cls, fullname, path=None):
         """Find module named in the registry.
 
-        This method is deprecated.  Use exec_module() instead.
+        This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("WindowsRegistryFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is not None:
             return spec.loader
@@ -1322,10 +1330,13 @@ class PathFinder:
         # This would be a good place for a DeprecationWarning if
         # we ended up going that route.
         if hasattr(finder, 'find_loader'):
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_loader()")
+            _warnings.warn(msg, ImportWarning)
             loader, portions = finder.find_loader(fullname)
         else:
             msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
-                           "falling back to find_module()")
+                    "falling back to find_module()")
             _warnings.warn(msg, ImportWarning)
             loader = finder.find_module(fullname)
             portions = []
@@ -1399,6 +1410,9 @@ class PathFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("PathFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is None:
             return None
@@ -1454,6 +1468,9 @@ class FileFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FileFinder.find_loader() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = self.find_spec(fullname)
         if spec is None:
             return None, []

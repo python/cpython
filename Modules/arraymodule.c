@@ -1136,18 +1136,32 @@ array_array_count(arrayobject *self, PyObject *v)
 array.array.index
 
     v: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
     /
 
 Return index of first occurrence of v in the array.
+
+Raise ValueError if the value is not present.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_index(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=d48498d325602167 input=cf619898c6649d08]*/
+array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
+                       Py_ssize_t stop)
+/*[clinic end generated code: output=c45e777880c99f52 input=089dff7baa7e5a7e]*/
 {
-    Py_ssize_t i;
-
-    for (i = 0; i < Py_SIZE(self); i++) {
+    if (start < 0) {
+        start += Py_SIZE(self);
+        if (start < 0) {
+            start = 0;
+        }
+    }
+    if (stop < 0) {
+        stop += Py_SIZE(self);
+    }
+    // Use Py_SIZE() for every iteration in case the array is mutated
+    // during PyObject_RichCompareBool()
+    for (Py_ssize_t i = start; i < stop && i < Py_SIZE(self); i++) {
         PyObject *selfi;
         int cmp;
 

@@ -1,4 +1,0 @@
-Enum's `repr()` and `str()` have changed: `repr()` is now *EnumClass.MemberName*
-and `str()` is *MemberName*.  Additionally, stdlib Enum's whose contents are
-available as module attributes, such as `RegexFlag.IGNORECASE`, have their
-`repr()` as *module.name*, e.g. `re.IGNORECASE`.

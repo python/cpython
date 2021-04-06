@@ -1,0 +1,2 @@
+Fix dataclasses with ``InitVar``\s and :func:`~dataclasses.replace()`. Patch
+by Claudiu Popa.

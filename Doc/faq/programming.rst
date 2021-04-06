@@ -1420,6 +1420,41 @@ single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
 ``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
 
+Note that :func:`isinstance` also checks for virtual inheritance from an
+:term:`abstract base class`.  So, the test will return ``True`` for a
+registered class even if hasn't directly or indirectly inherited from it.  To
+test for "true inheritance", scan the :term:`MRO` of the class:
+
+.. testcode::
+
+    from collections.abc import Mapping
+
+    class P:
+         pass
+
+    class C(P):
+        pass
+
+    Mapping.register(P)
+
+.. doctest::
+
+    >>> c = C()
+    >>> isinstance(c, C)        # direct
+    True
+    >>> isinstance(c, P)        # indirect
+    True
+    >>> isinstance(c, Mapping)  # virtual
+    True
+
+    # Actual inheritance chain
+    >>> type(c).__mro__
+    (<class 'C'>, <class 'P'>, <class 'object'>)
+
+    # Test for "true inheritance"
+    >>> Mapping in type(c).__mro__
+    False
+
 Note that most programs do not use :func:`isinstance` on user-defined classes
 very often.  If you are developing the classes yourself, a more proper
 object-oriented style is to define methods on the classes that encapsulate a
@@ -1699,6 +1734,93 @@ to the object:
 13901272
 >>> id(b) # doctest: +SKIP
 13891296
+
+
+When can I rely on identity tests with the *is* operator?
+---------------------------------------------------------
+
+The ``is`` operator tests for object identity.  The test ``a is b`` is
+equivalent to ``id(a) == id(b)``.
+
+The most important property of an identity test is that an object is always
+identical to itself, ``a is a`` always returns ``True``.  Identity tests are
+usually faster than equality tests.  And unlike equality tests, identity tests
+are guaranteed to return a boolean ``True`` or ``False``.
+
+However, identity tests can *only* be substituted for equality tests when
+object identity is assured.  Generally, there are three circumstances where
+identity is guaranteed:
+
+1) Assignments create new names but do not change object identity.  After the
+assignment ``new = old``, it is guaranteed that ``new is old``.
+
+2) Putting an object in a container that stores object references does not
+change object identity.  After the list assignment ``s[0] = x``, it is
+guaranteed that ``s[0] is x``.
+
+3) If an object is a singleton, it means that only one instance of that object
+can exist.  After the assignments ``a = None`` and ``b = None``, it is
+guaranteed that ``a is b`` because ``None`` is a singleton.
+
+In most other circumstances, identity tests are inadvisable and equality tests
+are preferred.  In particular, identity tests should not be used to check
+constants such as :class:`int` and :class:`str` which aren't guaranteed to be
+singletons::
+
+    >>> a = 1000
+    >>> b = 500
+    >>> c = b + 500
+    >>> a is c
+    False
+
+    >>> a = 'Python'
+    >>> b = 'Py'
+    >>> c = b + 'thon'
+    >>> a is c
+    False
+
+Likewise, new instances of mutable containers are never identical::
+
+    >>> a = []
+    >>> b = []
+    >>> a is b
+    False
+
+In the standard library code, you will see several common patterns for
+correctly using identity tests:
+
+1) As recommended by :pep:`8`, an identity test is the preferred way to check
+for ``None``.  This reads like plain English in code and avoids confusion with
+other objects that may have boolean values that evaluate to false.
+
+2) Detecting optional arguments can be tricky when ``None`` is a valid input
+value.  In those situations, you can create an singleton sentinel object
+guaranteed to be distinct from other objects.  For example, here is how
+to implement a method that behaves like :meth:`dict.pop`::
+
+   _sentinel = object()
+
+   def pop(self, key, default=_sentinel):
+       if key in self:
+           value = self[key]
+           del self[key]
+           return value
+       if default is _sentinel:
+           raise KeyError(key)
+       return default
+
+3) Container implementations sometimes need to augment equality tests with
+identity tests.  This prevents the code from being confused by objects such as
+``float('NaN')`` that are not equal to themselves.
+
+For example, here is the implementation of
+:meth:`collections.abc.Sequence.__contains__`::
+
+    def __contains__(self, value):
+        for v in self:
+            if v is value or v == value:
+                return True
+        return False
 
 
 Modules

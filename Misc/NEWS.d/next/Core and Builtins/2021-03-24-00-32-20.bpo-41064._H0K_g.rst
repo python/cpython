@@ -1,2 +1,0 @@
-Improve the syntax error for invalid usage of double starred elements ('**')
-in f-strings. Patch by Pablo Galindo.

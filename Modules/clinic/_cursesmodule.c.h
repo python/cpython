@@ -689,7 +689,7 @@ PyDoc_STRVAR(_curses_window_enclose__doc__,
 #define _CURSES_WINDOW_ENCLOSE_METHODDEF    \
     {"enclose", (PyCFunction)(void(*)(void))_curses_window_enclose, METH_FASTCALL, _curses_window_enclose__doc__},
 
-static long
+static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x);
 
 static PyObject *
@@ -698,7 +698,6 @@ _curses_window_enclose(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     PyObject *return_value = NULL;
     int y;
     int x;
-    long _return_value;
 
     if (!_PyArg_CheckPositional("enclose", nargs, 2, 2)) {
         goto exit;
@@ -711,11 +710,7 @@ _curses_window_enclose(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    _return_value = _curses_window_enclose_impl(self, y, x);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
+    return_value = _curses_window_enclose_impl(self, y, x);
 
 exit:
     return return_value;
@@ -4289,4 +4284,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ae6559aa61200289 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9efc9943a3ac3741 input=a9049054013a1b77]*/
