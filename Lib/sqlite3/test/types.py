@@ -122,6 +122,7 @@ class DeclTypesTests(unittest.TestCase):
                 n1 number,
                 n2 number(5),
                 bad bad,
+                d date,
                 cbin cblob)
         """)
 
@@ -255,7 +256,16 @@ class DeclTypesTests(unittest.TestCase):
     def test_convert_zero_sized_blob(self):
         self.con.execute("insert into test(cbin) values (?)", (b"",))
         cur = self.con.execute("select cbin from test")
-        self.assertEqual(cur.fetchone()[0], b"blobish")
+        # The converter is not called if sqlite3_column_blob() returns NULL
+        # This behaviour differs from blobs without a converter, where b"" is
+        # returned.
+        self.assertEqual(cur.fetchone()[0], None)
+
+    def test_convert_null_date(self):
+        cur = self.con.execute("insert into test(d) values (null)")
+        cur.execute("select d from test")
+        values = [x[0] for x in cur.fetchall()]
+        self.assertEqual(values, [None])
 
 
 class ColNamesTests(unittest.TestCase):
