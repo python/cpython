@@ -1000,6 +1000,10 @@ Optimizations
   performance in the common case of cache hits. This makes the interpreter 1.04 times faster
   in average (Contributed by Dino Viehland in :issue:`43452`)
 
+* Following built-in functions now support the faster :pep:`590` vectorcall calling convention:
+  :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
+  (Contributed by Dong-hee Na and Jeroen Demeyerin in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+
 Deprecated
 ==========
 
@@ -1057,6 +1061,39 @@ Deprecated
   :meth:`importlib.abc.PathEntryFinder.find_spec` is preferred. You can use
   :func:`importlib.util.spec_from_loader` to help in porting.
   (Contributed by Brett Cannon in :issue:`43672`.)
+
+* The various implementations of
+  :meth:`importlib.abc.MetaPathFinder.find_module` (
+  :meth:`importlib.machinery.BuiltinImporter.find_module`,
+  :meth:`importlib.machinery.FrozenImporter.find_module`,
+  :meth:`importlib.machinery.WindowsRegistryFinder.find_module`,
+  :meth:`importlib.machinery.PathFinder.find_module`,
+  :meth:`importlib.abc.MetaPathFinder.find_module`),
+  :meth:`importlib.abc.PathEntryFinder.find_module` (
+  :meth:`importlib.machinery.FileFinder.find_module`,
+  ), and
+  :meth:`importlib.abc.PathEntryFinder.find_loader` (
+  :meth:`importlib.machinery.FileFinder.find_loader`
+  ) now raise :exc:`DeprecationWarning` and are slated for removal in
+  Python 3.12 (previously they were documented as deprecated in Python 3.4).
+  (Contributed by Brett Cannon in :issue:`42135`.)
+
+* :class:`importlib.abc.Finder` is deprecated (including its sole method,
+  :meth:`~importlib.abc.Finder.find_module`). Both
+  :class:`importlib.abc.MetaPathFinder` and :class:`importlib.abc.PathEntryFinder`
+  no longer inherit from the class. Users should inherit from one of these two
+  classes as appropriate instead.
+  (Contributed by Brett Cannon in :issue:`42135`.)
+
+* The deprecations of :mod:`imp`, :func:`importlib.find_loader`,
+  :func:`importlib.util.set_package_wrapper`,
+  :func:`importlib.util.set_loader_wrapper`,
+  :func:`importlib.util.module_for_loader`,
+  :class:`pkgutil.ImpImporter`, and
+  :class:`pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
+  slated version of removal (they began raising :exc:`DeprecationWarning` in
+  previous versions of Python).
+  (Contributed by Brett Cannon in :issue:`43720`.)
 
 * The import system now uses the ``__spec__`` attribute on modules before
   falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's

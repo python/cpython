@@ -1030,7 +1030,7 @@ subject value:
 
    For a number of built-in types (specified below), a single positional
    subpattern is accepted which will match the entire subject; for these types
-   no keyword patterns are accepted.
+   keyword patterns also work as for other types.
 
    If only keyword patterns are present, they are processed as follows,
    one by one:
@@ -1057,7 +1057,7 @@ subject value:
 
       * If this raises an exception, the exception bubbles up.
 
-      * If the returned value is not a list or tuple, the conversion fails and
+      * If the returned value is not a tuple, the conversion fails and
         :exc:`TypeError` is raised.
 
       * If there are more positional patterns than ``len(cls.__match_args__)``,

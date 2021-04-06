@@ -77,7 +77,7 @@ echo.Fetching external binaries...
 
 set binaries=
 if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1k
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1k-1
 if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.10.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 

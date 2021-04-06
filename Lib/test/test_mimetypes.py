@@ -64,7 +64,7 @@ class MimeTypesTestCase(unittest.TestCase):
         with os_helper.temp_dir() as directory:
             data = "x-application/x-unittest pyunit\n"
             file = pathlib.Path(directory, "sample.mimetype")
-            file.write_text(data)
+            file.write_text(data, encoding="utf-8")
             mime_dict = mimetypes.read_mime_types(file)
             eq(mime_dict[".pyunit"], "x-application/x-unittest")
 
