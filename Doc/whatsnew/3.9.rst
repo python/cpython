@@ -267,6 +267,10 @@ Other Language Changes
   :func:`~operator.countOf` of the :mod:`operator` module.
   (Contributed by Serhiy Storchaka in :issue:`40824`.)
 
+* Unparenthesized lambda expressions can no longer be the expression part in an
+  ``if`` clause in comprehensions and generator expressions. See :issue:`41848`
+  and :issue:`43755` for details.
+
 
 New Modules
 ===========
