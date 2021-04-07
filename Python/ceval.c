@@ -1796,14 +1796,14 @@ main_loop:
                                         tstate->c_traceobj,
                                         tstate, f,
                                         &trace_info);
-            if (err) {
-                /* trace function raised an exception */
-                goto error;
-            }
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
             stack_pointer = f->f_valuestack+f->f_stackdepth;
             f->f_stackdepth = -1;
+            if (err) {
+                /* trace function raised an exception */
+                goto error;
+            }
             NEXTOPARG();
         }
 
