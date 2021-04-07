@@ -38,6 +38,7 @@ typedef struct {
     PyCodeObject *code; // The code object for the bounds. May be NULL.
     int instr_prev;  // Only valid if code != NULL.
     PyCodeAddressRange bounds; // Only valid if code != NULL.
+    CFrame cframe;
 } PyTraceInfo;
 
 
@@ -1306,7 +1307,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define DISPATCH() \
     { \
-        if (tstate->use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
+        if (trace_info.cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
             goto tracing_dispatch; \
         } \
         f->f_lasti = INSTR_OFFSET(); \
@@ -1614,11 +1615,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     /* Mark trace_info as uninitialized */
     trace_info.code = NULL;
 
+    CFrame *prev_cframe = tstate->cframe;
+    trace_info.cframe.use_tracing = prev_cframe->use_tracing;
+    trace_info.cframe.previous = prev_cframe;
+    tstate->cframe = &trace_info.cframe;
+
     /* push frame */
     tstate->frame = f;
     co = f->f_code;
 
-    if (tstate->use_tracing) {
+    if (trace_info.cframe.use_tracing) {
         if (tstate->c_tracefunc != NULL) {
             /* tstate->c_tracefunc, if defined, is a
                function that will be called on *every* entry
@@ -1780,7 +1786,7 @@ main_loop:
 
         /* line-by-line tracing support */
 
-        if (tstate->use_tracing &&
+        if (trace_info.cframe.use_tracing &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
             /* see maybe_call_line_trace()
@@ -4541,7 +4547,7 @@ exception_unwind:
                 PUSH(val);
                 PUSH(exc);
                 JUMPTO(handler);
-                if (tstate->use_tracing) {
+                if (trace_info.cframe.use_tracing) {
                     trace_info.instr_prev = INT_MAX;
                 }
                 /* Resume normal execution */
@@ -4565,7 +4571,7 @@ exception_unwind:
     f->f_stackdepth = 0;
     f->f_state = FRAME_RAISED;
 exiting:
-    if (tstate->use_tracing) {
+    if (trace_info.cframe.use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
                                      tstate, f, &trace_info, PyTrace_RETURN, retval)) {
@@ -4582,6 +4588,10 @@ exiting:
 
     /* pop frame */
 exit_eval_frame:
+
+    tstate->cframe = trace_info.cframe.previous;
+    tstate->cframe->use_tracing = trace_info.cframe.use_tracing;
+
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
@@ -5505,7 +5515,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     if (tstate->tracing)
         return 0;
     tstate->tracing++;
-    tstate->use_tracing = 0;
+    tstate->cframe->use_tracing = 0;
     if (frame->f_lasti < 0) {
         frame->f_lineno = frame->f_code->co_firstlineno;
     }
@@ -5515,7 +5525,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     }
     result = func(obj, frame, what, arg);
     frame->f_lineno = 0;
-    tstate->use_tracing = ((tstate->c_tracefunc != NULL)
+    tstate->cframe->use_tracing = ((tstate->c_tracefunc != NULL)
                            || (tstate->c_profilefunc != NULL));
     tstate->tracing--;
     return result;
@@ -5526,15 +5536,15 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int save_tracing = tstate->tracing;
-    int save_use_tracing = tstate->use_tracing;
+    int save_use_tracing = tstate->cframe->use_tracing;
     PyObject *result;
 
     tstate->tracing = 0;
-    tstate->use_tracing = ((tstate->c_tracefunc != NULL)
+    tstate->cframe->use_tracing = ((tstate->c_tracefunc != NULL)
                            || (tstate->c_profilefunc != NULL));
     result = PyObject_Call(func, args, NULL);
     tstate->tracing = save_tracing;
-    tstate->use_tracing = save_use_tracing;
+    tstate->cframe->use_tracing = save_use_tracing;
     return result;
 }
 
@@ -5588,7 +5598,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = NULL;
     tstate->c_profileobj = NULL;
     /* Must make sure that tracing is not ignored if 'profileobj' is freed */
-    tstate->use_tracing = tstate->c_tracefunc != NULL;
+    tstate->cframe->use_tracing = tstate->c_tracefunc != NULL;
     Py_XDECREF(profileobj);
 
     Py_XINCREF(arg);
@@ -5596,7 +5606,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_profilefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    tstate->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
+    tstate->cframe->use_tracing = (func != NULL) || (tstate->c_tracefunc != NULL);
     return 0;
 }
 
@@ -5629,7 +5639,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = NULL;
     tstate->c_traceobj = NULL;
     /* Must make sure that profiling is not ignored if 'traceobj' is freed */
-    tstate->use_tracing = (tstate->c_profilefunc != NULL);
+    tstate->cframe->use_tracing = (tstate->c_profilefunc != NULL);
     Py_XDECREF(traceobj);
 
     Py_XINCREF(arg);
@@ -5637,7 +5647,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     tstate->c_tracefunc = func;
 
     /* Flag that tracing or profiling is turned on */
-    tstate->use_tracing = ((func != NULL)
+    tstate->cframe->use_tracing = ((func != NULL)
                            || (tstate->c_profilefunc != NULL));
 
     return 0;
@@ -5832,7 +5842,7 @@ PyEval_GetFuncDesc(PyObject *func)
 }
 
 #define C_TRACE(x, call) \
-if (tstate->use_tracing && tstate->c_profilefunc) { \
+if (trace_info->cframe.use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
         tstate, tstate->frame, trace_info, \
         PyTrace_C_CALL, func)) { \
@@ -5913,7 +5923,7 @@ call_function(PyThreadState *tstate,
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
-    if (tstate->use_tracing) {
+    if (trace_info->cframe.use_tracing) {
         x = trace_call_function(tstate, trace_info, func, stack, nargs, kwnames);
     }
     else {
@@ -5946,7 +5956,7 @@ do_call_core(PyThreadState *tstate,
     }
     else if (Py_IS_TYPE(func, &PyMethodDescr_Type)) {
         Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-        if (nargs > 0 && tstate->use_tracing) {
+        if (nargs > 0 && trace_info->cframe.use_tracing) {
             /* We need to create a temporary bound method as argument
                for profiling.
 

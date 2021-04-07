@@ -29,6 +29,14 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 
+typedef struct _cframe {
+    /* This struct will be threaded through the C stack
+     * allowing faster access to state that must can be modified
+     * outside of the interpreter must be accessed within it */
+    int use_tracing;
+    struct _cframe *previous;
+} CFrame;
+
 typedef struct _err_stackitem {
     /* This struct represents an entry on the exception stack, which is a
      * per-coroutine state. (Coroutine in the computer science sense,
@@ -61,7 +69,7 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
-    int use_tracing;
+    CFrame *cframe;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -128,6 +136,7 @@ struct _ts {
 
     /* Unique thread state id. */
     uint64_t id;
+    CFrame root_cframe;
 
     /* XXX signal handlers should also be here */
 
