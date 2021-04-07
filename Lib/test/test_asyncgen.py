@@ -373,40 +373,55 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         asyncio.set_event_loop_policy(None)
 
     def test_async_gen_anext(self):
-        async def gen():
+        async def agen():
             yield 1
             yield 2
-        g = gen()
-        async def consume():
-            results = []
-            results.append(await anext(g))
-            results.append(await anext(g))
-            results.append(await anext(g, 'buckle my shoe'))
-            return results
-        res = self.loop.run_until_complete(consume())
-        self.assertEqual(res, [1, 2, 'buckle my shoe'])
-        with self.assertRaises(StopAsyncIteration):
-            self.loop.run_until_complete(consume())
 
-        async def test_2():
-            g1 = gen()
-            self.assertEqual(await anext(g1), 1)
-            self.assertEqual(await anext(g1), 2)
+        class MyAsyncIter:
+            """Asynchronously yield 1, then 2."""
+            def __init__(self):
+                self.yielded = 0
+            def __aiter__(self):
+                return self
+            async def __anext__(self):
+                if self.yielded >= 2:
+                    raise StopAsyncIteration()
+                else:
+                    self.yielded += 1
+                    return self.yielded
+        
+        for gen in (agen, MyAsyncIter):
+            g = gen()
+            async def consume():
+                results = []
+                results.append(await anext(g))
+                results.append(await anext(g))
+                results.append(await anext(g, 'buckle my shoe'))
+                return results
+            res = self.loop.run_until_complete(consume())
+            self.assertEqual(res, [1, 2, 'buckle my shoe'])
             with self.assertRaises(StopAsyncIteration):
-                await anext(g1)
-            with self.assertRaises(StopAsyncIteration):
-                await anext(g1)
+                self.loop.run_until_complete(consume())
 
-            g2 = gen()
-            self.assertEqual(await anext(g2, "default"), 1)
-            self.assertEqual(await anext(g2, "default"), 2)
-            self.assertEqual(await anext(g2, "default"), "default")
-            self.assertEqual(await anext(g2, "default"), "default")
+            async def test_2():
+                g1 = gen()
+                self.assertEqual(await anext(g1), 1)
+                self.assertEqual(await anext(g1), 2)
+                with self.assertRaises(StopAsyncIteration):
+                    await anext(g1)
+                with self.assertRaises(StopAsyncIteration):
+                    await anext(g1)
 
-            return "completed"
+                g2 = gen()
+                self.assertEqual(await anext(g2, "default"), 1)
+                self.assertEqual(await anext(g2, "default"), 2)
+                self.assertEqual(await anext(g2, "default"), "default")
+                self.assertEqual(await anext(g2, "default"), "default")
 
-        result = self.loop.run_until_complete(test_2())
-        self.assertEqual(result, "completed")
+                return "completed"
+
+            result = self.loop.run_until_complete(test_2())
+            self.assertEqual(result, "completed")
 
     def test_async_gen_aiter(self):
         async def gen():
