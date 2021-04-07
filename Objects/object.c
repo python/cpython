@@ -1833,6 +1833,7 @@ _PyTypes_Init(void)
     INIT_TYPE(PyUnicode_Type);
     INIT_TYPE(PyWrapperDescr_Type);
     INIT_TYPE(Py_GenericAliasType);
+    INIT_TYPE(_PyAnextAwaitable_Type);
     INIT_TYPE(_PyAsyncGenASend_Type);
     INIT_TYPE(_PyAsyncGenAThrow_Type);
     INIT_TYPE(_PyAsyncGenWrappedValue_Type);
