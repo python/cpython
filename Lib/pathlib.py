@@ -1401,7 +1401,7 @@ class Path(PurePath):
         matches that of os.link.
 
         """
-        self._accessor.link(self, target)
+        self._accessor.link_to(self, target)
 
     # Convenience functions for querying the stat results
 
