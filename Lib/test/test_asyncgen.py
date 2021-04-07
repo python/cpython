@@ -389,7 +389,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 else:
                     self.yielded += 1
                     return self.yielded
-        
+
         for gen in (agen, MyAsyncIter):
             g = gen()
             async def consume():
