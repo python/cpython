@@ -1,0 +1,2 @@
+Update :func:`os.path.splitdrive` to use native APIs for determining the
+drive.
