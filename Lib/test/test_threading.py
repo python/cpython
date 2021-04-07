@@ -447,13 +447,17 @@ class ThreadTests(BaseTestCase):
         # Just a quick sanity check to make sure the old method names are
         # still present
         t = threading.Thread()
-        with self.assertWarnsRegex(DeprecationWarning, r'use \.daemon'):
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'get the daemon attribute'):
             t.isDaemon()
-        with self.assertWarnsRegex(DeprecationWarning, r'use \.daemon'):
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'set the daemon attribute'):
             t.setDaemon(True)
-        with self.assertWarnsRegex(DeprecationWarning, r'use \.name'):
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'get the name attribute'):
             t.getName()
-        with self.assertWarnsRegex(DeprecationWarning, r'use \.name'):
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'set the name attribute'):
             t.setName("name")
 
         e = threading.Event()
