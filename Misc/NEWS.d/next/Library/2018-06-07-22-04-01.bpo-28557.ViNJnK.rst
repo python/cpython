@@ -1,1 +1,0 @@
-Improve the error message for a misbehaving ``rawio.readinto``

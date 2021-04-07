@@ -746,5 +746,5 @@ Domain Dedication 1.0 Universal:
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
-   https://www.ietf.org/rfc/rfc2898.txt
-      PKCS #5: Password-Based Cryptography Specification Version 2.0
+   https://www.ietf.org/rfc/rfc8018.txt
+      PKCS #5: Password-Based Cryptography Specification Version 2.1

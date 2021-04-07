@@ -165,7 +165,8 @@ Searches
 .I sys.path
 for the named module and runs the corresponding
 .I .py
-file as a script.
+file as a script. This terminates the option list (following options
+are passed as arguments to the module).
 .TP
 .B \-O
 Remove assert statements and any code conditional on the value of

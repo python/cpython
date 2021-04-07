@@ -66,11 +66,9 @@ the definition of all other Python objects.
 
    Get the type of the Python object *o*.
 
-   Return a borrowed reference.
+   Return a :term:`borrowed reference`.
 
-   .. versionchanged:: 3.10
-      :c:func:`Py_TYPE()` is changed to the inline static function.
-      Use :c:func:`Py_SET_TYPE()` to set an object type.
+   The :c:func:`Py_SET_TYPE` function must be used to set an object type.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -108,9 +106,7 @@ the definition of all other Python objects.
 
    Get the size of the Python object *o*.
 
-   .. versionchanged:: 3.10
-      :c:func:`Py_SIZE()` is changed to the inline static function.
-      Use :c:func:`Py_SET_SIZE()` to set an object size.
+   The :c:func:`Py_SET_SIZE` function must be used to set an object size.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
@@ -263,9 +259,11 @@ There are these calling conventions:
    of :c:type:`PyObject*` values indicating the arguments and the third
    parameter is the number of arguments (the length of the array).
 
-   This is not part of the :ref:`limited API <stable>`.
-
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.10
+
+      ``METH_FASTCALL`` is now part of the stable ABI.
 
 
 .. data:: METH_FASTCALL | METH_KEYWORDS

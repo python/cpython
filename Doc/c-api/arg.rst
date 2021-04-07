@@ -149,7 +149,7 @@ which disallows mutable objects such as :class:`bytearray`.
       Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -158,7 +158,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Unicode data buffer, the second one its length.  This variant allows
    null code points.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -166,7 +166,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Like ``u``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to ``NULL``.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -174,7 +174,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Like ``u#``, but the Python object may also be ``None``, in which case the
    :c:type:`Py_UNICODE` pointer is set to ``NULL``.
 
-   .. deprecated-removed:: 3.3 4.0
+   .. deprecated-removed:: 3.3 3.12
       Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
       :c:func:`PyUnicode_AsWideCharString`.
 
@@ -482,7 +482,8 @@ API Functions
    *min* and no more than *max*; *min* and *max* may be equal.  Additional
    arguments must be passed to the function, each of which should be a pointer to a
    :c:type:`PyObject*` variable; these will be filled in with the values from
-   *args*; they will contain borrowed references.  The variables which correspond
+   *args*; they will contain :term:`borrowed references <borrowed reference>`.
+   The variables which correspond
    to optional parameters not given by *args* will not be filled in; these should
    be initialized by the caller. This function returns true on success and false if
    *args* is not a tuple or contains the wrong number of elements; an exception

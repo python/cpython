@@ -315,21 +315,25 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. function:: getpreferredencoding(do_setlocale=True)
 
-   Return the encoding used for text data, according to user preferences.  User
-   preferences are expressed differently on different systems, and might not be
-   available programmatically on some systems, so this function only returns a
-   guess.
+   Return the :term:`locale encoding` used for text data, according to user
+   preferences.  User preferences are expressed differently on different
+   systems, and might not be available programmatically on some systems, so
+   this function only returns a guess.
 
-   On some systems, it is necessary to invoke :func:`setlocale` to obtain the user
-   preferences, so this function is not thread-safe. If invoking setlocale is not
-   necessary or desired, *do_setlocale* should be set to ``False``.
+   On some systems, it is necessary to invoke :func:`setlocale` to obtain the
+   user preferences, so this function is not thread-safe. If invoking setlocale
+   is not necessary or desired, *do_setlocale* should be set to ``False``.
 
-   On Android or in the UTF-8 mode (:option:`-X` ``utf8`` option), always
-   return ``'UTF-8'``, the locale and the *do_setlocale* argument are ignored.
+   On Android or if the :ref:`Python UTF-8 Mode <utf8-mode>` is enabled, always
+   return ``'UTF-8'``, the :term:`locale encoding` and the *do_setlocale*
+   argument are ignored.
+
+   The :ref:`Python preinitialization <c-preinit>` configures the LC_CTYPE
+   locale. See also the :term:`filesystem encoding and error handler`.
 
    .. versionchanged:: 3.7
-      The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
-      is enabled.
+      The function now always returns ``UTF-8`` on Android or if the
+      :ref:`Python UTF-8 Mode <utf8-mode>` is enabled.
 
 
 .. function:: normalize(localename)

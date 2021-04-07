@@ -634,6 +634,13 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: VERIFY_ALLOW_PROXY_CERTS
+
+   Possible value for :attr:`SSLContext.verify_flags` to enables proxy
+   certificate verification.
+
+   .. versionadded:: 3.10
+
 .. data:: VERIFY_X509_TRUSTED_FIRST
 
    Possible value for :attr:`SSLContext.verify_flags`. It instructs OpenSSL to
@@ -1878,7 +1885,7 @@ to speed up repeated connections from the same clients.
 
 .. attribute:: SSLContext.check_hostname
 
-   Whether to match the peer cert's hostname with :func:`match_hostname` in
+   Whether to match the peer cert's hostname in
    :meth:`SSLSocket.do_handshake`. The context's
    :attr:`~SSLContext.verify_mode` must be set to :data:`CERT_OPTIONAL` or
    :data:`CERT_REQUIRED`, and you must pass *server_hostname* to
@@ -2055,7 +2062,7 @@ to speed up repeated connections from the same clients.
       :attr:`SSLContext.verify_flags` returns :class:`VerifyFlags` flags:
 
          >>> ssl.create_default_context().verify_flags  # doctest: +SKIP
-         <VerifyFlags.VERIFY_X509_TRUSTED_FIRST: 32768>
+         ssl.VERIFY_X509_TRUSTED_FIRST
 
 .. attribute:: SSLContext.verify_mode
 
@@ -2067,7 +2074,7 @@ to speed up repeated connections from the same clients.
       :attr:`SSLContext.verify_mode` returns :class:`VerifyMode` enum:
 
          >>> ssl.create_default_context().verify_mode
-         <VerifyMode.CERT_REQUIRED: 2>
+         ssl.CERT_REQUIRED
 
 .. index:: single: certificates
 

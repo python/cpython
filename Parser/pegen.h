@@ -4,8 +4,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <token.h>
-#include <Python-ast.h>
-#include <pyarena.h>
+#include <pycore_ast.h>
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
@@ -73,6 +72,7 @@ typedef struct {
     growable_comment_array type_ignore_comments;
     Token *known_err_token;
     int level;
+    int call_invalid_rules;
 } Parser;
 
 typedef struct {
@@ -101,10 +101,7 @@ typedef struct {
     arg_ty kwarg;
 } StarEtc;
 
-typedef struct {
-    operator_ty kind;
-} AugOperator;
-
+typedef struct { operator_ty kind; } AugOperator;
 typedef struct {
     void *element;
     int is_keyword;
@@ -117,12 +114,14 @@ int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
+
 int _PyPegen_lookahead_with_name(int, expr_ty (func)(Parser *), Parser *);
 int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int);
 int _PyPegen_lookahead_with_string(int , expr_ty (func)(Parser *, const char*), Parser *, const char*);
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 
 Token *_PyPegen_expect_token(Parser *p, int type);
+Token *_PyPegen_expect_forced_token(Parser *p, int type, const char* expected);
 expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
@@ -137,8 +136,9 @@ void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 void *_PyPegen_dummy_name(Parser *p, ...);
 
 Py_LOCAL_INLINE(void *)
-RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
-                           int col_offset, const char *errmsg, ...)
+RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
+                           Py_ssize_t lineno, Py_ssize_t col_offset,
+                           const char *errmsg, ...)
 {
     va_list va;
     va_start(va, errmsg);
@@ -178,8 +178,8 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
     return result;
 }
 
-#define CHECK(result) CHECK_CALL(p, result)
-#define CHECK_NULL_ALLOWED(result) CHECK_CALL_NULL_ALLOWED(p, result)
+#define CHECK(type, result) ((type) CHECK_CALL(p, result))
+#define CHECK_NULL_ALLOWED(type, result) ((type) CHECK_CALL_NULL_ALLOWED(p, result))
 
 PyObject *_PyPegen_new_type_comment(Parser *, char *);
 
@@ -218,7 +218,7 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
     return node;
 }
 
-#define CHECK_VERSION(version, msg, node) INVALID_VERSION_CHECK(p, version, msg, node)
+#define CHECK_VERSION(type, version, msg, node) ((type) INVALID_VERSION_CHECK(p, version, msg, node))
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
 PyObject *_PyPegen_new_identifier(Parser *, char *);
@@ -227,7 +227,6 @@ void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, PyCompilerFlags *, int *, PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 asdl_seq *_PyPegen_singleton_seq(Parser *, void *);
@@ -262,7 +261,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
-int _PyPegen_check_barry_as_flufl(Parser *);
+int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 
 // Error reporting helpers
@@ -277,7 +276,7 @@ expr_ty _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type);
 Py_LOCAL_INLINE(void *)
 _RAISE_SYNTAX_ERROR_INVALID_TARGET(Parser *p, TARGETS_TYPE type, void *e)
 {
-    expr_ty invalid_target = CHECK_NULL_ALLOWED(_PyPegen_get_invalid_target(e, type));
+    expr_ty invalid_target = CHECK_NULL_ALLOWED(expr_ty, _PyPegen_get_invalid_target(e, type));
     if (invalid_target != NULL) {
         const char *msg;
         if (type == STAR_TARGETS || type == FOR_TARGETS) {

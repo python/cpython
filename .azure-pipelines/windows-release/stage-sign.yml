@@ -57,7 +57,7 @@ jobs:
       $files = (gi ${{ parameters.Include }} -Exclude ${{ parameters.Exclude }})
       $failed = $true
       foreach ($retry in 1..10) {
-          signtool timestamp /t http://timestamp.verisign.com/scripts/timestamp.dll $files
+          signtool timestamp /tr http://timestamp.digicert.com/ /td sha256 $files
           if ($?) {
               $failed = $false
               break

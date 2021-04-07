@@ -538,9 +538,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             case FFI_TYPE_SINT16:
             case FFI_TYPE_SINT32:
                 if (dict->getfunc != _ctypes_get_fielddesc("c")->getfunc
-#ifdef CTYPES_UNICODE
                     && dict->getfunc != _ctypes_get_fielddesc("u")->getfunc
-#endif
                     )
                     break;
                 /* else fall through */

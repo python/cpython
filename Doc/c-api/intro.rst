@@ -326,7 +326,7 @@ when it's no longer needed---or passing on this responsibility (usually to its
 caller). When a function passes ownership of a reference on to its caller, the
 caller is said to receive a *new* reference.  When no ownership is transferred,
 the caller is said to *borrow* the reference. Nothing needs to be done for a
-borrowed reference.
+:term:`borrowed reference`.
 
 Conversely, when a calling function passes in a reference to an  object, there
 are two possibilities: the function *steals* a  reference to the object, or it

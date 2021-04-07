@@ -591,7 +591,7 @@ Dealloc(compobject *self)
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
 

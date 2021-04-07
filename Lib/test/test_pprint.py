@@ -206,6 +206,7 @@ class QueryTestCase(unittest.TestCase):
             self.assertEqual(pprint.pformat(simple), native)
             self.assertEqual(pprint.pformat(simple, width=1, indent=0)
                              .replace('\n', ' '), native)
+            self.assertEqual(pprint.pformat(simple, underscore_numbers=True), native)
             self.assertEqual(pprint.saferepr(simple), native)
 
     def test_container_repr_override_called(self):
@@ -322,6 +323,18 @@ class QueryTestCase(unittest.TestCase):
       3],
      '1 '
      '2']]]]]""")
+
+    def test_integer(self):
+        self.assertEqual(pprint.pformat(1234567), '1234567')
+        self.assertEqual(pprint.pformat(1234567, underscore_numbers=True), '1_234_567')
+
+        class Temperature(int):
+            def __new__(cls, celsius_degrees):
+                return super().__new__(Temperature, celsius_degrees)
+            def __repr__(self):
+                kelvin_degrees = self + 273.15
+                return f"{kelvin_degrees}°K"
+        self.assertEqual(pprint.pformat(Temperature(1000)), '1273.15°K')
 
     def test_sorted_dict(self):
         # Starting in Python 2.5, pprint sorts dict displays by key regardless
@@ -453,12 +466,23 @@ AdvancedNamespace(the=0,
                   dog=8)""")
 
     def test_subclassing(self):
+        # length(repr(obj)) > width
         o = {'names with spaces': 'should be presented using repr()',
              'others.should.not.be': 'like.this'}
         exp = """\
 {'names with spaces': 'should be presented using repr()',
  others.should.not.be: like.this}"""
-        self.assertEqual(DottedPrettyPrinter().pformat(o), exp)
+
+        dotted_printer = DottedPrettyPrinter()
+        self.assertEqual(dotted_printer.pformat(o), exp)
+
+        # length(repr(obj)) < width
+        o1 = ['with space']
+        exp1 = "['with space']"
+        self.assertEqual(dotted_printer.pformat(o1), exp1)
+        o2 = ['without.space']
+        exp2 = "[without.space]"
+        self.assertEqual(dotted_printer.pformat(o2), exp2)
 
     def test_set_reprs(self):
         self.assertEqual(pprint.pformat(set()), 'set()')

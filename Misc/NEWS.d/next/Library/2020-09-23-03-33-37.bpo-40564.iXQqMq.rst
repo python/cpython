@@ -1,1 +1,0 @@
-In ``zipfile.Path``, mutate the passed ZipFile object type instead of making a copy. Prevents issues when both the local copy and the caller’s copy attempt to close the same file handle.

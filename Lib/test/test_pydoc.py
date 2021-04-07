@@ -81,7 +81,7 @@ CLASSES
      |\x20\x20
      |  NO_MEANING = 'eggs'
      |\x20\x20
-     |  __annotations__ = {'NO_MEANING': <class 'str'>}
+     |  __annotations__ = {'NO_MEANING': 'str'}
 \x20\x20\x20\x20
     class C(builtins.object)
      |  Methods defined here:
@@ -194,7 +194,7 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
 
-<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': &lt;class 'str'&gt;}</dl>
+<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': 'str'}</dl>
 
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -453,7 +453,7 @@ class PydocDocTest(unittest.TestCase):
             zero = 0
             one = 1
         doc = pydoc.render_doc(BinaryInteger)
-        self.assertIn('<BinaryInteger.zero: 0>', doc)
+        self.assertIn('BinaryInteger.zero', doc)
 
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
@@ -1374,17 +1374,11 @@ class PydocUrlHandlerTest(PydocBaseTest):
             ("topic?key=def", "Pydoc: KEYWORD def"),
             ("topic?key=STRINGS", "Pydoc: TOPIC STRINGS"),
             ("foobar", "Pydoc: Error - foobar"),
-            ("getfile?key=foobar", "Pydoc: Error - getfile?key=foobar"),
             ]
 
         with self.restrict_walk_packages():
             for url, title in requests:
                 self.call_url_handler(url, title)
-
-            path = string.__file__
-            title = "Pydoc: getfile " + path
-            url = "getfile?key=" + path
-            self.call_url_handler(url, title)
 
 
 class TestHelper(unittest.TestCase):

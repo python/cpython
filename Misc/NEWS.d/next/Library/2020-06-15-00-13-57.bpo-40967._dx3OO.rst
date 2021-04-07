@@ -1,2 +1,0 @@
-Removed :meth:`asyncio.Task.current_task` and
-:meth:`asyncio.Task.all_tasks`. Patch contributed by Rémi Lapeyre.

@@ -277,6 +277,13 @@ class SocketServerTest(unittest.TestCase):
             t.join()
             s.server_close()
 
+    def test_close_immediately(self):
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), lambda: None)
+        server.server_close()
+
     def test_tcpserver_bind_leak(self):
         # Issue #22435: the server socket wouldn't be closed if bind()/listen()
         # failed.
@@ -489,6 +496,22 @@ class MiscTestCase(unittest.TestCase):
         s.close()
         server.handle_request()
         self.assertEqual(server.shutdown_called, 1)
+        server.server_close()
+
+    def test_threads_reaped(self):
+        """
+        In #37193, users reported a memory leak
+        due to the saving of every request thread. Ensure that
+        not all threads are kept forever.
+        """
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        for n in range(10):
+            with socket.create_connection(server.server_address):
+                server.handle_request()
+        self.assertLess(len(server._threads), 10)
         server.server_close()
 
 

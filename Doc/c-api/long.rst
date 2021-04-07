@@ -27,13 +27,13 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: int PyLong_Check(PyObject *p)
 
    Return true if its argument is a :c:type:`PyLongObject` or a subtype of
-   :c:type:`PyLongObject`.
+   :c:type:`PyLongObject`.  This function always succeeds.
 
 
 .. c:function:: int PyLong_CheckExact(PyObject *p)
 
    Return true if its argument is a :c:type:`PyLongObject`, but not a subtype of
-   :c:type:`PyLongObject`.
+   :c:type:`PyLongObject`.  This function always succeeds.
 
 
 .. c:function:: PyObject* PyLong_FromLong(long v)

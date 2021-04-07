@@ -874,8 +874,8 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-The only feature in Python 3.7 that requires using the future statement is
-``annotations``.
+The only feature that requires using the future statement is
+``annotations`` (see :pep:`563`).
 
 All historical features enabled by the future statement are still recognized
 by Python 3.  The list includes ``absolute_import``, ``division``,
@@ -950,7 +950,7 @@ Names listed in a :keyword:`global` statement must not be used in the same code
 block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
-parameters or in a :keyword:`for` loop control target, :keyword:`class`
+parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
 definition, function definition, :keyword:`import` statement, or variable
 annotation.
 

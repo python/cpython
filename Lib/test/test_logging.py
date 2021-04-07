@@ -553,7 +553,7 @@ class HandlerTest(BaseTest):
                 os.close(fd)
                 if not existing:
                     os.unlink(fn)
-                h = logging.handlers.WatchedFileHandler(fn, delay=True)
+                h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=True)
                 if existing:
                     dev, ino = h.dev, h.ino
                     self.assertEqual(dev, -1)
@@ -616,7 +616,7 @@ class HandlerTest(BaseTest):
         if sys.platform in ('linux', 'darwin'):
             cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
         for cls, args in cases:
-            h = cls(*args)
+            h = cls(*args, encoding="utf-8")
             self.assertTrue(os.path.exists(fn))
             h.close()
             os.unlink(fn)
@@ -645,7 +645,7 @@ class HandlerTest(BaseTest):
             remover = threading.Thread(target=remove_loop, args=(fn, del_count))
             remover.daemon = True
             remover.start()
-            h = logging.handlers.WatchedFileHandler(fn, delay=delay)
+            h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=delay)
             f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
             h.setFormatter(f)
             try:
@@ -677,7 +677,7 @@ class HandlerTest(BaseTest):
             def __init__(self):
                 super().__init__()
                 self.sub_handler = logging.StreamHandler(
-                    stream=open('/dev/null', 'wt'))
+                    stream=open('/dev/null', 'wt', encoding='utf-8'))
 
             def emit(self, record):
                 self.sub_handler.acquire()
@@ -1164,22 +1164,27 @@ class MemoryHandlerTest(BaseTest):
         class MockRaceConditionHandler:
             def __init__(self, mem_hdlr):
                 self.mem_hdlr = mem_hdlr
+                self.threads = []
 
             def removeTarget(self):
                 self.mem_hdlr.setTarget(None)
 
             def handle(self, msg):
-                t = threading.Thread(target=self.removeTarget)
-                t.daemon = True
-                t.start()
+                thread = threading.Thread(target=self.removeTarget)
+                self.threads.append(thread)
+                thread.start()
 
         target = MockRaceConditionHandler(self.mem_hdlr)
-        self.mem_hdlr.setTarget(target)
+        try:
+            self.mem_hdlr.setTarget(target)
 
-        for _ in range(10):
-            time.sleep(0.005)
-            self.mem_logger.info("not flushed")
-            self.mem_logger.warning("flushed")
+            for _ in range(10):
+                time.sleep(0.005)
+                self.mem_logger.info("not flushed")
+                self.mem_logger.warning("flushed")
+        finally:
+            for thread in target.threads:
+                threading_helper.join_thread(thread)
 
 
 class ExceptionFormatter(logging.Formatter):
@@ -4214,6 +4219,15 @@ class ModuleLevelMiscTest(BaseTest):
         logging.disable(83)
         self.assertEqual(logging.root.manager.disable, 83)
 
+        self.assertRaises(ValueError, logging.disable, "doesnotexists")
+
+        class _NotAnIntOrString:
+            pass
+
+        self.assertRaises(TypeError, logging.disable, _NotAnIntOrString())
+
+        logging.disable("WARN")
+
         # test the default value introduced in 3.7
         # (Issue #28524)
         logging.disable()
@@ -4305,8 +4319,8 @@ class ModuleLevelMiscTest(BaseTest):
             logging.setLoggerClass(logging.Logger)
 
     def test_logging_at_shutdown(self):
-        # Issue #20037
-        code = """if 1:
+        # bpo-20037: Doing text I/O late at interpreter shutdown must not crash
+        code = textwrap.dedent("""
             import logging
 
             class A:
@@ -4316,22 +4330,55 @@ class ModuleLevelMiscTest(BaseTest):
                     except Exception:
                         logging.exception("exception in __del__")
 
-            a = A()"""
+            a = A()
+        """)
         rc, out, err = assert_python_ok("-c", code)
         err = err.decode()
         self.assertIn("exception in __del__", err)
         self.assertIn("ValueError: some error", err)
 
+    def test_logging_at_shutdown_open(self):
+        # bpo-26789: FileHandler keeps a reference to the builtin open()
+        # function to be able to open or reopen the file during Python
+        # finalization.
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+
+        code = textwrap.dedent(f"""
+            import builtins
+            import logging
+
+            class A:
+                def __del__(self):
+                    logging.error("log in __del__")
+
+            # basicConfig() opens the file, but logging.shutdown() closes
+            # it at Python exit. When A.__del__() is called,
+            # FileHandler._open() must be called again to re-open the file.
+            logging.basicConfig(filename={filename!r}, encoding="utf-8")
+
+            a = A()
+
+            # Simulate the Python finalization which removes the builtin
+            # open() function.
+            del builtins.open
+        """)
+        assert_python_ok("-c", code)
+
+        with open(filename, encoding="utf-8") as fp:
+            self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
+
     def test_recursion_error(self):
         # Issue 36272
-        code = """if 1:
+        code = textwrap.dedent("""
             import logging
 
             def rec():
                 logging.error("foo")
                 rec()
 
-            rec()"""
+            rec()
+        """)
         rc, out, err = assert_python_failure("-c", code)
         err = err.decode()
         self.assertNotIn("Cannot recover from stack overflow.", err)
@@ -4510,13 +4557,13 @@ class BasicConfigTest(unittest.TestCase):
             h2.close()
             os.remove(fn)
 
-        logging.basicConfig(filename='test.log')
+        logging.basicConfig(filename='test.log', encoding='utf-8')
 
         self.assertEqual(len(logging.root.handlers), 1)
         handler = logging.root.handlers[0]
         self.assertIsInstance(handler, logging.FileHandler)
 
-        expected = logging.FileHandler('test.log', 'a')
+        expected = logging.FileHandler('test.log', 'a', encoding='utf-8')
         self.assertEqual(handler.stream.mode, expected.stream.mode)
         self.assertEqual(handler.stream.name, expected.stream.name)
         self.addCleanup(cleanup, handler, expected, 'test.log')
@@ -5114,7 +5161,7 @@ class BaseFileTest(BaseTest):
 class FileHandlerTest(BaseFileTest):
     def test_delay(self):
         os.unlink(self.fn)
-        fh = logging.FileHandler(self.fn, delay=True)
+        fh = logging.FileHandler(self.fn, encoding='utf-8', delay=True)
         self.assertIsNone(fh.stream)
         self.assertFalse(os.path.exists(self.fn))
         fh.handle(logging.makeLogRecord({}))
@@ -5129,19 +5176,20 @@ class RotatingFileHandlerTest(BaseFileTest):
 
     def test_should_not_rollover(self):
         # If maxbytes is zero rollover never occurs
-        rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=0)
+        rh = logging.handlers.RotatingFileHandler(
+                self.fn, encoding="utf-8", maxBytes=0)
         self.assertFalse(rh.shouldRollover(None))
         rh.close()
 
     def test_should_rollover(self):
-        rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=1)
+        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=1)
         self.assertTrue(rh.shouldRollover(self.next_rec()))
         rh.close()
 
     def test_file_created(self):
         # checks that the file is created and assumes it was created
         # by us
-        rh = logging.handlers.RotatingFileHandler(self.fn)
+        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8")
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
         rh.close()
@@ -5150,7 +5198,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         def namer(name):
             return name + ".test"
         rh = logging.handlers.RotatingFileHandler(
-            self.fn, backupCount=2, maxBytes=1)
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
         rh.namer = namer
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
@@ -5171,7 +5219,7 @@ class RotatingFileHandlerTest(BaseFileTest):
                     os.rename(source, dest + ".rotated")
 
         rh = HandlerWithNamerAndRotator(
-            self.fn, backupCount=2, maxBytes=1)
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
         self.assertEqual(rh.namer(self.fn), self.fn + ".test")
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
@@ -5194,7 +5242,7 @@ class RotatingFileHandlerTest(BaseFileTest):
             os.remove(source)
 
         rh = logging.handlers.RotatingFileHandler(
-            self.fn, backupCount=2, maxBytes=1)
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
         rh.rotator = rotator
         rh.namer = namer
         m1 = self.next_rec()

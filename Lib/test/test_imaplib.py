@@ -476,7 +476,7 @@ class NewIMAPTestsMixin():
 
         _, server = self._setup(TimeoutHandler)
         addr = server.server_address[1]
-        with self.assertRaises(socket.timeout):
+        with self.assertRaises(TimeoutError):
             client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):

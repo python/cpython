@@ -3,12 +3,15 @@ import os
 import string
 import unittest
 import shutil
-from test.support import run_unittest, reap_children
+from test.support import run_unittest, reap_children, unix_shell
 from test.support.os_helper import TESTFN, unlink
 
 
 if os.name != 'posix':
     raise unittest.SkipTest('pipes module only works on posix')
+
+if not (unix_shell and os.path.exists(unix_shell)):
+    raise unittest.SkipTest('pipes module requires a shell')
 
 TESTFN2 = TESTFN + "2"
 

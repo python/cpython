@@ -112,9 +112,9 @@ the same library that the Python runtime is using.
 
    Similar to :c:func:`PyRun_SimpleStringFlags`, but the Python source code is read
    from *fp* instead of an in-memory string. *filename* should be the name of
-   the file, it is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).  If *closeit* is true, the file is
-   closed before PyRun_SimpleFileExFlags returns.
+   the file, it is decoded from :term:`filesystem encoding and error handler`.
+   If *closeit* is true, the file is closed before
+   ``PyRun_SimpleFileExFlags()`` returns.
 
    .. note::
       On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``).
@@ -132,7 +132,7 @@ the same library that the Python runtime is using.
    Read and execute a single statement from a file associated with an
    interactive device according to the *flags* argument.  The user will be
    prompted using ``sys.ps1`` and ``sys.ps2``.  *filename* is decoded from the
-   filesystem encoding (:func:`sys.getfilesystemencoding`).
+   :term:`filesystem encoding and error handler`.
 
    Returns ``0`` when the input was
    executed successfully, ``-1`` if there was an exception, or an error code
@@ -151,9 +151,8 @@ the same library that the Python runtime is using.
 
    Read and execute statements from a file associated with an interactive device
    until EOF is reached.  The user will be prompted using ``sys.ps1`` and
-   ``sys.ps2``.  *filename* is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF or a negative
-   number upon failure.
+   ``sys.ps2``.  *filename* is decoded from the :term:`filesystem encoding and
+   error handler`.  Returns ``0`` at EOF or a negative number upon failure.
 
 
 .. c:var:: int (*PyOS_InputHook)(void)
@@ -206,8 +205,8 @@ the same library that the Python runtime is using.
    Parse Python source code from *str* using the start token *start* according to
    the *flags* argument.  The result can be used to create a code object which can
    be evaluated efficiently. This is useful if a code fragment must be evaluated
-   many times. *filename* is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).
+   many times. *filename* is decoded from the :term:`filesystem encoding and
+   error handler`.
 
 
 .. c:function:: struct _node* PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
@@ -262,7 +261,7 @@ the same library that the Python runtime is using.
 
    Similar to :c:func:`PyRun_StringFlags`, but the Python source code is read from
    *fp* instead of an in-memory string. *filename* should be the name of the file,
-   it is decoded from the filesystem encoding (:func:`sys.getfilesystemencoding`).
+   it is decoded from the :term:`filesystem encoding and error handler`.
    If *closeit* is true, the file is closed before :c:func:`PyRun_FileExFlags`
    returns.
 
@@ -301,7 +300,7 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* Py_CompileStringExFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags, int optimize)
 
    Like :c:func:`Py_CompileStringObject`, but *filename* is a byte string
-   decoded from the filesystem encoding (:func:`os.fsdecode`).
+   decoded from the :term:`filesystem encoding and error handler`.
 
    .. versionadded:: 3.2
 

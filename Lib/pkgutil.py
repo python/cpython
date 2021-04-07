@@ -204,7 +204,8 @@ class ImpImporter:
 
     def __init__(self, path=None):
         global imp
-        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+        warnings.warn("This emulation is deprecated and slated for removal "
+                      "in Python 3.12; use 'importlib' instead",
              DeprecationWarning)
         _import_imp()
         self.path = path
@@ -271,7 +272,8 @@ class ImpLoader:
     code = source = None
 
     def __init__(self, fullname, file, filename, etc):
-        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+        warnings.warn("This emulation is deprecated and slated for removal in "
+                      "Python 3.12; use 'importlib' instead",
                       DeprecationWarning)
         _import_imp()
         self.file = file

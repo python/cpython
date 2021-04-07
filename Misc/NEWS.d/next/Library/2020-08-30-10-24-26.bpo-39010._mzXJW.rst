@@ -1,2 +1,0 @@
-Restarting a ``ProactorEventLoop`` on Windows no longer logs spurious
-``ConnectionResetErrors``.

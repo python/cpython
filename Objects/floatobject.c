@@ -6,6 +6,7 @@
 #include "Python.h"
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -215,7 +216,7 @@ PyFloat_FromString(PyObject *v)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-            "float() argument must be a string or a number, not '%.200s'",
+            "float() argument must be a string or a real number, not '%.200s'",
             Py_TYPE(v)->tp_name);
         return NULL;
     }
@@ -236,7 +237,7 @@ float_dealloc(PyFloatObject *op)
         assert(state->numfree != -1);
 #endif
         if (state->numfree >= PyFloat_MAXFREELIST)  {
-            PyObject_FREE(op);
+            PyObject_Free(op);
             return;
         }
         state->numfree++;
@@ -504,7 +505,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 Py_DECREF(vv);
                 vv = temp;
 
-                temp = PyNumber_Or(vv, _PyLong_One);
+                temp = PyNumber_Or(vv, _PyLong_GetOne());
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -1605,7 +1606,7 @@ float_subtype_new(PyTypeObject *type, PyObject *x);
 /*[clinic input]
 @classmethod
 float.__new__ as float_new
-    x: object(c_default="_PyLong_Zero") = 0
+    x: object(c_default="NULL") = 0
     /
 
 Convert a string or number to a floating point number, if possible.
@@ -1613,10 +1614,18 @@ Convert a string or number to a floating point number, if possible.
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x)
-/*[clinic end generated code: output=ccf1e8dc460ba6ba input=540ee77c204ff87a]*/
+/*[clinic end generated code: output=ccf1e8dc460ba6ba input=f43661b7de03e9d8]*/
 {
-    if (type != &PyFloat_Type)
+    if (type != &PyFloat_Type) {
+        if (x == NULL) {
+            x = _PyLong_GetZero();
+        }
         return float_subtype_new(type, x); /* Wimp out */
+    }
+
+    if (x == NULL) {
+        return PyFloat_FromDouble(0.0);
+    }
     /* If it's a string, but not a string subclass, use
        PyFloat_FromString. */
     if (PyUnicode_CheckExact(x))
@@ -1662,7 +1671,7 @@ float_vectorcall(PyObject *type, PyObject * const*args,
         return NULL;
     }
 
-    PyObject *x = nargs >= 1 ? args[0] : _PyLong_Zero;
+    PyObject *x = nargs >= 1 ? args[0] : NULL;
     return float_new_impl((PyTypeObject *)type, x);
 }
 
@@ -1936,7 +1945,8 @@ PyTypeObject PyFloat_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     float_new__doc__,                           /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1958,7 +1968,7 @@ PyTypeObject PyFloat_Type = {
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
 };
 
-int
+void
 _PyFloat_Init(void)
 {
     /* We attempt to determine if this machine is using IEEE
@@ -2006,24 +2016,28 @@ _PyFloat_Init(void)
 
     double_format = detected_double_format;
     float_format = detected_float_format;
+}
 
+int
+_PyFloat_InitTypes(void)
+{
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
-            return 0;
+            return -1;
         }
     }
-    return 1;
+    return 0;
 }
 
 void
-_PyFloat_ClearFreeList(PyThreadState *tstate)
+_PyFloat_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_float_state *state = &tstate->interp->float_state;
+    struct _Py_float_state *state = &interp->float_state;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
-        PyObject_FREE(f);
+        PyObject_Free(f);
         f = next;
     }
     state->free_list = NULL;
@@ -2031,11 +2045,11 @@ _PyFloat_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyFloat_Fini(PyThreadState *tstate)
+_PyFloat_Fini(PyInterpreterState *interp)
 {
-    _PyFloat_ClearFreeList(tstate);
+    _PyFloat_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_float_state *state = &tstate->interp->float_state;
+    struct _Py_float_state *state = &interp->float_state;
     state->numfree = -1;
 #endif
 }

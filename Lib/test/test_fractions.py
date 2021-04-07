@@ -369,7 +369,9 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(1, 2), F(1, 10) + F(2, 5))
         self.assertEqual(F(-3, 10), F(1, 10) - F(2, 5))
         self.assertEqual(F(1, 25), F(1, 10) * F(2, 5))
+        self.assertEqual(F(5, 6), F(2, 3) * F(5, 4))
         self.assertEqual(F(1, 4), F(1, 10) / F(2, 5))
+        self.assertEqual(F(-15, 8), F(3, 4) / F(-2, 5))
         self.assertTypedEquals(2, F(9, 10) // F(2, 5))
         self.assertTypedEquals(10**23, F(10**23, 1) // F(1))
         self.assertEqual(F(5, 6), F(7, 3) % F(3, 2))
@@ -724,17 +726,6 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(type(f.numerator), myint)
         self.assertEqual(type(f.denominator), myint)
 
-    def test_is_integer(self):
-        # Issue #26680: Incorporating number.is_integer into Fraction
-        self.assertTrue(F(-1, 1).is_integer())
-        self.assertTrue(F(0, 1).is_integer())
-        self.assertTrue(F(1, 1).is_integer())
-        self.assertTrue(F(42, 1).is_integer())
-        self.assertTrue(F(2, 2).is_integer())
-        self.assertTrue(F(8, 4).is_integer())
-        self.assertFalse(F(1, 2).is_integer())
-        self.assertFalse(F(1, 3).is_integer())
-        self.assertFalse(F(2, 3).is_integer())
 
 if __name__ == '__main__':
     unittest.main()

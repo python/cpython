@@ -891,14 +891,14 @@ static PyModuleDef_Slot _abcmodule_slots[] = {
 
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
-    "_abc",
-    _abc__doc__,
-    sizeof(_abcmodule_state),
-    _abcmodule_methods,
-    _abcmodule_slots,
-    _abcmodule_traverse,
-    _abcmodule_clear,
-    _abcmodule_free,
+    .m_name = "_abc",
+    .m_doc = _abc__doc__,
+    .m_size = sizeof(_abcmodule_state),
+    .m_methods = _abcmodule_methods,
+    .m_slots = _abcmodule_slots,
+    .m_traverse = _abcmodule_traverse,
+    .m_clear = _abcmodule_clear,
+    .m_free = _abcmodule_free,
 };
 
 PyMODINIT_FUNC

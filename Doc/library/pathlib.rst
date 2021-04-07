@@ -336,6 +336,8 @@ Pure paths provide the following methods and properties:
       >>> p.parents[2]
       PureWindowsPath('c:/')
 
+   .. versionchanged:: 3.10
+      The parents sequence now supports :term:`slices <slice>` and negative index values.
 
 .. data:: PurePath.parent
 
@@ -1179,7 +1181,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.write_text(data, encoding=None, errors=None)
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
 
    Open the file pointed to in text mode, write *data* to it, and close the
    file::
@@ -1195,6 +1197,9 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
+
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
 
@@ -1203,14 +1208,15 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. note::
 
-   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
-   overlapping use-cases, their semantics differ enough to warrant not
-   considering them equivalent.
+   Not all pairs of functions/methods below are equivalent. Some of them,
+   despite having some overlapping use-cases, have different semantics. They
+   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
-os and os.path                         pathlib
+:mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve`
+:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1229,6 +1235,7 @@ os and os.path                         pathlib
 :func:`os.link`                        :meth:`Path.link_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
+:func:`os.path.relpath`                :meth:`Path.relative_to` [#]_
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
@@ -1239,3 +1246,8 @@ os and os.path                         pathlib
 :func:`os.path.samefile`               :meth:`Path.samefile`
 :func:`os.path.splitext`               :data:`PurePath.suffix`
 ====================================   ==============================
+
+.. rubric:: Footnotes
+
+.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.
