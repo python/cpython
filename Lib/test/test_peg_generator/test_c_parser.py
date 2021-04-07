@@ -96,7 +96,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_c_parser(self) -> None:
         grammar_source = """
-        start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { Module(a, NULL, p->arena) }
+        start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { _Py_Module(a, NULL, p->arena) }
         stmt[stmt_ty]: a=expr_stmt { a }
         expr_stmt[stmt_ty]: a=expression NEWLINE { _Py_Expr(a, EXTRA) }
         expression[expr_ty]: ( l=expression '+' r=term { _Py_BinOp(l, Add, r, EXTRA) }
@@ -237,7 +237,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_return_stmt_noexpr_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _Py_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
@@ -252,7 +252,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_gather_action_ast(self) -> None:
         grammar_source = """
-        start[mod_ty]: a[asdl_stmt_seq*]=';'.pass_stmt+ NEWLINE ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a[asdl_stmt_seq*]=';'.pass_stmt+ NEWLINE ENDMARKER { _Py_Module(a, NULL, p->arena) }
         pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA)}
         """
         test_source = """
@@ -263,7 +263,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_pass_stmt_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _Py_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
@@ -278,7 +278,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_if_stmt_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _Py_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
         statement[asdl_stmt_seq*]:  a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | simple_stmt
 
@@ -306,7 +306,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_same_name_different_types(self) -> None:
         grammar_source = """
-        start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { Module(a, NULL, p->arena)}
+        start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { _Py_Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
                                 _Py_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
@@ -326,7 +326,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_with_stmt_with_paren(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _Py_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
         statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
         compound_stmt[stmt_ty]: with_stmt
@@ -352,7 +352,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_ternary_operator(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=expr ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=expr ENDMARKER { _Py_Module(a, NULL, p->arena) }
         expr[asdl_stmt_seq*]: a=listcomp NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, _Py_Expr(a, EXTRA)) }
         listcomp[expr_ty]: (
             a='[' b=NAME c=for_if_clauses d=']' { _Py_ListComp(b, c, EXTRA) }

@@ -897,7 +897,7 @@ interactive_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ interactive[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "statement_newline"));
-            _res = Interactive ( a , p -> arena );
+            _res = _Py_Interactive ( a , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -944,7 +944,7 @@ eval_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ eval[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expressions NEWLINE* $"));
-            _res = Expression ( a , p -> arena );
+            _res = _Py_Expression ( a , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -1003,7 +1003,7 @@ func_type_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ func_type[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' type_expressions? ')' '->' expression NEWLINE* $"));
-            _res = FunctionType ( a , b , p -> arena );
+            _res = _Py_FunctionType ( a , b , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
