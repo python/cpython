@@ -9130,7 +9130,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = comprehension(target, iter, ifs, is_async, arena);
+    *out = _Py_comprehension(target, iter, ifs, is_async, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9491,8 +9491,8 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    *out = arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg,
-                     defaults, arena);
+    *out = _Py_arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults,
+                         kwarg, defaults, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9602,8 +9602,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = arg(arg, annotation, type_comment, lineno, col_offset, end_lineno,
-               end_col_offset, arena);
+    *out = _Py_arg(arg, annotation, type_comment, lineno, col_offset,
+                   end_lineno, end_col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9700,8 +9700,8 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = keyword(arg, value, lineno, col_offset, end_lineno, end_col_offset,
-                   arena);
+    *out = _Py_keyword(arg, value, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9742,7 +9742,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = alias(name, asname, arena);
+    *out = _Py_alias(name, asname, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9783,7 +9783,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = withitem(context_expr, optional_vars, arena);
+    *out = _Py_withitem(context_expr, optional_vars, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9858,7 +9858,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    *out = match_case(pattern, guard, body, arena);
+    *out = _Py_match_case(pattern, guard, body, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);

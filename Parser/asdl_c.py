@@ -529,7 +529,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.visitField(a, name, prod=prod, depth=1)
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
-        self.emit("*out = %s(%s);" % (name, self.buildArgs(args)), 1)
+        self.emit("*out = %s(%s);" % (pyfunc_name(name), self.buildArgs(args)), 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
