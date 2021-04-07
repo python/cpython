@@ -19,6 +19,34 @@ work. One should use importlib as the public-facing version of this module.
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
 
+# Import builtin modules
+import _imp
+import _io
+import sys
+import _warnings
+import marshal
+
+
+_MS_WINDOWS = (sys.platform == 'win32')
+if _MS_WINDOWS:
+    import nt as _os
+    import winreg
+else:
+    import posix as _os
+
+
+if _MS_WINDOWS:
+    path_separators = ['\\', '/']
+else:
+    path_separators = ['/']
+# Assumption made in _path_join()
+assert all(len(sep) == 1 for sep in path_separators)
+path_sep = path_separators[0]
+path_sep_tuple = tuple(path_separators)
+path_separators = ''.join(path_separators)
+_pathseps_with_colon = {f':{s}' for s in path_separators}
+
+
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
 _CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin'
@@ -59,22 +87,49 @@ def _unpack_uint16(data):
     return int.from_bytes(data, 'little')
 
 
-def _path_join(*path_parts):
-    """Replacement for os.path.join()."""
-    return path_sep.join([part.rstrip(path_separators)
-                          for part in path_parts if part])
+if _MS_WINDOWS:
+    def _path_join(*path_parts):
+        """Replacement for os.path.join()."""
+        if not path_parts:
+            return ""
+        if len(path_parts) == 1:
+            return path_parts[0]
+        root = ""
+        path = []
+        for new_root, tail in map(_os._path_splitroot, path_parts):
+            if new_root.startswith(path_sep_tuple) or new_root.endswith(path_sep_tuple):
+                root = new_root.rstrip(path_separators) or root
+                path = [path_sep + tail]
+            elif new_root.endswith(':'):
+                if root.casefold() != new_root.casefold():
+                    # Drive relative paths have to be resolved by the OS, so we reset the
+                    # tail but do not add a path_sep prefix.
+                    root = new_root
+                    path = [tail]
+                else:
+                    path.append(tail)
+            else:
+                root = new_root or root
+                path.append(tail)
+        path = [p.rstrip(path_separators) for p in path if p]
+        if len(path) == 1 and not path[0]:
+            # Avoid losing the root's trailing separator when joining with nothing
+            return root + path_sep
+        return root + path_sep.join(path)
+
+else:
+    def _path_join(*path_parts):
+        """Replacement for os.path.join()."""
+        return path_sep.join([part.rstrip(path_separators)
+                              for part in path_parts if part])
 
 
 def _path_split(path):
     """Replacement for os.path.split()."""
-    if len(path_separators) == 1:
-        front, _, tail = path.rpartition(path_sep)
-        return front, tail
-    for x in reversed(path):
-        if x in path_separators:
-            front, tail = path.rsplit(x, maxsplit=1)
-            return front, tail
-    return '', path
+    i = max(path.rfind(p) for p in path_separators)
+    if i < 0:
+        return '', path
+    return path[:i], path[i + 1:]
 
 
 def _path_stat(path):
@@ -108,13 +163,18 @@ def _path_isdir(path):
     return _path_is_mode_type(path, 0o040000)
 
 
-def _path_isabs(path):
-    """Replacement for os.path.isabs.
+if _MS_WINDOWS:
+    def _path_isabs(path):
+        """Replacement for os.path.isabs."""
+        if not path:
+            return False
+        root = _os._path_splitroot(path)[0].replace('/', '\\')
+        return len(root) > 1 and (root.startswith('\\\\') or root.endswith('\\'))
 
-    Considers a Windows drive-relative path (no drive, but starts with slash) to
-    still be "absolute".
-    """
-    return path.startswith(path_separators) or path[1:3] in _pathseps_with_colon
+else:
+    def _path_isabs(path):
+        """Replacement for os.path.isabs."""
+        return path.startswith(path_separators)
 
 
 def _write_atomic(path, data, mode=0o666):
@@ -658,6 +718,11 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 pass
     else:
         location = _os.fspath(location)
+        if not _path_isabs(location):
+            try:
+                location = _path_join(_os.getcwd(), location)
+            except OSError:
+                pass
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not
@@ -1408,6 +1473,8 @@ class FileFinder:
         self._loaders = loaders
         # Base (directory) path
         self.path = path or '.'
+        if not _path_isabs(self.path):
+            self.path = _path_join(_os.getcwd(), self.path)
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
@@ -1470,7 +1537,10 @@ class FileFinder:
                 is_namespace = _path_isdir(base_path)
         # Check for a file w/ a proper suffix exists.
         for suffix, loader_class in self._loaders:
-            full_path = _path_join(self.path, tail_module + suffix)
+            try:
+                full_path = _path_join(self.path, tail_module + suffix)
+            except ValueError:
+                return None
             _bootstrap._verbose_message('trying {}', full_path, verbosity=2)
             if cache_module + suffix in cache:
                 if _path_isfile(full_path):
