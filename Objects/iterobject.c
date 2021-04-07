@@ -318,7 +318,11 @@ anextawaitable_iternext(anextawaitableobject *obj)
 {
     assert(obj->wrapped != NULL);
     unaryfunc getter = Py_TYPE(obj->wrapped)->tp_iternext;
-    assert(getter != NULL);
+    if (getter == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+            "anext() argument was not async iterable.");
+        return NULL;
+    }
     PyObject *result = getter(obj->wrapped);
     if (result != NULL) {
         return result;
