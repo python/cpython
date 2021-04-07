@@ -1,3 +1,4 @@
+from test import support
 import unittest
 
 def funcattrs(**kwds):
@@ -76,11 +77,39 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
-    def test_staticmethod_function(self):
-        @staticmethod
-        def notamethod(x):
+    def check_wrapper_attrs(self, wrapper, func):
+        self.assertIs(wrapper.__wrapped__, func)
+
+        for attr in ('__module__', '__qualname__', '__name__',
+                     '__doc__', '__annotations__'):
+            self.assertIs(getattr(wrapper, attr),
+                          getattr(func, attr))
+
+    def test_staticmethod(self):
+        def func(x):
             return x
-        self.assertRaises(TypeError, notamethod, 1)
+        wrapper = staticmethod(func)
+
+        self.assertIs(wrapper.__func__, func)
+        self.check_wrapper_attrs(wrapper, func)
+
+        self.assertEqual(repr(wrapper),
+                         f'<staticmethod({func!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
+
+    def test_classmethod(self):
+        def func(x):
+            return x
+        wrapper = classmethod(func)
+
+        self.assertIs(wrapper.__func__, func)
+        self.check_wrapper_attrs(wrapper, func)
+
+        self.assertEqual(repr(wrapper),
+                         f'<classmethod({func!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
 
     def test_dotted(self):
         decorators = MiscDecorators()
