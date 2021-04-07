@@ -264,6 +264,10 @@ class StructVisitor(EmitVisitor):
         self.emit("", depth)
 
 
+def ast_func_name(name):
+    return f"_PyAST_{name}"
+
+
 class PrototypeVisitor(EmitVisitor):
     """Generate function prototypes for the .h file"""
 
@@ -322,26 +326,13 @@ class PrototypeVisitor(EmitVisitor):
             argstr += ", PyArena *arena"
         else:
             argstr = "PyArena *arena"
-        margs = "a0"
-        for i in range(1, len(args)+1):
-            margs += ", a%d" % i
-        # bpo-43244: <winbase.h> defines Yield macro. Don't redefine it in
-        # pycore_ast.h: it is not needed outside Python-ast.c which calls
-        # directly _Py_Yield().
-        if name != "Yield":
-            self.emit("#define %s(%s) _Py_%s(%s)" % (name, margs, name, margs), 0,
-                    reflow=False)
-        self.emit("%s _Py_%s(%s);" % (ctype, name, argstr), False)
+        self.emit("%s %s(%s);" % (ctype, ast_func_name(name), argstr), False)
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),
                            self.get_args(prod.fields),
                            self.get_args(prod.attributes),
                            union=False)
-
-
-def pyfunc_name(name):
-    return f"_Py_{name}"
 
 
 class FunctionVisitor(PrototypeVisitor):
@@ -357,7 +348,7 @@ class FunctionVisitor(PrototypeVisitor):
         else:
             argstr = "PyArena *arena"
         self.emit("%s" % ctype, 0)
-        emit("%s(%s)" % (pyfunc_name(name), argstr))
+        emit("%s(%s)" % (ast_func_name(name), argstr))
         emit("{")
         emit("%s p;" % ctype, 1)
         for argtype, argname, opt in args:
@@ -496,7 +487,7 @@ class Obj2ModVisitor(PickleVisitor):
             for f in t.fields:
                 self.visitField(f, t.name, sum=sum, depth=2)
             args = [f.name for f in t.fields] + [a.name for a in sum.attributes]
-            self.emit("*out = %s(%s);" % (pyfunc_name(t.name), self.buildArgs(args)), 2)
+            self.emit("*out = %s(%s);" % (ast_func_name(t.name), self.buildArgs(args)), 2)
             self.emit("if (*out == NULL) goto failed;", 2)
             self.emit("return 0;", 2)
             self.emit("}", 1)
@@ -529,7 +520,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.visitField(a, name, prod=prod, depth=1)
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
-        self.emit("*out = %s(%s);" % (pyfunc_name(name), self.buildArgs(args)), 1)
+        self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)

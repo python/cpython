@@ -96,15 +96,15 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_c_parser(self) -> None:
         grammar_source = """
-        start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { Module(a, NULL, p->arena) }
+        start[mod_ty]: a[asdl_stmt_seq*]=stmt* $ { _PyAST_Module(a, NULL, p->arena) }
         stmt[stmt_ty]: a=expr_stmt { a }
-        expr_stmt[stmt_ty]: a=expression NEWLINE { _Py_Expr(a, EXTRA) }
-        expression[expr_ty]: ( l=expression '+' r=term { _Py_BinOp(l, Add, r, EXTRA) }
-                            | l=expression '-' r=term { _Py_BinOp(l, Sub, r, EXTRA) }
+        expr_stmt[stmt_ty]: a=expression NEWLINE { _PyAST_Expr(a, EXTRA) }
+        expression[expr_ty]: ( l=expression '+' r=term { _PyAST_BinOp(l, Add, r, EXTRA) }
+                            | l=expression '-' r=term { _PyAST_BinOp(l, Sub, r, EXTRA) }
                             | t=term { t }
                             )
-        term[expr_ty]: ( l=term '*' r=factor { _Py_BinOp(l, Mult, r, EXTRA) }
-                    | l=term '/' r=factor { _Py_BinOp(l, Div, r, EXTRA) }
+        term[expr_ty]: ( l=term '*' r=factor { _PyAST_BinOp(l, Mult, r, EXTRA) }
+                    | l=term '/' r=factor { _PyAST_BinOp(l, Div, r, EXTRA) }
                     | f=factor { f }
                     )
         factor[expr_ty]: ('(' e=expression ')' { e }
@@ -237,12 +237,12 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_return_stmt_noexpr_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
         small_stmt[stmt_ty]: return_stmt
-        return_stmt[stmt_ty]: a='return' NEWLINE { _Py_Return(NULL, EXTRA) }
+        return_stmt[stmt_ty]: a='return' NEWLINE { _PyAST_Return(NULL, EXTRA) }
         """
         test_source = """
         stmt = "return"
@@ -252,8 +252,8 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_gather_action_ast(self) -> None:
         grammar_source = """
-        start[mod_ty]: a[asdl_stmt_seq*]=';'.pass_stmt+ NEWLINE ENDMARKER { Module(a, NULL, p->arena) }
-        pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA)}
+        start[mod_ty]: a[asdl_stmt_seq*]=';'.pass_stmt+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        pass_stmt[stmt_ty]: a='pass' { _PyAST_Pass(EXTRA)}
         """
         test_source = """
         stmt = "pass; pass"
@@ -263,12 +263,12 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_pass_stmt_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a[asdl_stmt_seq*]=statement+ { a }
         statement[stmt_ty]: simple_stmt
         simple_stmt[stmt_ty]: small_stmt
         small_stmt[stmt_ty]: pass_stmt
-        pass_stmt[stmt_ty]: a='pass' NEWLINE { _Py_Pass(EXTRA) }
+        pass_stmt[stmt_ty]: a='pass' NEWLINE { _PyAST_Pass(EXTRA) }
         """
         test_source = """
         stmt = "pass"
@@ -278,7 +278,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_if_stmt_action(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
         statement[asdl_stmt_seq*]:  a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | simple_stmt
 
@@ -290,11 +290,11 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
         compound_stmt: if_stmt
 
-        if_stmt: 'if' a=full_expression ':' b=block { _Py_If(a, b, NULL, EXTRA) }
+        if_stmt: 'if' a=full_expression ':' b=block { _PyAST_If(a, b, NULL, EXTRA) }
 
         small_stmt[stmt_ty]: pass_stmt
 
-        pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA) }
+        pass_stmt[stmt_ty]: a='pass' { _PyAST_Pass(EXTRA) }
 
         full_expression: NAME
         """
@@ -306,15 +306,15 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_same_name_different_types(self) -> None:
         grammar_source = """
-        start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { Module(a, NULL, p->arena)}
+        start[mod_ty]: a[asdl_stmt_seq*]=import_from+ NEWLINE ENDMARKER { _PyAST_Module(a, NULL, p->arena)}
         import_from[stmt_ty]: ( a='from' !'import' c=simple_name 'import' d=import_as_names_from {
-                                _Py_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
+                                _PyAST_ImportFrom(c->v.Name.id, d, 0, EXTRA) }
                             | a='from' '.' 'import' c=import_as_names_from {
-                                _Py_ImportFrom(NULL, c, 1, EXTRA) }
+                                _PyAST_ImportFrom(NULL, c, 1, EXTRA) }
                             )
         simple_name[expr_ty]: NAME
         import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
-        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _Py_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
+        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _PyAST_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
         """
         test_source = """
         for stmt in ("from a import b as c", "from . import a as b"):
@@ -326,19 +326,19 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_with_stmt_with_paren(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=[statements] ENDMARKER { Module(a, NULL, p->arena) }
+        start[mod_ty]: a=[statements] ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
         statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
         statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
         compound_stmt[stmt_ty]: with_stmt
         with_stmt[stmt_ty]: (
             a='with' '(' b[asdl_withitem_seq*]=','.with_item+ ')' ':' c=block {
-                _Py_With(b, (asdl_stmt_seq*) _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
+                _PyAST_With(b, (asdl_stmt_seq*) _PyPegen_singleton_seq(p, c), NULL, EXTRA) }
         )
         with_item[withitem_ty]: (
-            e=NAME o=['as' t=NAME { t }] { _Py_withitem(e, _PyPegen_set_expr_context(p, o, Store), p->arena) }
+            e=NAME o=['as' t=NAME { t }] { _PyAST_withitem(e, _PyPegen_set_expr_context(p, o, Store), p->arena) }
         )
         block[stmt_ty]: a=pass_stmt NEWLINE { a } | NEWLINE INDENT a=pass_stmt DEDENT { a }
-        pass_stmt[stmt_ty]: a='pass' { _Py_Pass(EXTRA) }
+        pass_stmt[stmt_ty]: a='pass' { _PyAST_Pass(EXTRA) }
         """
         test_source = """
         stmt = "with (\\n    a as b,\\n    c as d\\n): pass"
@@ -352,14 +352,14 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def test_ternary_operator(self) -> None:
         grammar_source = """
-        start[mod_ty]: a=expr ENDMARKER { Module(a, NULL, p->arena) }
-        expr[asdl_stmt_seq*]: a=listcomp NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, _Py_Expr(a, EXTRA)) }
+        start[mod_ty]: a=expr ENDMARKER { _PyAST_Module(a, NULL, p->arena) }
+        expr[asdl_stmt_seq*]: a=listcomp NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, _PyAST_Expr(a, EXTRA)) }
         listcomp[expr_ty]: (
-            a='[' b=NAME c=for_if_clauses d=']' { _Py_ListComp(b, c, EXTRA) }
+            a='[' b=NAME c=for_if_clauses d=']' { _PyAST_ListComp(b, c, EXTRA) }
         )
         for_if_clauses[asdl_comprehension_seq*]: (
             a[asdl_comprehension_seq*]=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
-                { _Py_comprehension(_Py_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
+                { _PyAST_comprehension(_PyAST_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
         )
         """
         test_source = """

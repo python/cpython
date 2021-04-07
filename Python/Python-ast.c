@@ -1776,8 +1776,8 @@ static int obj2ast_type_ignore(struct ast_state *state, PyObject* obj,
                                type_ignore_ty* out, PyArena* arena);
 
 mod_ty
-_Py_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores, PyArena
-           *arena)
+_PyAST_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores,
+              PyArena *arena)
 {
     mod_ty p;
     p = (mod_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -1790,7 +1790,7 @@ _Py_Module(asdl_stmt_seq * body, asdl_type_ignore_seq * type_ignores, PyArena
 }
 
 mod_ty
-_Py_Interactive(asdl_stmt_seq * body, PyArena *arena)
+_PyAST_Interactive(asdl_stmt_seq * body, PyArena *arena)
 {
     mod_ty p;
     p = (mod_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -1802,7 +1802,7 @@ _Py_Interactive(asdl_stmt_seq * body, PyArena *arena)
 }
 
 mod_ty
-_Py_Expression(expr_ty body, PyArena *arena)
+_PyAST_Expression(expr_ty body, PyArena *arena)
 {
     mod_ty p;
     if (!body) {
@@ -1819,7 +1819,7 @@ _Py_Expression(expr_ty body, PyArena *arena)
 }
 
 mod_ty
-_Py_FunctionType(asdl_expr_seq * argtypes, expr_ty returns, PyArena *arena)
+_PyAST_FunctionType(asdl_expr_seq * argtypes, expr_ty returns, PyArena *arena)
 {
     mod_ty p;
     if (!returns) {
@@ -1837,10 +1837,10 @@ _Py_FunctionType(asdl_expr_seq * argtypes, expr_ty returns, PyArena *arena)
 }
 
 stmt_ty
-_Py_FunctionDef(identifier name, arguments_ty args, asdl_stmt_seq * body,
-                asdl_expr_seq * decorator_list, expr_ty returns, string
-                type_comment, int lineno, int col_offset, int end_lineno, int
-                end_col_offset, PyArena *arena)
+_PyAST_FunctionDef(identifier name, arguments_ty args, asdl_stmt_seq * body,
+                   asdl_expr_seq * decorator_list, expr_ty returns, string
+                   type_comment, int lineno, int col_offset, int end_lineno,
+                   int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1871,10 +1871,10 @@ _Py_FunctionDef(identifier name, arguments_ty args, asdl_stmt_seq * body,
 }
 
 stmt_ty
-_Py_AsyncFunctionDef(identifier name, arguments_ty args, asdl_stmt_seq * body,
-                     asdl_expr_seq * decorator_list, expr_ty returns, string
-                     type_comment, int lineno, int col_offset, int end_lineno,
-                     int end_col_offset, PyArena *arena)
+_PyAST_AsyncFunctionDef(identifier name, arguments_ty args, asdl_stmt_seq *
+                        body, asdl_expr_seq * decorator_list, expr_ty returns,
+                        string type_comment, int lineno, int col_offset, int
+                        end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1905,10 +1905,10 @@ _Py_AsyncFunctionDef(identifier name, arguments_ty args, asdl_stmt_seq * body,
 }
 
 stmt_ty
-_Py_ClassDef(identifier name, asdl_expr_seq * bases, asdl_keyword_seq *
-             keywords, asdl_stmt_seq * body, asdl_expr_seq * decorator_list,
-             int lineno, int col_offset, int end_lineno, int end_col_offset,
-             PyArena *arena)
+_PyAST_ClassDef(identifier name, asdl_expr_seq * bases, asdl_keyword_seq *
+                keywords, asdl_stmt_seq * body, asdl_expr_seq * decorator_list,
+                int lineno, int col_offset, int end_lineno, int end_col_offset,
+                PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1933,8 +1933,8 @@ _Py_ClassDef(identifier name, asdl_expr_seq * bases, asdl_keyword_seq *
 }
 
 stmt_ty
-_Py_Return(expr_ty value, int lineno, int col_offset, int end_lineno, int
-           end_col_offset, PyArena *arena)
+_PyAST_Return(expr_ty value, int lineno, int col_offset, int end_lineno, int
+              end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -1950,8 +1950,8 @@ _Py_Return(expr_ty value, int lineno, int col_offset, int end_lineno, int
 }
 
 stmt_ty
-_Py_Delete(asdl_expr_seq * targets, int lineno, int col_offset, int end_lineno,
-           int end_col_offset, PyArena *arena)
+_PyAST_Delete(asdl_expr_seq * targets, int lineno, int col_offset, int
+              end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -1967,9 +1967,9 @@ _Py_Delete(asdl_expr_seq * targets, int lineno, int col_offset, int end_lineno,
 }
 
 stmt_ty
-_Py_Assign(asdl_expr_seq * targets, expr_ty value, string type_comment, int
-           lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
-           *arena)
+_PyAST_Assign(asdl_expr_seq * targets, expr_ty value, string type_comment, int
+              lineno, int col_offset, int end_lineno, int end_col_offset,
+              PyArena *arena)
 {
     stmt_ty p;
     if (!value) {
@@ -1992,8 +1992,8 @@ _Py_Assign(asdl_expr_seq * targets, expr_ty value, string type_comment, int
 }
 
 stmt_ty
-_Py_AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
-              col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
+                 col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2026,9 +2026,9 @@ _Py_AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
 }
 
 stmt_ty
-_Py_AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int simple,
-              int lineno, int col_offset, int end_lineno, int end_col_offset,
-              PyArena *arena)
+_PyAST_AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int simple,
+                 int lineno, int col_offset, int end_lineno, int
+                 end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2057,9 +2057,9 @@ _Py_AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int simple,
 }
 
 stmt_ty
-_Py_For(expr_ty target, expr_ty iter, asdl_stmt_seq * body, asdl_stmt_seq *
-        orelse, string type_comment, int lineno, int col_offset, int
-        end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_For(expr_ty target, expr_ty iter, asdl_stmt_seq * body, asdl_stmt_seq *
+           orelse, string type_comment, int lineno, int col_offset, int
+           end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2089,9 +2089,9 @@ _Py_For(expr_ty target, expr_ty iter, asdl_stmt_seq * body, asdl_stmt_seq *
 }
 
 stmt_ty
-_Py_AsyncFor(expr_ty target, expr_ty iter, asdl_stmt_seq * body, asdl_stmt_seq
-             * orelse, string type_comment, int lineno, int col_offset, int
-             end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_AsyncFor(expr_ty target, expr_ty iter, asdl_stmt_seq * body,
+                asdl_stmt_seq * orelse, string type_comment, int lineno, int
+                col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2121,9 +2121,9 @@ _Py_AsyncFor(expr_ty target, expr_ty iter, asdl_stmt_seq * body, asdl_stmt_seq
 }
 
 stmt_ty
-_Py_While(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int
-          lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
-          *arena)
+_PyAST_While(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int
+             lineno, int col_offset, int end_lineno, int end_col_offset,
+             PyArena *arena)
 {
     stmt_ty p;
     if (!test) {
@@ -2146,8 +2146,9 @@ _Py_While(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int
 }
 
 stmt_ty
-_Py_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int lineno,
-       int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int
+          lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
+          *arena)
 {
     stmt_ty p;
     if (!test) {
@@ -2170,9 +2171,9 @@ _Py_If(expr_ty test, asdl_stmt_seq * body, asdl_stmt_seq * orelse, int lineno,
 }
 
 stmt_ty
-_Py_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string type_comment,
-         int lineno, int col_offset, int end_lineno, int end_col_offset,
-         PyArena *arena)
+_PyAST_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string
+            type_comment, int lineno, int col_offset, int end_lineno, int
+            end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2190,9 +2191,9 @@ _Py_With(asdl_withitem_seq * items, asdl_stmt_seq * body, string type_comment,
 }
 
 stmt_ty
-_Py_AsyncWith(asdl_withitem_seq * items, asdl_stmt_seq * body, string
-              type_comment, int lineno, int col_offset, int end_lineno, int
-              end_col_offset, PyArena *arena)
+_PyAST_AsyncWith(asdl_withitem_seq * items, asdl_stmt_seq * body, string
+                 type_comment, int lineno, int col_offset, int end_lineno, int
+                 end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2210,8 +2211,8 @@ _Py_AsyncWith(asdl_withitem_seq * items, asdl_stmt_seq * body, string
 }
 
 stmt_ty
-_Py_Match(expr_ty subject, asdl_match_case_seq * cases, int lineno, int
-          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Match(expr_ty subject, asdl_match_case_seq * cases, int lineno, int
+             col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!subject) {
@@ -2233,8 +2234,8 @@ _Py_Match(expr_ty subject, asdl_match_case_seq * cases, int lineno, int
 }
 
 stmt_ty
-_Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
-          end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
+             end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2251,9 +2252,9 @@ _Py_Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int
 }
 
 stmt_ty
-_Py_Try(asdl_stmt_seq * body, asdl_excepthandler_seq * handlers, asdl_stmt_seq
-        * orelse, asdl_stmt_seq * finalbody, int lineno, int col_offset, int
-        end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Try(asdl_stmt_seq * body, asdl_excepthandler_seq * handlers,
+           asdl_stmt_seq * orelse, asdl_stmt_seq * finalbody, int lineno, int
+           col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2272,8 +2273,8 @@ _Py_Try(asdl_stmt_seq * body, asdl_excepthandler_seq * handlers, asdl_stmt_seq
 }
 
 stmt_ty
-_Py_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, int
-           end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, int
+              end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!test) {
@@ -2295,8 +2296,8 @@ _Py_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, int
 }
 
 stmt_ty
-_Py_Import(asdl_alias_seq * names, int lineno, int col_offset, int end_lineno,
-           int end_col_offset, PyArena *arena)
+_PyAST_Import(asdl_alias_seq * names, int lineno, int col_offset, int
+              end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2312,9 +2313,9 @@ _Py_Import(asdl_alias_seq * names, int lineno, int col_offset, int end_lineno,
 }
 
 stmt_ty
-_Py_ImportFrom(identifier module, asdl_alias_seq * names, int level, int
-               lineno, int col_offset, int end_lineno, int end_col_offset,
-               PyArena *arena)
+_PyAST_ImportFrom(identifier module, asdl_alias_seq * names, int level, int
+                  lineno, int col_offset, int end_lineno, int end_col_offset,
+                  PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2332,8 +2333,8 @@ _Py_ImportFrom(identifier module, asdl_alias_seq * names, int level, int
 }
 
 stmt_ty
-_Py_Global(asdl_identifier_seq * names, int lineno, int col_offset, int
-           end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Global(asdl_identifier_seq * names, int lineno, int col_offset, int
+              end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2349,8 +2350,8 @@ _Py_Global(asdl_identifier_seq * names, int lineno, int col_offset, int
 }
 
 stmt_ty
-_Py_Nonlocal(asdl_identifier_seq * names, int lineno, int col_offset, int
-             end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Nonlocal(asdl_identifier_seq * names, int lineno, int col_offset, int
+                end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2366,8 +2367,8 @@ _Py_Nonlocal(asdl_identifier_seq * names, int lineno, int col_offset, int
 }
 
 stmt_ty
-_Py_Expr(expr_ty value, int lineno, int col_offset, int end_lineno, int
-         end_col_offset, PyArena *arena)
+_PyAST_Expr(expr_ty value, int lineno, int col_offset, int end_lineno, int
+            end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!value) {
@@ -2388,8 +2389,8 @@ _Py_Expr(expr_ty value, int lineno, int col_offset, int end_lineno, int
 }
 
 stmt_ty
-_Py_Pass(int lineno, int col_offset, int end_lineno, int end_col_offset,
-         PyArena *arena)
+_PyAST_Pass(int lineno, int col_offset, int end_lineno, int end_col_offset,
+            PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2404,8 +2405,8 @@ _Py_Pass(int lineno, int col_offset, int end_lineno, int end_col_offset,
 }
 
 stmt_ty
-_Py_Break(int lineno, int col_offset, int end_lineno, int end_col_offset,
-          PyArena *arena)
+_PyAST_Break(int lineno, int col_offset, int end_lineno, int end_col_offset,
+             PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2420,8 +2421,8 @@ _Py_Break(int lineno, int col_offset, int end_lineno, int end_col_offset,
 }
 
 stmt_ty
-_Py_Continue(int lineno, int col_offset, int end_lineno, int end_col_offset,
-             PyArena *arena)
+_PyAST_Continue(int lineno, int col_offset, int end_lineno, int end_col_offset,
+                PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2436,8 +2437,8 @@ _Py_Continue(int lineno, int col_offset, int end_lineno, int end_col_offset,
 }
 
 expr_ty
-_Py_BoolOp(boolop_ty op, asdl_expr_seq * values, int lineno, int col_offset,
-           int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_BoolOp(boolop_ty op, asdl_expr_seq * values, int lineno, int col_offset,
+              int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!op) {
@@ -2459,8 +2460,8 @@ _Py_BoolOp(boolop_ty op, asdl_expr_seq * values, int lineno, int col_offset,
 }
 
 expr_ty
-_Py_NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, int
-              end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, int
+                 end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!target) {
@@ -2487,8 +2488,8 @@ _Py_NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int
-          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int
+             col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!left) {
@@ -2521,8 +2522,8 @@ _Py_BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int
 }
 
 expr_ty
-_Py_UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, int
-            end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, int
+               end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!op) {
@@ -2549,8 +2550,8 @@ _Py_UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, int
-           end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, int
+              end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!args) {
@@ -2577,8 +2578,8 @@ _Py_Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
-          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
+             col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!test) {
@@ -2611,8 +2612,8 @@ _Py_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
 }
 
 expr_ty
-_Py_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno, int
-         col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno, int
+            col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2629,8 +2630,8 @@ _Py_Dict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno, int
 }
 
 expr_ty
-_Py_Set(asdl_expr_seq * elts, int lineno, int col_offset, int end_lineno, int
-        end_col_offset, PyArena *arena)
+_PyAST_Set(asdl_expr_seq * elts, int lineno, int col_offset, int end_lineno,
+           int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2646,8 +2647,9 @@ _Py_Set(asdl_expr_seq * elts, int lineno, int col_offset, int end_lineno, int
 }
 
 expr_ty
-_Py_ListComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno, int
-             col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_ListComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno,
+                int col_offset, int end_lineno, int end_col_offset, PyArena
+                *arena)
 {
     expr_ty p;
     if (!elt) {
@@ -2669,8 +2671,9 @@ _Py_ListComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno, int
 }
 
 expr_ty
-_Py_SetComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno, int
-            col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_SetComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno,
+               int col_offset, int end_lineno, int end_col_offset, PyArena
+               *arena)
 {
     expr_ty p;
     if (!elt) {
@@ -2692,9 +2695,9 @@ _Py_SetComp(expr_ty elt, asdl_comprehension_seq * generators, int lineno, int
 }
 
 expr_ty
-_Py_DictComp(expr_ty key, expr_ty value, asdl_comprehension_seq * generators,
-             int lineno, int col_offset, int end_lineno, int end_col_offset,
-             PyArena *arena)
+_PyAST_DictComp(expr_ty key, expr_ty value, asdl_comprehension_seq *
+                generators, int lineno, int col_offset, int end_lineno, int
+                end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!key) {
@@ -2722,9 +2725,9 @@ _Py_DictComp(expr_ty key, expr_ty value, asdl_comprehension_seq * generators,
 }
 
 expr_ty
-_Py_GeneratorExp(expr_ty elt, asdl_comprehension_seq * generators, int lineno,
-                 int col_offset, int end_lineno, int end_col_offset, PyArena
-                 *arena)
+_PyAST_GeneratorExp(expr_ty elt, asdl_comprehension_seq * generators, int
+                    lineno, int col_offset, int end_lineno, int end_col_offset,
+                    PyArena *arena)
 {
     expr_ty p;
     if (!elt) {
@@ -2746,8 +2749,8 @@ _Py_GeneratorExp(expr_ty elt, asdl_comprehension_seq * generators, int lineno,
 }
 
 expr_ty
-_Py_Await(expr_ty value, int lineno, int col_offset, int end_lineno, int
-          end_col_offset, PyArena *arena)
+_PyAST_Await(expr_ty value, int lineno, int col_offset, int end_lineno, int
+             end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2768,8 +2771,8 @@ _Py_Await(expr_ty value, int lineno, int col_offset, int end_lineno, int
 }
 
 expr_ty
-_Py_Yield(expr_ty value, int lineno, int col_offset, int end_lineno, int
-          end_col_offset, PyArena *arena)
+_PyAST_Yield(expr_ty value, int lineno, int col_offset, int end_lineno, int
+             end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2785,8 +2788,8 @@ _Py_Yield(expr_ty value, int lineno, int col_offset, int end_lineno, int
 }
 
 expr_ty
-_Py_YieldFrom(expr_ty value, int lineno, int col_offset, int end_lineno, int
-              end_col_offset, PyArena *arena)
+_PyAST_YieldFrom(expr_ty value, int lineno, int col_offset, int end_lineno, int
+                 end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2807,9 +2810,9 @@ _Py_YieldFrom(expr_ty value, int lineno, int col_offset, int end_lineno, int
 }
 
 expr_ty
-_Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_expr_seq * comparators, int
-            lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
-            *arena)
+_PyAST_Compare(expr_ty left, asdl_int_seq * ops, asdl_expr_seq * comparators,
+               int lineno, int col_offset, int end_lineno, int end_col_offset,
+               PyArena *arena)
 {
     expr_ty p;
     if (!left) {
@@ -2832,9 +2835,9 @@ _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_expr_seq * comparators, int
 }
 
 expr_ty
-_Py_Call(expr_ty func, asdl_expr_seq * args, asdl_keyword_seq * keywords, int
-         lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
-         *arena)
+_PyAST_Call(expr_ty func, asdl_expr_seq * args, asdl_keyword_seq * keywords,
+            int lineno, int col_offset, int end_lineno, int end_col_offset,
+            PyArena *arena)
 {
     expr_ty p;
     if (!func) {
@@ -2857,9 +2860,9 @@ _Py_Call(expr_ty func, asdl_expr_seq * args, asdl_keyword_seq * keywords, int
 }
 
 expr_ty
-_Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int
-                   lineno, int col_offset, int end_lineno, int end_col_offset,
-                   PyArena *arena)
+_PyAST_FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int
+                      lineno, int col_offset, int end_lineno, int
+                      end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2882,8 +2885,8 @@ _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int
 }
 
 expr_ty
-_Py_JoinedStr(asdl_expr_seq * values, int lineno, int col_offset, int
-              end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_JoinedStr(asdl_expr_seq * values, int lineno, int col_offset, int
+                 end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -2899,8 +2902,8 @@ _Py_JoinedStr(asdl_expr_seq * values, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_Constant(constant value, string kind, int lineno, int col_offset, int
-             end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Constant(constant value, string kind, int lineno, int col_offset, int
+                end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2922,9 +2925,9 @@ _Py_Constant(constant value, string kind, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno,
-              int col_offset, int end_lineno, int end_col_offset, PyArena
-              *arena)
+_PyAST_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
+                 lineno, int col_offset, int end_lineno, int end_col_offset,
+                 PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2957,9 +2960,9 @@ _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno,
 }
 
 expr_ty
-_Py_Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno,
-              int col_offset, int end_lineno, int end_col_offset, PyArena
-              *arena)
+_PyAST_Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno,
+                 int col_offset, int end_lineno, int end_col_offset, PyArena
+                 *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2992,8 +2995,8 @@ _Py_Subscript(expr_ty value, expr_ty slice, expr_context_ty ctx, int lineno,
 }
 
 expr_ty
-_Py_Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, int
-            end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset,
+               int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -3020,8 +3023,8 @@ _Py_Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, int
-         end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, int
+            end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!id) {
@@ -3048,8 +3051,8 @@ _Py_Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_List(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int col_offset,
-         int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_List(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int
+            col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!ctx) {
@@ -3071,8 +3074,8 @@ _Py_List(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int col_offset,
 }
 
 expr_ty
-_Py_Tuple(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int
-          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Tuple(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int
+             col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!ctx) {
@@ -3094,8 +3097,8 @@ _Py_Tuple(asdl_expr_seq * elts, expr_context_ty ctx, int lineno, int
 }
 
 expr_ty
-_Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int
-          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int
+             col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -3113,8 +3116,8 @@ _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, int lineno, int
 }
 
 expr_ty
-_Py_MatchAs(expr_ty pattern, identifier name, int lineno, int col_offset, int
-            end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_MatchAs(expr_ty pattern, identifier name, int lineno, int col_offset,
+               int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!pattern) {
@@ -3141,8 +3144,8 @@ _Py_MatchAs(expr_ty pattern, identifier name, int lineno, int col_offset, int
 }
 
 expr_ty
-_Py_MatchOr(asdl_expr_seq * patterns, int lineno, int col_offset, int
-            end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_MatchOr(asdl_expr_seq * patterns, int lineno, int col_offset, int
+               end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -3158,8 +3161,8 @@ _Py_MatchOr(asdl_expr_seq * patterns, int lineno, int col_offset, int
 }
 
 comprehension_ty
-_Py_comprehension(expr_ty target, expr_ty iter, asdl_expr_seq * ifs, int
-                  is_async, PyArena *arena)
+_PyAST_comprehension(expr_ty target, expr_ty iter, asdl_expr_seq * ifs, int
+                     is_async, PyArena *arena)
 {
     comprehension_ty p;
     if (!target) {
@@ -3183,9 +3186,9 @@ _Py_comprehension(expr_ty target, expr_ty iter, asdl_expr_seq * ifs, int
 }
 
 excepthandler_ty
-_Py_ExceptHandler(expr_ty type, identifier name, asdl_stmt_seq * body, int
-                  lineno, int col_offset, int end_lineno, int end_col_offset,
-                  PyArena *arena)
+_PyAST_ExceptHandler(expr_ty type, identifier name, asdl_stmt_seq * body, int
+                     lineno, int col_offset, int end_lineno, int
+                     end_col_offset, PyArena *arena)
 {
     excepthandler_ty p;
     p = (excepthandler_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -3203,9 +3206,10 @@ _Py_ExceptHandler(expr_ty type, identifier name, asdl_stmt_seq * body, int
 }
 
 arguments_ty
-_Py_arguments(asdl_arg_seq * posonlyargs, asdl_arg_seq * args, arg_ty vararg,
-              asdl_arg_seq * kwonlyargs, asdl_expr_seq * kw_defaults, arg_ty
-              kwarg, asdl_expr_seq * defaults, PyArena *arena)
+_PyAST_arguments(asdl_arg_seq * posonlyargs, asdl_arg_seq * args, arg_ty
+                 vararg, asdl_arg_seq * kwonlyargs, asdl_expr_seq *
+                 kw_defaults, arg_ty kwarg, asdl_expr_seq * defaults, PyArena
+                 *arena)
 {
     arguments_ty p;
     p = (arguments_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -3222,8 +3226,8 @@ _Py_arguments(asdl_arg_seq * posonlyargs, asdl_arg_seq * args, arg_ty vararg,
 }
 
 arg_ty
-_Py_arg(identifier arg, expr_ty annotation, string type_comment, int lineno,
-        int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_arg(identifier arg, expr_ty annotation, string type_comment, int lineno,
+           int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     arg_ty p;
     if (!arg) {
@@ -3245,8 +3249,8 @@ _Py_arg(identifier arg, expr_ty annotation, string type_comment, int lineno,
 }
 
 keyword_ty
-_Py_keyword(identifier arg, expr_ty value, int lineno, int col_offset, int
-            end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_keyword(identifier arg, expr_ty value, int lineno, int col_offset, int
+               end_lineno, int end_col_offset, PyArena *arena)
 {
     keyword_ty p;
     if (!value) {
@@ -3267,7 +3271,7 @@ _Py_keyword(identifier arg, expr_ty value, int lineno, int col_offset, int
 }
 
 alias_ty
-_Py_alias(identifier name, identifier asname, PyArena *arena)
+_PyAST_alias(identifier name, identifier asname, PyArena *arena)
 {
     alias_ty p;
     if (!name) {
@@ -3284,7 +3288,7 @@ _Py_alias(identifier name, identifier asname, PyArena *arena)
 }
 
 withitem_ty
-_Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
+_PyAST_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
 {
     withitem_ty p;
     if (!context_expr) {
@@ -3301,8 +3305,8 @@ _Py_withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
 }
 
 match_case_ty
-_Py_match_case(expr_ty pattern, expr_ty guard, asdl_stmt_seq * body, PyArena
-               *arena)
+_PyAST_match_case(expr_ty pattern, expr_ty guard, asdl_stmt_seq * body, PyArena
+                  *arena)
 {
     match_case_ty p;
     if (!pattern) {
@@ -3320,7 +3324,7 @@ _Py_match_case(expr_ty pattern, expr_ty guard, asdl_stmt_seq * body, PyArena
 }
 
 type_ignore_ty
-_Py_TypeIgnore(int lineno, string tag, PyArena *arena)
+_PyAST_TypeIgnore(int lineno, string tag, PyArena *arena)
 {
     type_ignore_ty p;
     if (!tag) {
@@ -5037,7 +5041,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Module(body, type_ignores, arena);
+        *out = _PyAST_Module(body, type_ignores, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5082,7 +5086,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Interactive(body, arena);
+        *out = _PyAST_Interactive(body, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5107,7 +5111,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Expression(body, arena);
+        *out = _PyAST_Expression(body, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5166,7 +5170,7 @@ obj2ast_mod(struct ast_state *state, PyObject* obj, mod_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_FunctionType(argtypes, returns, arena);
+        *out = _PyAST_FunctionType(argtypes, returns, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5377,9 +5381,9 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_FunctionDef(name, args, body, decorator_list, returns,
-                               type_comment, lineno, col_offset, end_lineno,
-                               end_col_offset, arena);
+        *out = _PyAST_FunctionDef(name, args, body, decorator_list, returns,
+                                  type_comment, lineno, col_offset, end_lineno,
+                                  end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5514,9 +5518,10 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_AsyncFunctionDef(name, args, body, decorator_list, returns,
-                                    type_comment, lineno, col_offset,
-                                    end_lineno, end_col_offset, arena);
+        *out = _PyAST_AsyncFunctionDef(name, args, body, decorator_list,
+                                       returns, type_comment, lineno,
+                                       col_offset, end_lineno, end_col_offset,
+                                       arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5677,9 +5682,9 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_ClassDef(name, bases, keywords, body, decorator_list,
-                            lineno, col_offset, end_lineno, end_col_offset,
-                            arena);
+        *out = _PyAST_ClassDef(name, bases, keywords, body, decorator_list,
+                               lineno, col_offset, end_lineno, end_col_offset,
+                               arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5704,8 +5709,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Return(value, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_Return(value, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5750,8 +5755,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Delete(targets, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_Delete(targets, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5824,8 +5829,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Assign(targets, value, type_comment, lineno, col_offset,
-                          end_lineno, end_col_offset, arena);
+        *out = _PyAST_Assign(targets, value, type_comment, lineno, col_offset,
+                             end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5878,8 +5883,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_AugAssign(target, op, value, lineno, col_offset, end_lineno,
-                             end_col_offset, arena);
+        *out = _PyAST_AugAssign(target, op, value, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5946,8 +5951,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_AnnAssign(target, annotation, value, simple, lineno,
-                             col_offset, end_lineno, end_col_offset, arena);
+        *out = _PyAST_AnnAssign(target, annotation, value, simple, lineno,
+                                col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6068,8 +6073,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_For(target, iter, body, orelse, type_comment, lineno,
-                       col_offset, end_lineno, end_col_offset, arena);
+        *out = _PyAST_For(target, iter, body, orelse, type_comment, lineno,
+                          col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6190,8 +6195,9 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_AsyncFor(target, iter, body, orelse, type_comment, lineno,
-                            col_offset, end_lineno, end_col_offset, arena);
+        *out = _PyAST_AsyncFor(target, iter, body, orelse, type_comment,
+                               lineno, col_offset, end_lineno, end_col_offset,
+                               arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6284,8 +6290,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_While(test, body, orelse, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_While(test, body, orelse, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6378,8 +6384,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_If(test, body, orelse, lineno, col_offset, end_lineno,
-                      end_col_offset, arena);
+        *out = _PyAST_If(test, body, orelse, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6472,8 +6478,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_With(items, body, type_comment, lineno, col_offset,
-                        end_lineno, end_col_offset, arena);
+        *out = _PyAST_With(items, body, type_comment, lineno, col_offset,
+                           end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6566,8 +6572,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_AsyncWith(items, body, type_comment, lineno, col_offset,
-                             end_lineno, end_col_offset, arena);
+        *out = _PyAST_AsyncWith(items, body, type_comment, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6626,8 +6632,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Match(subject, cases, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_Match(subject, cases, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6666,8 +6672,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Raise(exc, cause, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_Raise(exc, cause, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6814,8 +6820,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Try(body, handlers, orelse, finalbody, lineno, col_offset,
-                       end_lineno, end_col_offset, arena);
+        *out = _PyAST_Try(body, handlers, orelse, finalbody, lineno,
+                          col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6854,8 +6860,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Assert(test, msg, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_Assert(test, msg, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6900,8 +6906,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Import(names, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_Import(names, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6974,8 +6980,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_ImportFrom(module, names, level, lineno, col_offset,
-                              end_lineno, end_col_offset, arena);
+        *out = _PyAST_ImportFrom(module, names, level, lineno, col_offset,
+                                 end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7020,8 +7026,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Global(names, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_Global(names, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7066,8 +7072,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Nonlocal(names, lineno, col_offset, end_lineno,
-                            end_col_offset, arena);
+        *out = _PyAST_Nonlocal(names, lineno, col_offset, end_lineno,
+                               end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7092,8 +7098,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Expr(value, lineno, col_offset, end_lineno, end_col_offset,
-                        arena);
+        *out = _PyAST_Expr(value, lineno, col_offset, end_lineno,
+                           end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7104,7 +7110,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
 
-        *out = _Py_Pass(lineno, col_offset, end_lineno, end_col_offset, arena);
+        *out = _PyAST_Pass(lineno, col_offset, end_lineno, end_col_offset,
+                           arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7115,7 +7122,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
 
-        *out = _Py_Break(lineno, col_offset, end_lineno, end_col_offset, arena);
+        *out = _PyAST_Break(lineno, col_offset, end_lineno, end_col_offset,
+                            arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7126,8 +7134,8 @@ obj2ast_stmt(struct ast_state *state, PyObject* obj, stmt_ty* out, PyArena*
     }
     if (isinstance) {
 
-        *out = _Py_Continue(lineno, col_offset, end_lineno, end_col_offset,
-                            arena);
+        *out = _PyAST_Continue(lineno, col_offset, end_lineno, end_col_offset,
+                               arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7262,8 +7270,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_BoolOp(op, values, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_BoolOp(op, values, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7302,8 +7310,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_NamedExpr(target, value, lineno, col_offset, end_lineno,
-                             end_col_offset, arena);
+        *out = _PyAST_NamedExpr(target, value, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7356,8 +7364,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_BinOp(left, op, right, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_BinOp(left, op, right, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7396,8 +7404,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_UnaryOp(op, operand, lineno, col_offset, end_lineno,
-                           end_col_offset, arena);
+        *out = _PyAST_UnaryOp(op, operand, lineno, col_offset, end_lineno,
+                              end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7436,8 +7444,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Lambda(args, body, lineno, col_offset, end_lineno,
-                          end_col_offset, arena);
+        *out = _PyAST_Lambda(args, body, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7490,8 +7498,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_IfExp(test, body, orelse, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_IfExp(test, body, orelse, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7570,8 +7578,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Dict(keys, values, lineno, col_offset, end_lineno,
-                        end_col_offset, arena);
+        *out = _PyAST_Dict(keys, values, lineno, col_offset, end_lineno,
+                           end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7616,8 +7624,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Set(elts, lineno, col_offset, end_lineno, end_col_offset,
-                       arena);
+        *out = _PyAST_Set(elts, lineno, col_offset, end_lineno, end_col_offset,
+                          arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7676,8 +7684,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_ListComp(elt, generators, lineno, col_offset, end_lineno,
-                            end_col_offset, arena);
+        *out = _PyAST_ListComp(elt, generators, lineno, col_offset, end_lineno,
+                               end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7736,8 +7744,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_SetComp(elt, generators, lineno, col_offset, end_lineno,
-                           end_col_offset, arena);
+        *out = _PyAST_SetComp(elt, generators, lineno, col_offset, end_lineno,
+                              end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7810,8 +7818,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_DictComp(key, value, generators, lineno, col_offset,
-                            end_lineno, end_col_offset, arena);
+        *out = _PyAST_DictComp(key, value, generators, lineno, col_offset,
+                               end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7870,8 +7878,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_GeneratorExp(elt, generators, lineno, col_offset,
-                                end_lineno, end_col_offset, arena);
+        *out = _PyAST_GeneratorExp(elt, generators, lineno, col_offset,
+                                   end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7896,8 +7904,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Await(value, lineno, col_offset, end_lineno, end_col_offset,
-                         arena);
+        *out = _PyAST_Await(value, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7922,8 +7930,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Yield(value, lineno, col_offset, end_lineno, end_col_offset,
-                         arena);
+        *out = _PyAST_Yield(value, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7948,8 +7956,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_YieldFrom(value, lineno, col_offset, end_lineno,
-                             end_col_offset, arena);
+        *out = _PyAST_YieldFrom(value, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8042,8 +8050,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Compare(left, ops, comparators, lineno, col_offset,
-                           end_lineno, end_col_offset, arena);
+        *out = _PyAST_Compare(left, ops, comparators, lineno, col_offset,
+                              end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8136,8 +8144,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_Call(func, args, keywords, lineno, col_offset, end_lineno,
-                        end_col_offset, arena);
+        *out = _PyAST_Call(func, args, keywords, lineno, col_offset,
+                           end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8190,9 +8198,9 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_FormattedValue(value, conversion, format_spec, lineno,
-                                  col_offset, end_lineno, end_col_offset,
-                                  arena);
+        *out = _PyAST_FormattedValue(value, conversion, format_spec, lineno,
+                                     col_offset, end_lineno, end_col_offset,
+                                     arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8237,8 +8245,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_JoinedStr(values, lineno, col_offset, end_lineno,
-                             end_col_offset, arena);
+        *out = _PyAST_JoinedStr(values, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8277,8 +8285,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Constant(value, kind, lineno, col_offset, end_lineno,
-                            end_col_offset, arena);
+        *out = _PyAST_Constant(value, kind, lineno, col_offset, end_lineno,
+                               end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8331,8 +8339,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Attribute(value, attr, ctx, lineno, col_offset, end_lineno,
-                             end_col_offset, arena);
+        *out = _PyAST_Attribute(value, attr, ctx, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8385,8 +8393,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Subscript(value, slice, ctx, lineno, col_offset, end_lineno,
-                             end_col_offset, arena);
+        *out = _PyAST_Subscript(value, slice, ctx, lineno, col_offset,
+                                end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8425,8 +8433,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Starred(value, ctx, lineno, col_offset, end_lineno,
-                           end_col_offset, arena);
+        *out = _PyAST_Starred(value, ctx, lineno, col_offset, end_lineno,
+                              end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8465,8 +8473,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Name(id, ctx, lineno, col_offset, end_lineno,
-                        end_col_offset, arena);
+        *out = _PyAST_Name(id, ctx, lineno, col_offset, end_lineno,
+                           end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8525,8 +8533,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_List(elts, ctx, lineno, col_offset, end_lineno,
-                        end_col_offset, arena);
+        *out = _PyAST_List(elts, ctx, lineno, col_offset, end_lineno,
+                           end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8585,8 +8593,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Tuple(elts, ctx, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_Tuple(elts, ctx, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8639,8 +8647,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_Slice(lower, upper, step, lineno, col_offset, end_lineno,
-                         end_col_offset, arena);
+        *out = _PyAST_Slice(lower, upper, step, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8679,8 +8687,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_MatchAs(pattern, name, lineno, col_offset, end_lineno,
-                           end_col_offset, arena);
+        *out = _PyAST_MatchAs(pattern, name, lineno, col_offset, end_lineno,
+                              end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8725,8 +8733,8 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_MatchOr(patterns, lineno, col_offset, end_lineno,
-                           end_col_offset, arena);
+        *out = _PyAST_MatchOr(patterns, lineno, col_offset, end_lineno,
+                              end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -9130,7 +9138,7 @@ obj2ast_comprehension(struct ast_state *state, PyObject* obj, comprehension_ty*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _Py_comprehension(target, iter, ifs, is_async, arena);
+    *out = _PyAST_comprehension(target, iter, ifs, is_async, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9275,8 +9283,8 @@ obj2ast_excepthandler(struct ast_state *state, PyObject* obj, excepthandler_ty*
             }
             Py_CLEAR(tmp);
         }
-        *out = _Py_ExceptHandler(type, name, body, lineno, col_offset,
-                                 end_lineno, end_col_offset, arena);
+        *out = _PyAST_ExceptHandler(type, name, body, lineno, col_offset,
+                                    end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -9491,8 +9499,8 @@ obj2ast_arguments(struct ast_state *state, PyObject* obj, arguments_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    *out = _Py_arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults,
-                         kwarg, defaults, arena);
+    *out = _PyAST_arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults,
+                            kwarg, defaults, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9602,8 +9610,8 @@ obj2ast_arg(struct ast_state *state, PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _Py_arg(arg, annotation, type_comment, lineno, col_offset,
-                   end_lineno, end_col_offset, arena);
+    *out = _PyAST_arg(arg, annotation, type_comment, lineno, col_offset,
+                      end_lineno, end_col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9700,8 +9708,8 @@ obj2ast_keyword(struct ast_state *state, PyObject* obj, keyword_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _Py_keyword(arg, value, lineno, col_offset, end_lineno,
-                       end_col_offset, arena);
+    *out = _PyAST_keyword(arg, value, lineno, col_offset, end_lineno,
+                          end_col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9742,7 +9750,7 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _Py_alias(name, asname, arena);
+    *out = _PyAST_alias(name, asname, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9783,7 +9791,7 @@ obj2ast_withitem(struct ast_state *state, PyObject* obj, withitem_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _Py_withitem(context_expr, optional_vars, arena);
+    *out = _PyAST_withitem(context_expr, optional_vars, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9858,7 +9866,7 @@ obj2ast_match_case(struct ast_state *state, PyObject* obj, match_case_ty* out,
         }
         Py_CLEAR(tmp);
     }
-    *out = _Py_match_case(pattern, guard, body, arena);
+    *out = _PyAST_match_case(pattern, guard, body, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9913,7 +9921,7 @@ obj2ast_type_ignore(struct ast_state *state, PyObject* obj, type_ignore_ty*
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _Py_TypeIgnore(lineno, tag, arena);
+        *out = _PyAST_TypeIgnore(lineno, tag, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
