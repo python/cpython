@@ -1828,6 +1828,21 @@ class _BasePathTest(object):
         p.chmod(new_mode)
         self.assertEqual(p.stat().st_mode, new_mode)
 
+    # On Windows, os.chmod does not follow symlinks (issue #15411)
+    @only_posix
+    def test_chmod_follow_symlinks_true(self):
+        p = self.cls(BASE) / 'linkA'
+        q = p.resolve()
+        mode = q.stat().st_mode
+        # Clear writable bit.
+        new_mode = mode & ~0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+        # Set writable bit
+        new_mode = mode | 0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+
     # XXX also need a test for lchmod.
 
     def test_stat(self):
@@ -1838,6 +1853,17 @@ class _BasePathTest(object):
         p.chmod(st.st_mode ^ 0o222)
         self.addCleanup(p.chmod, st.st_mode)
         self.assertNotEqual(p.stat(), st)
+
+    @os_helper.skip_unless_symlink
+    def test_stat_no_follow_symlinks(self):
+        p = self.cls(BASE) / 'linkA'
+        st = p.stat()
+        self.assertNotEqual(st, p.stat(follow_symlinks=False))
+
+    def test_stat_no_follow_symlinks_nosymlink(self):
+        p = self.cls(BASE) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.stat(follow_symlinks=False))
 
     @os_helper.skip_unless_symlink
     def test_lstat(self):

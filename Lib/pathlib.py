@@ -393,8 +393,6 @@ class _NormalAccessor(_Accessor):
 
     stat = os.stat
 
-    lstat = os.lstat
-
     open = os.open
 
     listdir = os.listdir
@@ -402,12 +400,6 @@ class _NormalAccessor(_Accessor):
     scandir = os.scandir
 
     chmod = os.chmod
-
-    if hasattr(os, "lchmod"):
-        lchmod = os.lchmod
-    else:
-        def lchmod(self, path, mode):
-            raise NotImplementedError("os.lchmod() not available on this system")
 
     mkdir = os.mkdir
 
@@ -1191,12 +1183,12 @@ class Path(PurePath):
         normed = self._flavour.pathmod.normpath(s)
         return self._from_parts((normed,))
 
-    def stat(self):
+    def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return self._accessor.stat(self)
+        return self._accessor.stat(self, follow_symlinks=follow_symlinks)
 
     def owner(self):
         """
@@ -1286,18 +1278,18 @@ class Path(PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
-    def chmod(self, mode):
+    def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
         """
-        self._accessor.chmod(self, mode)
+        self._accessor.chmod(self, mode, follow_symlinks=follow_symlinks)
 
     def lchmod(self, mode):
         """
         Like chmod(), except if the path points to a symlink, the symlink's
         permissions are changed, rather than its target's.
         """
-        self._accessor.lchmod(self, mode)
+        self.chmod(mode, follow_symlinks=False)
 
     def unlink(self, missing_ok=False):
         """
@@ -1321,7 +1313,7 @@ class Path(PurePath):
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
-        return self._accessor.lstat(self)
+        return self.stat(follow_symlinks=False)
 
     def link_to(self, target):
         """
