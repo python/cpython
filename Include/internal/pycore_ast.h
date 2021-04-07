@@ -12,8 +12,6 @@ extern "C" {
 
 #include "pycore_asdl.h"
 
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
 typedef struct _mod *mod_ty;
 
 typedef struct _stmt *stmt_ty;
@@ -729,7 +727,6 @@ expr_ty _Py_GeneratorExp(expr_ty elt, asdl_comprehension_seq * generators, int
 #define Await(a0, a1, a2, a3, a4, a5) _Py_Await(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Await(expr_ty value, int lineno, int col_offset, int end_lineno,
                   int end_col_offset, PyArena *arena);
-#define Yield(a0, a1, a2, a3, a4, a5) _Py_Yield(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Yield(expr_ty value, int lineno, int col_offset, int end_lineno,
                   int end_col_offset, PyArena *arena);
 #define YieldFrom(a0, a1, a2, a3, a4, a5) _Py_YieldFrom(a0, a1, a2, a3, a4, a5)
