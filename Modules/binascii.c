@@ -441,7 +441,7 @@ Decode a line of base64 data.
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=0628223f19fd3f9b input=5872acf6e1cac243]*/
+/*[clinic end generated code: output=5409557788d4f975 input=5872acf6e1cac243]*/
 {
     assert(data->len >= 0);
 
