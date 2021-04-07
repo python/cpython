@@ -28,9 +28,9 @@ _PyPegen_parse(Parser *p)
 // The end
 '''
 file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
-interactive[mod_ty]: a=statement_newline { Interactive(a, p->arena) }
-eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { Expression(a, p->arena) }
-func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMARKER { FunctionType(a, b, p->arena) }
+interactive[mod_ty]: a=statement_newline { _PyAST_Interactive(a, p->arena) }
+eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { _PyAST_Expression(a, p->arena) }
+func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMARKER { _PyAST_FunctionType(a, b, p->arena) }
 fstring[expr_ty]: star_expressions
 
 # type_expressions allow */** but ignore them
@@ -56,7 +56,7 @@ statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_
 statement_newline[asdl_stmt_seq*]:
     | a=compound_stmt NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
     | simple_stmts
-    | NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, CHECK(stmt_ty, _Py_Pass(EXTRA))) }
+    | NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, CHECK(stmt_ty, _PyAST_Pass(EXTRA))) }
     | ENDMARKER { _PyPegen_interactive_exit(p) }
 simple_stmts[asdl_stmt_seq*]:
     | a=simple_stmt !';' NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } # Not needed, there for speedup
@@ -65,16 +65,16 @@ simple_stmts[asdl_stmt_seq*]:
 # will throw a SyntaxError.
 simple_stmt[stmt_ty] (memo):
     | assignment
-    | e=star_expressions { _Py_Expr(e, EXTRA) }
+    | e=star_expressions { _PyAST_Expr(e, EXTRA) }
     | &'return' return_stmt
     | &('import' | 'from') import_stmt
     | &'raise' raise_stmt
-    | 'pass' { _Py_Pass(EXTRA) }
+    | 'pass' { _PyAST_Pass(EXTRA) }
     | &'del' del_stmt
     | &'yield' yield_stmt
     | &'assert' assert_stmt
-    | 'break' { _Py_Break(EXTRA) }
-    | 'continue' { _Py_Continue(EXTRA) }
+    | 'break' { _PyAST_Break(EXTRA) }
+    | 'continue' { _PyAST_Continue(EXTRA) }
     | &'global' global_stmt
     | &'nonlocal' nonlocal_stmt
 compound_stmt[stmt_ty]:
@@ -94,15 +94,15 @@ assignment[stmt_ty]:
             stmt_ty,
             6,
             "Variable annotation syntax is",
-            _Py_AnnAssign(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA)
+            _PyAST_AnnAssign(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, c, 1, EXTRA)
         ) }
     | a=('(' b=single_target ')' { b }
          | single_subscript_attribute_target) ':' b=expression c=['=' d=annotated_rhs { d }] {
-        CHECK_VERSION(stmt_ty, 6, "Variable annotations syntax is", _Py_AnnAssign(a, b, c, 0, EXTRA)) }
+        CHECK_VERSION(stmt_ty, 6, "Variable annotations syntax is", _PyAST_AnnAssign(a, b, c, 0, EXTRA)) }
     | a[asdl_expr_seq*]=(z=star_targets '=' { z })+ b=(yield_expr | star_expressions) !'=' tc=[TYPE_COMMENT] {
-         _Py_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+         _PyAST_Assign(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | a=single_target b=augassign ~ c=(yield_expr | star_expressions) {
-         _Py_AugAssign(a, b->kind, c, EXTRA) }
+         _PyAST_AugAssign(a, b->kind, c, EXTRA) }
     | invalid_assignment
 
 augassign[AugOperator*]:
@@ -121,26 +121,26 @@ augassign[AugOperator*]:
     | '//=' { _PyPegen_augoperator(p, FloorDiv) }
 
 global_stmt[stmt_ty]: 'global' a[asdl_expr_seq*]=','.NAME+ {
-    _Py_Global(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
+    _PyAST_Global(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
 nonlocal_stmt[stmt_ty]: 'nonlocal' a[asdl_expr_seq*]=','.NAME+ {
-    _Py_Nonlocal(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
+    _PyAST_Nonlocal(CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p, a)), EXTRA) }
 
-yield_stmt[stmt_ty]: y=yield_expr { _Py_Expr(y, EXTRA) }
+yield_stmt[stmt_ty]: y=yield_expr { _PyAST_Expr(y, EXTRA) }
 
-assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _Py_Assert(a, b, EXTRA) }
+assert_stmt[stmt_ty]: 'assert' a=expression b=[',' z=expression { z }] { _PyAST_Assert(a, b, EXTRA) }
 
 del_stmt[stmt_ty]:
-    | 'del' a=del_targets &(';' | NEWLINE) { _Py_Delete(a, EXTRA) }
+    | 'del' a=del_targets &(';' | NEWLINE) { _PyAST_Delete(a, EXTRA) }
     | invalid_del_stmt
 
 import_stmt[stmt_ty]: import_name | import_from
-import_name[stmt_ty]: 'import' a=dotted_as_names { _Py_Import(a, EXTRA) }
+import_name[stmt_ty]: 'import' a=dotted_as_names { _PyAST_Import(a, EXTRA) }
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
     | 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _Py_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
+        _PyAST_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
     | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
-        _Py_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
+        _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
 import_from_targets[asdl_alias_seq*]:
     | '(' a=import_from_as_names [','] ')' { a }
     | import_from_as_names !','
@@ -149,13 +149,13 @@ import_from_targets[asdl_alias_seq*]:
 import_from_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.import_from_as_name+ { a }
 import_from_as_name[alias_ty]:
-    | a=NAME b=['as' z=NAME { z }] { _Py_alias(a->v.Name.id,
+    | a=NAME b=['as' z=NAME { z }] { _PyAST_alias(a->v.Name.id,
                                                (b) ? ((expr_ty) b)->v.Name.id : NULL,
                                                p->arena) }
 dotted_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.dotted_as_name+ { a }
 dotted_as_name[alias_ty]:
-    | a=dotted_name b=['as' z=NAME { z }] { _Py_alias(a->v.Name.id,
+    | a=dotted_name b=['as' z=NAME { z }] { _PyAST_alias(a->v.Name.id,
                                                       (b) ? ((expr_ty) b)->v.Name.id : NULL,
                                                       p->arena) }
 dotted_name[expr_ty]:
@@ -164,77 +164,77 @@ dotted_name[expr_ty]:
 
 if_stmt[stmt_ty]:
     | 'if' a=named_expression &&':' b=block c=elif_stmt {
-        _Py_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
-    | 'if' a=named_expression &&':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
+        _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
+    | 'if' a=named_expression &&':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
 elif_stmt[stmt_ty]:
     | 'elif' a=named_expression &&':' b=block c=elif_stmt {
-        _Py_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
-    | 'elif' a=named_expression &&':' b=block c=[else_block] { _Py_If(a, b, c, EXTRA) }
+        _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
+    | 'elif' a=named_expression &&':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
 else_block[asdl_stmt_seq*]: 'else' &&':' b=block { b }
 
 while_stmt[stmt_ty]:
-    | 'while' a=named_expression &&':' b=block c=[else_block] { _Py_While(a, b, c, EXTRA) }
+    | 'while' a=named_expression &&':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
     | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
-        _Py_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+        _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
-        CHECK_VERSION(stmt_ty, 5, "Async for loops are", _Py_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+        CHECK_VERSION(stmt_ty, 5, "Async for loops are", _PyAST_AsyncFor(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_for_target
 
 with_stmt[stmt_ty]:
     | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
-        _Py_With(a, b, NULL, EXTRA) }
+        _PyAST_With(a, b, NULL, EXTRA) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
-        _Py_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
+        _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
-       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _Py_AsyncWith(a, b, NULL, EXTRA)) }
+       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NULL, EXTRA)) }
     | ASYNC 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
-       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _Py_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
     | invalid_with_stmt
 
 with_item[withitem_ty]:
-    | e=expression 'as' t=star_target &(',' | ')' | ':') { _Py_withitem(e, t, p->arena) }
+    | e=expression 'as' t=star_target &(',' | ')' | ':') { _PyAST_withitem(e, t, p->arena) }
     | invalid_with_item
-    | e=expression { _Py_withitem(e, NULL, p->arena) }
+    | e=expression { _PyAST_withitem(e, NULL, p->arena) }
 
 try_stmt[stmt_ty]:
-    | 'try' &&':' b=block f=finally_block { _Py_Try(b, NULL, NULL, f, EXTRA) }
-    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _Py_Try(b, ex, el, f, EXTRA) }
+    | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
+    | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
 except_block[excepthandler_ty]:
     | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
-        _Py_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
-    | 'except' ':' b=block { _Py_ExceptHandler(NULL, NULL, b, EXTRA) }
+        _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
+    | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_block
 finally_block[asdl_stmt_seq*]: 'finally' ':' a=block { a }
 
 match_stmt[stmt_ty]:
     | "match" subject=subject_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
-        CHECK_VERSION(stmt_ty, 10, "Pattern matching is", _Py_Match(subject, cases, EXTRA)) }
+        CHECK_VERSION(stmt_ty, 10, "Pattern matching is", _PyAST_Match(subject, cases, EXTRA)) }
     | invalid_match_stmt
 subject_expr[expr_ty]:
     | value=star_named_expression ',' values=star_named_expressions? {
-        _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
+        _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
     | named_expression
 case_block[match_case_ty]:
     | "case" pattern=patterns guard=guard? ':' body=block {
-        _Py_match_case(pattern, guard, body, p->arena) }
+        _PyAST_match_case(pattern, guard, body, p->arena) }
     | invalid_case_block
 guard[expr_ty]: 'if' guard=named_expression { guard }
 
 patterns[expr_ty]:
     | values[asdl_expr_seq*]=open_sequence_pattern {
-        _Py_Tuple(values, Load, EXTRA) }
+        _PyAST_Tuple(values, Load, EXTRA) }
     | pattern
 pattern[expr_ty]:
     | as_pattern
     | or_pattern
 as_pattern[expr_ty]:
     | pattern=or_pattern 'as' target=capture_pattern {
-        _Py_MatchAs(pattern, target->v.Name.id, EXTRA) }
+        _PyAST_MatchAs(pattern, target->v.Name.id, EXTRA) }
 or_pattern[expr_ty]:
     | patterns[asdl_expr_seq*]='|'.closed_pattern+ {
-        asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _Py_MatchOr(patterns, EXTRA) }
+        asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _PyAST_MatchOr(patterns, EXTRA) }
 closed_pattern[expr_ty]:
     | literal_pattern
     | capture_pattern
@@ -247,28 +247,28 @@ closed_pattern[expr_ty]:
 
 literal_pattern[expr_ty]:
     | signed_number !('+' | '-')
-    | real=signed_number '+' imag=NUMBER { _Py_BinOp(real, Add, imag, EXTRA) }
-    | real=signed_number '-' imag=NUMBER  { _Py_BinOp(real, Sub, imag, EXTRA) }
+    | real=signed_number '+' imag=NUMBER { _PyAST_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_number '-' imag=NUMBER  { _PyAST_BinOp(real, Sub, imag, EXTRA) }
     | strings
-    | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
-    | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
-    | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
+    | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
+    | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
+    | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
 signed_number[expr_ty]:
     | NUMBER
-    | '-' number=NUMBER { _Py_UnaryOp(USub, number, EXTRA) }
+    | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
 capture_pattern[expr_ty]:
     | !"_" name=NAME !('.' | '(' | '=') {
         _PyPegen_set_expr_context(p, name, Store) }
 
 wildcard_pattern[expr_ty]:
-    | "_" { _Py_Name(CHECK(PyObject*, _PyPegen_new_identifier(p, "_")), Store, EXTRA) }
+    | "_" { _PyAST_Name(CHECK(PyObject*, _PyPegen_new_identifier(p, "_")), Store, EXTRA) }
 
 value_pattern[expr_ty]:
     | attr=attr !('.' | '(' | '=') { attr }
 attr[expr_ty]:
     | value=name_or_attr '.' attr=NAME {
-        _Py_Attribute(value, attr->v.Name.id, Load, EXTRA) }
+        _PyAST_Attribute(value, attr->v.Name.id, Load, EXTRA) }
 name_or_attr[expr_ty]:
     | attr
     | NAME
@@ -277,8 +277,8 @@ group_pattern[expr_ty]:
     | '(' pattern=pattern ')' { pattern }
 
 sequence_pattern[expr_ty]:
-    | '[' values=maybe_sequence_pattern? ']' { _Py_List(values, Load, EXTRA) }
-    | '(' values=open_sequence_pattern? ')' { _Py_Tuple(values, Load, EXTRA) }
+    | '[' values=maybe_sequence_pattern? ']' { _PyAST_List(values, Load, EXTRA) }
+    | '(' values=open_sequence_pattern? ')' { _PyAST_Tuple(values, Load, EXTRA) }
 open_sequence_pattern[asdl_seq*]:
     | value=maybe_star_pattern ',' values=maybe_sequence_pattern? {
         _PyPegen_seq_insert_in_front(p, value, values) }
@@ -289,11 +289,11 @@ maybe_star_pattern[expr_ty]:
     | pattern
 star_pattern[expr_ty]:
     | '*' value=(capture_pattern | wildcard_pattern) {
-        _Py_Starred(value, Store, EXTRA) }
+        _PyAST_Starred(value, Store, EXTRA) }
 
 mapping_pattern[expr_ty]:
     | '{' items=items_pattern? '}' {
-        _Py_Dict(CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, items)), CHECK(asdl_expr_seq*, _PyPegen_get_values(p, items)), EXTRA) }
+        _PyAST_Dict(CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, items)), CHECK(asdl_expr_seq*, _PyPegen_get_values(p, items)), EXTRA) }
 items_pattern[asdl_seq*]:
     | items=','.key_value_pattern+ ','? { items }
 key_value_pattern[KeyValuePair*]:
@@ -304,26 +304,26 @@ double_star_pattern[KeyValuePair*]:
     | '**' value=capture_pattern { _PyPegen_key_value_pair(p, NULL, value) }
 
 class_pattern[expr_ty]:
-    | func=name_or_attr '(' ')' { _Py_Call(func, NULL, NULL, EXTRA) }
+    | func=name_or_attr '(' ')' { _PyAST_Call(func, NULL, NULL, EXTRA) }
     | func=name_or_attr '(' args=positional_patterns ','? ')' {
-        _Py_Call(func, args, NULL, EXTRA) }
+        _PyAST_Call(func, args, NULL, EXTRA) }
     | func=name_or_attr '(' keywords=keyword_patterns ','? ')' {
-        _Py_Call(func, NULL, keywords, EXTRA) }
+        _PyAST_Call(func, NULL, keywords, EXTRA) }
     | func=name_or_attr '(' args=positional_patterns ',' keywords=keyword_patterns ','? ')' {
-        _Py_Call(func, args, keywords, EXTRA) }
+        _PyAST_Call(func, args, keywords, EXTRA) }
 positional_patterns[asdl_expr_seq*]:
     | args[asdl_expr_seq*]=','.pattern+ { args }
 keyword_patterns[asdl_keyword_seq*]:
     | keywords[asdl_keyword_seq*]=','.keyword_pattern+ { keywords }
 keyword_pattern[keyword_ty]:
-    | arg=NAME '=' value=pattern { _Py_keyword(arg->v.Name.id, value, EXTRA) }
+    | arg=NAME '=' value=pattern { _PyAST_keyword(arg->v.Name.id, value, EXTRA) }
 
 return_stmt[stmt_ty]:
-    | 'return' a=[star_expressions] { _Py_Return(a, EXTRA) }
+    | 'return' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
 
 raise_stmt[stmt_ty]:
-    | 'raise' a=expression b=['from' z=expression { z }] { _Py_Raise(a, b, EXTRA) }
-    | 'raise' { _Py_Raise(NULL, NULL, EXTRA) }
+    | 'raise' a=expression b=['from' z=expression { z }] { _PyAST_Raise(a, b, EXTRA) }
+    | 'raise' { _PyAST_Raise(NULL, NULL, EXTRA) }
 
 function_def[stmt_ty]:
     | d=decorators f=function_def_raw { _PyPegen_function_def_decorators(p, d, f) }
@@ -331,7 +331,7 @@ function_def[stmt_ty]:
 
 function_def_raw[stmt_ty]:
     | 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
-        _Py_FunctionDef(n->v.Name.id,
+        _PyAST_FunctionDef(n->v.Name.id,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                         b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
@@ -339,7 +339,7 @@ function_def_raw[stmt_ty]:
             stmt_ty,
             5,
             "Async functions are",
-            _Py_AsyncFunctionDef(n->v.Name.id,
+            _PyAST_AsyncFunctionDef(n->v.Name.id,
                             (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
                             b, NULL, a, NEW_TYPE_COMMENT(p, tc), EXTRA)
         ) }
@@ -403,7 +403,7 @@ param_with_default[NameDefaultPair*]:
 param_maybe_default[NameDefaultPair*]:
     | a=param c=default? ',' tc=TYPE_COMMENT? { _PyPegen_name_default_pair(p, a, c, tc) }
     | a=param c=default? tc=TYPE_COMMENT? &')' { _PyPegen_name_default_pair(p, a, c, tc) }
-param[arg_ty]: a=NAME b=annotation? { _Py_arg(a->v.Name.id, b, NULL, EXTRA) }
+param[arg_ty]: a=NAME b=annotation? { _PyAST_arg(a->v.Name.id, b, NULL, EXTRA) }
 
 annotation[expr_ty]: ':' a=expression { a }
 default[expr_ty]: '=' a=expression { a }
@@ -415,7 +415,7 @@ class_def[stmt_ty]:
     | class_def_raw
 class_def_raw[stmt_ty]:
     | 'class' a=NAME b=['(' z=[arguments] ')' { z }] &&':' c=block {
-        _Py_ClassDef(a->v.Name.id,
+        _PyAST_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
                      (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                      c, NULL, EXTRA) }
@@ -427,19 +427,19 @@ block[asdl_stmt_seq*] (memo):
 
 star_expressions[expr_ty]:
     | a=star_expression b=(',' c=star_expression { c })+ [','] {
-        _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=star_expression ',' { _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
+        _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
+    | a=star_expression ',' { _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
     | star_expression
 star_expression[expr_ty] (memo):
-    | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
+    | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
     | expression
 
 star_named_expressions[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_named_expression+ [','] { a }
 star_named_expression[expr_ty]:
-    | '*' a=bitwise_or { _Py_Starred(a, Load, EXTRA) }
+    | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
     | named_expression
 named_expression[expr_ty]:
-    | a=NAME ':=' ~ b=expression { _Py_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
     | expression !':='
     | invalid_named_expression
 
@@ -447,17 +447,17 @@ annotated_rhs[expr_ty]: yield_expr | star_expressions
 
 expressions[expr_ty]:
     | a=expression b=(',' c=expression { c })+ [','] {
-        _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
-    | a=expression ',' { _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
+        _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Load, EXTRA) }
+    | a=expression ',' { _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
     | expression
 expression[expr_ty] (memo):
-    | a=disjunction 'if' b=disjunction 'else' c=expression { _Py_IfExp(b, a, c, EXTRA) }
+    | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
 
 lambdef[expr_ty]:
     | 'lambda' a=[lambda_params] ':' b=expression {
-        _Py_Lambda((a) ? a : CHECK(arguments_ty, _PyPegen_empty_arguments(p)), b, EXTRA) }
+        _PyAST_Lambda((a) ? a : CHECK(arguments_ty, _PyPegen_empty_arguments(p)), b, EXTRA) }
 
 lambda_params[arguments_ty]:
     | invalid_lambda_parameters
@@ -503,26 +503,26 @@ lambda_param_with_default[NameDefaultPair*]:
 lambda_param_maybe_default[NameDefaultPair*]:
     | a=lambda_param c=default? ',' { _PyPegen_name_default_pair(p, a, c, NULL) }
     | a=lambda_param c=default? &':' { _PyPegen_name_default_pair(p, a, c, NULL) }
-lambda_param[arg_ty]: a=NAME { _Py_arg(a->v.Name.id, NULL, NULL, EXTRA) }
+lambda_param[arg_ty]: a=NAME { _PyAST_arg(a->v.Name.id, NULL, NULL, EXTRA) }
 
 disjunction[expr_ty] (memo):
-    | a=conjunction b=('or' c=conjunction { c })+ { _Py_BoolOp(
+    | a=conjunction b=('or' c=conjunction { c })+ { _PyAST_BoolOp(
         Or,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
     | conjunction
 conjunction[expr_ty] (memo):
-    | a=inversion b=('and' c=inversion { c })+ { _Py_BoolOp(
+    | a=inversion b=('and' c=inversion { c })+ { _PyAST_BoolOp(
         And,
         CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)),
         EXTRA) }
     | inversion
 inversion[expr_ty] (memo):
-    | 'not' a=inversion { _Py_UnaryOp(Not, a, EXTRA) }
+    | 'not' a=inversion { _PyAST_UnaryOp(Not, a, EXTRA) }
     | comparison
 comparison[expr_ty]:
     | a=bitwise_or b=compare_op_bitwise_or_pair+ {
-        _Py_Compare(
+        _PyAST_Compare(
             a,
             CHECK(asdl_int_seq*, _PyPegen_get_cmpops(p, b)),
             CHECK(asdl_expr_seq*, _PyPegen_get_exprs(p, b)),
@@ -552,98 +552,98 @@ isnot_bitwise_or[CmpopExprPair*]: 'is' 'not' a=bitwise_or { _PyPegen_cmpop_expr_
 is_bitwise_or[CmpopExprPair*]: 'is' a=bitwise_or { _PyPegen_cmpop_expr_pair(p, Is, a) }
 
 bitwise_or[expr_ty]:
-    | a=bitwise_or '|' b=bitwise_xor { _Py_BinOp(a, BitOr, b, EXTRA) }
+    | a=bitwise_or '|' b=bitwise_xor { _PyAST_BinOp(a, BitOr, b, EXTRA) }
     | bitwise_xor
 bitwise_xor[expr_ty]:
-    | a=bitwise_xor '^' b=bitwise_and { _Py_BinOp(a, BitXor, b, EXTRA) }
+    | a=bitwise_xor '^' b=bitwise_and { _PyAST_BinOp(a, BitXor, b, EXTRA) }
     | bitwise_and
 bitwise_and[expr_ty]:
-    | a=bitwise_and '&' b=shift_expr { _Py_BinOp(a, BitAnd, b, EXTRA) }
+    | a=bitwise_and '&' b=shift_expr { _PyAST_BinOp(a, BitAnd, b, EXTRA) }
     | shift_expr
 shift_expr[expr_ty]:
-    | a=shift_expr '<<' b=sum { _Py_BinOp(a, LShift, b, EXTRA) }
-    | a=shift_expr '>>' b=sum { _Py_BinOp(a, RShift, b, EXTRA) }
+    | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
+    | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
     | sum
 
 sum[expr_ty]:
-    | a=sum '+' b=term { _Py_BinOp(a, Add, b, EXTRA) }
-    | a=sum '-' b=term { _Py_BinOp(a, Sub, b, EXTRA) }
+    | a=sum '+' b=term { _PyAST_BinOp(a, Add, b, EXTRA) }
+    | a=sum '-' b=term { _PyAST_BinOp(a, Sub, b, EXTRA) }
     | term
 term[expr_ty]:
-    | a=term '*' b=factor { _Py_BinOp(a, Mult, b, EXTRA) }
-    | a=term '/' b=factor { _Py_BinOp(a, Div, b, EXTRA) }
-    | a=term '//' b=factor { _Py_BinOp(a, FloorDiv, b, EXTRA) }
-    | a=term '%' b=factor { _Py_BinOp(a, Mod, b, EXTRA) }
-    | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _Py_BinOp(a, MatMult, b, EXTRA)) }
+    | a=term '*' b=factor { _PyAST_BinOp(a, Mult, b, EXTRA) }
+    | a=term '/' b=factor { _PyAST_BinOp(a, Div, b, EXTRA) }
+    | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }
+    | a=term '%' b=factor { _PyAST_BinOp(a, Mod, b, EXTRA) }
+    | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _PyAST_BinOp(a, MatMult, b, EXTRA)) }
     | factor
 factor[expr_ty] (memo):
-    | '+' a=factor { _Py_UnaryOp(UAdd, a, EXTRA) }
-    | '-' a=factor { _Py_UnaryOp(USub, a, EXTRA) }
-    | '~' a=factor { _Py_UnaryOp(Invert, a, EXTRA) }
+    | '+' a=factor { _PyAST_UnaryOp(UAdd, a, EXTRA) }
+    | '-' a=factor { _PyAST_UnaryOp(USub, a, EXTRA) }
+    | '~' a=factor { _PyAST_UnaryOp(Invert, a, EXTRA) }
     | power
 power[expr_ty]:
-    | a=await_primary '**' b=factor { _Py_BinOp(a, Pow, b, EXTRA) }
+    | a=await_primary '**' b=factor { _PyAST_BinOp(a, Pow, b, EXTRA) }
     | await_primary
 await_primary[expr_ty] (memo):
-    | AWAIT a=primary { CHECK_VERSION(expr_ty, 5, "Await expressions are", _Py_Await(a, EXTRA)) }
+    | AWAIT a=primary { CHECK_VERSION(expr_ty, 5, "Await expressions are", _PyAST_Await(a, EXTRA)) }
     | primary
 primary[expr_ty]:
     | invalid_primary  # must be before 'primay genexp' because of invalid_genexp
-    | a=primary '.' b=NAME { _Py_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=primary b=genexp { _Py_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
+    | a=primary '.' b=NAME { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
+    | a=primary b=genexp { _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=primary '(' b=[arguments] ')' {
-        _Py_Call(a,
+        _PyAST_Call(a,
                  (b) ? ((expr_ty) b)->v.Call.args : NULL,
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
-    | a=primary '[' b=slices ']' { _Py_Subscript(a, b, Load, EXTRA) }
+    | a=primary '[' b=slices ']' { _PyAST_Subscript(a, b, Load, EXTRA) }
     | atom
 
 slices[expr_ty]:
     | a=slice !',' { a }
-    | a[asdl_expr_seq*]=','.slice+ [','] { _Py_Tuple(a, Load, EXTRA) }
+    | a[asdl_expr_seq*]=','.slice+ [','] { _PyAST_Tuple(a, Load, EXTRA) }
 slice[expr_ty]:
-    | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _Py_Slice(a, b, c, EXTRA) }
+    | a=[expression] ':' b=[expression] c=[':' d=[expression] { d }] { _PyAST_Slice(a, b, c, EXTRA) }
     | a=named_expression { a }
 atom[expr_ty]:
     | NAME
-    | 'True' { _Py_Constant(Py_True, NULL, EXTRA) }
-    | 'False' { _Py_Constant(Py_False, NULL, EXTRA) }
-    | 'None' { _Py_Constant(Py_None, NULL, EXTRA) }
+    | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
+    | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
+    | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | &STRING strings
     | NUMBER
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
     | &'{' (dict | set | dictcomp | setcomp)
-    | '...' { _Py_Constant(Py_Ellipsis, NULL, EXTRA) }
+    | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
 
 strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
 list[expr_ty]:
-    | '[' a=[star_named_expressions] ']' { _Py_List(a, Load, EXTRA) }
+    | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
 listcomp[expr_ty]:
-    | '[' a=named_expression b=for_if_clauses ']' { _Py_ListComp(a, b, EXTRA) }
+    | '[' a=named_expression b=for_if_clauses ']' { _PyAST_ListComp(a, b, EXTRA) }
     | invalid_comprehension
 tuple[expr_ty]:
     | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
-        _Py_Tuple(a, Load, EXTRA) }
+        _PyAST_Tuple(a, Load, EXTRA) }
 group[expr_ty]:
     | '(' a=(yield_expr | named_expression) ')' { a }
     | invalid_group
 genexp[expr_ty]:
-    | '(' a=named_expression b=for_if_clauses ')' { _Py_GeneratorExp(a, b, EXTRA) }
+    | '(' a=named_expression b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
-set[expr_ty]: '{' a=star_named_expressions '}' { _Py_Set(a, EXTRA) }
+set[expr_ty]: '{' a=star_named_expressions '}' { _PyAST_Set(a, EXTRA) }
 setcomp[expr_ty]:
-    | '{' a=named_expression b=for_if_clauses '}' { _Py_SetComp(a, b, EXTRA) }
+    | '{' a=named_expression b=for_if_clauses '}' { _PyAST_SetComp(a, b, EXTRA) }
     | invalid_comprehension
 dict[expr_ty]:
     | '{' a=[double_starred_kvpairs] '}' {
-        _Py_Dict(
+        _PyAST_Dict(
             CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, a)),
             CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
             EXTRA) }
 dictcomp[expr_ty]:
-    | '{' a=kvpair b=for_if_clauses '}' { _Py_DictComp(a->key, a->value, b, EXTRA) }
+    | '{' a=kvpair b=for_if_clauses '}' { _PyAST_DictComp(a->key, a->value, b, EXTRA) }
     | invalid_dict_comprehension
 double_starred_kvpairs[asdl_seq*]: a=','.double_starred_kvpair+ [','] { a }
 double_starred_kvpair[KeyValuePair*]:
@@ -654,21 +654,21 @@ for_if_clauses[asdl_comprehension_seq*]:
     | a[asdl_comprehension_seq*]=for_if_clause+ { a }
 for_if_clause[comprehension_ty]:
     | ASYNC 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
-        CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _Py_comprehension(a, b, c, 1, p->arena)) }
+        CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
-        _Py_comprehension(a, b, c, 0, p->arena) }
+        _PyAST_comprehension(a, b, c, 0, p->arena) }
     | invalid_for_target
 
 yield_expr[expr_ty]:
-    | 'yield' 'from' a=expression { _Py_YieldFrom(a, EXTRA) }
-    | 'yield' a=[star_expressions] { _Py_Yield(a, EXTRA) }
+    | 'yield' 'from' a=expression { _PyAST_YieldFrom(a, EXTRA) }
+    | 'yield' a=[star_expressions] { _PyAST_Yield(a, EXTRA) }
 
 arguments[expr_ty] (memo):
     | a=args [','] &')' { a }
     | invalid_arguments
 args[expr_ty]:
     | a[asdl_expr_seq*]=','.(starred_expression | named_expression !'=')+ b=[',' k=kwargs {k}] { _PyPegen_collect_call_seqs(p, a, b, EXTRA) }
-    | a=kwargs { _Py_Call(_PyPegen_dummy_name(p),
+    | a=kwargs { _PyAST_Call(_PyPegen_dummy_name(p),
                           CHECK_NULL_ALLOWED(asdl_expr_seq*, _PyPegen_seq_extract_starred_exprs(p, a)),
                           CHECK_NULL_ALLOWED(asdl_keyword_seq*, _PyPegen_seq_delete_starred_exprs(p, a)),
                           EXTRA) }
@@ -677,72 +677,72 @@ kwargs[asdl_seq*]:
     | ','.kwarg_or_starred+
     | ','.kwarg_or_double_starred+
 starred_expression[expr_ty]:
-    | '*' a=expression { _Py_Starred(a, Load, EXTRA) }
+    | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
 kwarg_or_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
-        _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
+        _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _PyAST_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | a=starred_expression { _PyPegen_keyword_or_starred(p, a, 0) }
     | invalid_kwarg
 kwarg_or_double_starred[KeywordOrStarred*]:
     | a=NAME '=' b=expression {
-        _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _Py_keyword(a->v.Name.id, b, EXTRA)), 1) }
-    | '**' a=expression { _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _Py_keyword(NULL, a, EXTRA)), 1) }
+        _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _PyAST_keyword(a->v.Name.id, b, EXTRA)), 1) }
+    | '**' a=expression { _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _PyAST_keyword(NULL, a, EXTRA)), 1) }
     | invalid_kwarg
 
 # NOTE: star_targets may contain *bitwise_or, targets may not.
 star_targets[expr_ty]:
     | a=star_target !',' { a }
     | a=star_target b=(',' c=star_target { c })* [','] {
-        _Py_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
+        _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, a, b)), Store, EXTRA) }
 star_targets_list_seq[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_target+ [','] { a }
 star_targets_tuple_seq[asdl_expr_seq*]:
     | a=star_target b=(',' c=star_target { c })+ [','] { (asdl_expr_seq*) _PyPegen_seq_insert_in_front(p, a, b) }
     | a=star_target ',' { (asdl_expr_seq*) _PyPegen_singleton_seq(p, a) }
 star_target[expr_ty] (memo):
     | '*' a=(!'*' star_target) {
-        _Py_Starred(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
+        _PyAST_Starred(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), Store, EXTRA) }
     | target_with_star_atom
 target_with_star_atom[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
+    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
     | star_atom
 star_atom[expr_ty]:
     | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
     | '(' a=target_with_star_atom ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=[star_targets_tuple_seq] ')' { _Py_Tuple(a, Store, EXTRA) }
-    | '[' a=[star_targets_list_seq] ']' { _Py_List(a, Store, EXTRA) }
+    | '(' a=[star_targets_tuple_seq] ')' { _PyAST_Tuple(a, Store, EXTRA) }
+    | '[' a=[star_targets_list_seq] ']' { _PyAST_List(a, Store, EXTRA) }
 
 single_target[expr_ty]:
     | single_subscript_attribute_target
     | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
     | '(' a=single_target ')' { a }
 single_subscript_attribute_target[expr_ty]:
-    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
+    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
 
 del_targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.del_target+ [','] { a }
 del_target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Del, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Del, EXTRA) }
+    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Del, EXTRA) }
+    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Del, EXTRA) }
     | del_t_atom
 del_t_atom[expr_ty]:
     | a=NAME { _PyPegen_set_expr_context(p, a, Del) }
     | '(' a=del_target ')' { _PyPegen_set_expr_context(p, a, Del) }
-    | '(' a=[del_targets] ')' { _Py_Tuple(a, Del, EXTRA) }
-    | '[' a=[del_targets] ']' { _Py_List(a, Del, EXTRA) }
+    | '(' a=[del_targets] ')' { _PyAST_Tuple(a, Del, EXTRA) }
+    | '[' a=[del_targets] ']' { _PyAST_List(a, Del, EXTRA) }
 
 targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.target+ [','] { a }
 target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _Py_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _Py_Subscript(a, b, Store, EXTRA) }
+    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
+    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
     | t_atom
 t_primary[expr_ty]:
-    | a=t_primary '.' b=NAME &t_lookahead { _Py_Attribute(a, b->v.Name.id, Load, EXTRA) }
-    | a=t_primary '[' b=slices ']' &t_lookahead { _Py_Subscript(a, b, Load, EXTRA) }
+    | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
+    | a=t_primary '[' b=slices ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
     | a=t_primary b=genexp &t_lookahead {
-        _Py_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
+        _PyAST_Call(a, CHECK(asdl_expr_seq*, (asdl_expr_seq*)_PyPegen_singleton_seq(p, b)), NULL, EXTRA) }
     | a=t_primary '(' b=[arguments] ')' &t_lookahead {
-        _Py_Call(a,
+        _PyAST_Call(a,
                  (b) ? ((expr_ty) b)->v.Call.args : NULL,
                  (b) ? ((expr_ty) b)->v.Call.keywords : NULL,
                  EXTRA) }
@@ -751,8 +751,8 @@ t_lookahead: '(' | '[' | '.'
 t_atom[expr_ty]:
     | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
     | '(' a=target ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' b=[targets] ')' { _Py_Tuple(b, Store, EXTRA) }
-    | '[' b=[targets] ']' { _Py_List(b, Store, EXTRA) }
+    | '(' b=[targets] ')' { _PyAST_Tuple(b, Store, EXTRA) }
+    | '[' b=[targets] ']' { _PyAST_List(b, Store, EXTRA) }
 
 
 # From here on, there are rules for invalid syntax with specialised error messages
@@ -856,7 +856,7 @@ invalid_except_block:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "exception group must be parenthesized") }
     | 'except' expression ['as' NAME ] &&':'
-    | 'except' &&':' 
+    | 'except' &&':'
 
 invalid_match_stmt:
     | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
