@@ -18,7 +18,7 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
 
    The ``camelCase`` names used for some
    methods and functions in this module in the Python 2.x series are still
-   supported by this module. They will be removed in the future.
+   supported by this module for compatibility with Python 2.5 and lower.
 
 
 .. impl-detail::
@@ -42,7 +42,7 @@ This module defines the following functions:
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
 
-   .. deprecated-removed:: 3.10 3.12
+   .. deprecated:: 3.10
       The function `activeCount` is an alias for this function.
 
 .. function:: current_thread()
@@ -52,7 +52,7 @@ This module defines the following functions:
    :mod:`threading` module, a dummy thread object with limited functionality is
    returned.
 
-   .. deprecated-removed:: 3.10 3.12
+   .. deprecated:: 3.10
       The function `currentThread` is an alias for this function.
 
 
@@ -389,7 +389,7 @@ since it is impossible to detect the termination of alien threads.
       Old getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
 
-      .. deprecated-removed:: 3.10 3.12
+      .. deprecated:: 3.10
 
    .. attribute:: ident
 
@@ -443,7 +443,7 @@ since it is impossible to detect the termination of alien threads.
       Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
 
-      .. deprecated-removed:: 3.10 3.12
+      .. deprecated:: 3.10
 
 
 .. _lock-objects:
@@ -780,7 +780,7 @@ item to the buffer only needs to wake up one consumer thread.
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
-      .. deprecated-removed:: 3.10 3.12
+      .. deprecated:: 3.10
          The method `notifyAll` is an alias for this method.
 
 
@@ -920,7 +920,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
       Return ``True`` if and only if the internal flag is true.
 
-      .. deprecated-removed:: 3.10 3.12
+      .. deprecated:: 3.10
          The method `isSet` is an alias for this method.
 
    .. method:: set()

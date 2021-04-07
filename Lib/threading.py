@@ -1166,11 +1166,11 @@ class Thread:
     def isDaemon(self):
         """Return whether this thread is a daemon.
 
-        This method is deprecated, use the .daemon property instead.
+        This method is deprecated, use the daemon attribute instead.
 
         """
         import warnings
-        warnings.warn('isDaemon() is deprecated, use .daemon instead',
+        warnings.warn('isDaemon() is deprecated, get the daemon attribute instead',
                       DeprecationWarning, stacklevel=2)
         return self.daemon
 
@@ -1181,29 +1181,29 @@ class Thread:
 
         """
         import warnings
-        warnings.warn('setDaemon() is deprecated, use .daemon instead',
+        warnings.warn('setDaemon() is deprecated, set the daemon attribute instead',
                       DeprecationWarning, stacklevel=2)
         self.daemon = daemonic
 
     def getName(self):
         """Return a string used for identification purposes only.
 
-        This method is deprecated, use the .name property instead.
+        This method is deprecated, use the name attribute instead.
 
         """
         import warnings
-        warnings.warn('getName() is deprecated, use .name instead',
+        warnings.warn('getName() is deprecated, get the name attribute instead',
                       DeprecationWarning, stacklevel=2)
         return self.name
 
     def setName(self, name):
         """Set the name string for this thread.
 
-        This method is deprecated, use the .name property instead.
+        This method is deprecated, use the name attribute instead.
 
         """
         import warnings
-        warnings.warn('setName() is deprecated, use .name instead',
+        warnings.warn('setName() is deprecated, set the name attribute instead',
                       DeprecationWarning, stacklevel=2)
         self.name = name
 
