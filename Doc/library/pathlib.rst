@@ -713,10 +713,13 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.stat()
+.. method:: Path.stat(*, follow_symlinks=True)
 
    Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
+
+   This method normally follows symlinks; to stat a symlink add the argument
+   ``follow_symlinks=False``, or use :meth:`~Path.lstat`.
 
    ::
 
@@ -726,10 +729,18 @@ call fails (for example because the path doesn't exist).
       >>> p.stat().st_mtime
       1327883547.852554
 
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
-.. method:: Path.chmod(mode)
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
 
-   Change the file mode and permissions, like :func:`os.chmod`::
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
 
       >>> p = Path('setup.py')
       >>> p.stat().st_mode
@@ -738,6 +749,8 @@ call fails (for example because the path doesn't exist).
       >>> p.stat().st_mode
       33060
 
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.exists()
 
