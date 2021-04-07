@@ -77,7 +77,12 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
-    def check_wrapper_attrs(self, wrapper, func):
+    def check_wrapper_attrs(self, method_wrapper, format_str):
+        def func(x):
+            return x
+        wrapper = method_wrapper(func)
+
+        self.assertIs(wrapper.__func__, func)
         self.assertIs(wrapper.__wrapped__, func)
 
         for attr in ('__module__', '__qualname__', '__name__',
@@ -85,31 +90,15 @@ class TestDecorators(unittest.TestCase):
             self.assertIs(getattr(wrapper, attr),
                           getattr(func, attr))
 
-    def test_staticmethod(self):
-        def func(x):
-            return x
-        wrapper = staticmethod(func)
-
-        self.assertIs(wrapper.__func__, func)
-        self.check_wrapper_attrs(wrapper, func)
-
-        self.assertEqual(repr(wrapper),
-                         f'<staticmethod({func!r})>')
+        self.assertEqual(repr(wrapper), format_str.format(func))
 
         self.assertRaises(TypeError, wrapper, 1)
+
+    def test_staticmethod(self):
+        self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
 
     def test_classmethod(self):
-        def func(x):
-            return x
-        wrapper = classmethod(func)
-
-        self.assertIs(wrapper.__func__, func)
-        self.check_wrapper_attrs(wrapper, func)
-
-        self.assertEqual(repr(wrapper),
-                         f'<classmethod({func!r})>')
-
-        self.assertRaises(TypeError, wrapper, 1)
+        self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
 
     def test_dotted(self):
         decorators = MiscDecorators()
