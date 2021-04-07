@@ -126,3 +126,48 @@ class WindowsExtensionSuffixTests:
 (Frozen_WindowsExtensionSuffixTests,
  Source_WindowsExtensionSuffixTests
  ) = test_util.test_both(WindowsExtensionSuffixTests, machinery=machinery)
+
+
+@unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
+class WindowsBootstrapPathTests(unittest.TestCase):
+    def check_join(self, expected, *inputs):
+        from importlib._bootstrap_external import _path_join
+        actual = _path_join(*inputs)
+        if expected.casefold() == actual.casefold():
+            return
+        self.assertEqual(expected, actual)
+
+    def test_path_join(self):
+        self.check_join(r"C:\A\B", "C:\\", "A", "B")
+        self.check_join(r"C:\A\B", "D:\\", "D", "C:\\", "A", "B")
+        self.check_join(r"C:\A\B", "C:\\", "A", "C:B")
+        self.check_join(r"C:\A\B", "C:\\", "A\\B")
+        self.check_join(r"C:\A\B", r"C:\A\B")
+
+        self.check_join("D:A", r"D:", "A")
+        self.check_join("D:A", r"C:\B\C", "D:", "A")
+        self.check_join("D:A", r"C:\B\C", r"D:A")
+
+        self.check_join(r"A\B\C", "A", "B", "C")
+        self.check_join(r"A\B\C", "A", r"B\C")
+        self.check_join(r"A\B/C", "A", "B/C")
+        self.check_join(r"A\B\C", "A/", "B\\", "C")
+
+        # Dots are not normalised by this function
+        self.check_join(r"A\../C", "A", "../C")
+        self.check_join(r"A.\.\B", "A.", ".", "B")
+
+        self.check_join(r"\\Server\Share\A\B\C", r"\\Server\Share", "A", "B", "C")
+        self.check_join(r"\\Server\Share\A\B\C", r"\\Server\Share", "D", r"\A", "B", "C")
+        self.check_join(r"\\Server\Share\A\B\C", r"\\Server2\Share2", "D",
+                                                 r"\\Server\Share", "A", "B", "C")
+        self.check_join(r"\\Server\Share\A\B\C", r"\\Server", r"\Share", "A", "B", "C")
+        self.check_join(r"\\Server\Share", r"\\Server\Share")
+        self.check_join(r"\\Server\Share\\", r"\\Server\Share\\")
+
+        # Handle edge cases with empty segments
+        self.check_join("C:\\A", "C:/A", "")
+        self.check_join("C:\\", "C:/", "")
+        self.check_join("C:", "C:", "")
+        self.check_join("//Server/Share\\", "//Server/Share/", "")
+        self.check_join("//Server/Share\\", "//Server/Share", "")
