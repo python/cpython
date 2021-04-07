@@ -58,8 +58,21 @@ def normcase(s):
 # volume), or if a pathname after the volume-letter-and-colon or UNC-resource
 # starts with a slash or backslash.
 
+try:
+    from nt import _path_splitroot
+except ImportError:
+    _path_splitroot = None
+
+
 def isabs(s):
     """Test whether a path is absolute"""
+    if _path_splitroot:
+        try:
+            r = _path_splitroot(os.fsdecode(s))[0].replace(altsep, sep)
+        except ValueError:
+            pass
+        else:
+            return r.startswith(sep + sep) or r.endswith(sep)
     s = os.fspath(s)
     # Paths beginning with \\?\ are always absolute, but do not
     # necessarily contain a drive.
@@ -141,17 +154,24 @@ def splitdrive(p):
 
     """
     p = os.fspath(p)
+    if isinstance(p, bytes):
+        sep = b'\\'
+        altsep = b'/'
+        colon = b':'
+    else:
+        sep = '\\'
+        altsep = '/'
+        colon = ':'
+
+    if _path_splitroot:
+        try:
+            d = _path_splitroot(p)[0].rstrip('\\/')
+        except ValueError:
+            pass
+
     if len(p) >= 2:
-        if isinstance(p, bytes):
-            sep = b'\\'
-            altsep = b'/'
-            colon = b':'
-        else:
-            sep = '\\'
-            altsep = '/'
-            colon = ':'
         normp = p.replace(altsep, sep)
-        if (normp[0:2] == sep*2) and (normp[2:3] != sep):
+        if (normp[0:2] == sep*2):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
             # \\machine\mountpoint\directory\etc\...
@@ -160,10 +180,11 @@ def splitdrive(p):
             if index == -1:
                 return p[:0], p
             index2 = normp.find(sep, index + 1)
-            # a UNC path can't have two slashes in a row
-            # (after the initial two)
+            # a UNC path shouldn't have two slashes in a row
+            # (after the initial two), but to be consistent with
+            # the native function, we split before them.
             if index2 == index + 1:
-                return p[:0], p
+                return p[:index], p[index:]
             if index2 == -1:
                 index2 = len(p)
             return p[:index2], p[index2:]
@@ -262,19 +283,28 @@ except ImportError:
 def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
     share, or a mounted volume)"""
-    path = os.fspath(path)
-    seps = _get_bothseps(path)
-    path = abspath(path)
-    root, rest = splitdrive(path)
-    if root and root[0] in seps:
-        return (not rest) or (rest in seps)
-    if rest in seps:
-        return True
+    try_fallback = True
+    if _path_splitroot:
+        try:
+            root, tail = _path_splitroot(os.fsdecode(path))
+        except ValueError:
+            pass
+        else:
+            try_fallback = False
+            if not tail:
+                root = root.replace(altsep, sep)
+                return root.startswith(sep + sep) or root.endswith(sep)
+
+    if try_fallback:
+        root, rest = splitdrive(os.fsdecode(path))
+        if root:
+            return rest in ("/", "\\") or root.startswith(("\\\\", "//"))
 
     if _getvolumepathname:
+        path = os.fspath(path)
+        seps = _get_bothseps(path)
         return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
-    else:
-        return False
+    return False
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -505,7 +535,7 @@ def _abspath_fallback(path):
     """
 
     path = os.fspath(path)
-    if not isabs(path):
+    if not splitdrive(path)[0]:
         if isinstance(path, bytes):
             cwd = os.getcwdb()
         else:
@@ -671,9 +701,9 @@ else:
         return path
 
 
-# Win9x family and earlier have no Unicode filename support.
-supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
-                              sys.getwindowsversion()[3] >= 2)
+# All supported platforms have Unicode filenames
+supports_unicode_filenames = True
+
 
 def relpath(path, start=None):
     """Return a relative version of a path"""

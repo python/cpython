@@ -793,6 +793,11 @@ Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
 and :data:`~os.O_NOFOLLOW_ANY` for macOS.
 (Contributed by Dong-hee Na in :issue:`43106`.)
 
+Changed :func:`os.path.splitdrive()` on Windows to rely on a native API.
+This has improved support for special prefixes, but may have changed the
+results for some invalid UNC paths.
+(Contributed by Steve Dower in :issue:`37609`.)
+
 pathlib
 -------
 
