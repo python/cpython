@@ -451,8 +451,9 @@ astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
             return 0;
         }
         asdl_seq_SET(values, 0, st->v.Expr.value);
-        expr_ty expr = _Py_JoinedStr(values, st->lineno, st->col_offset,
-                                     st->end_lineno, st->end_col_offset, ctx_);
+        expr_ty expr = _PyAST_JoinedStr(values, st->lineno, st->col_offset,
+                                        st->end_lineno, st->end_col_offset,
+                                        ctx_);
         if (!expr) {
             return 0;
         }
