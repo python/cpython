@@ -767,4 +767,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=95a0178f30801b89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f261ee49971f5ca input=a9049054013a1b77]*/

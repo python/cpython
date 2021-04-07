@@ -437,11 +437,15 @@ binascii.a2b_base64
     strict_mode: bool(accept={int}) = False
 
 Decode a line of base64 data.
+
+  strict_mode
+    When set to True, bytes that are not part of the base64 standard are not allowed.
+    The same applies to excess data after padding (= / ==).
 [clinic start generated code]*/
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=5409557788d4f975 input=5872acf6e1cac243]*/
+/*[clinic end generated code: output=5409557788d4f975 input=3a30c4e3528317c6]*/
 {
     assert(data->len >= 0);
 
