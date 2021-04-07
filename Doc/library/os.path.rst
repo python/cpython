@@ -175,8 +175,8 @@ the :mod:`glob` module.)
 
    On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
    of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
-   ``~user`` is handled by stripping the last directory component from the created
-   user path derived above.
+   ``~user`` is handled by checking that the last directory component of the current
+   user's home directory matches :envvar:`USERNAME`, and replacing it if so.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.

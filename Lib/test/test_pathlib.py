@@ -2609,7 +2609,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 env.pop('USERNAME', None)
                 self.assertEqual(p1.expanduser(),
                                  P('C:/Users/alice/My Documents'))
-                self.assertRaises(KeyError, p2.expanduser)
+                self.assertRaises(RuntimeError, p2.expanduser)
                 env['USERNAME'] = 'alice'
                 self.assertEqual(p2.expanduser(),
                                  P('C:/Users/alice/My Documents'))
