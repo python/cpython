@@ -23,6 +23,7 @@
 
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
