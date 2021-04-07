@@ -61,12 +61,9 @@ parse_strict_test_cases = [
     ("", ValueError("bad query field: ''")),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
-    (";", ValueError("bad query field: ''")),
-    (";&;", ValueError("bad query field: ''")),
     # Should the next few really be valid?
     ("=", {}),
     ("=&=", {}),
-    ("=;=", {}),
     # This rest seem to make sense
     ("=a", {'': ['a']}),
     ("&=a", ValueError("bad query field: ''")),
@@ -81,8 +78,6 @@ parse_strict_test_cases = [
     ("a=a+b&b=b+c", {'a': ['a b'], 'b': ['b c']}),
     ("a=a+b&a=b+a", {'a': ['a b', 'b a']}),
     ("x=1&y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
-    ("x=1;y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
-    ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
     ("Hbc5161168c542333633315dee1182227:key_store_seqid=400006&cuyer=r&view=bustomer&order_id=0bb2e248638833d48cb7fed300000f1b&expire=964546263&lobale=en-US&kid=130003.300038&ss=env",
      {'Hbc5161168c542333633315dee1182227:key_store_seqid': ['400006'],
       'cuyer': ['r'],
@@ -103,6 +98,18 @@ parse_strict_test_cases = [
       'set': ['custom'],
       })
     ]
+
+parse_semicolon_test_cases = [
+    ("x=1;y=2.0", {'x': ['1'], 'y': ['2.0']}),
+    ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+    (";", ValueError("bad query field: ''")),
+    (";;", ValueError("bad query field: ''")),
+    ("=;a", ValueError("bad query field: 'a'")),
+    (";b=a", ValueError("bad query field: ''")),
+    ("b;=a", ValueError("bad query field: 'b'")),
+    ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+    ("a=a+b;a=b+a", {'a': ['a b', 'b a']}),
+]
 
 def first_elts(list):
     return map(lambda x:x[0], list)
@@ -176,6 +183,23 @@ class CgiTests(unittest.TestCase):
                                                 first_elts(expect.values()))
                         self.assertItemsEqual(sd.items(),
                                                 first_second_elts(expect.items()))
+
+    def test_separator(self):
+        for orig, expect in parse_semicolon_test_cases:
+            env = {'QUERY_STRING': orig}
+            try:
+                fs = cgi.FieldStorage(separator=';', environ=env, strict_parsing=True)
+            except ValueError as ve:
+                self.assertEqual(type(ve), type(expect))
+                self.assertEqual(ve.args, expect.args)
+            else:
+                for key in expect.keys():
+                    expect_val = expect[key]
+                    self.assertIn(key, fs)
+                    if len(expect_val) > 1:
+                        self.assertEqual(fs.getvalue(key), expect_val)
+                    else:
+                        self.assertEqual(fs.getvalue(key), expect_val[0])
 
     def test_weird_formcontentdict(self):
         # Test the weird FormContentDict classes
