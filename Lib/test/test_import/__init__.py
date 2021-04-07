@@ -906,7 +906,7 @@ class PycacheTests(unittest.TestCase):
         m = __import__(TESTFN)
         try:
             self.assertEqual(m.__file__,
-                             os.path.join(os.curdir, os.path.relpath(pyc_file)))
+                             os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
         finally:
             os.remove(pyc_file)
 
@@ -914,7 +914,7 @@ class PycacheTests(unittest.TestCase):
         # Modules now also have an __cached__ that points to the pyc file.
         m = __import__(TESTFN)
         pyc_file = importlib.util.cache_from_source(TESTFN + '.py')
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, pyc_file))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, pyc_file))
 
     @skip_if_dont_write_bytecode
     def test___cached___legacy_pyc(self):
@@ -930,7 +930,7 @@ class PycacheTests(unittest.TestCase):
         importlib.invalidate_caches()
         m = __import__(TESTFN)
         self.assertEqual(m.__cached__,
-                         os.path.join(os.curdir, os.path.relpath(pyc_file)))
+                         os.path.join(os.getcwd(), os.curdir, os.path.relpath(pyc_file)))
 
     @skip_if_dont_write_bytecode
     def test_package___cached__(self):
@@ -950,10 +950,10 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
 
     def test_package___cached___from_pyc(self):
         # Like test___cached__ but ensuring __cached__ when imported from a
@@ -977,10 +977,10 @@ class PycacheTests(unittest.TestCase):
         m = __import__('pep3147.foo')
         init_pyc = importlib.util.cache_from_source(
             os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.curdir, init_pyc))
+        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), os.curdir, init_pyc))
         foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
         self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.curdir, foo_pyc))
+                         os.path.join(os.getcwd(), os.curdir, foo_pyc))
 
     def test_recompute_pyc_same_second(self):
         # Even when the source file doesn't change timestamp, a change in
