@@ -1315,12 +1315,6 @@ class Path(PurePath):
         """
         return self.stat(follow_symlinks=False)
 
-    def link_to(self, target):
-        """
-        Create a hard link pointing to a path named target.
-        """
-        self._accessor.link(self, target)
-
     def rename(self, target):
         """
         Rename this path to the target path.
@@ -1349,10 +1343,22 @@ class Path(PurePath):
 
     def symlink_to(self, target, target_is_directory=False):
         """
-        Make this path a symlink pointing to the given path.
-        Note the order of arguments (self, target) is the reverse of os.symlink's.
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
         """
         self._accessor.symlink(target, self, target_is_directory)
+
+    def link_to(self, target):
+        """
+        Make the target path a hard link pointing to this path.
+
+        Note this function does not make this path a hard link to *target*,
+        despite the implication of the function and argument names. The order
+        of arguments (target, link) is the reverse of Path.symlink_to, but
+        matches that of os.link.
+
+        """
+        self._accessor.link(self, target)
 
     # Convenience functions for querying the stat results
 
