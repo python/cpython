@@ -188,7 +188,7 @@ created.  Socket addresses are represented as follows:
 
     - ``PACKET_HOST`` (the default) - Packet addressed to the local host.
     - ``PACKET_BROADCAST`` - Physical-layer broadcast packet.
-    - ``PACKET_MULTIHOST`` - Packet sent to a physical-layer multicast address.
+    - ``PACKET_MULTICAST`` - Packet sent to a physical-layer multicast address.
     - ``PACKET_OTHERHOST`` - Packet to some other host that has been caught by
       a device driver in promiscuous mode.
     - ``PACKET_OUTGOING`` - Packet originating from the local host that is
