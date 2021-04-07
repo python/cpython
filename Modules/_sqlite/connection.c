@@ -1154,6 +1154,10 @@ pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
 {
     int rc;
 
+    if (PySys_Audit("sqlite3.enable_load_extension", "i", onoff) < 0) {
+        return NULL;
+    }
+
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
