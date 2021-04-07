@@ -116,7 +116,8 @@ compiler IR.
 */
 
 enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
-                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER };
+                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
+                  ASYNC_COMPREHENSION_GENERATOR };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -1700,6 +1701,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
     switch (info->fb_type) {
         case WHILE_LOOP:
         case EXCEPTION_HANDLER:
+        case ASYNC_COMPREHENSION_GENERATOR:
             return 1;
 
         case FOR_LOOP:
@@ -4573,6 +4575,11 @@ compiler_async_comprehension_generator(struct compiler *c,
     }
 
     compiler_use_next_block(c, start);
+    /* Runtime will push a block here, so we need to account for that */
+    if (!compiler_push_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start,
+                              NULL, NULL)) {
+        return 0;
+    }
 
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
@@ -4626,6 +4633,8 @@ compiler_async_comprehension_generator(struct compiler *c,
     }
     compiler_use_next_block(c, if_cleanup);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+
+    compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
     compiler_use_next_block(c, except);
     ADDOP(c, END_ASYNC_FOR);
