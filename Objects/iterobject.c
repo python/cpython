@@ -317,10 +317,41 @@ static PyObject *
 anextawaitable_iternext(anextawaitableobject *obj)
 {
     assert(obj->wrapped != NULL);
-    unaryfunc getter = Py_TYPE(obj->wrapped)->tp_iternext;
+    PyTypeObject *type = Py_TYPE(obj->wrapped);
+    /* Consider the following class:
+     *
+     *     class A:
+     *         async def __anext__(self):
+     *             ...
+     *     a = A()
+     *
+     * Then anext(a) should call
+     * a.__anext__().__await__().__next__()
+     *
+     * On the other hand, given
+     *
+     *     async def agen():
+     *         yield 1
+     *         yield 2
+     *     gen = agen()
+     *
+     * Then anext(g) can just call
+     * g.__anext__().__next__()
+     */
+    if (type->tp_as_async && type->tp_as_async->am_await) {
+        unaryfunc await_getter = type->tp_as_async->am_await;
+        PyObject *result = await_getter(obj->wrapped);
+        if (result == NULL) {
+            return NULL;
+        }
+        type = Py_TYPE(result);
+        Py_SETREF(obj->wrapped, result);
+    }
+
+    unaryfunc getter = type->tp_iternext;
     if (getter == NULL) {
         PyErr_SetString(PyExc_TypeError,
-            "anext() argument was not async iterable.");
+            "__await__() did not return an iterator.");
         return NULL;
     }
     PyObject *result = getter(obj->wrapped);
