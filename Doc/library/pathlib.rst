@@ -705,7 +705,10 @@ call fails (for example because the path doesn't exist).
 .. classmethod:: Path.home()
 
    Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct)::
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
 
       >>> Path.home()
       PosixPath('/home/antoine')
@@ -773,7 +776,10 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.expanduser()
 
    Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`::
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
 
       >>> p = PosixPath('~/films/Monty Python')
       >>> p.expanduser()
