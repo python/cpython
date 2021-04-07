@@ -65,7 +65,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    match.
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
-   .. audit-event:: glob.glob/2 pathname,root_dir,dir_fd,recursive glob.glob
+   .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -84,7 +84,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    without actually storing them all simultaneously.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
-   .. audit-event:: glob.glob/2 pathname,root_dir,dir_fd,recursive glob.iglob
+   .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
