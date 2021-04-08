@@ -1,0 +1,2 @@
+The flag to check whether tracing is enabled for the thread is now kept on
+the C stack, instead of the heap, to streamline dispatch in the interpreter.
