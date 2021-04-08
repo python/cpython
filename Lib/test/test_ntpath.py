@@ -340,8 +340,7 @@ class TestNtpath(NtpathTestCase):
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_symlink_loops(self):
-        # Symlink loops are non-deterministic as to which path is returned, but
-        # it will always be the fully resolved path of one member of the cycle
+        # Symlink loops raise OSError
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "1")
@@ -351,16 +350,13 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN + "a")
 
         os.symlink(ABSTFN, ABSTFN)
-        self.assertPathEqual(ntpath.realpath(ABSTFN), ABSTFN)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN)
 
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
-        expected = (ABSTFN + "1", ABSTFN + "2")
-        self.assertPathIn(ntpath.realpath(ABSTFN + "1"), expected)
-        self.assertPathIn(ntpath.realpath(ABSTFN + "2"), expected)
-
-        self.assertPathIn(ntpath.realpath(ABSTFN + "1\\x"),
-                          (ntpath.join(r, "x") for r in expected))
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x")
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\.."),
                              ntpath.dirname(ABSTFN))
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\x"),
@@ -369,9 +365,8 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                              + ntpath.basename(ABSTFN) + "y"),
                              ABSTFN + "x")
-        self.assertPathIn(ntpath.realpath(ABSTFN + "1\\..\\"
-                                          + ntpath.basename(ABSTFN) + "1"),
-                          expected)
+        self.assertRaises(OSError, ntpath.realpath,
+                          ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1")
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
         self.assertPathEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
