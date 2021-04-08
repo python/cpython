@@ -8,7 +8,7 @@ import unittest
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
-from enum import STRICT, CONFORM, EJECT, KEEP
+from enum import STRICT, CONFORM, EJECT, KEEP, simple_enum, test_simple_enum
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -3520,6 +3520,23 @@ class TestStdLib(unittest.TestCase):
         if failed:
             self.fail("result does not equal expected, see print above")
 
+    def test_test_simple_enum(self):
+        @simple_enum(Enum)
+        class SimpleColor:
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        class CheckedColor(Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        self.assertTrue(test_simple_enum(CheckedColor, SimpleColor) is None)
+        SimpleColor.GREEN._value_ = 9
+        self.assertRaisesRegex(
+                TypeError, "enum mismatch",
+                test_simple_enum, CheckedColor, SimpleColor,
+                )
+        
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
