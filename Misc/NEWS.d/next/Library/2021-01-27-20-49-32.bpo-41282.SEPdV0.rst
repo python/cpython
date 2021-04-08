@@ -1,1 +1,0 @@
-Deprecate ``distutils`` in documentation and add warning on import.

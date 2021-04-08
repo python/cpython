@@ -367,10 +367,9 @@ def geometric_mean(data):
 def harmonic_mean(data, weights=None):
     """Return the harmonic mean of data.
 
-    The harmonic mean, sometimes called the subcontrary mean, is the
-    reciprocal of the arithmetic mean of the reciprocals of the data,
-    and is often appropriate when averaging quantities which are rates
-    or ratios, for example speeds.
+    The harmonic mean is the reciprocal of the arithmetic mean of the
+    reciprocals of the data.  It can be used for averaging ratios or
+    rates, for example speeds.
 
     Suppose a car travels 40 km/hr for 5 km and then speeds-up to
     60 km/hr for another 5 km. What is the average speed?

@@ -328,86 +328,23 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
 /* --- PyFunction call functions ---------------------------------- */
 
-static PyObject* _Py_HOT_FUNCTION
-function_code_fastcall(PyThreadState *tstate, PyCodeObject *co,
-                       PyObject *const *args, Py_ssize_t nargs,
-                       PyFunctionObject *func)
-{
-    assert(tstate != NULL);
-    assert(func != NULL);
-
-    /* XXX Perhaps we should create a specialized
-       _PyFrame_New_NoTrack() that doesn't take locals, but does
-       take builtins without sanity checking them.
-       */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, func->func_globals, func->func_builtins, NULL);
-    if (f == NULL) {
-        return NULL;
-    }
-
-    PyObject **fastlocals = f->f_localsplus;
-
-    for (Py_ssize_t i = 0; i < nargs; i++) {
-        Py_INCREF(*args);
-        fastlocals[i] = *args++;
-    }
-    PyObject *result = _PyEval_EvalFrame(tstate, f, 0);
-
-    if (Py_REFCNT(f) > 1) {
-        Py_DECREF(f);
-        _PyObject_GC_TRACK(f);
-    }
-    else {
-        ++tstate->recursion_depth;
-        Py_DECREF(f);
-        --tstate->recursion_depth;
-    }
-    return result;
-}
-
-
 PyObject *
 _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                        size_t nargsf, PyObject *kwnames)
 {
     assert(PyFunction_Check(func));
-    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
-
+    PyFrameConstructor *f = PyFunction_AS_FRAME_CONSTRUCTOR(func);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs >= 0);
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-    /* kwnames must only contain strings and all keys must be unique */
-
     PyThreadState *tstate = _PyThreadState_GET();
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-
-    if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
-        (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
-    {
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(tstate, co, stack, nargs, (PyFunctionObject *)func);
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            stack = _PyTuple_ITEMS(argdefs);
-            return function_code_fastcall(tstate, co,
-                                          stack, PyTuple_GET_SIZE(argdefs),
-                                          (PyFunctionObject *)func);
-        }
+    assert(nargs == 0 || stack != NULL);
+    if (((PyCodeObject *)f->fc_code)->co_flags & CO_OPTIMIZED) {
+        return _PyEval_Vector(tstate, f, NULL, stack, nargs, kwnames);
     }
-
-    return _PyEval_EvalCode(tstate,
-                PyFunction_AS_FRAME_CONSTRUCTOR(func), (PyObject *)NULL,
-                stack, nargs,
-                nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
-                stack + nargs,
-                nkwargs, 1);
+    else {
+        return _PyEval_Vector(tstate, f, f->fc_globals, stack, nargs, kwnames);
+    }
 }
-
 
 /* --- More complex call functions -------------------------------- */
 

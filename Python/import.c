@@ -2,8 +2,6 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
@@ -301,16 +299,16 @@ _PyImport_GetModuleId(struct _Py_Identifier *nameid)
 int
 _PyImport_SetModule(PyObject *name, PyObject *m)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *modules = tstate->interp->modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *modules = interp->modules;
     return PyObject_SetItem(modules, name, m);
 }
 
 int
 _PyImport_SetModuleString(const char *name, PyObject *m)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *modules = tstate->interp->modules;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *modules = interp->modules;
     return PyMapping_SetItemString(modules, name, m);
 }
 
@@ -342,9 +340,8 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 
 
 static int
-import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
+import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *name)
 {
-    PyInterpreterState *interp = tstate->interp;
     PyObject *spec;
 
     _Py_IDENTIFIER(_lock_unlock_module);
@@ -441,7 +438,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         return -1;
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         if (def->m_size == -1) {
             if (def->m_base.m_copy) {
                 /* Somebody already imported the module,
@@ -1530,7 +1527,7 @@ PyImport_GetModule(PyObject *name)
 
     mod = import_get_module(tstate, name);
     if (mod != NULL && mod != Py_None) {
-        if (import_ensure_initialized(tstate, mod, name) < 0) {
+        if (import_ensure_initialized(tstate->interp, mod, name) < 0) {
             Py_DECREF(mod);
             remove_importlib_frames(tstate);
             return NULL;
@@ -1594,7 +1591,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     if (mod != NULL && mod != Py_None) {
-        if (import_ensure_initialized(tstate, mod, name) < 0) {
+        if (import_ensure_initialized(tstate->interp, mod, abs_name) < 0) {
             goto error;
         }
     }
@@ -1745,26 +1742,29 @@ PyImport_ReloadModule(PyObject *m)
 PyObject *
 PyImport_Import(PyObject *module_name)
 {
+    _Py_IDENTIFIER(__import__);
+    _Py_IDENTIFIER(__builtins__);
+
     PyThreadState *tstate = _PyThreadState_GET();
-    static PyObject *silly_list = NULL;
-    static PyObject *builtins_str = NULL;
-    static PyObject *import_str = NULL;
     PyObject *globals = NULL;
     PyObject *import = NULL;
     PyObject *builtins = NULL;
     PyObject *r = NULL;
 
     /* Initialize constant string objects */
-    if (silly_list == NULL) {
-        import_str = PyUnicode_InternFromString("__import__");
-        if (import_str == NULL)
-            return NULL;
-        builtins_str = PyUnicode_InternFromString("__builtins__");
-        if (builtins_str == NULL)
-            return NULL;
-        silly_list = PyList_New(0);
-        if (silly_list == NULL)
-            return NULL;
+    PyObject *import_str = _PyUnicode_FromId(&PyId___import__); // borrowed ref
+    if (import_str == NULL) {
+        return NULL;
+    }
+
+    PyObject *builtins_str = _PyUnicode_FromId(&PyId___builtins__); // borrowed ref
+    if (builtins_str == NULL) {
+        return NULL;
+    }
+
+    PyObject *from_list = PyList_New(0);
+    if (from_list == NULL) {
+        goto err;
     }
 
     /* Get the builtins from current globals */
@@ -1779,8 +1779,9 @@ PyImport_Import(PyObject *module_name)
         /* No globals -- use standard builtins, and fake globals */
         builtins = PyImport_ImportModuleLevel("builtins",
                                               NULL, NULL, NULL, 0);
-        if (builtins == NULL)
-            return NULL;
+        if (builtins == NULL) {
+            goto err;
+        }
         globals = Py_BuildValue("{OO}", builtins_str, builtins);
         if (globals == NULL)
             goto err;
@@ -1802,7 +1803,7 @@ PyImport_Import(PyObject *module_name)
        Always use absolute import here.
        Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
-                              globals, silly_list, 0, NULL);
+                              globals, from_list, 0, NULL);
     if (r == NULL)
         goto err;
     Py_DECREF(r);
@@ -1816,6 +1817,7 @@ PyImport_Import(PyObject *module_name)
     Py_XDECREF(globals);
     Py_XDECREF(builtins);
     Py_XDECREF(import);
+    Py_XDECREF(from_list);
 
     return r;
 }

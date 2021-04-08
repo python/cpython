@@ -21,6 +21,7 @@ has the following attributes:
     name    -- name of the object;
     file    -- file in which the object is defined;
     lineno  -- line in the file where the object's definition starts;
+    end_lineno -- line in the file where the object's definition ends;
     parent  -- parent of this object, if any;
     children -- nested objects contained in this object.
 The 'children' attribute is a dictionary mapping names to objects.
@@ -52,40 +53,50 @@ _modules = {}  # Initialize cache of modules we've seen.
 
 class _Object:
     "Information about Python class or function."
-    def __init__(self, module, name, file, lineno, parent):
+    def __init__(self, module, name, file, lineno, end_lineno, parent):
         self.module = module
         self.name = name
         self.file = file
         self.lineno = lineno
+        self.end_lineno = end_lineno
         self.parent = parent
         self.children = {}
         if parent is not None:
             parent.children[name] = self
 
+
+# Odd Function and Class signatures are for back-compatibility.
 class Function(_Object):
     "Information about a Python function, including methods."
-    def __init__(self, module, name, file, lineno, parent=None, is_async=False):
-        super().__init__(module, name, file, lineno, parent)
+    def __init__(self, module, name, file, lineno,
+                 parent=None, is_async=False, *, end_lineno=None):
+        super().__init__(module, name, file, lineno, end_lineno, parent)
         self.is_async = is_async
         if isinstance(parent, Class):
             parent.methods[name] = lineno
 
+
 class Class(_Object):
     "Information about a Python class."
-    def __init__(self, module, name, super_, file, lineno, parent=None):
-        super().__init__(module, name, file, lineno, parent)
+    def __init__(self, module, name, super_, file, lineno,
+                 parent=None, *, end_lineno=None):
+        super().__init__(module, name, file, lineno, end_lineno, parent)
         self.super = super_ or []
         self.methods = {}
 
+
 # These 2 functions are used in these tests
 # Lib/test/test_pyclbr, Lib/idlelib/idle_test/test_browser.py
-def _nest_function(ob, func_name, lineno, is_async=False):
+def _nest_function(ob, func_name, lineno, end_lineno, is_async=False):
     "Return a Function after nesting within ob."
-    return Function(ob.module, func_name, ob.file, lineno, ob, is_async)
+    return Function(ob.module, func_name, ob.file, lineno,
+                    parent=ob, is_async=is_async, end_lineno=end_lineno)
 
-def _nest_class(ob, class_name, lineno, super=None):
+def _nest_class(ob, class_name, lineno, end_lineno, super=None):
     "Return a Class after nesting within ob."
-    return Class(ob.module, class_name, super, ob.file, lineno, ob)
+    return Class(ob.module, class_name, super, ob.file, lineno,
+                 parent=ob, end_lineno=end_lineno)
+
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -107,6 +118,7 @@ def readmodule_ex(module, path=None):
     Do this by reading source, without importing (and executing) it.
     """
     return _readmodule(module, path or [])
+
 
 def _readmodule(module, path, inpackage=None):
     """Do the hard work for readmodule[_ex].
@@ -198,9 +210,8 @@ class _ModuleBrowser(ast.NodeVisitor):
                 bases.append(name)
 
         parent = self.stack[-1] if self.stack else None
-        class_ = Class(
-            self.module, node.name, bases, self.file, node.lineno, parent
-        )
+        class_ = Class(self.module, node.name, bases, self.file, node.lineno,
+                       parent=parent, end_lineno=node.end_lineno)
         if parent is None:
             self.tree[node.name] = class_
         self.stack.append(class_)
@@ -209,9 +220,8 @@ class _ModuleBrowser(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node, *, is_async=False):
         parent = self.stack[-1] if self.stack else None
-        function = Function(
-            self.module, node.name, self.file, node.lineno, parent, is_async
-        )
+        function = Function(self.module, node.name, self.file, node.lineno,
+                            parent, is_async, end_lineno=node.end_lineno)
         if parent is None:
             self.tree[node.name] = function
         self.stack.append(function)

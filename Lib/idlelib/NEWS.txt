@@ -1,7 +1,12 @@
-What's New in IDLE 3.10.0 (since 3.9.0)
+What's New in IDLE 3.10.0
+(since 3.9.0)
 Released on 2021-10-04?
-======================================
+=========================
 
+
+bpo-43283: Document why printing to IDLE's Shell is often slower than
+printing to a system terminal and that it can be made faster by
+pre-formatting a single string before printing.
 
 bpo-23544: Disable Debug=>Stack Viewer when user code is running or
 Debugger is active, to prevent hang or crash.  Patch by Zackery Spytz.

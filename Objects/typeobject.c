@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
@@ -32,13 +33,13 @@ class object "PyObject *" "&PyBaseObject_Type"
          & ((1 << MCACHE_SIZE_EXP) - 1))
 
 #define MCACHE_HASH_METHOD(type, name)                                  \
-        MCACHE_HASH((type)->tp_version_tag,                     \
-                    ((PyASCIIObject *)(name))->hash)
+    MCACHE_HASH((type)->tp_version_tag, ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
         PyUnicode_CheckExact(name) &&                           \
         PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
+// bpo-42745: next_version_tag remains shared by all interpreters because of static types
 // Used to set PyTypeObject.tp_version_tag
 static unsigned int next_version_tag = 0;
 
@@ -252,8 +253,9 @@ _PyType_InitCache(PyInterpreterState *interp)
 
 
 static unsigned int
-_PyType_ClearCache(struct type_cache *cache)
+_PyType_ClearCache(PyInterpreterState *interp)
 {
+    struct type_cache *cache = &interp->type_cache;
 #if MCACHE_STATS
     size_t total = cache->hits + cache->collisions + cache->misses;
     fprintf(stderr, "-- Method cache hits        = %zd (%d%%)\n",
@@ -267,7 +269,10 @@ _PyType_ClearCache(struct type_cache *cache)
 #endif
 
     unsigned int cur_version_tag = next_version_tag - 1;
-    next_version_tag = 0;
+    if (_Py_IsMainInterpreter(interp)) {
+        next_version_tag = 0;
+    }
+
     type_cache_clear(cache, 0);
 
     return cur_version_tag;
@@ -277,16 +282,16 @@ _PyType_ClearCache(struct type_cache *cache)
 unsigned int
 PyType_ClearCache(void)
 {
-    struct type_cache *cache = get_type_cache();
-    return _PyType_ClearCache(cache);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _PyType_ClearCache(interp);
 }
 
 
 void
-_PyType_Fini(PyThreadState *tstate)
+_PyType_Fini(PyInterpreterState *interp)
 {
-    _PyType_ClearCache(&tstate->interp->type_cache);
-    if (_Py_IsMainInterpreter(tstate)) {
+    _PyType_ClearCache(interp);
+    if (_Py_IsMainInterpreter(interp)) {
         clear_slotdefs();
     }
 }
@@ -333,6 +338,7 @@ PyType_Modified(PyTypeObject *type)
         }
     }
     type->tp_flags &= ~Py_TPFLAGS_VALID_VERSION_TAG;
+    type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
 
 static void
@@ -391,6 +397,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     Py_XDECREF(type_mro_meth);
     type->tp_flags &= ~(Py_TPFLAGS_HAVE_VERSION_TAG|
                         Py_TPFLAGS_VALID_VERSION_TAG);
+    type->tp_version_tag = 0; /* 0 is not a valid version tag */
 }
 
 static int
@@ -417,7 +424,7 @@ assign_version_tag(struct type_cache *cache, PyTypeObject *type)
     if (type->tp_version_tag == 0) {
         // Wrap-around or just starting Python - clear the whole cache
         type_cache_clear(cache, 1);
-        return 1;
+        return 0;
     }
 
     bases = type->tp_bases;
@@ -2888,6 +2895,23 @@ error:
     return NULL;
 }
 
+static PyObject *
+type_vectorcall(PyObject *metatype, PyObject *const *args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs == 1 && metatype == (PyObject *)&PyType_Type){
+        if (!_PyArg_NoKwnames("type", kwnames)) {
+            return NULL;
+        }
+        return Py_NewRef(Py_TYPE(args[0]));
+    }
+    /* In other (much less common) cases, fall back to
+       more flexible calling conventions. */
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_MakeTpCall(tstate, metatype, args, nargs, kwnames);
+}
+
 /* An array of type slot offsets corresponding to Py_tp_* constants,
   * for use in e.g. PyType_Spec and PyType_GetSlot.
   * Each entry has two offsets: "slot_offset" and "subslot_offset".
@@ -3329,18 +3353,16 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     PyObject *res;
     int error;
 
-    if (MCACHE_CACHEABLE_NAME(name) &&
-        _PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG)) {
-        /* fast path */
-        unsigned int h = MCACHE_HASH_METHOD(type, name);
-        struct type_cache *cache = get_type_cache();
-        struct type_cache_entry *entry = &cache->hashtable[h];
-        if (entry->version == type->tp_version_tag && entry->name == name) {
+    unsigned int h = MCACHE_HASH_METHOD(type, name);
+    struct type_cache *cache = get_type_cache();
+    struct type_cache_entry *entry = &cache->hashtable[h];
+    if (entry->version == type->tp_version_tag &&
+        entry->name == name) {
 #if MCACHE_STATS
-            cache->hits++;
+        cache->hits++;
 #endif
-            return entry->value;
-        }
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
+        return entry->value;
     }
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
@@ -3363,24 +3385,22 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
-    if (MCACHE_CACHEABLE_NAME(name)) {
-        struct type_cache *cache = get_type_cache();
-        if (assign_version_tag(cache, type)) {
-            unsigned int h = MCACHE_HASH_METHOD(type, name);
-            struct type_cache_entry *entry = &cache->hashtable[h];
-            entry->version = type->tp_version_tag;
-            entry->value = res;  /* borrowed */
-            assert(((PyASCIIObject *)(name))->hash != -1);
+    if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(cache, type)) {
+        h = MCACHE_HASH_METHOD(type, name);
+        struct type_cache_entry *entry = &cache->hashtable[h];
+        entry->version = type->tp_version_tag;
+        entry->value = res;  /* borrowed */
+        assert(((PyASCIIObject *)(name))->hash != -1);
 #if MCACHE_STATS
-            if (entry->name != Py_None && entry->name != name) {
-                cache->collisions++;
-            }
-            else {
-                cache->misses++;
-            }
-#endif
-            Py_SETREF(entry->name, Py_NewRef(name));
+        if (entry->name != Py_None && entry->name != name) {
+            cache->collisions++;
         }
+        else {
+            cache->misses++;
+        }
+#endif
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
+        Py_SETREF(entry->name, Py_NewRef(name));
     }
     return res;
 }
@@ -3896,6 +3916,7 @@ PyTypeObject PyType_Type = {
     type_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     (inquiry)type_is_gc,                        /* tp_is_gc */
+    .tp_vectorcall = type_vectorcall,
 };
 
 
@@ -5243,6 +5264,10 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     else if (PyType_IsSubtype(base, &PyDict_Type))
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+
+    if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
+        type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
+    }
 }
 
 static int

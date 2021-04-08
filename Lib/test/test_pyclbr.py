@@ -176,15 +176,15 @@ class PyclbrTest(TestCase):
         actual = mb._create_tree(m, p, f, source, t, i)
 
         # Create descriptors, linked together, and expected dict.
-        f0 = mb.Function(m, 'f0', f, 1)
-        f1 = mb._nest_function(f0, 'f1', 2)
-        f2 = mb._nest_function(f1, 'f2', 3)
-        c1 = mb._nest_class(f0, 'c1', 5)
-        C0 = mb.Class(m, 'C0', None, f, 6)
-        F1 = mb._nest_function(C0, 'F1', 8)
-        C1 = mb._nest_class(C0, 'C1', 11)
-        C2 = mb._nest_class(C1, 'C2', 12)
-        F3 = mb._nest_function(C2, 'F3', 14)
+        f0 = mb.Function(m, 'f0', f, 1, end_lineno=5)
+        f1 = mb._nest_function(f0, 'f1', 2, 4)
+        f2 = mb._nest_function(f1, 'f2', 3, 3)
+        c1 = mb._nest_class(f0, 'c1', 5, 5)
+        C0 = mb.Class(m, 'C0', None, f, 6, end_lineno=14)
+        F1 = mb._nest_function(C0, 'F1', 8, 10)
+        C1 = mb._nest_class(C0, 'C1', 11, 14)
+        C2 = mb._nest_class(C1, 'C2', 12, 14)
+        F3 = mb._nest_function(C2, 'F3', 14, 14)
         expected = {'f0':f0, 'C0':C0}
 
         def compare(parent1, children1, parent2, children2):
@@ -203,8 +203,8 @@ class PyclbrTest(TestCase):
                 self.assertIs(ob.parent, parent2)
             for key in children1.keys():
                 o1, o2 = children1[key], children2[key]
-                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno
-                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno
+                t1 = type(o1), o1.name, o1.file, o1.module, o1.lineno, o1.end_lineno
+                t2 = type(o2), o2.name, o2.file, o2.module, o2.lineno, o2.end_lineno
                 self.assertEqual(t1, t2)
                 if type(o1) is mb.Class:
                     self.assertEqual(o1.methods, o2.methods)

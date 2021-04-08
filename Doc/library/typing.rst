@@ -1247,26 +1247,28 @@ These are not used in annotations. They are building blocks for declaring types.
 
       assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-   The type info for introspection can be accessed via ``Point2D.__annotations__``
-   and ``Point2D.__total__``.  To allow using this feature with older versions
-   of Python that do not support :pep:`526`, ``TypedDict`` supports two additional
-   equivalent syntactic forms::
+   The type info for introspection can be accessed via ``Point2D.__annotations__``,
+   ``Point2D.__total__``, ``Point2D.__required_keys__``, and
+   ``Point2D.__optional_keys__``.
+   To allow using this feature with older versions of Python that do not
+   support :pep:`526`, ``TypedDict`` supports two additional equivalent
+   syntactic forms::
 
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   By default, all keys must be present in a TypedDict. It is possible
-   to override this by specifying totality.
+   By default, all keys must be present in a ``TypedDict``. It is possible to
+   override this by specifying totality.
    Usage::
 
-      class point2D(TypedDict, total=False):
+      class Point2D(TypedDict, total=False):
           x: int
           y: int
 
-   This means that a point2D TypedDict can have any of the keys omitted. A type
-   checker is only expected to support a literal False or True as the value of
-   the total argument. True is the default, and makes all items defined in the
-   class body be required.
+   This means that a ``Point2D`` ``TypedDict`` can have any of the keys
+   omitted. A type checker is only expected to support a literal ``False`` or
+   ``True`` as the value of the ``total`` argument. ``True`` is the default,
+   and makes all items defined in the class body required.
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -1946,9 +1948,16 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``list["SomeClass"]`` is implicitly transformed into
-   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
+
+   .. note::
+      :pep:`585` generic types such as ``list["SomeClass"]`` will not be
+      implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
+      will not automatically resolve to ``list[SomeClass]``.
+
+   .. versionadded:: 3.7.4
 
 Constant
 --------
@@ -1978,4 +1987,3 @@ Constant
       (see :pep:`563`).
 
    .. versionadded:: 3.5.2
-

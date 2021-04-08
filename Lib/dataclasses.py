@@ -152,6 +152,15 @@ __all__ = ['dataclass',
 #
 # See _hash_action (below) for a coded version of this table.
 
+# __match_args__
+#
+# |  no   |  yes  |  <--- class has __match_args__ in __dict__?
+# +=======+=======+
+# | add   |       |  <- the default
+# +=======+=======+
+# __match_args__ is always added unless the class already defines it. It is a
+# tuple of __init__ parameter names; non-init fields must be matched by keyword.
+
 
 # Raised when an attempt is made to modify a frozen class.
 class FrozenInstanceError(AttributeError): pass
@@ -851,7 +860,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Only process classes that have been processed by our
         # decorator.  That is, they have a _FIELDS attribute.
         base_fields = getattr(b, _FIELDS, None)
-        if base_fields:
+        if base_fields is not None:
             has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
@@ -1006,6 +1015,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> NoneType', ''))
+
+    if '__match_args__' not in cls.__dict__:
+        cls.__match_args__ = tuple(f.name for f in field_list if f.init)
 
     abc.update_abstractmethods(cls)
 
@@ -1288,7 +1300,7 @@ def replace(obj, /, **changes):
             continue
 
         if f.name not in changes:
-            if f._field_type is _FIELD_INITVAR:
+            if f._field_type is _FIELD_INITVAR and f.default is MISSING:
                 raise ValueError(f"InitVar {f.name!r} "
                                  'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)

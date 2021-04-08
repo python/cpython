@@ -1,2 +1,0 @@
-Fix CLI of :mod:`cProfile` and :mod:`profile` to catch
-:exc:`BrokenPipeError`.

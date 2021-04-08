@@ -273,6 +273,7 @@ class AST_Tests(unittest.TestCase):
                     self._assertTrueorder(child, first_pos)
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
+        self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
         x = ast.AST()

@@ -229,9 +229,40 @@ SyntaxError: cannot assign to function call
 
 >>> with a as b
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: expected ':'
 
 >>> p = p =
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+Comprehensions creating tuples without parentheses
+should produce a specialized error message:
+
+>>> [x,y for x,y in range(100)]
+Traceback (most recent call last):
+SyntaxError: did you forget parentheses around the comprehension target?
+
+>>> {x,y for x,y in range(100)}
+Traceback (most recent call last):
+SyntaxError: did you forget parentheses around the comprehension target?
+
+# Missing commas in literals collections should not
+# produce special error messages regarding missing
+# parentheses
+
+>>> [1, 2 3]
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> {1, 2 3}
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> {1:2, 2:5 3:12}
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> (1, 2 3)
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
@@ -316,7 +347,7 @@ SyntaxError: Generator expression must be parenthesized
 >>> class C(x for x in L):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: expected ':'
 
 >>> def g(*args, **kwargs):
 ...     print(args, sorted(kwargs.items()))
@@ -693,6 +724,125 @@ leading to spurious errors.
      ...
    SyntaxError: cannot assign to function call
 
+    Missing ':' before suites:
+
+    >>> def f()
+    ...     pass
+    Traceback (most recent call last):
+    SyntaxError: expected ':'
+
+    >>> class A
+    ...     pass
+    Traceback (most recent call last):
+    SyntaxError: expected ':'
+
+   >>> if 1
+   ...   pass
+   ... elif 1:
+   ...   pass
+   ... else:
+   ...   x() = 1
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> if 1:
+   ...   pass
+   ... elif 1
+   ...   pass
+   ... else:
+   ...   x() = 1
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   pass
+   ... else
+   ...   x() = 1
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> for x in range(10)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> while True
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech as something
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech, block as something
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with blech, block as something, bluch
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech as something)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech, block as something)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> with (blech, block as something, bluch)
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> try
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> try:
+   ...   pass
+   ... except
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x
+   ...   case list():
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x:
+   ...   case list()
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x:
+   ...   case [y] if y > 0
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -702,6 +852,39 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
    Traceback (most recent call last):
      ...
    SyntaxError: invalid syntax
+
+Check that an exception group with missing parentheses
+raise a custom exception
+
+   >>> try:
+   ...   pass
+   ... except A, B:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except A, B, C:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except A, B, C as blech:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
+
+   >>> try:
+   ...   pass
+   ... except A, B, C as blech:
+   ...   pass
+   ... finally:
+   ...   pass
+   Traceback (most recent call last):
+   SyntaxError: exception group must be parenthesized
 
 
 >>> f(a=23, a=234)
@@ -977,7 +1160,12 @@ def func2():
     finally:
         pass
 """
-        self._check_error(code, "invalid syntax")
+        self._check_error(code, "expected ':'")
+
+    def test_invalid_line_continuation_error_position(self):
+        self._check_error(r"a = 3 \ 4",
+                          "unexpected character after line continuation character",
+                          lineno=1, offset=9)
 
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
@@ -993,6 +1181,24 @@ def func2():
 
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
+
+    def test_match_call_does_not_raise_syntax_error(self):
+        code = """
+def match(x):
+    return 1+1
+
+match(34)
+"""
+        compile(code, "<string>", "exec")
+
+    def test_case_call_does_not_raise_syntax_error(self):
+        code = """
+def case(x):
+    return 1+1
+
+case(34)
+"""
+        compile(code, "<string>", "exec")
 
 
 def test_main():

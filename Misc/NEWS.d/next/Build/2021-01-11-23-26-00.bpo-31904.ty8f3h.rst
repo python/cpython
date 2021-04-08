@@ -1,1 +1,0 @@
-Add library search path by wr-cc in add_cross_compiling_paths() for VxWorks.

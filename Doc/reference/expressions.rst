@@ -77,6 +77,8 @@ When the name is bound to an object, evaluation of the atom yields that object.
 When a name is not bound, an attempt to evaluate it raises a :exc:`NameError`
 exception.
 
+.. _private-name-mangling:
+
 .. index::
    pair: name; mangling
    pair: private; names
@@ -183,7 +185,7 @@ Common syntax elements for comprehensions are:
    comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
-   comp_if: "if" `expression_nocond` [`comp_iter`]
+   comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
 :keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
@@ -476,8 +478,8 @@ allowing any pending :keyword:`finally` clauses to execute.
 .. index::
    single: from; yield from expression
 
-When ``yield from <expr>`` is used, it treats the supplied expression as
-a subiterator. All values produced by that subiterator are passed directly
+When ``yield from <expr>`` is used, the supplied expression must be an
+iterable. The values produced by iterating that iterable are passed directly
 to the caller of the current generator's methods. Any values passed in with
 :meth:`~generator.send` and any exceptions passed in with
 :meth:`~generator.throw` are passed to the underlying iterator if it has the
@@ -1705,7 +1707,6 @@ Conditional expressions
 .. productionlist:: python-grammar
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
-   expression_nocond: `or_test` | `lambda_expr_nocond`
 
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
@@ -1731,7 +1732,6 @@ Lambdas
 
 .. productionlist:: python-grammar
    lambda_expr: "lambda" [`parameter_list`] ":" `expression`
-   lambda_expr_nocond: "lambda" [`parameter_list`] ":" `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
 functions. The expression ``lambda parameters: expression`` yields a function
