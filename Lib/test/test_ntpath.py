@@ -369,14 +369,14 @@ class TestNtpath(NtpathTestCase):
                           ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1")
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
-        self.assertPathEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "a")
 
         os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
                    + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
-        self.assertPathEqual(ntpath.realpath(ABSTFN + "c"), ABSTFN + "c")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "c")
 
         # Test using relative path as well.
-        self.assertPathEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
+        self.assertRaises(OSError, ntpath.realpath, ntpath.basename(ABSTFN))
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
