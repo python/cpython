@@ -231,7 +231,7 @@ Other Language Changes
   absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
-* In the :ref:`Python Development Mode <devmode>` and in debug build, the
+* In the :ref:`Python Development Mode <devmode>` and in :ref:`debug build <debug-build>`, the
   *encoding* and *errors* arguments are now checked for string encoding and
   decoding operations. Examples: :func:`open`, :meth:`str.encode` and
   :meth:`bytes.decode`.
