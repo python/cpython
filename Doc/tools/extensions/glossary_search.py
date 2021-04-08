@@ -49,10 +49,10 @@ def on_build_finish(app, exc):
 
     logger.info(f'Writing {JSON}', color='green')
 
-    path = path.join(app.outdir, STATIC_DIR)
-    os.makedirs(path, exist_ok=True)
+    dest_dir = path.join(app.outdir, STATIC_DIR)
+    os.makedirs(dest_dir, exist_ok=True)
 
-    with open(path.join(path, JSON), 'w') as f:
+    with open(path.join(dest_dir, JSON), 'w') as f:
         json.dump(app.env.glossary_terms, f)
 
 
