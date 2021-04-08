@@ -364,8 +364,8 @@ the :mod:`glob` module.)
       The *strict* parameter was added.
 
    .. versionchanged:: 3.10
-      Raises :exc:`OSError` with :const:`~errno.ELOOP` when a symbolic link
-      cycle occurs. Previously returned one member of the cycle.
+      Raises :exc:`OSError` when a symbolic link cycle occurs. Previously
+      returned one member of the cycle.
 
 
 .. function:: relpath(path, start=os.curdir)
