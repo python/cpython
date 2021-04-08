@@ -42,7 +42,8 @@ This module defines the following functions:
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
 
-   The function `activeCount` is a deprecated alias for this function.
+   The function ``activeCount`` is a deprecated alias for this function.
+
 
 .. function:: current_thread()
 
@@ -51,7 +52,7 @@ This module defines the following functions:
    :mod:`threading` module, a dummy thread object with limited functionality is
    returned.
 
-   The function `currentThread` is a deprecated alias for this function.
+   The function ``currentThread`` is a deprecated alias for this function.
 
 
 .. function:: excepthook(args, /)
@@ -774,7 +775,7 @@ item to the buffer only needs to wake up one consumer thread.
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
-      The method `notifyAll` is a deprecated alias for this method.
+      The method ``notifyAll`` is a deprecated alias for this method.
 
 
 .. _semaphore-objects:
@@ -913,7 +914,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
       Return ``True`` if and only if the internal flag is true.
 
-      The method `isSet` is a deprecated alias for this method.
+      The method ``isSet`` is a deprecated alias for this method.
 
    .. method:: set()
 
