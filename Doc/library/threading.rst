@@ -42,8 +42,7 @@ This module defines the following functions:
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
 
-   .. deprecated:: 3.10
-      The function `activeCount` is an alias for this function.
+   The function `activeCount` is a deprecated alias for this function.
 
 .. function:: current_thread()
 
@@ -52,8 +51,7 @@ This module defines the following functions:
    :mod:`threading` module, a dummy thread object with limited functionality is
    returned.
 
-   .. deprecated:: 3.10
-      The function `currentThread` is an alias for this function.
+   The function `currentThread` is a deprecated alias for this function.
 
 
 .. function:: excepthook(args, /)
@@ -386,10 +384,8 @@ since it is impossible to detect the termination of alien threads.
    .. method:: getName()
                setName()
 
-      Old getter/setter API for :attr:`~Thread.name`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
-
-      .. deprecated:: 3.10
 
    .. attribute:: ident
 
@@ -440,10 +436,8 @@ since it is impossible to detect the termination of alien threads.
    .. method:: isDaemon()
                setDaemon()
 
-      Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
-
-      .. deprecated:: 3.10
 
 
 .. _lock-objects:
@@ -780,8 +774,7 @@ item to the buffer only needs to wake up one consumer thread.
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
-      .. deprecated:: 3.10
-         The method `notifyAll` is an alias for this method.
+      The method `notifyAll` is a deprecated alias for this method.
 
 
 .. _semaphore-objects:
@@ -920,8 +913,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
       Return ``True`` if and only if the internal flag is true.
 
-      .. deprecated:: 3.10
-         The method `isSet` is an alias for this method.
+      The method `isSet` is a deprecated alias for this method.
 
    .. method:: set()
 
