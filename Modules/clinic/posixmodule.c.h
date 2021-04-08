@@ -1282,7 +1282,11 @@ PyDoc_STRVAR(os__path_splitroot__doc__,
 "_path_splitroot($module, /, path)\n"
 "--\n"
 "\n"
-"Removes everything after the root on Win32.");
+"Split a path at the root on Win32.\n"
+"\n"
+"The result is always a tuple of two strings, the root and the tail.\n"
+"To match splitdrive, a trailing slash from the root is transferred to\n"
+"the start of the tail.");
 
 #define OS__PATH_SPLITROOT_METHODDEF    \
     {"_path_splitroot", (PyCFunction)(void(*)(void))os__path_splitroot, METH_FASTCALL|METH_KEYWORDS, os__path_splitroot__doc__},
@@ -9208,4 +9212,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=ede310b1d316d2b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a7cea60db8986fc0 input=a9049054013a1b77]*/

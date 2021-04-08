@@ -4396,12 +4396,16 @@ os._path_splitroot
 
     path: path_t
 
-Removes everything after the root on Win32.
+Split a path at the root on Win32.
+
+The result is always a tuple of two strings, the root and the tail.
+To match splitdrive, a trailing slash from the root is transferred to
+the start of the tail.
 [clinic start generated code]*/
 
 static PyObject *
 os__path_splitroot_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+/*[clinic end generated code: output=ab7f1a88b654581c input=b49d17e03c17e368]*/
 {
     wchar_t *buffer;
     wchar_t *end;
@@ -4424,6 +4428,9 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
         result = Py_BuildValue("sO", "", path->object);
     } else if (end != buffer) {
         size_t rootLen = (size_t)(end - buffer);
+        if (rootLen > 0 && end[-1] == L'\\') {
+            rootLen -= 1;
+        }
         result = Py_BuildValue("NN",
             PyUnicode_FromWideChar(path->wide, rootLen),
             PyUnicode_FromWideChar(path->wide + rootLen, -1)

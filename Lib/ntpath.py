@@ -61,18 +61,28 @@ def normcase(s):
 try:
     from nt import _path_splitroot
 except ImportError:
-    _path_splitroot = None
+    _path_splitroot = _splitroot = None
+else:
+    def _splitroot(p):
+        p = os.fspath(p)
+        r = _path_splitroot(p)
+        if isinstance(p, bytes):
+            return tuple(map(os.fsencode, r))
+        return r
 
 
 def isabs(s):
     """Test whether a path is absolute"""
     if _path_splitroot:
         try:
-            r = _path_splitroot(os.fsdecode(s))[0].replace(altsep, sep)
+            root, tail = _path_splitroot(s)
         except ValueError:
             pass
         else:
-            return r.startswith(sep + sep) or r.endswith(sep)
+            # UNC roots are always absolute
+            if root.startswith(sep + sep) or root.startswith(altsep + altsep):
+                return True
+            return tail.startswith((sep, altsep))
     s = os.fspath(s)
     # Paths beginning with \\?\ are always absolute, but do not
     # necessarily contain a drive.
@@ -154,6 +164,12 @@ def splitdrive(p):
 
     """
     p = os.fspath(p)
+    if _splitroot:
+        try:
+            return _splitroot(p)
+        except ValueError:
+            pass
+
     if isinstance(p, bytes):
         sep = b'\\'
         altsep = b'/'
@@ -162,12 +178,6 @@ def splitdrive(p):
         sep = '\\'
         altsep = '/'
         colon = ':'
-
-    if _path_splitroot:
-        try:
-            d = _path_splitroot(p)[0].rstrip('\\/')
-        except ValueError:
-            pass
 
     if len(p) >= 2:
         normp = p.replace(altsep, sep)
@@ -283,27 +293,13 @@ except ImportError:
 def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
     share, or a mounted volume)"""
-    try_fallback = True
-    if _path_splitroot:
-        try:
-            root, tail = _path_splitroot(os.fsdecode(path))
-        except ValueError:
-            pass
-        else:
-            try_fallback = False
-            if not tail:
-                root = root.replace(altsep, sep)
-                return root.startswith(sep + sep) or root.endswith(sep)
-
-    if try_fallback:
-        root, rest = splitdrive(os.fsdecode(path))
-        if root:
-            return rest in ("/", "\\") or root.startswith(("\\\\", "//"))
+    path = os.fsdecode(path)
+    root, rest = splitdrive(path)
+    if root:
+        return rest in ("/", "\\", "") or root.startswith(("\\\\", "//"))
 
     if _getvolumepathname:
-        path = os.fspath(path)
-        seps = _get_bothseps(path)
-        return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
+        return path.rstrip("/\\") == _getvolumepathname(path).rstrip("/\\")
     return False
 
 
