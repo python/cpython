@@ -1142,7 +1142,8 @@ class TestDescriptions(unittest.TestCase):
                 '''A static method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['sm']),
-                         "<staticmethod object>")
+                         'sm(...)\n'
+                         '    A static method\n')
         self.assertEqual(self._get_summary_lines(X.sm), """\
 sm(x, y)
     A static method
@@ -1162,7 +1163,8 @@ sm(x, y)
                 '''A class method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['cm']),
-                         "<classmethod object>")
+                         'cm(...)\n'
+                         '    A class method\n')
         self.assertEqual(self._get_summary_lines(X.cm), """\
 cm(x) method of builtins.type instance
     A class method
