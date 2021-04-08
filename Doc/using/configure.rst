@@ -51,11 +51,10 @@ General Options
 
    .. versionadded:: 3.9
 
-.. cmdoption:: --with-decimal-contextvar
+.. cmdoption:: --without-decimal-contextvar
 
-   Build the ``_decimal`` extension module using a coroutine-local rather than
-   a thread-local context (use thread-local context by default), see the
-   :mod:`decimal` module.
+   Build the ``_decimal`` extension module using a thread-local context rather
+   than a coroutine-local context (default), see the :mod:`decimal` module.
 
    See :data:`decimal.HAVE_CONTEXTVAR`.
 
