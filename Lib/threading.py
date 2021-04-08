@@ -839,16 +839,6 @@ class Thread:
         # For debugging and _after_fork()
         _dangling.add(self)
 
-    def __del__(self):
-        if not self._initialized:
-            return
-        lock = self._tstate_lock
-        if lock is not None and not self.daemon:
-            if lock.acquire(False):
-                lock.release()
-                with _shutdown_locks_lock:
-                    _shutdown_locks.discard(lock)
-
     def _reset_internal_locks(self, is_alive):
         # private!  Called by _after_fork() to reset our internal locks as
         # they may be in an invalid state leading to a deadlock or crash.
@@ -1416,6 +1406,13 @@ from _thread import stack_size
 # (Py_Main) as threading._shutdown.
 
 _main_thread = _MainThread()
+
+def _discard_shutdown_lock(lock):
+    """
+    Discard the Thread._tstate_lock lock when the non-daemon thread have done.
+    """
+    with _shutdown_locks_lock:
+        _shutdown_locks.discard(lock)
 
 def _shutdown():
     """

@@ -3,8 +3,9 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "pycore_pylifecycle.h"
 #include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_Init()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
@@ -20,6 +21,7 @@ _Py_IDENTIFIER(__dict__);
 
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(flush);
+_Py_IDENTIFIER(threading);
 
 
 // Forward declarations
@@ -1277,19 +1279,40 @@ In most applications `threading.enumerate()` should be used instead.");
 static void
 release_sentinel(void *wr_raw)
 {
+    _Py_IDENTIFIER(_discard_shutdown_lock);
     PyObject *wr = _PyObject_CAST(wr_raw);
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
     PyObject *obj = PyWeakref_GET_OBJECT(wr);
     lockobject *lock;
+
     if (obj != Py_None) {
         lock = (lockobject *) obj;
         if (lock->locked) {
             PyThread_release_lock(lock->lock_lock);
             lock->locked = 0;
         }
+        PyThreadState *tstate = _PyThreadState_GET();
+        PyObject *threading = _PyImport_GetModuleId(&PyId_threading);
+        if (threading == NULL) {
+            if (!_PyErr_Occurred(tstate)) {
+                _PyErr_SetString(tstate, PyExc_RuntimeError,
+                                 "lost threading module");
+            }
+            goto exit;
+        }
+        PyObject *result = _PyObject_CallMethodIdOneArg(
+            threading, &PyId__discard_shutdown_lock, obj);
+        if (result == NULL) {
+            PyErr_WriteUnraisable(threading);
+        } else {
+            Py_DECREF(result);
+        }
+        Py_DECREF(threading);
     }
+
+exit:
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
     Py_DECREF(wr);

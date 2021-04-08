@@ -882,6 +882,20 @@ class ThreadTests(BaseTestCase):
             threading.Thread(target=noop).start()
             # Thread.join() is not called
 
+    def test_leak_without_join_2(self):
+        # Same as above, but a delay gets introduced after the thread's
+        # Python code returned but before the thread state is deleted.
+        def random_sleep():
+            seconds = random.random() * 0.010
+            time.sleep(seconds)
+
+        def f():
+            random_sleep()
+
+        with threading_helper.wait_threads_exit():
+            threading.Thread(target=f).start()
+            # Thread.join() is not called
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
