@@ -31,8 +31,15 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 
 typedef struct _cframe {
     /* This struct will be threaded through the C stack
-     * allowing faster access to state that must can be modified
-     * outside of the interpreter must be accessed within it */
+     * allowing fast access to per-thread state that needs
+     * to be accessed quickly by the interpreter, but can
+     * be modified outside of the interpreter.
+     *
+     * WARNING: This makes data on the C stack accessible from
+     * heap objects. Care must be taken to maintain stack
+     * discipline and make sure that instances of this struct cannot
+     * accessed outside of their lifetime.
+     */
     int use_tracing;
     struct _cframe *previous;
 } CFrame;
@@ -69,6 +76,9 @@ struct _ts {
        This is to prevent the actual trace/profile code from being recorded in
        the trace/profile. */
     int tracing;
+
+    /* Pointer to current CFrame in the C stack frame of the currently,
+     * or most recently, executing _PyEval_EvalFrameDefault. */
     CFrame *cframe;
 
     Py_tracefunc c_profilefunc;
@@ -136,6 +146,7 @@ struct _ts {
 
     /* Unique thread state id. */
     uint64_t id;
+
     CFrame root_cframe;
 
     /* XXX signal handlers should also be here */

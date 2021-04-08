@@ -1615,6 +1615,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     /* Mark trace_info as uninitialized */
     trace_info.code = NULL;
 
+    /* WARNING: Because the CFrame lives on the C stack,
+     * but can be accessed from a heap allocated object (tstate)
+     * strict stack discipline must be maintained.
+     */
     CFrame *prev_cframe = tstate->cframe;
     trace_info.cframe.use_tracing = prev_cframe->use_tracing;
     trace_info.cframe.previous = prev_cframe;
@@ -4588,7 +4592,7 @@ exiting:
 
     /* pop frame */
 exit_eval_frame:
-
+    /* Restore previous cframe */
     tstate->cframe = trace_info.cframe.previous;
     tstate->cframe->use_tracing = trace_info.cframe.use_tracing;
 
