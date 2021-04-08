@@ -118,6 +118,7 @@ __all__ = [
     'Text',
     'TYPE_CHECKING',
     'TypeAlias',
+    'TypeGuard',
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
@@ -564,6 +565,48 @@ def Concatenate(self, parameters):
     msg = "Concatenate[arg, ...]: each arg must be a type."
     parameters = tuple(_type_check(p, msg) for p in parameters)
     return _ConcatenateGenericAlias(self, parameters)
+
+
+@_SpecialForm
+def TypeGuard(self, parameters):
+    """Special typing form used to annotate the return type of a user-defined
+    type guard function.  ``TypeGuard`` only accepts a single type argument.
+
+    ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
+    type checkers to determine a more precise type of an expression within a
+    program's code flow.
+
+    A ``TypeGuard`` tells the static type checker that for a given function:
+       1. The return value is a boolean.
+       2. If the return value was "truthy", the type of the input to the
+          function is specified by the type inside ``TypeGuard``.
+
+       For example::
+
+          def is_str_list(val: List[object]) -> TypeGuard[List[str]]:
+              '''Determines whether all objects in the list are strings'''
+              return all(isinstance(x, str) for x in val)
+
+          def func1(val: List[object]):
+              if is_str_list(val):
+                  # Type of ``val`` is narrowed to List[str]
+                  print(" ".join(val))
+              else:
+                  # Type of ``val`` remains as List[object]
+                  print("Not a list of strings!")
+
+    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
+    Means that if ``foo(arg)`` returned true, then ``arg`` narrows from
+    ``TypeA`` to ``TypeB``.
+
+    Return statements within a type guard function should return ``bool``
+    values.
+
+    ``TypeGuard`` also works with type variables.  For more information, see
+    :pep:`647` (User-Defined Type Guards).
+    """
+    item = _type_check(parameters, f'{self} accepts only single type.')
+    return _GenericAlias(self, (item,))
 
 
 class ForwardRef(_Final, _root=True):
