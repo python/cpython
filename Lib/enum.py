@@ -1669,4 +1669,4 @@ def test_simple_enum(checked_enum, simple_enum):
                 # in the first checks above
                 pass
     if failed:
-        raise ValueError('enum mismatch:\n   %s' % '\n   '.join(failed))
+        raise TypeError('enum mismatch:\n   %s' % '\n   '.join(failed))
