@@ -1299,13 +1299,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#define TARGET(op) \
-    op: \
-    TARGET_##op
-#define DISPATCH_GOTO goto *opcode_targets[opcode];
+#define TARGET(op) op: TARGET_##op
+#define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
 #define TARGET(op) op
-#define DISPATCH_GOTO goto dispatch_opcode;
+#define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
 #define DISPATCH() \
@@ -1315,7 +1313,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
         } \
         f->f_lasti = INSTR_OFFSET(); \
         NEXTOPARG(); \
-        DISPATCH_GOTO \
+        DISPATCH_GOTO(); \
     }
 
 #define CHECK_EVAL_BREAKER() \
@@ -1594,7 +1592,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 #endif
     PyObject **stack_pointer;  /* Next free slot in value stack */
     const _Py_CODEUNIT *next_instr;
-    uint8_t opcode;    /* Current opcode */
+    int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
