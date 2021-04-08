@@ -577,11 +577,11 @@ See :pep:`613` for more details.
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
 PEP 647: User-Defined Type Guards
------------------------------
+---------------------------------
 
-:data:`TypeGuard` is a new addition to the :mod:`typing` module to annotate
+:data:`TypeGuard` has been added to the :mod:`typing` module to annotate
 type guard functions and improve information provided to static type checkers
-for type narrowing.  For more information, please see :data:`TypeGuard`\ 's
+during type narrowing.  For more information, please see :data:`TypeGuard`\ 's
 documentation, and :pep:`647`.
 
 (Contributed by Ken Jin in :issue:`43766`. PEP written by Eric Traut.)

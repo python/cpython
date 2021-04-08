@@ -945,10 +945,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    conditional code flow and applying the narrowing to a block of code.  The
    conditional expression here is sometimes referred to as a "type guard".
 
-   Sometimes, a type guard can be a complex checking function. These functions
-   are called "type guard functions".  These type guard functions require
-   ``TypeGuard`` to narrow their input types as the static type checker usually
-   does not have enough information to statically infer them.
+   Sometimes, a type guard can be a complex checking function.
+   These type guard functions require ``TypeGuard`` to narrow their input types
+   as the static type checker usually does not have enough information to
+   statically infer them.
 
    A ``TypeGuard`` tells the static type checker that for a given function:
       1. The return value is a boolean.
