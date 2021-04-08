@@ -434,8 +434,8 @@ def _joinrealpath(path, rest, strict, seen):
         else:
             is_link = stat.S_ISLNK(st.st_mode)
         if not is_link:
-             path = newpath
-             continue
+            path = newpath
+            continue
         # Resolve the symbolic link
         if newpath in seen:
             # Already seen this path
