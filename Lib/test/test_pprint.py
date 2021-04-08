@@ -84,6 +84,11 @@ class dataclass2:
 class dataclass3:
     a: int = 1
 
+@dataclasses.dataclass
+class dataclass4:
+    a: "dataclass4"
+    b: int = 1
+
 class Unorderable:
     def __repr__(self):
         return str(id(self))
@@ -513,6 +518,14 @@ AdvancedNamespace(the=0,
         dc = dataclass3()
         formatted = pprint.pformat(dc, width=10)
         self.assertRegex(formatted, r"<test.test_pprint.dataclass3 object at \w+>")
+
+    def test_recursive_dataclass(self):
+        dc = dataclass4(None)
+        dc.a = dc
+        formatted = pprint.pformat(dc, width=10)
+        self.assertEqual(formatted, """\
+dataclass4(a=...,
+           b=1)""")
 
     def test_subclassing(self):
         # length(repr(obj)) > width
