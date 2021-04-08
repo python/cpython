@@ -722,6 +722,8 @@ _PyPegen_fill_token(Parser *p)
     return 0;
 }
 
+
+#if defined(Py_DEBUG)
 // Instrumentation to count the effectiveness of memoization.
 // The array counts the number of tokens skipped by memoization,
 // indexed by type.
@@ -758,6 +760,7 @@ _PyPegen_get_memo_statistics()
     }
     return ret;
 }
+#endif
 
 int  // bool
 _PyPegen_is_memoized(Parser *p, int type, void *pres)
@@ -773,6 +776,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
 
     for (Memo *m = t->memo; m != NULL; m = m->next) {
         if (m->type == type) {
+#if defined(PY_DEBUG)
             if (0 <= type && type < NSTATISTICS) {
                 long count = m->mark - p->mark;
                 // A memoized negative result counts for one.
@@ -781,6 +785,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 }
                 memo_statistics[type] += count;
             }
+#endif
             p->mark = m->mark;
             *(void **)(pres) = m->node;
             return 1;
@@ -2271,9 +2276,9 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
     }
 
 #define VISIT_CONTAINER(CONTAINER, TYPE) do { \
-        Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
+        Py_ssize_t len = asdl_seq_LEN((CONTAINER)->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
-            expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
+            expr_ty other = asdl_seq_GET((CONTAINER)->v.TYPE.elts, i);\
             expr_ty child = _PyPegen_get_invalid_target(other, targets_type);\
             if (child != NULL) {\
                 return child;\
