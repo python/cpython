@@ -660,4 +660,4 @@ Utilites and Decorators
       ...     BLUE = auto()
       >>> test_simple_enum(CheckedColor, Color)
 
-   If differences are found, a :exc:`ValueError` is raised.
+   If differences are found, a :exc:`TypeError` is raised.
