@@ -269,9 +269,8 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(os.fsencode(ABSTFN + "1")),
                          os.fsencode(ABSTFN))
 
-    @unittest.skipUnless(hasattr(os, "symlink"),
-                         "Missing symlink implementation")
-    @skip_if_ABSTFN_contains_backslash
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):
         # Bug #43757: raise FileNotFoundError in strict mode if we encounter
         # a path that does not exist.
