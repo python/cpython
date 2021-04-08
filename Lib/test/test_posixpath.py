@@ -369,36 +369,33 @@ class PosixPathTest(unittest.TestCase):
                          "Missing symlink implementation")
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_symlink_loops(self):
-        # Bug #930024, return the path unchanged if we get into an infinite
-        # symlink loop.
+        # Bug #43757, raise OSError if we get into an infinite symlink loop.
         try:
             os.symlink(ABSTFN, ABSTFN)
-            self.assertEqual(realpath(ABSTFN), ABSTFN)
+            self.assertRaises(OSError, realpath, ABSTFN)
 
             os.symlink(ABSTFN+"1", ABSTFN+"2")
             os.symlink(ABSTFN+"2", ABSTFN+"1")
-            self.assertEqual(realpath(ABSTFN+"1"), ABSTFN+"1")
-            self.assertEqual(realpath(ABSTFN+"2"), ABSTFN+"2")
+            self.assertRaises(OSError, realpath, ABSTFN+"1")
+            self.assertRaises(OSError, realpath, ABSTFN+"2")
 
-            self.assertEqual(realpath(ABSTFN+"1/x"), ABSTFN+"1/x")
-            self.assertEqual(realpath(ABSTFN+"1/.."), dirname(ABSTFN))
-            self.assertEqual(realpath(ABSTFN+"1/../x"), dirname(ABSTFN) + "/x")
+            self.assertRaises(OSError, realpath, ABSTFN+"1/x")
+            self.assertRaises(OSError, realpath, ABSTFN+"1/..")
+            self.assertRaises(OSError, realpath, ABSTFN+"1/../x")
             os.symlink(ABSTFN+"x", ABSTFN+"y")
-            self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "y"),
-                             ABSTFN + "y")
-            self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "1"),
-                             ABSTFN + "1")
+            self.assertRaises(OSError, realpath, ABSTFN+"1/../" + basename(ABSTFN) + "y")
+            self.assertRaises(OSError, realpath, ABSTFN+"1/../" + basename(ABSTFN) + "1")
 
             os.symlink(basename(ABSTFN) + "a/b", ABSTFN+"a")
-            self.assertEqual(realpath(ABSTFN+"a"), ABSTFN+"a/b")
+            self.assertRaises(OSError, realpath, ABSTFN+"a")
 
             os.symlink("../" + basename(dirname(ABSTFN)) + "/" +
                        basename(ABSTFN) + "c", ABSTFN+"c")
-            self.assertEqual(realpath(ABSTFN+"c"), ABSTFN+"c")
+            self.assertRaises(OSError, realpath, ABSTFN+"c")
 
             # Test using relative path as well.
             with os_helper.change_cwd(dirname(ABSTFN)):
-                self.assertEqual(realpath(basename(ABSTFN)), ABSTFN)
+                self.assertRaises(OSError, realpath, basename(ABSTFN))
         finally:
             os_helper.unlink(ABSTFN)
             os_helper.unlink(ABSTFN+"1")
