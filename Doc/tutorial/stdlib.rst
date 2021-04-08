@@ -78,8 +78,8 @@ and an optional number of lines to be displayed::
 
     import argparse
 
-    parser = argparse.ArgumentParser(prog = 'top',
-        description = 'Show top lines from each file')
+    description = 'Show top lines from each file'
+    parser = argparse.ArgumentParser(prog='top', description=description)
     parser.add_argument('filenames', nargs='+')
     parser.add_argument('-l', '--lines', type=int, default=10)
     args = parser.parse_args()
