@@ -327,6 +327,9 @@ Notes:
    Not for complex numbers.  Instead convert to floats using :func:`abs` if
    appropriate.
 
+   For non-complex numbers x and y the identity ``x = (x//y)*y + (x%y)`` always holds.
+   See :ref:`faq-floordivision` for more details.
+
 (3)
    .. index::
       module: math

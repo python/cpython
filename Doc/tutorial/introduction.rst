@@ -38,6 +38,15 @@ Let's try some simple Python commands.  Start the interpreter and wait for the
 primary prompt, ``>>>``.  (It shouldn't take long.)
 
 
+.. index::
+    operator: /
+    operator: //
+    operator: % (percent)
+    operator: +
+    operator: *
+    operator: -
+    operator: **
+
 .. _tut-numbers:
 
 Numbers
@@ -75,6 +84,8 @@ operator; to calculate the remainder you can use ``%``::
    2
    >>> 5 * 3 + 2  # result * divisor + remainder
    17
+
+For more details on how the ``//`` and ``%`` operators work with negative numbers see :ref:`faq-floordivision`
 
 With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
 

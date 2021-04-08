@@ -813,6 +813,12 @@ or uppercase.  For example, in the Python interpreter::
    178
 
 
+.. index::
+    operator: \\
+    operator: % (percent)
+
+.. _faq-floordivision:
+
 Why does -22 // 10 return -3?
 -----------------------------
 
@@ -821,16 +827,18 @@ If you want that, and also want::
 
     i == (i // j) * j + (i % j)
 
-then integer division has to return the floor.  C also requires that identity to
-hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
+then integer division has to return the floor, and Floor division rounds towards -infinity.
+C also requires that identity to hold, and then compilers that truncate ``i // j`` need to make ``i % j`` have
 the same sign as ``i``.
+
+Note that the identity and the definition of floor division also means that ``(i % -j) != - (i % j)``. For example
+with i and j being 22 and -12 respectively then``21 // -12 == -2`` and therefore ``21 % -12 == -2``
 
 There are few real use cases for ``i % j`` when ``j`` is negative.  When ``j``
 is positive, there are many, and in virtually all of them it's more useful for
 ``i % j`` to be ``>= 0``.  If the clock says 10 now, what did it say 200 hours
 ago?  ``-190 % 12 == 2`` is useful; ``-190 % 12 == -10`` is a bug waiting to
 bite.
-
 
 How do I convert a string to a number?
 --------------------------------------

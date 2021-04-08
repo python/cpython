@@ -1149,6 +1149,9 @@ Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
 
+.. index::
+    operator: unary
+
 .. _unary:
 
 Unary arithmetic and bitwise operations
@@ -1191,6 +1194,9 @@ applies to integral numbers.
 In all three cases, if the argument does not have the proper type, a
 :exc:`TypeError` exception is raised.
 
+
+.. index::
+    operator: binary
 
 .. _binary:
 
@@ -1256,8 +1262,13 @@ the result is strictly smaller than the absolute value of the second operand
 [#]_.
 
 The floor division and modulo operators are connected by the following
-identity: ``x == (x//y)*y + (x%y)``.  Floor division and modulo are also
-connected with the built-in function :func:`divmod`: ``divmod(x, y) == (x//y,
+identity:
+
+``x == (x//y)*y + (x%y)`` [#]_
+
+.. index:: single: divmod
+
+Floor division and modulo are also connected with the built-in function :func:`divmod`: ``divmod(x, y) == (x//y,
 x%y)``. [#]_.
 
 In addition to performing the modulo operation on numbers, the ``%`` operator is
@@ -1890,6 +1901,9 @@ precedence and have a left-to-right chaining feature as described in the
    :func:`math.fmod` returns a result whose sign matches the sign of the
    first argument instead, and so returns ``-1e-100`` in this case. Which approach
    is more appropriate depends on the application.
+
+.. [#] See :ref:`faq-floordivision` for more details on ``\\`` and ``%`` operators
+   especially with negative divisors.
 
 .. [#] If x is very close to an exact integer multiple of y, it's possible for
    ``x//y`` to be one larger than ``(x-x%y)//y`` due to rounding.  In such
