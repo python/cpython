@@ -350,9 +350,9 @@ the :mod:`glob` module.)
    links encountered in the path (if they are supported by the operating
    system).
 
-   In non-strict mode (the default), missing or inaccessible ancestors are
-   permitted; when encountered, the remainder of the path joined on and
-   returned. In strict mode an :exc:`OSError` is raised in this scenario.
+   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
+   is raised. If *strict* is ``False``, the path is resolved as far as possible
+   and any remainder is appended without checking whether it exists.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
