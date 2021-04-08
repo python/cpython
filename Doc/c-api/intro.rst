@@ -742,8 +742,8 @@ allocator, or low-level profiling of the main interpreter loop.  Only the most
 frequently-used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
-what is generally meant by "a debug build" of Python. :c:macro:`Py_DEBUG` is
-enabled in the Unix build by adding ``--with-pydebug`` to the
+what is generally meant by `a debug build of Python <debug-build>`. :c:macro:`Py_DEBUG` is
+enabled in the Unix build by adding :option:`--with-pydebug` to the
 :file:`./configure` command.  It is also implied by the presence of the
 not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.

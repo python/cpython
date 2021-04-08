@@ -211,7 +211,7 @@ Python now uses the same ABI whether it's built in release or debug mode. On
 Unix, when Python is built in debug mode, it is now possible to load C
 extensions built in release mode and C extensions built using the stable ABI.
 
-Release builds and debug builds are now ABI compatible: defining the
+Release builds and :ref:`debug builds <debug-build>` are now ABI compatible: defining the
 ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
 introduces the only ABI incompatibility. The ``Py_TRACE_REFS`` macro, which
 adds the :func:`sys.getobjects` function and the :envvar:`PYTHONDUMPREFS`
@@ -904,7 +904,7 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
 io
 --
 
-In development mode (:option:`-X` ``env``) and in debug build, the
+In development mode (:option:`-X` ``env``) and in :ref:`debug build <debug-build>`, the
 :class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
 fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
