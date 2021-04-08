@@ -702,18 +702,24 @@ call fails (for example because the path doesn't exist).
       PosixPath('/home/antoine/pathlib')
 
 
-.. classmethod:: Path.home()
+.. classmethod:: Path.home(user=None)
 
-   Return a new path object representing the user's home directory (as
+   Return a new path object representing a user's home directory (as
    returned by :func:`os.path.expanduser` with ``~`` construct). If the home
-   directory can't be resolved, :exc:`RuntimeError` is raised.
+   directory can't be resolved, :exc:`RuntimeError` is raised. If no user name
+   is given, the current user's home directory is used.
 
    ::
 
       >>> Path.home()
       PosixPath('/home/antoine')
+      >>> Path.home('barney')
+      PosixPath('/home/barney')
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.10
+      The *user* parameter was added.
 
 
 .. method:: Path.stat(*, follow_symlinks=True)

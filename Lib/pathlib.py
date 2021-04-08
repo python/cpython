@@ -1055,14 +1055,22 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(cls()._accessor.getcwd())
+        return cls(cls._accessor.getcwd())
 
     @classmethod
-    def home(cls):
+    def home(cls, user=None):
         """Return a new path pointing to the user's home directory (as
         returned by os.path.expanduser('~')).
         """
-        return cls("~").expanduser()
+        tilde = "~"
+        if user is None:
+            user = ""
+        elif isinstance(user, bytes):
+            tilde = b"~"
+        homedir = cls._accessor.expanduser(tilde + user)
+        if homedir[:1] == tilde:
+            raise RuntimeError("Could not determine home directory.")
+        return cls(homedir)
 
     def samefile(self, other_path):
         """Return whether other_path is the same or not as this file
@@ -1488,9 +1496,7 @@ class Path(PurePath):
         """
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
-            homedir = self._accessor.expanduser(self._parts[0])
-            if homedir[:1] == "~":
-                raise RuntimeError("Could not determine home directory.")
+            homedir = self.home(self.parts[0][1:])
             return self._from_parts([homedir] + self._parts[1:])
 
         return self
