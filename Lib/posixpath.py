@@ -22,6 +22,7 @@ defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
+import errno
 import os
 import sys
 import stat
@@ -387,16 +388,16 @@ def abspath(path):
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
 
-def realpath(filename):
+def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, {})
+    path = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
-def _joinrealpath(path, rest, seen):
+def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
         curdir = b'.'
@@ -425,9 +426,17 @@ def _joinrealpath(path, rest, seen):
                 path = pardir
             continue
         newpath = join(path, name)
-        if not islink(newpath):
-            path = newpath
-            continue
+        try:
+            st = os.lstat(newpath)
+        except OSError:
+            if strict:
+                raise
+            is_link = False
+        else:
+            is_link = stat.S_ISLNK(st.st_mode)
+        if not is_link:
+             path = newpath
+             continue
         # Resolve the symbolic link
         if newpath in seen:
             # Already seen this path
@@ -436,15 +445,11 @@ def _joinrealpath(path, rest, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            # Return already resolved part + rest of the path unchanged.
-            return join(newpath, rest), False
-        seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), seen)
-        if not ok:
-            return join(path, rest), False
+            raise OSError(errno.ELOOP, os.strerror(errno.ELOOP), newpath)
+        path = _joinrealpath(path, os.readlink(newpath), strict, seen)
         seen[newpath] = path # resolved symlink
 
-    return path, True
+    return path
 
 
 supports_unicode_filenames = (sys.platform == 'darwin')

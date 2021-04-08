@@ -1058,14 +1058,13 @@ class Path(PurePath):
         normalizing it (for example turning slashes into backslashes under
         Windows).
         """
-        p = self._from_parts((self._accessor.realpath(self),))
         try:
-            if S_ISLNK(self.lstat().st_mode):
-                raise RuntimeError("Symlink loop from %r" % str(p))
-        except OSError:
-            if strict:
-                raise
-        return p
+            p = self._accessor.realpath(self, strict=strict)
+        except OSError as ex:
+            if ex.errno == ELOOP:
+                raise RuntimeError("Symlink loop from %r", ex.filename)
+            raise
+        return self._from_parts((p,))
 
     def stat(self, *, follow_symlinks=True):
         """
