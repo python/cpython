@@ -397,9 +397,14 @@ class PrettyPrinter:
             last = i == last_index
             write(key)
             write('=')
-            self._format(ent, stream, indent + len(key) + 1,
-                         allowance if last else 1,
-                         context, level)
+            if id(ent) in context:
+                # Special-case representation of recursion to match standard
+                # recursive dataclass repr.
+                write("...")
+            else:
+                self._format(ent, stream, indent + len(key) + 1,
+                             allowance if last else 1,
+                             context, level)
             if not last:
                 write(delimnl)
 
