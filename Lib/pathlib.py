@@ -29,14 +29,17 @@ __all__ = [
 # Internals
 #
 
+_WINERROR_NOT_READY = 21  # drive exists but is not accessible
+_WINERROR_INVALID_NAME = 123  # fix for bpo-35306
+_WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
+
 # EBADF - guard against macOS `stat` throwing EBADF
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
-    21,  # ERROR_NOT_READY - drive exists but is not accessible
-    123, # ERROR_INVALID_NAME - fix for bpo-35306
-    1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
-)
+    _WINERROR_NOT_READY,
+    _WINERROR_INVALID_NAME,
+    _WINERROR_CANT_RESOLVE_FILENAME)
 
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
@@ -1061,7 +1064,8 @@ class Path(PurePath):
         try:
             p = self._accessor.realpath(self, strict=strict)
         except OSError as ex:
-            if ex.errno == ELOOP:
+            winerr = getattr(ex, 'winerror', 0)
+            if ex.errno == ELOOP or winerr == _WINERROR_CANT_RESOLVE_FILENAME:
                 raise RuntimeError("Symlink loop from %r", ex.filename)
             raise
         return self._from_parts((p,))
