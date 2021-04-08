@@ -358,6 +358,19 @@ class PosixPathTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, "symlink"),
                          "Missing symlink implementation")
     @skip_if_ABSTFN_contains_backslash
+    def test_realpath_strict(self):
+        # Bug #43757: raise FileNotFoundError in strict mode if we encounter
+        # a path that does not exist.
+        try:
+            os.symlink(ABSTFN+"1", ABSTFN)
+            self.assertRaises(FileNotFoundError, realpath, ABSTFN, strict=True)
+            self.assertRaises(FileNotFoundError, realpath, ABSTFN + "2", strict=True)
+        finally:
+            os_helper.unlink(ABSTFN)
+
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_relative(self):
         try:
             os.symlink(posixpath.relpath(ABSTFN+"1"), ABSTFN)
