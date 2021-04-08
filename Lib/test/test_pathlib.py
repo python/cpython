@@ -2559,6 +2559,42 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
             self.assertEqual(p6.expanduser(), p6)
             self.assertRaises(RuntimeError, p7.expanduser)
 
+    @unittest.skipUnless(hasattr(pwd, 'getpwall'),
+                         'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
+    def test_home(self):
+        P = self.cls
+        import_helper.import_module('pwd')
+        import pwd
+        pwdent = pwd.getpwuid(os.getuid())
+        username = pwdent.pw_name
+        userhome = pwdent.pw_dir.rstrip('/') or '/'
+        # Find arbitrary different user (if exists).
+        for pwdent in pwd.getpwall():
+            othername = pwdent.pw_name
+            otherhome = pwdent.pw_dir.rstrip('/')
+            if othername != username and otherhome:
+                break
+        else:
+            othername = username
+            otherhome = userhome
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env.pop('HOME', None)
+
+            self.assertEqual(P.home(), P(userhome))
+            self.assertEqual(P.home(username), P(userhome))
+            self.assertEqual(P.home(othername), P(otherhome))
+            self.assertRaises(RuntimeError, P.home, 'missinguser')
+
+            env['HOME'] = '/tmp'
+
+            self.assertEqual(P.home(), P('/tmp'))
+            self.assertEqual(P.home(username), P(userhome))
+            self.assertEqual(P.home(othername), P(otherhome))
+            self.assertRaises(RuntimeError, P.home, 'missinguser')
+
     @unittest.skipIf(sys.platform != "darwin",
                      "Bad file descriptor in /dev/fd affects only macOS")
     def test_handling_bad_descriptor(self):
@@ -2637,6 +2673,43 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 self.assertEqual(p4.expanduser(), p4)
                 self.assertEqual(p5.expanduser(), p5)
                 self.assertEqual(p6.expanduser(), p6)
+
+            env['HOMEPATH'] = 'C:\\Users\\alice'
+            check()
+
+            env['HOMEDRIVE'] = 'C:\\'
+            env['HOMEPATH'] = 'Users\\alice'
+            check()
+
+            env.pop('HOMEDRIVE', None)
+            env.pop('HOMEPATH', None)
+            env['USERPROFILE'] = 'C:\\Users\\alice'
+            check()
+
+            # bpo-38883: ignore `HOME` when set on windows
+            env['HOME'] = 'C:\\Users\\eve'
+            check()
+
+    def test_home(self):
+        P = self.cls
+        with os_helper.EnvironmentVarGuard() as env:
+            env.pop('HOME', None)
+            env.pop('USERPROFILE', None)
+            env.pop('HOMEPATH', None)
+            env.pop('HOMEDRIVE', None)
+            env['USERNAME'] = 'alice'
+
+            self.assertRaises(RuntimeError, P.home)
+            self.assertRaises(RuntimeError, P.home, 'alice')
+            self.assertRaises(RuntimeError, P.home, 'bob')
+
+            def check():
+                env.pop('USERNAME', None)
+                self.assertEqual(P.home(), P('C:/Users/alice'))
+                self.assertRaises(RuntimeError, P.home, 'alice')
+                env['USERNAME'] = 'alice'
+                self.assertEqual(P.home('alice'), P('C:/Users/alice'))
+                self.assertEqual(P.home('bob'), P('C:/Users/bob'))
 
             env['HOMEPATH'] = 'C:\\Users\\alice'
             check()
