@@ -445,7 +445,8 @@ def _joinrealpath(path, rest, strict, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            raise OSError(errno.ELOOP, os.strerror(errno.ELOOP), newpath)
+            # Raise OSError(errno.ELOOP)
+            os.stat(newpath)
         path = _joinrealpath(path, os.readlink(newpath), strict, seen)
         seen[newpath] = path # resolved symlink
 
