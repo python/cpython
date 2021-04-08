@@ -4390,10 +4390,6 @@ class TypeGuardTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, TypeGuard)
 
-    def test_final_unmodified(self):
-        def func(x): ...
-        self.assertIs(func, final(func))
-
 
 class AllTests(BaseTestCase):
     """Tests for __all__."""
