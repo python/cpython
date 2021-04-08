@@ -49,13 +49,14 @@ a file may not have one.
 You can control how files are opened by providing an opening hook via the
 *openhook* parameter to :func:`fileinput.input` or :class:`FileInput()`. The
 hook must be a function that takes two arguments, *filename* and *mode*, and
-returns an accordingly opened file-like object. Two useful hooks are already
-provided by this module.
+returns an accordingly opened file-like object. If *encoding* is specified,
+it will be passed to the hook as an aditional argument. Two useful hooks are
+already provided by this module.
 
 The following function is the primary interface of this module:
 
 
-.. function:: input(files=None, inplace=False, backup='', *, mode='r', openhook=None)
+.. function:: input(files=None, inplace=False, backup='', *, mode='r', openhook=None, encoding=None)
 
    Create an instance of the :class:`FileInput` class.  The instance will be used
    as global state for the functions of this module, and is also returned to use
@@ -137,7 +138,7 @@ The class which implements the sequence behavior provided by the module is
 available for subclassing as well:
 
 
-.. class:: FileInput(files=None, inplace=False, backup='', *, mode='r', openhook=None)
+.. class:: FileInput(files=None, inplace=False, backup='', *, mode='r', openhook=None, encoding=None)
 
    Class :class:`FileInput` is the implementation; its methods :meth:`filename`,
    :meth:`fileno`, :meth:`lineno`, :meth:`filelineno`, :meth:`isfirstline`,
@@ -155,13 +156,14 @@ available for subclassing as well:
    *filename* and *mode*, and returns an accordingly opened file-like object. You
    cannot use *inplace* and *openhook* together.
 
+   You can specify *encoding* that is passed to :func:`open` or ``openhook``.
+
    A :class:`FileInput` instance can be used as a context manager in the
    :keyword:`with` statement.  In this example, *input* is closed after the
    :keyword:`!with` statement is exited, even if an exception occurs::
 
       with FileInput(files=('spam.txt', 'eggs.txt')) as input:
           process(input)
-
 
    .. versionchanged:: 3.2
       Can be used as a context manager.
@@ -175,6 +177,8 @@ available for subclassing as well:
    .. versionchanged:: 3.8
       The keyword parameter *mode* and *openhook* are now keyword-only.
 
+   .. versionchanged:: 3.10
+      Added *encoding* parameter to FileInput.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
@@ -191,12 +195,15 @@ when standard input is read.
 
 The two following opening hooks are provided by this module:
 
-.. function:: hook_compressed(filename, mode)
+.. function:: hook_compressed(filename, mode, encoding=None)
 
    Transparently opens files compressed with gzip and bzip2 (recognized by the
    extensions ``'.gz'`` and ``'.bz2'``) using the :mod:`gzip` and :mod:`bz2`
    modules.  If the filename extension is not ``'.gz'`` or ``'.bz2'``, the file is
    opened normally (ie, using :func:`open` without any decompression).
+
+   The *encoding* value is passed to to :class:`io.TextIOWrapper` for
+   compressed files and open for normal files.
 
    Usage example:  ``fi = fileinput.FileInput(openhook=fileinput.hook_compressed)``
 
