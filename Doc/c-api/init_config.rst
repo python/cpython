@@ -1020,9 +1020,8 @@ PyConfig
 
       Set to 1 by :option:`-X showrefcount <-X>` command line option.
 
-      Need a :ref:`debug build of Python <debug-build>` (``Py_REF_DEBUG`` macro
-      must be defined): see :option:`configure --with-pydebug
-      <--with-pydebug>`:
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
+      macro must be defined).
 
       Default: ``0``.
 

@@ -11,6 +11,8 @@ List all ``./configure`` script options using::
 
     ./configure --help
 
+See also the :file:`Misc/SpecialBuilds.txt` in the Python source distribution.
+
 General Options
 ---------------
 
@@ -120,15 +122,16 @@ Performance options
 -------------------
 
 Configuring Python using ``--enable-optimizations --with-lto`` (PGO + LTO) is
-recommended for best performances.
+recommended for best performance.
 
 .. cmdoption:: --enable-optimizations
 
    Enable Profile Guided Optimization (PGO) using :envvar:`PROFILE_TASK`
    (disabled by default).
 
-   Disable also semantic interposition if ``--enable-shared`` and GCC is used:
-   add ``-fno-semantic-interposition`` to the compiler and linker flags.
+   Disable also semantic interposition in libpython if ``--enable-shared`` and
+   GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
+   flags.
 
    .. versionadded:: 3.6
 
@@ -181,13 +184,16 @@ Debug build
 -----------
 
 A debug build is Python built with the :option:`--with-pydebug` configure
-option. In this mode, ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros are defined.
+option.
 
 Effects of a debug build:
 
+* Define ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros.
+* Add ``d`` to :data:`sys.abiflags`.
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :envvar:`PYTHONTHREADDEBUG` environment variable.
+* The list of default warning filters is empty in the :mod:`warnings` module.
 * Install debug hooks on memory allocators to detect buffer overflow and other
   memory errors: see :c:func:`PyMem_SetupDebugHooks`.
 * Build Python with assertions (don't set ``NDEBUG`` macro):
@@ -223,10 +229,11 @@ Debug options
 
    Enable tracing references for debugging purpose (disabled by default).
 
-   Define the ``Py_TRACE_REFS`` macro.
+   Effects:
 
-   Add :func:`sys.getobjects` function and :envvar:`PYTHONDUMPREFS` environment
-   variable.
+   * Define the ``Py_TRACE_REFS`` macro.
+   * Add :func:`sys.getobjects` function.
+   * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    This build is not ABI compatible with release build (default build) or debug
    build (``Py_DEBUG`` macro).
@@ -239,6 +246,9 @@ Debug options
 
    If set, the ``NDEBUG`` macro is not defined in the :envvar:`OPT` compiler
    variable.
+
+   See also the :option:`--with-pydebug` option (:ref:`debug build
+   <debug-build>`) which also enables assertions.
 
    .. versionadded:: 3.6
 
@@ -277,7 +287,7 @@ Linker options
 
 .. cmdoption:: --enable-shared
 
-   Enable building a shared Python library (default is no).
+   Enable building a shared Python library: "libpython" (default is no).
 
 .. cmdoption:: --without-static-libpython
 
@@ -292,7 +302,7 @@ Libraries options
 
 .. cmdoption:: --with-libs='lib1 ...'
 
-   Link against additional libs (default is no).
+   Link against additional libraries (default is no).
 
 .. cmdoption:: --with-system-expat
 
@@ -323,7 +333,7 @@ Libraries options
 
 .. cmdoption:: --with-tcltk-libs='-L...'
 
-   Override search for Tcl and Tk libs.
+   Override search for Tcl and Tk libraries.
 
 .. cmdoption:: --with-libm=STRING
 

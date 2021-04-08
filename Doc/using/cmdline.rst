@@ -927,9 +927,6 @@ conflict.
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-Setting these variables only has an effect in a :ref:`debug build of Python
-<debug-build>`.
-
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.

@@ -501,7 +501,7 @@ Customize Memory Allocators
    memory block was traced.
 
    These hooks are :ref:`installed by default <default-memory-allocators>` if
-   Python is built in :ref:`debug mode <debug-build>`.
+   :ref:`Python is built in debug mode <debug-build>`.
    The :envvar:`PYTHONMALLOC` environment variable can be used to install
    debug hooks on a Python compiled in release mode.
 

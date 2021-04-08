@@ -1365,7 +1365,7 @@ New Features
   to simulate.
   (Contributed by Antoine Pitrou in :issue:`43356`.)
 
-* The limited C API is now supported if Python is :ref:`built in debug mode
+* The limited C API is now supported if :ref:`Python is built in debug mode
   <debug-build>` (if the ``Py_DEBUG`` macro is defined). In the limited C API,
   the :c:func:`Py_INCREF` and :c:func:`Py_DECREF` functions are now implemented
   as opaque function
