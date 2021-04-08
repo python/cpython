@@ -690,7 +690,10 @@ _PyPegen_fill_token(Parser *p)
     if (t->bytes == NULL) {
         return -1;
     }
-    _PyArena_AddPyObject(p->arena, t->bytes);
+    if (_PyArena_AddPyObject(p->arena, t->bytes) < 0) {
+        Py_DECREF(t->bytes);
+        return -1;
+    }
 
     int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
     const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
