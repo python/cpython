@@ -870,7 +870,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     (getattrofunc)module_getattro,              /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
+    0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */

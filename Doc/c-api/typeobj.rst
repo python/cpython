@@ -926,9 +926,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       PyObject *tp_getattro(PyObject *self, PyObject *attr);
 
-   It is usually convenient to set this field to :c:func:`PyObject_GenericGetAttr`,
-   which implements the normal way of looking for object attributes.
-
    **Inheritance:**
 
    Group: :attr:`tp_getattr`, :attr:`tp_getattro`
@@ -951,9 +948,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       int tp_setattro(PyObject *self, PyObject *attr, PyObject *value);
 
    In addition, setting *value* to ``NULL`` to delete an attribute must be
-   supported.  It is usually convenient to set this field to
-   :c:func:`PyObject_GenericSetAttr`, which implements the normal
-   way of setting object attributes.
+   supported.
 
    **Inheritance:**
 

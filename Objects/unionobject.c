@@ -429,7 +429,6 @@ PyTypeObject _Py_UnionType = {
     .tp_free = PyObject_Del,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_hash = union_hash,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,

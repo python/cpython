@@ -167,7 +167,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     0,                                       /* tp_hash */
     0,                                       /* tp_call */
     0,                                       /* tp_str */
-    PyObject_GenericGetAttr,                 /* tp_getattro */
+    0,                                          /* tp_setattro */
     0,                                       /* tp_setattro */
     0,                                       /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
@@ -3260,7 +3260,6 @@ static PyTypeObject PyMemoryIter_Type = {
     .tp_basicsize = sizeof(memoryiterobject),
     // methods
     .tp_dealloc = (destructor)memoryiter_dealloc,
-    .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
@@ -3284,7 +3283,7 @@ PyTypeObject PyMemoryView_Type = {
     (hashfunc)memory_hash,                    /* tp_hash */
     0,                                        /* tp_call */
     0,                                        /* tp_str */
-    PyObject_GenericGetAttr,                  /* tp_getattro */
+    0,                                        /* tp_getattro */
     0,                                        /* tp_setattro */
     &memory_as_buffer,                        /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
