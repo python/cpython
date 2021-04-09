@@ -639,7 +639,7 @@ static PyObject*
 func_repr(PyFunctionObject *op)
 {
     return PyUnicode_FromFormat("<function %U at %p>",
-                               op->func_qualname, op);
+                                op->func_qualname, op);
 }
 
 static int
@@ -713,6 +713,50 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_alloc */
     func_new,                                   /* tp_new */
 };
+
+
+static int
+functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
+{
+    PyObject *value = PyObject_GetAttr(wrapped, name);
+    if (value == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            PyErr_Clear();
+            return 0;
+        }
+        return -1;
+    }
+
+    int res = PyObject_SetAttr(wrapper, name, value);
+    Py_DECREF(value);
+    return res;
+}
+
+// Similar to functools.wraps(wrapper, wrapped)
+static int
+functools_wraps(PyObject *wrapper, PyObject *wrapped)
+{
+#define COPY_ATTR(ATTR) \
+    do { \
+        _Py_IDENTIFIER(ATTR); \
+        PyObject *attr = _PyUnicode_FromId(&PyId_ ## ATTR); \
+        if (attr == NULL) { \
+            return -1; \
+        } \
+        if (functools_copy_attr(wrapper, wrapped, attr) < 0) { \
+            return -1; \
+        } \
+    } while (0) \
+
+    COPY_ATTR(__module__);
+    COPY_ATTR(__name__);
+    COPY_ATTR(__qualname__);
+    COPY_ATTR(__doc__);
+    COPY_ATTR(__annotations__);
+    return 0;
+
+#undef COPY_ATTR
+}
 
 
 /* Class method object */
@@ -798,11 +842,16 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     Py_INCREF(callable);
     Py_XSETREF(cm->cm_callable, callable);
+
+    if (functools_wraps((PyObject *)cm, cm->cm_callable) < 0) {
+        return -1;
+    }
     return 0;
 }
 
 static PyMemberDef cm_memberlist[] = {
     {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__wrapped__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -821,12 +870,16 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
 
 static PyGetSetDef cm_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)cm_get___isabstractmethod__, NULL,
-     NULL,
-     NULL},
+     (getter)cm_get___isabstractmethod__, NULL, NULL, NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {NULL} /* Sentinel */
 };
+
+static PyObject*
+cm_repr(classmethod *cm)
+{
+    return PyUnicode_FromFormat("<classmethod(%R)>", cm->cm_callable);
+}
 
 PyDoc_STRVAR(classmethod_doc,
 "classmethod(function) -> method\n\
@@ -860,7 +913,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)cm_repr,                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -980,11 +1033,16 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     Py_INCREF(callable);
     Py_XSETREF(sm->sm_callable, callable);
+
+    if (functools_wraps((PyObject *)sm, sm->sm_callable) < 0) {
+        return -1;
+    }
     return 0;
 }
 
 static PyMemberDef sm_memberlist[] = {
     {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__wrapped__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1003,12 +1061,16 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
 
 static PyGetSetDef sm_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)sm_get___isabstractmethod__, NULL,
-     NULL,
-     NULL},
+     (getter)sm_get___isabstractmethod__, NULL, NULL, NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {NULL} /* Sentinel */
 };
+
+static PyObject*
+sm_repr(staticmethod *sm)
+{
+    return PyUnicode_FromFormat("<staticmethod(%R)>", sm->sm_callable);
+}
 
 PyDoc_STRVAR(staticmethod_doc,
 "staticmethod(function) -> method\n\
@@ -1040,7 +1102,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)sm_repr,                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
