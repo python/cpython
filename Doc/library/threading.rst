@@ -388,7 +388,7 @@ since it is impossible to detect the termination of alien threads.
       Deprecated getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
 
-      .. deprecated: 3.10
+      .. deprecated:: 3.10
 
    .. attribute:: ident
 
@@ -442,7 +442,7 @@ since it is impossible to detect the termination of alien threads.
       Deprecated getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
 
-      .. deprecated: 3.10
+      .. deprecated:: 3.10
 
 
 .. _lock-objects:
