@@ -350,7 +350,7 @@ class _NormalAccessor(_Accessor):
 
     stat = os.stat
 
-    open = os.open
+    open = io.open
 
     listdir = os.listdir
 
@@ -1046,10 +1046,6 @@ class Path(PurePath):
         # removed in the future.
         pass
 
-    def _opener(self, name, flags, mode=0o666):
-        # A stub for the opener argument to built-in open()
-        return self._accessor.open(self, flags, mode)
-
     # Public API
 
     @classmethod
@@ -1171,8 +1167,8 @@ class Path(PurePath):
         """
         if "b" not in mode:
             encoding = io.text_encoding(encoding)
-        return io.open(self, mode, buffering, encoding, errors, newline,
-                       opener=self._opener)
+        return self._accessor.open(self, mode, buffering, encoding, errors,
+                                   newline)
 
     def read_bytes(self):
         """
