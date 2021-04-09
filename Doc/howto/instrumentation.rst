@@ -266,7 +266,7 @@ should instead read:
 
    probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
 
-(assuming a debug build of CPython 3.6)
+(assuming a :ref:`debug build <debug-build>` of CPython 3.6)
 
 
 Available static markers

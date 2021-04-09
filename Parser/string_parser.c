@@ -797,10 +797,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     //TODO: Fix this
-    *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, first_token->lineno,
-                                 first_token->col_offset, last_token->end_lineno,
-                                 last_token->end_col_offset, p->arena);
+    *expression = _PyAST_FormattedValue(simple_expression, conversion,
+                                        format_spec, first_token->lineno,
+                                        first_token->col_offset,
+                                        last_token->end_lineno,
+                                        last_token->end_col_offset, p->arena);
     if (!*expression) {
         goto error;
     }
@@ -1044,8 +1045,9 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
         return NULL;
     }
 
-    return Constant(s, kind, first_token->lineno, first_token->col_offset,
-                    last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _PyAST_Constant(s, kind, first_token->lineno, first_token->col_offset,
+                           last_token->end_lineno, last_token->end_col_offset,
+                           p->arena);
 
 }
 
@@ -1204,8 +1206,9 @@ _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_toke
         goto error;
     }
 
-    return _Py_JoinedStr(seq, first_token->lineno, first_token->col_offset,
-                         last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _PyAST_JoinedStr(seq, first_token->lineno, first_token->col_offset,
+                            last_token->end_lineno, last_token->end_col_offset,
+                            p->arena);
 
 error:
     _PyPegen_FstringParser_Dealloc(state);

@@ -1411,6 +1411,8 @@ def _discard_shutdown_lock(lock):
     """
     Discard the Thread._tstate_lock lock when the non-daemon thread have done.
     """
+    if lock not in _shutdown_locks:
+        return
     with _shutdown_locks_lock:
         _shutdown_locks.discard(lock)
 

@@ -140,10 +140,12 @@
           Condition="!Exists(%(None.OutFile)) or (Exists(%(None.IntFile)) and '$([System.IO.File]::ReadAllText(%(None.OutFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))' != '$([System.IO.File]::ReadAllText(%(None.IntFile)).Replace(`&#x0D;&#x0A;`, `&#x0A;`))')">
       <Output TaskParameter="CopiedFiles" ItemName="_Updated" />
     </Copy>
-    
-    <Warning Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
+
+    <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
+             Condition="'@(_Updated)' != ''" Importance="high" />
+    <Warning Text="Frozen importlib files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
              Condition="'@(_Updated)' != '' and $(Configuration) == 'Debug'" />
-    <Error Text="@(_Updated->'%(Filename)%(Extension)',', ') updated. You will need to rebuild pythoncore to see the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, you need to run 'make regen-all' and commit any changes."
+    <Error Text="Frozen importlib files were updated. Please rebuild to pick up the changes.%0D%0A%0D%0AIf you are not developing on Windows but you see this error on a continuous integration build, please run 'make regen-all' and commit anything that changes."
            Condition="'@(_Updated)' != '' and $(Configuration) == 'Release'" />
   </Target>
   <Target Name="RebuildImportLib" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Debug' or $(Configuration) == 'Release'"

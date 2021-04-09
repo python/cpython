@@ -1276,6 +1276,47 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__path_splitroot__doc__,
+"_path_splitroot($module, /, path)\n"
+"--\n"
+"\n"
+"Removes everything after the root on Win32.");
+
+#define OS__PATH_SPLITROOT_METHODDEF    \
+    {"_path_splitroot", (PyCFunction)(void(*)(void))os__path_splitroot, METH_FASTCALL|METH_KEYWORDS, os__path_splitroot__doc__},
+
+static PyObject *
+os__path_splitroot_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__path_splitroot(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_path_splitroot", 0};
+    PyObject *argsbuf[1];
+    path_t path = PATH_T_INITIALIZE("_path_splitroot", "path", 0, 0);
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!path_converter(args[0], &path)) {
+        goto exit;
+    }
+    return_value = os__path_splitroot_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 PyDoc_STRVAR(os_mkdir__doc__,
 "mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
 "--\n"
@@ -8664,6 +8705,10 @@ exit:
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
 
+#ifndef OS__PATH_SPLITROOT_METHODDEF
+    #define OS__PATH_SPLITROOT_METHODDEF
+#endif /* !defined(OS__PATH_SPLITROOT_METHODDEF) */
+
 #ifndef OS_NICE_METHODDEF
     #define OS_NICE_METHODDEF
 #endif /* !defined(OS_NICE_METHODDEF) */
@@ -9163,4 +9208,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=f3ec08afcd6cd8f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ede310b1d316d2b2 input=a9049054013a1b77]*/

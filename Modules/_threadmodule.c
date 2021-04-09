@@ -22,6 +22,7 @@ _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(threading);
+_Py_IDENTIFIER(_discard_shutdown_lock);
 
 
 // Forward declarations
@@ -1279,7 +1280,6 @@ In most applications `threading.enumerate()` should be used instead.");
 static void
 release_sentinel(void *wr_raw)
 {
-    _Py_IDENTIFIER(_discard_shutdown_lock);
     PyObject *wr = _PyObject_CAST(wr_raw);
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
@@ -1305,7 +1305,7 @@ release_sentinel(void *wr_raw)
         PyObject *result = _PyObject_CallMethodIdOneArg(
             threading, &PyId__discard_shutdown_lock, obj);
         if (result == NULL) {
-            PyErr_WriteUnraisable(threading);
+            goto exit;
         } else {
             Py_DECREF(result);
         }

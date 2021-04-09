@@ -17,7 +17,7 @@ def no_perf(f):
 class MyClass:
     x: int
     y: str
-    __match_args__ = ["x", "y"]
+    __match_args__ = ("x", "y")
 
 
 @dataclasses.dataclass
@@ -2018,7 +2018,7 @@ class TestPatma(unittest.TestCase):
 
     def test_patma_200(self):
         class Class:
-            __match_args__ = ["a", "b"]
+            __match_args__ = ("a", "b")
         c = Class()
         c.a = 0
         c.b = 1
@@ -2046,7 +2046,7 @@ class TestPatma(unittest.TestCase):
         class Parent:
             __match_args__ = "a", "b"
         class Child(Parent):
-            __match_args__ = ["c", "d"]
+            __match_args__ = ("c", "d")
         c = Child()
         c.a = 0
         c.b = 1
@@ -2500,7 +2500,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_248(self):
         class Class:
-            __match_args__ = [None]
+            __match_args__ = (None,)
         x = Class()
         y = z = None
         with self.assertRaises(TypeError):
@@ -2513,7 +2513,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_249(self):
         class Class:
-            __match_args__ = []
+            __match_args__ = ()
         x = Class()
         y = z = None
         with self.assertRaises(TypeError):
@@ -2560,7 +2560,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_253(self):
         class Class:
-            __match_args__ = ["a", "a"]
+            __match_args__ = ("a", "a")
             a = None
         x = Class()
         w = y = z = None
@@ -2575,7 +2575,7 @@ class TestPatma(unittest.TestCase):
     @no_perf
     def test_patma_254(self):
         class Class:
-            __match_args__ = ["a"]
+            __match_args__ = ("a",)
             a = None
         x = Class()
         w = y = z = None
@@ -2840,6 +2840,22 @@ class TestPatma(unittest.TestCase):
                     y = 0
         self.assertEqual(x, range(10))
         self.assertIs(y, None)
+
+    @no_perf
+    def test_patma_282(self):
+        class Class:
+            __match_args__ = ["spam", "eggs"]
+            spam = 0
+            eggs = 1
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
 
 
 class PerfPatma(TestPatma):

@@ -11,8 +11,6 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()

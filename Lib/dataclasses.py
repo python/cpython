@@ -860,7 +860,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Only process classes that have been processed by our
         # decorator.  That is, they have a _FIELDS attribute.
         base_fields = getattr(b, _FIELDS, None)
-        if base_fields:
+        if base_fields is not None:
             has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
@@ -1017,7 +1017,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                        str(inspect.signature(cls)).replace(' -> NoneType', ''))
 
     if '__match_args__' not in cls.__dict__:
-        cls.__match_args__ = tuple(f.name for f in flds if f.init)
+        cls.__match_args__ = tuple(f.name for f in field_list if f.init)
 
     abc.update_abstractmethods(cls)
 
@@ -1300,7 +1300,7 @@ def replace(obj, /, **changes):
             continue
 
         if f.name not in changes:
-            if f._field_type is _FIELD_INITVAR:
+            if f._field_type is _FIELD_INITVAR and f.default is MISSING:
                 raise ValueError(f"InitVar {f.name!r} "
                                  'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)

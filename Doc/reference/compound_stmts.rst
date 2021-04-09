@@ -1030,7 +1030,7 @@ subject value:
 
    For a number of built-in types (specified below), a single positional
    subpattern is accepted which will match the entire subject; for these types
-   no keyword patterns are accepted.
+   keyword patterns also work as for other types.
 
    If only keyword patterns are present, they are processed as follows,
    one by one:
@@ -1057,7 +1057,7 @@ subject value:
 
       * If this raises an exception, the exception bubbles up.
 
-      * If the returned value is not a list or tuple, the conversion fails and
+      * If the returned value is not a tuple, the conversion fails and
         :exc:`TypeError` is raised.
 
       * If there are more positional patterns than ``len(cls.__match_args__)``,
@@ -1138,7 +1138,6 @@ A function definition defines a user-defined function object (see section
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
-   dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
@@ -1215,19 +1214,25 @@ e.g.::
        return penguin
 
 .. index::
+   single: / (slash); function definition
    single: * (asterisk); function definition
    single: **; function definition
 
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
-list, either from position arguments, from keyword arguments, or from default
+list, either from positional arguments, from keyword arguments, or from default
 values.  If the form "``*identifier``" is present, it is initialized to a tuple
 receiving any excess positional parameters, defaulting to the empty tuple.
 If the form "``**identifier``" is present, it is initialized to a new
 ordered mapping receiving any excess keyword arguments, defaulting to a
 new empty mapping of the same type.  Parameters after "``*``" or
 "``*identifier``" are keyword-only parameters and may only be passed
-used keyword arguments.
+by keyword arguments.  Parameters before "``/``" are positional-only parameters
+and may only be passed by positional arguments.
+
+.. versionchanged:: 3.8
+   The ``/`` function parameter syntax may be used to indicate positional-only
+   parameters. See :pep:`570` for details.
 
 .. index::
    pair: function; annotations

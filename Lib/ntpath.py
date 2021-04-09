@@ -312,11 +312,23 @@ def expanduser(path):
             drive = ''
         userhome = join(drive, os.environ['HOMEPATH'])
 
+    if i != 1: #~user
+        # Try to guess user home directory.  By default all users directories
+        # are located in the same place and are named by corresponding
+        # usernames.  If current user home directory points to nonstandard
+        # place, this guess is likely wrong, and so we bail out.
+        current_user = os.environ.get('USERNAME')
+        if current_user != basename(userhome):
+            return path
+
+        target_user = path[1:i]
+        if isinstance(target_user, bytes):
+            target_user = os.fsdecode(target_user)
+        if target_user != current_user:
+            userhome = join(dirname(userhome), target_user)
+
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
-
-    if i != 1: #~user
-        userhome = join(dirname(userhome), path[1:i])
 
     return userhome + path[i:]
 
