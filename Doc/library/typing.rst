@@ -1059,7 +1059,9 @@ These are not used in annotations. They are building blocks for creating generic
       given call and should only be used to annotate ``*args``.  ``P.kwargs``
       represents the mapping of keyword parameters to their values in a given call,
       and should be only be used to annotate ``**kwargs`` or ``**kwds``.  Both
-      attributes require the annotated parameter to be in scope.
+      attributes require the annotated parameter to be in scope. At runtime,
+      ``P.args`` and ``P.kwargs`` are instances respectively of
+      :class:`ParamSpecArgs` and :class:`ParamSpecKwargs`.
 
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
@@ -1077,6 +1079,23 @@ These are not used in annotations. They are building blocks for creating generic
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``).
       * :class:`Callable` and :class:`Concatenate`.
+
+.. data:: ParamSpecArgs
+.. data:: ParamSpecKwargs
+
+   Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
+   ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
+   and ``P.kwargs`` is an instance of ``ParamSpecKwargs``.
+
+   Calling :func:`get_origin` on either of these objects will return the
+   original ``ParamSpec``::
+
+      P = ParamSpec("P")
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.10
+
 
 .. data:: AnyStr
 
