@@ -1085,7 +1085,8 @@ These are not used in annotations. They are building blocks for creating generic
 
    Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
    ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
-   and ``P.kwargs`` is an instance of ``ParamSpecKwargs``.
+   and ``P.kwargs`` is an instance of ``ParamSpecKwargs``. They are intended
+   for runtime introspection and have no special meaning to static type checkers.
 
    Calling :func:`get_origin` on either of these objects will return the
    original ``ParamSpec``::
