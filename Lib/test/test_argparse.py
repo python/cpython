@@ -5320,7 +5320,7 @@ class TestHelpFlexi(HelpTestCase):
         positional arguments:
           spam        spam help
 
-        optional arguments:
+        options:
           -h, --help  show this help message and exit
           --foo FOO   foo help should also appear as given here
 
