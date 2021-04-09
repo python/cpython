@@ -1729,7 +1729,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     /* _PyEval_EvalFrameDefault() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!_PyErr_Occurred(tstate));
+    if (_PyErr_Occurred(tstate)) {
+        Py_FatalError("a function returned a result with an exception set");
+    }
 #endif
 
 main_loop:
