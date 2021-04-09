@@ -42,6 +42,7 @@ HOST = socket_helper.HOST
 IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
 IS_OPENSSL_1_1_0 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
 IS_OPENSSL_1_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 1)
+IS_OPENSSL_3_0_0 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
@@ -210,6 +211,10 @@ def has_tls_version(version):
 
     # check compile time flags like ssl.HAS_TLSv1_2
     if not getattr(ssl, f'HAS_{version.name}'):
+        return False
+
+    if IS_OPENSSL_3_0_0 and version < ssl.TLSVersion.TLSv1_2:
+        # bpo43791: 3.0.0-alpha14 fails with TLSV1_ALERT_INTERNAL_ERROR
         return False
 
     # check runtime and dynamic crypto policy settings. A TLS version may
