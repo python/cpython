@@ -146,8 +146,8 @@ recommended for best performance.
    Enable Profile Guided Optimization (PGO) using :envvar:`PROFILE_TASK`
    (disabled by default).
 
-   The C compiler ``clang`` requires ``llvm-profdata`` program for PGO. On
-   macOS, GCC also requires it: GCC is just an alis to clang on macOS.
+   The C compiler Clang requires ``llvm-profdata`` program for PGO. On
+   macOS, GCC also requires it: GCC is just an alias to Clang on macOS.
 
    Disable also semantic interposition in libpython if ``--enable-shared`` and
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
@@ -171,7 +171,8 @@ recommended for best performance.
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
 
-   The C compiler ``clang`` requires ``llvm-av`` for LTO.
+   The C compiler Clang requires ``llvm-ar`` for LTO, as well as an LTO-aware
+   linker (``ld.gold`` or ``lld``).
 
    .. versionadded:: 3.6
 
@@ -504,8 +505,9 @@ Main Makefile targets
 * ``make platform:``: build the ``python`` program, but don't build the
   standard library extension modules.
 * ``make profile-opt``: build Python using Profile Guided Optimization (PGO).
-  You can use the configure :option:`--enable-optimizations` option to use
-  the general ``make`` command.
+  You can use the configure :option:`--enable-optimizations` option to make
+  this the default target of the ``make`` command (``make all`` or just
+  ``make``).
 * ``make buildbottest``: Build Python and run the Python test suite, the same
   way than buildbots test Python. Set ``TESTTIMEOUT`` variable (in seconds)
   to change the test timeout (1200 by default: 20 minutes).
@@ -546,7 +548,7 @@ Example on Linux x86-64::
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :file:`setup.py` script only build C extensions as shared libraries using
+The :file:`setup.py` script only builds C extensions as shared libraries using
 the :mod:`distutils` module.
 
 The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_API()` and
@@ -611,7 +613,8 @@ Compiler flags
    C compiler command used to build the ``main()`` function of programs like
    ``python``.
 
-   Variable set by the :option:`--with-cxx-main` option.
+   Variable set by the :option:`--with-cxx-main` option of the configure
+   script.
 
    Default: ``$(CC)``.
 
