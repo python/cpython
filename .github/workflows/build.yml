@@ -126,12 +126,22 @@ jobs:
       run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_ubuntu:
-    name: 'Ubuntu'
+    name: 'Ubuntu ${{ matrix.openssl_ver }}'
     runs-on: ubuntu-20.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        openssl_ver: [1.1.1k, 3.0.0-alpha14]
+        include:
+        - openssl_ver: 1.1.1k
+          testmode: 'full'
     env:
-      OPENSSL_VER: 3.0.0-alpha14
+      OPENSSL_VER: ${{ matrix.openssl_ver }}
+      MULTISSL_DIR: ${{ github.workspace }}/multissl
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v2
     - name: Register gcc problem matcher
@@ -146,12 +156,16 @@ jobs:
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      if: ${{ matrix.testmode == 'full' }}
+    - name: SSL tests
+      run: ./python Lib/test/ssltests.py
+      if: ${{ matrix.testmode != 'full' }}
