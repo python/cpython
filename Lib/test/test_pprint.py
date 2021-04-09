@@ -89,6 +89,16 @@ class dataclass4:
     a: "dataclass4"
     b: int = 1
 
+@dataclasses.dataclass
+class dataclass5:
+    a: "dataclass6"
+    b: int = 1
+
+@dataclasses.dataclass
+class dataclass6:
+    c: "dataclass5"
+    d: int = 1
+
 class Unorderable:
     def __repr__(self):
         return str(id(self))
@@ -525,6 +535,17 @@ AdvancedNamespace(the=0,
         formatted = pprint.pformat(dc, width=10)
         self.assertEqual(formatted, """\
 dataclass4(a=...,
+           b=1)""")
+
+    def test_cyclic_dataclass(self):
+        dc5 = dataclass5(None)
+        dc6 = dataclass6(None)
+        dc5.a = dc6
+        dc6.c = dc5
+        formatted = pprint.pformat(dc5, width=10)
+        self.assertEqual(formatted, """\
+dataclass5(a=dataclass6(c=...,
+                        d=1),
            b=1)""")
 
     def test_subclassing(self):
