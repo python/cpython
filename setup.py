@@ -2467,7 +2467,13 @@ class PyBuildExt(build_ext):
                 Extension(
                     '_ssl',
                     ['_ssl.c'],
-                    depends=['socketmodule.h', '_ssl/debughelpers.c'],
+                    depends=[
+                        'socketmodule.h',
+                        '_ssl/debughelpers.c',
+                        '_ssl_data.h',
+                        '_ssl_data_111.h',
+                        '_ssl_data_300.h',
+                    ],
                     **openssl_extension_kwargs
                 )
             )
