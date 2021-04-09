@@ -16,9 +16,9 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
 
 .. note::
 
-   The ``camelCase`` names used for some
-   methods and functions in this module in the Python 2.x series are still
-   supported by this module for compatibility with Python 2.5 and lower.
+   In the Python 2.x series, this module contained ``camelCase`` names
+   for some methods and functions. These are deprecated as of Python 3.10,
+   but they are still supported for compatibility with Python 2.5 and lower.
 
 
 .. impl-detail::
@@ -388,6 +388,8 @@ since it is impossible to detect the termination of alien threads.
       Deprecated getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
 
+      .. deprecated: 3.10
+
    .. attribute:: ident
 
       The 'thread identifier' of this thread or ``None`` if the thread has not
@@ -439,6 +441,8 @@ since it is impossible to detect the termination of alien threads.
 
       Deprecated getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
+
+      .. deprecated: 3.10
 
 
 .. _lock-objects:
