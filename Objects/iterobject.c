@@ -335,8 +335,8 @@ anextawaitable_iternext(anextawaitableobject *obj)
      *         yield 2
      *     gen = agen()
      *
-     * Then anext(g) can just call
-     * g.__anext__().__next__()
+     * Then anext(gen) can just call
+     * gen.__anext__().__next__()
      */
     if (type->tp_as_async && type->tp_as_async->am_await) {
         unaryfunc await_getter = type->tp_as_async->am_await;
