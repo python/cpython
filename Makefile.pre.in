@@ -731,7 +731,9 @@ regen-abidump: all
 	@$(UPDATE_FILE) $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
 
 check-abidump: all
-		abidiff "libpython$(LDVERSION).so" $(srcdir)/Doc/data/python$(LDVERSION).abi --drop-private-types --no-architecture --no-added-syms
+		abidiff "libpython$(LDVERSION).so" $(srcdir)/Doc/data/python$(LDVERSION).abi --drop-private-types \
+		--suppressions $(srcdir)/Doc/data/python$(LDVERSION).abi.ignorefile \
+		--no-architecture --no-added-syms
 
 ############################################################################
 # Regenerate all generated files
