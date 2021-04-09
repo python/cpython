@@ -639,7 +639,7 @@ _PyPegen_fill_token(Parser *p)
     if (t->bytes == NULL) {
         return -1;
     }
-    if (_PyArena_AddPyObject(p->arena, t->bytes) < 0) {
+    if (PyArena_AddPyObject(p->arena, t->bytes) < 0) {
         Py_DECREF(t->bytes);
         return -1;
     }
