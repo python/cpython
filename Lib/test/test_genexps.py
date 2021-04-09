@@ -103,7 +103,7 @@ Verify that parenthesis are required when used as a keyword argument value
     >>> dict(a = i for i in range(10))
     Traceback (most recent call last):
        ...
-    SyntaxError: invalid syntax
+    SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
 
 Verify that parenthesis are required when used as a keyword argument value
 
@@ -153,7 +153,7 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) = 10
     Traceback (most recent call last):
        ...
-    SyntaxError: cannot assign to generator expression
+    SyntaxError: cannot assign to generator expression. Maybe you meant '==' instead of '='?
 
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
