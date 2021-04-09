@@ -146,6 +146,9 @@ recommended for best performance.
    Enable Profile Guided Optimization (PGO) using :envvar:`PROFILE_TASK`
    (disabled by default).
 
+   The C compiler Clang requires ``llvm-profdata`` program for PGO. On
+   macOS, GCC also requires it: GCC is just an alias to Clang on macOS.
+
    Disable also semantic interposition in libpython if ``--enable-shared`` and
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
@@ -167,6 +170,9 @@ recommended for best performance.
 .. cmdoption:: --with-lto
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
+
+   The C compiler Clang requires ``llvm-ar`` for LTO, as well as an LTO-aware
+   linker (``ld.gold`` or ``lld``).
 
    .. versionadded:: 3.6
 
@@ -469,18 +475,99 @@ See ``Mac/README.rst``.
    :option:`--enable-framework` is set (default: ``Python``).
 
 
+Python Build System
+===================
+
+Main files of the build system
+------------------------------
+
+* :file:`configure.ac` => :file:`configure`;
+* :file:`Makefile.pre.in` => :file:`Makefile` (created by :file:`configure`);
+* :file:`pyconfig.h` (created by :file:`configure`);
+* :file:`Modules/Setup`: C extensions built by the Makefile using
+  :file:`Module/makesetup` shell script;
+* :file:`setup.py`: C extensions built using the :mod:`distutils` module.
+
+Main build steps
+----------------
+
+* C files (``.c``) are built as object files (``.o``).
+* A static ``libpython`` library (``.a``) is created from objects files.
+* ``python.o`` and the static ``libpython`` library are linked into the
+  final ``python`` program.
+* C extensions are built by the Makefile (see :file:`Modules/Setup`)
+  and ``python setup.py build``.
+
+Main Makefile targets
+---------------------
+
+* ``make``: Build Python with the standard library.
+* ``make platform:``: build the ``python`` program, but don't build the
+  standard library extension modules.
+* ``make profile-opt``: build Python using Profile Guided Optimization (PGO).
+  You can use the configure :option:`--enable-optimizations` option to make
+  this the default target of the ``make`` command (``make all`` or just
+  ``make``).
+* ``make buildbottest``: Build Python and run the Python test suite, the same
+  way than buildbots test Python. Set ``TESTTIMEOUT`` variable (in seconds)
+  to change the test timeout (1200 by default: 20 minutes).
+* ``make install``: Build and install Python.
+* ``make regen-all``: Regenerate (almost) all generated files;
+  ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
+  for the remaining generated files.
+* ``make clean``: Remove built files.
+* ``make distclean``: Same than ``make clean``, but remove also files created
+  by the configure script.
+
+C extensions
+------------
+
+Some C extensions are built as built-in modules, like the ``sys`` module.
+They are built with the ``Py_BUILD_CORE_BUILTIN`` macro defined.
+Built-in modules have no ``__file__`` attribute::
+
+    >>> import sys
+    >>> sys
+    <module 'sys' (built-in)>
+    >>> sys.__file__
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    AttributeError: module 'sys' has no attribute '__file__'
+
+Other C extensins are built as dynamic libraires, like the ``_asyncio`` module.
+They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
+Example on Linux x86-64::
+
+    >>> import _asyncio
+    >>> _asyncio
+    <module '_asyncio' from '/usr/lib64/python3.9/lib-dynload/_asyncio.cpython-39-x86_64-linux-gnu.so'>
+    >>> _asyncio.__file__
+    '/usr/lib64/python3.9/lib-dynload/_asyncio.cpython-39-x86_64-linux-gnu.so'
+
+:file:`Modules/Setup` is used to generate Makefile targets to build C extensions.
+At the beginning of the files, C extensions are built as built-in modules.
+Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
+
+The :file:`setup.py` script only builds C extensions as shared libraries using
+the :mod:`distutils` module.
+
+The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_API()` and
+:c:macro:`PyMODINIT_FUNC()` macros of :file:`Include/pyport.h` are defined
+differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
+
+* Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined
+* Use ``Py_IMPORTED_SYMBOL`` otherwise.
+
+If the ``Py_BUILD_CORE_BUILTIN`` macro is used by mistake on a C extension
+built as a shared library, its ``PyInit_xxx()`` function is not exported,
+causing an :exc:`ImportError` on import.
+
+
 Compiler and linker flags
 =========================
 
 Options set by the ``./configure`` script and environment variables and used by
 ``Makefile``.
-
-Main files of the Python build system:
-
-* :file:`configure.ac` =>  :file:`configure`;
-* :file:`Makefile.pre.in` => :file:`Makefile` (created by :file:`configure`);
-* :file:`pyconfig.h` (created by :file:`configure`);
-* :file:`Modules/Setup`.
 
 Preprocessor flags
 ------------------
@@ -520,6 +607,16 @@ Compiler flags
    C compiler command.
 
    Example: ``gcc -pthread``.
+
+.. envvar:: MAINCC
+
+   C compiler command used to build the ``main()`` function of programs like
+   ``python``.
+
+   Variable set by the :option:`--with-cxx-main` option of the configure
+   script.
+
+   Default: ``$(CC)``.
 
 .. envvar:: CXX
 
@@ -619,9 +716,21 @@ Compiler flags
 
    .. versionadded:: 3.8
 
+.. envvar:: PURIFY
+
+   Purify command. Purify is a memory debugger program.
+
+   Default: empty string (not used).
+
 
 Linker flags
 ------------
+
+.. envvar:: LINKCC
+
+   Linker command used to build programs like ``python`` and ``_testembed``.
+
+   Default: ``$(PURIFY) $(MAINCC)``.
 
 .. envvar:: CONFIGURE_LDFLAGS
 
