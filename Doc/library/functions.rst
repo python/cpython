@@ -269,6 +269,11 @@ are always available.  They are listed here in alphabetical order.
       Class methods can now wrap other :term:`descriptors <descriptor>` such as
       :func:`property`.
 
+   .. versionchanged:: 3.10
+      Class methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
+      have a new ``__wrapped__`` attribute.
+
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
@@ -1631,6 +1636,11 @@ are always available.  They are listed here in alphabetical order.
           builtin_open = staticmethod(open)
 
    For more information on static methods, see :ref:`types`.
+
+   .. versionchanged:: 3.10
+      Static methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
+      have a new ``__wrapped__`` attribute.
 
 
 .. index::
