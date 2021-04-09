@@ -2232,8 +2232,13 @@ class PyBuildExt(build_ext):
                 include_dirs=openssl_includes,
                 library_dirs=openssl_libdirs,
                 libraries=openssl_libs,
-                depends=['socketmodule.h', '_ssl/debughelpers.c'])
-            )
+                depends=[
+                    'socketmodule.h',
+                    '_ssl/debughelpers.c',
+                    '_ssl_data.h',
+                    '_ssl_data_111.h',
+                    '_ssl_data_300.h',
+                ]))
         else:
             self.missing.append('_ssl')
 
