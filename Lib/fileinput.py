@@ -431,10 +431,7 @@ def hook_compressed(filename, mode, encoding=None):
 
 
 def hook_encoded(encoding, errors=None):
-    """Deprecated: use `encoding` parameter in the FileInput()"""
-    _default_encoding = encoding
-    def openhook(filename, mode, encoding=None):
-        encoding = encoding or _default_encoding
+    def openhook(filename, mode):
         return open(filename, mode, encoding=encoding, errors=errors)
     return openhook
 
