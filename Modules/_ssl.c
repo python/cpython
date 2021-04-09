@@ -3933,6 +3933,13 @@ _password_callback(char *buf, int size, int rwflag, void *userdata)
 
     PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
 
+    if (pw_info->error) {
+        /* already failed previously. OpenSSL 3.0.0-alpha14 invokes the
+         * callback multiple times which can lead to fatal Python error in
+         * exception check. */
+        goto error;
+    }
+
     if (pw_info->callable) {
         fn_ret = _PyObject_CallNoArg(pw_info->callable);
         if (!fn_ret) {
