@@ -755,6 +755,8 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
 
        P.kwargs.__origin__ is P
 
+    This type is meant for runtime introspection and has no special meaning to
+    static type checkers.
     """
     def __init__(self, origin):
         self.__origin__ = origin
