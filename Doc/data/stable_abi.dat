@@ -767,7 +767,11 @@ Py_HasFileSystemDefaultEncoding
 Py_IncRef
 Py_Initialize
 Py_InitializeEx
+Py_Is
+Py_IsFalse
 Py_IsInitialized
+Py_IsNone
+Py_IsTrue
 Py_LeaveRecursiveCall
 Py_Main
 Py_MakePendingCalls
