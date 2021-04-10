@@ -59,7 +59,7 @@ distance(const char *string1, const char *string2)
     /* initalize first row */
     row = (size_t*)PyMem_Malloc(len2*sizeof(size_t));
     if (!row) {
-        return (size_t)(-1);
+        return (Py_ssize_t)(-1);
     }
     end = row + len2 - 1;
     for (i = 0; i < len2 - half; i++) {
@@ -72,7 +72,7 @@ distance(const char *string1, const char *string2)
      * necessary */
     row[0] = len1 - half - 1;
     for (i = 1; i < len1; i++) {
-        size_t *p;
+        size_t *scan_ptr;
         const char char1 = string1[i - 1];
         const char *char2p;
         size_t D, x;
@@ -82,17 +82,18 @@ distance(const char *string1, const char *string2)
             size_t c3;
 
             char2p = string2 + offset;
-            p = row + offset;
-            c3 = *(p++) + (char1 != *(char2p++));
-            x = *p;
+            scan_ptr = row + offset;
+            c3 = *(scan_ptr++) + (char1 != *(char2p++));
+            x = *scan_ptr;
             x++;
             D = x;
-            if (x > c3)
+            if (x > c3) {
               x = c3;
-            *(p++) = x;
+            }
+            *(scan_ptr++) = x;
         }
         else {
-            p = row + 1;
+            scan_ptr = row + 1;
             char2p = string2;
             D = x = i;
         }
@@ -101,24 +102,26 @@ distance(const char *string1, const char *string2)
             end = row + len2 + i - half - 2;
         }
         /* main */
-        while (p <= end) {
+        while (scan_ptr <= end) {
             size_t c3 = --D + (char1 != *(char2p++));
             x++;
-            if (x > c3)
+            if (x > c3) {
               x = c3;
-            D = *p;
+            }
+            D = *scan_ptr;
             D++;
             if (x > D)
               x = D;
-            *(p++) = x;
+            *(scan_ptr++) = x;
         }
         /* lower triangle sentinel */
         if (i <= half) {
             size_t c3 = --D + (char1 != *char2p);
             x++;
-            if (x > c3)
+            if (x > c3) {
               x = c3;
-            *p = x;
+            }
+            *scan_ptr = x;
         }
     }
     i = *end;
@@ -131,6 +134,7 @@ calculate_suggestions(PyObject* dir,
                       PyObject* name,
                       PyObject* oldexceptionvalue)
 {
+    assert(!PyErr_Occurred());
     assert(PyList_CheckExact(dir));
 
     Py_ssize_t dir_size = PyList_GET_SIZE(dir);
@@ -166,13 +170,13 @@ calculate_suggestions(PyObject* dir,
 
 static int
 offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
-    int return_val = 0;
+    int return_val = -1;
 
-    PyObject* name = exc->name;
-    PyObject* v = exc->obj;
+    PyObject* name = exc->name; // borrowed reference
+    PyObject* obj = exc->obj; // borrowed reference
 
-    // Aboirt if we don't have an attribute name or we have an invalid one
-    if ((name == NULL) || (v == NULL) || !PyUnicode_CheckExact(name)) {
+    // Abort if we don't have an attribute name or we have an invalid one
+    if (name == NULL || obj == NULL || !PyUnicode_CheckExact(name)) {
         return -1;
     }
 
@@ -181,13 +185,15 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
     switch (nargs) {
         case 0:
             oldexceptionvalue = PyUnicode_New(0, 0);
+            if (oldexceptionvalue == NULL) {
+                return -1;
+            }
             break;
         case 1:
             oldexceptionvalue = PyTuple_GET_ITEM(exc->args, 0);
             Py_INCREF(oldexceptionvalue);
-            // Check that the the message is an uncode objects that we can use.
+            // Check that the the message is an unicode objects that we can use.
             if (!PyUnicode_CheckExact(oldexceptionvalue)) {
-                return_val = -1;
                 goto exit;
             }
             break;
@@ -197,8 +203,8 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
             return 0;
     }
 
-    PyObject* dir = PyObject_Dir(v);
-    if (!dir) {
+    PyObject* dir = PyObject_Dir(obj);
+    if (dir == NULL) {
         goto exit;
     }
 
@@ -210,15 +216,14 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
         goto exit;
     }
 
-    PyObject* old_args = exc->args;
     PyObject* new_args = PyTuple_Pack(1, newexceptionvalue);
     Py_DECREF(newexceptionvalue);
     if (new_args == NULL) {
-        return_val = -1;
         goto exit;
     }
+    Py_SETREF(exc->args, new_args);
     exc->args = new_args;
-    Py_DECREF(old_args);
+    return_val = 0;
 
 exit:
     Py_DECREF(oldexceptionvalue);
@@ -229,7 +234,7 @@ exit:
 }
 
 
-int _Py_offer_suggestions(PyObject* exception, PyObject* value) {
+int _Py_Offer_Suggestions(PyObject* exception, PyObject* value) {
     if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError) &&
         offer_suggestions_for_attribute_error((PyAttributeErrorObject*) value) != 0) {
              PyErr_Clear();

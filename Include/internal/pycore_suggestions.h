@@ -7,6 +7,6 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-int _Py_offer_suggestions(PyObject* exception, PyObject* value);
+int _Py_Offer_Suggestions(PyObject* exception, PyObject* value);
 
 #endif /* !Py_INTERNAL_SUGGESTIONS_H */

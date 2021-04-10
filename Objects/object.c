@@ -889,6 +889,8 @@ static inline int
 set_attribute_error_context(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());
+    _Py_IDENTIFIER(name);
+    _Py_IDENTIFIER(obj);
     // Intercept AttributeError exceptions and augment them to offer
     // suggestions later.
     if (PyErr_ExceptionMatches(PyExc_AttributeError)){
@@ -896,8 +898,8 @@ set_attribute_error_context(PyObject* v, PyObject* name)
         PyErr_Fetch(&type, &value, &traceback);
         PyErr_NormalizeException(&type, &value, &traceback);
         if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
-            (PyObject_SetAttrString(value, "name", name) ||
-             PyObject_SetAttrString(value, "obj", v))) {
+            (_PyObject_SetAttrId(value, &PyId_name, name) ||
+             _PyObject_SetAttrId(value, &PyId_obj, v))) {
             return 1;
         }
         PyErr_Restore(type, value, traceback);
@@ -922,19 +924,20 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     }
     else if (tp->tp_getattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
+        if (name_str == NULL) {
             return NULL;
+        }
         result = (*tp->tp_getattr)(v, (char *)name_str);
-    } else {
+    }
+    else {
         PyErr_Format(PyExc_AttributeError,
                     "'%.50s' object has no attribute '%U'",
                     tp->tp_name, name);
     }
 
-    if (!result && set_attribute_error_context(v, name)) {
-        return NULL;
+    if (result == NULL) {
+        set_attribute_error_context(v, name);
     }
-
     return result;
 }
 
@@ -1195,10 +1198,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
                  "'%.50s' object has no attribute '%U'",
                  tp->tp_name, name);
 
-    if (set_attribute_error_context(obj, name)) {
-        return 0;
-    }
-
+    set_attribute_error_context(obj, name);
     return 0;
 }
 

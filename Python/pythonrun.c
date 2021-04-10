@@ -24,7 +24,7 @@
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
-#include "pycore_suggestions.h"   // _Py_offer_suggestions
+#include "pycore_suggestions.h"   // _Py_Offer_Suggestions
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -1082,7 +1082,7 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         return;
     }
 
-    if (_Py_offer_suggestions(exception, value) != 0) {
+    if (_Py_Offer_Suggestions(exception, value) != 0) {
         return;
     }
 
