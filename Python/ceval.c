@@ -1,4 +1,3 @@
-
 /* Execute compiled code */
 
 /* XXX TO DO:
@@ -2570,7 +2569,7 @@ main_loop:
                 gen_status = PyIter_Send(receiver, v, &retval);
             } else {
                 _Py_IDENTIFIER(send);
-                if (v == Py_None && PyIter_Check(receiver)) {
+                if (Py_IsNone(v) && PyIter_Check(receiver)) {
                     retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 }
                 else {
@@ -2634,7 +2633,7 @@ main_loop:
         case TARGET(GEN_START): {
             PyObject *none = POP();
             Py_DECREF(none);
-            if (none != Py_None) {
+            if (!Py_IsNone(none)) {
                 if (oparg > 2) {
                     _PyErr_SetString(tstate, PyExc_SystemError,
                         "Illegal kind for GEN_START");
@@ -3615,7 +3614,7 @@ main_loop:
         case TARGET(IS_OP): {
             PyObject *right = POP();
             PyObject *left = TOP();
-            int res = (left == right)^oparg;
+            int res = Py_Is(left, right) ^ oparg;
             PyObject *b = res ? Py_True : Py_False;
             Py_INCREF(b);
             SET_TOP(b);
@@ -3744,11 +3743,11 @@ main_loop:
             PREDICTED(POP_JUMP_IF_FALSE);
             PyObject *cond = POP();
             int err;
-            if (cond == Py_True) {
+            if (Py_IsTrue(cond)) {
                 Py_DECREF(cond);
                 DISPATCH();
             }
-            if (cond == Py_False) {
+            if (Py_IsFalse(cond)) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
                 DISPATCH();
@@ -3768,11 +3767,11 @@ main_loop:
             PREDICTED(POP_JUMP_IF_TRUE);
             PyObject *cond = POP();
             int err;
-            if (cond == Py_False) {
+            if (Py_IsFalse(cond)) {
                 Py_DECREF(cond);
                 DISPATCH();
             }
-            if (cond == Py_True) {
+            if (Py_IsTrue(cond)) {
                 Py_DECREF(cond);
                 JUMPTO(oparg);
                 DISPATCH();
@@ -3792,12 +3791,12 @@ main_loop:
         case TARGET(JUMP_IF_FALSE_OR_POP): {
             PyObject *cond = TOP();
             int err;
-            if (cond == Py_True) {
+            if (Py_IsTrue(cond)) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
                 DISPATCH();
             }
-            if (cond == Py_False) {
+            if (Py_IsFalse(cond)) {
                 JUMPTO(oparg);
                 DISPATCH();
             }
@@ -3816,12 +3815,12 @@ main_loop:
         case TARGET(JUMP_IF_TRUE_OR_POP): {
             PyObject *cond = TOP();
             int err;
-            if (cond == Py_False) {
+            if (Py_IsFalse(cond)) {
                 STACK_SHRINK(1);
                 Py_DECREF(cond);
                 DISPATCH();
             }
-            if (cond == Py_True) {
+            if (Py_IsTrue(cond)) {
                 JUMPTO(oparg);
                 DISPATCH();
             }
@@ -3966,7 +3965,7 @@ main_loop:
                 goto error;
             }
             PUSH(values_or_none);
-            if (values_or_none == Py_None) {
+            if (Py_IsNone(values_or_none)) {
                 Py_INCREF(Py_False);
                 PUSH(Py_False);
                 DISPATCH();
@@ -4157,7 +4156,7 @@ main_loop:
             exc = TOP();
             val = SECOND();
             tb = THIRD();
-            assert(exc != Py_None);
+            assert(!Py_IsNone(exc));
             assert(!PyLong_Check(exc));
             exit_func = PEEK(7);
             PyObject *stack[4] = {NULL, exc, val, tb};
@@ -5235,7 +5234,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
         type = exc_info->exc_type;
         value = exc_info->exc_value;
         tb = exc_info->exc_traceback;
-        if (type == Py_None || type == NULL) {
+        if (Py_IsNone(type) || type == NULL) {
             _PyErr_SetString(tstate, PyExc_RuntimeError,
                              "No active exception to reraise");
             return 0;
@@ -5293,7 +5292,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
         else if (PyExceptionInstance_Check(cause)) {
             fixed_cause = cause;
         }
-        else if (cause == Py_None) {
+        else if (Py_IsNone(cause)) {
             Py_DECREF(cause);
             fixed_cause = NULL;
         }
@@ -5987,7 +5986,7 @@ int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (v != Py_None) {
+    if (!Py_IsNone(v)) {
         Py_ssize_t x;
         if (_PyIndex_Check(v)) {
             x = PyNumber_AsSsize_t(v, NULL);
