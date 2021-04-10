@@ -1,1 +1,6 @@
-Mocks can no longer be used as the specs for other Mocks. As a result, an already-mocked object cannot have an attribute mocked using `autospec=True` or be the subject of a `create_autospec(...)` call. This can uncover bugs in tests since these Mock-derived Mocks will always pass certain tests (e.g. isinstance) and builtin assert functions (e.g. assert_called_once_with) will unconditionally pass.
+Mocks can no longer be used as the specs for other Mocks. As a result, an
+already-mocked object cannot have an attribute mocked using ``autospec=True``
+or be the subject of a ``create_autospec(...)`` call. This can uncover bugs in
+tests since these Mock-derived Mocks will always pass certain tests (e.g.
+:func:`isinstance`) and builtin assert functions (e.g. assert_called_once_with)
+will unconditionally pass.
