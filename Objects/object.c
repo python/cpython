@@ -886,7 +886,7 @@ _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
 }
 
 static inline int
-add_context_to_attribute_error_exception(PyObject* v, PyObject* name)
+set_attribute_error_context(PyObject* v, PyObject* name)
 {
     assert(PyErr_Occurred());
     // Intercept AttributeError exceptions and augment them to offer
@@ -917,8 +917,9 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
                      Py_TYPE(name)->tp_name);
         return NULL;
     }
-    if (tp->tp_getattro != NULL)
+    if (tp->tp_getattro != NULL) {
         result = (*tp->tp_getattro)(v, name);
+    }
     else if (tp->tp_getattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
@@ -930,7 +931,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
                     tp->tp_name, name);
     }
 
-    if (!result && add_context_to_attribute_error_exception(v, name)) {
+    if (!result && set_attribute_error_context(v, name)) {
         return NULL;
     }
 
@@ -1194,7 +1195,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
                  "'%.50s' object has no attribute '%U'",
                  tp->tp_name, name);
 
-    if (add_context_to_attribute_error_exception(obj, name)) {
+    if (set_attribute_error_context(obj, name)) {
         return 0;
     }
 

@@ -1394,12 +1394,6 @@ AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
 }
 
-static PyObject *
-AttributeError_str(PyAttributeErrorObject *self)
-{
-    return BaseException_str((PyBaseExceptionObject *)self);
-}
-
 static PyMemberDef AttributeError_members[] = {
     {"name", T_OBJECT, offsetof(PyAttributeErrorObject, name), 0, PyDoc_STR("attribute name")},
     {"obj", T_OBJECT, offsetof(PyAttributeErrorObject, obj), 0, PyDoc_STR("object")},
@@ -1413,7 +1407,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, AttributeError_str, "Attribute not found.");
+                        0, BaseException_str, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception

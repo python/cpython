@@ -1082,9 +1082,8 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         return;
     }
 
-    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError) &&
-        _Py_offer_suggestions_for_attribute_error((PyAttributeErrorObject*) value) != 0) {
-             PyErr_Clear();
+    if (_Py_offer_suggestions(exception, value) != 0) {
+        return;
     }
 
     Py_INCREF(file);

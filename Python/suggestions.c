@@ -6,7 +6,8 @@
 #define MAX_GETATTR_PREDICT_ITEMS 100
 #define MAX_GETATTR_STRING_SIZE 20
 
-static size_t
+/* Calculate the Levenshtein distance between string1 and string2 */
+static Py_ssize_t
 distance(const char *string1, const char *string2)
 {
     Py_ssize_t len1 = strlen(string1);
@@ -137,7 +138,7 @@ calculate_suggestions(PyObject* dir,
         return NULL;
     }
 
-    int suggestion_distance = PyUnicode_GetLength(name);
+    Py_ssize_t suggestion_distance = PyUnicode_GetLength(name);
     PyObject* suggestion = NULL;
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
@@ -146,25 +147,25 @@ calculate_suggestions(PyObject* dir,
             PyErr_Clear();
             continue;
         }
-        int current_distance = distance(PyUnicode_AsUTF8(name),
-                                        PyUnicode_AsUTF8(item));
+        Py_ssize_t current_distance = distance(PyUnicode_AsUTF8(name),
+                                               PyUnicode_AsUTF8(item));
         if (current_distance > MAX_GETATTR_PREDICT_DIST){
             continue;
         }
         if (!suggestion || current_distance < suggestion_distance) {
             suggestion = item;
             suggestion_distance = current_distance;
-        }       
+        }
     }
     if (!suggestion) {
         return NULL;
     }
-    return PyUnicode_FromFormat("%S\n\nDid you mean: %U?",
+    return PyUnicode_FromFormat("%S. Did you mean: %U?",
                                 oldexceptionvalue, suggestion);
 }
 
-int
-_Py_offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
+static int
+offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
     int return_val = 0;
 
     PyObject* name = exc->name;
@@ -174,7 +175,7 @@ _Py_offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
     if ((name == NULL) || (v == NULL) || !PyUnicode_CheckExact(name)) {
         return -1;
     }
-    
+
     PyObject* oldexceptionvalue = NULL;
     Py_ssize_t nargs = PyTuple_GET_SIZE(exc->args);
     switch (nargs) {
@@ -227,4 +228,12 @@ exit:
     return return_val;
 }
 
+
+int _Py_offer_suggestions(PyObject* exception, PyObject* value) {
+    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError) &&
+        offer_suggestions_for_attribute_error((PyAttributeErrorObject*) value) != 0) {
+             PyErr_Clear();
+    }
+    return 0;
+}
 
