@@ -659,7 +659,10 @@ else:
             path = _getfinalpathname(path)
             initial_winerror = 0
         except OSError as ex:
-            if strict:
+            # ERROR_CANT_RESOLVE_FILENAME (1921) is from exceeding the
+            # max allowed number of reparse attempts (currently 63), which
+            # is either due to a loop or a chain of links that's too long.
+            if strict or ex.winerror == 1921:
                 raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path)
