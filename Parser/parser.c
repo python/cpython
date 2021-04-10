@@ -18454,7 +18454,7 @@ invalid_group_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_group[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' starred_expression ')'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "can't use starred expression here" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use starred expression here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -18487,7 +18487,7 @@ invalid_group_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_group[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' '**' expression ')'"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "can't use double starred expression here" );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use double starred expression here" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
