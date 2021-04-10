@@ -410,7 +410,7 @@ optionally followed by an import of the module::
        /* Optionally import the module; alternatively,
           import can be deferred until the embedded script
           imports it. */
-       pmodule = PyImport_ImportModule("spam");
+       PyObject *pmodule = PyImport_ImportModule("spam");
        if (!pmodule) {
            PyErr_Print();
            fprintf(stderr, "Error: could not import module 'spam'\n");
