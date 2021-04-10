@@ -248,7 +248,7 @@ The module defines the following user-callable items:
    The result of this search is cached, see the description of
    :data:`tempdir` below.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.9.5
 
       Always returns a str.  Previously it would return any :data:`tempdir`
       value regardless of type so long as it was not ``None``.
