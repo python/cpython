@@ -144,7 +144,7 @@ import_from[stmt_ty]:
 import_from_targets[asdl_alias_seq*]:
     | '(' a=import_from_as_names [','] ')' { a }
     | import_from_as_names !','
-    | '*' { (asdl_alias_seq*)_PyPegen_singleton_seq(p, _PyAST_alias(CHECK(PyObject *, _PyPegen_alias_star(p)), NULL, EXTRA)) }
+    | '*' { (asdl_alias_seq*)_PyPegen_singleton_seq(p, CHECK(alias_ty, _PyPegen_alias_for_star(p, EXTRA))) }
     | invalid_import_from_targets
 import_from_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.import_from_as_name+ { a }

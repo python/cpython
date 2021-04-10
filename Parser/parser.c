@@ -3395,7 +3395,7 @@ import_from_targets_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = ( asdl_alias_seq * ) _PyPegen_singleton_seq ( p , _PyAST_alias ( CHECK ( PyObject * , _PyPegen_alias_star ( p ) ) , NULL , EXTRA ) );
+            _res = ( asdl_alias_seq * ) _PyPegen_singleton_seq ( p , CHECK ( alias_ty , _PyPegen_alias_for_star ( p , EXTRA ) ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
