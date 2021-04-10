@@ -335,8 +335,8 @@ anextawaitable_iternext(anextawaitableobject *obj)
      *         yield 2
      *     gen = agen()
      *
-     * Then `await anext(g)` can just call
-     * g.__anext__().__next__()
+     * Then `await anext(gen)` can just call
+     * gen.__anext__().__next__()
      */
     if (type->tp_as_async && type->tp_as_async->am_await) {
         PyObject *result = type->tp_as_async->am_await(obj->wrapped);
