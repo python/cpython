@@ -7,6 +7,6 @@ out and unconditionally pass.
 
 This issue is most often encountered when failing to stop and restart a patch
 using ``autospec=True`` across test cases, when using an already-mocked object
-as the input to :meth:`unittest.mock.create_autospec()`, or when attempted to
+as the input to :func:`unittest.mock.create_autospec()`, or when attempted to
 mock an attribute of an existing :class:`unittest.mock.Mock` using
 ``autospec=True``.
