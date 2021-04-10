@@ -154,12 +154,17 @@ __all__ = ['dataclass',
 
 # __match_args__
 #
-# |  no   |  yes  |  <--- class has __match_args__ in __dict__?
-# +=======+=======+
-# | add   |       |  <- the default
-# +=======+=======+
-# __match_args__ is always added unless the class already defines it. It is a
-# tuple of __init__ parameter names; non-init fields must be matched by keyword.
+#    +--- match_args= parameter
+#    |
+#    v    |       |       |
+#         |  no   |  yes  |  <--- class has __match_args__ in __dict__?
+# +=======+=======+=======+
+# | False |       |       |
+# +-------+-------+-------+
+# | True  | add   |       |  <- the default
+# +=======+=======+=======+
+# __match_args__ is a tuple of __init__ parameter names; non-init fields must
+# be matched by keyword.
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -830,7 +835,8 @@ _hash_action = {(False, False, False, False): None,
 # version of this table.
 
 
-def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
+def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
+                   match_args):
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
@@ -1016,8 +1022,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         cls.__doc__ = (cls.__name__ +
                        str(inspect.signature(cls)).replace(' -> NoneType', ''))
 
-    if '__match_args__' not in cls.__dict__:
-        cls.__match_args__ = tuple(f.name for f in field_list if f.init)
+    if match_args:
+        _set_new_attribute(cls, '__match_args__',
+                           tuple(f.name for f in field_list if f.init))
 
     abc.update_abstractmethods(cls)
 
@@ -1025,7 +1032,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
 
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
-              unsafe_hash=False, frozen=False):
+              unsafe_hash=False, frozen=False, match_args=True):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -1035,11 +1042,13 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     repr is true, a __repr__() method is added. If order is true, rich
     comparison dunder methods are added. If unsafe_hash is true, a
     __hash__() method function is added. If frozen is true, fields may
-    not be assigned to after instance creation.
+    not be assigned to after instance creation. If match_args is true,
+    the __match_args__ tuple is added.
     """
 
     def wrap(cls):
-        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash,
+                              frozen, match_args)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
@@ -1198,7 +1207,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False):
+                   frozen=False, match_args=True):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1259,7 +1268,8 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # of generic dataclassses.
     cls = types.new_class(cls_name, bases, {}, lambda ns: ns.update(namespace))
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
-                     unsafe_hash=unsafe_hash, frozen=frozen)
+                     unsafe_hash=unsafe_hash, frozen=frozen,
+                     match_args=match_args)
 
 
 def replace(obj, /, **changes):
