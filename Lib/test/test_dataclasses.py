@@ -3468,6 +3468,19 @@ class TestMatchArgs(unittest.TestCase):
             b: int
         self.assertEqual(B.__match_args__, ('a', 'z'))
 
+    def test_make_dataclasses(self):
+        C = make_dataclass('C', [('x', int), ('y', int)])
+        self.assertEqual(C.__match_args__, ('x', 'y'))
+
+        C = make_dataclass('C', [('x', int), ('y', int)], match_args=True)
+        self.assertEqual(C.__match_args__, ('x', 'y'))
+
+        C = make_dataclass('C', [('x', int), ('y', int)], match_args=False)
+        self.assertNotIn('__match__args__', C.__dict__)
+
+        C = make_dataclass('C', [('x', int), ('y', int)], namespace={'__match_args__': ('z',)})
+        self.assertEqual(C.__match_args__, ('z',))
+
 
 if __name__ == '__main__':
     unittest.main()
