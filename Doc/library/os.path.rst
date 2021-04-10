@@ -354,6 +354,14 @@ the :mod:`glob` module.)
    is raised. If *strict* is ``False``, the path is resolved as far as possible
    and any remainder is appended without checking whether it exists.
 
+   .. note::
+      This function emulates the operating system's procedure for making a path
+      canonical, which differs slightly between Windows and UNIX with respect
+      to how links and subsequent path components interact.
+
+      Operating system APIs make paths canonical as needed, so it's not
+      normally necessary to call this function.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 

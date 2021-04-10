@@ -368,6 +368,9 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2")
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x")
+
+        # Windows eliminates '..' components before resolving links, so the
+        # following 3 realpath() calls are not expected to raise.
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\.."),
                              ntpath.dirname(ABSTFN))
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\x"),
