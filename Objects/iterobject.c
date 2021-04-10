@@ -316,8 +316,6 @@ anextawaitable_traverse(anextawaitableobject *obj, visitproc visit, void *arg)
 static PyObject *
 anextawaitable_iternext(anextawaitableobject *obj)
 {
-    assert(obj->wrapped != NULL);
-    PyTypeObject *type = Py_TYPE(obj->wrapped);
     /* Consider the following class:
      *
      *     class A:
@@ -338,22 +336,29 @@ anextawaitable_iternext(anextawaitableobject *obj)
      * Then `await anext(gen)` can just call
      * gen.__anext__().__next__()
      */
-    if (type->tp_as_async && type->tp_as_async->am_await) {
-        PyObject *result = type->tp_as_async->am_await(obj->wrapped);
-        if (result == NULL) {
-            return NULL;
-        }
-        type = Py_TYPE(result);
-        Py_SETREF(obj->wrapped, result);
-    }
-
-    unaryfunc getter = type->tp_iternext;
-    if (getter == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-            "__await__() did not return an iterator.");
+    assert(obj->wrapped != NULL);
+    PyObject *awaitable = _PyCoro_GetAwaitableIter(obj->wrapped);
+    if (awaitable == NULL) {
         return NULL;
     }
-    PyObject *result = getter(obj->wrapped);
+    if (Py_TYPE(awaitable)->tp_iternext == NULL) {
+        if (Py_TYPE(awaitable)->tp_as_async == NULL ||
+            Py_TYPE(awaitable)->tp_as_async->am_await == NULL)
+        {
+            PyErr_SetString(PyExc_TypeError,
+                            "__anext__ returned a non-awaitable.");
+            return NULL;
+        }
+        unaryfunc getter = Py_TYPE(awaitable)->tp_as_async->am_await;
+        PyObject *new_awaitable = getter(awaitable);
+        Py_SETREF(awaitable, new_awaitable);
+        if (Py_TYPE(awaitable)->tp_iternext == NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "__await__ returned a non-iterable");
+            return NULL;
+        }
+    }
+    PyObject *result = (*Py_TYPE(awaitable)->tp_iternext)(awaitable);
     if (result != NULL) {
         return result;
     }
