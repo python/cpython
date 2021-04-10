@@ -1,6 +1,2 @@
 :func:`os.path.realpath` now raises :exc:`OSError` when a symlink loop is
 encountered. Previously it returned a path with unresolved symlinks.
-
-:func:`os.path.realpath` now accepts a *strict* keyword-only argument.
-When set to ``True``, :exc:`FileNotFoundException` is raised if a path
-doesn't exist.
