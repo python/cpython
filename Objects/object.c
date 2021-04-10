@@ -2279,6 +2279,33 @@ Py_XNewRef(PyObject *obj)
     return _Py_XNewRef(obj);
 }
 
+#undef Py_Is
+#undef Py_IsNone
+#undef Py_IsTrue
+#undef Py_IsFalse
+
+// Export Py_Is(), Py_IsNone(), Py_IsTrue(), Py_IsFalse() as regular functions
+// for the stable ABI.
+int Py_Is(PyObject *x, PyObject *y)
+{
+    return (x == y);
+}
+
+int Py_IsNone(PyObject *x)
+{
+    return Py_Is(x, Py_None);
+}
+
+int Py_IsTrue(PyObject *x)
+{
+    return Py_Is(x, Py_True);
+}
+
+int Py_IsFalse(PyObject *x)
+{
+    return Py_Is(x, Py_False);
+}
+
 #ifdef __cplusplus
 }
 #endif
