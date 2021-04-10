@@ -1247,6 +1247,14 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.10
 
+.. opcode:: GEN_START (kind)
+
+    Pops TOS. If TOS was not ``None``, raises an exception. The ``kind``
+    operand corresponds to the type of generator or coroutine and determines
+    the error message. The legal kinds are 0 for generator, 1 for coroutine,
+    and 2 for async generator.
+
+   .. versionadded:: 3.10
 
 .. opcode:: HAVE_ARGUMENT
 

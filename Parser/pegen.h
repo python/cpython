@@ -107,8 +107,10 @@ typedef struct {
     int is_keyword;
 } KeywordOrStarred;
 
+#if defined(Py_DEBUG)
 void _PyPegen_clear_memo_statistics(void);
 PyObject *_PyPegen_get_memo_statistics(void);
+#endif
 
 int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
@@ -150,7 +152,7 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
 
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
+#define EXTRA_EXPR(head, tail) head->lineno, (head)->col_offset, (tail)->end_lineno, (tail)->end_col_offset, p->arena
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)

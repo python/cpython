@@ -3432,6 +3432,14 @@ class TestMatchArgs(unittest.TestCase):
             __match_args__ = ma
         self.assertIs(C(42).__match_args__, ma)
 
+    def test_bpo_43764(self):
+        @dataclass(repr=False, eq=False, init=False)
+        class X:
+            a: int
+            b: int
+            c: int
+        self.assertEqual(X.__match_args__, ("a", "b", "c"))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1017,7 +1017,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
                        str(inspect.signature(cls)).replace(' -> NoneType', ''))
 
     if '__match_args__' not in cls.__dict__:
-        cls.__match_args__ = tuple(f.name for f in flds if f.init)
+        cls.__match_args__ = tuple(f.name for f in field_list if f.init)
 
     abc.update_abstractmethods(cls)
 

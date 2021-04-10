@@ -41,15 +41,27 @@ class Finder(metaclass=abc.ABCMeta):
     Deprecated since Python 3.3
     """
 
+    def __init__(self):
+        warnings.warn("the Finder ABC is deprecated and "
+                       "slated for removal in Python 3.12; use MetaPathFinder "
+                       "or PathEntryFinder instead",
+                       DeprecationWarning)
+
     @abc.abstractmethod
     def find_module(self, fullname, path=None):
         """An abstract method that should find a module.
         The fullname is a str and the optional path is a str or None.
         Returns a Loader object or None.
         """
+        warnings.warn("importlib.abc.Finder along with its find_module() "
+                      "method are deprecated and "
+                       "slated for removal in Python 3.12; use "
+                       "MetaPathFinder.find_spec() or "
+                       "PathEntryFinder.find_spec() instead",
+                       DeprecationWarning)
 
 
-class MetaPathFinder(Finder):
+class MetaPathFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for import finders on sys.meta_path."""
 
@@ -68,8 +80,8 @@ class MetaPathFinder(Finder):
 
         """
         warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec() "
-                      "(available since 3.4)",
+                      "3.4 in favor of MetaPathFinder.find_spec() and is "
+                      "slated for removal in Python 3.12",
                       DeprecationWarning,
                       stacklevel=2)
         if not hasattr(self, 'find_spec'):
@@ -86,7 +98,7 @@ _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
 
 
-class PathEntryFinder(Finder):
+class PathEntryFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for path entry finders used by PathFinder."""
 

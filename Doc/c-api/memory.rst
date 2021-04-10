@@ -385,11 +385,12 @@ Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``mal
 
 Legend:
 
-* Name: value for :envvar:`PYTHONMALLOC` environment variable
+* Name: value for :envvar:`PYTHONMALLOC` environment variable.
 * ``malloc``: system allocators from the standard C library, C functions:
-  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`
-* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`
-* "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`
+  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
+* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`.
+* "Debug build": :ref:`Python build in debug mode <debug-build>`.
 
 .. _customize-memory-allocators:
 
@@ -500,8 +501,8 @@ Customize Memory Allocators
    memory block was traced.
 
    These hooks are :ref:`installed by default <default-memory-allocators>` if
-   Python is compiled in debug
-   mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install
+   :ref:`Python is built in debug mode <debug-build>`.
+   The :envvar:`PYTHONMALLOC` environment variable can be used to install
    debug hooks on a Python compiled in release mode.
 
    .. versionchanged:: 3.6

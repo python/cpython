@@ -231,7 +231,7 @@ Other Language Changes
   absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
-* In the :ref:`Python Development Mode <devmode>` and in debug build, the
+* In the :ref:`Python Development Mode <devmode>` and in :ref:`debug build <debug-build>`, the
   *encoding* and *errors* arguments are now checked for string encoding and
   decoding operations. Examples: :func:`open`, :meth:`str.encode` and
   :meth:`bytes.decode`.
@@ -266,6 +266,10 @@ Other Language Changes
   :func:`~operator.contains`, :func:`~operator.indexOf` and
   :func:`~operator.countOf` of the :mod:`operator` module.
   (Contributed by Serhiy Storchaka in :issue:`40824`.)
+
+* Unparenthesized lambda expressions can no longer be the expression part in an
+  ``if`` clause in comprehensions and generator expressions. See :issue:`41848`
+  and :issue:`43755` for details.
 
 
 New Modules
