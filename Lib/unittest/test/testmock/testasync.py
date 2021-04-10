@@ -199,7 +199,7 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
-    @unittest.skip('Broken test from bpo-issue37251')
+    @unittest.skip('Broken test from https://bugs.python.org/issue37251')
     def test_create_autospec_awaitable_class(self):
         self.assertIsInstance(create_autospec(AwaitableClass), AsyncMock)
 
