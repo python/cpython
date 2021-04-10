@@ -335,6 +335,26 @@ class AST_Tests(unittest.TestCase):
         mod.body[0].module = " __future__ ".strip()
         compile(mod, "<test>", "exec")
 
+    def test_alias(self):
+        im = ast.parse("from bar import y").body[0]
+        self.assertEqual(len(im.names), 1)
+        alias = im.names[0]
+        self.assertEqual(alias.name, 'y')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
+
+        im = ast.parse("from bar import *").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, '*')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
+
     def test_base_classes(self):
         self.assertTrue(issubclass(ast.For, ast.stmt))
         self.assertTrue(issubclass(ast.Name, ast.expr))
@@ -1037,7 +1057,8 @@ Module(
 
     def test_level_as_none(self):
         body = [ast.ImportFrom(module='time',
-                               names=[ast.alias(name='sleep')],
+                               names=[ast.alias(name='sleep',
+                                                lineno=0, col_offset=0)],
                                level=None,
                                lineno=0, col_offset=0)]
         mod = ast.Module(body, [])
@@ -1735,6 +1756,7 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         imp = ast.parse(s).body[0]
         self._check_end_pos(imp, 3, 1)
+        self._check_end_pos(imp.names[2], 2, 16)
 
     def test_slices(self):
         s1 = 'f()[1, 2] [0]'
@@ -2095,8 +2117,8 @@ exec_results = [
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
-('Module', [('Import', (1, 0, 1, 10), [('alias', 'sys', None)])], []),
-('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', 'v', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
+('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
 ('Module', [('Pass', (1, 0, 1, 4))], []),

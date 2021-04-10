@@ -144,20 +144,20 @@ import_from[stmt_ty]:
 import_from_targets[asdl_alias_seq*]:
     | '(' a=import_from_as_names [','] ')' { a }
     | import_from_as_names !','
-    | '*' { (asdl_alias_seq*)_PyPegen_singleton_seq(p, CHECK(alias_ty, _PyPegen_alias_for_star(p))) }
+    | '*' { (asdl_alias_seq*)_PyPegen_singleton_seq(p, CHECK(alias_ty, _PyPegen_alias_for_star(p, EXTRA))) }
     | invalid_import_from_targets
 import_from_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.import_from_as_name+ { a }
 import_from_as_name[alias_ty]:
     | a=NAME b=['as' z=NAME { z }] { _PyAST_alias(a->v.Name.id,
                                                (b) ? ((expr_ty) b)->v.Name.id : NULL,
-                                               p->arena) }
+                                               EXTRA) }
 dotted_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.dotted_as_name+ { a }
 dotted_as_name[alias_ty]:
     | a=dotted_name b=['as' z=NAME { z }] { _PyAST_alias(a->v.Name.id,
                                                       (b) ? ((expr_ty) b)->v.Name.id : NULL,
-                                                      p->arena) }
+                                                      EXTRA) }
 dotted_name[expr_ty]:
     | a=dotted_name '.' b=NAME { _PyPegen_join_names_with_dot(p, a, b) }
     | NAME

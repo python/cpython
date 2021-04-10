@@ -1555,8 +1555,8 @@ _PyPegen_seq_count_dots(asdl_seq *seq)
 
 /* Creates an alias with '*' as the identifier name */
 alias_ty
-_PyPegen_alias_for_star(Parser *p)
-{
+_PyPegen_alias_for_star(Parser *p, int lineno, int col_offset, int end_lineno,
+                        int end_col_offset, PyArena *arena) {
     PyObject *str = PyUnicode_InternFromString("*");
     if (!str) {
         return NULL;
@@ -1565,7 +1565,7 @@ _PyPegen_alias_for_star(Parser *p)
         Py_DECREF(str);
         return NULL;
     }
-    return _PyAST_alias(str, NULL, p->arena);
+    return _PyAST_alias(str, NULL, lineno, col_offset, end_lineno, end_col_offset, arena);
 }
 
 /* Creates a new asdl_seq* with the identifiers of all the names in seq */

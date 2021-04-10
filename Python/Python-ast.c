@@ -675,6 +675,12 @@ static const char * const keyword_fields[]={
     "value",
 };
 static PyObject* ast2obj_alias(struct ast_state *state, void*);
+static const char * const alias_attributes[] = {
+    "lineno",
+    "col_offset",
+    "end_lineno",
+    "end_col_offset",
+};
 static const char * const alias_fields[]={
     "name",
     "asname",
@@ -1707,8 +1713,14 @@ init_types(struct ast_state *state)
                                   alias_fields, 2,
         "alias(identifier name, identifier? asname)");
     if (!state->alias_type) return 0;
-    if (!add_attributes(state, state->alias_type, NULL, 0)) return 0;
+    if (!add_attributes(state, state->alias_type, alias_attributes, 4)) return
+        0;
     if (PyObject_SetAttr(state->alias_type, state->asname, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->alias_type, state->end_lineno, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->alias_type, state->end_col_offset, Py_None) ==
+        -1)
         return 0;
     state->withitem_type = make_type(state, "withitem", state->AST_type,
                                      withitem_fields, 2,
@@ -3271,7 +3283,8 @@ _PyAST_keyword(identifier arg, expr_ty value, int lineno, int col_offset, int
 }
 
 alias_ty
-_PyAST_alias(identifier name, identifier asname, PyArena *arena)
+_PyAST_alias(identifier name, identifier asname, int lineno, int col_offset,
+             int end_lineno, int end_col_offset, PyArena *arena)
 {
     alias_ty p;
     if (!name) {
@@ -3284,6 +3297,10 @@ _PyAST_alias(identifier name, identifier asname, PyArena *arena)
         return NULL;
     p->name = name;
     p->asname = asname;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -4848,6 +4865,26 @@ ast2obj_alias(struct ast_state *state, void* _o)
     value = ast2obj_identifier(state, o->asname);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, state->asname, value) == -1)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, o->lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, o->col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(state, o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, state->end_col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -9723,6 +9760,10 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
     PyObject* tmp = NULL;
     identifier name;
     identifier asname;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
         return 1;
@@ -9750,7 +9791,60 @@ obj2ast_alias(struct ast_state *state, PyObject* obj, alias_ty* out, PyArena*
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = _PyAST_alias(name, asname, arena);
+    if (_PyObject_LookupAttr(obj, state->lineno, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from alias");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_int(state, tmp, &lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, state->col_offset, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from alias");
+        return 1;
+    }
+    else {
+        int res;
+        res = obj2ast_int(state, tmp, &col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(state, tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(state, tmp, &end_col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    *out = _PyAST_alias(name, asname, lineno, col_offset, end_lineno,
+                        end_col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
