@@ -199,7 +199,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case DictComp_kind:
             return "dict comprehension";
         case Dict_kind:
-            return "dict display";
+            return "dict literal";
         case Set_kind:
             return "set display";
         case JoinedStr_kind:

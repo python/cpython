@@ -600,7 +600,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
-            # Confirm that the caret is located under the first 1 character
+            # Confirm that the caret is located under the '=' sign
             self.assertIn("\n    1 + 1 = 2\n          ^\n", text)
 
     def test_syntaxerror_indented_caret_position(self):

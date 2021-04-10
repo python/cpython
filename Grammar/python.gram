@@ -778,8 +778,8 @@ invalid_named_expression:
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
     | a=NAME b='=' bitwise_or !('='|':='|',') {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
-    | !(list|tuple) a=bitwise_or b='=' bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "cannot assign to %s. Maybe you meant '==' instead of '='?",
+    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':='|',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
 invalid_assignment:

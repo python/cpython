@@ -153,7 +153,7 @@ Verify that syntax error's are raised for genexps used as lvalues
     >>> (y for y in (1,2)) = 10
     Traceback (most recent call last):
        ...
-    SyntaxError: cannot assign to generator expression. Maybe you meant '==' instead of '='?
+    SyntaxError: cannot assign to generator expression
 
     >>> (y for y in (1,2)) += 10
     Traceback (most recent call last):
