@@ -990,7 +990,7 @@ x = (
                              ])
 
     def test_assignment(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax.',
+        self.assertAllRaise(SyntaxError, r'invalid syntax\.',
                             ["f'' = 3",
                              "f'{0}' = x",
                              "f'{x}' = x",
