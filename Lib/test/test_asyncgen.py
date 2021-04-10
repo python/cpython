@@ -495,6 +495,27 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.loop.run_until_complete(call_with_wrong_type_args())
 
+        class BadAwaitable:
+            def __await__(self):
+                return 42
+        class MyAsyncIter:
+            def __aiter__(self):
+                return self
+            def __anext__(self):
+                return BadAwaitable()
+
+        async def call_not_awaitable():
+            regex = r"__await__.*iterator"
+            awaitable = anext(MyAsyncIter(), "default")
+            with self.assertRaisesRegex(TypeError, regex):
+                await awaitable
+            awaitable = anext(MyAsyncIter())
+            with self.assertRaisesRegex(TypeError, regex):
+                await awaitable
+            return "completed"
+        result = self.loop.run_until_complete(call_not_awaitable())
+        self.assertEqual(result, "completed")
+
     def test_aiter_bad_args(self):
         async def gen():
             yield 1

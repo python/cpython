@@ -325,7 +325,7 @@ anextawaitable_iternext(anextawaitableobject *obj)
      *             ...
      *     a = A()
      *
-     * Then anext(a) should call
+     * Then `await anext(a)` should call
      * a.__anext__().__await__().__next__()
      *
      * On the other hand, given
@@ -335,12 +335,11 @@ anextawaitable_iternext(anextawaitableobject *obj)
      *         yield 2
      *     gen = agen()
      *
-     * Then anext(g) can just call
+     * Then `await anext(g)` can just call
      * g.__anext__().__next__()
      */
     if (type->tp_as_async && type->tp_as_async->am_await) {
-        unaryfunc await_getter = type->tp_as_async->am_await;
-        PyObject *result = await_getter(obj->wrapped);
+        PyObject *result = type->tp_as_async->am_await(obj->wrapped);
         if (result == NULL) {
             return NULL;
         }
