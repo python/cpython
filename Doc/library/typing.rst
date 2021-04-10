@@ -1144,10 +1144,7 @@ These are not used in annotations. They are building blocks for creating generic
    .. note::
 
         :func:`runtime_checkable` will check only the presence of the required methods,
-        not their type signatures! For example, :class:`builtins.complex <complex>`
-        implements :func:`__float__`, therefore it passes an :func:`issubclass` check
-        against :class:`SupportsFloat`. However, the ``complex.__float__`` method
-        exists only to raise a :class:`TypeError` with a more informative message.
+        not their type signatures.
 
    .. versionadded:: 3.8
 
