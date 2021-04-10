@@ -206,26 +206,26 @@ class MockTest(unittest.TestCase):
 
 
     def test_autospec_mock(self):
-      class A(object):
-        class B(object):
-          C = None
+        class A(object):
+            class B(object):
+                C = None
 
-      with mock.patch.object(A, 'B'):
-        with self.assertRaisesRegex(InvalidSpecError,
-                                    "Cannot autospec attr 'B' from target <MagicMock spec='A'"):
-          create_autospec(A).B
-        with self.assertRaisesRegex(InvalidSpecError,
-                                    "Cannot autospec attr 'B' from target 'A'"):
-          mock.patch.object(A, 'B', autospec=True).start()
-        with self.assertRaisesRegex(InvalidSpecError,
-                                    "Cannot autospec attr 'C' as the patch target "):
-          mock.patch.object(A.B, 'C', autospec=True).start()
-        with self.assertRaisesRegex(InvalidSpecError,
-                                    "Cannot spec attr 'B' as the spec "):
-          mock.patch.object(A, 'B', spec=A.B).start()
-        with self.assertRaisesRegex(InvalidSpecError,
-                                    "Cannot spec attr 'B' as the spec_set "):
-          mock.patch.object(A, 'B', spec_set=A.B).start()
+        with mock.patch.object(A, 'B'):
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'B' from target <MagicMock spec='A'"):
+                create_autospec(A).B
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'B' from target 'A'"):
+                mock.patch.object(A, 'B', autospec=True).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot autospec attr 'C' as the patch target "):
+                mock.patch.object(A.B, 'C', autospec=True).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec "):
+                mock.patch.object(A, 'B', spec=A.B).start()
+            with self.assertRaisesRegex(InvalidSpecError,
+                                        "Cannot spec attr 'B' as the spec_set "):
+                mock.patch.object(A, 'B', spec_set=A.B).start()
 
     def test_reset_mock(self):
         parent = Mock()

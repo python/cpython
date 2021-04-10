@@ -37,7 +37,7 @@ from functools import wraps, partial
 
 
 class InvalidSpecError(Exception):
-  """Indicates that an invalid value was used as a mock spec."""
+    """Indicates that an invalid value was used as a mock spec."""
 
 
 _builtins = {name for name in dir(builtins) if not name.startswith('_')}
