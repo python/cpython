@@ -173,7 +173,7 @@ PEP 626: Precise line numbers for debugging and other tools
 PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
 Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
 
-The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+The ``f_lineno`` attribute of frame objects will always contain the expected line number.
 
 The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
 Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
