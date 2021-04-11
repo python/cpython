@@ -34,9 +34,9 @@ _PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
     if (tco == NULL) {
         return NULL;
     }
-    return arg(a->arg, a->annotation, tco,
-               a->lineno, a->col_offset, a->end_lineno, a->end_col_offset,
-               p->arena);
+    return _PyAST_arg(a->arg, a->annotation, tco,
+                      a->lineno, a->col_offset, a->end_lineno, a->end_col_offset,
+                      p->arena);
 }
 
 static int
@@ -568,7 +568,7 @@ _PyPegen_dummy_name(Parser *p, ...)
     if (!id) {
         return NULL;
     }
-    cache = Name(id, Load, 1, 0, 1, 0, p->arena);
+    cache = _PyAST_Name(id, Load, 1, 0, 1, 0, p->arena);
     return cache;
 }
 
@@ -625,6 +625,64 @@ growable_comment_array_deallocate(growable_comment_array *arr) {
     PyMem_Free(arr->items);
 }
 
+static int
+initialize_token(Parser *p, Token *token, const char *start, const char *end, int token_type) {
+    assert(token != NULL);
+
+    token->type = (token_type == NAME) ? _get_keyword_or_name_type(p, start, (int)(end - start)) : token_type;
+    token->bytes = PyBytes_FromStringAndSize(start, end - start);
+    if (token->bytes == NULL) {
+        return -1;
+    }
+
+    if (_PyArena_AddPyObject(p->arena, token->bytes) < 0) {
+        Py_DECREF(token->bytes);
+        return -1;
+    }
+
+    const char *line_start = token_type == STRING ? p->tok->multi_line_start : p->tok->line_start;
+    int lineno = token_type == STRING ? p->tok->first_lineno : p->tok->lineno;
+    int end_lineno = p->tok->lineno;
+
+    int col_offset = (start != NULL && start >= line_start) ? (int)(start - line_start) : -1;
+    int end_col_offset = (end != NULL && end >= p->tok->line_start) ? (int)(end - p->tok->line_start) : -1;
+
+    token->lineno = p->starting_lineno + lineno;
+    token->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
+    token->end_lineno = p->starting_lineno + end_lineno;
+    token->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
+
+    p->fill += 1;
+
+    if (token_type == ERRORTOKEN && p->tok->done == E_DECODE) {
+        return raise_decode_error(p);
+    }
+
+    return (token_type == ERRORTOKEN ? tokenizer_error(p) : 0);
+}
+
+static int
+_resize_tokens_array(Parser *p) {
+    int newsize = p->size * 2;
+    Token **new_tokens = PyMem_Realloc(p->tokens, newsize * sizeof(Token *));
+    if (new_tokens == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    p->tokens = new_tokens;
+
+    for (int i = p->size; i < newsize; i++) {
+        p->tokens[i] = PyMem_Calloc(1, sizeof(Token));
+        if (p->tokens[i] == NULL) {
+            p->size = i; // Needed, in order to cleanup correctly after parser fails
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    p->size = newsize;
+    return 0;
+}
+
 int
 _PyPegen_fill_token(Parser *p)
 {
@@ -650,7 +708,8 @@ _PyPegen_fill_token(Parser *p)
         type = PyTokenizer_Get(p->tok, &start, &end);
     }
 
-    if (type == ENDMARKER && p->start_rule == Py_single_input && p->parsing_started) {
+    // If we have reached the end and we are in single input mode we need to insert a newline and reset the parsing
+    if (p->start_rule == Py_single_input && type == ENDMARKER && p->parsing_started) {
         type = NEWLINE; /* Add an extra newline */
         p->parsing_started = 0;
 
@@ -663,65 +722,17 @@ _PyPegen_fill_token(Parser *p)
         p->parsing_started = 1;
     }
 
-    if (p->fill == p->size) {
-        int newsize = p->size * 2;
-        Token **new_tokens = PyMem_Realloc(p->tokens, newsize * sizeof(Token *));
-        if (new_tokens == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-        p->tokens = new_tokens;
-
-        for (int i = p->size; i < newsize; i++) {
-            p->tokens[i] = PyMem_Malloc(sizeof(Token));
-            if (p->tokens[i] == NULL) {
-                p->size = i; // Needed, in order to cleanup correctly after parser fails
-                PyErr_NoMemory();
-                return -1;
-            }
-            memset(p->tokens[i], '\0', sizeof(Token));
-        }
-        p->size = newsize;
+    // Check if we are at the limit of the token array capacity and resize if needed
+    if ((p->fill == p->size) && (_resize_tokens_array(p) != 0)) {
+        return -1;
     }
 
     Token *t = p->tokens[p->fill];
-    t->type = (type == NAME) ? _get_keyword_or_name_type(p, start, (int)(end - start)) : type;
-    t->bytes = PyBytes_FromStringAndSize(start, end - start);
-    if (t->bytes == NULL) {
-        return -1;
-    }
-    _PyArena_AddPyObject(p->arena, t->bytes);
-
-    int lineno = type == STRING ? p->tok->first_lineno : p->tok->lineno;
-    const char *line_start = type == STRING ? p->tok->multi_line_start : p->tok->line_start;
-    int end_lineno = p->tok->lineno;
-    int col_offset = -1;
-    int end_col_offset = -1;
-    if (start != NULL && start >= line_start) {
-        col_offset = (int)(start - line_start);
-    }
-    if (end != NULL && end >= p->tok->line_start) {
-        end_col_offset = (int)(end - p->tok->line_start);
-    }
-
-    t->lineno = p->starting_lineno + lineno;
-    t->col_offset = p->tok->lineno == 1 ? p->starting_col_offset + col_offset : col_offset;
-    t->end_lineno = p->starting_lineno + end_lineno;
-    t->end_col_offset = p->tok->lineno == 1 ? p->starting_col_offset + end_col_offset : end_col_offset;
-
-    p->fill += 1;
-
-    if (type == ERRORTOKEN) {
-        if (p->tok->done == E_DECODE) {
-            return raise_decode_error(p);
-        }
-        return tokenizer_error(p);
-
-    }
-
-    return 0;
+    return initialize_token(p, t, start, end, type);
 }
 
+
+#if defined(Py_DEBUG)
 // Instrumentation to count the effectiveness of memoization.
 // The array counts the number of tokens skipped by memoization,
 // indexed by type.
@@ -758,6 +769,7 @@ _PyPegen_get_memo_statistics()
     }
     return ret;
 }
+#endif
 
 int  // bool
 _PyPegen_is_memoized(Parser *p, int type, void *pres)
@@ -773,6 +785,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
 
     for (Memo *m = t->memo; m != NULL; m = m->next) {
         if (m->type == type) {
+#if defined(PY_DEBUG)
             if (0 <= type && type < NSTATISTICS) {
                 long count = m->mark - p->mark;
                 // A memoized negative result counts for one.
@@ -781,6 +794,7 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 }
                 memo_statistics[type] += count;
             }
+#endif
             p->mark = m->mark;
             *(void **)(pres) = m->node;
             return 1;
@@ -919,8 +933,8 @@ _PyPegen_name_token(Parser *p)
         p->error_indicator = 1;
         return NULL;
     }
-    return Name(id, Load, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
-                p->arena);
+    return _PyAST_Name(id, Load, t->lineno, t->col_offset, t->end_lineno,
+                       t->end_col_offset, p->arena);
 }
 
 void *
@@ -1035,8 +1049,8 @@ _PyPegen_number_token(Parser *p)
         return NULL;
     }
 
-    return Constant(c, NULL, t->lineno, t->col_offset, t->end_lineno, t->end_col_offset,
-                    p->arena);
+    return _PyAST_Constant(c, NULL, t->lineno, t->col_offset, t->end_lineno,
+                           t->end_col_offset, p->arena);
 }
 
 static int // bool
@@ -1514,7 +1528,7 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
         return NULL;
     }
 
-    return _Py_Name(uni, Load, EXTRA_EXPR(first_name, second_name));
+    return _PyAST_Name(uni, Load, EXTRA_EXPR(first_name, second_name));
 }
 
 /* Counts the total number of dots in seq's tokens */
@@ -1541,8 +1555,8 @@ _PyPegen_seq_count_dots(asdl_seq *seq)
 
 /* Creates an alias with '*' as the identifier name */
 alias_ty
-_PyPegen_alias_for_star(Parser *p)
-{
+_PyPegen_alias_for_star(Parser *p, int lineno, int col_offset, int end_lineno,
+                        int end_col_offset, PyArena *arena) {
     PyObject *str = PyUnicode_InternFromString("*");
     if (!str) {
         return NULL;
@@ -1551,7 +1565,7 @@ _PyPegen_alias_for_star(Parser *p)
         Py_DECREF(str);
         return NULL;
     }
-    return alias(str, NULL, p->arena);
+    return _PyAST_alias(str, NULL, lineno, col_offset, end_lineno, end_col_offset, arena);
 }
 
 /* Creates a new asdl_seq* with the identifiers of all the names in seq */
@@ -1643,13 +1657,13 @@ _set_seq_context(Parser *p, asdl_expr_seq *seq, expr_context_ty ctx)
 static expr_ty
 _set_name_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_Name(e->v.Name.id, ctx, EXTRA_EXPR(e, e));
+    return _PyAST_Name(e->v.Name.id, ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
 _set_tuple_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_Tuple(
+    return _PyAST_Tuple(
             _set_seq_context(p, e->v.Tuple.elts, ctx),
             ctx,
             EXTRA_EXPR(e, e));
@@ -1658,7 +1672,7 @@ _set_tuple_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_list_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_List(
+    return _PyAST_List(
             _set_seq_context(p, e->v.List.elts, ctx),
             ctx,
             EXTRA_EXPR(e, e));
@@ -1667,19 +1681,22 @@ _set_list_context(Parser *p, expr_ty e, expr_context_ty ctx)
 static expr_ty
 _set_subscript_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_Subscript(e->v.Subscript.value, e->v.Subscript.slice, ctx, EXTRA_EXPR(e, e));
+    return _PyAST_Subscript(e->v.Subscript.value, e->v.Subscript.slice,
+                            ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
 _set_attribute_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_Attribute(e->v.Attribute.value, e->v.Attribute.attr, ctx, EXTRA_EXPR(e, e));
+    return _PyAST_Attribute(e->v.Attribute.value, e->v.Attribute.attr,
+                            ctx, EXTRA_EXPR(e, e));
 }
 
 static expr_ty
 _set_starred_context(Parser *p, expr_ty e, expr_context_ty ctx)
 {
-    return _Py_Starred(_PyPegen_set_expr_context(p, e->v.Starred.value, ctx), ctx, EXTRA_EXPR(e, e));
+    return _PyAST_Starred(_PyPegen_set_expr_context(p, e->v.Starred.value, ctx),
+                          ctx, EXTRA_EXPR(e, e));
 }
 
 /* Creates an `expr_ty` equivalent to `expr` but with `ctx` as context */
@@ -1850,6 +1867,117 @@ _get_defaults(Parser *p, asdl_seq *names_with_defaults)
     return seq;
 }
 
+static int
+_make_posonlyargs(Parser *p,
+                  asdl_arg_seq *slash_without_default,
+                  SlashWithDefault *slash_with_default,
+                  asdl_arg_seq **posonlyargs) {
+    if (slash_without_default != NULL) {
+        *posonlyargs = slash_without_default;
+    }
+    else if (slash_with_default != NULL) {
+        asdl_arg_seq *slash_with_default_names =
+                _get_names(p, slash_with_default->names_with_defaults);
+        if (!slash_with_default_names) {
+            return -1;
+        }
+        *posonlyargs = (asdl_arg_seq*)_PyPegen_join_sequences(
+                p,
+                (asdl_seq*)slash_with_default->plain_names,
+                (asdl_seq*)slash_with_default_names);
+    }
+    else {
+        *posonlyargs = _Py_asdl_arg_seq_new(0, p->arena);
+    }
+    return *posonlyargs == NULL ? -1 : 0;
+}
+
+static int
+_make_posargs(Parser *p,
+              asdl_arg_seq *plain_names,
+              asdl_seq *names_with_default,
+              asdl_arg_seq **posargs) {
+    if (plain_names != NULL && names_with_default != NULL) {
+        asdl_arg_seq *names_with_default_names = _get_names(p, names_with_default);
+        if (!names_with_default_names) {
+            return -1;
+        }
+        *posargs = (asdl_arg_seq*)_PyPegen_join_sequences(
+                p,(asdl_seq*)plain_names, (asdl_seq*)names_with_default_names);
+    }
+    else if (plain_names == NULL && names_with_default != NULL) {
+        *posargs = _get_names(p, names_with_default);
+    }
+    else if (plain_names != NULL && names_with_default == NULL) {
+        *posargs = plain_names;
+    }
+    else {
+        *posargs = _Py_asdl_arg_seq_new(0, p->arena);
+    }
+    return *posargs == NULL ? -1 : 0;
+}
+
+static int
+_make_posdefaults(Parser *p,
+                  SlashWithDefault *slash_with_default,
+                  asdl_seq *names_with_default,
+                  asdl_expr_seq **posdefaults) {
+    if (slash_with_default != NULL && names_with_default != NULL) {
+        asdl_expr_seq *slash_with_default_values =
+                _get_defaults(p, slash_with_default->names_with_defaults);
+        if (!slash_with_default_values) {
+            return -1;
+        }
+        asdl_expr_seq *names_with_default_values = _get_defaults(p, names_with_default);
+        if (!names_with_default_values) {
+            return -1;
+        }
+        *posdefaults = (asdl_expr_seq*)_PyPegen_join_sequences(
+                p,
+                (asdl_seq*)slash_with_default_values,
+                (asdl_seq*)names_with_default_values);
+    }
+    else if (slash_with_default == NULL && names_with_default != NULL) {
+        *posdefaults = _get_defaults(p, names_with_default);
+    }
+    else if (slash_with_default != NULL && names_with_default == NULL) {
+        *posdefaults = _get_defaults(p, slash_with_default->names_with_defaults);
+    }
+    else {
+        *posdefaults = _Py_asdl_expr_seq_new(0, p->arena);
+    }
+    return *posdefaults == NULL ? -1 : 0;
+}
+
+static int
+_make_kwargs(Parser *p, StarEtc *star_etc,
+             asdl_arg_seq **kwonlyargs,
+             asdl_expr_seq **kwdefaults) {
+    if (star_etc != NULL && star_etc->kwonlyargs != NULL) {
+        *kwonlyargs = _get_names(p, star_etc->kwonlyargs);
+    }
+    else {
+        *kwonlyargs = _Py_asdl_arg_seq_new(0, p->arena);
+    }
+
+    if (*kwonlyargs == NULL) {
+        return -1;
+    }
+
+    if (star_etc != NULL && star_etc->kwonlyargs != NULL) {
+        *kwdefaults = _get_defaults(p, star_etc->kwonlyargs);
+    }
+    else {
+        *kwdefaults = _Py_asdl_expr_seq_new(0, p->arena);
+    }
+
+    if (*kwdefaults == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
 /* Constructs an arguments_ty object out of all the parsed constructs in the parameters rule */
 arguments_ty
 _PyPegen_make_arguments(Parser *p, asdl_arg_seq *slash_without_default,
@@ -1857,96 +1985,18 @@ _PyPegen_make_arguments(Parser *p, asdl_arg_seq *slash_without_default,
                         asdl_seq *names_with_default, StarEtc *star_etc)
 {
     asdl_arg_seq *posonlyargs;
-    if (slash_without_default != NULL) {
-        posonlyargs = slash_without_default;
-    }
-    else if (slash_with_default != NULL) {
-        asdl_arg_seq *slash_with_default_names =
-            _get_names(p, slash_with_default->names_with_defaults);
-        if (!slash_with_default_names) {
-            return NULL;
-        }
-        posonlyargs = (asdl_arg_seq*)_PyPegen_join_sequences(
-                p,
-                (asdl_seq*)slash_with_default->plain_names,
-                (asdl_seq*)slash_with_default_names);
-        if (!posonlyargs) {
-            return NULL;
-        }
-    }
-    else {
-        posonlyargs = _Py_asdl_arg_seq_new(0, p->arena);
-        if (!posonlyargs) {
-            return NULL;
-        }
+    if (_make_posonlyargs(p, slash_without_default, slash_with_default, &posonlyargs) == -1) {
+        return NULL;
     }
 
     asdl_arg_seq *posargs;
-    if (plain_names != NULL && names_with_default != NULL) {
-        asdl_arg_seq *names_with_default_names = _get_names(p, names_with_default);
-        if (!names_with_default_names) {
-            return NULL;
-        }
-        posargs = (asdl_arg_seq*)_PyPegen_join_sequences(
-                p,
-                (asdl_seq*)plain_names,
-                (asdl_seq*)names_with_default_names);
-        if (!posargs) {
-            return NULL;
-        }
-    }
-    else if (plain_names == NULL && names_with_default != NULL) {
-        posargs = _get_names(p, names_with_default);
-        if (!posargs) {
-            return NULL;
-        }
-    }
-    else if (plain_names != NULL && names_with_default == NULL) {
-        posargs = plain_names;
-    }
-    else {
-        posargs = _Py_asdl_arg_seq_new(0, p->arena);
-        if (!posargs) {
-            return NULL;
-        }
+    if (_make_posargs(p, plain_names, names_with_default, &posargs) == -1) {
+        return NULL;
     }
 
     asdl_expr_seq *posdefaults;
-    if (slash_with_default != NULL && names_with_default != NULL) {
-        asdl_expr_seq *slash_with_default_values =
-            _get_defaults(p, slash_with_default->names_with_defaults);
-        if (!slash_with_default_values) {
-            return NULL;
-        }
-        asdl_expr_seq *names_with_default_values = _get_defaults(p, names_with_default);
-        if (!names_with_default_values) {
-            return NULL;
-        }
-        posdefaults = (asdl_expr_seq*)_PyPegen_join_sequences(
-                p,
-                (asdl_seq*)slash_with_default_values,
-                (asdl_seq*)names_with_default_values);
-        if (!posdefaults) {
-            return NULL;
-        }
-    }
-    else if (slash_with_default == NULL && names_with_default != NULL) {
-        posdefaults = _get_defaults(p, names_with_default);
-        if (!posdefaults) {
-            return NULL;
-        }
-    }
-    else if (slash_with_default != NULL && names_with_default == NULL) {
-        posdefaults = _get_defaults(p, slash_with_default->names_with_defaults);
-        if (!posdefaults) {
-            return NULL;
-        }
-    }
-    else {
-        posdefaults = _Py_asdl_expr_seq_new(0, p->arena);
-        if (!posdefaults) {
-            return NULL;
-        }
+    if (_make_posdefaults(p,slash_with_default, names_with_default, &posdefaults) == -1) {
+        return NULL;
     }
 
     arg_ty vararg = NULL;
@@ -1955,31 +2005,9 @@ _PyPegen_make_arguments(Parser *p, asdl_arg_seq *slash_without_default,
     }
 
     asdl_arg_seq *kwonlyargs;
-    if (star_etc != NULL && star_etc->kwonlyargs != NULL) {
-        kwonlyargs = _get_names(p, star_etc->kwonlyargs);
-        if (!kwonlyargs) {
-            return NULL;
-        }
-    }
-    else {
-        kwonlyargs = _Py_asdl_arg_seq_new(0, p->arena);
-        if (!kwonlyargs) {
-            return NULL;
-        }
-    }
-
     asdl_expr_seq *kwdefaults;
-    if (star_etc != NULL && star_etc->kwonlyargs != NULL) {
-        kwdefaults = _get_defaults(p, star_etc->kwonlyargs);
-        if (!kwdefaults) {
-            return NULL;
-        }
-    }
-    else {
-        kwdefaults = _Py_asdl_expr_seq_new(0, p->arena);
-        if (!kwdefaults) {
-            return NULL;
-        }
+    if (_make_kwargs(p, star_etc, &kwonlyargs, &kwdefaults) == -1) {
+        return NULL;
     }
 
     arg_ty kwarg = NULL;
@@ -1987,9 +2015,10 @@ _PyPegen_make_arguments(Parser *p, asdl_arg_seq *slash_without_default,
         kwarg = star_etc->kwarg;
     }
 
-    return _Py_arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg,
-                         posdefaults, p->arena);
+    return _PyAST_arguments(posonlyargs, posargs, vararg, kwonlyargs,
+                            kwdefaults, kwarg, posdefaults, p->arena);
 }
+
 
 /* Constructs an empty arguments_ty object, that gets used when a function accepts no
  * arguments. */
@@ -2017,8 +2046,8 @@ _PyPegen_empty_arguments(Parser *p)
         return NULL;
     }
 
-    return _Py_arguments(posonlyargs, posargs, NULL, kwonlyargs, kwdefaults, NULL, posdefaults,
-                         p->arena);
+    return _PyAST_arguments(posonlyargs, posargs, NULL, kwonlyargs,
+                            kwdefaults, NULL, posdefaults, p->arena);
 }
 
 /* Encapsulates the value of an operator_ty into an AugOperator struct */
@@ -2039,7 +2068,7 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
 {
     assert(function_def != NULL);
     if (function_def->kind == AsyncFunctionDef_kind) {
-        return _Py_AsyncFunctionDef(
+        return _PyAST_AsyncFunctionDef(
             function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
             function_def->v.FunctionDef.body, decorators, function_def->v.FunctionDef.returns,
             function_def->v.FunctionDef.type_comment, function_def->lineno,
@@ -2047,12 +2076,13 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
             p->arena);
     }
 
-    return _Py_FunctionDef(function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
-                           function_def->v.FunctionDef.body, decorators,
-                           function_def->v.FunctionDef.returns,
-                           function_def->v.FunctionDef.type_comment, function_def->lineno,
-                           function_def->col_offset, function_def->end_lineno,
-                           function_def->end_col_offset, p->arena);
+    return _PyAST_FunctionDef(
+        function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
+        function_def->v.FunctionDef.body, decorators,
+        function_def->v.FunctionDef.returns,
+        function_def->v.FunctionDef.type_comment, function_def->lineno,
+        function_def->col_offset, function_def->end_lineno,
+        function_def->end_col_offset, p->arena);
 }
 
 /* Construct a ClassDef equivalent to class_def, but with decorators */
@@ -2060,10 +2090,11 @@ stmt_ty
 _PyPegen_class_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty class_def)
 {
     assert(class_def != NULL);
-    return _Py_ClassDef(class_def->v.ClassDef.name, class_def->v.ClassDef.bases,
-                        class_def->v.ClassDef.keywords, class_def->v.ClassDef.body, decorators,
-                        class_def->lineno, class_def->col_offset, class_def->end_lineno,
-                        class_def->end_col_offset, p->arena);
+    return _PyAST_ClassDef(
+        class_def->v.ClassDef.name, class_def->v.ClassDef.bases,
+        class_def->v.ClassDef.keywords, class_def->v.ClassDef.body, decorators,
+        class_def->lineno, class_def->col_offset, class_def->end_lineno,
+        class_def->end_col_offset, p->arena);
 }
 
 /* Construct a KeywordOrStarred */
@@ -2214,8 +2245,9 @@ _PyPegen_concatenate_strings(Parser *p, asdl_seq *strings)
         if (_PyArena_AddPyObject(p->arena, bytes_str) < 0) {
             goto error;
         }
-        return Constant(bytes_str, NULL, first->lineno, first->col_offset, last->end_lineno,
-                        last->end_col_offset, p->arena);
+        return _PyAST_Constant(bytes_str, NULL, first->lineno,
+                               first->col_offset, last->end_lineno,
+                               last->end_col_offset, p->arena);
     }
 
     return _PyPegen_FstringParser_Finish(p, &state, first, last);
@@ -2244,14 +2276,15 @@ _PyPegen_make_module(Parser *p, asdl_stmt_seq *a) {
             if (tag == NULL) {
                 return NULL;
             }
-            type_ignore_ty ti = TypeIgnore(p->type_ignore_comments.items[i].lineno, tag, p->arena);
+            type_ignore_ty ti = _PyAST_TypeIgnore(p->type_ignore_comments.items[i].lineno,
+                                                  tag, p->arena);
             if (ti == NULL) {
                 return NULL;
             }
             asdl_seq_SET(type_ignores, i, ti);
         }
     }
-    return Module(a, type_ignores, p->arena);
+    return _PyAST_Module(a, type_ignores, p->arena);
 }
 
 // Error reporting helpers
@@ -2264,9 +2297,9 @@ _PyPegen_get_invalid_target(expr_ty e, TARGETS_TYPE targets_type)
     }
 
 #define VISIT_CONTAINER(CONTAINER, TYPE) do { \
-        Py_ssize_t len = asdl_seq_LEN(CONTAINER->v.TYPE.elts);\
+        Py_ssize_t len = asdl_seq_LEN((CONTAINER)->v.TYPE.elts);\
         for (Py_ssize_t i = 0; i < len; i++) {\
-            expr_ty other = asdl_seq_GET(CONTAINER->v.TYPE.elts, i);\
+            expr_ty other = asdl_seq_GET((CONTAINER)->v.TYPE.elts, i);\
             expr_ty child = _PyPegen_get_invalid_target(other, targets_type);\
             if (child != NULL) {\
                 return child;\
@@ -2361,7 +2394,7 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
     Py_ssize_t total_len = args_len;
 
     if (b == NULL) {
-        return _Py_Call(_PyPegen_dummy_name(p), a, NULL, lineno, col_offset,
+        return _PyAST_Call(_PyPegen_dummy_name(p), a, NULL, lineno, col_offset,
                         end_lineno, end_col_offset, arena);
 
     }
@@ -2383,6 +2416,6 @@ expr_ty _PyPegen_collect_call_seqs(Parser *p, asdl_expr_seq *a, asdl_seq *b,
         asdl_seq_SET(args, i, asdl_seq_GET(starreds, i - args_len));
     }
 
-    return _Py_Call(_PyPegen_dummy_name(p), args, keywords, lineno,
-                    col_offset, end_lineno, end_col_offset, arena);
+    return _PyAST_Call(_PyPegen_dummy_name(p), args, keywords, lineno,
+                       col_offset, end_lineno, end_col_offset, arena);
 }

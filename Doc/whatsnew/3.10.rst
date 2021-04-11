@@ -173,7 +173,7 @@ PEP 626: Precise line numbers for debugging and other tools
 PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
 Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
 
-The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+The ``f_lineno`` attribute of frame objects will always contain the expected line number.
 
 The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
 Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
@@ -550,9 +550,11 @@ which adds or removes parameters of another callable.  Examples of usage can
 be found in :class:`typing.Concatenate`.
 
 See :class:`typing.Callable`, :class:`typing.ParamSpec`,
-:class:`typing.Concatenate` and :pep:`612` for more details.
+:class:`typing.Concatenate`, :class:`typing.ParamSpecArgs`,
+:class:`typing.ParamSpecKwargs`, and :pep:`612` for more details.
 
-(Contributed by Ken Jin in :issue:`41559`.)
+(Contributed by Ken Jin in :issue:`41559`, with minor enhancements by Jelle
+Zijlstra in :issue:`43783`.  PEP written by Mark Mendoza.)
 
 
 PEP 613: TypeAlias Annotation
@@ -616,6 +618,13 @@ Other Language Changes
   to provide asynchronous counterparts to :func:`iter` and :func:`next`,
   respectively.
   (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
+
+* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
+  (:func:`@classmethod <classmethod>`) now inherit the method attributes
+  (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
+  ``__annotations__``) and have a new ``__wrapped__`` attribute.
+  Moreover, static methods are now callable as regular functions.
+  (Contributed by Victor Stinner in :issue:`43682`.)
 
 
 New Modules
@@ -1365,9 +1374,10 @@ New Features
   to simulate.
   (Contributed by Antoine Pitrou in :issue:`43356`.)
 
-* The limited C API is now supported if Python is built in debug mode (if the
-  ``Py_DEBUG`` macro is defined). In the limited C API, the :c:func:`Py_INCREF`
-  and :c:func:`Py_DECREF` functions are now implemented as opaque function
+* The limited C API is now supported if :ref:`Python is built in debug mode
+  <debug-build>` (if the ``Py_DEBUG`` macro is defined). In the limited C API,
+  the :c:func:`Py_INCREF` and :c:func:`Py_DECREF` functions are now implemented
+  as opaque function
   calls, rather than accessing directly the :c:member:`PyObject.ob_refcnt`
   member, if Python is built in debug mode and the ``Py_LIMITED_API`` macro
   targets Python 3.10 or newer. It became possible to support the limited C API
@@ -1377,6 +1387,13 @@ New Features
   The limited C API is still not supported in the ``--with-trace-refs`` special
   build (``Py_TRACE_REFS`` macro).
   (Contributed by Victor Stinner in :issue:`43688`.)
+
+* Add the :c:func:`Py_Is(x, y) <Py_Is>` function to test if the *x* object is
+  the *y* object, the same as ``x is y`` in Python. Add also the
+  :c:func:`Py_IsNone`, :c:func:`Py_IsTrue`, :c:func:`Py_IsFalse` functions to
+  test if an object is, respectively, the ``None`` singleton, the ``True``
+  singleton or the ``False`` singleton.
+  (Contributed by Victor Stinner in :issue:`43753`.)
 
 Porting to Python 3.10
 ----------------------

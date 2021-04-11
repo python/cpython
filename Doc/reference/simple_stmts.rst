@@ -591,10 +591,13 @@ instance, with its traceback set to its argument), like so::
            __context__ (exception attribute)
 
 The ``from`` clause is used for exception chaining: if given, the second
-*expression* must be another exception class or instance, which will then be
-attached to the raised exception as the :attr:`__cause__` attribute (which is
-writable).  If the raised exception is not handled, both exceptions will be
-printed::
+*expression* must be another exception class or instance. If the second
+expression is an exception instance, it will be attached to the raised
+exception as the :attr:`__cause__` attribute (which is writable). If the
+expression is an exception class, the class will be instantiated and the
+resulting exception instance will be attached to the raised exception as the
+:attr:`__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed::
 
    >>> try:
    ...     print(1 / 0)
@@ -874,14 +877,11 @@ can appear before a future statement are:
 * blank lines, and
 * other future statements.
 
-The only feature that requires using the future statement is
-``annotations`` (see :pep:`563`).
-
 All historical features enabled by the future statement are still recognized
 by Python 3.  The list includes ``absolute_import``, ``division``,
 ``generators``, ``generator_stop``, ``unicode_literals``,
-``print_function``, ``nested_scopes`` and ``with_statement``.  They are
-all redundant because they are always enabled, and only kept for
+``print_function``, ``nested_scopes``, ``with_statement`` and ``annotations``.
+They are all redundant because they are always enabled, and only kept for
 backwards compatibility.
 
 A future statement is recognized and treated specially at compile time: Changes

@@ -433,7 +433,8 @@ Miscellaneous options
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
-     interactive interpreter. This only works on debug builds.
+     interactive interpreter. This only works on :ref:`debug builds
+     <debug-build>`.
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
@@ -926,13 +927,11 @@ conflict.
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-Setting these variables only has an effect in a debug build of Python.
-
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.
 
-   Need Python configured with the ``--with-pydebug`` build option.
+   Need a :ref:`debug build of Python <debug-build>`.
 
 
 .. envvar:: PYTHONDUMPREFS
@@ -940,4 +939,4 @@ Setting these variables only has an effect in a debug build of Python.
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
 
-   Need Python configured with the ``--with-trace-refs`` build option.
+   Need Python configured with the :option:`--with-trace-refs` build option.

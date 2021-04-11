@@ -114,6 +114,8 @@ __all__ = [
     'no_type_check_decorator',
     'NoReturn',
     'overload',
+    'ParamSpecArgs',
+    'ParamSpecKwargs',
     'runtime_checkable',
     'Text',
     'TYPE_CHECKING',
@@ -646,8 +648,8 @@ class _TypeVarLike:
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
     def __repr__(self):
         if self.__covariant__:
@@ -727,6 +729,44 @@ class TypeVar( _Final, _Immutable, _TypeVarLike, _root=True):
             self.__module__ = def_mod
 
 
+class ParamSpecArgs(_Final, _Immutable, _root=True):
+    """The args for a ParamSpec object.
+
+    Given a ParamSpec object P, P.args is an instance of ParamSpecArgs.
+
+    ParamSpecArgs objects have a reference back to their ParamSpec:
+
+       P.args.__origin__ is P
+
+    This type is meant for runtime introspection and has no special meaning to
+    static type checkers.
+    """
+    def __init__(self, origin):
+        self.__origin__ = origin
+
+    def __repr__(self):
+        return f"{self.__origin__.__name__}.args"
+
+
+class ParamSpecKwargs(_Final, _Immutable, _root=True):
+    """The kwargs for a ParamSpec object.
+
+    Given a ParamSpec object P, P.kwargs is an instance of ParamSpecKwargs.
+
+    ParamSpecKwargs objects have a reference back to their ParamSpec:
+
+       P.kwargs.__origin__ is P
+
+    This type is meant for runtime introspection and has no special meaning to
+    static type checkers.
+    """
+    def __init__(self, origin):
+        self.__origin__ = origin
+
+    def __repr__(self):
+        return f"{self.__origin__.__name__}.kwargs"
+
+
 class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     """Parameter specification variable.
 
@@ -776,8 +816,13 @@ class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):
     __slots__ = ('__name__', '__bound__', '__covariant__', '__contravariant__',
                  '__dict__')
 
-    args = object()
-    kwargs = object()
+    @property
+    def args(self):
+        return ParamSpecArgs(self)
+
+    @property
+    def kwargs(self):
+        return ParamSpecKwargs(self)
 
     def __init__(self, name, *, bound=None, covariant=False, contravariant=False):
         self.__name__ = name
@@ -1662,10 +1707,12 @@ def get_origin(tp):
         get_origin(Generic[T]) is Generic
         get_origin(Union[T, int]) is Union
         get_origin(List[Tuple[T, T]][int]) == list
+        get_origin(P.args) is P
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
-    if isinstance(tp, (_BaseGenericAlias, GenericAlias)):
+    if isinstance(tp, (_BaseGenericAlias, GenericAlias,
+                       ParamSpecArgs, ParamSpecKwargs)):
         return tp.__origin__
     if tp is Generic:
         return Generic

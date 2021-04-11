@@ -1484,7 +1484,8 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_CONTEXTVAR
 
-   The default value is ``True``. If Python is compiled ``--without-decimal-contextvar``,
+   The default value is ``True``. If Python is :option:`configured with
+   --without-decimal-contextvar <--without-decimal-contextvar>`,
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 

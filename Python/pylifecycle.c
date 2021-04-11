@@ -2551,12 +2551,14 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     // memory cannot be allocated on the heap in a signal handler.
     // Iterate on the dict instead.
     PyObject *stdlib_module_names = NULL;
-    pos = 0;
-    while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
-        if (PyUnicode_Check(key)
-           && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
-            stdlib_module_names = value;
-            break;
+    if (interp->sysdict != NULL) {
+        pos = 0;
+        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+            if (PyUnicode_Check(key)
+               && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+                stdlib_module_names = value;
+                break;
+            }
         }
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,
