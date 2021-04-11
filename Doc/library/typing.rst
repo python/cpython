@@ -969,9 +969,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Using  ``-> TypeGuard`` tells the static type checker that for a given
    function:
-      1. The return value is a boolean.
-      2. If the return value is ``True``, the type of its argument
-         is the type inside ``TypeGuard``.
+
+   1. The return value is a boolean.
+   2. If the return value is ``True``, the type of its argument
+      is the type inside ``TypeGuard``.
 
       For example::
 
@@ -990,6 +991,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
    ``TypeA`` to ``TypeB``.
+
+.. note::
+   Type checkers and the Python runtime do not enforce strict narrowing.
+   ``TypeB``  need not be a narrower form of ``TypeA``
+   (it can even be a wider form) and this can lead to type-unsafe results.
+   Strict narrowing is unenforced to not burden the user with invariance rules
+   or type compatibility with other types.  This allows greater articulation of
+   the subtleties in type guards.  The responsibility of writing type-safe
+   type guards is left to the user.
 
    A type guard function should return a ``bool`` value.
 

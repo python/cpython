@@ -570,14 +570,14 @@ def Concatenate(self, parameters):
 @_SpecialForm
 def TypeGuard(self, parameters):
     """Special typing form used to annotate the return type of a user-defined
-   type guard function.  ``TypeGuard`` only accepts a single type argument.
-   At runtime, functions marked this way return a boolean.
+    type guard function.  ``TypeGuard`` only accepts a single type argument.
+    At runtime, functions marked this way return a boolean.
 
-   ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
-   type checkers to determine a more precise type of an expression within a
-   program's code flow.  Usually type narrowing is done by analyzing
-   conditional code flow and applying the narrowing to a block of code.  The
-   conditional expression here is sometimes referred to as a "type guard".
+    ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
+    type checkers to determine a more precise type of an expression within a
+    program's code flow.  Usually type narrowing is done by analyzing
+    conditional code flow and applying the narrowing to a block of code.  The
+    conditional expression here is sometimes referred to as a "type guard".
 
     Sometimes, a type guard uses a user-defined checking function instead of
     ``isinstance`` or ``is None`` checks.  These user-defined type guard
@@ -587,9 +587,10 @@ def TypeGuard(self, parameters):
 
     Using  ``-> TypeGuard`` tells the static type checker that for a given
     function:
-       1. The return value is a boolean.
-       2. If the return value is ``True``, the type of its argument
-          is the type inside ``TypeGuard``.
+
+    1. The return value is a boolean.
+    2. If the return value is ``True``, the type of its argument
+       is the type inside ``TypeGuard``.
 
        For example::
 
@@ -607,13 +608,14 @@ def TypeGuard(self, parameters):
 
     In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
     means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
-    ``TypeA`` to ``TypeB``.
+    ``TypeA`` to ``TypeB``.  Note that strict type narrowing is not enforced -
+    ``TypeB`` need not be a narrower form of ``TypeB``.  The responsibility of
+    writing type-safe type guards is left to the user.
 
     A type guard function should return a ``bool`` value.
 
     ``TypeGuard`` also works with type variables.  For more information, see
     PEP 647 (User-Defined Type Guards).
-
     """
     item = _type_check(parameters, f'{self} accepts only single type.')
     return _GenericAlias(self, (item,))
