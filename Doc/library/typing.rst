@@ -1003,7 +1003,11 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       type-unsafe results.  The main reason is to allow for things like
       narrowing ``List[object]`` to ``List[str]`` which would fail under strict
       narrowing as ``List`` is invariant.  The responsibility of
-      writing type-safe type guards is left to the user.
+      writing type-safe type guards is left to the user.  Furthermore, even if
+      the type guard function passes type checks, it may still fail at runtime.
+      The type guard function may perform erroneous checks and return wrong
+      booleans. Consequently, the type it promises in ``TypeGuard[TypeB]`` may
+      not hold.
 
    ``TypeGuard`` also works with type variables.  For more information, see
    :pep:`647` (User-Defined Type Guards).
