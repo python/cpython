@@ -938,22 +938,40 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Special typing form used to annotate the return type of a user-defined
    type guard function.  ``TypeGuard`` only accepts a single type argument.
+   At runtime, functions marked this way return a boolean.
 
    ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
    type checkers to determine a more precise type of an expression within a
    program's code flow.  Usually type narrowing is done by analyzing
    conditional code flow and applying the narrowing to a block of code.  The
-   conditional expression here is sometimes referred to as a "type guard".
+   conditional expression here is sometimes referred to as a "type guard"::
 
-   Sometimes, a type guard can be a complex checking function.
-   These type guard functions require ``TypeGuard`` to narrow their input types
-   as the static type checker usually does not have enough information to
-   statically infer them.
+      def func(val: Optional[Union[str, float]]):
+          # Non-"None" type guard
+          if val is not None:
+              # Type of val is narrowed to ``Union[str, float]``
+              # "isinstance" type guard
+              if isinstance(val, str):
+                  # Type of val is narrowed to ``str``
+                  ...
+              else:
+                  # Else, type of val is narrowed to ``float``.
+                  ...
+          else:
+              # Type of val remains Optional[Union[str, float]]
+              ...
 
-   A ``TypeGuard`` tells the static type checker that for a given function:
+   Sometimes, a type guard uses a user-defined checking function instead of
+   ``isinstance`` or ``is None`` checks.  These user-defined type guard
+   functions require ``TypeGuard`` to narrow their input types as the static
+   type checker usually does not have enough information to statically infer
+   them.
+
+   Using  ``-> TypeGuard`` tells the static type checker that for a given
+   function:
       1. The return value is a boolean.
-      2. If the return value was "truthy", the type of the input to the
-         function is specified by the type inside ``TypeGuard``.
+      2. If the return value is ``True``, the type of its argument
+         is the type inside ``TypeGuard``.
 
       For example::
 
@@ -970,11 +988,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
                  print("Not a list of strings!")
 
    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
-   Means that if ``foo(arg)`` returned true, then ``arg`` narrows from
+   means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
    ``TypeA`` to ``TypeB``.
 
-   Return statements within a type guard function should return ``bool``
-   values.
+   A type guard function should return a ``bool`` value.
 
    ``TypeGuard`` also works with type variables.  For more information, see
    :pep:`647` (User-Defined Type Guards).
