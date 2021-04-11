@@ -174,6 +174,10 @@ extern int _Py_CheckSlotResult(
     const char *slot_name,
     int success);
 
+// PyType_Ready() must be called if _PyType_IsReady() is false.
+// See also the Py_TPFLAGS_READY flag.
+#define _PyType_IsReady(type) ((type)->tp_dict != NULL)
+
 #ifdef __cplusplus
 }
 #endif

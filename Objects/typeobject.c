@@ -1815,7 +1815,7 @@ mro_implementation(PyTypeObject *type)
     PyObject **to_merge;
     Py_ssize_t i, n;
 
-    if (type->tp_dict == NULL) {
+    if (!_PyType_IsReady(type)) {
         if (PyType_Ready(type) < 0)
             return NULL;
     }
@@ -2084,7 +2084,7 @@ best_base(PyObject *bases)
             return NULL;
         }
         base_i = (PyTypeObject *)base_proto;
-        if (base_i->tp_dict == NULL) {
+        if (!_PyType_IsReady(base_i)) {
             if (PyType_Ready(base_i) < 0)
                 return NULL;
         }
@@ -2429,6 +2429,7 @@ typedef struct {
 } type_new_ctx;
 
 
+/* Check for valid slot names and two special cases */
 static int
 type_new_visit_slots(type_new_ctx *ctx)
 {
@@ -2464,6 +2465,10 @@ type_new_visit_slots(type_new_ctx *ctx)
 }
 
 
+/* Copy slots into a list, mangle names and sort them.
+   Sorted names are needed for __class__ assignment.
+   Convert them back to tuple at the end.
+*/
 static PyObject*
 type_new_copy_slots(type_new_ctx *ctx, PyObject *dict)
 {
@@ -2554,7 +2559,7 @@ type_new_slots_bases(type_new_ctx *ctx)
             if (ctx->may_add_dict && ctx->add_dict == 0 &&
                 type->tp_dictoffset != 0)
             {
-                (ctx->add_dict)++;
+                ctx->add_dict++;
             }
             if (ctx->may_add_weak && ctx->add_weak == 0 &&
                 type->tp_weaklistoffset != 0)
@@ -2585,15 +2590,10 @@ type_new_slots_impl(type_new_ctx *ctx, PyObject *dict)
         return -1;
     }
 
-    /* Check for valid slot names and two special cases */
     if (type_new_visit_slots(ctx) < 0) {
         return -1;
     }
 
-    /* Copy slots into a list, mangle names and sort them.
-       Sorted names are needed for __class__ assignment.
-       Convert them back to tuple at the end.
-    */
     PyObject *new_slots = type_new_copy_slots(ctx, dict);
     if (new_slots == NULL) {
         return -1;
@@ -2698,6 +2698,7 @@ type_new_set_name(const type_new_ctx *ctx, PyTypeObject *type)
 }
 
 
+/* Set __module__ in the dict */
 static int
 type_new_set_module(PyTypeObject *type)
 {
@@ -2729,6 +2730,8 @@ type_new_set_module(PyTypeObject *type)
 }
 
 
+/* Set ht_qualname to dict['__qualname__'] if available, else to
+   __name__.  The __qualname__ accessor will look for ht_qualname. */
 static int
 type_new_set_ht_name(PyTypeObject *type)
 {
@@ -2757,6 +2760,9 @@ type_new_set_ht_name(PyTypeObject *type)
 }
 
 
+/* Set tp_doc to a copy of dict['__doc__'], if the latter is there
+   and is a string.  The __doc__ accessor will first look for tp_doc;
+   if that fails, it will still look into __dict__. */
 static int
 type_new_set_doc(PyTypeObject *type)
 {
@@ -2847,6 +2853,7 @@ type_new_classmethod(PyTypeObject *type, _Py_Identifier *attr_id)
 }
 
 
+/* Add descriptors for custom slots from __slots__, or for __dict__ */
 static int
 type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
 {
@@ -2924,6 +2931,7 @@ type_new_set_slots(const type_new_ctx *ctx, PyTypeObject *type)
 }
 
 
+/* store type in class' cell if one is supplied */
 static int
 type_new_set_classcell(PyTypeObject *type)
 {
@@ -2959,20 +2967,14 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
 
-    /* Set __module__ in the dict */
     if (type_new_set_module(type) < 0) {
         return -1;
     }
 
-    /* Set ht_qualname to dict['__qualname__'] if available, else to
-       __name__.  The __qualname__ accessor will look for ht_qualname. */
     if (type_new_set_ht_name(type) < 0) {
         return -1;
     }
 
-    /* Set tp_doc to a copy of dict['__doc__'], if the latter is there
-       and is a string.  The __doc__ accessor will first look for tp_doc;
-       if that fails, it will still look into __dict__. */
     if (type_new_set_doc(type) < 0) {
         return -1;
     }
@@ -2992,14 +2994,12 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
 
-    /* Add descriptors for custom slots from __slots__, or for __dict__ */
     if (type_new_descriptors(ctx, type) < 0) {
         return -1;
     }
 
     type_new_set_slots(ctx, type);
 
-    /* store type in class' cell if one is supplied */
     if (type_new_set_classcell(type) < 0) {
         return -1;
     }
@@ -3784,7 +3784,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
     }
 
     /* Initialize this type (we'll assume the metatype is initialized) */
-    if (type->tp_dict == NULL) {
+    if (!_PyType_IsReady(type)) {
         if (PyType_Ready(type) < 0)
             return NULL;
     }
@@ -5817,20 +5817,10 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
 static int add_operators(PyTypeObject *);
 
-int
-PyType_Ready(PyTypeObject *type)
+
+static int
+type_ready_checks(PyTypeObject *type)
 {
-    PyObject *dict, *bases;
-    PyTypeObject *base;
-    Py_ssize_t i, n;
-
-    if (type->tp_flags & Py_TPFLAGS_READY) {
-        assert(_PyType_CheckConsistency(type));
-        return 0;
-    }
-    _PyObject_ASSERT((PyObject *)type,
-                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
-
     /* Consistency checks for PEP 590:
      * - Py_TPFLAGS_METHOD_DESCRIPTOR requires tp_descr_get
      * - Py_TPFLAGS_HAVE_VECTORCALL requires tp_call and
@@ -5844,6 +5834,7 @@ PyType_Ready(PyTypeObject *type)
         _PyObject_ASSERT((PyObject *)type, type->tp_vectorcall_offset > 0);
         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
     }
+
     /* Consistency check for Py_TPFLAGS_HAVE_AM_SEND - flag requires
      * type->tp_as_async->am_send to be present.
      */
@@ -5852,25 +5843,20 @@ PyType_Ready(PyTypeObject *type)
         _PyObject_ASSERT((PyObject *)type, type->tp_as_async->am_send != NULL);
     }
 
-    type->tp_flags |= Py_TPFLAGS_READYING;
-
-#ifdef Py_TRACE_REFS
-    /* PyType_Ready is the closest thing we have to a choke point
-     * for type objects, so is the best place I can think of to try
-     * to get type objects into the doubly-linked list of all objects.
-     * Still, not all type objects go through PyType_Ready.
-     */
-    _Py_AddToAllObjects((PyObject *)type, 0);
-#endif
-
     if (type->tp_name == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "Type does not define the tp_name field.");
-        goto error;
+        return -1;
     }
+    return 0;
+}
 
+
+static int
+type_ready_set_base(PyTypeObject *type)
+{
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
-    base = type->tp_base;
+    PyTypeObject *base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
         base = &PyBaseObject_Type;
         if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
@@ -5882,13 +5868,13 @@ PyType_Ready(PyTypeObject *type)
     }
 
     /* Now the only way base can still be NULL is if type is
-     * &PyBaseObject_Type.
-     */
+     * &PyBaseObject_Type. */
 
     /* Initialize the base class */
-    if (base != NULL && base->tp_dict == NULL) {
-        if (PyType_Ready(base) < 0)
-            goto error;
+    if (base != NULL && !_PyType_IsReady(base)) {
+        if (PyType_Ready(base) < 0) {
+            return -1;
+        }
     }
 
     /* Initialize ob_type if NULL.      This means extensions that want to be
@@ -5901,83 +5887,115 @@ PyType_Ready(PyTypeObject *type)
     if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
+    return 0;
+}
 
+
+static int
+type_ready_add_attrs(PyTypeObject *type)
+{
     /* Initialize tp_bases */
-    bases = type->tp_bases;
+    PyObject *bases = type->tp_bases;
     if (bases == NULL) {
-        if (base == NULL)
+        PyTypeObject *base = type->tp_base;
+        if (base == NULL) {
             bases = PyTuple_New(0);
-        else
+        }
+        else {
             bases = PyTuple_Pack(1, base);
-        if (bases == NULL)
-            goto error;
+        }
+        if (bases == NULL) {
+            return -1;
+        }
         type->tp_bases = bases;
     }
 
     /* Initialize tp_dict */
-    dict = type->tp_dict;
+    PyObject *dict = type->tp_dict;
     if (dict == NULL) {
         dict = PyDict_New();
-        if (dict == NULL)
-            goto error;
+        if (dict == NULL) {
+            return -1;
+        }
         type->tp_dict = dict;
     }
 
     /* Add type-specific descriptors to tp_dict */
-    if (add_operators(type) < 0)
-        goto error;
+    if (add_operators(type) < 0) {
+        return -1;
+    }
     if (type->tp_methods != NULL) {
-        if (add_methods(type, type->tp_methods) < 0)
-            goto error;
-    }
-    if (type->tp_members != NULL) {
-        if (add_members(type, type->tp_members) < 0)
-            goto error;
-    }
-    if (type->tp_getset != NULL) {
-        if (add_getset(type, type->tp_getset) < 0)
-            goto error;
-    }
-
-    /* Calculate method resolution order */
-    if (mro_internal(type, NULL) < 0)
-        goto error;
-
-    /* Inherit special flags from dominant base */
-    if (type->tp_base != NULL)
-        inherit_special(type, type->tp_base);
-
-    /* Initialize tp_dict properly */
-    bases = type->tp_mro;
-    assert(bases != NULL);
-    assert(PyTuple_Check(bases));
-    n = PyTuple_GET_SIZE(bases);
-    for (i = 1; i < n; i++) {
-        PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (PyType_Check(b)) {
-            if (inherit_slots(type, (PyTypeObject *)b) < 0) {
-                goto error;
-            }
+        if (add_methods(type, type->tp_methods) < 0) {
+            return -1;
         }
     }
+    if (type->tp_members != NULL) {
+        if (add_members(type, type->tp_members) < 0) {
+            return -1;
+        }
+    }
+    if (type->tp_getset != NULL) {
+        if (add_getset(type, type->tp_getset) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+static int
+type_ready_mro(PyTypeObject *type)
+{
+    /* Calculate method resolution order */
+    if (mro_internal(type, NULL) < 0) {
+        return -1;
+    }
+    assert(type->tp_mro != NULL);
+    assert(PyTuple_Check(type->tp_mro));
 
     /* All bases of statically allocated type should be statically allocated */
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
-        for (i = 0; i < n; i++) {
-            PyObject *b = PyTuple_GET_ITEM(bases, i);
-            if (PyType_Check(b) &&
-                (((PyTypeObject *)b)->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyObject *mro = type->tp_mro;
+        Py_ssize_t n = PyTuple_GET_SIZE(mro);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyTypeObject *base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
+            if (PyType_Check(base) && (base->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
                 PyErr_Format(PyExc_TypeError,
                              "type '%.100s' is not dynamically allocated but "
                              "its base type '%.100s' is dynamically allocated",
-                             type->tp_name, ((PyTypeObject *)b)->tp_name);
-                goto error;
+                             type->tp_name, base->tp_name);
+                return -1;
             }
         }
+    }
+    return 0;
+}
+
+
+static int
+type_ready_inherit(PyTypeObject *type)
+{
+    /* Inherit special flags from dominant base */
+    if (type->tp_base != NULL) {
+        inherit_special(type, type->tp_base);
+    }
+
+    /* Initialize tp_dict properly */
+    PyObject *mro = type->tp_mro;
+    Py_ssize_t n = PyTuple_GET_SIZE(type->tp_mro);
+    for (Py_ssize_t i = 1; i < n; i++) {
+        PyObject *b = PyTuple_GET_ITEM(mro, i);
+        if (PyType_Check(b)) {
+            if (inherit_slots(type, (PyTypeObject *)b) < 0) {
+                return -1;
+            }
+        }
+    }
 
     /* Sanity check for tp_free. */
     if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
-        (type->tp_free == NULL || type->tp_free == PyObject_Del)) {
+        (type->tp_free == NULL || type->tp_free == PyObject_Del))
+    {
         /* This base class needs to call tp_free, but doesn't have
          * one, or its tp_free is for non-gc'ed objects.
          */
@@ -5985,88 +6003,186 @@ PyType_Ready(PyTypeObject *type)
                      "gc and is a base type but has inappropriate "
                      "tp_free slot",
                      type->tp_name);
-        goto error;
+        return -1;
     }
+    return 0;
+}
 
-    /* if the type dictionary doesn't contain a __doc__, set it from
-       the tp_doc slot.
-     */
+
+/* If the type dictionary doesn't contain a __doc__, set it from
+   the tp_doc slot. */
+static int
+type_ready_set_doc(PyTypeObject *type)
+{
     int r = _PyDict_ContainsId(type->tp_dict, &PyId___doc__);
     if (r < 0) {
-        goto error;
+        return -1;
     }
-    if (r == 0) {
-        if (type->tp_doc != NULL) {
-            const char *old_doc = _PyType_DocWithoutSignature(type->tp_name,
-                type->tp_doc);
-            PyObject *doc = PyUnicode_FromString(old_doc);
-            if (doc == NULL)
-                goto error;
-            if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc) < 0) {
-                Py_DECREF(doc);
-                goto error;
-            }
+    if (r > 0) {
+        return 0;
+    }
+
+    if (type->tp_doc != NULL) {
+        const char *doc_str;
+        doc_str = _PyType_DocWithoutSignature(type->tp_name, type->tp_doc);
+        PyObject *doc = PyUnicode_FromString(doc_str);
+        if (doc == NULL) {
+            return -1;
+        }
+
+        if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc) < 0) {
             Py_DECREF(doc);
-        } else {
-            if (_PyDict_SetItemId(type->tp_dict,
-                                  &PyId___doc__, Py_None) < 0)
-                goto error;
+            return -1;
+        }
+        Py_DECREF(doc);
+    }
+    else {
+        if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, Py_None) < 0) {
+            return -1;
         }
     }
+    return 0;
+}
 
-    /* Hack for tp_hash and __hash__.
-       If after all that, tp_hash is still NULL, and __hash__ is not in
-       tp_dict, set tp_hash to PyObject_HashNotImplemented and
-       tp_dict['__hash__'] equal to None.
-       This signals that __hash__ is not inherited.
-     */
-    if (type->tp_hash == NULL) {
-        r = _PyDict_ContainsId(type->tp_dict, &PyId___hash__);
-        if (r < 0) {
-            goto error;
-        }
-        if (r == 0) {
-            if (_PyDict_SetItemId(type->tp_dict, &PyId___hash__, Py_None) < 0) {
-                goto error;
-            }
-            type->tp_hash = PyObject_HashNotImplemented;
-        }
+
+/* Hack for tp_hash and __hash__.
+   If after all that, tp_hash is still NULL, and __hash__ is not in
+   tp_dict, set tp_hash to PyObject_HashNotImplemented and
+   tp_dict['__hash__'] equal to None.
+   This signals that __hash__ is not inherited. */
+static int
+type_ready_set_hash(PyTypeObject *type)
+{
+    if (type->tp_hash != NULL) {
+        return 0;
     }
 
-    /* Some more special stuff */
-    base = type->tp_base;
-    if (base != NULL) {
-        if (type->tp_as_async == NULL)
-            type->tp_as_async = base->tp_as_async;
-        if (type->tp_as_number == NULL)
-            type->tp_as_number = base->tp_as_number;
-        if (type->tp_as_sequence == NULL)
-            type->tp_as_sequence = base->tp_as_sequence;
-        if (type->tp_as_mapping == NULL)
-            type->tp_as_mapping = base->tp_as_mapping;
-        if (type->tp_as_buffer == NULL)
-            type->tp_as_buffer = base->tp_as_buffer;
+    int r = _PyDict_ContainsId(type->tp_dict, &PyId___hash__);
+    if (r < 0) {
+        return -1;
+    }
+    if (r > 0) {
+        return 0;
     }
 
-    /* Link into each base class's list of subclasses */
-    bases = type->tp_bases;
-    n = PyTuple_GET_SIZE(bases);
-    for (i = 0; i < n; i++) {
+    if (_PyDict_SetItemId(type->tp_dict, &PyId___hash__, Py_None) < 0) {
+        return -1;
+    }
+    type->tp_hash = PyObject_HashNotImplemented;
+    return 0;
+}
+
+
+/* Some more special stuff */
+static void
+type_ready_inherit_special(PyTypeObject *type)
+{
+    PyTypeObject *base = type->tp_base;
+    if (base == NULL) {
+        return;
+    }
+
+    if (type->tp_as_async == NULL) {
+        type->tp_as_async = base->tp_as_async;
+    }
+    if (type->tp_as_number == NULL) {
+        type->tp_as_number = base->tp_as_number;
+    }
+    if (type->tp_as_sequence == NULL) {
+        type->tp_as_sequence = base->tp_as_sequence;
+    }
+    if (type->tp_as_mapping == NULL) {
+        type->tp_as_mapping = base->tp_as_mapping;
+    }
+    if (type->tp_as_buffer == NULL) {
+        type->tp_as_buffer = base->tp_as_buffer;
+    }
+}
+
+
+/* Link into each base class's list of subclasses */
+static int
+type_ready_add_subclasses(PyTypeObject *type)
+{
+    PyObject *bases = type->tp_bases;
+    Py_ssize_t nbase = PyTuple_GET_SIZE(bases);
+    for (Py_ssize_t i = 0; i < nbase; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
-        if (PyType_Check(b) &&
-            add_subclass((PyTypeObject *)b, type) < 0)
-            goto error;
+        if (PyType_Check(b) && add_subclass((PyTypeObject *)b, type) < 0) {
+            return -1;
+        }
     }
+    return 0;
+}
+
+
+static int
+type_ready(PyTypeObject *type)
+{
+    if (type_ready_checks(type) < 0) {
+        return -1;
+    }
+
+#ifdef Py_TRACE_REFS
+    /* PyType_Ready is the closest thing we have to a choke point
+     * for type objects, so is the best place I can think of to try
+     * to get type objects into the doubly-linked list of all objects.
+     * Still, not all type objects go through PyType_Ready.
+     */
+    _Py_AddToAllObjects((PyObject *)type, 0);
+#endif
+
+    if (type_ready_set_base(type) < 0) {
+        return -1;
+    }
+    if (type_ready_add_attrs(type) < 0) {
+        return -1;
+    }
+    if (type_ready_mro(type) < 0) {
+        return -1;
+    }
+    if (type_ready_inherit(type) < 0) {
+        return -1;
+    }
+    if (type_ready_set_doc(type) < 0) {
+        return -1;
+    }
+    if (type_ready_set_hash(type) < 0) {
+        return -1;
+    }
+
+    type_ready_inherit_special(type);
+
+    if (type_ready_add_subclasses(type) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+PyType_Ready(PyTypeObject *type)
+{
+    if (type->tp_flags & Py_TPFLAGS_READY) {
+        assert(_PyType_CheckConsistency(type));
+        return 0;
+    }
+    _PyObject_ASSERT((PyObject *)type,
+                     (type->tp_flags & Py_TPFLAGS_READYING) == 0);
+
+    type->tp_flags |= Py_TPFLAGS_READYING;
+
+    if (type_ready(type) < 0) {
+        type->tp_flags &= ~Py_TPFLAGS_READYING;
+        return -1;
+    }
+
     /* All done -- set the ready flag */
-    type->tp_flags =
-        (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
+    type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
     assert(_PyType_CheckConsistency(type));
     return 0;
-
-  error:
-    type->tp_flags &= ~Py_TPFLAGS_READYING;
-    return -1;
 }
+
 
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
