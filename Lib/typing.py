@@ -577,7 +577,7 @@ def TypeGuard(self, parameters):
    type checkers to determine a more precise type of an expression within a
    program's code flow.  Usually type narrowing is done by analyzing
    conditional code flow and applying the narrowing to a block of code.  The
-   conditional expression here is sometimes referred to as a "type guard"::
+   conditional expression here is sometimes referred to as a "type guard".
 
     Sometimes, a type guard uses a user-defined checking function instead of
     ``isinstance`` or ``is None`` checks.  These user-defined type guard
