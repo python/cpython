@@ -186,6 +186,9 @@ Threading-like synchronization primitives that can be used in Tasks.
     * - :class:`BoundedSemaphore`
       - A bounded semaphore.
 
+    * - :class:`Barrier`
+      - A barrier object.
+
 
 .. rubric:: Examples
 

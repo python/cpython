@@ -28,6 +28,7 @@ asyncio has the following basic synchronization primitives:
 * :class:`Condition`
 * :class:`Semaphore`
 * :class:`BoundedSemaphore`
+* :class:`Barrier`
 
 
 ---------
@@ -324,6 +325,22 @@ BoundedSemaphore
    Bounded Semaphore is a version of :class:`Semaphore` that raises
    a :exc:`ValueError` in :meth:`~Semaphore.release` if it
    increases the internal counter above the initial *value*.
+
+
+Barrier
+=======
+
+.. class:: Barrier(parties, action=None)
+
+   A barrier object.  Not thread-safe.
+
+   Create a barrier object for *parties* number of tasks.  An *action*, when
+   provided, is a callable to be called by one of the tasks when they are
+   released.
+
+   A barrier object: a clone of :class:`threading.Barrier`.
+
+   .. versionadded:: 3.10
 
 ---------
 
