@@ -25,7 +25,7 @@ from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
 from typing import TypeAlias
-from typing import ParamSpec, Concatenate
+from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 import abc
 import typing
 import weakref
@@ -3004,6 +3004,7 @@ class GetTypeHintTests(BaseTestCase):
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
         T = TypeVar('T')
+        P = ParamSpec('P')
         class C(Generic[T]): pass
         self.assertIs(get_origin(C[int]), C)
         self.assertIs(get_origin(C[T]), C)
@@ -3022,6 +3023,8 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(list[int]), list)
         self.assertIs(get_origin(list), None)
         self.assertIs(get_origin(list | str), types.Union)
+        self.assertIs(get_origin(P.args), P)
+        self.assertIs(get_origin(P.kwargs), P)
 
     def test_get_args(self):
         T = TypeVar('T')
@@ -4265,11 +4268,16 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(C4.__args__, (P, T))
         self.assertEqual(C4.__parameters__, (P, T))
 
-        # ParamSpec instances should also have args and kwargs attributes.
+    def test_args_kwargs(self):
+        P = ParamSpec('P')
         self.assertIn('args', dir(P))
         self.assertIn('kwargs', dir(P))
-        P.args
-        P.kwargs
+        self.assertIsInstance(P.args, ParamSpecArgs)
+        self.assertIsInstance(P.kwargs, ParamSpecKwargs)
+        self.assertIs(P.args.__origin__, P)
+        self.assertIs(P.kwargs.__origin__, P)
+        self.assertEqual(repr(P.args), "P.args")
+        self.assertEqual(repr(P.kwargs), "P.kwargs")
 
     def test_user_generics(self):
         T = TypeVar("T")
