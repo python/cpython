@@ -185,6 +185,8 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(Union[X, int].__args__, (X, int))
         self.assertEqual(Union[X, int].__parameters__, (X,))
         self.assertIs(Union[X, int].__origin__, Union)
+        self.assertEqual(X | "x", Union[X, "x"])
+        self.assertEqual("x" | X, Union["x", X])
 
     def test_union_constrained(self):
         A = TypeVar('A', str, bytes)
