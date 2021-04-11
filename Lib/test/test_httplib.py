@@ -666,7 +666,7 @@ class BasicTest(TestCase):
             NETWORK_AUTHENTICATION_REQUIRED = (511,
                 'Network Authentication Required',
                 'The client needs to authenticate to gain network access')
-        enum.test_simple_enum(CheckedHTTPStatus, HTTPStatus)
+        enum._test_simple_enum(CheckedHTTPStatus, HTTPStatus)
 
 
     def test_status_lines(self):

@@ -10,7 +10,6 @@ __all__ = [
         'property',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_enum',
-        'simple_enum', 'test_simple_enum',
         ]
 
 
@@ -392,7 +391,7 @@ class EnumType(type):
                     )
         return enum_dict
 
-    def __new__(metacls, cls, bases, classdict, boundary=None, _simple=False, **kwds):
+    def __new__(metacls, cls, bases, classdict, *, boundary=None, _simple=False, **kwds):
         # an Enum class is final once enumeration items have been defined; it
         # cannot be mixed with other types (int, float, etc.) if it has an
         # inherited __new__ unless a new __new__ is defined (or the resulting
@@ -753,40 +752,8 @@ class EnumType(type):
 
         return metacls.__new__(metacls, class_name, bases, classdict, boundary=boundary)
 
-    def _convert_(cls, name, module, filter, source=None, boundary=None):
-        """
-        Create a new Enum subclass that replaces a collection of global constants
-        """
-        # convert all constants from source (or module) that pass filter() to
-        # a new Enum called name, and export the enum and its members back to
-        # module;
-        # also, replace the __reduce_ex__ method so unpickling works in
-        # previous Python versions
-        module_globals = sys.modules[module].__dict__
-        if source:
-            source = source.__dict__
-        else:
-            source = module_globals
-        # _value2member_map_ is populated in the same order every time
-        # for a consistent reverse mapping of number to name when there
-        # are multiple names for the same number.
-        members = [
-                (name, value)
-                for name, value in source.items()
-                if filter(name)]
-        try:
-            # sort by value
-            members.sort(key=lambda t: (t[1], t[0]))
-        except TypeError:
-            # unless some values aren't comparable, in which case sort by name
-            members.sort(key=lambda t: t[0])
-        cls = cls(name, members, module=module, boundary=boundary or KEEP)
-        cls.__reduce_ex__ = _reduce_ex_by_name
-        global_enum(cls)
-        module_globals[name] = cls
-        return cls
+    def _convert_(cls, name, module, filter, source=None, *, boundary=None):
 
-    def _convert_new_(cls, name, module, filter, source=None, boundary=None):
         """
         Create a new Enum subclass that replaces a collection of global constants
         """
@@ -816,8 +783,8 @@ class EnumType(type):
         body = {t[0]: t[1] for t in members}
         body['__module__'] = module
         tmp_cls = type(name, (object, ), body)
-        cls = simple_enum(etype=cls, boundary=boundary)(tmp_cls)
-        # cls = cls(name, members, module=module, boundary=boundary or KEEP)
+        cls = _simple_enum(etype=cls, boundary=boundary or KEEP)(tmp_cls)
+        cls.__reduce_ex__ = _reduce_ex_by_name
         global_enum(cls)
         module_globals[name] = cls
         return cls
@@ -1228,7 +1195,7 @@ class Flag(Enum, boundary=STRICT):
             pseudo_member = object.__new__(cls)
         else:
             pseudo_member = (__new__ or cls._member_type_.__new__)(cls, value)
-        if not hasattr(pseudo_member, 'value'):
+        if not hasattr(pseudo_member, '_value_'):
             pseudo_member._value_ = value
         if member_value:
             pseudo_member._name_ = '|'.join([
@@ -1423,9 +1390,21 @@ def global_enum(cls):
     sys.modules[cls.__module__].__dict__.update(cls.__members__)
     return cls
 
-def simple_enum(etype=Enum, *, boundary=None, use_args=None):
+def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
     """
-    Directly converts a class into an Enum, bypassing all safety checks, etc.
+    Class decorator that converts a normal class into an :class:`Enum`.  No
+    safety checks are done, and some advanced behavior (such as
+    :func:`__init_subclass__`) is not available.  Enum creation can be faster
+    using :func:`simple_enum`.
+
+        >>> from enum import Enum, _simple_enum
+        >>> @_simple_enum(Enum)
+        ... class Color:
+        ...     RED = auto()
+        ...     GREEN = auto()
+        ...     BLUE = auto()
+        >>> Color
+        <enum 'Color'>
     """
     def convert_class(cls):
         nonlocal use_args
@@ -1479,12 +1458,10 @@ def simple_enum(etype=Enum, *, boundary=None, use_args=None):
         gnv_last_values = []
         if issubclass(enum_class, Flag):
             # Flag / IntFlag
-            flag_mask = 0
-            order = 0
+            single_bits = multi_bits = 0
             for name, value in attrs.items():
                 if isinstance(value, auto) and auto.value is _auto_null:
-                    value = gnv(name, 1, order, gnv_last_values)
-                flag_mask |= value
+                    value = gnv(name, 1, len(member_names), gnv_last_values)
                 if value in value2member_map:
                     # an alias to an existing member
                     redirect = property()
@@ -1505,30 +1482,31 @@ def simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member._name_ = name
                     member.__objclass__ = enum_class
                     member.__init__(value)
-                    member._sort_order_ = order
                     redirect = property()
                     redirect.__set_name__(enum_class, name)
                     setattr(enum_class, name, redirect)
                     member_map[name] = member
+                    member._sort_order_ = len(member_names)
                     value2member_map[value] = member
                     if _is_single_bit(value):
-                        # not a multi-bit alias, record in _member_names_
+                        # not a multi-bit alias, record in _member_names_ and _flag_mask_
                         member_names.append(name)
-                    order += 1
+                        single_bits |= value
+                    else:
+                        multi_bits |= value
                     gnv_last_values.append(value)
-            enum_class._flag_mask_ = flag_mask
-            enum_class._all_bits_ = 2 ** ((flag_mask).bit_length()) - 1
+            enum_class._flag_mask_ = single_bits
+            enum_class._all_bits_ = 2 ** ((single_bits|multi_bits).bit_length()) - 1
             # set correct __iter__
             member_list = [m._value_ for m in enum_class]
             if member_list != sorted(member_list):
                 enum_class._iter_member_ = enum_class._iter_member_by_def_
         else:
             # Enum / IntEnum / StrEnum
-            order = 0
             for name, value in attrs.items():
                 if isinstance(value, auto):
                     if value.value is _auto_null:
-                        value.value = gnv(name, 1, order, gnv_last_values)
+                        value.value = gnv(name, 1, len(member_names), gnv_last_values)
                     value = value.value
                 if value in value2member_map:
                     # an alias to an existing member
@@ -1550,14 +1528,13 @@ def simple_enum(etype=Enum, *, boundary=None, use_args=None):
                     member._name_ = name
                     member.__objclass__ = enum_class
                     member.__init__(value)
-                    member._sort_order_ = order
+                    member._sort_order_ = len(member_names)
                     redirect = property()
                     redirect.__set_name__(enum_class, name)
                     setattr(enum_class, name, redirect)
                     member_map[name] = member
                     value2member_map[value] = member
                     member_names.append(name)
-                    order += 1
                     gnv_last_values.append(value)
         if '__new__' in body:
             enum_class.__new_member__ = enum_class.__new__
@@ -1565,9 +1542,24 @@ def simple_enum(etype=Enum, *, boundary=None, use_args=None):
         return enum_class
     return convert_class
 
-def test_simple_enum(checked_enum, simple_enum):
+def _test_simple_enum(checked_enum, simple_enum):
     """
-    Compare a simple enum with the equivalent fully-checked enum.
+    A function that can be used to test an enum created with :func:`_simple_enum`
+    against the version created by subclassing :class:`Enum`::
+
+        >>> from enum import Enum, _simple_enum, _test_simple_enum
+        >>> @_simple_enum(Enum)
+        ... class Color:
+        ...     RED = auto()
+        ...     GREEN = auto()
+        ...     BLUE = auto()
+        >>> class CheckedColor(Enum):
+        ...     RED = auto()
+        ...     GREEN = auto()
+        ...     BLUE = auto()
+        >>> _test_simple_enum(CheckedColor, Color)
+
+    If differences are found, a :exc:`TypeError` is raised.
     """
     failed = []
     if checked_enum.__dict__ != simple_enum.__dict__:
@@ -1670,3 +1662,36 @@ def test_simple_enum(checked_enum, simple_enum):
                 pass
     if failed:
         raise TypeError('enum mismatch:\n   %s' % '\n   '.join(failed))
+
+def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
+    """
+    Create a new Enum subclass that replaces a collection of global constants
+    """
+    # convert all constants from source (or module) that pass filter() to
+    # a new Enum called name, and export the enum and its members back to
+    # module;
+    # also, replace the __reduce_ex__ method so unpickling works in
+    # previous Python versions
+    module_globals = sys.modules[module].__dict__
+    if source:
+        source = source.__dict__
+    else:
+        source = module_globals
+    # _value2member_map_ is populated in the same order every time
+    # for a consistent reverse mapping of number to name when there
+    # are multiple names for the same number.
+    members = [
+            (name, value)
+            for name, value in source.items()
+            if filter(name)]
+    try:
+        # sort by value
+        members.sort(key=lambda t: (t[1], t[0]))
+    except TypeError:
+        # unless some values aren't comparable, in which case sort by name
+        members.sort(key=lambda t: t[0])
+    cls = etype(name, members, module=module, boundary=boundary or KEEP)
+    cls.__reduce_ex__ = _reduce_ex_by_name
+    cls.__repr__ = global_enum_repr
+    return cls
+
