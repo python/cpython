@@ -940,7 +940,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    type guard function.  ``TypeGuard`` only accepts a single type argument.
    At runtime, functions marked this way should return a boolean.
 
-   ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
+   ``TypeGuard`` aims to benefit *type narrowing* -- a technique used by static
    type checkers to determine a more precise type of an expression within a
    program's code flow.  Usually type narrowing is done by analyzing
    conditional code flow and applying the narrowing to a block of code.  The
@@ -998,7 +998,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       writing type-safe type guards is left to the user.  Even if
       the type guard function passes type checks, it may still fail at runtime.
       The type guard function may perform erroneous checks and return wrong
-      booleans. Consequently, the type it promises in ``TypeGuard[TypeB]`` may
+      booleans.  Consequently, the type it promises in ``TypeGuard[TypeB]`` may
       not hold.
 
    ``TypeGuard`` also works with type variables.  For more information, see

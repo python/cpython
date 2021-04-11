@@ -575,7 +575,7 @@ def TypeGuard(self, parameters):
     type guard function.  ``TypeGuard`` only accepts a single type argument.
     At runtime, functions marked this way should return a boolean.
 
-    ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
+    ``TypeGuard`` aims to benefit *type narrowing* -- a technique used by static
     type checkers to determine a more precise type of an expression within a
     program's code flow.  Usually type narrowing is done by analyzing
     conditional code flow and applying the narrowing to a block of code.  The
@@ -603,7 +603,7 @@ def TypeGuard(self, parameters):
                   # Else, type of ``val`` is narrowed to ``float``.
                   ...
 
-    Strict type narrowing is not enforced - ``TypeB`` need not be a narrower
+    Strict type narrowing is not enforced -- ``TypeB`` need not be a narrower
     form of ``TypeA`` (it can even be a wider form) and this may lead to
     type-unsafe results.  The main reason is to allow for things like
     narrowing ``List[object]`` to ``List[str]`` even though the latter is not
