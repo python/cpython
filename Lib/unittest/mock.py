@@ -56,13 +56,6 @@ def _is_async_obj(obj):
     return iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
-def _is_async_func(func):
-    if getattr(func, '__code__', None):
-        return iscoroutinefunction(func)
-    else:
-        return False
-
-
 def _is_instance_mock(obj):
     # can't use isinstance on Mock objects because they override __class__
     # The base class for all mocks is NonCallableMock
@@ -2647,7 +2640,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if _is_instance_mock(spec):
         raise InvalidSpecError(f'Cannot autospec a Mock object. '
                                f'[object={spec!r}]')
-    is_async_func = _is_async_func(spec)
+    is_async = _is_async_obj(spec)
     _kwargs = {'spec': spec}
     if spec_set:
         _kwargs = {'spec_set': spec}
@@ -2666,15 +2659,18 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # descriptors don't have a spec
         # because we don't know what type they return
         _kwargs = {}
-    elif is_async_func:
-        if instance:
+    elif is_async:
+        if instance and isinstance(spec, FunctionTypes):
             raise RuntimeError("Instance can not be True when create_autospec "
                                "is mocking an async function")
         Klass = AsyncMock
     elif not _callable(spec):
         Klass = NonCallableMagicMock
-    elif is_type and instance and not _instance_callable(spec):
-        Klass = NonCallableMagicMock
+    elif is_type and instance:
+        if _is_async_obj(spec.__new__(spec)):
+            Klass = AsyncMock
+        elif not _instance_callable(spec):
+            Klass = NonCallableMagicMock
 
     _name = _kwargs.pop('name', _name)
 
@@ -2690,10 +2686,11 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # should only happen at the top level because we don't
         # recurse for functions
         mock = _set_signature(mock, spec)
-        if is_async_func:
-            _setup_async_mock(mock)
     else:
         _check_signature(spec, mock, is_type, instance)
+
+    if is_async:
+        _setup_async_mock(mock)
 
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
