@@ -745,7 +745,7 @@ class ParamSpecArgs(_Final, _Immutable, _root=True):
         self.__origin__ = origin
 
     def __repr__(self):
-        return f"{self.__origin__!r}.args"
+        return f"{self.__origin__.__name__}.args"
 
 
 class ParamSpecKwargs(_Final, _Immutable, _root=True):
@@ -764,7 +764,7 @@ class ParamSpecKwargs(_Final, _Immutable, _root=True):
         self.__origin__ = origin
 
     def __repr__(self):
-        return f"{self.__origin__!r}.kwargs"
+        return f"{self.__origin__.__name__}.kwargs"
 
 
 class ParamSpec(_Final, _Immutable, _TypeVarLike, _root=True):

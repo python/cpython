@@ -4276,12 +4276,8 @@ class ParamSpecTests(BaseTestCase):
         self.assertIsInstance(P.kwargs, ParamSpecKwargs)
         self.assertIs(P.args.__origin__, P)
         self.assertIs(P.kwargs.__origin__, P)
-        self.assertEqual(repr(P.args), "~P.args")
-        self.assertEqual(repr(P.kwargs), "~P.kwargs")
-
-        P_co = ParamSpec("P_co", covariant=True)
-        self.assertEqual(repr(P_co.args), "+P_co.args")
-        self.assertEqual(repr(P_co.kwargs), "+P_co.kwargs")
+        self.assertEqual(repr(P.args), "P.args")
+        self.assertEqual(repr(P.kwargs), "P.kwargs")
 
     def test_user_generics(self):
         T = TypeVar("T")

@@ -1092,8 +1092,8 @@ These are not used in annotations. They are building blocks for creating generic
    original ``ParamSpec``::
 
       P = ParamSpec("P")
-      assert get_origin(P.args) is P
-      assert get_origin(P.kwargs) is P
+      get_origin(P.args)  # returns P
+      get_origin(P.kwargs)  # returns P
 
    .. versionadded:: 3.10
 
