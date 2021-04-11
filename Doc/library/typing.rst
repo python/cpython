@@ -1058,7 +1058,7 @@ These are not used in annotations. They are building blocks for creating generic
       components.  ``P.args`` represents the tuple of positional parameters in a
       given call and should only be used to annotate ``*args``.  ``P.kwargs``
       represents the mapping of keyword parameters to their values in a given call,
-      and should be only be used to annotate ``**kwargs`` or ``**kwds``.  Both
+      and should be only be used to annotate ``**kwargs``.  Both
       attributes require the annotated parameter to be in scope. At runtime,
       ``P.args`` and ``P.kwargs`` are instances respectively of
       :class:`ParamSpecArgs` and :class:`ParamSpecKwargs`.
