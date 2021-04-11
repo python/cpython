@@ -1,5 +1,6 @@
-Improve ``bz2.BZ2File`` performance. Remove `RLock` from `BZ2File`. It makes
-`BZ2File` to thread unsafe, but gzip and lzma don't use it too. Add
-``BZ2File.__iter__()`` method which delegate to internal buffer's
-``__iter__`` method. It is much faster than calling ``BZ2File.readline()``
-for each lines. Patch by Inada Naoki.
+Improve ``bz2.BZ2File`` performance by removing the `RLock` from `BZ2File`.
+This makes `BZ2File` thread unsafe in the face of multiple simultaneous
+readers or writers, just like the equivalent classes in :mod:`gzip` and
+:mod:`lzma` have always been.  Adds a ``BZ2File.__iter__()`` method to
+delegate to the internal buffer's ``__iter__`` method.  It is much faster
+than calling ``BZ2File.readline()`` for each lines.  Patch by Inada Naoki.
