@@ -938,7 +938,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    Special typing form used to annotate the return type of a user-defined
    type guard function.  ``TypeGuard`` only accepts a single type argument.
-   At runtime, functions marked this way return a boolean.
+   At runtime, functions marked this way should return a boolean.
 
    ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
    type checkers to determine a more precise type of an expression within a
@@ -992,16 +992,15 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
    ``TypeA`` to ``TypeB``.
 
-.. note::
-   Type checkers and the Python runtime do not enforce strict narrowing.
-   ``TypeB``  need not be a narrower form of ``TypeA``
-   (it can even be a wider form) and this can lead to type-unsafe results.
-   Strict narrowing is unenforced to not burden the user with invariance rules
-   or type compatibility with other types.  This allows greater articulation of
-   the subtleties in type guards.  The responsibility of writing type-safe
-   type guards is left to the user.
+   .. note::
 
-   A type guard function should return a ``bool`` value.
+      Strict type narrowing is not enforced - ``TypeB`` need not be a narrower
+      form of ``TypeA`` (it can even be a wider form) and this may lead to
+      type-unsafe results.
+      The intent is to not burden the user with invariance rules
+      and type compatibility with other types.  This allows for greater
+      expression of the subtleties in type guards.  The responsibility of
+      writing type-safe type guards is left to the user.
 
    ``TypeGuard`` also works with type variables.  For more information, see
    :pep:`647` (User-Defined Type Guards).

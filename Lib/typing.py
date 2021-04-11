@@ -571,7 +571,7 @@ def Concatenate(self, parameters):
 def TypeGuard(self, parameters):
     """Special typing form used to annotate the return type of a user-defined
     type guard function.  ``TypeGuard`` only accepts a single type argument.
-    At runtime, functions marked this way return a boolean.
+    At runtime, functions marked this way should return a boolean.
 
     ``TypeGuard`` aims to benefit *type narrowing* - a technique used by static
     type checkers to determine a more precise type of an expression within a
@@ -609,10 +609,8 @@ def TypeGuard(self, parameters):
     In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
     means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
     ``TypeA`` to ``TypeB``.  Note that strict type narrowing is not enforced -
-    ``TypeB`` need not be a narrower form of ``TypeB``.  The responsibility of
+    ``TypeB`` need not be a narrower form of ``TypeA``.  The responsibility of
     writing type-safe type guards is left to the user.
-
-    A type guard function should return a ``bool`` value.
 
     ``TypeGuard`` also works with type variables.  For more information, see
     PEP 647 (User-Defined Type Guards).
