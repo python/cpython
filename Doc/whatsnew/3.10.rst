@@ -586,7 +586,8 @@ type guard functions and improve information provided to static type checkers
 during type narrowing.  For more information, please see :data:`TypeGuard`\ 's
 documentation, and :pep:`647`.
 
-(Contributed by Ken Jin in :issue:`43766`. PEP written by Eric Traut.)
+(Contributed by Ken Jin and Guido van Rossum in :issue:`43766`.
+PEP written by Eric Traut.)
 
 Other Language Changes
 ======================

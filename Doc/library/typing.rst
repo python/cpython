@@ -946,26 +946,18 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    conditional code flow and applying the narrowing to a block of code.  The
    conditional expression here is sometimes referred to as a "type guard"::
 
-      def func(val: Optional[Union[str, float]]):
-          # Non-"None" type guard
-          if val is not None:
-              # Type of val is narrowed to ``Union[str, float]``
-              # "isinstance" type guard
-              if isinstance(val, str):
-                  # Type of val is narrowed to ``str``
-                  ...
-              else:
-                  # Else, type of val is narrowed to ``float``.
-                  ...
+      def is_str(val: Union[str, float]):
+          # "isinstance" type guard
+          if isinstance(val, str):
+              # Type of ``val`` is narrowed to ``str``
+              ...
           else:
-              # Type of val remains Optional[Union[str, float]]
+              # Else, type of ``val`` is narrowed to ``float``.
               ...
 
-   Sometimes, a type guard uses a user-defined checking function instead of
-   ``isinstance`` or ``is None`` checks.  These user-defined type guard
-   functions require ``TypeGuard`` to narrow their input types as the static
-   type checker usually does not have enough information to statically infer
-   them.
+   Sometimes it would be convenient to use a user-defined boolean function
+   as a type guard.  Such a function should use ``TypeGuard[...]`` as its
+   return type to alert static type checkers to this intention.
 
    Using  ``-> TypeGuard`` tells the static type checker that for a given
    function:
@@ -998,12 +990,12 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. note::
 
-      Strict type narrowing is not enforced - ``TypeB`` need not be a narrower
-      form of ``TypeA`` (it can even be a wider form) and this may lead to
-      type-unsafe results.  The main reason is to allow for things like
-      narrowing ``List[object]`` to ``List[str]`` which would fail under strict
-      narrowing as ``List`` is invariant.  The responsibility of
-      writing type-safe type guards is left to the user.  Furthermore, even if
+      ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
+      wider form. The main reason is to allow for things like
+      narrowing ``List[object]`` to ``List[str]`` even though the latter
+      is not a subtype of the former, since ``List`` is invariant.
+      The responsibility of
+      writing type-safe type guards is left to the user.  Even if
       the type guard function passes type checks, it may still fail at runtime.
       The type guard function may perform erroneous checks and return wrong
       booleans. Consequently, the type it promises in ``TypeGuard[TypeB]`` may
