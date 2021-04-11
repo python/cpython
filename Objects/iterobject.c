@@ -356,10 +356,12 @@ anextawaitable_iternext(anextawaitableobject *obj)
         if (Py_TYPE(awaitable)->tp_iternext == NULL) {
             PyErr_SetString(PyExc_TypeError,
                             "__await__ returned a non-iterable");
+            Py_DECREF(awaitable);
             return NULL;
         }
     }
     PyObject *result = (*Py_TYPE(awaitable)->tp_iternext)(awaitable);
+    Py_DECREF(awaitable);
     if (result != NULL) {
         return result;
     }
