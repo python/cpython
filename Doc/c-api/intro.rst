@@ -742,9 +742,10 @@ allocator, or low-level profiling of the main interpreter loop.  Only the most
 frequently-used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
-what is generally meant by "a debug build" of Python. :c:macro:`Py_DEBUG` is
-enabled in the Unix build by adding ``--with-pydebug`` to the
-:file:`./configure` command.  It is also implied by the presence of the
+what is generally meant by :ref:`a debug build of Python <debug-build>`.
+:c:macro:`Py_DEBUG` is enabled in the Unix build by adding
+:option:`--with-pydebug` to the :file:`./configure` command.
+It is also implied by the presence of the
 not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
@@ -778,7 +779,7 @@ Defining :c:macro:`Py_TRACE_REFS` enables reference tracing.  When defined, a
 circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon
 exit, all existing references are printed.  (In interactive mode this happens
-after every statement run by the interpreter.)  Implied by :c:macro:`Py_DEBUG`.
+after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.

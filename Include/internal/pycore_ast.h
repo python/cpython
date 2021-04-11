@@ -543,6 +543,10 @@ struct _keyword {
 struct _alias {
     identifier name;
     identifier asname;
+    int lineno;
+    int col_offset;
+    int end_lineno;
+    int end_col_offset;
 };
 
 struct _withitem {
@@ -751,7 +755,9 @@ arg_ty _PyAST_arg(identifier arg, expr_ty annotation, string type_comment, int
 keyword_ty _PyAST_keyword(identifier arg, expr_ty value, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);
-alias_ty _PyAST_alias(identifier name, identifier asname, PyArena *arena);
+alias_ty _PyAST_alias(identifier name, identifier asname, int lineno, int
+                      col_offset, int end_lineno, int end_col_offset, PyArena
+                      *arena);
 withitem_ty _PyAST_withitem(expr_ty context_expr, expr_ty optional_vars,
                             PyArena *arena);
 match_case_ty _PyAST_match_case(expr_ty pattern, expr_ty guard, asdl_stmt_seq *

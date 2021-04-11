@@ -250,8 +250,8 @@ always available.
    Print low-level information to stderr about the state of CPython's memory
    allocator.
 
-   If Python is configured --with-pydebug, it also performs some expensive
-   internal consistency checks.
+   If Python is :option:`configured --with-pydebug <--with-pydebug>`, it also
+   performs some expensive internal consistency checks.
 
    .. versionadded:: 3.3
 

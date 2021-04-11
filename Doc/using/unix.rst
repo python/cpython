@@ -78,9 +78,9 @@ The build process consists of the usual commands::
    make
    make install
 
-Configuration options and caveats for specific Unix platforms are extensively
-documented in the :source:`README.rst` file in the root of the Python source
-tree.
+:ref:`Configuration options <configure-options>` and caveats for specific Unix
+platforms are extensively documented in the :source:`README.rst` file in the
+root of the Python source tree.
 
 .. warning::
 

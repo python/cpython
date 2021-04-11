@@ -1581,13 +1581,15 @@ expression support in the :mod:`re` module).
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
+   *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -2710,7 +2712,7 @@ arbitrary binary data.
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
 
    .. note::
 
@@ -2722,7 +2724,8 @@ arbitrary binary data.
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])

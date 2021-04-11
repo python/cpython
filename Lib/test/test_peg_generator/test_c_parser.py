@@ -314,7 +314,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
                             )
         simple_name[expr_ty]: NAME
         import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
-        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _PyAST_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
+        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _PyAST_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, EXTRA) }
         """
         test_source = """
         for stmt in ("from a import b as c", "from . import a as b"):
