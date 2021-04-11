@@ -1,0 +1,2 @@
+It is now possible to build from source with Apple Silicon support (on macOS
+11 and above).
