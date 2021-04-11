@@ -623,6 +623,7 @@ Other Language Changes
   (:func:`@classmethod <classmethod>`) now inherit the method attributes
   (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
   ``__annotations__``) and have a new ``__wrapped__`` attribute.
+  Moreover, static methods are now callable as regular functions.
   (Contributed by Victor Stinner in :issue:`43682`.)
 
 

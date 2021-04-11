@@ -91,14 +91,18 @@ class TestDecorators(unittest.TestCase):
                           getattr(func, attr))
 
         self.assertEqual(repr(wrapper), format_str.format(func))
-
-        self.assertRaises(TypeError, wrapper, 1)
+        return wrapper
 
     def test_staticmethod(self):
-        self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
+        wrapper = self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
+
+        # bpo-43682: Static methods are callable since Python 3.10
+        self.assertEqual(wrapper(1), 1)
 
     def test_classmethod(self):
-        self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
+        wrapper = self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
 
     def test_dotted(self):
         decorators = MiscDecorators()

@@ -1040,6 +1040,13 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+static PyObject*
+sm_call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    staticmethod *sm = (staticmethod *)callable;
+    return PyObject_Call(sm->sm_callable, args, kwargs);
+}
+
 static PyMemberDef sm_memberlist[] = {
     {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
     {"__wrapped__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
@@ -1107,7 +1114,7 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    0,                                          /* tp_call */
+    sm_call,                                    /* tp_call */
     0,                                          /* tp_str */
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */

@@ -1132,9 +1132,8 @@ Internal types
       around any other object, usually a user-defined method object. When a static
       method object is retrieved from a class or a class instance, the object actually
       returned is the wrapped object, which is not subject to any further
-      transformation. Static method objects are not themselves callable, although the
-      objects they wrap usually are. Static method objects are created by the built-in
-      :func:`staticmethod` constructor.
+      transformation. Static method objects are also callable. Static method
+      objects are created by the built-in :func:`staticmethod` constructor.
 
    Class method objects
       A class method object, like a static method object, is a wrapper around another
