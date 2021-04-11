@@ -8,7 +8,7 @@ import unittest
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
-from enum import STRICT, CONFORM, EJECT, KEEP, simple_enum, test_simple_enum
+from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -2479,10 +2479,13 @@ class TestFlag(unittest.TestCase):
             d = 6
         #
         self.assertRaisesRegex(ValueError, 'invalid value: 7', Iron, 7)
+        #
         self.assertIs(Water(7), Water.ONE|Water.TWO)
         self.assertIs(Water(~9), Water.TWO)
+        #
         self.assertEqual(Space(7), 7)
         self.assertTrue(type(Space(7)) is int)
+        #
         self.assertEqual(list(Bizarre), [Bizarre.c])
         self.assertIs(Bizarre(3), Bizarre.b)
         self.assertIs(Bizarre(6), Bizarre.d)
@@ -3021,16 +3024,20 @@ class TestIntFlag(unittest.TestCase):
             EIGHT = 8
         self.assertIs(Space._boundary_, EJECT)
         #
+        #
         class Bizarre(IntFlag, boundary=KEEP):
             b = 3
             c = 4
             d = 6
         #
         self.assertRaisesRegex(ValueError, 'invalid value: 5', Iron, 5)
+        #
         self.assertIs(Water(7), Water.ONE|Water.TWO)
         self.assertIs(Water(~9), Water.TWO)
+        #
         self.assertEqual(Space(7), 7)
         self.assertTrue(type(Space(7)) is int)
+        #
         self.assertEqual(list(Bizarre), [Bizarre.c])
         self.assertIs(Bizarre(3), Bizarre.b)
         self.assertIs(Bizarre(6), Bizarre.d)
@@ -3521,7 +3528,7 @@ class TestStdLib(unittest.TestCase):
             self.fail("result does not equal expected, see print above")
 
     def test_test_simple_enum(self):
-        @simple_enum(Enum)
+        @_simple_enum(Enum)
         class SimpleColor:
             RED = 1
             GREEN = 2
@@ -3530,12 +3537,30 @@ class TestStdLib(unittest.TestCase):
             RED = 1
             GREEN = 2
             BLUE = 3
-        self.assertTrue(test_simple_enum(CheckedColor, SimpleColor) is None)
+        self.assertTrue(_test_simple_enum(CheckedColor, SimpleColor) is None)
         SimpleColor.GREEN._value_ = 9
         self.assertRaisesRegex(
                 TypeError, "enum mismatch",
-                test_simple_enum, CheckedColor, SimpleColor,
+                _test_simple_enum, CheckedColor, SimpleColor,
                 )
+        class CheckedMissing(IntFlag, boundary=KEEP):
+            SIXTY_FOUR = 64
+            ONE_TWENTY_EIGHT = 128
+            TWENTY_FORTY_EIGHT = 2048
+            ALL = 2048 + 128 + 64 + 12
+        CM = CheckedMissing
+        self.assertEqual(list(CheckedMissing), [CM.SIXTY_FOUR, CM.ONE_TWENTY_EIGHT, CM.TWENTY_FORTY_EIGHT])
+        #
+        @_simple_enum(IntFlag, boundary=KEEP)
+        class Missing:
+            SIXTY_FOUR = 64
+            ONE_TWENTY_EIGHT = 128
+            TWENTY_FORTY_EIGHT = 2048
+            ALL = 2048 + 128 + 64 + 12
+        M = Missing
+        self.assertEqual(list(CheckedMissing), [M.SIXTY_FOUR, M.ONE_TWENTY_EIGHT, M.TWENTY_FORTY_EIGHT])
+        #
+        _test_simple_enum(CheckedMissing, Missing)
         
 
 class MiscTestCase(unittest.TestCase):
@@ -3551,6 +3576,13 @@ CONVERT_TEST_NAME_B = 5
 CONVERT_TEST_NAME_A = 5  # This one should sort first.
 CONVERT_TEST_NAME_E = 5
 CONVERT_TEST_NAME_F = 5
+
+CONVERT_STRING_TEST_NAME_D = 5
+CONVERT_STRING_TEST_NAME_C = 5
+CONVERT_STRING_TEST_NAME_B = 5
+CONVERT_STRING_TEST_NAME_A = 5  # This one should sort first.
+CONVERT_STRING_TEST_NAME_E = 5
+CONVERT_STRING_TEST_NAME_F = 5
 
 class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
@@ -3599,14 +3631,16 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
+        # reset global constants, as previous tests could have converted the 
+        # integer values to enums
         module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
                 module,
-                filter=lambda x: x.startswith('CONVERT_TEST_'))
-        self.assertEqual(repr(test_type.CONVERT_TEST_NAME_A), '%s.CONVERT_TEST_NAME_A' % module)
-        self.assertEqual(str(test_type.CONVERT_TEST_NAME_A), 'CONVERT_TEST_NAME_A')
-        self.assertEqual(format(test_type.CONVERT_TEST_NAME_A), '5')
+                filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
+        self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % module)
+        self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
+        self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
 
 # global names for StrEnum._convert_ test
 CONVERT_STR_TEST_2 = 'goodbye'
