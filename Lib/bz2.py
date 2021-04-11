@@ -52,8 +52,6 @@ class BZ2File(_compression.BaseStream):
         If mode is 'r', the input file may be the concatenation of
         multiple compressed streams.
         """
-        # This lock must be recursive, so that BufferedIOBase's
-        # writelines() does not deadlock.
         self._fp = None
         self._closefp = False
         self._mode = _MODE_CLOSED
