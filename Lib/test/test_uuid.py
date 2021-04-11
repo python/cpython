@@ -37,7 +37,7 @@ class BaseTestUUID:
             safe = 0
             unsafe = -1
             unknown = None
-        enum.test_simple_enum(CheckedSafeUUID, py_uuid.SafeUUID)
+        enum._test_simple_enum(CheckedSafeUUID, py_uuid.SafeUUID)
 
     def test_UUID(self):
         equal = self.assertEqual

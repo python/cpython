@@ -1118,10 +1118,23 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
         with warnings_helper.check_warnings():
             ctx.options = (ctx.options & ~ssl.OP_NO_TLSv1)
+        # <<<<<<< HEAD  FIXME
         self.assertEqual(default, ctx.options)
         ctx.options = 0
         # Ubuntu has OP_NO_SSLv3 forced on by default
         self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
+        # =======
+            self.assertEqual(
+                    default, ctx.options,
+                    'Failed comparison:\n   ssl.OP_ALL: %50s %s\n      default: %50s %s\n  ctx.options: %50s %s' % (enum.bin(ssl.OP_ALL), ssl.OP_ALL, enum.bin(default), default, enum.bin(ctx.options), ctx.options),
+                    )
+            ctx.options = 0
+            # Ubuntu has OP_NO_SSLv3 forced on by default
+            self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
+        else:
+            with self.assertRaises(ValueError):
+                ctx.options = 0
+        # >>>>>>> changes:
 
     def test_verify_mode_protocol(self):
         with warnings_helper.check_warnings():
@@ -4710,7 +4723,7 @@ class TestEnumerations(unittest.TestCase):
             TLSv1_2 = _ssl.PROTO_TLSv1_2
             TLSv1_3 = _ssl.PROTO_TLSv1_3
             MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
-        enum.test_simple_enum(CheckedTLSVersion, TLSVersion)
+        enum._test_simple_enum(CheckedTLSVersion, TLSVersion)
 
     def test_tlscontenttype(self):
         class Checked_TLSContentType(enum.IntEnum):
@@ -4725,7 +4738,7 @@ class TestEnumerations(unittest.TestCase):
             # pseudo content types
             HEADER = 0x100
             INNER_CONTENT_TYPE = 0x101
-        enum.test_simple_enum(Checked_TLSContentType, _TLSContentType)
+        enum._test_simple_enum(Checked_TLSContentType, _TLSContentType)
 
     def test_tlsalerttype(self):
         class Checked_TLSAlertType(enum.IntEnum):
@@ -4767,7 +4780,7 @@ class TestEnumerations(unittest.TestCase):
             UNKNOWN_PSK_IDENTITY = 115
             CERTIFICATE_REQUIRED = 116
             NO_APPLICATION_PROTOCOL = 120
-        enum.test_simple_enum(Checked_TLSAlertType, _TLSAlertType)
+        enum._test_simple_enum(Checked_TLSAlertType, _TLSAlertType)
 
     def test_tlsmessagetype(self):
         class Checked_TLSMessageType(enum.IntEnum):
@@ -4797,8 +4810,56 @@ class TestEnumerations(unittest.TestCase):
             NEXT_PROTO = 67
             MESSAGE_HASH = 254
             CHANGE_CIPHER_SPEC = 0x0101
-        enum.test_simple_enum(Checked_TLSMessageType, _TLSMessageType)
+        enum._test_simple_enum(Checked_TLSMessageType, _TLSMessageType)
 
+    def test_sslmethod(self):
+        Checked_SSLMethod = enum._old_convert_(
+                enum.IntEnum, '_SSLMethod', 'ssl',
+                lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+                source=ssl._ssl,
+                )
+        enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
+
+    def test_options(self):
+        CheckedOptions = enum._old_convert_(
+                enum.FlagEnum, 'Options', 'ssl',
+                lambda name: name.startswith('OP_'),
+                source=ssl._ssl,
+                )
+        enum._test_simple_enum(CheckedOptions, ssl.Options)
+
+
+    def test_alertdescription(self):
+        CheckedAlertDescription = enum._old_convert_(
+                enum.IntEnum, 'AlertDescription', 'ssl',
+                lambda name: name.startswith('ALERT_DESCRIPTION_'),
+                source=ssl._ssl,
+                )
+        enum._test_simple_enum(CheckedAlertDescription, ssl.AlertDescription)
+
+    def test_sslerrornumber(self):
+        Checked_SSLMethod = enum._old_convert_(
+                enum.IntEnum, '_SSLMethod', 'ssl',
+                lambda name: name.startswith('PROTOCOL_') and name != 'PROTOCOL_SSLv23',
+                source=ssl._ssl,
+                )
+        enum._test_simple_enum(Checked_SSLMethod, ssl._SSLMethod)
+
+    def test_verifyflags(self):
+        CheckedVerifyFlags = enum._old_convert_(
+                enum.FlagEnum, 'VerifyFlags', 'ssl',
+                lambda name: name.startswith('VERIFY_'),
+                source=ssl._ssl,
+                )
+        enum._test_simple_enum(CheckedVerifyFlags, ssl.VerifyFlags)
+
+    def test_verifymode(self):
+        CheckedVerifyMode = enum._old_convert_(
+                enum.IntEnum, 'VerifyMode', 'ssl',
+                lambda name: name.startswith('CERT_'),
+                source=ssl._ssl,
+                )
+        enum._test_simple_enum(CheckedVerifyMode, ssl.VerifyMode)
 
 def test_main(verbose=False):
     if support.verbose:

@@ -3,7 +3,7 @@ import unittest
 from test import support
 from io import StringIO
 from pstats import SortKey
-from enum import StrEnum, test_simple_enum
+from enum import StrEnum, _test_simple_enum
 
 import pstats
 import cProfile
@@ -86,7 +86,7 @@ class StatsTestCase(unittest.TestCase):
                     cls._value2member_map_[other_value] = obj
                 obj._all_values = values
                 return obj
-        test_simple_enum(CheckedSortKey, SortKey)
+        _test_simple_enum(CheckedSortKey, SortKey)
 
     def test_sort_starts_mix(self):
         self.assertRaises(TypeError, self.stats.sort_stats,

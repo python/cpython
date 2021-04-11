@@ -117,19 +117,6 @@ Module Contents
 
       Enum class decorator that ensures only one name is bound to any one value.
 
-   :func:`simple_enum`
-
-      Class decorator that converts a normal class into an :class:`Enum`.  No
-      safety checks are done, and some advanced behavior (such as
-      :func:`__init_subclass__`) is not available.  Enum creation can be faster
-      using :func:`simple_enum`.
-
-   :func:`test_simple_enum`
-
-      Function that can be used to test an enum created with 
-      :func:`simple_enum` with the corresponding :class:`Enum`-subclassed
-      version.
-
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.10  ``StrEnum``
@@ -634,30 +621,3 @@ Utilites and Decorators
       Traceback (most recent call last):
       ...
       ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE
-
-.. decorator:: simple_enum
-
-   A :keyword:`class` decorator that converts a normal class into an enum::
-
-      >>> from enum import Enum, simple_enum
-      >>> @simple_enum(Enum):
-      ... class Color:
-      ...     RED = auto()
-      ...     GREEN = auto()
-      ...     BLUE = auto()
-      >>> Color
-      <enum 'Color'>
-
-.. function:: test_simple_enum
-
-   A function that can be used to test an enum created with :func:`simple_enum`
-   against the version created by subclassing :class:`Enum`::
-
-      >>> from enum import Enum, test_simple_enum
-      >>> class CheckedColor(Enum):
-      ...     RED = auto()
-      ...     GREEN = auto()
-      ...     BLUE = auto()
-      >>> test_simple_enum(CheckedColor, Color)
-
-   If differences are found, a :exc:`TypeError` is raised.

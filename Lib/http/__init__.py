@@ -1,9 +1,9 @@
-from enum import IntEnum, simple_enum
+from enum import IntEnum, _simple_enum
 
 __all__ = ['HTTPStatus']
 
 
-@simple_enum(IntEnum)
+@_simple_enum(IntEnum)
 class HTTPStatus:
     """HTTP status codes and reason phrases
 

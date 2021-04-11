@@ -726,7 +726,7 @@ class AST_Tests(unittest.TestCase):
                     return self.__class__(self + 1)
                 except ValueError:
                     return self
-        enum.test_simple_enum(_Precedence, ast._Precedence)
+        enum._test_simple_enum(_Precedence, ast._Precedence)
 
 
 class ASTHelpers_Test(unittest.TestCase):

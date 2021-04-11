@@ -303,7 +303,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             Activate = '36'
             Deactivate = '37'
             MouseWheel = '38'
-        enum.test_simple_enum(CheckedEventType, tkinter.EventType)
+        enum._test_simple_enum(CheckedEventType, tkinter.EventType)
 
     def test_getboolean(self):
         for v in 'true', 'yes', 'on', '1', 't', 'y', 1, True:
