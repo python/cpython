@@ -648,8 +648,8 @@ class _TypeVarLike:
     def __or__(self, right):
         return Union[self, right]
 
-    def __ror__(self, right):
-        return Union[self, right]
+    def __ror__(self, left):
+        return Union[left, self]
 
     def __repr__(self):
         if self.__covariant__:
