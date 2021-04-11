@@ -2,8 +2,9 @@
 
 import argparse
 import glob
-import re
+import os.path
 import pathlib
+import re
 import subprocess
 import sys
 import sysconfig
@@ -21,12 +22,8 @@ EXCLUDED_HEADERS = {
     "genobject.h",
     "longintrepr.h",
     "parsetok.h",
-    "pyarena.h",
     "pyatomic.h",
-    "pyctype.h",
-    "pydebug.h",
     "pytime.h",
-    "symtable.h",
     "token.h",
     "ucnhash.h",
 }
@@ -94,11 +91,6 @@ https://www.python.org/dev/peps/pep-0384/
 
 
 def generate_limited_api_symbols(args):
-    if hasattr(sys, "gettotalrefcount"):
-        print(
-            "Stable ABI symbols cannot be generated from a debug build", file=sys.stderr
-        )
-        sys.exit(1)
     library = sysconfig.get_config_var("LIBRARY")
     ldlibrary = sysconfig.get_config_var("LDLIBRARY")
     if ldlibrary != library:
@@ -115,11 +107,10 @@ def generate_limited_api_symbols(args):
     stable_data, stable_exported_data, stable_functions = get_limited_api_definitions(
         headers
     )
-    macros = get_limited_api_macros(headers)
 
     stable_symbols = {
         symbol
-        for symbol in (stable_functions | stable_exported_data | stable_data | macros)
+        for symbol in (stable_functions | stable_exported_data | stable_data)
         if symbol.startswith("Py") and symbol in available_symbols
     }
     with open(args.output_file, "w") as output_file:
@@ -129,36 +120,6 @@ def generate_limited_api_symbols(args):
         )
         for symbol in sorted(stable_symbols):
             output_file.write(f"{symbol}\n")
-
-
-def get_limited_api_macros(headers):
-    """Run the preprocesor over all the header files in "Include" setting
-    "-DPy_LIMITED_API" to the correct value for the running version of the interpreter
-    and extracting all macro definitions (via adding -dM to the compiler arguments).
-    """
-
-    preprocesor_output_with_macros = subprocess.check_output(
-        sysconfig.get_config_var("CC").split()
-        + [
-            # Prevent the expansion of the exported macros so we can capture them later
-            "-DSIZEOF_WCHAR_T=4",  # The actual value is not important
-            f"-DPy_LIMITED_API={sys.version_info.major << 24 | sys.version_info.minor << 16}",
-            "-I.",
-            "-I./Include",
-            "-dM",
-            "-E",
-        ]
-        + [str(file) for file in headers],
-        text=True,
-        stderr=subprocess.DEVNULL,
-    )
-
-    return {
-        target
-        for _, target in re.findall(
-            r"#define (\w+)\s*(?:\(.*?\))?\s+(\w+)", preprocesor_output_with_macros
-        )
-    }
 
 
 def get_limited_api_definitions(headers):
@@ -213,7 +174,8 @@ def check_symbols(parser_args):
         LIBRARY = sysconfig.get_config_var("LIBRARY")
         if not LIBRARY:
             raise Exception("failed to get LIBRARY variable from sysconfig")
-        check_library(parser_args.stable_abi_file, LIBRARY, abi_funcs)
+        if os.path.exists(LIBRARY):
+            check_library(parser_args.stable_abi_file, LIBRARY, abi_funcs)
 
         # dynamic library
         LDLIBRARY = sysconfig.get_config_var("LDLIBRARY")

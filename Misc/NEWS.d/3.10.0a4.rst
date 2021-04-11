@@ -605,12 +605,12 @@ deprecated in Python 3.7. Patch by Erlend E. Aasland
 .. nonce: Cfl1eR
 .. section: Library
 
-Harmonized random.randrange() argument handling to match range().
+Harmonized :func:`random.randrange` argument handling to match :func:`range`.
 
-* The integer test and conversion in randrange() now uses
-  operator.index().
-* Non-integer arguments to randrange() are deprecated.
-* The *ValueError* is deprecated in favor of a *TypeError*.
+* The integer test and conversion in ``randrange()`` now uses
+  :func:`operator.index`.
+* Non-integer arguments to ``randrange()`` are deprecated.
+* The ``ValueError`` is deprecated in favor of a ``TypeError``.
 * It now runs a little faster than before.
 
 (Contributed by Raymond Hettinger and Serhiy Storchaka.)

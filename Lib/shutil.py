@@ -32,16 +32,6 @@ try:
 except ImportError:
     _LZMA_SUPPORTED = False
 
-try:
-    from pwd import getpwnam
-except ImportError:
-    getpwnam = None
-
-try:
-    from grp import getgrnam
-except ImportError:
-    getgrnam = None
-
 _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
@@ -813,6 +803,12 @@ def move(src, dst, copy_function=copy2):
             if _destinsrc(src, dst):
                 raise Error("Cannot move a directory '%s' into itself"
                             " '%s'." % (src, dst))
+            if (_is_immutable(src)
+                    or (not os.access(src, os.W_OK) and os.listdir(src)
+                        and sys.platform == 'darwin')):
+                raise PermissionError("Cannot move the non-empty directory "
+                                      "'%s': Lacking write permission to '%s'."
+                                      % (src, src))
             copytree(src, real_dst, copy_function=copy_function,
                      symlinks=True)
             rmtree(src)
@@ -830,10 +826,21 @@ def _destinsrc(src, dst):
         dst += os.path.sep
     return dst.startswith(src)
 
+def _is_immutable(src):
+    st = _stat(src)
+    immutable_states = [stat.UF_IMMUTABLE, stat.SF_IMMUTABLE]
+    return hasattr(st, 'st_flags') and st.st_flags in immutable_states
+
 def _get_gid(name):
     """Returns a gid, given a group name."""
-    if getgrnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from grp import getgrnam
+    except ImportError:
+        return None
+
     try:
         result = getgrnam(name)
     except KeyError:
@@ -844,8 +851,14 @@ def _get_gid(name):
 
 def _get_uid(name):
     """Returns an uid, given a user name."""
-    if getpwnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from pwd import getpwnam
+    except ImportError:
+        return None
+
     try:
         result = getpwnam(name)
     except KeyError:

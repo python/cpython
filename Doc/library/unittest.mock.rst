@@ -30,7 +30,7 @@ module and class level attributes within the scope of a test, along with
 some examples of how to use :class:`Mock`, :class:`MagicMock` and
 :func:`patch`.
 
-Mock is very easy to use and is designed for use with :mod:`unittest`. Mock
+Mock is designed for use with :mod:`unittest` and
 is based on the 'action -> assertion' pattern instead of 'record -> replay'
 used by many mocking frameworks.
 

@@ -1581,13 +1581,15 @@ expression support in the :mod:`re` module).
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
+   *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -2710,7 +2712,7 @@ arbitrary binary data.
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
 
    .. note::
 
@@ -2722,7 +2724,8 @@ arbitrary binary data.
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -5022,8 +5025,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       str | None == typing.Optional[str]
 
 .. describe:: isinstance(obj, union_object)
+.. describe:: issubclass(obj, union_object)
 
-   Calls to :func:`isinstance` are also supported with a union object::
+   Calls to :func:`isinstance` and :func:`issubclass` are also supported with a
+   union object::
 
       >>> isinstance("", int | str)
       True
@@ -5035,21 +5040,6 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
-
-.. describe:: issubclass(obj, union_object)
-
-   Calls to :func:`issubclass` are also supported with a union object::
-
-      >>> issubclass(bool, int | str)
-      True
-
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
-
-      >>> issubclass(bool, bool | list[str])
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: issubclass() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be

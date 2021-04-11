@@ -433,7 +433,8 @@ Miscellaneous options
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
-     interactive interpreter. This only works on debug builds.
+     interactive interpreter. This only works on :ref:`debug builds
+     <debug-build>`.
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
@@ -453,6 +454,9 @@ Miscellaneous options
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
+   * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when the
+     locale-specific default encoding is used for opening files.
+     See also :envvar:`PYTHONWARNDEFAULTENCODING`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -481,6 +485,9 @@ Miscellaneous options
       string encoding and decoding operations.
 
       The ``-X showalloccount`` option has been removed.
+
+   .. versionadded:: 3.10
+      The ``-X warn_default_encoding`` option.
 
    .. deprecated-removed:: 3.9 3.10
       The ``-X oldparser`` option.
@@ -907,17 +914,24 @@ conflict.
 
    .. versionadded:: 3.7
 
+.. envvar:: PYTHONWARNDEFAULTENCODING
+
+   If this environment variable is set to a non-empty string, issue a
+   :class:`EncodingWarning` when the locale-specific default encoding is used.
+
+   See :ref:`io-encoding-warning` for details.
+
+   .. versionadded:: 3.10
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
-
-Setting these variables only has an effect in a debug build of Python.
 
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.
 
-   Need Python configured with the ``--with-pydebug`` build option.
+   Need a :ref:`debug build of Python <debug-build>`.
 
 
 .. envvar:: PYTHONDUMPREFS
@@ -925,4 +939,4 @@ Setting these variables only has an effect in a debug build of Python.
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
 
-   Need Python configured with the ``--with-trace-refs`` build option.
+   Need Python configured with the :option:`--with-trace-refs` build option.

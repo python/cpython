@@ -408,7 +408,7 @@ def classify_class_attrs(cls):
     # attribute with the same name as a DynamicClassAttribute exists.
     for base in mro:
         for k, v in base.__dict__.items():
-            if isinstance(v, types.DynamicClassAttribute):
+            if isinstance(v, types.DynamicClassAttribute) and v.fget is not None:
                 names.append(k)
     result = []
     processed = set()
@@ -2454,9 +2454,6 @@ class _ParameterKind(enum.IntEnum):
     VAR_POSITIONAL = 2
     KEYWORD_ONLY = 3
     VAR_KEYWORD = 4
-
-    def __str__(self):
-        return self._name_
 
     @property
     def description(self):

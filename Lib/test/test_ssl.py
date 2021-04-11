@@ -42,6 +42,7 @@ HOST = socket_helper.HOST
 IS_LIBRESSL = ssl.OPENSSL_VERSION.startswith('LibreSSL')
 IS_OPENSSL_1_1_0 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 0)
 IS_OPENSSL_1_1_1 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (1, 1, 1)
+IS_OPENSSL_3_0_0 = not IS_LIBRESSL and ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
@@ -150,6 +151,28 @@ OP_SINGLE_DH_USE = getattr(ssl, "OP_SINGLE_DH_USE", 0)
 OP_SINGLE_ECDH_USE = getattr(ssl, "OP_SINGLE_ECDH_USE", 0)
 OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
 OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
+OP_IGNORE_UNEXPECTED_EOF = getattr(ssl, "OP_IGNORE_UNEXPECTED_EOF", 0)
+
+# Ubuntu has patched OpenSSL and changed behavior of security level 2
+# see https://bugs.python.org/issue41561#msg389003
+def is_ubuntu():
+    try:
+        # Assume that any references of "ubuntu" implies Ubuntu-like distro
+        # The workaround is not required for 18.04, but doesn't hurt either.
+        with open("/etc/os-release", encoding="utf-8") as f:
+            return "ubuntu" in f.read()
+    except FileNotFoundError:
+        return False
+
+if is_ubuntu():
+    def seclevel_workaround(*ctxs):
+        """"Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
+        for ctx in ctxs:
+            if ctx.minimum_version <= ssl.TLSVersion.TLSv1_1:
+                ctx.set_ciphers("@SECLEVEL=1:ALL")
+else:
+    def seclevel_workaround(*ctxs):
+        pass
 
 
 def has_tls_protocol(protocol):
@@ -189,6 +212,10 @@ def has_tls_version(version):
 
     # check compile time flags like ssl.HAS_TLSv1_2
     if not getattr(ssl, f'HAS_{version.name}'):
+        return False
+
+    if IS_OPENSSL_3_0_0 and version < ssl.TLSVersion.TLSv1_2:
+        # bpo43791: 3.0.0-alpha14 fails with TLSV1_ALERT_INTERNAL_ERROR
         return False
 
     # check runtime and dynamic crypto policy settings. A TLS version may
@@ -360,7 +387,7 @@ class BasicSocketTests(unittest.TestCase):
         # Make sure that the PROTOCOL_* constants have enum-like string
         # reprs.
         proto = ssl.PROTOCOL_TLS
-        self.assertEqual(str(proto), '_SSLMethod.PROTOCOL_TLS')
+        self.assertEqual(str(proto), 'PROTOCOL_TLS')
         ctx = ssl.SSLContext(proto)
         self.assertIs(ctx.protocol, proto)
 
@@ -1142,7 +1169,8 @@ class ContextTests(unittest.TestCase):
         # SSLContext also enables these by default
         default |= (OP_NO_COMPRESSION | OP_CIPHER_SERVER_PREFERENCE |
                     OP_SINGLE_DH_USE | OP_SINGLE_ECDH_USE |
-                    OP_ENABLE_MIDDLEBOX_COMPAT)
+                    OP_ENABLE_MIDDLEBOX_COMPAT |
+                    OP_IGNORE_UNEXPECTED_EOF)
         self.assertEqual(default, ctx.options)
         ctx.options |= ssl.OP_NO_TLSv1
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
@@ -1305,6 +1333,8 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_flags, ssl.VERIFY_CRL_CHECK_CHAIN)
         ctx.verify_flags = ssl.VERIFY_DEFAULT
         self.assertEqual(ctx.verify_flags, ssl.VERIFY_DEFAULT)
+        ctx.verify_flags = ssl.VERIFY_ALLOW_PROXY_CERTS
+        self.assertEqual(ctx.verify_flags, ssl.VERIFY_ALLOW_PROXY_CERTS)
         # supports any value
         ctx.verify_flags = ssl.VERIFY_CRL_CHECK_LEAF | ssl.VERIFY_X509_STRICT
         self.assertEqual(ctx.verify_flags,
@@ -2278,6 +2308,8 @@ class NetworkedTests(unittest.TestCase):
             rc = s.connect_ex((REMOTE_HOST, 443))
             if rc == 0:
                 self.skipTest("REMOTE_HOST responded too quickly")
+            elif rc == errno.ENETUNREACH:
+                self.skipTest("Network unreachable.")
             self.assertIn(rc, (errno.EAGAIN, errno.EWOULDBLOCK))
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'Needs IPv6')
@@ -2800,6 +2832,8 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
     if client_context.protocol == ssl.PROTOCOL_TLS:
         client_context.set_ciphers("ALL")
 
+    seclevel_workaround(server_context, client_context)
+
     for ctx in (client_context, server_context):
         ctx.verify_mode = certsreqs
         ctx.load_cert_chain(SIGNED_CERTFILE)
@@ -2841,6 +2875,7 @@ class ThreadedTests(unittest.TestCase):
             with self.subTest(protocol=ssl._PROTOCOL_NAMES[protocol]):
                 context = ssl.SSLContext(protocol)
                 context.load_cert_chain(CERTFILE)
+                seclevel_workaround(context)
                 server_params_test(context, context,
                                    chatty=True, connectionchatty=True)
 
@@ -3845,6 +3880,7 @@ class ThreadedTests(unittest.TestCase):
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         server_context.minimum_version = ssl.TLSVersion.TLSv1
         server_context.maximum_version = ssl.TLSVersion.TLSv1_1
+        seclevel_workaround(client_context, server_context)
 
         with ThreadedEchoServer(context=server_context) as server:
             with client_context.wrap_socket(socket.socket(),
@@ -3862,6 +3898,8 @@ class ThreadedTests(unittest.TestCase):
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.maximum_version = ssl.TLSVersion.TLSv1
         client_context.minimum_version = ssl.TLSVersion.TLSv1
+        seclevel_workaround(client_context, server_context)
+
         with ThreadedEchoServer(context=server_context) as server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
@@ -3876,6 +3914,8 @@ class ThreadedTests(unittest.TestCase):
         server_context.minimum_version = ssl.TLSVersion.SSLv3
         client_context.minimum_version = ssl.TLSVersion.SSLv3
         client_context.maximum_version = ssl.TLSVersion.SSLv3
+        seclevel_workaround(client_context, server_context)
+
         with ThreadedEchoServer(context=server_context) as server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
@@ -4732,6 +4772,28 @@ class TestSSLDebug(unittest.TestCase):
              _TLSMessageType.CHANGE_CIPHER_SPEC),
             msg
         )
+
+    def test_msg_callback_deadlock_bpo43577(self):
+        client_context, server_context, hostname = testing_context()
+        server_context2 = testing_context()[1]
+
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            pass
+
+        def sni_cb(sock, servername, ctx):
+            sock.context = server_context2
+
+        server_context._msg_callback = msg_cb
+        server_context.sni_callback = sni_cb
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
 
 
 def test_main(verbose=False):

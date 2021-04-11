@@ -31,7 +31,8 @@ class _sqlite3.Row "pysqlite_Row *" "pysqlite_RowType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=384227da65f250fd]*/
 
-void pysqlite_row_dealloc(pysqlite_Row* self)
+static void
+pysqlite_row_dealloc(pysqlite_Row *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -105,7 +106,8 @@ equal_ignore_case(PyObject *left, PyObject *right)
     return 1;
 }
 
-PyObject* pysqlite_row_subscript(pysqlite_Row* self, PyObject* idx)
+static PyObject *
+pysqlite_row_subscript(pysqlite_Row *self, PyObject *idx)
 {
     Py_ssize_t _idx;
     Py_ssize_t nitems, i;
@@ -241,7 +243,8 @@ static PyType_Spec row_spec = {
 
 PyTypeObject *pysqlite_RowType = NULL;
 
-extern int pysqlite_row_setup_types(PyObject *module)
+int
+pysqlite_row_setup_types(PyObject *module)
 {
     pysqlite_RowType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &row_spec, NULL);
     if (pysqlite_RowType == NULL) {

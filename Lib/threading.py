@@ -906,7 +906,7 @@ class Thread:
 
         """
         try:
-            if self._target:
+            if self._target is not None:
                 self._target(*self._args, **self._kwargs)
         finally:
             # Avoid a refcycle if the thread is running a function with

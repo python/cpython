@@ -388,6 +388,7 @@ PyCurses_ConvertToString(PyCursesWindowObject *win, PyObject *obj,
         *bytes = obj;
         /* check for embedded null bytes */
         if (PyBytes_AsStringAndSize(*bytes, &str, NULL) < 0) {
+            Py_DECREF(obj);
             return 0;
         }
         return 1;
@@ -828,8 +829,9 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
 #else
     strtype = PyCurses_ConvertToString(self, str, &bytesobj, NULL);
 #endif
-    if (strtype == 0)
+    if (strtype == 0) {
         return NULL;
+    }
     if (use_attr) {
         attr_old = getattrs(self->win);
         (void)wattrset(self->win,attr);
@@ -1341,7 +1343,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef NCURSES_MOUSE_VERSION
 /*[clinic input]
-_curses.window.enclose -> long
+_curses.window.enclose
 
     y: int
         Y-coordinate.
@@ -1352,11 +1354,11 @@ _curses.window.enclose -> long
 Return True if the screen-relative coordinates are enclosed by the window.
 [clinic start generated code]*/
 
-static long
+static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
-/*[clinic end generated code: output=5251c961cbe3df63 input=dfe1d9d4d05d8642]*/
+/*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
 {
-    return wenclose(self->win, y, x);
+    return PyBool_FromLong(wenclose(self->win, y, x));
 }
 #endif
 
@@ -4725,21 +4727,22 @@ static struct PyModuleDef _cursesmodule = {
     NULL
 };
 
+static void
+curses_destructor(PyObject *op)
+{
+    void *ptr = PyCapsule_GetPointer(op, PyCurses_CAPSULE_NAME);
+    Py_DECREF(*(void **)ptr);
+    PyMem_Free(ptr);
+}
+
 PyMODINIT_FUNC
 PyInit__curses(void)
 {
     PyObject *m, *d, *v, *c_api_object;
-    static void *PyCurses_API[PyCurses_API_pointers];
 
     /* Initialize object type */
     if (PyType_Ready(&PyCursesWindow_Type) < 0)
         return NULL;
-
-    /* Initialize the C API pointer array */
-    PyCurses_API[0] = (void *)&PyCursesWindow_Type;
-    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
-    PyCurses_API[2] = (void *)func_PyCursesInitialised;
-    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
 
     /* Create the module and add the functions */
     m = PyModule_Create(&_cursesmodule);
@@ -4752,9 +4755,29 @@ PyInit__curses(void)
         return NULL;
     ModDict = d; /* For PyCurses_InitScr to use later */
 
+    void **PyCurses_API = PyMem_Calloc(PyCurses_API_pointers, sizeof(void *));
+    if (PyCurses_API == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    /* Initialize the C API pointer array */
+    PyCurses_API[0] = (void *)Py_NewRef(&PyCursesWindow_Type);
+    PyCurses_API[1] = (void *)func_PyCursesSetupTermCalled;
+    PyCurses_API[2] = (void *)func_PyCursesInitialised;
+    PyCurses_API[3] = (void *)func_PyCursesInitialisedColor;
+
     /* Add a capsule for the C API */
-    c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME, NULL);
-    PyDict_SetItemString(d, "_C_API", c_api_object);
+    c_api_object = PyCapsule_New(PyCurses_API, PyCurses_CAPSULE_NAME,
+                                 curses_destructor);
+    if (c_api_object == NULL) {
+        Py_DECREF(PyCurses_API[0]);
+        PyMem_Free(PyCurses_API);
+        return NULL;
+    }
+    if (PyDict_SetItemString(d, "_C_API", c_api_object) < 0) {
+        Py_DECREF(c_api_object);
+        return NULL;
+    }
     Py_DECREF(c_api_object);
 
     /* For exception curses.error */
@@ -4869,6 +4892,14 @@ PyInit__curses(void)
     SetDictInt("BUTTON4_CLICKED",          BUTTON4_CLICKED);
     SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
     SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
+
+#if NCURSES_MOUSE_VERSION > 1
+    SetDictInt("BUTTON5_PRESSED",          BUTTON5_PRESSED);
+    SetDictInt("BUTTON5_RELEASED",         BUTTON5_RELEASED);
+    SetDictInt("BUTTON5_CLICKED",          BUTTON5_CLICKED);
+    SetDictInt("BUTTON5_DOUBLE_CLICKED",   BUTTON5_DOUBLE_CLICKED);
+    SetDictInt("BUTTON5_TRIPLE_CLICKED",   BUTTON5_TRIPLE_CLICKED);
+#endif
 
     SetDictInt("BUTTON_SHIFT",             BUTTON_SHIFT);
     SetDictInt("BUTTON_CTRL",              BUTTON_CTRL);

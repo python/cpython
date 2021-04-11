@@ -7927,6 +7927,9 @@ PyInit__socket(void)
 #ifdef  IPPROTO_BIP
     PyModule_AddIntMacro(m, IPPROTO_BIP);
 #endif
+#ifdef  IPPROTO_MPTCP
+    PyModule_AddIntMacro(m, IPPROTO_MPTCP);
+#endif
 /**/
 #ifdef  IPPROTO_RAW
     PyModule_AddIntMacro(m, IPPROTO_RAW);
