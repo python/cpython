@@ -342,15 +342,16 @@ anextawaitable_iternext(anextawaitableobject *obj)
         return NULL;
     }
     if (Py_TYPE(awaitable)->tp_iternext == NULL) {
-        if (Py_TYPE(awaitable)->tp_as_async == NULL ||
-            Py_TYPE(awaitable)->tp_as_async->am_await == NULL)
-        {
-            PyErr_SetString(PyExc_TypeError,
-                            "__anext__ returned a non-awaitable.");
-            return NULL;
-        }
+        /* _PyCoro_GetAwaitableIter returns a Coroutine, a Generator,
+         * or an iterator. Of these, only coroutines lack tp_iternext.
+         */
+        assert(PyCoro_CheckExact(awaitable));
         unaryfunc getter = Py_TYPE(awaitable)->tp_as_async->am_await;
         PyObject *new_awaitable = getter(awaitable);
+        if (new_awaitable == NULL) {
+            Py_DECREF(awaitable);
+            return NULL;
+        }
         Py_SETREF(awaitable, new_awaitable);
         if (Py_TYPE(awaitable)->tp_iternext == NULL) {
             PyErr_SetString(PyExc_TypeError,
