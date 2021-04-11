@@ -125,6 +125,10 @@ The second command created :file:`ni.dll` (and :file:`.obj` and :file:`.lib`),
 which knows how to find the necessary functions from spam, and also from the
 Python executable.
 
+.. note::
+
+   The above commands are only applicable for Python 32-bit versions.
+
 Not every identifier is exported to the lookup table.  If you want any other
 modules (including Python) to be able to see your identifiers, you have to say
 ``_declspec(dllexport)``, as in ``void _declspec(dllexport) initspam(void)`` or
