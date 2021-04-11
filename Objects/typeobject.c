@@ -6133,7 +6133,7 @@ type_ready(PyTypeObject *type)
 #endif
 
     if (type_ready_set_base(type) < 0) {
-        return 0;
+        return -1;
     }
     if (type_ready_add_attrs(type) < 0) {
         return -1;
