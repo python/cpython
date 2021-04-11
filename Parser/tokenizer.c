@@ -1194,6 +1194,66 @@ tok_decimal_tail(struct tok_state *tok)
     return c;
 }
 
+static int
+paren_will_be_closed(struct tok_state *tok, char opening) {
+    char target;
+    switch (opening) {
+    case '(':
+        target = ')';
+        break;
+    case '[':
+        target = ']';
+        break;
+    case '{':
+        target = '}';
+        break;
+    default:
+        Py_UNREACHABLE();
+    }
+
+    int found = 0;
+    char c = 0;
+    int lineno = tok->lineno;
+    size_t line_start_offset = tok->cur - tok->line_start;
+    size_t advanced_chars = 0;
+
+    for (;;) {
+        c = tok_nextc(tok);
+        advanced_chars++;
+        if (!c || c == EOF) {
+            goto exit;
+        }
+        // Skip comments
+        if (c == '#') {
+            while (c != EOF && c != '\n') {
+                c = tok_nextc(tok);
+                advanced_chars++;
+            }
+        }
+
+        // In interactive mode, we don't want to consume more input
+        // just to check if the parentheses will be closed.
+        if (tok->fp_interactive && c == '\n') {
+            tok_backup(tok, c);
+            return 0;
+        }
+        if (c != target) {
+            continue;
+        }
+        found = 1;
+        break;
+    }
+exit:
+    // Backup to the place when we started
+    if (tok->cur - advanced_chars < tok->buf) {
+        Py_FatalError("tokenizer beginning of buffer");
+    }
+    tok->cur = tok->cur - advanced_chars;
+    tok->line_start = tok->cur - line_start_offset + 1;
+    tok->lineno = lineno;
+    return found;
+}
+
 /* Get next token, after space stripping etc. */
 
 static int
@@ -1847,6 +1907,11 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
               (opening == '[' && c == ']') ||
               (opening == '{' && c == '}')))
         {
+            if (paren_will_be_closed(tok, opening)) {
+                return syntaxerror(tok, "closing parenthesis '%c' was never opened",
+                                   c, tok->parenlinenostack[tok->level]);
+            }
+
             if (tok->parenlinenostack[tok->level] != tok->lineno) {
                 return syntaxerror(tok,
                         "closing parenthesis '%c' does not match "

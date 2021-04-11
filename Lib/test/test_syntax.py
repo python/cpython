@@ -1182,6 +1182,32 @@ def func2():
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
 
+        self._check_error("(a+b+c])", "']' was never opened")
+        self._check_error("[a+b+c)]", "'\\)' was never opened")
+        self._check_error("(a+b+c})", "'}' was never opened")
+
+        self._check_error("""\\
+        (
+            a+b+c]
+
+
+                  )""", "']' was never opened", lineno=3, offset=17)
+
+        self._check_error("""\\
+        (
+            a+b+c]
+
+
+            #      )""", "']' does not match opening", lineno=3, offset=17)
+
+        self._check_error("""\\
+        (
+            a+b+c]
+
+
+            #      )
+               )""", "']' was never opened", lineno=3, offset=17)
+
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
 def match(x):
