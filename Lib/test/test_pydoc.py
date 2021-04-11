@@ -1142,7 +1142,7 @@ class TestDescriptions(unittest.TestCase):
                 '''A static method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['sm']),
-                         'sm(...)\n'
+                         'sm(x, y)\n'
                          '    A static method\n')
         self.assertEqual(self._get_summary_lines(X.sm), """\
 sm(x, y)
