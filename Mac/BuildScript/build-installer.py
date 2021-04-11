@@ -192,27 +192,6 @@ EXPECTED_SHARED_LIBS = {}
 def internalTk():
     return getDeptargetTuple() >= (10, 6)
 
-
-def tweak_tcl_build(basedir, archList):
-    with open("Makefile", "r") as fp:
-        contents = fp.readlines()
-
-    # For reasons I don't understand the tcl configure script
-    # decides that some stdlib symbols aren't present, before
-    # deciding that strtod is broken.
-    new_contents = []
-    for line in contents:
-        if line.startswith("COMPAT_OBJS"):
-            # note: the space before strtod.o is intentional,
-            # the detection of a broken strtod results in
-            # "fixstrod.o" on this line.
-            for nm in ("strstr.o", "strtoul.o", " strtod.o"):
-                line = line.replace(nm, "")
-        new_contents.append(line)
-
-    with open("Makefile", "w") as fp:
-        fp.writelines(new_contents)
-
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
 THIRD_PARTY_LIBS = []
@@ -254,7 +233,6 @@ def library_recipes():
                     '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
               ],
               useLDFlags=False,
-              buildrecipe=tweak_tcl_build,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
                   "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
