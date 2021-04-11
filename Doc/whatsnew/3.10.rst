@@ -550,9 +550,11 @@ which adds or removes parameters of another callable.  Examples of usage can
 be found in :class:`typing.Concatenate`.
 
 See :class:`typing.Callable`, :class:`typing.ParamSpec`,
-:class:`typing.Concatenate` and :pep:`612` for more details.
+:class:`typing.Concatenate`, :class:`typing.ParamSpecArgs`,
+:class:`typing.ParamSpecKwargs`, and :pep:`612` for more details.
 
-(Contributed by Ken Jin in :issue:`41559`.)
+(Contributed by Ken Jin in :issue:`41559`, with minor enhancements by Jelle
+Zijlstra in :issue:`43783`.  PEP written by Mark Mendoza.)
 
 
 PEP 613: TypeAlias Annotation
