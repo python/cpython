@@ -606,10 +606,11 @@ def TypeGuard(self, parameters):
                   # Type of ``val`` remains as List[object]
                   print("Not a list of strings!")
 
-    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
-    means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
-    ``TypeA`` to ``TypeB``.  Note that strict type narrowing is not enforced -
-    ``TypeB`` need not be a narrower form of ``TypeA``.  The responsibility of
+    Strict type narrowing is not enforced - ``TypeB`` need not be a narrower
+    form of ``TypeA`` (it can even be a wider form) and this may lead to
+    type-unsafe results.  The main reason is to allow for things like
+    narrowing ``List[object]`` to ``List[str]`` which would fail under strict
+    narrowing as ``List`` is invariant.  The responsibility of
     writing type-safe type guards is left to the user.
 
     ``TypeGuard`` also works with type variables.  For more information, see

@@ -988,6 +988,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
                  # Type of ``val`` remains as List[object]
                  print("Not a list of strings!")
 
+   If ``is_str_list`` is a class or instance method, then the type in
+   ``TypeGuard`` maps to the type of the second parameter after ``cls`` or
+   ``self``.
+
    In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
    means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
    ``TypeA`` to ``TypeB``.
@@ -996,10 +1000,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       Strict type narrowing is not enforced - ``TypeB`` need not be a narrower
       form of ``TypeA`` (it can even be a wider form) and this may lead to
-      type-unsafe results.
-      The intent is to not burden the user with invariance rules
-      and type compatibility with other types.  This allows for greater
-      expression of the subtleties in type guards.  The responsibility of
+      type-unsafe results.  The main reason is to allow for things like
+      narrowing ``List[object]`` to ``List[str]`` which would fail under strict
+      narrowing as ``List`` is invariant.  The responsibility of
       writing type-safe type guards is left to the user.
 
    ``TypeGuard`` also works with type variables.  For more information, see
