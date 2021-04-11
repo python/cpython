@@ -1,6 +1,4 @@
 Improve ``bz2.BZ2File`` performance by removing the RLock from BZ2File.
 This makes BZ2File thread unsafe in the face of multiple simultaneous
 readers or writers, just like its equivalent classes in :mod:`gzip` and
-:mod:`lzma` have always been.  Adds a ``BZ2File.__iter__()`` method to
-delegate to the internal buffer's ``__iter__`` method.  It is much faster
-than calling ``BZ2File.readline()`` for each lines.  Patch by Inada Naoki.
+:mod:`lzma` have always been.  Patch by Inada Naoki.
