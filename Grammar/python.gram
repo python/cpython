@@ -163,17 +163,20 @@ dotted_name[expr_ty]:
     | NAME
 
 if_stmt[stmt_ty]:
-    | 'if' a=named_expression &&':' b=block c=elif_stmt {
+    | 'if' a=named_expression ':' b=block c=elif_stmt {
         _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
-    | 'if' a=named_expression &&':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
+    | 'if' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
+    | invalid_if_stmt
 elif_stmt[stmt_ty]:
-    | 'elif' a=named_expression &&':' b=block c=elif_stmt {
+    | 'elif' a=named_expression ':' b=block c=elif_stmt {
         _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
-    | 'elif' a=named_expression &&':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
+    | 'elif' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
+    | invalid_elif_stmt
 else_block[asdl_stmt_seq*]: 'else' &&':' b=block { b }
 
 while_stmt[stmt_ty]:
-    | 'while' a=named_expression &&':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
+    | 'while' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
+    | invalid_while_stmt
 
 for_stmt[stmt_ty]:
     | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
@@ -438,10 +441,11 @@ star_named_expressions[asdl_expr_seq*]: a[asdl_expr_seq*]=','.star_named_express
 star_named_expression[expr_ty]:
     | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
     | named_expression
+
 named_expression[expr_ty]:
     | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
-    | expression !':='
     | invalid_named_expression
+    | expression !':='
 
 annotated_rhs[expr_ty]: yield_expr | star_expressions
 
@@ -772,6 +776,12 @@ invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
+    | a=NAME b='=' bitwise_or !('='|':='|',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
+    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':='|',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+                                          _PyPegen_get_expr_name(a)) }
+
 invalid_assignment:
     | a=invalid_ann_assign_target ':' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
@@ -841,9 +851,9 @@ invalid_for_target:
 
 invalid_group:
     | '(' a=starred_expression ')' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use starred expression here") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use starred expression here") }
     | '(' a='**' expression ')' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "can't use double starred expression here") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use double starred expression here") }
 invalid_import_from_targets:
     | import_from_as_names ',' {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
@@ -860,6 +870,11 @@ invalid_except_block:
 
 invalid_match_stmt:
     | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
-
 invalid_case_block:
     | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
+invalid_if_stmt:
+    | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+invalid_elif_stmt:
+    | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+invalid_while_stmt:
+    | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
