@@ -13,7 +13,6 @@ from builtins import open as _builtin_open
 import io
 import os
 import _compression
-from threading import RLock
 
 from _bz2 import BZ2Compressor, BZ2Decompressor
 
@@ -53,9 +52,6 @@ class BZ2File(_compression.BaseStream):
         If mode is 'r', the input file may be the concatenation of
         multiple compressed streams.
         """
-        # This lock must be recursive, so that BufferedIOBase's
-        # writelines() does not deadlock.
-        self._lock = RLock()
         self._fp = None
         self._closefp = False
         self._mode = _MODE_CLOSED
@@ -104,24 +100,23 @@ class BZ2File(_compression.BaseStream):
         May be called more than once without error. Once the file is
         closed, any other operation on it will raise a ValueError.
         """
-        with self._lock:
-            if self._mode == _MODE_CLOSED:
-                return
+        if self._mode == _MODE_CLOSED:
+            return
+        try:
+            if self._mode == _MODE_READ:
+                self._buffer.close()
+            elif self._mode == _MODE_WRITE:
+                self._fp.write(self._compressor.flush())
+                self._compressor = None
+        finally:
             try:
-                if self._mode == _MODE_READ:
-                    self._buffer.close()
-                elif self._mode == _MODE_WRITE:
-                    self._fp.write(self._compressor.flush())
-                    self._compressor = None
+                if self._closefp:
+                    self._fp.close()
             finally:
-                try:
-                    if self._closefp:
-                        self._fp.close()
-                finally:
-                    self._fp = None
-                    self._closefp = False
-                    self._mode = _MODE_CLOSED
-                    self._buffer = None
+                self._fp = None
+                self._closefp = False
+                self._mode = _MODE_CLOSED
+                self._buffer = None
 
     @property
     def closed(self):
@@ -153,12 +148,11 @@ class BZ2File(_compression.BaseStream):
         Always returns at least one byte of data, unless at EOF.
         The exact number of bytes returned is unspecified.
         """
-        with self._lock:
-            self._check_can_read()
-            # Relies on the undocumented fact that BufferedReader.peek()
-            # always returns at least one byte (except at EOF), independent
-            # of the value of n
-            return self._buffer.peek(n)
+        self._check_can_read()
+        # Relies on the undocumented fact that BufferedReader.peek()
+        # always returns at least one byte (except at EOF), independent
+        # of the value of n
+        return self._buffer.peek(n)
 
     def read(self, size=-1):
         """Read up to size uncompressed bytes from the file.
@@ -166,9 +160,8 @@ class BZ2File(_compression.BaseStream):
         If size is negative or omitted, read until EOF is reached.
         Returns b'' if the file is already at EOF.
         """
-        with self._lock:
-            self._check_can_read()
-            return self._buffer.read(size)
+        self._check_can_read()
+        return self._buffer.read(size)
 
     def read1(self, size=-1):
         """Read up to size uncompressed bytes, while trying to avoid
@@ -177,20 +170,18 @@ class BZ2File(_compression.BaseStream):
 
         Returns b'' if the file is at EOF.
         """
-        with self._lock:
-            self._check_can_read()
-            if size < 0:
-                size = io.DEFAULT_BUFFER_SIZE
-            return self._buffer.read1(size)
+        self._check_can_read()
+        if size < 0:
+            size = io.DEFAULT_BUFFER_SIZE
+        return self._buffer.read1(size)
 
     def readinto(self, b):
         """Read bytes into b.
 
         Returns the number of bytes read (0 for EOF).
         """
-        with self._lock:
-            self._check_can_read()
-            return self._buffer.readinto(b)
+        self._check_can_read()
+        return self._buffer.readinto(b)
 
     def readline(self, size=-1):
         """Read a line of uncompressed bytes from the file.
@@ -203,9 +194,8 @@ class BZ2File(_compression.BaseStream):
             if not hasattr(size, "__index__"):
                 raise TypeError("Integer argument expected")
             size = size.__index__()
-        with self._lock:
-            self._check_can_read()
-            return self._buffer.readline(size)
+        self._check_can_read()
+        return self._buffer.readline(size)
 
     def readlines(self, size=-1):
         """Read a list of lines of uncompressed bytes from the file.
@@ -218,9 +208,8 @@ class BZ2File(_compression.BaseStream):
             if not hasattr(size, "__index__"):
                 raise TypeError("Integer argument expected")
             size = size.__index__()
-        with self._lock:
-            self._check_can_read()
-            return self._buffer.readlines(size)
+        self._check_can_read()
+        return self._buffer.readlines(size)
 
     def write(self, data):
         """Write a byte string to the file.
@@ -229,12 +218,11 @@ class BZ2File(_compression.BaseStream):
         always len(data). Note that due to buffering, the file on disk
         may not reflect the data written until close() is called.
         """
-        with self._lock:
-            self._check_can_write()
-            compressed = self._compressor.compress(data)
-            self._fp.write(compressed)
-            self._pos += len(data)
-            return len(data)
+        self._check_can_write()
+        compressed = self._compressor.compress(data)
+        self._fp.write(compressed)
+        self._pos += len(data)
+        return len(data)
 
     def writelines(self, seq):
         """Write a sequence of byte strings to the file.
@@ -244,8 +232,7 @@ class BZ2File(_compression.BaseStream):
 
         Line separators are not added between the written byte strings.
         """
-        with self._lock:
-            return _compression.BaseStream.writelines(self, seq)
+        return _compression.BaseStream.writelines(self, seq)
 
     def seek(self, offset, whence=io.SEEK_SET):
         """Change the file position.
@@ -262,17 +249,15 @@ class BZ2File(_compression.BaseStream):
         Note that seeking is emulated, so depending on the parameters,
         this operation may be extremely slow.
         """
-        with self._lock:
-            self._check_can_seek()
-            return self._buffer.seek(offset, whence)
+        self._check_can_seek()
+        return self._buffer.seek(offset, whence)
 
     def tell(self):
         """Return the current file position."""
-        with self._lock:
-            self._check_not_closed()
-            if self._mode == _MODE_READ:
-                return self._buffer.tell()
-            return self._pos
+        self._check_not_closed()
+        if self._mode == _MODE_READ:
+            return self._buffer.tell()
+        return self._pos
 
 
 def open(filename, mode="rb", compresslevel=9,
