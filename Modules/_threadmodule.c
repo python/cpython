@@ -9,6 +9,10 @@
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
 
+#ifdef HAVE_SIGNAL_H
+#  include <signal.h>             // SIGINT
+#endif
+
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
 
@@ -828,27 +832,26 @@ local_traverse(localobject *self, visitproc visit, void *arg)
 static int
 local_clear(localobject *self)
 {
-    PyThreadState *tstate;
     Py_CLEAR(self->args);
     Py_CLEAR(self->kw);
     Py_CLEAR(self->dummies);
     Py_CLEAR(self->wr_callback);
     /* Remove all strong references to dummies from the thread states */
-    if (self->key
-        && (tstate = PyThreadState_Get())
-        && tstate->interp) {
-        for(tstate = PyInterpreterState_ThreadHead(tstate->interp);
-            tstate;
-            tstate = PyThreadState_Next(tstate))
-            if (tstate->dict) {
-                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-                if (v == NULL) {
-                    PyErr_Clear();
-                }
-                else {
-                    Py_DECREF(v);
-                }
+    if (self->key) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        for(; tstate; tstate = PyThreadState_Next(tstate)) {
+            if (tstate->dict == NULL) {
+                continue;
             }
+            PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
+            if (v != NULL) {
+                Py_DECREF(v);
+            }
+            else {
+                PyErr_Clear();
+            }
+        }
     }
     return 0;
 }
@@ -1174,17 +1177,29 @@ This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
 
 static PyObject *
-thread_PyThread_interrupt_main(PyObject * self, PyObject *Py_UNUSED(ignored))
+thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
 {
-    PyErr_SetInterrupt();
+    int signum = SIGINT;
+    if (!PyArg_ParseTuple(args, "|i:signum", &signum)) {
+        return NULL;
+    }
+
+    if (PyErr_SetInterruptEx(signum)) {
+        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(interrupt_doc,
-"interrupt_main()\n\
+"interrupt_main(signum=signal.SIGINT, /)\n\
 \n\
-Raise a KeyboardInterrupt in the main thread.\n\
-A subthread can use this function to interrupt the main thread."
+Simulate the arrival of the given signal in the main thread,\n\
+where the corresponding signal handler will be executed.\n\
+If *signum* is omitted, SIGINT is assumed.\n\
+A subthread can use this function to interrupt the main thread.\n\
+\n\
+Note: the default signal hander for SIGINT raises ``KeyboardInterrupt``."
 );
 
 static lockobject *newlockobject(PyObject *module);
@@ -1528,8 +1543,8 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, exit_doc},
     {"exit",                    thread_PyThread_exit_thread,
      METH_NOARGS, exit_doc},
-    {"interrupt_main",          thread_PyThread_interrupt_main,
-     METH_NOARGS, interrupt_doc},
+    {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
+     METH_VARARGS, interrupt_doc},
     {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
 #ifdef PY_HAVE_THREAD_NATIVE_ID

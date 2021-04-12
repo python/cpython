@@ -62,6 +62,7 @@ def setup_tests(ns):
 
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
+        sys._deactivate_opcache()
 
     if ns.memlimit is not None:
         support.set_memlimit(ns.memlimit)
@@ -91,6 +92,10 @@ def setup_tests(ns):
         support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
         support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+
+    if ns.xmlpath:
+        from test.support.testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
 
 
 def replace_stdout():

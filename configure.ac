@@ -1,6 +1,9 @@
-dnl ***********************************************
-dnl * Please run autoreconf to test your changes! *
-dnl ***********************************************
+dnl ***************************************************
+dnl * Please run autoreconf -if to test your changes! *
+dnl ***************************************************
+dnl
+dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.10)
@@ -9,14 +12,18 @@ AC_PREREQ([2.69])
 
 AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
 
-AC_CONFIG_MACRO_DIR(m4)
+m4_ifdef(
+    [AX_C_FLOAT_WORDS_BIGENDIAN],
+    [],
+    [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
+)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
-    #   Include/ -> Python-ast.h
+    #   Include/ -> Python.h
     #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -2347,10 +2354,11 @@ AC_CHECK_TYPE(ssize_t,
 AC_CHECK_TYPE(__uint128_t,
   AC_DEFINE(HAVE_GCC_UINT128_T, 1, [Define if your compiler provides __uint128_t]),,)
 
-# Sizes of various common basic types
+# Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_ALIGNOF(long)
 AC_CHECK_SIZEOF(long long, 8)
 AC_CHECK_SIZEOF(void *, 4)
 AC_CHECK_SIZEOF(short, 2)
@@ -2358,6 +2366,7 @@ AC_CHECK_SIZEOF(float, 4)
 AC_CHECK_SIZEOF(double, 8)
 AC_CHECK_SIZEOF(fpos_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
+AC_CHECK_ALIGNOF(size_t)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
 
@@ -3157,8 +3166,13 @@ then
   then
     AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
   fi
-  TCLTK_INCLUDES=""
-  TCLTK_LIBS=""
+  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
+    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
+    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
+  else
+    TCLTK_INCLUDES=""
+    TCLTK_LIBS=""
+  fi
 else
   TCLTK_INCLUDES="$with_tcltk_includes"
   TCLTK_LIBS="$with_tcltk_libs"
@@ -5803,6 +5817,30 @@ if test "$have_openssl" = yes; then
     LIBS="$save_LIBS"
 fi
 
+# rpath to libssl and libcrypto
+AC_MSG_CHECKING(for --with-openssl-rpath)
+AC_ARG_WITH(openssl-rpath,
+    AS_HELP_STRING([--with-openssl-rpath=@<:@DIR|auto|no@:>@],
+                   [Set runtime library directory (rpath) for OpenSSL libraries,
+                    no (default): don't set rpath,
+                    auto: auto-detect rpath from --with-openssl and pkg-config,
+                    DIR: set an explicit rpath
+                   ]),
+    [],
+    [with_openssl_rpath=no]
+)
+AS_CASE($with_openssl_rpath,
+    [auto|yes],[OPENSSL_RPATH=auto],
+    [no],[OPENSSL_RPATH=],
+    [AS_IF(
+        [test -d "$with_openssl_rpath"],
+        [OPENSSL_RPATH="$with_openssl_rpath"],
+        AC_MSG_ERROR([--with-openssl-rpath "$with_openssl_rpath" is not a directory]))
+    ]
+)
+AC_MSG_RESULT($OPENSSL_RPATH)
+AC_SUBST([OPENSSL_RPATH])
+
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
   [Default cipher suites list for ssl module.
@@ -5881,6 +5919,33 @@ else
   AC_MSG_RESULT(no);
 fi],
 [AC_MSG_RESULT(no)])
+
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+AC_MSG_CHECKING(for --with-static-libpython)
+AC_ARG_WITH(static-libpython,
+  AS_HELP_STRING([--without-static-libpython],
+                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+  STATIC_LIBPYTHON=0
+else
+  AC_MSG_RESULT(yes);
+fi],
+[AC_MSG_RESULT(yes)])
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+else
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+fi
+AC_SUBST(STATIC_LIBPYTHON)
+AC_SUBST(LIBRARY_DEPS)
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.

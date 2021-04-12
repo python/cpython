@@ -21,6 +21,14 @@ PyAPI_DATA(struct _longobject) _Py_FalseStruct, _Py_TrueStruct;
 #define Py_False ((PyObject *) &_Py_FalseStruct)
 #define Py_True ((PyObject *) &_Py_TrueStruct)
 
+// Test if an object is the True singleton, the same as "x is True" in Python.
+PyAPI_FUNC(int) Py_IsTrue(PyObject *x);
+#define Py_IsTrue(x) Py_Is((x), Py_True)
+
+// Test if an object is the False singleton, the same as "x is False" in Python.
+PyAPI_FUNC(int) Py_IsFalse(PyObject *x);
+#define Py_IsFalse(x) Py_Is((x), Py_False)
+
 /* Macros for returning Py_True or Py_False, respectively */
 #define Py_RETURN_TRUE return Py_NewRef(Py_True)
 #define Py_RETURN_FALSE return Py_NewRef(Py_False)

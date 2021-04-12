@@ -2608,7 +2608,7 @@ static PyTypeObject PyZoneInfo_ZoneInfoType = {
 // Specify the _zoneinfo module
 static PyMethodDef module_methods[] = {{NULL, NULL}};
 static void
-module_free()
+module_free(void)
 {
     Py_XDECREF(_tzpath_find_tzfile);
     _tzpath_find_tzfile = NULL;

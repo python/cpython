@@ -4,8 +4,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <token.h>
-#include <Python-ast.h>
-#include <pyarena.h>
+#include <pycore_ast.h>
 
 #if 0
 #define PyPARSE_YIELD_IS_KEYWORD        0x0001
@@ -102,14 +101,16 @@ typedef struct {
     arg_ty kwarg;
 } StarEtc;
 
-typedef struct { operator_ty kind; } AugOperator; 
+typedef struct { operator_ty kind; } AugOperator;
 typedef struct {
     void *element;
     int is_keyword;
 } KeywordOrStarred;
 
+#if defined(Py_DEBUG)
 void _PyPegen_clear_memo_statistics(void);
 PyObject *_PyPegen_get_memo_statistics(void);
+#endif
 
 int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
@@ -137,8 +138,9 @@ void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 void *_PyPegen_dummy_name(Parser *p, ...);
 
 Py_LOCAL_INLINE(void *)
-RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
-                           int col_offset, const char *errmsg, ...)
+RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
+                           Py_ssize_t lineno, Py_ssize_t col_offset,
+                           const char *errmsg, ...)
 {
     va_list va;
     va_start(va, errmsg);
@@ -150,7 +152,7 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype, int lineno,
 
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
+#define EXTRA_EXPR(head, tail) head->lineno, (head)->col_offset, (tail)->end_lineno, (tail)->end_col_offset, p->arena
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
@@ -227,7 +229,6 @@ void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
                                     const char *, const char *, PyCompilerFlags *, int *, PyArena *);
 void *_PyPegen_run_parser(Parser *);
-mod_ty _PyPegen_run_parser_from_file(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);
 asdl_seq *_PyPegen_singleton_seq(Parser *, void *);
@@ -236,7 +237,7 @@ asdl_seq *_PyPegen_seq_append_to_end(Parser *, asdl_seq *, void *);
 asdl_seq *_PyPegen_seq_flatten(Parser *, asdl_seq *);
 expr_ty _PyPegen_join_names_with_dot(Parser *, expr_ty, expr_ty);
 int _PyPegen_seq_count_dots(asdl_seq *);
-alias_ty _PyPegen_alias_for_star(Parser *);
+alias_ty _PyPegen_alias_for_star(Parser *, int, int, int, int, PyArena *);
 asdl_identifier_seq *_PyPegen_map_names_to_ids(Parser *, asdl_expr_seq *);
 CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);

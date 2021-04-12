@@ -1287,9 +1287,9 @@ get_token_missing(void)
 
 
 void
-_PyContext_ClearFreeList(PyThreadState *tstate)
+_PyContext_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_context_state *state = &tstate->interp->context;
+    struct _Py_context_state *state = &interp->context;
     for (; state->numfree; state->numfree--) {
         PyContext *ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
@@ -1300,14 +1300,14 @@ _PyContext_ClearFreeList(PyThreadState *tstate)
 
 
 void
-_PyContext_Fini(PyThreadState *tstate)
+_PyContext_Fini(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(interp)) {
         Py_CLEAR(_token_missing);
     }
-    _PyContext_ClearFreeList(tstate);
+    _PyContext_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_context_state *state = &tstate->interp->context;
+    struct _Py_context_state *state = &interp->context;
     state->numfree = -1;
 #endif
     _PyHamt_Fini();

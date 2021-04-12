@@ -1349,7 +1349,7 @@ class EventLoopTestsMixin:
 
         rpipe, wpipe = os.pipe()
         rpipeobj = io.open(rpipe, 'rb', 1024)
-        wpipeobj = io.open(wpipe, 'w', 1024)
+        wpipeobj = io.open(wpipe, 'w', 1024, encoding="utf-8")
 
         async def connect():
             read_transport, _ = await loop.connect_read_pipe(

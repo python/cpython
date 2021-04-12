@@ -825,6 +825,24 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> match x
+   ...   case list():
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x:
+   ...   case list()
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> match x:
+   ...   case [y] if y > 0
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -1144,6 +1162,11 @@ def func2():
 """
         self._check_error(code, "expected ':'")
 
+    def test_invalid_line_continuation_error_position(self):
+        self._check_error(r"a = 3 \ 4",
+                          "unexpected character after line continuation character",
+                          lineno=1, offset=9)
+
     def test_invalid_line_continuation_left_recursive(self):
         # Check bpo-42218: SyntaxErrors following left-recursive rules
         # (t_primary_raw in this case) need to be tested explicitly
@@ -1158,6 +1181,24 @@ def func2():
 
         for paren in ")]}":
             self._check_error(paren + "1 + 2", f"unmatched '\\{paren}'")
+
+    def test_match_call_does_not_raise_syntax_error(self):
+        code = """
+def match(x):
+    return 1+1
+
+match(34)
+"""
+        compile(code, "<string>", "exec")
+
+    def test_case_call_does_not_raise_syntax_error(self):
+        code = """
+def case(x):
+    return 1+1
+
+case(34)
+"""
+        compile(code, "<string>", "exec")
 
 
 def test_main():

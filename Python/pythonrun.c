@@ -10,11 +10,11 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
+#include "pycore_ast.h"           // PyAST_mod2obj
+#include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
+#include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pyerrors.h"      // _PyErr_Fetch
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -23,10 +23,7 @@
 #include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
-#include "symtable.h"             // PySymtable_BuildObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
-
-#include "parser_interface.h"      // PyParser_ASTFrom*
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -248,7 +245,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             }
         }
     }
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL) {
         Py_XDECREF(v);
         Py_XDECREF(w);
@@ -256,14 +253,14 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
-                                     ps1, ps2, flags, &errcode, arena);
+    mod = _PyParser_ASTFromFile(fp, filename, enc, Py_single_input,
+                                ps1, ps2, flags, &errcode, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
     Py_XDECREF(oenc);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         if (errcode == E_EOF) {
             PyErr_Clear();
             return E_EOF;
@@ -272,12 +269,12 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     }
     m = PyImport_AddModuleObject(mod_name);
     if (m == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return -1;
     }
     d = PyModule_GetDict(m);
     v = run_mod(mod, filename, d, d, flags, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     if (v == NULL) {
         return -1;
     }
@@ -1083,8 +1080,9 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
     if (file == Py_None) {
         return;
     }
-
+    Py_INCREF(file);
     _PyErr_Display(file, exception, value, tb);
+    Py_DECREF(file);
 }
 
 PyObject *
@@ -1100,15 +1098,15 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (filename == NULL)
         return NULL;
 
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
 
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return ret;
 }
 
@@ -1117,14 +1115,14 @@ static PyObject *
 pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
            PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
 
     mod_ty mod;
-    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, NULL, NULL,
-                                     flags, NULL, arena);
+    mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
+                                flags, NULL, arena);
 
     if (closeit) {
         fclose(fp);
@@ -1137,7 +1135,7 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     else {
         ret = NULL;
     }
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
 
     return ret;
 }
@@ -1227,7 +1225,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyCodeObject *co = PyAST_CompileObject(mod, filename, flags, -1, arena);
+    PyCodeObject *co = _PyAST_Compile(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
 
@@ -1290,22 +1288,22 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
 {
     PyCodeObject *co;
     mod_ty mod;
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         PyObject *result = PyAST_mod2obj(mod);
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return result;
     }
-    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
-    PyArena_Free(arena);
+    co = _PyAST_Compile(mod, filename, flags, optimize, arena);
+    _PyArena_Free(arena);
     return (PyObject *)co;
 }
 
@@ -1369,48 +1367,6 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
         return NULL;
     }
     return str;
-}
-
-struct symtable *
-Py_SymtableStringObject(const char *str, PyObject *filename, int start)
-{
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
-}
-
-struct symtable *
-_Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, PyCompilerFlags *flags)
-{
-    struct symtable *st;
-    mod_ty mod;
-    PyArena *arena;
-
-    arena = PyArena_New();
-    if (arena == NULL)
-        return NULL;
-
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
-    if (mod == NULL) {
-        PyArena_Free(arena);
-        return NULL;
-    }
-    st = PySymtable_BuildObject(mod, filename, 0);
-    PyArena_Free(arena);
-    return st;
-}
-
-struct symtable *
-Py_SymtableString(const char *str, const char *filename_str, int start)
-{
-    PyObject *filename;
-    struct symtable *st;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    st = Py_SymtableStringObject(str, filename, start);
-    Py_DECREF(filename);
-    return st;
 }
 
 #if defined(USE_STACKCHECK)

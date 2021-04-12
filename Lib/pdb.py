@@ -1708,7 +1708,7 @@ def main():
             print("The program finished and will be restarted")
         except Restart:
             print("Restarting", mainpyfile, "with arguments:")
-            print("\t" + " ".join(args))
+            print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')

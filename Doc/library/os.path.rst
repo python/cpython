@@ -175,8 +175,8 @@ the :mod:`glob` module.)
 
    On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
    of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
-   ``~user`` is handled by stripping the last directory component from the created
-   user path derived above.
+   ``~user`` is handled by checking that the last directory component of the current
+   user's home directory matches :envvar:`USERNAME`, and replacing it if so.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
@@ -306,11 +306,10 @@ the :mod:`glob` module.)
 
    Join one or more path components intelligently.  The return value is the
    concatenation of *path* and any members of *\*paths* with exactly one
-   directory separator (``os.sep``) following each non-empty part except the
-   last, meaning that the result will only end in a separator if the last
-   part is empty.  If a component is an absolute path, all previous
-   components are thrown away and joining continues from the absolute path
-   component.
+   directory separator following each non-empty part except the last, meaning
+   that the result will only end in a separator if the last part is empty.  If
+   a component is an absolute path, all previous components are thrown away
+   and joining continues from the absolute path component.
 
    On Windows, the drive letter is not reset when an absolute path component
    (e.g., ``r'\foo'``) is encountered.  If a component contains a drive

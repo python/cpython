@@ -135,7 +135,13 @@ static void _PySSLFixErrno(void) {
 #endif
 
 /* Include generated data (error codes) */
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#include "_ssl_data_300.h"
+#elif (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#include "_ssl_data_111.h"
+#else
 #include "_ssl_data.h"
+#endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #  define OPENSSL_VERSION_1_1 1
@@ -2202,6 +2208,11 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
         Py_INCREF(value);
         Py_SETREF(self->ctx, (PySSLContext *)value);
         SSL_set_SSL_CTX(self->ssl, self->ctx->ctx);
+        /* Set SSL* internal msg_callback to state of new context's state */
+        SSL_set_msg_callback(
+            self->ssl,
+            self->ctx->msg_cb ? _PySSL_msg_callback : NULL
+        );
 #endif
     } else {
         PyErr_SetString(PyExc_TypeError, "The value must be a SSLContext");
@@ -3192,6 +3203,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #ifdef SSL_OP_SINGLE_ECDH_USE
     options |= SSL_OP_SINGLE_ECDH_USE;
 #endif
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
+    /* Make OpenSSL 3.0.0 behave like 1.1.1 */
+    options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
+#endif
     SSL_CTX_set_options(self->ctx, options);
 
     /* A bare minimum cipher list without completely broken cipher suites.
@@ -3920,6 +3935,13 @@ _password_callback(char *buf, int size, int rwflag, void *userdata)
     PyObject *fn_ret = NULL;
 
     PySSL_END_ALLOW_THREADS_S(pw_info->thread_state);
+
+    if (pw_info->error) {
+        /* already failed previously. OpenSSL 3.0.0-alpha14 invokes the
+         * callback multiple times which can lead to fatal Python error in
+         * exception check. */
+        goto error;
+    }
 
     if (pw_info->callable) {
         fn_ret = _PyObject_CallNoArg(pw_info->callable);
@@ -6181,6 +6203,8 @@ sslmodule_init_constants(PyObject *m)
                             X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
     PyModule_AddIntConstant(m, "VERIFY_X509_STRICT",
                             X509_V_FLAG_X509_STRICT);
+    PyModule_AddIntConstant(m, "VERIFY_ALLOW_PROXY_CERTS",
+                            X509_V_FLAG_ALLOW_PROXY_CERTS);
 #ifdef X509_V_FLAG_TRUSTED_FIRST
     PyModule_AddIntConstant(m, "VERIFY_X509_TRUSTED_FIRST",
                             X509_V_FLAG_TRUSTED_FIRST);
@@ -6292,6 +6316,10 @@ sslmodule_init_constants(PyObject *m)
 #ifdef SSL_OP_NO_RENEGOTIATION
     PyModule_AddIntConstant(m, "OP_NO_RENEGOTIATION",
                             SSL_OP_NO_RENEGOTIATION);
+#endif
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
+    PyModule_AddIntConstant(m, "OP_IGNORE_UNEXPECTED_EOF",
+                            SSL_OP_IGNORE_UNEXPECTED_EOF);
 #endif
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT

@@ -690,6 +690,7 @@ class RawConfigParser(MutableMapping):
         """
         if isinstance(filenames, (str, bytes, os.PathLike)):
             filenames = [filenames]
+        encoding = io.text_encoding(encoding)
         read_ok = []
         for filename in filenames:
             try:
