@@ -949,7 +949,7 @@ class Test_hook_compressed(unittest.TestCase):
 
         self.assertEqual(self.fake_open.invocation_count, 1)
         self.assertEqual(self.fake_open.last_invocation,
-                         ((filename, mode), {'encoding': 'locale'}))
+                         ((filename, mode), {'encoding': 'locale', 'errors': None}))
 
     @staticmethod
     def replace_builtin_open(new_open_func):
