@@ -1,2 +1,2 @@
-The flag to check whether tracing is enabled for the thread is now kept on
-the C stack, instead of the heap, to streamline dispatch in the interpreter.
+Move the flag for checking whether tracing is enabled to the C stack, from of the heap.
+Should speed up dispatch in the interpreter.
