@@ -986,9 +986,9 @@ Optimizations
   van Rossum in :issue:`42927`, based on ideas implemented originally in PyPy
   and MicroPython.)
 
-* When building Python with ``--enable-optimizations`` now
+* When building Python with :option:`--enable-optimizations` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.
-  This speeds builds of the Python interpreter created with ``--enable-shared``
+  This speeds builds of the Python interpreter created with :option:`--enable-shared`
   with ``gcc`` by up to 30%. See `this article
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
@@ -1300,11 +1300,12 @@ Build Changes
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
-* Added ``--disable-test-modules`` option to the ``configure`` script:
+* Added :option:`--disable-test-modules` option to the ``configure`` script:
   don't build nor install test modules.
   (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
-* Add ``--with-wheel-pkg-dir=PATH`` option to the ``./configure`` script. If
+* Add :option:`--with-wheel-pkg-dir=PATH option <--with-wheel-pkg-dir>`
+  to the ``./configure`` script. If
   specified, the :mod:`ensurepip` module looks for ``setuptools`` and ``pip``
   wheel packages in this directory: if both are present, these wheel packages
   are used instead of ensurepip bundled wheel packages.
@@ -1316,19 +1317,19 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`42856`.)
 
-* Add a new configure ``--without-static-libpython`` option to not build the
-  ``libpythonMAJOR.MINOR.a`` static library and not install the ``python.o``
-  object file.
+* Add a new :option:`configure --without-static-libpython option
+  <--without-static-libpython>` to not build the ``libpythonMAJOR.MINOR.a``
+  static library and not install the ``python.o`` object file.
 
   (Contributed by Victor Stinner in :issue:`43103`.)
 
 * The ``configure`` script now uses the ``pkg-config`` utility, if available,
   to detect the location of Tcl/Tk headers and libraries.  As before, those
-  locations can be explicitly specified with the ``--with-tcltk-includes``
-  and ``--with-tcltk-libs`` configuration options.
+  locations can be explicitly specified with the :option:`--with-tcltk-includes`
+  and :option:`--with-tcltk-libs` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
-* Add ``--with-openssl-rpath`` option to ``configure`` script. The option
+* Add :option:`--with-openssl-rpath` option to ``configure`` script. The option
   simplifies building Python with a custom OpenSSL installation, e.g.
   ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
   (Contributed by Christian Heimes in :issue:`43466`.)
@@ -1405,8 +1406,8 @@ New Features
   in debug mode because the :c:type:`PyObject` structure is the same in release
   and debug mode since Python 3.8 (see :issue:`36465`).
 
-  The limited C API is still not supported in the ``--with-trace-refs`` special
-  build (``Py_TRACE_REFS`` macro).
+  The limited C API is still not supported in the :option:`--with-trace-refs`
+  special build (``Py_TRACE_REFS`` macro).
   (Contributed by Victor Stinner in :issue:`43688`.)
 
 * Add the :c:func:`Py_Is(x, y) <Py_Is>` function to test if the *x* object is

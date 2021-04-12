@@ -168,6 +168,7 @@ Custom OpenSSL
          $ popd
 
 3. Build Python with custom OpenSSL
+   (see the configure `--with-openssl` and `--with-openssl-rpath` options)
 
    .. code-block:: shell-session
 
