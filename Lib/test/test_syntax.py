@@ -61,7 +61,7 @@ SyntaxError: cannot assign to __debug__
 
 >>> f() = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to function call
+SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
 
 >>> yield = 1
 Traceback (most recent call last):
@@ -73,7 +73,7 @@ SyntaxError: cannot delete function call
 
 >>> a + 1 = 2
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression here. Maybe you meant '==' instead of '='?
 
 >>> (x for x in x) = 1
 Traceback (most recent call last):
@@ -81,19 +81,19 @@ SyntaxError: cannot assign to generator expression
 
 >>> 1 = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to literal
+SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> "abc" = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to literal
+SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> b"" = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to literal
+SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> ... = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to Ellipsis
+SyntaxError: cannot assign to Ellipsis here. Maybe you meant '==' instead of '='?
 
 >>> `1` = 1
 Traceback (most recent call last):
@@ -126,15 +126,15 @@ SyntaxError: cannot assign to __debug__
 
 >>> [a, b, c + 1] = [1, 2, 3]
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression
 
 >>> [a, b[1], c + 1] = [1, 2, 3]
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression
 
 >>> [a, b.c.d, c + 1] = [1, 2, 3]
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
@@ -181,7 +181,7 @@ SyntaxError: cannot assign to function call
 
 >>> for (*a, b, c+1) in b: pass
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression
 
 >>> for (x, *(y, z.d())) in b: pass
 Traceback (most recent call last):
@@ -193,7 +193,7 @@ SyntaxError: cannot assign to function call
 
 >>> for a, b, (c + 1, d()): pass
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression
 
 >>> for i < (): pass
 Traceback (most recent call last):
@@ -217,7 +217,7 @@ SyntaxError: cannot assign to function call
 
 >>> with a as (*b, c, d+1): pass
 Traceback (most recent call last):
-SyntaxError: cannot assign to operator
+SyntaxError: cannot assign to expression
 
 >>> with a as (x, *(y, z.d())): pass
 Traceback (most recent call last):
@@ -465,7 +465,7 @@ keyword slot of a call site.  Test a few different options.
 # SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 # >>> f(True=2)
 # Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+# SyntaxError: cannot assign to True here. Maybe you meant '==' instead of '='?
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -684,7 +684,7 @@ leading to spurious errors.
    ...   pass
    Traceback (most recent call last):
      ...
-   SyntaxError: cannot assign to function call
+   SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
 
    >>> if 1:
    ...   pass
@@ -692,27 +692,27 @@ leading to spurious errors.
    ...   x() = 1
    Traceback (most recent call last):
      ...
-   SyntaxError: cannot assign to function call
+   SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
 
    >>> if 1:
    ...   x() = 1
    ... elif 1:
    ...   pass
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
    ... else:
    ...   pass
    Traceback (most recent call last):
      ...
-   SyntaxError: cannot assign to function call
-
-   >>> if 1:
-   ...   pass
-   ... elif 1:
-   ...   x() = 1
-   ... else:
-   ...   pass
-   Traceback (most recent call last):
-     ...
-   SyntaxError: cannot assign to function call
+   SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
 
    >>> if 1:
    ...   pass
@@ -722,7 +722,7 @@ leading to spurious errors.
    ...   x() = 1
    Traceback (most recent call last):
      ...
-   SyntaxError: cannot assign to function call
+   SyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?
 
     Missing ':' before suites:
 
@@ -843,6 +843,26 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> if x = 3:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+   >>> while x = 3:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+   >>> if x.a = 3:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+   >>> while x.a = 3:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -894,19 +914,19 @@ SyntaxError: keyword argument repeated: a
 
 >>> {1, 2, 3} = 42
 Traceback (most recent call last):
-SyntaxError: cannot assign to set display
+SyntaxError: cannot assign to set display here. Maybe you meant '==' instead of '='?
 
 >>> {1: 2, 3: 4} = 42
 Traceback (most recent call last):
-SyntaxError: cannot assign to dict display
+SyntaxError: cannot assign to dict literal here. Maybe you meant '==' instead of '='?
 
 >>> f'{x}' = 42
 Traceback (most recent call last):
-SyntaxError: cannot assign to f-string expression
+SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
 >>> f'{x}-{y}' = 42
 Traceback (most recent call last):
-SyntaxError: cannot assign to f-string expression
+SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
 >>> from t import x,
 Traceback (most recent call last):
@@ -988,7 +1008,7 @@ class SyntaxTestCase(unittest.TestCase):
     def test_expression_with_assignment(self):
         self._check_error(
             "print(end1 + end2 = ' ')",
-            'expression cannot contain assignment, perhaps you meant "=="?',
+            "cannot assign to expression here. Maybe you meant '==' instead of '='?",
             offset=19
         )
 
@@ -1000,31 +1020,31 @@ class SyntaxTestCase(unittest.TestCase):
 
     def test_assign_del(self):
         self._check_error("del (,)", "invalid syntax")
-        self._check_error("del 1", "delete literal")
-        self._check_error("del (1, 2)", "delete literal")
-        self._check_error("del None", "delete None")
-        self._check_error("del *x", "delete starred")
-        self._check_error("del (*x)", "use starred expression")
-        self._check_error("del (*x,)", "delete starred")
-        self._check_error("del [*x,]", "delete starred")
-        self._check_error("del f()", "delete function call")
-        self._check_error("del f(a, b)", "delete function call")
-        self._check_error("del o.f()", "delete function call")
-        self._check_error("del a[0]()", "delete function call")
-        self._check_error("del x, f()", "delete function call")
-        self._check_error("del f(), x", "delete function call")
-        self._check_error("del [a, b, ((c), (d,), e.f())]", "delete function call")
-        self._check_error("del (a if True else b)", "delete conditional")
-        self._check_error("del +a", "delete operator")
-        self._check_error("del a, +b", "delete operator")
-        self._check_error("del a + b", "delete operator")
-        self._check_error("del (a + b, c)", "delete operator")
-        self._check_error("del (c[0], a + b)", "delete operator")
-        self._check_error("del a.b.c + 2", "delete operator")
-        self._check_error("del a.b.c[0] + 2", "delete operator")
-        self._check_error("del (a, b, (c, d.e.f + 2))", "delete operator")
-        self._check_error("del [a, b, (c, d.e.f[0] + 2)]", "delete operator")
-        self._check_error("del (a := 5)", "delete named expression")
+        self._check_error("del 1", "cannot delete literal")
+        self._check_error("del (1, 2)", "cannot delete literal")
+        self._check_error("del None", "cannot delete None")
+        self._check_error("del *x", "cannot delete starred")
+        self._check_error("del (*x)", "cannot use starred expression")
+        self._check_error("del (*x,)", "cannot delete starred")
+        self._check_error("del [*x,]", "cannot delete starred")
+        self._check_error("del f()", "cannot delete function call")
+        self._check_error("del f(a, b)", "cannot delete function call")
+        self._check_error("del o.f()", "cannot delete function call")
+        self._check_error("del a[0]()", "cannot delete function call")
+        self._check_error("del x, f()", "cannot delete function call")
+        self._check_error("del f(), x", "cannot delete function call")
+        self._check_error("del [a, b, ((c), (d,), e.f())]", "cannot delete function call")
+        self._check_error("del (a if True else b)", "cannot delete conditional")
+        self._check_error("del +a", "cannot delete expression")
+        self._check_error("del a, +b", "cannot delete expression")
+        self._check_error("del a + b", "cannot delete expression")
+        self._check_error("del (a + b, c)", "cannot delete expression")
+        self._check_error("del (c[0], a + b)", "cannot delete expression")
+        self._check_error("del a.b.c + 2", "cannot delete expression")
+        self._check_error("del a.b.c[0] + 2", "cannot delete expression")
+        self._check_error("del (a, b, (c, d.e.f + 2))", "cannot delete expression")
+        self._check_error("del [a, b, (c, d.e.f[0] + 2)]", "cannot delete expression")
+        self._check_error("del (a := 5)", "cannot delete named expression")
         # We don't have a special message for this, but make sure we don't
         # report "cannot delete name"
         self._check_error("del a += b", "invalid syntax")
