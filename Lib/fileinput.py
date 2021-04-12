@@ -3,7 +3,7 @@
 Typical use is:
 
     import fileinput
-    for line in fileinput.input():
+    for line in fileinput.input(encoding="utf-8"):
         process(line)
 
 This iterates over the lines of all files listed in sys.argv[1:],
@@ -76,7 +76,7 @@ __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
 _state = None
 
 def input(files=None, inplace=False, backup="", *, mode="r", openhook=None,
-          encoding=None):
+          encoding=None, errors=None):
     """Return an instance of the FileInput class, which can be iterated.
 
     The parameters are passed to the constructor of the FileInput class.
@@ -87,7 +87,7 @@ def input(files=None, inplace=False, backup="", *, mode="r", openhook=None,
     if _state and _state._file:
         raise RuntimeError("input() already active")
     _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook,
-                       encoding=encoding)
+                       encoding=encoding, errors=errors)
     return _state
 
 def close():
@@ -182,7 +182,7 @@ class FileInput:
     """
 
     def __init__(self, files=None, inplace=False, backup="", *,
-                 mode="r", openhook=None, encoding=None):
+                 mode="r", openhook=None, encoding=None, errors=None):
         if isinstance(files, str):
             files = (files,)
         elif isinstance(files, os.PathLike):
@@ -206,6 +206,7 @@ class FileInput:
         self._isstdin = False
         self._backupfilename = None
         self._encoding = encoding
+        self._errors = errors
 
         # We can not use io.text_encoding() here because old openhook doesn't
         # take encoding parameter.
@@ -373,14 +374,14 @@ class FileInput:
                         self._file = self._openhook(self._filename, self._mode)
                     else:
                         self._file = self._openhook(
-                            self._filename, self._mode, encoding=self._encoding)
+                            self._filename, self._mode, encoding=self._encoding, errors=self._errors)
                 else:
                     # EncodingWarning is emitted in __init__() already
                     if "b" not in self._mode:
                         encoding = self._encoding or "locale"
                     else:
                         encoding = None
-                    self._file = open(self._filename, self._mode, encoding=encoding)
+                    self._file = open(self._filename, self._mode, encoding=encoding, errors=self._errors)
         self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()
 
@@ -411,7 +412,7 @@ class FileInput:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def hook_compressed(filename, mode, encoding=None):
+def hook_compressed(filename, mode, encoding=None, errors=None):
     if encoding is None:  # EncodingWarning is emitted in FileInput() already.
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
@@ -422,11 +423,11 @@ def hook_compressed(filename, mode, encoding=None):
         import bz2
         stream = bz2.BZ2File(filename, mode)
     else:
-        return open(filename, mode, encoding=encoding)
+        return open(filename, mode, encoding=encoding, errors=errors)
 
     # gzip and bz2 are binary mode by default.
     if "b" not in mode:
-        stream = io.TextIOWrapper(stream, encoding=encoding)
+        stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors)
     return stream
 
 
