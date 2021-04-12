@@ -638,7 +638,7 @@ PyConfig
       Set to ``1`` by the :envvar:`PYTHONDUMPREFS` environment variable.
 
       Need a special build of Python with the ``Py_TRACE_REFS`` macro defined:
-      see :option:`configure --with-trace-refs <--with-trace-refs>`.
+      see the :option:`configure --with-trace-refs option <--with-trace-refs>`.
 
       Default: ``0``.
 
@@ -820,7 +820,7 @@ PyConfig
       Set to ``1`` by the :envvar:`PYTHONMALLOCSTATS` environment variable.
 
       The option is ignored if Python is :option:`configured using
-      --without-pymalloc <--without-pymalloc>`.
+      the --without-pymalloc option <--without-pymalloc>`.
 
       Default: ``0``.
 
@@ -831,8 +831,8 @@ PyConfig
       Set by the :envvar:`PYTHONPLATLIBDIR` environment variable.
 
       Default: value of the ``PLATLIBDIR`` macro which is set by the
-      :option:`configure --with-platlibdir option <--with-platlibdir>` (default:
-      ``"lib"``).
+      :option:`configure --with-platlibdir option <--with-platlibdir>`
+      (default: ``"lib"``).
 
       Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
