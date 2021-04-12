@@ -412,7 +412,7 @@ class FileInput:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def hook_compressed(filename, mode, encoding=None, errors=None):
+def hook_compressed(filename, mode, *, encoding=None, errors=None):
     if encoding is None:  # EncodingWarning is emitted in FileInput() already.
         encoding = "locale"
     ext = os.path.splitext(filename)[1]
