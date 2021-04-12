@@ -849,7 +849,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         """
         self._thread = t = threading.Thread(target=self.serve_forever,
                                             args=(self.poll_interval,))
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
 
     def serve_forever(self, poll_interval):
@@ -901,7 +901,7 @@ class ControlMixin(object):
         """
         self._thread = t = threading.Thread(target=self.serve_forever,
                                             args=(self.poll_interval,))
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
 
     def serve_forever(self, poll_interval):
