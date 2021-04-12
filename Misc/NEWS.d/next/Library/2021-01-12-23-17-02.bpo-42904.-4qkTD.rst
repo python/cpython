@@ -1,0 +1,2 @@
+:func:`typing.get_type_hints` now checks the local namespace of a class when
+evaluating :pep:`563` annotations inside said class.
