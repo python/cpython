@@ -54,7 +54,7 @@ typedef struct {
 #elif BOB_SIZE_TYPE == size_t
     #define BOB_SIZE_MAX UINTPTR_MAX
 #else
-    #error Please define BOB_SIZE_MAX to BOB_SIZE_TYPE's max value
+    #error "Please define BOB_SIZE_MAX to BOB_SIZE_TYPE's max value"
 #endif
 
 const char unable_allocate_msg[] = "Unable to allocate output buffer.";
@@ -226,7 +226,11 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
     int block_size;
 
     // ensure no gaps in the data
-    assert(*avail_out == 0);
+    if (*avail_out != 0) {
+        PyErr_SetString(PyExc_SystemError,
+                        "*avail_out is non-zero in _BlocksOutputBuffer_Grow().");
+        return -1;
+    }
 
     // get block size
     if (list_len < (Py_ssize_t) Py_ARRAY_LENGTH(BUFFER_BLOCK_SIZE)) {
@@ -281,7 +285,6 @@ _BlocksOutputBuffer_GetDataSize(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail
 }
 
 /* Finish the buffer.
-   After it succeeds, don't call OutputBuffer_OnError() function.
 
    Return a bytes object on success
    Return NULL on failure
@@ -294,11 +297,12 @@ _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
 
     // fast path for single block
     if ( (list_len == 1 && avail_out == 0) ||
-         (list_len == 2 && Py_SIZE(PyList_GET_ITEM(buffer->list, 1)) == (Py_ssize_t) avail_out)) {
+         (list_len == 2 && Py_SIZE(PyList_GET_ITEM(buffer->list, 1)) == (Py_ssize_t) avail_out))
+    {
         block = PyList_GET_ITEM(buffer->list, 0);
         Py_INCREF(block);
 
-        Py_DECREF(buffer->list);
+        Py_CLEAR(buffer->list);
         return block;
     }
 
@@ -327,7 +331,7 @@ _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
         assert(Py_SIZE(result) == 0);
     }
 
-    Py_DECREF(buffer->list);
+    Py_CLEAR(buffer->list);
     return result;
 }
 
@@ -336,7 +340,7 @@ _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
 static inline void
 _BlocksOutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 {
-    Py_XDECREF(buffer->list);
+    Py_CLEAR(buffer->list);
 }
 
 #undef BOB_BUFFER_TYPE
