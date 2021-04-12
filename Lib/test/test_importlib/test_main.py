@@ -83,7 +83,7 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
         metadata_dir = site_dir / 'my_pkg.dist-info'
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
-        with metadata.open('w') as strm:
+        with metadata.open('w', encoding='utf-8') as strm:
             strm.write('Version: 1.0\n')
         return 'my-pkg'
 
@@ -102,7 +102,7 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
         metadata_dir = site_dir / 'CherryPy.dist-info'
         metadata_dir.mkdir()
         metadata = metadata_dir / 'METADATA'
-        with metadata.open('w') as strm:
+        with metadata.open('w', encoding='utf-8') as strm:
             strm.write('Version: 1.0\n')
         return 'CherryPy'
 
