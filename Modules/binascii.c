@@ -451,6 +451,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
 
     const unsigned char *ascii_data = data->buf;
     size_t ascii_len = data->len;
+    char padding_started = 0;
 
     /* Allocate the buffer */
     Py_ssize_t bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
@@ -471,6 +472,8 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         ** the invalid ones.
         */
         if (this_ch == BASE64_PAD) {
+            padding_started = 1;
+
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
                 /* A pad sequence means we should not parse more input.
                 ** We've already interpreted the data from the quad at this point.
@@ -499,6 +502,15 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
                 goto error_end;
             }
             continue;
+        }
+
+        // Characters that are not '=', in the middle of the padding, are not allowed
+        if (strict_mode && padding_started) {
+            binascii_state *state = PyModule_GetState(module);
+            if (state) {
+                PyErr_SetString(state->Error, "Malformed padding in strict mode");
+            }
+            goto error_end;
         }
         pads = 0;
 
