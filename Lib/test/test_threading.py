@@ -154,9 +154,9 @@ class ThreadTests(BaseTestCase):
 
     def test_ident_of_no_threading_threads(self):
         # The ident still must work for the main thread and dummy threads.
-        self.assertIsNotNone(threading.currentThread().ident)
+        self.assertIsNotNone(threading.current_thread().ident)
         def f():
-            ident.append(threading.currentThread().ident)
+            ident.append(threading.current_thread().ident)
             done.set()
         done = threading.Event()
         ident = []
@@ -447,13 +447,32 @@ class ThreadTests(BaseTestCase):
         # Just a quick sanity check to make sure the old method names are
         # still present
         t = threading.Thread()
-        t.isDaemon()
-        t.setDaemon(True)
-        t.getName()
-        t.setName("name")
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'get the daemon attribute'):
+            t.isDaemon()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'set the daemon attribute'):
+            t.setDaemon(True)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'get the name attribute'):
+            t.getName()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'set the name attribute'):
+            t.setName("name")
+
         e = threading.Event()
-        e.isSet()
-        threading.activeCount()
+        with self.assertWarnsRegex(DeprecationWarning, 'use is_set()'):
+            e.isSet()
+
+        cond = threading.Condition()
+        cond.acquire()
+        with self.assertWarnsRegex(DeprecationWarning, 'use notify_all()'):
+            cond.notifyAll()
+
+        with self.assertWarnsRegex(DeprecationWarning, 'use active_count()'):
+            threading.activeCount()
+        with self.assertWarnsRegex(DeprecationWarning, 'use current_thread()'):
+            threading.currentThread()
 
     def test_repr_daemon(self):
         t = threading.Thread()
