@@ -53,7 +53,7 @@ matrix:
         - cd Doc
         - make venv PYTHON=python
       script:
-        - make check html SPHINXOPTS="-q -W -j4"
+        - make check html suspicious SPHINXOPTS="-q -W -j4"
     - name: "Documentation tests"
       os: linux
       language: c

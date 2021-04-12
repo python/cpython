@@ -831,7 +831,7 @@ PyConfig
       Set by the :envvar:`PYTHONPLATLIBDIR` environment variable.
 
       Default: value of the ``PLATLIBDIR`` macro which is set by the
-      :option`configure --with-platlibdir option <--with-platlibdir>` (default:
+      :option:`configure --with-platlibdir option <--with-platlibdir>` (default:
       ``"lib"``).
 
       Part of the :ref:`Python Path Configuration <init-path-config>` input.
