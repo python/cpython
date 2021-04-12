@@ -1129,6 +1129,27 @@ Deprecated
   ``cache=shared`` query parameter.
   (Contributed by Erlend E. Aasland in :issue:`24464`.)
 
+* The following ``threading`` methods are now deprecated:
+
+  * ``threading.currentThread`` => :func:`threading.current_thread`
+
+  * ``threading.activeCount`` => :func:`threading.active_count`
+
+  * ``threading.Condition.notifyAll`` =>
+    :meth:`threading.Condition.notify_all`
+
+  * ``threading.Event.isSet`` => :meth:`threading.Event.is_set`
+
+  * ``threading.Thread.setName`` => :attr:`threading.Thread.name`
+
+  * ``threading.thread.getName`` => :attr:`threading.Thread.name`
+
+  * ``threading.Thread.isDaemon`` => :attr:`threading.Thread.daemon`
+
+  * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
+
+  (Contributed by Jelle Zijlstra in :issue:`21574`.)
+
 
 Removed
 =======
