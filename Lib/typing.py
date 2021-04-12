@@ -1628,7 +1628,10 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         for base in reversed(obj.__mro__):
             if globalns is None:
-                base_globals = sys.modules[base.__module__].__dict__
+                try:
+                    base_globals = sys.modules[base.__module__].__dict__
+                except KeyError:
+                    continue
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
