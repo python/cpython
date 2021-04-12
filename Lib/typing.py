@@ -1632,12 +1632,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
+            base_locals = dict(vars(base)) if localns is None else localns
             for name, value in ann.items():
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
-                value = _eval_type(value, base_globals, localns)
+                value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 

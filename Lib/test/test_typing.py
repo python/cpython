@@ -2874,7 +2874,7 @@ class GetTypeHintTests(BaseTestCase):
                          {'x': int, 'y': int})
         self.assertEqual(gth(mod_generics_cache.B),
                          {'my_inner_a1': mod_generics_cache.B.A,
-                          'my_inner_a2': mod_generics_cache.A,
+                          'my_inner_a2': mod_generics_cache.B.A,
                           'my_outer_a': mod_generics_cache.A})
 
     def test_respect_no_type_check(self):
@@ -3009,6 +3009,13 @@ class GetTypeHintTests(BaseTestCase):
             get_type_hints(MySet.__ior__, globals(), locals()),
             {'other': MySet[T], 'return': MySet[T]}
         )
+
+    def test_get_type_hints_classes(self):
+        class Foo:
+            y = str
+            x: y
+        # This previously raised an error under PEP 563.
+        self.assertEqual(get_type_hints(Foo), {'x': str})
 
 
 class GetUtilitiesTestCase(TestCase):
