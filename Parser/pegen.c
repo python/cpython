@@ -147,8 +147,8 @@ byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
         return 0;
     }
     Py_ssize_t len = strlen(str);
-    if (col_offset > len) {
-        col_offset = len;
+    if (col_offset > len + 1) {
+        col_offset = len + 1;
     }
     assert(col_offset >= 0);
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
@@ -184,7 +184,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case BoolOp_kind:
         case BinOp_kind:
         case UnaryOp_kind:
-            return "operator";
+            return "expression";
         case GeneratorExp_kind:
             return "generator expression";
         case Yield_kind:
@@ -199,7 +199,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case DictComp_kind:
             return "dict comprehension";
         case Dict_kind:
-            return "dict display";
+            return "dict literal";
         case Set_kind:
             return "set display";
         case JoinedStr_kind:
