@@ -63,6 +63,13 @@ def text_encoding(encoding, stacklevel=2):
     return encoding
 
 
+# Wrapper for builtins.open
+#
+# Trick so that open() won't become a bound method when stored
+# as a class variable (as dbm.dumb does).
+#
+# See init_set_builtins_open() in Python/pylifecycle.c.
+@staticmethod
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
 
@@ -313,18 +320,9 @@ class DocDescriptor:
                  "errors=None, newline=None, closefd=True)\n\n" +
             open.__doc__)
 
-class OpenWrapper:
-    """Wrapper for builtins.open
 
-    Trick so that open won't become a bound method when stored
-    as a class variable (as dbm.dumb does).
-
-    See initstdio() in Python/pylifecycle.c.
-    """
-    __doc__ = DocDescriptor()
-
-    def __new__(cls, *args, **kwargs):
-        return open(*args, **kwargs)
+# bpo-43680: Alias to open() kept for backward compatibility
+OpenWrapper = open
 
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
