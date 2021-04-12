@@ -248,7 +248,7 @@ def _setup_func(funcopy, mock, sig):
     mock._mock_delegate = funcopy
 
 
-def _setup_async_mock(mock):
+def _setup_async_func_mock(mock):
     mock._is_coroutine = asyncio.coroutines._is_coroutine
     mock.await_count = 0
     mock.await_args = None
@@ -2230,6 +2230,9 @@ class AsyncMockMixin(Base):
 
         return self.return_value
 
+    def __await__(self):
+        return self._execute_mock_call().__await__()
+
     def assert_awaited(self):
         """
         Assert that the mock was awaited at least once.
@@ -2695,11 +2698,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # should only happen at the top level because we don't
         # recurse for functions
         mock = _set_signature(mock, spec)
+        if is_async:
+            _setup_async_func_mock(mock)
     else:
         _check_signature(spec, mock, is_type, instance)
-
-    if is_async:
-        _setup_async_mock(mock)
 
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
