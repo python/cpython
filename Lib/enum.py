@@ -919,25 +919,30 @@ class Enum(metaclass=EnumType):
         except Exception as e:
             exc = e
             result = None
-        if isinstance(result, cls):
-            return result
-        elif (
-                Flag is not None and issubclass(cls, Flag)
-                and cls._boundary_ is EJECT and isinstance(result, int)
-            ):
-            return result
-        else:
-            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
-            if result is None and exc is None:
-                raise ve_exc
-            elif exc is None:
-                exc = TypeError(
-                        'error in %s._missing_: returned %r instead of None or a valid member'
-                        % (cls.__name__, result)
-                        )
-            if not isinstance(exc, ValueError):
-                exc.__context__ = ve_exc
-            raise exc
+        try:
+            if isinstance(result, cls):
+                return result
+            elif (
+                    Flag is not None and issubclass(cls, Flag)
+                    and cls._boundary_ is EJECT and isinstance(result, int)
+                ):
+                return result
+            else:
+                ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+                if result is None and exc is None:
+                    raise ve_exc
+                elif exc is None:
+                    exc = TypeError(
+                            'error in %s._missing_: returned %r instead of None or a valid member'
+                            % (cls.__name__, result)
+                            )
+                if not isinstance(exc, ValueError):
+                    exc.__context__ = ve_exc
+                raise exc
+        finally:
+            # ensure all variables that could hold an exception are destroyed
+            exc = None
+            ve_exc = None
 
     def _generate_next_value_(name, start, count, last_values):
         """
