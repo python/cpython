@@ -131,8 +131,7 @@ distance(const char *string1, const char *string2)
 
 static inline PyObject*
 calculate_suggestions(PyObject* dir,
-                      PyObject* name,
-                      PyObject* oldexceptionvalue)
+                      PyObject* name)
 {
     assert(!PyErr_Occurred());
     assert(PyList_CheckExact(dir));
@@ -164,81 +163,37 @@ calculate_suggestions(PyObject* dir,
     if (!suggestion) {
         return NULL;
     }
-    return PyUnicode_FromFormat("%S. Did you mean: %U?",
-                                oldexceptionvalue, suggestion);
+    return PyUnicode_FromFormat("Did you mean: %U?", suggestion);
 }
 
-static int
+static PyObject*
 offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
-    int return_val = -1;
-
     PyObject* name = exc->name; // borrowed reference
     PyObject* obj = exc->obj; // borrowed reference
 
     // Abort if we don't have an attribute name or we have an invalid one
     if (name == NULL || obj == NULL || !PyUnicode_CheckExact(name)) {
-        return -1;
-    }
-
-    PyObject* oldexceptionvalue = NULL;
-    Py_ssize_t nargs = PyTuple_GET_SIZE(exc->args);
-    switch (nargs) {
-        case 0:
-            oldexceptionvalue = PyUnicode_New(0, 0);
-            if (oldexceptionvalue == NULL) {
-                return -1;
-            }
-            break;
-        case 1:
-            oldexceptionvalue = PyTuple_GET_ITEM(exc->args, 0);
-            Py_INCREF(oldexceptionvalue);
-            // Check that the the message is an unicode objects that we can use.
-            if (!PyUnicode_CheckExact(oldexceptionvalue)) {
-                goto exit;
-            }
-            break;
-        default:
-            // Exceptions with more than 1 value in args are not
-            // formatted using args, so no need to make a new suggestion.
-            return 0;
+        return NULL;
     }
 
     PyObject* dir = PyObject_Dir(obj);
     if (dir == NULL) {
-        goto exit;
+        return NULL;
     }
 
-    PyObject* newexceptionvalue = calculate_suggestions(dir, name, oldexceptionvalue);
+    PyObject* suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
-
-    if (newexceptionvalue == NULL) {
-        // We did't find a suggestion :(
-        goto exit;
-    }
-
-    PyObject* new_args = PyTuple_Pack(1, newexceptionvalue);
-    Py_DECREF(newexceptionvalue);
-    if (new_args == NULL) {
-        goto exit;
-    }
-    Py_SETREF(exc->args, new_args);
-    exc->args = new_args;
-    return_val = 0;
-
-exit:
-    Py_DECREF(oldexceptionvalue);
-
-    // Clear any error that may have happened.
-    PyErr_Clear();
-    return return_val;
+    return suggestions;
 }
 
 
-int _Py_Offer_Suggestions(PyObject* exception, PyObject* value) {
-    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError) &&
-        offer_suggestions_for_attribute_error((PyAttributeErrorObject*) value) != 0) {
-             PyErr_Clear();
+// Offer suggestions for a given exception. This function does not raise exceptions
+// and returns NULL if no exception was found.
+PyObject* _Py_Offer_Suggestions(PyObject* exception) {
+    assert(!PyErr_Occurred());
+    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError)) {
+        return offer_suggestions_for_attribute_error((PyAttributeErrorObject*) exception);
     }
-    return 0;
+    return NULL;
 }
 

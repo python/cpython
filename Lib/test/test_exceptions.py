@@ -1570,7 +1570,7 @@ class AttributeErrorTests(unittest.TestCase):
                 with support.captured_stderr() as err:
                     sys.__excepthook__(*sys.exc_info())
 
-            self.assertNotIn("blech", err.getvalue())
+            self.assertIn("blech", err.getvalue())
 
 
 class ImportErrorTests(unittest.TestCase):

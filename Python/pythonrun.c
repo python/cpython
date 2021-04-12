@@ -954,6 +954,14 @@ print_exception(PyObject *f, PyObject *value)
     if (err < 0) {
         PyErr_Clear();
     }
+    PyObject* suggestions = _Py_Offer_Suggestions(value);
+    if (suggestions) {
+        err = PyFile_WriteString(". ", f);
+        if (err == 0) {
+            err = PyFile_WriteObject(suggestions, f, Py_PRINT_RAW);
+        }
+        Py_DECREF(suggestions);
+    }
     err += PyFile_WriteString("\n", f);
     Py_XDECREF(tb);
     Py_DECREF(value);
@@ -1079,10 +1087,6 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
         return;
     }
     if (file == Py_None) {
-        return;
-    }
-
-    if (_Py_Offer_Suggestions(exception, value) != 0) {
         return;
     }
 
