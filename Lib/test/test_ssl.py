@@ -168,7 +168,10 @@ if is_ubuntu():
     def seclevel_workaround(*ctxs):
         """"Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
         for ctx in ctxs:
-            if ctx.minimum_version <= ssl.TLSVersion.TLSv1_1:
+            if (
+                hasattr(ctx, "minimum_version") and
+                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1
+            ):
                 ctx.set_ciphers("@SECLEVEL=1:ALL")
 else:
     def seclevel_workaround(*ctxs):
