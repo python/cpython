@@ -114,6 +114,38 @@ class BinASCIITest(unittest.TestCase):
         # empty strings. TBD: shouldn't it raise an exception instead ?
         self.assertEqual(binascii.a2b_base64(self.type2test(fillers)), b'')
 
+    def test_base64_strict_mode(self):
+        # Test base64 with strict mode on
+        def assertExcessData(data):
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Excess data'):
+                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+
+        def assertNonBase64Data(data):
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Only base64 data'):
+                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+
+        def assertMalformedPadding(data):
+            with self.assertRaisesRegex(binascii.Error, r'(?i)Malformed padding'):
+                binascii.a2b_base64(self.type2test(data), strict_mode=True)
+
+        # Test excess data exceptions
+        assertExcessData(b'ab==a')
+        assertExcessData(b'ab===')
+        assertExcessData(b'ab==:')
+        assertExcessData(b'abc=a')
+        assertExcessData(b'abc=:')
+        assertExcessData(b'ab==\n')
+
+        # Test non-base64 data exceptions
+        assertNonBase64Data(b'ab:(){:|:&};:==')
+        assertNonBase64Data(b'a\nb==')
+        assertNonBase64Data(b'a\x00b==')
+
+        # Test malformed padding
+        assertMalformedPadding(b'ab=c=')
+        assertMalformedPadding(b'ab=ab==')
+
+
     def test_base64errors(self):
         # Test base64 with invalid padding
         def assertIncorrectPadding(data):
