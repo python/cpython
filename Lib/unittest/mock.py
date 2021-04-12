@@ -24,6 +24,7 @@ __all__ = (
 
 
 import asyncio
+import collections
 import contextlib
 import io
 import inspect
@@ -31,7 +32,7 @@ import pprint
 import sys
 import builtins
 from asyncio import iscoroutinefunction
-from types import CodeType, ModuleType, MethodType
+from types import CodeType, ModuleType, MethodType, CoroutineType, GeneratorType
 from unittest.util import safe_repr
 from functools import wraps, partial
 
@@ -54,6 +55,14 @@ def _is_async_obj(obj):
     if hasattr(obj, '__func__'):
         obj = getattr(obj, '__func__')
     return iscoroutinefunction(obj) or inspect.isawaitable(obj)
+
+
+def _is_type_awaitable(cls):
+    """Adaptation of inspect.isawaitable for types."""
+    return (issubclass(cls, CoroutineType) or
+            issubclass(cls, GeneratorType) and
+                bool(cls.gi_code.co_flags & inspect.CO_ITERABLE_COROUTINE) or
+            issubclass(cls, collections.abc.Awaitable))
 
 
 def _is_instance_mock(obj):
@@ -2667,7 +2676,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     elif not _callable(spec):
         Klass = NonCallableMagicMock
     elif is_type and instance:
-        if _is_async_obj(spec.__new__(spec)):
+        if _is_type_awaitable(spec):
             Klass = AsyncMock
         elif not _instance_callable(spec):
             Klass = NonCallableMagicMock
