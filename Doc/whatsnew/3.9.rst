@@ -1211,9 +1211,9 @@ Build Changes
   non-system Tcl and Tk frameworks if they are installed in
   ``/Library/Frameworks``, as had been the case on older releases
   of macOS. If a macOS SDK is explicitly configured, by using
-  ``--enable-universalsdk=`` or ``-isysroot``, only the SDK itself is
+  :option:`--enable-universalsdk` or ``-isysroot``, only the SDK itself is
   searched. The default behavior can still be overridden with
-  ``--with-tcltk-includes`` and ``--with-tcltk-libs``.
+  :option:`--with-tcltk-includes` and :option:`--with-tcltk-libs`.
   (Contributed by Ned Deily in :issue:`34956`.)
 
 * Python can now be built for Windows 10 ARM64.
