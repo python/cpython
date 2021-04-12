@@ -1932,6 +1932,38 @@ class TestEnum(unittest.TestCase):
         else:
             raise Exception('Exception not raised.')
 
+    def test_missing_exceptions_reset(self):
+        import weakref
+        #
+        class TestEnum(enum.Enum):
+            VAL1 = 'val1'
+            VAL2 = 'val2'
+        #
+        class Class1:
+            def __init__(self):
+                # Gracefully handle an exception of our own making
+                try:
+                    raise ValueError()
+                except ValueError:
+                    pass
+        #
+        class Class2:
+            def __init__(self):
+                # Gracefully handle an exception of Enum's making
+                try:
+                    TestEnum('invalid_value')
+                except ValueError:
+                    pass
+        # No strong refs here so these are free to die.
+        class_1_ref = weakref.ref(Class1())
+        class_2_ref = weakref.ref(Class2())
+        #
+        # The exception raised by Enum creates a reference loop and thus
+        # Class2 instances will stick around until the next gargage collection
+        # cycle, unlike Class1.
+        self.assertIs(class_1_ref(), None)
+        self.assertIs(class_2_ref(), None)
+
     def test_multiple_mixin(self):
         class MaxMixin:
             @classproperty
