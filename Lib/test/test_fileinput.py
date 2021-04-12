@@ -538,13 +538,14 @@ class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""
 
     def __init__(self, files=None, inplace=False, backup="", *,
-                 mode="r", openhook=None, encoding=None):
+                 mode="r", openhook=None, encoding=None, errors=None):
         self.files = files
         self.inplace = inplace
         self.backup = backup
         self.mode = mode
         self.openhook = openhook
         self.encoding = encoding
+        self.errors = errors
         self._file = None
         self.invocation_counts = collections.defaultdict(lambda: 0)
         self.return_values = {}
