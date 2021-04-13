@@ -1969,6 +1969,31 @@ _Py_GetConfig(void)
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
+/* Dumbest possible (and very inefficient) implementation */
+
+PyObject **
+_PyThreadState_PushLocals(PyThreadState *tstate, int size)
+{
+    (void)tstate;
+    PyObject **res = PyMem_Malloc(sizeof(PyObject **)*size);
+    if (res == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (Py_ssize_t i=0; i < size; i++) {
+        res[i] = NULL;
+    }
+    return res;
+}
+
+void
+_PyThreadState_PopLocals(PyThreadState *tstate, PyObject **locals)
+{
+    (void)tstate;
+    PyMem_Free(locals);
+}
+
+
 #ifdef __cplusplus
 }
 #endif

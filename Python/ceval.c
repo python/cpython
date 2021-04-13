@@ -4771,10 +4771,6 @@ fail:
 
 }
 
-/* Exception table parsing code.
- * See Objects/exception_table_notes.txt for details.
- */
-
 static inline unsigned char *
 parse_varint(unsigned char *p, int *result) {
     int val = p[0] & 63;
@@ -4862,25 +4858,14 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
     return 0;
 }
 
-PyFrameObject *
-_PyEval_MakeFrameVector(PyThreadState *tstate,
-           PyFrameConstructor *con, PyObject *locals,
-           PyObject *const *args, Py_ssize_t argcount,
-           PyObject *kwnames)
+static int
+initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
+    PyObject **fastlocals, PyObject *const *args,
+    Py_ssize_t argcount, PyObject *kwnames)
 {
-    assert(is_tstate_valid(tstate));
-
     PyCodeObject *co = (PyCodeObject*)con->fc_code;
-    assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-
-    /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, con, locals);
-    if (f == NULL) {
-        return NULL;
-    }
-    PyObject **fastlocals = f->f_localsptr;
-    PyObject **freevars = f->f_localsptr + co->co_nlocals;
+    PyObject **freevars = fastlocals + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
@@ -5086,25 +5071,33 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
         freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
     }
 
-    return f;
+    return 0;
 
 fail: /* Jump here from prelude on failure */
+    return -1;
 
-    /* decref'ing the frame can cause __del__ methods to get invoked,
-       which can call back into Python.  While we're done with the
-       current Python frame (f), the associated C stack is still in use,
-       so recursion_depth must be boosted for the duration.
-    */
-    if (Py_REFCNT(f) > 1) {
-        Py_DECREF(f);
-        _PyObject_GC_TRACK(f);
+}
+
+
+PyFrameObject *
+_PyEval_MakeFrameVector(PyThreadState *tstate,
+           PyFrameConstructor *con, PyObject *locals,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *kwnames, PyObject** localsarray)
+{
+    assert(is_tstate_valid(tstate));
+    assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
+
+    /* Create the frame */
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, con, locals, localsarray);
+    if (f == NULL) {
+        return NULL;
     }
-    else {
-        ++tstate->recursion_depth;
+    if (initialize_locals(tstate, con, f->f_localsptr, args, argcount, kwnames)) {
         Py_DECREF(f);
-        --tstate->recursion_depth;
+        return NULL;
     }
-    return NULL;
+    return f;
 }
 
 static PyObject *
@@ -5142,15 +5135,31 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
+    PyObject **localsarray;
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int is_coro = code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+    if (is_coro) {
+        localsarray = NULL;
+    }
+    else {
+        localsarray = _PyThreadState_PushLocals(tstate, code->co_nlocalsplus + code->co_stacksize);
+        if (localsarray == NULL) {
+            return NULL;
+        }
+    }
     PyFrameObject *f = _PyEval_MakeFrameVector(
-        tstate, con, locals, args, argcount, kwnames);
+        tstate, con, locals, args, argcount, kwnames, localsarray);
     if (f == NULL) {
+        if (!is_coro) {
+            _PyThreadState_PopLocals(tstate, localsarray);
+        }
         return NULL;
     }
-    if (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+    if (is_coro) {
         return make_coro(con, f);
     }
     PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
+    assert(f->f_stackdepth == 0);
 
     /* decref'ing the frame can cause __del__ methods to get invoked,
        which can call back into Python.  While we're done with the
@@ -5160,12 +5169,22 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
         _PyObject_GC_TRACK(f);
+        if (_PyFrame_MakeCopyOfLocals(f)) {
+            Py_XDECREF(retval);
+            return NULL;
+        }
     }
     else {
         ++tstate->recursion_depth;
         Py_DECREF(f);
         --tstate->recursion_depth;
     }
+    assert (!is_coro);
+
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        Py_XDECREF(localsarray[i]);
+    }
+    _PyThreadState_PopLocals(tstate, localsarray);
     return retval;
 }
 
