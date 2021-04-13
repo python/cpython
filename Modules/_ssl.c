@@ -14,6 +14,13 @@
        http://bugs.python.org/issue8108#msg102867 ?
 */
 
+/* Don't warn about deprecated functions, */
+#ifndef OPENSSL_API_COMPAT
+  // 0x10101000L == 1.1.1, 30000 == 3.0.0
+  #define OPENSSL_API_COMPAT 0x10101000L
+#endif
+#define OPENSSL_NO_DEPRECATED 1
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -41,14 +48,6 @@ static PySocketModule_APIObject PySocketModule;
 #include <poll.h>
 #elif defined(HAVE_SYS_POLL_H)
 #include <sys/poll.h>
-#endif
-
-/* Don't warn about deprecated functions */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 /* Include OpenSSL header files */
@@ -148,23 +147,19 @@ static void _PySSLFixErrno(void) {
 #  define PY_OPENSSL_1_1_API 1
 #endif
 
-/* OpenSSL API compat */
-#ifdef OPENSSL_API_COMPAT
-#if OPENSSL_API_COMPAT >= 0x10100000L
-
-/* OpenSSL API 1.1.0+ does not include version methods */
+/* OpenSSL API 1.1.0+ does not include version methods. Define the methods
+ * unless OpenSSL is compiled without the methods. It's the easiest way to
+ * make 1.0.2, 1.1.0, 1.1.1, and 3.0.0 happy without deprecation warnings.
+ */
 #ifndef OPENSSL_NO_TLS1_METHOD
-#define OPENSSL_NO_TLS1_METHOD 1
+extern const SSL_METHOD *TLSv1_method(void);
 #endif
 #ifndef OPENSSL_NO_TLS1_1_METHOD
-#define OPENSSL_NO_TLS1_1_METHOD 1
+extern const SSL_METHOD *TLSv1_1_method(void);
 #endif
 #ifndef OPENSSL_NO_TLS1_2_METHOD
-#define OPENSSL_NO_TLS1_2_METHOD 1
+extern const SSL_METHOD *TLSv1_2_method(void);
 #endif
-
-#endif /* >= 1.1.0 compcat */
-#endif /* OPENSSL_API_COMPAT */
 
 /* LibreSSL 2.7.0 provides necessary OpenSSL 1.1.0 APIs */
 #if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x2070000fL
