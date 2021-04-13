@@ -5853,7 +5853,7 @@ type_ready_checks(PyTypeObject *type)
 
 
 static int
-type_ready_set_base(PyTypeObject *type)
+type_ready_set_bases(PyTypeObject *type)
 {
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     PyTypeObject *base = type->tp_base;
@@ -5887,13 +5887,7 @@ type_ready_set_base(PyTypeObject *type)
     if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
-    return 0;
-}
 
-
-static int
-type_ready_add_attrs(PyTypeObject *type)
-{
     /* Initialize tp_bases */
     PyObject *bases = type->tp_bases;
     if (bases == NULL) {
@@ -5909,17 +5903,29 @@ type_ready_add_attrs(PyTypeObject *type)
         }
         type->tp_bases = bases;
     }
+    return 0;
+}
 
-    /* Initialize tp_dict */
-    PyObject *dict = type->tp_dict;
-    if (dict == NULL) {
-        dict = PyDict_New();
-        if (dict == NULL) {
-            return -1;
-        }
-        type->tp_dict = dict;
+
+static int
+type_ready_set_dict(PyTypeObject *type)
+{
+    if (type->tp_dict != NULL) {
+        return 0;
     }
 
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return -1;
+    }
+    type->tp_dict = dict;
+    return 0;
+}
+
+
+static int
+type_ready_add_attrs(PyTypeObject *type)
+{
     /* Add type-specific descriptors to tp_dict */
     if (add_operators(type) < 0) {
         return -1;
@@ -5972,12 +5978,35 @@ type_ready_mro(PyTypeObject *type)
 }
 
 
+/* Some more special stuff */
+static void
+type_ready_inherit_special(PyTypeObject *type, PyTypeObject *base)
+{
+    if (type->tp_as_async == NULL) {
+        type->tp_as_async = base->tp_as_async;
+    }
+    if (type->tp_as_number == NULL) {
+        type->tp_as_number = base->tp_as_number;
+    }
+    if (type->tp_as_sequence == NULL) {
+        type->tp_as_sequence = base->tp_as_sequence;
+    }
+    if (type->tp_as_mapping == NULL) {
+        type->tp_as_mapping = base->tp_as_mapping;
+    }
+    if (type->tp_as_buffer == NULL) {
+        type->tp_as_buffer = base->tp_as_buffer;
+    }
+}
+
+
 static int
 type_ready_inherit(PyTypeObject *type)
 {
     /* Inherit special flags from dominant base */
-    if (type->tp_base != NULL) {
-        inherit_special(type, type->tp_base);
+    PyTypeObject *base = type->tp_base;
+    if (base != NULL) {
+        inherit_special(type, base);
     }
 
     /* Initialize tp_dict properly */
@@ -5990,6 +6019,10 @@ type_ready_inherit(PyTypeObject *type)
                 return -1;
             }
         }
+    }
+
+    if (base != NULL) {
+        type_ready_inherit_special(type, base);
     }
 
     /* Sanity check for tp_free. */
@@ -6005,6 +6038,7 @@ type_ready_inherit(PyTypeObject *type)
                      type->tp_name);
         return -1;
     }
+
     return 0;
 }
 
@@ -6073,33 +6107,6 @@ type_ready_set_hash(PyTypeObject *type)
 }
 
 
-/* Some more special stuff */
-static void
-type_ready_inherit_special(PyTypeObject *type)
-{
-    PyTypeObject *base = type->tp_base;
-    if (base == NULL) {
-        return;
-    }
-
-    if (type->tp_as_async == NULL) {
-        type->tp_as_async = base->tp_as_async;
-    }
-    if (type->tp_as_number == NULL) {
-        type->tp_as_number = base->tp_as_number;
-    }
-    if (type->tp_as_sequence == NULL) {
-        type->tp_as_sequence = base->tp_as_sequence;
-    }
-    if (type->tp_as_mapping == NULL) {
-        type->tp_as_mapping = base->tp_as_mapping;
-    }
-    if (type->tp_as_buffer == NULL) {
-        type->tp_as_buffer = base->tp_as_buffer;
-    }
-}
-
-
 /* Link into each base class's list of subclasses */
 static int
 type_ready_add_subclasses(PyTypeObject *type)
@@ -6132,13 +6139,17 @@ type_ready(PyTypeObject *type)
     _Py_AddToAllObjects((PyObject *)type, 0);
 #endif
 
-    if (type_ready_set_base(type) < 0) {
+    /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
+    if (type_ready_set_dict(type) < 0) {
         return -1;
     }
-    if (type_ready_add_attrs(type) < 0) {
+    if (type_ready_set_bases(type) < 0) {
         return -1;
     }
     if (type_ready_mro(type) < 0) {
+        return -1;
+    }
+    if (type_ready_add_attrs(type) < 0) {
         return -1;
     }
     if (type_ready_inherit(type) < 0) {
@@ -6150,9 +6161,6 @@ type_ready(PyTypeObject *type)
     if (type_ready_set_hash(type) < 0) {
         return -1;
     }
-
-    type_ready_inherit_special(type);
-
     if (type_ready_add_subclasses(type) < 0) {
         return -1;
     }
