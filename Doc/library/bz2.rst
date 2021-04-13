@@ -139,7 +139,7 @@ The :mod:`bz2` module contains:
       The *compresslevel* parameter became keyword-only.
 
    .. versionchanged:: 3.10
-      This class is now thread unsafe in the face of multiple simultaneous
+      This class is thread unsafe in the face of multiple simultaneous
       readers or writers, just like its equivalent classes in :mod:`gzip` and
       :mod:`lzma` have always been.
 
