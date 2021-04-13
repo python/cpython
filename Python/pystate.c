@@ -624,7 +624,8 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
-    tstate->use_tracing = 0;
+    tstate->root_cframe.use_tracing = 0;
+    tstate->cframe = &tstate->root_cframe;
     tstate->gilstate_counter = 0;
     tstate->async_exc = NULL;
     tstate->thread_id = PyThread_get_thread_ident();
