@@ -638,7 +638,7 @@ group[expr_ty]:
     | '(' a=(yield_expr | named_expression) ')' { a }
     | invalid_group
 genexp[expr_ty]:
-    | '(' a=named_expression b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
+    | '(' a=direct_named_expression b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
 set[expr_ty]: '{' a=star_named_expressions '}' { _PyAST_Set(a, EXTRA) }
 setcomp[expr_ty]:
