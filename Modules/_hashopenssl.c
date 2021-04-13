@@ -11,12 +11,18 @@
  *
  */
 
+/* Don't warn about deprecated functions, */
+#ifndef OPENSSL_API_COMPAT
+  // 0x10101000L == 1.1.1, 30000 == 3.0.0
+  #define OPENSSL_API_COMPAT 0x10101000L
+#endif
+#define OPENSSL_NO_DEPRECATED 1
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include "hashlib.h"
 #include "pystrhex.h"
-
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -24,7 +30,7 @@
 #include <openssl/crypto.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
-#include "openssl/err.h"
+#include <openssl/err.h>
 
 #include <openssl/crypto.h>       // FIPS_mode()
 
@@ -1862,12 +1868,11 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 /*[clinic end generated code: output=87eece1bab4d3fa9 input=2db61538c41c6fef]*/
 
 {
-    int result;
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    result = EVP_default_properties_is_fips_enabled(NULL);
+    return EVP_default_properties_is_fips_enabled(NULL);
 #else
     ERR_clear_error();
-    result = FIPS_mode();
+    int result = FIPS_mode();
     if (result == 0) {
         // "If the library was built without support of the FIPS Object Module,
         // then the function will return 0 with an error code of
