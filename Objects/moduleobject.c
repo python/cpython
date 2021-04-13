@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
@@ -11,15 +12,6 @@ static Py_ssize_t max_module_number;
 _Py_IDENTIFIER(__doc__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__spec__);
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *md_dict;
-    struct PyModuleDef *md_def;
-    void *md_state;
-    PyObject *md_weaklist;
-    PyObject *md_name;  /* for logging purposes after md_dict is cleared */
-} PyModuleObject;
 
 static PyMemberDef module_members[] = {
     {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
@@ -556,7 +548,7 @@ PyModule_GetDef(PyObject* m)
         PyErr_BadArgument();
         return NULL;
     }
-    return ((PyModuleObject *)m)->md_def;
+    return _PyModule_GetDef(m);
 }
 
 void*
@@ -566,7 +558,7 @@ PyModule_GetState(PyObject* m)
         PyErr_BadArgument();
         return NULL;
     }
-    return ((PyModuleObject *)m)->md_state;
+    return _PyModule_GetState(m);
 }
 
 void

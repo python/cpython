@@ -866,7 +866,8 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.add(Extension('array', ['arraymodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
@@ -933,7 +934,8 @@ class PyBuildExt(build_ext):
         # _abc speedups
         self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"]))
+        self.add(Extension("_queue", ["_queuemodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
@@ -2711,7 +2713,8 @@ def main():
                       'install_lib': PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('_struct', ['_struct.c'],
+                                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

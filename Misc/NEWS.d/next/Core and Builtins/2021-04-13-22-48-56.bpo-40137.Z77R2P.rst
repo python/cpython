@@ -1,0 +1,2 @@
+Micro-optimize _PyType_GetModuleByDef() to make it 2.3 ns faster (43.2 ns +-
+0.7 ns -> 40.9 ns +- 1.0 ns). Patch by Victor Stinner.

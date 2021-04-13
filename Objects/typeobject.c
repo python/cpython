@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -3591,10 +3592,25 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 {
     assert(PyType_Check(type));
     assert(type->tp_mro);
-    int i;
-    for (i = 0; i < PyTuple_GET_SIZE(type->tp_mro); i++) {
-        PyObject *super = PyTuple_GET_ITEM(type->tp_mro, i);
-        if (!PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
+
+    // Fast path for type->tp_mro[0]=type. Calling _PyType_GetModuleByDef() on
+    // the defining type is the most common type.
+    assert(PyTuple_GET_ITEM(type->tp_mro, 0) == type);
+    // A static type cannot inherit from a heap type, since heap types are
+    // created at runtime. _PyType_GetModuleByDef() is used on heap types
+    // created by PyType_FromModuleAndSpec(), and on their subclasses.
+    assert(_PyType_HasFeature((PyTypeObject *)type, Py_TPFLAGS_HEAPTYPE));
+    PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+    if (ht->ht_module && _PyModule_GetDef(ht->ht_module) == def) {
+        return ht->ht_module;
+    }
+
+    // Slow path
+    PyObject *mro = type->tp_mro;
+    Py_ssize_t len = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 1; i < len; i++) {
+        PyObject *super = PyTuple_GET_ITEM(mro, i);
+        if (!_PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
             /* Currently, there's no way for static types to inherit
              * from heap types, but to allow that possibility,
              * we `continue` rather than `break`.
@@ -3603,11 +3619,12 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
              */
             continue;
         }
-        PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
-        if (ht->ht_module && PyModule_GetDef(ht->ht_module) == def) {
+        ht = (PyHeapTypeObject*)super;
+        if (ht->ht_module && _PyModule_GetDef(ht->ht_module) == def) {
             return ht->ht_module;
         }
     }
+
     PyErr_Format(
         PyExc_TypeError,
         "_PyType_GetModuleByDef: No superclass of '%s' has the given module",
