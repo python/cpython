@@ -590,25 +590,28 @@ frame_dealloc(PyFrameObject *f)
     }
 
     Py_TRASHCAN_SAFE_BEGIN(f)
+    PyCodeObject *co = f->f_code;
+
     /* Kill all local variables */
-    PyObject **valuestack = f->f_valuestack;
-    for (PyObject **p = f->f_localsplus; p < valuestack; p++) {
-        Py_CLEAR(*p);
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        Py_CLEAR(f->f_localsptr[i]);
     }
 
-    /* Free stack */
+    /* Free items on stack */
     for (int i = 0; i < f->f_stackdepth; i++) {
         Py_XDECREF(f->f_valuestack[i]);
     }
     f->f_stackdepth = 0;
-
     Py_XDECREF(f->f_back);
     Py_DECREF(f->f_builtins);
     Py_DECREF(f->f_globals);
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
-
-    PyCodeObject *co = f->f_code;
+    if (f->f_own_locals_memory) {
+        PyMem_Free(f->f_localsptr);
+        f->f_localsptr = NULL;
+        f->f_own_locals_memory = 0;
+    }
     struct _Py_frame_state *state = get_frame_state();
 #ifdef Py_DEBUG
     // frame_dealloc() must not be called after _PyFrame_Fini()
@@ -645,7 +648,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
 
     /* locals */
-    PyObject **fastlocals = f->f_localsplus;
+    PyObject **fastlocals = f->f_localsptr;
     for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
         Py_VISIT(*fastlocals);
     }
@@ -670,7 +673,7 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
 
     /* locals */
-    PyObject **fastlocals = f->f_localsplus;
+    PyObject **fastlocals = f->f_localsptr;
     for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
         Py_CLEAR(*fastlocals);
     }
@@ -708,8 +711,10 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     Py_ssize_t res;
     PyCodeObject *code = f->f_code;
     /* subtract one as it is already included in PyFrameObject */
-    res = sizeof(PyFrameObject) + (code->co_nlocalsplus+code->co_stacksize-1) * sizeof(PyObject *);
-
+    res = sizeof(PyFrameObject);
+    if (f->f_own_locals_memory) {
+        res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
+    }
     return PyLong_FromSsize_t(res);
 }
 
@@ -775,11 +780,15 @@ static inline PyFrameObject*
 frame_alloc(PyCodeObject *code)
 {
     PyFrameObject *f;
-    Py_ssize_t extras = code->co_nlocalsplus + code->co_stacksize;
+    PyObject **locals = PyMem_Malloc(sizeof(PyObject *)*(code->co_nlocalsplus+code->co_stacksize));
+    if (locals == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     struct _Py_frame_state *state = get_frame_state();
     if (state->free_list == NULL)
     {
-        f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
+        f = PyObject_GC_New(PyFrameObject, &PyFrame_Type);
         if (f == NULL) {
             return NULL;
         }
@@ -793,19 +802,13 @@ frame_alloc(PyCodeObject *code)
         --state->numfree;
         f = state->free_list;
         state->free_list = state->free_list->f_back;
-        if (Py_SIZE(f) < extras) {
-            PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
-            if (new_f == NULL) {
-                PyObject_GC_Del(f);
-                return NULL;
-            }
-            f = new_f;
-        }
         _Py_NewReference((PyObject *)f);
     }
-    f->f_valuestack = f->f_localsplus + code->co_nlocalsplus;
-    for (Py_ssize_t i=0; i < extras; i++) {
-        f->f_localsplus[i] = NULL;
+    f->f_localsptr = locals;
+    f->f_own_locals_memory = 1;
+    f->f_valuestack = f->f_localsptr + code->co_nlocalsplus;
+    for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
+        f->f_localsptr[i] = NULL;
     }
     return f;
 }
@@ -995,7 +998,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
                      Py_TYPE(map)->tp_name);
         return -1;
     }
-    fast = f->f_localsplus;
+    fast = f->f_localsptr;
     j = PyTuple_GET_SIZE(map);
     if (j > co->co_nlocals)
         j = co->co_nlocals;
@@ -1059,7 +1062,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     if (!PyTuple_Check(map))
         return;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    fast = f->f_localsplus;
+    fast = f->f_localsptr;
     j = PyTuple_GET_SIZE(map);
     if (j > co->co_nlocals)
         j = co->co_nlocals;

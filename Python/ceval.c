@@ -1641,8 +1641,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
     names = co->co_names;
     consts = co->co_consts;
-    fastlocals = f->f_localsplus;
-    freevars = f->f_localsplus + co->co_nlocals;
+    fastlocals = f->f_localsptr;
+    freevars = f->f_localsptr + co->co_nlocals;
     assert(PyBytes_Check(co->co_code));
     assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
     assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
@@ -4879,8 +4879,8 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
     if (f == NULL) {
         return NULL;
     }
-    PyObject **fastlocals = f->f_localsplus;
-    PyObject **freevars = f->f_localsplus + co->co_nlocals;
+    PyObject **fastlocals = f->f_localsptr;
+    PyObject **freevars = f->f_localsptr + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
@@ -6429,14 +6429,14 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         switch (opcode) {
         case STORE_FAST:
         {
-            PyObject **fastlocals = f->f_localsplus;
+            PyObject **fastlocals = f->f_localsptr;
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
             break;
         }
         case STORE_DEREF:
         {
-            PyObject **freevars = (f->f_localsplus +
+            PyObject **freevars = (f->f_localsptr +
                                    f->f_code->co_nlocals);
             PyObject *c = freevars[oparg];
             if (PyCell_GET(c) ==  v) {

@@ -879,7 +879,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return
 
-        f_localsplus = self.field('f_localsplus')
+        f_localsplus = self.field('f_localsptr')
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(f_localsplus[i])
             if not pyop_value.is_null():

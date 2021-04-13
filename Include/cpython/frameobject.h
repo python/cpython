@@ -20,7 +20,7 @@ enum _framestate {
 typedef signed char PyFrameState;
 
 struct _frame {
-    PyObject_VAR_HEAD
+    PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
     PyCodeObject *f_code;       /* code segment */
     PyObject *f_builtins;       /* builtin symbol table (PyDictObject) */
@@ -36,7 +36,8 @@ struct _frame {
     PyFrameState f_state;       /* What state the frame is in */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
-    PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
+    char f_own_locals_memory;   /* This frame owns the memory for the locals */
+    PyObject **f_localsptr;     /* Pointer to locals, cells, free */
 };
 
 static inline int _PyFrame_IsRunnable(struct _frame *f) {
