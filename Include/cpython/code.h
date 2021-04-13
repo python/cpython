@@ -40,6 +40,7 @@ struct PyCodeObject {
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
+    int co_nlocalsplus;         /* Number of locals + free + cell variables */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
     /* Scratch space for extra data relating to the code object.

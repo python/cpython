@@ -631,9 +631,7 @@ static inline Py_ssize_t
 frame_nslots(PyFrameObject *frame)
 {
     PyCodeObject *code = frame->f_code;
-    return (code->co_nlocals
-            + PyTuple_GET_SIZE(code->co_cellvars)
-            + PyTuple_GET_SIZE(code->co_freevars));
+    return code->co_nlocalsplus;
 }
 
 static int
@@ -707,14 +705,10 @@ PyDoc_STRVAR(clear__doc__,
 static PyObject *
 frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res, extras, ncells, nfrees;
-
+    Py_ssize_t res;
     PyCodeObject *code = f->f_code;
-    ncells = PyTuple_GET_SIZE(code->co_cellvars);
-    nfrees = PyTuple_GET_SIZE(code->co_freevars);
-    extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
     /* subtract one as it is already included in PyFrameObject */
-    res = sizeof(PyFrameObject) + (extras-1) * sizeof(PyObject *);
+    res = sizeof(PyFrameObject) + (code->co_nlocalsplus+code->co_stacksize-1) * sizeof(PyObject *);
 
     return PyLong_FromSsize_t(res);
 }
@@ -781,9 +775,7 @@ static inline PyFrameObject*
 frame_alloc(PyCodeObject *code)
 {
     PyFrameObject *f;
-    Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
-    Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
-    Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
+    Py_ssize_t extras = code->co_nlocalsplus + code->co_stacksize;
     struct _Py_frame_state *state = get_frame_state();
     if (state->free_list == NULL)
     {
@@ -811,9 +803,7 @@ frame_alloc(PyCodeObject *code)
         }
         _Py_NewReference((PyObject *)f);
     }
-
-    extras = code->co_nlocals + ncells + nfrees;
-    f->f_valuestack = f->f_localsplus + extras;
+    f->f_valuestack = f->f_localsplus + code->co_nlocalsplus;
     for (Py_ssize_t i=0; i < extras; i++) {
         f->f_localsplus[i] = NULL;
     }
