@@ -863,6 +863,11 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
+Ensure that early = are not matched by the parser as invalid comparisons
+   >>> f(2, 4, x=34); {1,2 a}
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
