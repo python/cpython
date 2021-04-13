@@ -820,6 +820,12 @@ identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
 (Contributed by Christian Heimes in :issue:`28468`)
 
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
+(Contributed by Lewis Gaul in :issue:`43080`.)
+
 py_compile
 ----------
 
