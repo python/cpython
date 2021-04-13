@@ -4283,6 +4283,14 @@ class MiscIOTest(unittest.TestCase):
         self.assertTrue(
             warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
+    @support.cpython_only
+    # Depending if OpenWrapper was already created or not, the warning is
+    # emitted or not. For example, the attribute is already created when this
+    # test is run multiple times.
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_openwrapper(self):
+        self.assertIs(self.io.OpenWrapper, self.io.open)
+
 
 class CMiscIOTest(MiscIOTest):
     io = io
