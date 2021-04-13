@@ -1,2 +1,2 @@
-Add ``encoding`` parameter to :func:`fileinput.input` and
+Add ``encoding`` and ``errors`` parameters to :func:`fileinput.input` and
 :class:`fileinput.FileInput`.
