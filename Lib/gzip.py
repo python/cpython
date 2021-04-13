@@ -398,6 +398,10 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
+    def __iter__(self):
+        self._check_not_closed()
+        return self._buffer.__iter__()
+
 
 class _GzipReader(_compression.DecompressReader):
     def __init__(self, fp):
