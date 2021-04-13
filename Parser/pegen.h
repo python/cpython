@@ -53,6 +53,11 @@ typedef struct {
 } growable_comment_array;
 
 typedef struct {
+    int reset_lineno;
+    int reset_col_offset;
+} reset_information;
+
+typedef struct {
     struct tok_state *tok;
     Token **tokens;
     int mark;
@@ -73,6 +78,7 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
+    reset_information reset_info;
 } Parser;
 
 typedef struct {

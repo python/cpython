@@ -418,6 +418,12 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
                                     const char *errmsg, va_list va)
 {
+    // Make sure we don't report syntax errors that happen before the point
+    // where we restored the parser
+    if ((p->reset_info.reset_lineno > lineno) ||
+        (p->reset_info.reset_lineno == lineno && p->reset_info.reset_col_offset > col_offset)) {
+        return NULL;
+    }
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *error_line = NULL;
@@ -1187,13 +1193,17 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-
+    p->reset_info.reset_lineno = 0;
+    p->reset_info.reset_col_offset = 0;
     return p;
 }
 
 static void
 reset_parser_state(Parser *p)
 {
+    Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
+    p->reset_info.reset_lineno = t->lineno;
+    p->reset_info.reset_col_offset = t->col_offset;
     for (int i = 0; i < p->fill; i++) {
         p->tokens[i]->memo = NULL;
     }
@@ -1250,6 +1260,16 @@ _PyPegen_run_parser(Parser *p)
         if (PyErr_Occurred()) {
             return NULL;
         }
+
+#ifdef Py_DEBUG
+        // Ensure that all errors are reported after or at the same point as whe we reset the parser
+        Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
+        assert(
+                p->reset_info.reset_lineno < t->lineno ||
+                (p->reset_info.reset_lineno == t->lineno && p->reset_info.reset_col_offset <= t->col_offset)
+        );
+#endif
+
         if (p->fill == 0) {
             RAISE_SYNTAX_ERROR("error at start before reading any input");
         }

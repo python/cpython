@@ -444,8 +444,8 @@ star_named_expression[expr_ty]:
 
 named_expression[expr_ty]:
     | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
-    | invalid_named_expression
     | expression !':='
+    | invalid_named_expression
 
 annotated_rhs[expr_ty]: yield_expr | star_expressions
 
@@ -531,6 +531,7 @@ comparison[expr_ty]:
             CHECK(asdl_int_seq*, _PyPegen_get_cmpops(p, b)),
             CHECK(asdl_expr_seq*, _PyPegen_get_exprs(p, b)),
             EXTRA) }
+    | invalid_comparison
     | bitwise_or
 compare_op_bitwise_or_pair[CmpopExprPair*]:
     | eq_bitwise_or
@@ -776,11 +777,6 @@ invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
-    | a=NAME b='=' bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
-    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
-                                          _PyPegen_get_expr_name(a)) }
 
 invalid_assignment:
     | a=invalid_ann_assign_target ':' expression {
@@ -878,3 +874,10 @@ invalid_elif_stmt:
     | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_while_stmt:
     | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+
+invalid_comparison:
+    | a=NAME b='=' bitwise_or !('='|':='|',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
+    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':='|',') {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+                                          _PyPegen_get_expr_name(a)) }
