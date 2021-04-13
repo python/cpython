@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
+      run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
     steps:
       - uses: actions/checkout@v2
       - name: Check for source changes
@@ -30,6 +31,7 @@ jobs:
         run: |
           if [ -z "$GITHUB_BASE_REF" ]; then
             echo '::set-output name=run_tests::true'
+            echo '::set-output name=run_ssl_tests::true'
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
             # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
@@ -46,6 +48,7 @@ jobs:
             #
             # https://github.com/python/core-workflow/issues/373
             git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE '(ssl|hashlib|hmac|^.github)' && echo '::set-output name=run_ssl_tests::true' || true
           fi
 
   check_generated_files:
@@ -138,6 +141,11 @@ jobs:
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v2.1.4
@@ -146,12 +154,65 @@ jobs:
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
     - name: Build CPython
       run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+
+  build_ubuntu_ssltests:
+    name: 'Ubuntu SSL tests with OpenSSL ${{ matrix.openssl_ver }}'
+    runs-on: ubuntu-20.04
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_ssl_tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        openssl_ver: [1.0.2u, 1.1.0l, 1.1.1k, 3.0.0-alpha14]
+    env:
+      OPENSSL_VER: ${{ matrix.openssl_ver }}
+      MULTISSL_DIR: ${{ github.workspace }}/multissl
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
+    steps:
+    - uses: actions/checkout@v2
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v2.1.4
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1
+    - name: Configure CPython
+      run: ./configure --with-pydebug --with-openssl=$OPENSSL_DIR
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: SSL tests
+      run: ./python Lib/test/ssltests.py
