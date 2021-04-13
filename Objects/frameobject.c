@@ -558,29 +558,10 @@ static PyGetSetDef frame_getsetlist[] = {
 };
 
 /* Stack frames are allocated and deallocated at a considerable rate.
-   In an attempt to improve the speed of function calls, we:
-
-   1. Hold a single "zombie" frame on each code object. This retains
-   the allocated and initialised frame object from an invocation of
-   the code object. The zombie is reanimated the next time we need a
-   frame object for that code object. Doing this saves the malloc/
-   realloc required when using a free_list frame that isn't the
-   correct size. It also saves some field initialisation.
-
-   In zombie mode, no field of PyFrameObject holds a reference, but
-   the following fields are still valid:
-
-     * ob_type, ob_size, f_code, f_valuestack;
-
-     * f_locals, f_trace are NULL;
-
-     * f_localsplus does not require re-allocation and
-       the local variables in f_localsplus are NULL.
-
-   2. We also maintain a separate free list of stack frames (just like
-   floats are allocated in a special way -- see floatobject.c).  When
-   a stack frame is on the free list, only the following members have
-   a meaning:
+   In an attempt to improve the speed of function calls, we maintain
+   a separate free list of stack frames (just like floats are
+   allocated in a special way -- see floatobject.c).  When a stack
+   frame is on the free list, only the following members have a meaning:
     ob_type             == &Frametype
     f_back              next item on free list, or NULL
     f_stacksize         size of value stack
@@ -628,23 +609,18 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
 
     PyCodeObject *co = f->f_code;
-    if (co->co_zombieframe == NULL) {
-        co->co_zombieframe = f;
+    struct _Py_frame_state *state = get_frame_state();
+#ifdef Py_DEBUG
+    // frame_dealloc() must not be called after _PyFrame_Fini()
+    assert(state->numfree != -1);
+#endif
+    if (state->numfree < PyFrame_MAXFREELIST) {
+        ++state->numfree;
+        f->f_back = state->free_list;
+        state->free_list = f;
     }
     else {
-        struct _Py_frame_state *state = get_frame_state();
-#ifdef Py_DEBUG
-        // frame_dealloc() must not be called after _PyFrame_Fini()
-        assert(state->numfree != -1);
-#endif
-        if (state->numfree < PyFrame_MAXFREELIST) {
-            ++state->numfree;
-            f->f_back = state->free_list;
-            state->free_list = f;
-        }
-        else {
-            PyObject_GC_Del(f);
-        }
+        PyObject_GC_Del(f);
     }
 
     Py_DECREF(co);
@@ -804,14 +780,7 @@ _Py_IDENTIFIER(__builtins__);
 static inline PyFrameObject*
 frame_alloc(PyCodeObject *code)
 {
-    PyFrameObject *f = code->co_zombieframe;
-    if (f != NULL) {
-        code->co_zombieframe = NULL;
-        _Py_NewReference((PyObject *)f);
-        assert(f->f_code == code);
-        return f;
-    }
-
+    PyFrameObject *f;
     Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
     Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
     Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;

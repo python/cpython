@@ -263,7 +263,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_linetable = linetable;
     Py_INCREF(exceptiontable);
     co->co_exceptiontable = exceptiontable;
-    co->co_zombieframe = NULL;
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
 
@@ -674,8 +673,6 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_exceptiontable);
     if (co->co_cell2arg != NULL)
         PyMem_Free(co->co_cell2arg);
-    if (co->co_zombieframe != NULL)
-        PyObject_GC_Del(co->co_zombieframe);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
     PyObject_Free(co);
