@@ -105,13 +105,13 @@ posix -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal posixmodule.c # posix
 errno errnomodule.c			# posix (UNIX) errno values
 pwd pwdmodule.c				# this is needed to find out the user's home dir
 					# if $HOME is not set
-_sre _sre.c				# Fredrik Lundh's new regular expressions
+_sre -DPy_BUILD_CORE_BUILTIN _sre.c	# Fredrik Lundh's new regular expressions
 _codecs _codecsmodule.c			# access to the builtin codecs and codec registry
 _weakref _weakref.c			# weak references
 _functools -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal _functoolsmodule.c   # Tools for working with functions and callable objects
-_operator _operator.c	        	# operator.add() and similar goodies
+_operator -DPy_BUILD_CORE_BUILTIN _operator.c	        	# operator.add() and similar goodies
 _collections _collectionsmodule.c	# Container types
-_abc _abc.c				# Abstract base classes
+_abc -DPy_BUILD_CORE_BUILTIN _abc.c	# Abstract base classes
 itertools itertoolsmodule.c		# Functions creating iterators for efficient looping
 atexit atexitmodule.c			# Register functions to be run at interpreter-shutdown
 _signal -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal signalmodule.c
@@ -166,17 +166,17 @@ _symtable symtablemodule.c
 
 # Modules that should always be present (non UNIX dependent):
 
-#array arraymodule.c	# array objects
+#array -DPy_BUILD_CORE_MODULE arraymodule.c	# array objects
 #cmath cmathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # complex math library functions
 #math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
-#_struct _struct.c	# binary structure packing/unpacking
+#_struct -DPy_BUILD_CORE_MODULE _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support
 #_testcapi _testcapimodule.c    # Python C API test module
 #_testinternalcapi _testinternalcapi.c -I$(srcdir)/Include/internal -DPy_BUILD_CORE_MODULE  # Python internal C API test module
 #_random _randommodule.c -DPy_BUILD_CORE_MODULE	# Random number generator
 #_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
-#_pickle _pickle.c	# pickle accelerator
+#_pickle -DPy_BUILD_CORE_MODULE _pickle.c	# pickle accelerator
 #_datetime _datetimemodule.c	# datetime accelerator
 #_zoneinfo _zoneinfo.c -DPy_BUILD_CORE_MODULE	# zoneinfo accelerator
 #_bisect _bisectmodule.c	# Bisection algorithms

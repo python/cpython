@@ -1,6 +1,7 @@
 /* ABCMeta implementation */
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -27,7 +28,7 @@ typedef struct {
 static inline _abcmodule_state*
 get_abc_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_abcmodule_state *)state;
 }
