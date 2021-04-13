@@ -603,7 +603,8 @@ else:
         # 87: ERROR_INVALID_PARAMETER
         # 123: ERROR_INVALID_NAME
         # 1920: ERROR_CANT_ACCESS_FILE
-        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 123, 1920
+        # 1921: ERROR_CANT_RESOLVE_FILENAME (implies unfollowable symlink)
+        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 123, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
@@ -659,10 +660,7 @@ else:
             path = _getfinalpathname(path)
             initial_winerror = 0
         except OSError as ex:
-            # ERROR_CANT_RESOLVE_FILENAME (1921) is from exceeding the
-            # max allowed number of reparse attempts (currently 63), which
-            # is either due to a loop or a chain of links that's too long.
-            if strict or ex.winerror == 1921:
+            if strict:
                 raise
             initial_winerror = ex.winerror
             path = _getfinalpathname_nonstrict(path)

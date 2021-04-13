@@ -350,9 +350,10 @@ the :mod:`glob` module.)
    links encountered in the path (if they are supported by the operating
    system).
 
-   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
-   is raised. If *strict* is ``False``, the path is resolved as far as possible
-   and any remainder is appended without checking whether it exists.
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
 
    .. note::
       This function emulates the operating system's procedure for making a path
@@ -370,10 +371,6 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.10
       The *strict* parameter was added.
-
-   .. versionchanged:: 3.10
-      Raises :exc:`OSError` when a symbolic link cycle occurs. Previously
-      returned one member of the cycle.
 
 
 .. function:: relpath(path, start=os.curdir)

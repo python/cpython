@@ -391,7 +391,7 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path = _joinrealpath(filename[:0], filename, strict, {})
+    path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
@@ -444,13 +444,19 @@ def _joinrealpath(path, rest, strict, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            # Raise OSError(errno.ELOOP)
-            os.stat(newpath)
+            if strict:
+                # Raise OSError(errno.ELOOP)
+                os.stat(newpath)
+            else:
+                # Return already resolved part + rest of the path unchanged.
+                return join(newpath, rest), False
         seen[newpath] = None # not resolved symlink
-        path = _joinrealpath(path, os.readlink(newpath), strict, seen)
+        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
+        if not ok:
+            return join(path, rest), False
         seen[newpath] = path # resolved symlink
 
-    return path
+    return path, True
 
 
 supports_unicode_filenames = (sys.platform == 'darwin')

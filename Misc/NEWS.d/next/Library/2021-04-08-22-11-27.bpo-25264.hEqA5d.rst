@@ -1,2 +1,0 @@
-:func:`os.path.realpath` now raises :exc:`OSError` when a symlink loop is
-encountered. Previously it returned a path with unresolved symlinks.

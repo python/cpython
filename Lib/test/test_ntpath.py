@@ -351,7 +351,9 @@ class TestNtpath(NtpathTestCase):
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_symlink_loops(self):
-        # Symlink loops raise OSError
+        # Symlink loops in non-strict mode are non-deterministic as to which
+        # path is returned, but it will always be the fully resolved path of
+        # one member of the cycle
         ABSTFN = ntpath.abspath(os_helper.TESTFN)
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.addCleanup(os_helper.unlink, ABSTFN + "1")
@@ -361,16 +363,16 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN + "a")
 
         os.symlink(ABSTFN, ABSTFN)
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN)
+        self.assertPathEqual(ntpath.realpath(ABSTFN), ABSTFN)
 
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1")
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2")
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x")
+        expected = (ABSTFN + "1", ABSTFN + "2")
+        self.assertPathIn(ntpath.realpath(ABSTFN + "1"), expected)
+        self.assertPathIn(ntpath.realpath(ABSTFN + "2"), expected)
 
-        # Windows eliminates '..' components before resolving links, so the
-        # following 3 realpath() calls are not expected to raise.
+        self.assertPathIn(ntpath.realpath(ABSTFN + "1\\x"),
+                          (ntpath.join(r, "x") for r in expected))
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\.."),
                              ntpath.dirname(ABSTFN))
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\x"),
@@ -379,18 +381,66 @@ class TestNtpath(NtpathTestCase):
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\"
                                              + ntpath.basename(ABSTFN) + "y"),
                              ABSTFN + "x")
-        self.assertRaises(OSError, ntpath.realpath,
-                          ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1")
+        self.assertPathIn(ntpath.realpath(ABSTFN + "1\\..\\"
+                                          + ntpath.basename(ABSTFN) + "1"),
+                          expected)
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "a")
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
 
         os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
                    + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "c")
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "c"), ABSTFN + "c")
 
         # Test using relative path as well.
-        self.assertRaises(OSError, ntpath.realpath, ntpath.basename(ABSTFN))
+        self.assertPathEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
+
+    @os_helper.skip_unless_symlink
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_symlink_loops_strict(self):
+        # Symlink loops raise OSError in strict mode
+        ABSTFN = ntpath.abspath(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, ABSTFN)
+        self.addCleanup(os_helper.unlink, ABSTFN + "1")
+        self.addCleanup(os_helper.unlink, ABSTFN + "2")
+        self.addCleanup(os_helper.unlink, ABSTFN + "y")
+        self.addCleanup(os_helper.unlink, ABSTFN + "c")
+        self.addCleanup(os_helper.unlink, ABSTFN + "a")
+
+        os.symlink(ABSTFN, ABSTFN)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN, strict=True)
+
+        os.symlink(ABSTFN + "1", ABSTFN + "2")
+        os.symlink(ABSTFN + "2", ABSTFN + "1")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1", strict=True)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2", strict=True)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x", strict=True)
+
+        # Windows eliminates '..' components before resolving links, so the
+        # following 3 realpath() calls are not expected to raise.
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..", strict=True),
+                             ntpath.dirname(ABSTFN))
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\x", strict=True),
+                             ntpath.dirname(ABSTFN) + "\\x")
+        os.symlink(ABSTFN + "x", ABSTFN + "y")
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\"
+                                             + ntpath.basename(ABSTFN) + "y",
+                                             strict=True),
+                             ABSTFN + "x")
+        self.assertRaises(OSError, ntpath.realpath,
+                          ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1",
+                          strict=True)
+
+        os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "a", strict=True)
+
+        os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
+                   + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "c", strict=True)
+
+        # Test using relative path as well.
+        self.assertRaises(OSError, ntpath.realpath, ntpath.basename(ABSTFN),
+                          strict=True)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
