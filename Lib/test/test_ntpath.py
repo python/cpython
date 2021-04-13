@@ -415,16 +415,15 @@ class TestNtpath(NtpathTestCase):
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1", strict=True)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "2", strict=True)
         self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\x", strict=True)
-        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\..\\x", strict=True)
         # Windows eliminates '..' components before resolving links, so the
-        # following 2 realpath() calls are not expected to raise.
+        # following call is not expected to raise.
         self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..", strict=True),
                              ntpath.dirname(ABSTFN))
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\..\\x", strict=True)
         os.symlink(ABSTFN + "x", ABSTFN + "y")
-        self.assertPathEqual(ntpath.realpath(ABSTFN + "1\\..\\"
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "1\\..\\"
                                              + ntpath.basename(ABSTFN) + "y",
-                                             strict=True),
-                             ABSTFN + "x")
+                                             strict=True)
         self.assertRaises(OSError, ntpath.realpath,
                           ABSTFN + "1\\..\\" + ntpath.basename(ABSTFN) + "1",
                           strict=True)
