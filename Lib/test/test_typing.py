@@ -2272,7 +2272,7 @@ class ClassVarTests(BaseTestCase):
         class BadModule:
             pass
         BadModule.__module__ = 'bad' # Something not in sys.modules
-        assert(get_type_hints(BadModule), {})
+        self.assertEqual(get_type_hints(BadModule), {})
 
 class FinalTests(BaseTestCase):
 
