@@ -59,6 +59,7 @@ typedef struct {
     int fill, size;
     PyArena *arena;
     KeywordToken **keywords;
+    char **soft_keywords;
     int n_keyword_lists;
     int start_rule;
     int *errcode;
@@ -125,6 +126,7 @@ int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 Token *_PyPegen_expect_token(Parser *p, int type);
 Token *_PyPegen_expect_forced_token(Parser *p, int type, const char* expected);
 expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
+expr_ty _PyPegen_soft_keyword_token(Parser *p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 expr_ty _PyPegen_name_token(Parser *p);

@@ -943,6 +943,23 @@ _PyPegen_string_token(Parser *p)
     return _PyPegen_expect_token(p, STRING);
 }
 
+
+expr_ty _PyPegen_soft_keyword_token(Parser *p) {
+    Token *t = _PyPegen_expect_token(p, NAME);
+    if (t == NULL) {
+        return NULL;
+    }
+    char *the_token;
+    Py_ssize_t size;
+    PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
+    for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
+        if (strncmp(*keyword, the_token, size) == 0) {
+            return _PyPegen_name_token(p);
+        }
+    }
+    return NULL;
+}
+
 static PyObject *
 parsenumber_raw(const char *s)
 {
@@ -1151,6 +1168,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
+    p->soft_keywords = NULL;
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyMem_Free(p);
