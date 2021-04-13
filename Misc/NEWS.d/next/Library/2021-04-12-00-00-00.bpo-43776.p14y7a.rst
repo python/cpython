@@ -1,0 +1,1 @@
+Fix issue with :class:`subprocess.Popen` repr when args are provided as a string.
