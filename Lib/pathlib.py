@@ -1056,20 +1056,25 @@ class Path(PurePath):
         Windows).
         """
 
+        def check_eloop(e):
+            winerror = getattr(e, 'winerror', 0)
+            if e.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
+                raise RuntimeError("Symlink loop from %r" % e.filename)
+
         try:
             s = self._accessor.realpath(self, strict=strict)
-            p = self._from_parts((s,))
+        except OSError as e:
+            check_eloop(e)
+            raise
+        p = self._from_parts((s,))
 
-            # In non-strict mode, realpath() doesn't raise on symlink loops.
-            # Ensure we get an exception by calling stat()
-            if not strict:
+        # In non-strict mode, realpath() doesn't raise on symlink loops.
+        # Ensure we get an exception by calling stat()
+        if not strict:
+            try:
                 p.stat()
-        except OSError as ex:
-            winerror = getattr(ex, 'winerror', 0)
-            if ex.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
-                raise RuntimeError("Symlink loop from %r", ex.filename)
-            if strict:
-                raise
+            except OSError as e:
+                check_eloop(e)
         return p
 
     def stat(self, *, follow_symlinks=True):
