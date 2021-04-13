@@ -447,6 +447,10 @@ named_expression[expr_ty]:
     | invalid_named_expression
     | expression !':='
 
+direct_named_expression[expr_ty]:
+    | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+    | expression !':='
+
 annotated_rhs[expr_ty]: yield_expr | star_expressions
 
 expressions[expr_ty]:
@@ -671,7 +675,7 @@ arguments[expr_ty] (memo):
     | a=args [','] &')' { a }
     | invalid_arguments
 args[expr_ty]:
-    | a[asdl_expr_seq*]=','.(starred_expression | named_expression !'=')+ b=[',' k=kwargs {k}] { _PyPegen_collect_call_seqs(p, a, b, EXTRA) }
+    | a[asdl_expr_seq*]=','.(starred_expression | direct_named_expression !'=')+ b=[',' k=kwargs {k}] { _PyPegen_collect_call_seqs(p, a, b, EXTRA) }
     | a=kwargs { _PyAST_Call(_PyPegen_dummy_name(p),
                           CHECK_NULL_ALLOWED(asdl_expr_seq*, _PyPegen_seq_extract_starred_exprs(p, a)),
                           CHECK_NULL_ALLOWED(asdl_keyword_seq*, _PyPegen_seq_delete_starred_exprs(p, a)),
