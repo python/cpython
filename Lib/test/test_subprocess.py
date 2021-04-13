@@ -1444,26 +1444,36 @@ class ProcessTestCase(BaseTestCase):
     def test_repr(self):
         # Run a command that waits for user input, to check the repr() of
         # a Proc object while and after the sub-process runs.
-        code = 'import sys; input(); sys.exit(57)'
-        cmd = [sys.executable, '-c', code]
-        result = "<Popen: returncode: {}"
+        # args can be Seq[str] or a str, hence two test cases
+        expected_exit_code = 57
+        code = f'import sys; input(); sys.exit({expected_exit_code})'
+        seq_cmd = [sys.executable, '-c', code]
+        arg_cmd = f"\"{sys.executable}\" -c \"{code}\""
 
-        with subprocess.Popen(
-                cmd, stdin=subprocess.PIPE, universal_newlines=True) as proc:
-            self.assertIsNone(proc.returncode)
-            self.assertTrue(
-                repr(proc).startswith(result.format(proc.returncode)) and
-                repr(proc).endswith('>')
-            )
+        cmd_shell = [(seq_cmd, False), (arg_cmd, True)]
 
-            proc.communicate(input='exit...\n')
-            proc.wait()
+        def to_result(exit_code, cmd):
+            sx = f"<Popen: returncode: {exit_code} args: {cmd!r}"
+            if len(sx) > 80:
+                sx = sx[:76] + "...>"
+            return sx
 
-            self.assertIsNotNone(proc.returncode)
-            self.assertTrue(
-                repr(proc).startswith(result.format(proc.returncode)) and
-                repr(proc).endswith('>')
-            )
+        for cmd, shell in cmd_shell:
+            with subprocess.Popen(
+                    cmd, stdin=subprocess.PIPE,
+                    universal_newlines=True, shell=shell) as proc:
+                self.assertIsNone(proc.returncode)
+                self.assertEqual(
+                    repr(proc), to_result(proc.returncode, cmd)
+                )
+
+                proc.communicate(input='exit...\n')
+                proc.wait()
+
+                self.assertEqual(proc.returncode, expected_exit_code)
+                self.assertEqual(
+                    repr(proc), to_result(proc.returncode, cmd)
+                )
 
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
