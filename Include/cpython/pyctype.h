@@ -1,7 +1,6 @@
 #ifndef Py_LIMITED_API
 #ifndef PYCTYPE_H
 #define PYCTYPE_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +35,5 @@ PyAPI_DATA(const unsigned char) _Py_ctype_toupper[256];
 #ifdef __cplusplus
 }
 #endif
-
 #endif /* !PYCTYPE_H */
 #endif /* !Py_LIMITED_API */
