@@ -1,0 +1,3 @@
+The docstrings, docs and argument lists of the functions ctypes.string_at
+and ctypes.wstring_at used different names to refer to the first argument.
+Changing them to only use the name "ptr" to refer to the first argument.
