@@ -718,6 +718,8 @@ class ProcessTestCase(BaseTestCase):
             # However, this function is not yet in _winapi.
             p.stdin.write(b"pear")
             p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
         finally:
             p.kill()
             p.wait()
@@ -745,6 +747,8 @@ class ProcessTestCase(BaseTestCase):
             # On other platforms we cannot test the pipe size (yet). But above
             # code using pipesize=-1 should not crash.
             p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
         finally:
             p.kill()
             p.wait()
@@ -3263,6 +3267,7 @@ class POSIXProcessTestCase(BaseTestCase):
         with mock.patch.object(p, 'poll', new=lambda: None):
             p.returncode = None
             p.send_signal(signal.SIGTERM)
+        p.kill()
 
     def test_communicate_repeated_call_after_stdout_close(self):
         proc = subprocess.Popen([sys.executable, '-c',
