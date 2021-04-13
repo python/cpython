@@ -868,6 +868,18 @@ Ensure that early = are not matched by the parser as invalid comparisons
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
+   >>> dict(x=34); x $ y
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> dict(x=34, (x for x in range 10), 1); x $ y
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> dict(x=34, x=1, y=2); x $ y
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -1013,7 +1025,7 @@ class SyntaxTestCase(unittest.TestCase):
     def test_expression_with_assignment(self):
         self._check_error(
             "print(end1 + end2 = ' ')",
-            "cannot assign to expression here. Maybe you meant '==' instead of '='?",
+            'expression cannot contain assignment, perhaps you meant "=="?',
             offset=19
         )
 
