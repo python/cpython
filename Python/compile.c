@@ -53,6 +53,17 @@
  */
 #define STACK_USE_GUIDELINE 30
 
+/* If we exceed this limit, it should
+ * be considered a compiler bug.
+ * Currently it should be impossible
+ * to exceed STACK_USE_GUIDELINE * 100,
+ * as 100 is the maximum parse depth.
+ * For performance reasons we will
+ * want to reduce this to a
+ * few hundred in the future.
+ */
+#define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
+
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
@@ -6277,7 +6288,6 @@ stackdepth(struct compiler *c)
                 maxdepth = new_depth;
             }
             assert(depth >= 0); /* invalid code or bug in stackdepth() */
-            //assert(depth < 50); /* Needs fixing in compiler */
             if (is_jump(instr)) {
                 effect = stack_effect(instr->i_opcode, instr->i_oparg, 1);
                 assert(effect != PY_INVALID_STACK_EFFECT);
@@ -6675,6 +6685,13 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     maxdepth = stackdepth(c);
     if (maxdepth < 0) {
+        Py_DECREF(consts);
+        goto error;
+    }
+    if (maxdepth > MAX_ALLOWED_STACK_USE) {
+        PyErr_Format(PyExc_SystemError,
+                     "excessive stack use: stack is %d deep",
+                     maxdepth);
         Py_DECREF(consts);
         goto error;
     }
