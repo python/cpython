@@ -164,7 +164,7 @@ class GzipFile(_compression.BaseStream):
         is in Unix format, i.e., seconds since 00:00:00 GMT, Jan.  1, 1970.
         If mtime is omitted or None, the current time is used. Use mtime = 0
         to generate a compressed stream that does not depend on creation time.
-        
+
         """
 
         if mode and ('t' in mode or 'U' in mode):
