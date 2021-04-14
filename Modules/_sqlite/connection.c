@@ -1601,7 +1601,6 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
 /*[clinic end generated code: output=306a3e6a38c36334 input=30ae45fc420bfd3b]*/
 {
     int rc;
-    int callback_error = 0;
     int sleep_ms = (int)(sleep * 1000.0);
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
@@ -1643,60 +1642,50 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     bck_handle = sqlite3_backup_init(bck_conn, "main", self->db, name);
     Py_END_ALLOW_THREADS
 
-    if (bck_handle) {
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            rc = sqlite3_backup_step(bck_handle, pages);
-            Py_END_ALLOW_THREADS
-
-            if (progress != Py_None) {
-                PyObject *res;
-
-                res = PyObject_CallFunction(progress, "iii", rc,
-                                            sqlite3_backup_remaining(bck_handle),
-                                            sqlite3_backup_pagecount(bck_handle));
-                if (res == NULL) {
-                    /* User's callback raised an error: interrupt the loop and
-                       propagate it. */
-                    callback_error = 1;
-                    rc = -1;
-                } else {
-                    Py_DECREF(res);
-                }
-            }
-
-            /* Sleep for a while if there are still further pages to copy and
-               the engine could not make any progress */
-            if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
-                Py_BEGIN_ALLOW_THREADS
-                sqlite3_sleep(sleep_ms);
-                Py_END_ALLOW_THREADS
-            }
-        } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
-
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_backup_finish(bck_handle);
-        Py_END_ALLOW_THREADS
-    } else {
-        rc = _pysqlite_seterror(bck_conn, NULL);
-    }
-
-    if (!callback_error && rc != SQLITE_OK) {
-        /* We cannot use _pysqlite_seterror() here because the backup APIs do
-           not set the error status on the connection object, but rather on
-           the backup handle. */
-        if (rc == SQLITE_NOMEM) {
-            (void)PyErr_NoMemory();
-        } else {
-            PyErr_SetString(pysqlite_OperationalError, sqlite3_errstr(rc));
-        }
-    }
-
-    if (!callback_error && rc == SQLITE_OK) {
-        Py_RETURN_NONE;
-    } else {
+    if (bck_handle == NULL) {
+        _pysqlite_seterror(bck_conn, NULL);
         return NULL;
     }
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        rc = sqlite3_backup_step(bck_handle, pages);
+        Py_END_ALLOW_THREADS
+
+        if (progress != Py_None) {
+            int remaining = sqlite3_backup_remaining(bck_handle);
+            int pagecount = sqlite3_backup_pagecount(bck_handle);
+            PyObject *res = PyObject_CallFunction(progress, "iii", rc,
+                                                  remaining, pagecount);
+            if (res == NULL) {
+                /* Callback failed: abort backup and bail. */
+                Py_BEGIN_ALLOW_THREADS
+                sqlite3_backup_finish(bck_handle);
+                Py_END_ALLOW_THREADS
+                return NULL;
+            }
+            Py_DECREF(res);
+        }
+
+        /* Sleep for a while if there are still further pages to copy and
+           the engine could not make any progress */
+        if (rc == SQLITE_BUSY || rc == SQLITE_LOCKED) {
+            Py_BEGIN_ALLOW_THREADS
+            sqlite3_sleep(sleep_ms);
+            Py_END_ALLOW_THREADS
+        }
+    } while (rc == SQLITE_OK || rc == SQLITE_BUSY || rc == SQLITE_LOCKED);
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_backup_finish(bck_handle);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(bck_conn, NULL);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
