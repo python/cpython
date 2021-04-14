@@ -1515,7 +1515,7 @@ class TestCollectionABCs(ABCTestCase):
         items = [5,43,2,1]
         s = MySet(items)
         r = s.pop()
-        self.assertEquals(len(s), len(items) - 1)
+        self.assertEqual(len(s), len(items) - 1)
         self.assertNotIn(r, s)
         self.assertIn(r, items)
 
