@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import sysconfig
+import warnings
 from glob import glob, escape
 import _osx_support
 
@@ -30,14 +31,19 @@ except ImportError:
     SUBPROCESS_BOOTSTRAP = True
 
 
-from distutils import log
-from distutils.command.build_ext import build_ext
-from distutils.command.build_scripts import build_scripts
-from distutils.command.install import install
-from distutils.command.install_lib import install_lib
-from distutils.core import Extension, setup
-from distutils.errors import CCompilerError, DistutilsError
-from distutils.spawn import find_executable
+with warnings.catch_warnings():
+    # bpo-41282 (PEP 632) deprecated distutils but setup.py still uses it
+    warnings.filterwarnings("ignore", "The distutils package is deprecated",
+                            DeprecationWarning)
+
+    from distutils import log
+    from distutils.command.build_ext import build_ext
+    from distutils.command.build_scripts import build_scripts
+    from distutils.command.install import install
+    from distutils.command.install_lib import install_lib
+    from distutils.core import Extension, setup
+    from distutils.errors import CCompilerError, DistutilsError
+    from distutils.spawn import find_executable
 
 
 # Compile extensions used to test Python?
