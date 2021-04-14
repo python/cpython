@@ -1,0 +1,21 @@
+.. bpo: 0
+.. date: 2020-11-13
+.. nonce: TRAK.h
+.. release date: 2020-11-13
+.. section: Library
+
+Address CVE-2020-27619 in multibytecodec tests
+
+.. bpo: 0
+.. date: 2020-11-12
+.. nonce: GEH1va
+.. section: Library
+
+Address CVE-2020-26116 in httplib
+
+.. bpo: 0
+.. date: 2020-11-03
+.. nonce: TWAB9g
+.. section: Library
+
+Address CVE-2019-20907 in tarfile

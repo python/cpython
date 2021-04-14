@@ -1,0 +1,7 @@
+.. bpo: 0
+.. date: 2020-09-29
+.. nonce: caft@D
+.. release date: 2020-09-29
+.. section: Library
+
+Address CVE-2020-8492 in urllib2
