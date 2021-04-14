@@ -6329,7 +6329,7 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
         if (PyErr_GivenExceptionMatches(value, PyExc_NameError)) {
             // We do not care if this fails because we are going to restore the
             // NameError anyway.
-            _PyObject_SetAttrId(value, &PyId_name, obj);
+            (void)_PyObject_SetAttrId(value, &PyId_name, obj);
         }
         PyErr_Restore(type, value, traceback);
     }

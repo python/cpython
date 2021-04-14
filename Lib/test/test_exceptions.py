@@ -1477,7 +1477,7 @@ class NameErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
         self.assertIn("global_for_suggestions?", err.getvalue())
 
-    def test_name_error_suggestions_do_not_trigger_for_long_attributes(self):
+    def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def f():
             somethingverywronghehehehehehe = None
             print(somethingverywronghe)
