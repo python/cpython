@@ -92,7 +92,7 @@ orig_threading_excepthook = None
 def regrtest_threading_excepthook(args):
     global orig_threading_excepthook
     support.environment_altered = True
-    print_warning("Uncaught thread exception")
+    print_warning(f"Uncaught thread exception: {args.exc_type.__name__}")
     old_stderr = sys.stderr
     try:
         sys.stderr = sys.__stderr__
