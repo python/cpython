@@ -86,6 +86,28 @@ def setup_unraisable_hook():
     sys.unraisablehook = regrtest_unraisable_hook
 
 
+orig_threading_excepthook = None
+
+
+def regrtest_threading_excepthook(args):
+    global orig_threading_excepthook
+    support.environment_altered = True
+    print_warning("Uncaught thread exception")
+    old_stderr = sys.stderr
+    try:
+        sys.stderr = sys.__stderr__
+        orig_threading_excepthook(args)
+    finally:
+        sys.stderr = old_stderr
+
+
+def setup_threading_excepthook():
+    global orig_threading_excepthook
+    import threading
+    orig_threading_excepthook = threading.excepthook
+    threading.excepthook = regrtest_threading_excepthook
+
+
 def clear_caches():
     # Clear the warnings registry, so they can be displayed again
     for mod in sys.modules.values():
