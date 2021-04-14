@@ -1,3 +1,3 @@
 When printing :exc:`AttributeError`, :c:func:`PyErr_Display` will offer
-suggestions of simmilar attribute names in the object that the exception was
+suggestions of similar attribute names in the object that the exception was
 raised from. Patch by Pablo Galindo
