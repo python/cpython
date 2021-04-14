@@ -5,9 +5,7 @@ cur = con.cursor()
 cur.execute("create table lang (lang_name, lang_age)")
 
 # This is the qmark style:
-name = "C"
-age = 49
-cur.execute("insert into lang values (?, ?)", (name, age))
+cur.execute("insert into lang values (?, ?)", ("C", 49))
 
 # The qmark style used with executemany():
 lang_list = [
