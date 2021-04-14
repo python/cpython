@@ -962,6 +962,8 @@ print_exception(PyObject *f, PyObject *value)
             err += PyFile_WriteString("?", f);
         }
         Py_DECREF(suggestions);
+    } else if (PyErr_Occurred()) {
+        PyErr_Clear();
     }
     err += PyFile_WriteString("\n", f);
     Py_XDECREF(tb);
