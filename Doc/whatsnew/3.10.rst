@@ -187,6 +187,23 @@ raised from:
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
+NameErrors
+~~~~~~~~~~
+
+When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
+will offer suggestions of simmilar variable names in the function that the exception
+was raised from:
+
+.. code-block:: python
+
+    >>> schwarzschild_black_hole = None
+    >>> schwarschild_black_hole
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
+
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
 

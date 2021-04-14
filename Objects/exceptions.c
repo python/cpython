@@ -1326,8 +1326,69 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
 /*
  *    NameError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, NameError,
-                       "Name not found globally.");
+
+static int
+NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"name", NULL};
+    PyObject *name = NULL;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
+        return -1;
+    }
+
+    PyObject *empty_tuple = PyTuple_New(0);
+    if (!empty_tuple) {
+        return -1;
+    }
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
+                                     &name)) {
+        Py_DECREF(empty_tuple);
+        return -1;
+    }
+    Py_DECREF(empty_tuple);
+
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    return 0;
+}
+
+static int
+NameError_clear(PyNameErrorObject *self)
+{
+    Py_CLEAR(self->name);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+NameError_dealloc(PyNameErrorObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    NameError_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+NameError_traverse(PyNameErrorObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->name);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyMemberDef NameError_members[] = {
+        {"name", T_OBJECT, offsetof(PyNameErrorObject, name), 0, PyDoc_STR("name")},
+        {NULL}  /* Sentinel */
+};
+
+static PyMethodDef NameError_methods[] = {
+        {NULL}  /* Sentinel */
+};
+
+ComplexExtendsException(PyExc_Exception, NameError,
+                        NameError, 0,
+                        NameError_methods, NameError_members,
+                        0, BaseException_str, "Name not found globally.");
 
 /*
  *    UnboundLocalError extends NameError

@@ -64,6 +64,11 @@ typedef struct {
 
 typedef struct {
     PyException_HEAD
+    PyObject *name;
+} PyNameErrorObject;
+
+typedef struct {
+    PyException_HEAD
     PyObject *obj;
     PyObject *name;
 } PyAttributeErrorObject;
