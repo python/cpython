@@ -546,7 +546,6 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
     sqlite3_value* cur_value;
     PyObject* cur_py_value;
     const char* val_str;
-    Py_ssize_t buflen;
 
     args = PyTuple_New(argc);
     if (!args) {
@@ -571,19 +570,26 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
                     cur_py_value = Py_NewRef(Py_None);
                 }
                 break;
-            case SQLITE_BLOB:
-                buflen = sqlite3_value_bytes(cur_value);
-                cur_py_value = PyBytes_FromStringAndSize(
-                    sqlite3_value_blob(cur_value), buflen);
+            case SQLITE_BLOB: {
+                sqlite3 *db = sqlite3_context_db_handle(context);
+                const void *blob = sqlite3_value_blob(cur_value);
+
+                if (blob == NULL && sqlite3_errcode(db) == SQLITE_NOMEM) {
+                    PyErr_NoMemory();
+                    goto error;
+                }
+
+                Py_ssize_t size = sqlite3_value_bytes(cur_value);
+                cur_py_value = PyBytes_FromStringAndSize(blob, size);
                 break;
+            }
             case SQLITE_NULL:
             default:
                 cur_py_value = Py_NewRef(Py_None);
         }
 
         if (!cur_py_value) {
-            Py_DECREF(args);
-            return NULL;
+            goto error;
         }
 
         PyTuple_SetItem(args, i, cur_py_value);
@@ -591,6 +597,10 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
     }
 
     return args;
+
+error:
+    Py_DECREF(args);
+    return NULL;
 }
 
 static void
