@@ -50,8 +50,8 @@ You can control how files are opened by providing an opening hook via the
 *openhook* parameter to :func:`fileinput.input` or :class:`FileInput()`. The
 hook must be a function that takes two arguments, *filename* and *mode*, and
 returns an accordingly opened file-like object. If *encoding* and/or *errors*
-are specified, they will be passed to the hook as an aditional argument.
-Two useful hooks are already provided by this module.
+are specified, they will be passed to the hook as aditional keyword arguments.
+This module provides a :func:`hook_encoded` to support compressed files.
 
 The following function is the primary interface of this module:
 
@@ -225,3 +225,7 @@ The two following opening hooks are provided by this module:
 
    .. versionchanged:: 3.6
       Added the optional *errors* parameter.
+
+   .. deprecated:: 3.10
+      This function is deprecated since :func:`input` and :class:`FileInput`
+      now have *encoding* and *errors* parameters.
