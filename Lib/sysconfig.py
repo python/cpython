@@ -212,13 +212,6 @@ def _expand_vars(scheme, vars):
     return res
 
 
-def get_default_scheme():
-    if os.name == 'posix':
-        # the default scheme for posix is posix_prefix
-        return 'posix_prefix'
-    return os.name
-
-
 def _get_preferred_schemes():
     if os.name == 'nt':
         return {
@@ -244,6 +237,10 @@ def get_preferred_scheme(key):
     if scheme not in _INSTALL_SCHEMES:
         raise KeyError(key)
     return scheme
+
+
+def get_default_scheme():
+    return get_preferred_scheme('prefix')
 
 
 def _parse_makefile(filename, vars=None):
