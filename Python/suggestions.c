@@ -9,10 +9,8 @@
 
 /* Calculate the Levenshtein distance between string1 and string2 */
 static size_t
-levenshtein_distance(const char *a, const char *b) {
-
-    const size_t a_size = strlen(a);
-    const size_t b_size = strlen(b);
+levenshtein_distance(const char *a, size_t a_size,
+                     const char *b, size_t b_size) {
 
     if (a_size > MAX_STRING_SIZE || b_size > MAX_STRING_SIZE) {
         return 0;
@@ -87,17 +85,20 @@ calculate_suggestions(PyObject *dir,
 
     Py_ssize_t suggestion_distance = PyUnicode_GetLength(name);
     PyObject *suggestion = NULL;
-    const char *name_str = PyUnicode_AsUTF8(name);
+    Py_ssize_t name_size;
+    const char *name_str = PyUnicode_AsUTF8AndSize(name, &name_size);
     if (name_str == NULL) {
         return NULL;
     }
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
-        const char *item_str = PyUnicode_AsUTF8(item);
+        Py_ssize_t item_size;
+        const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
             return NULL;
         }
-        Py_ssize_t current_distance = levenshtein_distance(name_str, item_str);
+        Py_ssize_t current_distance = levenshtein_distance(
+                name_str, name_size, item_str, item_size);
         if (current_distance == 0 || current_distance > MAX_DISTANCE) {
             continue;
         }
@@ -138,7 +139,8 @@ static PyObject *
 offer_suggestions_for_name_error(PyNameErrorObject *exc) {
     PyObject *name = exc->name; // borrowed reference
     PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
-    // Abort if we don't have an attribute name or we have an invalid one
+    // Abort if we don't have a variable name or we have an invalid one
+    // or if we don't have a traceback to work with
     if (name == NULL || traceback == NULL || !PyUnicode_CheckExact(name)) {
         return NULL;
     }
