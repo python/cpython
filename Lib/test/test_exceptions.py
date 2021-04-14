@@ -1708,6 +1708,7 @@ class AttributeErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
 
         self.assertNotIn("blech", err.getvalue())
+        self.assertNotIn("oh no!", err.getvalue())
 
 class ImportErrorTests(unittest.TestCase):
 
