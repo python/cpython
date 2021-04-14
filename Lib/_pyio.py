@@ -311,16 +311,6 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-class DocDescriptor:
-    """Helper for builtins.open.__doc__
-    """
-    def __get__(self, obj, typ=None):
-        return (
-            "open(file, mode='r', buffering=-1, encoding=None, "
-                 "errors=None, newline=None, closefd=True)\n\n" +
-            open.__doc__)
-
-
 # bpo-43680: Alias to open() kept for backward compatibility
 OpenWrapper = open
 
