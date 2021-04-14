@@ -178,6 +178,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
 // users must call PyErr_Occurred() to disambiguate.
 PyObject *_Py_Offer_Suggestions(PyObject *exception) {
     PyObject *result = NULL;
+    assert(!PyErr_Occurred());
     if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError)) {
         result = offer_suggestions_for_attribute_error((PyAttributeErrorObject *) exception);
     } else if (PyErr_GivenExceptionMatches(exception, PyExc_NameError)) {
