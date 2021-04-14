@@ -420,7 +420,7 @@ For example::
        case ('warning', code, 40):
            print("A warning has been received.")
        case ('error', code, _):
-           print(f"An error {code} occured.")
+           print(f"An error {code} occurred.")
 
 In the above case, ``test_variable`` will match for ('error', code, 100) and
 ('error', code, 800).
