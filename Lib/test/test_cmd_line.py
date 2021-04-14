@@ -862,7 +862,7 @@ class SyntaxErrorTests(unittest.TestCase):
         self.check_string(b"(1+2+3")
 
     def test_decoding_error_at_the_end_of_the_line(self):
-        self.check_string(b"'\u1f'")
+        self.check_string(br"'\u1f'")
 
 def test_main():
     support.run_unittest(CmdLineTest, IgnoreEnvironmentTest, SyntaxErrorTests)
