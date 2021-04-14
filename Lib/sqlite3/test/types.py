@@ -122,7 +122,6 @@ class DeclTypesTests(unittest.TestCase):
                 n1 number,
                 n2 number(5),
                 bad bad,
-                d date,
                 cbin cblob)
         """)
 
