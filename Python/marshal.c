@@ -492,7 +492,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object((PyObject *)NULL, p);
     }
     else if (PyAnySet_CheckExact(v)) {
-        PyObject *value;
+        PyObject *ordered_list, *value;
         Py_ssize_t pos = 0;
         Py_hash_t hash;
 
@@ -502,8 +502,10 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_TYPE(TYPE_SET, p);
         n = PySet_GET_SIZE(v);
         W_SIZE(n, p);
-        while (_PySet_NextEntry(v, &pos, &value, &hash)) {
-            w_object(value, p);
+        ordered_list = PySequence_List(v);
+        PyList_Sort(ordered_list);
+        for (i = 0; i < n; i++) {
+            w_object(PyList_GET_ITEM(ordered_list, i), p);
         }
     }
     else if (PyCode_Check(v)) {
