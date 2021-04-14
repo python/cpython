@@ -47,9 +47,8 @@
  * memory use for large constants, etc.
  *
  * The value 30 is plucked out of thin air.
- * Code that this impacts is rare (dynamically),
- * so exact value is unimportant.
- * An experimentally determined
+ * Code that could use more stack than this is
+ * rare, so the exact value is unimportant.
  */
 #define STACK_USE_GUIDELINE 30
 
@@ -61,6 +60,10 @@
  * For performance reasons we will
  * want to reduce this to a
  * few hundred in the future.
+ *
+ * NOTE: Whatever MAX_ALLOWED_STACK_USE is
+ * set to, it should never restrict what Python
+ * we can write, just how we compile it.
  */
 #define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
