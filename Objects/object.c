@@ -12,7 +12,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
 #include "pycore_unionobject.h"   // _Py_UnionType
-#include "pycore_suggestions.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -911,14 +910,14 @@ PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
-    PyObject* result = NULL;
-
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
                      Py_TYPE(name)->tp_name);
         return NULL;
     }
+
+    PyObject* result = NULL;
     if (tp->tp_getattro != NULL) {
         result = (*tp->tp_getattro)(v, name);
     }

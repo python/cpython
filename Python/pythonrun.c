@@ -15,7 +15,7 @@
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch
+#include "pycore_pyerrors.h"      // _PyErr_Fetch, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
@@ -24,7 +24,6 @@
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
-#include "pycore_suggestions.h"   // _Py_Offer_Suggestions
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -956,9 +955,11 @@ print_exception(PyObject *f, PyObject *value)
     }
     PyObject* suggestions = _Py_Offer_Suggestions(value);
     if (suggestions) {
-        err = PyFile_WriteString(". ", f);
+        // Add a trailer ". Did you mean: (...)?"
+        err = PyFile_WriteString(". Did you mean: ", f);
         if (err == 0) {
             err = PyFile_WriteObject(suggestions, f, Py_PRINT_RAW);
+            err += PyFile_WriteString("?", f);
         }
         Py_DECREF(suggestions);
     }
@@ -1089,7 +1090,6 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
     if (file == Py_None) {
         return;
     }
-
     Py_INCREF(file);
     _PyErr_Display(file, exception, value, tb);
     Py_DECREF(file);

@@ -1,6 +1,6 @@
 #include "Python.h"
 
-#include "pycore_suggestions.h"
+#include "pycore_pyerrors.h"
 
 #define MAX_GETATTR_PREDICT_DIST 3
 #define MAX_GETATTR_PREDICT_ITEMS 100
@@ -8,7 +8,7 @@
 
 /* Calculate the Levenshtein distance between string1 and string2 */
 static Py_ssize_t
-distance(const char *string1, const char *string2)
+levenshtein_distance(const char *string1, const char *string2)
 {
     Py_ssize_t len1 = strlen(string1);
     Py_ssize_t len2 = strlen(string2);
@@ -150,8 +150,8 @@ calculate_suggestions(PyObject* dir,
             PyErr_Clear();
             continue;
         }
-        Py_ssize_t current_distance = distance(PyUnicode_AsUTF8(name),
-                                               PyUnicode_AsUTF8(item));
+        Py_ssize_t current_distance = levenshtein_distance(PyUnicode_AsUTF8(name),
+                                                           PyUnicode_AsUTF8(item));
         if (current_distance > MAX_GETATTR_PREDICT_DIST){
             continue;
         }
@@ -163,7 +163,8 @@ calculate_suggestions(PyObject* dir,
     if (!suggestion) {
         return NULL;
     }
-    return PyUnicode_FromFormat("Did you mean: %U?", suggestion);
+    Py_INCREF(suggestion);
+    return suggestion;
 }
 
 static PyObject*
@@ -187,13 +188,15 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject* exc) {
 }
 
 
-// Offer suggestions for a given exception. This function does not raise exceptions
-// and returns NULL if no exception was found.
+// Offer suggestions for a given exception. Returns a python string object containing the
+// suggestions. This function does not raise exceptions and returns NULL if no suggestion was found.
 PyObject* _Py_Offer_Suggestions(PyObject* exception) {
-    assert(!PyErr_Occurred());
+    PyObject* result = NULL;
+    assert(!PyErr_Occurred()); // Check that we are not going to clean any existing exception
     if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError)) {
-        return offer_suggestions_for_attribute_error((PyAttributeErrorObject*) exception);
+        result = offer_suggestions_for_attribute_error((PyAttributeErrorObject*) exception);
     }
-    return NULL;
+    assert(!PyErr_Occurred());
+    return result;
 }
 

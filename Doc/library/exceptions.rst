@@ -154,6 +154,8 @@ The following exceptions are the exceptions that are usually raised.
    that was attempted to be accessed and the object that was accessed for said
    attribute, respectively.
 
+   .. versionchanged:: 3.10
+      Added the :attr:`name` and :attr:`obj` attributes.
 
 .. exception:: EOFError
 
