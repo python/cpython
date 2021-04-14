@@ -760,6 +760,17 @@ enum
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
 
+fileinput
+---------
+
+Added *encoding* and *errors* parameters in :func:`fileinput.input` and
+:class:`fileinput.FileInput`.
+(Contributed by Inada Naoki in :issue:`43712`.)
+
+:func:`fileinput.hook_compressed` now returns :class:`TextIOWrapper` object
+when *mode* is "r" and file is compressed, like uncompressed files.
+(Contributed by Inada Naoki in :issue:`5758`.)
+
 gc
 --
 
