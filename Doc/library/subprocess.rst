@@ -54,10 +54,11 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.  If you wish to capture
-   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
-   instead of *capture_output*.
+   ``stdout=subprocess.PIPE`` and ``stderr=subprocess.PIPE``. The *stdout* and 
+   *stderr* arguments may not be supplied at the same time as *capture_output*.  
+   If you wish to capture and combine both streams into one, use 
+   ``stdout=subprocess.PIPE`` and ``stderr=subprocess.STDOUT`` instead of 
+   *capture_output*.
 
    The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
    expires, the child process will be killed and waited for.  The
@@ -68,7 +69,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    subprocess's stdin.  If used it must be a byte sequence, or a string if
    *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
-   ``stdin=PIPE``, and the *stdin* argument may not be used as well.
+   ``stdin=subprocess.PIPE``, and the *stdin* argument may not be used as well.
 
    If *check* is true, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
