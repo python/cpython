@@ -125,8 +125,11 @@ Check :pep:`617` for more details.
 in :issue:`12782` and :issue:`40334`.)
 
 
-Better error messages in the parser
------------------------------------
+Better error messages
+---------------------
+
+SyntaxErrors
+~~~~~~~~~~~~
 
 When parsing code that contains unclosed parentheses or brackets the interpreter
 now includes the location of the unclosed bracket of parentheses instead of displaying
@@ -166,6 +169,23 @@ These improvements are inspired by previous work in the PyPy interpreter.
 
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
+
+
+AttributeErrors
+~~~~~~~~~~~~~~~
+
+When printing :exc:`AttributeError`, :c:func:`PyErr_Display` will offer
+suggestions of simmilar attribute names in the object that the exception was
+raised from:
+
+.. code-block:: python
+
+    >>> collections.namedtoplo
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    AttributeError: module 'collections' has no attribute 'namedtoplo'. Did you mean: namedtuple?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
 
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
