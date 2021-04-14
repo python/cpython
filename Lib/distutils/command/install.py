@@ -23,16 +23,16 @@ from site import USER_SITE
 HAS_USER_SITE = (USER_SITE is not None)
 
 # The keys to an installation scheme; if any new types of files are to be
-# installed, be sure to add an entry to every installation scheme above,
-# and to SCHEME_KEYS here.
+# installed, be sure to add an entry to every scheme in
+# sysconfig._INSTALL_SCHEMES, and to SCHEME_KEYS here.
 SCHEME_KEYS = ('purelib', 'platlib', 'headers', 'scripts', 'data')
 
 # The following code provides backward-compatible INSTALL_SCHEMES
 # while making the sysconfig module the single point of truth.
 # This makes it easier for OS distributions where they need to
-# alter locations for packages installations on single place.
-# This module is depracated anyway (PEP 632) so if anything
-# doesn't work for you, take a look at sysconfig.
+# alter locations for packages installations in a single place.
+# Note that this module is depracated (PEP 632); all consumers
+# of this information should switch to using sysconfig directly.
 INSTALL_SCHEMES = {"unix_prefix": {}, "unix_home": {}, "nt": {}}
 
 # Copy from sysconfig._INSTALL_SCHEMES
@@ -58,8 +58,8 @@ for main_key in INSTALL_SCHEMES:
             value = value.replace("/lib/", "/$platlibdir/")
         INSTALL_SCHEMES[main_key][key] = value
 
-# The following part of INSTALL_SCHEMES has different definition
-# that the one in sysconfig but because both depends on site module
+# The following part of INSTALL_SCHEMES has a different definition
+# than the one in sysconfig, but because both depend on the site module,
 # the outcomes should be the same.
 if HAS_USER_SITE:
     INSTALL_SCHEMES['nt_user'] = {
