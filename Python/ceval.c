@@ -5171,6 +5171,9 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
         _PyObject_GC_TRACK(f);
         if (_PyFrame_MakeCopyOfLocals(f)) {
             Py_XDECREF(retval);
+            if (!is_coro) {
+                _PyThreadState_PopLocals(tstate, localsarray);
+            }
             return NULL;
         }
     }

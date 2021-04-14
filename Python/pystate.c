@@ -607,6 +607,9 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
+#define DATA_STACK_SIZE (62*1024)
+#define DATA_STACK_HEADROOM (2*1024)
+
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
@@ -658,6 +661,15 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->context = NULL;
     tstate->context_ver = 1;
+    size_t total_size = (DATA_STACK_SIZE+DATA_STACK_HEADROOM);
+    tstate->datastack_base = _PyObject_VirtualAlloc(sizeof(PyObject *)*total_size);
+    if (tstate->datastack_base == NULL) {
+        PyMem_RawFree(tstate);
+        return NULL;
+    }
+    tstate->datastack_top = tstate->datastack_base;
+    tstate->datastack_hard_limit = tstate->datastack_base + total_size;
+    tstate->datastack_soft_limit = tstate->datastack_base + DATA_STACK_SIZE;
 
     if (init) {
         _PyThreadState_Init(tstate);
@@ -906,7 +918,6 @@ tstate_delete_common(PyThreadState *tstate,
     }
 }
 
-
 static void
 _PyThreadState_Delete(PyThreadState *tstate, int check_current)
 {
@@ -917,6 +928,7 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
         }
     }
     tstate_delete_common(tstate, gilstate);
+    _PyObject_VirtualFree(tstate->datastack_base, sizeof(PyObject *)*DATA_STACK_SIZE);
     PyMem_RawFree(tstate);
 }
 
@@ -1969,17 +1981,27 @@ _Py_GetConfig(void)
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
-/* Dumbest possible (and very inefficient) implementation */
-
 PyObject **
 _PyThreadState_PushLocals(PyThreadState *tstate, int size)
 {
-    (void)tstate;
-    PyObject **res = PyMem_Malloc(sizeof(PyObject **)*size);
-    if (res == NULL) {
-        PyErr_NoMemory();
+    PyObject **res = tstate->datastack_top;
+    PyObject **top = res + size;
+    if (top >= tstate->datastack_soft_limit) {
+        if (top >= tstate->datastack_hard_limit) {
+            if (tstate->recursion_headroom) {
+                Py_FatalError("Cannot recover from data-stack overflow.");
+            }
+            else {
+                Py_FatalError("Rapid data-stack overflow.");
+            }
+        }
+        tstate->recursion_headroom++;
+        _PyErr_Format(tstate, PyExc_RecursionError,
+                    "data stack overflow");
+        tstate->recursion_headroom--;
         return NULL;
     }
+    tstate->datastack_top = top;
     for (Py_ssize_t i=0; i < size; i++) {
         res[i] = NULL;
     }
@@ -1989,8 +2011,8 @@ _PyThreadState_PushLocals(PyThreadState *tstate, int size)
 void
 _PyThreadState_PopLocals(PyThreadState *tstate, PyObject **locals)
 {
-    (void)tstate;
-    PyMem_Free(locals);
+    assert(tstate->datastack_top >= locals);
+    tstate->datastack_top = locals;
 }
 
 

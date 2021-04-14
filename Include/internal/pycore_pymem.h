@@ -95,6 +95,10 @@ struct _PyTraceMalloc_Config {
 PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
 
 
+void *_PyObject_VirtualAlloc(size_t size);
+void _PyObject_VirtualFree(void *, size_t size);
+
+
 #ifdef __cplusplus
 }
 #endif

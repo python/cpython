@@ -149,6 +149,10 @@ struct _ts {
 
     CFrame root_cframe;
 
+    PyObject **datastack_base;
+    PyObject **datastack_top;
+    PyObject **datastack_soft_limit;
+    PyObject **datastack_hard_limit;
     /* XXX signal handlers should also be here */
 
 };
