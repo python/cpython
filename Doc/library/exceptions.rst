@@ -149,6 +149,13 @@ The following exceptions are the exceptions that are usually raised.
    assignment fails.  (When an object does not support attribute references or
    attribute assignments at all, :exc:`TypeError` is raised.)
 
+   The :attr:`name` and :attr:`obj` attributes can be set using keyword-only
+   arguments to the constructor. When set they represent the name of the attribute
+   that was attempted to be accessed and the object that was accessed for said
+   attribute, respectively.
+
+   .. versionchanged:: 3.10
+      Added the :attr:`name` and :attr:`obj` attributes.
 
 .. exception:: EOFError
 
