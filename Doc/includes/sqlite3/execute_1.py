@@ -2,25 +2,24 @@ import sqlite3
 
 con = sqlite3.connect(":memory:")
 cur = con.cursor()
-cur.execute("create table people (name_last, age)")
-
-who = "Yeltsin"
-age = 72
+cur.execute("create table lang (lang_name, lang_age)")
 
 # This is the qmark style:
-cur.execute("insert into people values (?, ?)", (who, age))
+name = "C"
+age = 49
+cur.execute("insert into lang values (?, ?)", (name, age))
 
 # The qmark style used with executemany():
-people = [
-    ('Chirac', 70),
-    ('Finnbogadóttir', 72),
-    ('Schröder', 58),
+lang_list = [
+    ("Fortran", 64),
+    ("Python", 30),
+    ("Go", 11),
 ]
-cur.executemany("insert into people values (?, ?)", people)
+cur.executemany("insert into lang values (?, ?)", lang_list)
 
 # And this is the named style:
-cur.execute("select * from people where name_last=:who and age=:age",
-            {"who": who, "age": age})
+cur.execute("select * from lang where lang_name=:name and lang_age=:age",
+            {"name": "C", "age": 49})
 print(cur.fetchall())
 
 con.close()
