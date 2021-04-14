@@ -1338,9 +1338,76 @@ SimpleExtendsException(PyExc_NameError, UnboundLocalError,
 /*
  *    AttributeError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, AttributeError,
-                       "Attribute not found.");
 
+static int
+AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"name", "obj", NULL};
+    PyObject *name = NULL;
+    PyObject *obj = NULL;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
+        return -1;
+    }
+
+    PyObject *empty_tuple = PyTuple_New(0);
+    if (!empty_tuple) {
+        return -1;
+    }
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:AttributeError", kwlist,
+                                     &name, &obj)) {
+        Py_DECREF(empty_tuple);
+        return -1;
+    }
+    Py_DECREF(empty_tuple);
+
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    Py_XINCREF(obj);
+    Py_XSETREF(self->obj, obj);
+
+    return 0;
+}
+
+static int
+AttributeError_clear(PyAttributeErrorObject *self)
+{
+    Py_CLEAR(self->obj);
+    Py_CLEAR(self->name);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+AttributeError_dealloc(PyAttributeErrorObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    AttributeError_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->obj);
+    Py_VISIT(self->name);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyMemberDef AttributeError_members[] = {
+    {"name", T_OBJECT, offsetof(PyAttributeErrorObject, name), 0, PyDoc_STR("attribute name")},
+    {"obj", T_OBJECT, offsetof(PyAttributeErrorObject, obj), 0, PyDoc_STR("object")},
+    {NULL}  /* Sentinel */
+};
+
+static PyMethodDef AttributeError_methods[] = {
+    {NULL}  /* Sentinel */
+};
+
+ComplexExtendsException(PyExc_Exception, AttributeError,
+                        AttributeError, 0,
+                        AttributeError_methods, AttributeError_members,
+                        0, BaseException_str, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
