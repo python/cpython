@@ -89,14 +89,12 @@ calculate_suggestions(PyObject *dir,
     PyObject *suggestion = NULL;
     const char *name_str = PyUnicode_AsUTF8(name);
     if (name_str == NULL) {
-        PyErr_Clear();
         return NULL;
     }
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
         const char *item_str = PyUnicode_AsUTF8(item);
         if (item_str == NULL) {
-            PyErr_Clear();
             return NULL;
         }
         Py_ssize_t current_distance = levenshtein_distance(name_str, item_str);
@@ -156,7 +154,6 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
     assert(code != NULL && code->co_varnames != NULL);
     PyObject *dir = PySequence_List(code->co_varnames);
     if (dir == NULL) {
-        PyErr_Clear();
         return NULL;
     }
 
@@ -168,7 +165,6 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
 
     dir = PySequence_List(frame->f_globals);
     if (dir == NULL) {
-        PyErr_Clear();
         return NULL;
     }
     suggestions = calculate_suggestions(dir, name);
@@ -178,16 +174,16 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
 }
 
 // Offer suggestions for a given exception. Returns a python string object containing the
-// suggestions. This function does not raise exceptions and returns NULL if no suggestion was found.
+// suggestions. This function returns NULL if no suggestion was found or if an exception happened,
+// users must call PyErr_Occurred() to disambiguate.
 PyObject *_Py_Offer_Suggestions(PyObject *exception) {
     PyObject *result = NULL;
-    assert(!PyErr_Occurred()); // Check that we are not going to clean any existing exception
+    assert(!PyErr_Occurred());
     if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError)) {
         result = offer_suggestions_for_attribute_error((PyAttributeErrorObject *) exception);
     } else if (PyErr_GivenExceptionMatches(exception, PyExc_NameError)) {
         result = offer_suggestions_for_name_error((PyNameErrorObject *) exception);
     }
-    assert(!PyErr_Occurred());
     return result;
 }
 

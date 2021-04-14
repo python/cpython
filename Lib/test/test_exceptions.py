@@ -1695,6 +1695,20 @@ class AttributeErrorTests(unittest.TestCase):
 
             self.assertIn("blech", err.getvalue())
 
+    def test_attribute_error_with_failing_dict(self):
+        class T:
+            bluch = 1
+            def __dir__(self):
+                raise AttributeError("oh no!")
+
+        try:
+            T().blich
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("blech", err.getvalue())
+        self.assertNotIn("oh no!", err.getvalue())
 
 class ImportErrorTests(unittest.TestCase):
 
