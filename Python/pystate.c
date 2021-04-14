@@ -607,7 +607,11 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
+/* Size of data stack
+ * Experimentally this can be set as low as 12k and have all the tests
+ * pass (64bit linux). */
 #define DATA_STACK_SIZE (62*1024)
+/* Additional stack space for error recovery */
 #define DATA_STACK_HEADROOM (2*1024)
 
 static PyThreadState *
