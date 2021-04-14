@@ -1605,6 +1605,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 double sleep)
 /*[clinic end generated code: output=306a3e6a38c36334 input=30ae45fc420bfd3b]*/
 {
+    int rc;
     int sleep_ms = (int)(sleep * 1000.0);
     sqlite3 *bck_conn;
     sqlite3_backup *bck_handle;
@@ -1651,7 +1652,6 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
         return NULL;
     }
 
-    int rc;
     do {
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_backup_step(bck_handle, pages);
