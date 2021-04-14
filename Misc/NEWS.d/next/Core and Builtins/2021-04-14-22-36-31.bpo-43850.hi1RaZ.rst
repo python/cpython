@@ -1,0 +1,1 @@
+Write sets and frozensets reproducibely in marshalled code. This makes Python bytecode not depend on the random seed.
