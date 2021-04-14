@@ -4283,6 +4283,14 @@ class MiscIOTest(unittest.TestCase):
         self.assertTrue(
             warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
+    @support.cpython_only
+    # Depending if OpenWrapper was already created or not, the warning is
+    # emitted or not. For example, the attribute is already created when this
+    # test is run multiple times.
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_openwrapper(self):
+        self.assertIs(self.io.OpenWrapper, self.io.open)
+
 
 class CMiscIOTest(MiscIOTest):
     io = io
@@ -4598,8 +4606,6 @@ def load_tests(*args):
     globs = globals()
     c_io_ns.update((x.__name__, globs["C" + x.__name__]) for x in mocks)
     py_io_ns.update((x.__name__, globs["Py" + x.__name__]) for x in mocks)
-    # Avoid turning open into a bound method.
-    py_io_ns["open"] = pyio.OpenWrapper
     for test in tests:
         if test.__name__.startswith("C"):
             for name, obj in c_io_ns.items():
