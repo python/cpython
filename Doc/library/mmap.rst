@@ -69,7 +69,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
-.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, \
+                access=ACCESS_DEFAULT[, offset], trackfd=True)
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -100,9 +101,15 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    defaults to 0. *offset* must be a multiple of :const:`ALLOCATIONGRANULARITY`
    which is equal to :const:`PAGESIZE` on Unix systems.
 
+   If *trackfd* is ``False``, the file descriptor specified by *fileno* will
+   not be duplicated.
+
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
    with physical backing store on Mac OS X and OpenVMS.
+
+   .. versionchanged:: 3.10
+      The *trackfd* parameter was added.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 

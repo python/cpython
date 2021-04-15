@@ -246,6 +246,16 @@ class MmapTests(unittest.TestCase):
                 self.assertRaises(TypeError, m.write_byte, 0)
                 m.close()
 
+    @unittest.skipIf(os.name == 'nt', 'trackfd not present on Windows')
+    def test_trackfd_parameter(self):
+        size = 64
+        with open(TESTFN, "wb") as f:
+            f.write(b"a"*size)
+        with open(TESTFN, "r+b") as f:
+            m = mmap.mmap(f.fileno(), size, trackfd=False)
+            self.assertEqual(len(m), size)
+            m.close()
+
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
         self.assertRaises(OSError, mmap.mmap, -2, 4096)

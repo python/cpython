@@ -831,6 +831,13 @@ linecache
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
+mmap
+----
+
+:class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
+the file descriptor specified by *fileno* will not be duplicated.
+(Contributed by Zackery Spytz in :issue:`34321`.)
+
 os
 --
 
