@@ -880,6 +880,38 @@ Ensure that early = are not matched by the parser as invalid comparisons
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
+Incomplete dictionary literals
+
+   >>> {1:2, 3:4, 5}
+   Traceback (most recent call last):
+   SyntaxError: ':' expected after dictionary key
+
+   >>> {1:2, 3:4, 5:}
+   Traceback (most recent call last):
+   SyntaxError: expression expected after dictionary key and ':'
+
+   >>> {1: *12+1, 23: 1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1: *12+1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1: 23, 1: *12+1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1:}
+   Traceback (most recent call last):
+   SyntaxError: expression expected after dictionary key and ':'
+
+   # Ensure that the error is not raise for syntax errors that happen after sets
+
+   >>> {1} $
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
