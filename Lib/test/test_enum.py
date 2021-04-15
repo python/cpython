@@ -3395,6 +3395,31 @@ class TestUnique(unittest.TestCase):
             triple = 3
             value = 4
 
+class TestHelpers(unittest.TestCase):
+
+    sunder_names = '_bad_', '_good_', '_what_ho_'
+    dunder_names = '__mal__', '__bien__', '__que_que__'
+    private_names = '_MyEnum__private', '_MyEnum__still_private'
+    private_and_sunder_names = '_MyEnum__private_', '_MyEnum__also_private_'
+    random_names = 'okay', '_semi_private', '_weird__', '_MyEnum__'
+
+    def test_sunder(self):
+        for name in self.sunder_names + self.private_and_sunder_names:
+            self.assertTrue(enum._is_sunder(name), '%r is a not sunder name?' % name)
+        for name in self.dunder_names + self.private_names + self.random_names:
+            self.assertFalse(enum._is_sunder(name), '%r is a sunder name?' % name)
+
+    def test_dunder(self):
+        for name in self.dunder_names:
+            self.assertTrue(enum._is_dunder(name), '%r is a not dunder name?' % name)
+        for name in self.sunder_names + self.private_names + self.private_and_sunder_names + self.random_names:
+            self.assertFalse(enum._is_dunder(name), '%r is a dunder name?' % name)
+
+    def test_is_private(self):
+        for name in self.private_names + self.private_and_sunder_names:
+            self.assertTrue(enum._is_private('MyEnum', name), '%r is a not private name?')
+        for name in self.sunder_names + self.dunder_names + self.random_names:
+            self.assertFalse(enum._is_private('MyEnum', name), '%r is a private name?')
 
 class TestEnumTypeSubclassing(unittest.TestCase):
     pass
