@@ -469,7 +469,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     if (!func_args) {
         goto error;
     }
-    PyTuple_SET_ITEM(func_args, 0, Py_NewRef(operation));
+    if (PyTuple_SetItem(func_args, 0, Py_NewRef(operation)) != 0) {
+        goto error;
+    }
 
     if (self->statement) {
         (void)pysqlite_statement_reset(self->statement);
