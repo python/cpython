@@ -53,10 +53,11 @@ def _is_sunder(name):
 def _is_private(cls_name, name):
     # do not use `re` as `re` imports `enum`
     pattern = '_%s__' % (cls_name, )
+    pat_len = len(pattern)
     if (
-            len(name) >= 5
+            len(name) > pat_len
             and name.startswith(pattern)
-            and name[len(pattern)] != '_'
+            and name[pat_len:pat_len+1] != ['_']
             and (name[-1] != '_' or name[-2] != '_')
         ):
         return True
