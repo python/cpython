@@ -478,6 +478,8 @@ class CompatPickleTests(unittest.TestCase):
         self.assertEqual(reverse_mapping('builtins', 'OSError'),
                          ('exceptions', 'OSError'))
 
+        exceptions_added_in_python_3 = [
+            'BaseExceptionGroup', 'ExceptionGroup']
         for name, exc in get_exceptions(builtins):
             with self.subTest(name):
                 if exc in (BlockingIOError,
@@ -494,7 +496,7 @@ class CompatPickleTests(unittest.TestCase):
                                      ('exceptions', 'ImportError'))
                     self.assertEqual(mapping('exceptions', name),
                                      ('exceptions', name))
-                else:
+                elif not name in exceptions_added_in_python_3:
                     self.assertEqual(reverse_mapping('builtins', name),
                                      ('exceptions', name))
                     self.assertEqual(mapping('exceptions', name),
