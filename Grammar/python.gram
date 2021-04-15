@@ -7,6 +7,7 @@ _PyPegen_parse(Parser *p)
     // Initialize keywords
     p->keywords = reserved_keywords;
     p->n_keyword_lists = n_keyword_lists;
+    p->soft_keywords = soft_keywords;
 
     // Run parser
     void *result = NULL;
@@ -459,6 +460,7 @@ expressions[expr_ty]:
     | a=expression ',' { _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_singleton_seq(p, a)), Load, EXTRA) }
     | expression
 expression[expr_ty] (memo):
+    | invalid_expression
     | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
     | disjunction
     | lambdef
@@ -778,6 +780,13 @@ invalid_kwarg:
     | expression a='=' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "expression cannot contain assignment, perhaps you meant \"==\"?") }
+
+invalid_expression:
+    # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
+    # Soft keywords need to also be ignored because they can be parsed as NAME NAME
+    | !(NAME STRING | SOFT_KEYWORD) a=disjunction expression {
+        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, "invalid syntax. Perhaps you forgot a comma?") }
+
 invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
