@@ -19170,6 +19170,7 @@ invalid_while_stmt_rule(Parser *p)
 
 // invalid_double_starred_kvpairs:
 //     | ','.double_starred_kvpair+ ',' invalid_kvpair
+//     | expression ':' '*' bitwise_or
 //     | expression ':' &('}' | ',')
 static void *
 invalid_double_starred_kvpairs_rule(Parser *p)
@@ -19206,6 +19207,39 @@ invalid_double_starred_kvpairs_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_double_starred_kvpairs[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.double_starred_kvpair+ ',' invalid_kvpair"));
     }
+    { // expression ':' '*' bitwise_or
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_double_starred_kvpairs[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' '*' bitwise_or"));
+        Token * _literal;
+        Token * a;
+        expr_ty bitwise_or_var;
+        expr_ty expression_var;
+        if (
+            (expression_var = expression_rule(p))  // expression
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (a = _PyPegen_expect_token(p, 16))  // token='*'
+            &&
+            (bitwise_or_var = bitwise_or_rule(p))  // bitwise_or
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_double_starred_kvpairs[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':' '*' bitwise_or"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use a starred expression in a dictionary value" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_double_starred_kvpairs[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' '*' bitwise_or"));
+    }
     { // expression ':' &('}' | ',')
         if (p->error_indicator) {
             D(p->level--);
@@ -19241,7 +19275,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
     return _res;
 }
 
-// invalid_kvpair: expression !(':') | expression ':'
+// invalid_kvpair: expression !(':') | expression ':' '*' bitwise_or | expression ':'
 static void *
 invalid_kvpair_rule(Parser *p)
 {
@@ -19277,6 +19311,39 @@ invalid_kvpair_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression !(':')"));
+    }
+    { // expression ':' '*' bitwise_or
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_kvpair[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "expression ':' '*' bitwise_or"));
+        Token * _literal;
+        Token * a;
+        expr_ty bitwise_or_var;
+        expr_ty expression_var;
+        if (
+            (expression_var = expression_rule(p))  // expression
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (a = _PyPegen_expect_token(p, 16))  // token='*'
+            &&
+            (bitwise_or_var = bitwise_or_rule(p))  // bitwise_or
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_kvpair[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "expression ':' '*' bitwise_or"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use a starred expression in a dictionary value" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_kvpair[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "expression ':' '*' bitwise_or"));
     }
     { // expression ':'
         if (p->error_indicator) {

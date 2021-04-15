@@ -890,6 +890,18 @@ Incomplete dictionary literals
    Traceback (most recent call last):
    SyntaxError: expression expected after dictionary key and ':'
 
+   >>> {1: *12+1, 23: 1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1: *12+1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1: 23, 1: *12+1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
    >>> {1:}
    Traceback (most recent call last):
    SyntaxError: expression expected after dictionary key and ':'
