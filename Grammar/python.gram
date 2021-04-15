@@ -899,6 +899,7 @@ invalid_double_starred_kvpairs:
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' &('}'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
 invalid_kvpair:
-    | a=expression !(':') { RAISE_SYNTAX_ERROR("':' expected after dictionary key") }
+    | a=expression !(':') {
+        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, "':' expected after dictionary key") }
     | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
