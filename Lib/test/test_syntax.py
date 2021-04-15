@@ -248,21 +248,35 @@ SyntaxError: did you forget parentheses around the comprehension target?
 
 # Missing commas in literals collections should not
 # produce special error messages regarding missing
-# parentheses
+# parentheses, but about missing commas instead
 
 >>> [1, 2 3]
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 >>> {1, 2 3}
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 >>> {1:2, 2:5 3:12}
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 >>> (1, 2 3)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+# Make sure soft keywords constructs don't raise specialized
+# errors regarding missing commas
+
+>>> match x:
+...     y = 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match x:
+...     case y:
+...        3 $ 3
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
@@ -864,7 +878,7 @@ leading to spurious errors.
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
 Ensure that early = are not matched by the parser as invalid comparisons
-   >>> f(2, 4, x=34); {1,2 a}
+   >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
