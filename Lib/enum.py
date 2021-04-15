@@ -310,7 +310,7 @@ class _EnumDict(dict):
             pass
         elif _is_sunder(key):
             if key not in (
-                    '_order_', '_create_pseudo_member_',
+                    '_order_',
                     '_generate_next_value_', '_missing_', '_ignore_',
                     '_iter_member_', '_iter_member_by_value_', '_iter_member_by_def_',
                     ):
@@ -1131,7 +1131,9 @@ class Flag(Enum, boundary=STRICT):
     @classmethod
     def _missing_(cls, value):
         """
-        Create a composite member iff value contains only members.
+        Create a composite member containing all canonical members present in `value`.
+
+        If non-member values are present, result depends on `_boundary_` setting.
         """
         if not isinstance(value, int):
             raise ValueError(
