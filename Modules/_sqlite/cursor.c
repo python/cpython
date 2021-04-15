@@ -560,22 +560,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                     PyErr_NoMemory();
                     goto error;
                 }
-                PyObject *descriptor = PyTuple_New(7);
+                column_name = _pysqlite_build_column_name(self, colname);
+                if (column_name == NULL) {
+                    goto error;
+                }
+                PyObject *descriptor = PyTuple_Pack(7, column_name,
+                                                    Py_None, Py_None, Py_None,
+                                                    Py_None, Py_None, Py_None);
+                Py_DECREF(column_name);
                 if (descriptor == NULL) {
                     goto error;
                 }
-                column_name = _pysqlite_build_column_name(self, colname);
-                if (column_name == NULL) {
-                    Py_DECREF(descriptor);
-                    goto error;
-                }
-                PyTuple_SET_ITEM(descriptor, 0, column_name);
-                PyTuple_SET_ITEM(descriptor, 1, Py_NewRef(Py_None));
-                PyTuple_SET_ITEM(descriptor, 2, Py_NewRef(Py_None));
-                PyTuple_SET_ITEM(descriptor, 3, Py_NewRef(Py_None));
-                PyTuple_SET_ITEM(descriptor, 4, Py_NewRef(Py_None));
-                PyTuple_SET_ITEM(descriptor, 5, Py_NewRef(Py_None));
-                PyTuple_SET_ITEM(descriptor, 6, Py_NewRef(Py_None));
                 PyTuple_SET_ITEM(self->description, i, descriptor);
             }
         }
