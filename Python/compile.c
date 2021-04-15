@@ -3748,14 +3748,13 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
                   int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    Py_ssize_t i, seen_star = 0;
     if (n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
             return 0;
         }
         PyObject *val;
-        for (i = 0; i < n; i++) {
+        for (Py_ssize_t i = 0; i < n; i++) {
             val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
             Py_INCREF(val);
             PyTuple_SET_ITEM(folded, i, val);
@@ -3776,14 +3775,16 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
         return 1;
     }
 
-    for (i = 0; i < n; i++) {
+    int big = n+pushed > STACK_USE_GUIDELINE;
+    int seen_star = 0;
+    for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
             seen_star = 1;
         }
     }
-    if (!seen_star && n+pushed < STACK_USE_GUIDELINE) {
-        for (i = 0; i < n; i++) {
+    if (!seen_star && !big) {
+        for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
             VISIT(c, expr, elt);
         }
@@ -3794,31 +3795,29 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
         }
         return 1;
     }
-    if (n+pushed >= STACK_USE_GUIDELINE) {
+    int sequence_built = 0;
+    if (big) {
         ADDOP_I(c, build, pushed);
-        seen_star = 1;
+        sequence_built = 1;
     }
-    else {
-        seen_star = 0;
-    }
-    for (i = 0; i < n; i++) {
+    for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
-            if (seen_star == 0) {
+            if (sequence_built == 0) {
                 ADDOP_I(c, build, i+pushed);
-                seen_star = 1;
+                sequence_built = 1;
             }
             VISIT(c, expr, elt->v.Starred.value);
             ADDOP_I(c, extend, 1);
         }
         else {
             VISIT(c, expr, elt);
-            if (seen_star) {
+            if (sequence_built) {
                 ADDOP_I(c, add, 1);
             }
         }
     }
-    assert(seen_star);
+    assert(sequence_built);
     if (tuple) {
         ADDOP(c, LIST_TO_TUPLE);
     }
@@ -3920,7 +3919,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
 {
     Py_ssize_t i, n = end - begin;
     PyObject *keys, *key;
-    int big = n > STACK_USE_GUIDELINE/2;
+    int big = n*2 > STACK_USE_GUIDELINE;
     if (n > 1 && !big && are_all_items_const(e->v.Dict.keys, begin, end)) {
         for (i = begin; i < end; i++) {
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
@@ -3984,7 +3983,7 @@ compiler_dict(struct compiler *c, expr_ty e)
             ADDOP_I(c, DICT_UPDATE, 1);
         }
         else {
-            if (elements > STACK_USE_GUIDELINE/2) {
+            if (elements*2 > STACK_USE_GUIDELINE) {
                 if (!compiler_subdict(c, e, i - elements, i + 1)) {
                     return 0;
                 }
@@ -4329,7 +4328,7 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
     keyword_ty kw;
     PyObject *keys, *key;
     assert(n > 0);
-    int big = n > STACK_USE_GUIDELINE/2;
+    int big = n*2 > STACK_USE_GUIDELINE;
     if (n > 1 && !big) {
         for (i = begin; i < end; i++) {
             kw = asdl_seq_GET(keywords, i);
@@ -4381,7 +4380,7 @@ compiler_call_helper(struct compiler *c,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
-    if (nelts + nkwelts >= STACK_USE_GUIDELINE) {
+    if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {
