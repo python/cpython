@@ -1389,7 +1389,9 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         Py_DECREF(dict);
     }
     if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-        PyErr_SetObject(PyExc_AttributeError, name);
+        PyErr_Format(PyExc_AttributeError,
+                     "'%.100s' object has no attribute '%U'",
+                     tp->tp_name, name);
 
   done:
     Py_XDECREF(descr);
