@@ -459,7 +459,7 @@ def gcc_get_limited_api_definitions(headers):
         re.findall(r"__EXPORT_DATA\((.*?)\)", preprocesor_output)
     )
     stable_data = set(
-        re.findall(r"__PyAPI_DATA\(.*?\)\s*\(?(.*?)\)?\s*;", preprocesor_output)
+        re.findall(r"__PyAPI_DATA\(.*?\)[\s\*\(]*([^);]*)\)?.*;", preprocesor_output)
     )
     return stable_data | stable_exported_data | stable_functions
 
