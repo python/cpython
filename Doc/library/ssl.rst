@@ -1274,6 +1274,40 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.9
       IPv6 address strings no longer have a trailing new line.
 
+.. method:: SSLSocket.get_unverified_chain(binary_form=False)
+
+   Returns an **unverified** certificate chain for the peer. If no chain is
+   provided, returns :const:`None`. Otherwise returns a tuple of dicts
+   containing information about the certificates. The chain starts with the
+   leaf certificate and ends with the root certificate. Return :const:`None`
+   if the session is resumed as peers do not send certificates.
+
+   If the ``binary_form`` parameter is :const:`True`, and a chain is available,
+   this method returns a tuple with each element corresponding to the
+   DER-encoded form of the entire certificate as a sequence of bytes.
+
+   .. versionadded:: 3.10
+
+   .. warning::
+      This is not a verified chain. See :meth:`ssl.SSLSocket.get_verified_chain`.
+
+.. method:: SSLSocket.get_verified_chain(binary_form=False)
+
+   Returns a verified certificate chain for the peer. If no chain is provided,
+   returns :const:`None`. Otherwise returns a tuple of dicts containing
+   information about the certificates. The chain starts with the leaf
+   certificate and ends with the root certificate. Return :const:`None` if the
+   session is resumed as peers do not send certificates.
+
+   If the ``binary_form`` parameter is :const:`True`, and a chain is available,
+   this method returns a tuple with each element corresponding to the
+   DER-encoded form of the entire certificate as a sequence of bytes.
+
+   .. versionadded:: 3.10
+
+   .. note::
+     This features requires OpenSSL 1.1.0 or newer.
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the

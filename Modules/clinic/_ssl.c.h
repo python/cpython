@@ -122,6 +122,88 @@ _ssl__SSLSocket_cipher(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_cipher_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_get_unverified_chain__doc__,
+"get_unverified_chain($self, /, der=False)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF    \
+    {"get_unverified_chain", (PyCFunction)(void(*)(void))_ssl__SSLSocket_get_unverified_chain, METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_get_unverified_chain__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self, int binary_mode);
+
+static PyObject *
+_ssl__SSLSocket_get_unverified_chain(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"der", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_unverified_chain", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int binary_mode = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    binary_mode = PyObject_IsTrue(args[0]);
+    if (binary_mode < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _ssl__SSLSocket_get_unverified_chain_impl(self, binary_mode);
+
+exit:
+    return return_value;
+}
+
+#if defined(OPENSSL_VERSION_1_1)
+
+PyDoc_STRVAR(_ssl__SSLSocket_get_verified_chain__doc__,
+"get_verified_chain($self, /, der=False)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF    \
+    {"get_verified_chain", (PyCFunction)(void(*)(void))_ssl__SSLSocket_get_verified_chain, METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_get_verified_chain__doc__},
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self, int binary_mode);
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"der", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_verified_chain", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int binary_mode = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    binary_mode = PyObject_IsTrue(args[0]);
+    if (binary_mode < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _ssl__SSLSocket_get_verified_chain_impl(self, binary_mode);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(OPENSSL_VERSION_1_1) */
+
 PyDoc_STRVAR(_ssl__SSLSocket_version__doc__,
 "version($self, /)\n"
 "--\n"
@@ -1420,6 +1502,10 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
+#ifndef _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+    #define _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+#endif /* !defined(_SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF) */
+
 #ifndef _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
     #define _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
 #endif /* !defined(_SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF) */
@@ -1447,4 +1533,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2bb53a80040c9b35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f880c7260e778fd input=a9049054013a1b77]*/
