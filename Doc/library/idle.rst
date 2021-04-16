@@ -732,7 +732,7 @@ intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, ``sys.modules`` starts with more entries,
-and ``threading.activeCount()`` returns 2 instead of 1.
+and ``threading.active_count()`` returns 2 instead of 1.
 
 By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution
