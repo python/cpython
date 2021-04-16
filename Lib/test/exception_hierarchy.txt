@@ -4,7 +4,7 @@ BaseException
  +-- GeneratorExit
  +-- BaseExceptionGroup
  +-- Exception
-      +-- ExceptionGroup
+      +-- ExceptionGroup [BaseExceptionGroup]
       +-- StopIteration
       +-- StopAsyncIteration
       +-- ArithmeticError
