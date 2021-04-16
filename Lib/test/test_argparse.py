@@ -2060,6 +2060,13 @@ class TestAddSubparsers(TestCase):
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
 
+    def test_required_subparsers_with_no_name(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparser = subparsers.add_parser('run')
+        subparser.set_defaults(command='run')
+        self._test_required_subparsers(parser)
+
     def test_optional_subparsers(self):
         parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(dest='command', required=False)

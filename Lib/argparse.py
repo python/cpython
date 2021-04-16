@@ -727,6 +727,9 @@ def _get_action_name(argument):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
+    # if a subparser has no better name call it 'command'
+    elif isinstance(argument, _SubParsersAction):
+        return 'command'
     else:
         return None
 
