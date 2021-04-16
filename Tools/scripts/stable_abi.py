@@ -304,13 +304,21 @@ def do_unixy_check(manifest, args):
             manifest, LDLIBRARY, expected_symbols, dynamic=False)
 
     # Check definitions in the header files
+    expected_defs = set(item.name for item in manifest.select(
+        {'function', 'data'}, include_abi_only=False, ifdef=feature_defines,
+    ))
     found_defs = gcc_get_limited_api_definitions(['Include/Python.h'])
-    missing_defs = expected_symbols - found_defs
+    missing_defs = expected_defs - found_defs
     okay &= _report_unexpected_items(
         missing_defs,
         'Some expected declarations were not declared in '
         + '"Include/Python.h" with Py_LIMITED_API:')
-    extra_defs = found_defs - expected_symbols
+
+    # Some Limited API macros are defined in terms of private symbols.
+    # These are not part of Limited API (even though they're defined with
+    # Py_LIMITED_API). They must be part of the Stable ABI, though.
+    private_symbols = {n for n in expected_symbols if n.startswith('_')}
+    extra_defs = found_defs - expected_defs - private_symbols
     okay &= _report_unexpected_items(
         extra_defs,
         'Some extra declarations were found in "Include/Python.h" '
