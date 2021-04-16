@@ -181,9 +181,9 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
 PyObject *_Py_Offer_Suggestions(PyObject *exception) {
     PyObject *result = NULL;
     assert(!PyErr_Occurred());
-    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError)) {
+    if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_AttributeError)) {
         result = offer_suggestions_for_attribute_error((PyAttributeErrorObject *) exception);
-    } else if (PyErr_GivenExceptionMatches(exception, PyExc_NameError)) {
+    } else if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_NameError)) {
         result = offer_suggestions_for_name_error((PyNameErrorObject *) exception);
     }
     return result;
