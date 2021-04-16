@@ -79,6 +79,19 @@ _init_nt = partial(_init_non_posix, _config_vars)
 # Following functions are deprecated together with this module and they
 # have no direct replacement
 
+# Calculate the build qualifier flags if they are defined.  Adding the flags
+# to the include and lib directories only makes sense for an installation, not
+# an in-source build.
+build_flags = ''
+try:
+    if not python_build:
+        build_flags = sys.abiflags
+except AttributeError:
+    # It's not a configure-based build, so the sys module doesn't have
+    # this attribute, which is fine.
+    pass
+
+
 def customize_compiler(compiler):
     """Do any platform-specific customization of a CCompiler instance.
 
