@@ -8,6 +8,7 @@ METH_NOARGS
 METH_O
 METH_STATIC
 METH_VARARGS
+PyAiter_Check
 PyArg_Parse
 PyArg_ParseTuple
 PyArg_ParseTupleAndKeywords
@@ -208,6 +209,7 @@ PyExc_ConnectionRefusedError
 PyExc_ConnectionResetError
 PyExc_DeprecationWarning
 PyExc_EOFError
+PyExc_EncodingWarning
 PyExc_EnvironmentError
 PyExc_Exception
 PyExc_FileExistsError
@@ -490,6 +492,7 @@ PyObject_GenericGetAttr
 PyObject_GenericGetDict
 PyObject_GenericSetAttr
 PyObject_GenericSetDict
+PyObject_GetAiter
 PyObject_GetAttr
 PyObject_GetAttrString
 PyObject_GetItem

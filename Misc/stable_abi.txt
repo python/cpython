@@ -2107,6 +2107,37 @@ data PyCodec_Unregister
     added 3.10
 function PyErr_SetInterruptEx
     added 3.10
+function Py_Is
+    added 3.10
+function Py_IsTrue
+    added 3.10
+function Py_IsFalse
+    added 3.10
+function Py_IsNone
+    added 3.10
+function _Py_IncRef
+    added 3.10
+    abi_only
+function _Py_DecRef
+    added 3.10
+    abi_only
+function PyAiter_Check
+    added 3.10
+function PyObject_GetAiter
+    added 3.10
+data PyExc_EncodingWarning
+    added 3.10
+
+# Support for Stable ABI in debug builds
+
+data _Py_RefTotal
+    added 3.10
+    abi_only
+    ifdef Py_REF_DEBUG
+function _Py_NegativeRefcount
+    added 3.10
+    abi_only
+    ifdef Py_REF_DEBUG
 
 # New slots in 3.10:
 
