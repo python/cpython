@@ -1537,6 +1537,21 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertNotIn("blech", err.getvalue())
 
+    def test_unbound_local_error_doesn_not_match(self):
+        def foo():
+            something = 3
+            print(somethong)
+            somethong = 3
+
+        try:
+            foo()
+        except UnboundLocalError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("something", err.getvalue())
+
+
 class AttributeErrorTests(unittest.TestCase):
     def test_attributes(self):
         # Setting 'attr' should not be a problem.
