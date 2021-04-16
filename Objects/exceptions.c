@@ -629,7 +629,14 @@ ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
  *    ExceptionGroup extends BaseExceptionGroup and Exception
  */
 
-static PyObject *PyExc_ExceptionGroup;
+PyObject *PyExc_ExceptionGroup;
+
+static inline PyBaseExceptionGroupObject*
+_PyBaseExceptionGroupObject_cast(PyObject *exc)
+{
+    assert(PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_BaseExceptionGroup));
+    return (PyBaseExceptionGroupObject *)exc;
+}
 
 static PyObject *
 BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -696,7 +703,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     PyBaseExceptionGroupObject *self =
-        (PyBaseExceptionGroupObject*)BaseException_new(cls, args, kwds);
+        _PyBaseExceptionGroupObject_cast(BaseException_new(cls, args, kwds));
     self->msg = Py_NewRef(msg);
     self->excs = PySequence_Tuple(excs);
     return (PyObject*)self;
@@ -752,9 +759,8 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 }
 
 static PyObject *
-BaseExceptionGroup_derive(PyBaseExceptionGroupObject *self,
-                          PyObject *args, PyObject *kwds) {
-
+BaseExceptionGroup_derive(PyObject *self_, PyObject *args, PyObject *kwds) {
+    PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
     PyObject *excs = NULL;
     if (!PyArg_ParseTuple(args, "O", &excs)) {
         return NULL;
@@ -861,7 +867,7 @@ exceptiongroup_split_recursive(PyObject *exc, PyObject *matcher, int complement)
     }
     else {
         /* Partial match */
-        PyBaseExceptionGroupObject *eg = (PyBaseExceptionGroupObject *)exc;
+        PyBaseExceptionGroupObject *eg = _PyBaseExceptionGroupObject_cast(exc);
         PyObject *match_list = NULL;
         PyObject *rest_list = NULL;
         PyObject *match_exc = NULL;
@@ -941,9 +947,7 @@ exceptiongroup_split_recursive(PyObject *exc, PyObject *matcher, int complement)
 }
 
 static PyObject *
-BaseExceptionGroup_split(PyBaseExceptionGroupObject *self,
-    PyObject *args,
-    PyObject *kwds)
+BaseExceptionGroup_split(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *matcher = NULL;
     if (!PyArg_UnpackTuple(args, "split", 1, 1, &matcher)) {
@@ -951,13 +955,11 @@ BaseExceptionGroup_split(PyBaseExceptionGroupObject *self,
     }
 
     return exceptiongroup_split_recursive(
-        (PyObject*)self, matcher, 1 /* with_complement */);
+        self, matcher, 1 /* with_complement */);
 }
 
 static PyObject *
-BaseExceptionGroup_subgroup(PyBaseExceptionGroupObject *self,
-    PyObject *args,
-    PyObject *kwds)
+BaseExceptionGroup_subgroup(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *matcher = NULL;
     if (!PyArg_UnpackTuple(args, "subgroup", 1, 1, &matcher)) {
@@ -965,7 +967,7 @@ BaseExceptionGroup_subgroup(PyBaseExceptionGroupObject *self,
     }
 
     PyObject *ret = exceptiongroup_split_recursive(
-        (PyObject*)self, matcher, 0 /* without complement */);
+        self, matcher, 0 /* without complement */);
 
     if (!ret) {
         return NULL;
