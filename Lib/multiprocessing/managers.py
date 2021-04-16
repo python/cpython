@@ -188,9 +188,16 @@ class Server(object):
                 c = self.listener.accept()
             except OSError:
                 continue
-            t = threading.Thread(target=self.handle_request, args=(c,))
+            t = threading.Thread(target=self._thread_handle_request, args=(c,))
             t.daemon = True
             t.start()
+
+    def _thread_handle_request(self, c):
+        try:
+            self.handle_request(c)
+        except SystemExit:
+            # Server.serve_client() calls sys.exit(0) on EOF
+            c.close()
 
     def handle_request(self, c):
         '''
