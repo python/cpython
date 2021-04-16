@@ -443,6 +443,18 @@ class _CallableGenericAlias(GenericAlias):
             ga_args = args
         return super().__new__(cls, origin, ga_args)
 
+    @property
+    def __parameters__(self):
+        params = []
+        for arg in self.__args__:
+            # Looks like a genericalias
+            if hasattr(arg, "__parameters__") and isinstance(arg.__parameters__, tuple):
+                params.extend(arg.__parameters__)
+            else:
+                if _is_typevarlike(arg):
+                    params.append(arg)
+        return tuple(dict.fromkeys(params))
+
     def __repr__(self):
         if _has_special_args(self.__args__):
             return super().__repr__()
@@ -459,15 +471,40 @@ class _CallableGenericAlias(GenericAlias):
     def __getitem__(self, item):
         # Called during TypeVar substitution, returns the custom subclass
         # rather than the default types.GenericAlias object.
-        ga = super().__getitem__(item)
-        args = ga.__args__
-        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
-        if not isinstance(ga.__args__[0], tuple):
-            t_result = ga.__args__[-1]
-            t_args = ga.__args__[:-1]
-            args = (t_args, t_result)
-        return _CallableGenericAlias(Callable, args)
 
+        # A special case in PEP 612 where if X = Callable[P, int],
+        # then X[int, str] == X[[int, str]].
+        if (len(self.__parameters__) == 1
+                and isinstance(item, (tuple, list))
+                and len(item) > 1):
+            item = (item,)
+        if not isinstance(item, tuple):
+            item = (item,)
+        subst = dict(zip(self.__parameters__, item))
+        new_args = []
+        for arg in self.__args__:
+            if _is_typevarlike(arg):
+                arg = subst[arg]
+            # Looks like a GenericAlias
+            elif hasattr(arg, '__parameters__') and hasattr(arg, '__args__'):
+                subparams = arg.__parameters__
+                if subparams:
+                    subargs = tuple(subst[x] for x in subparams)
+                    arg = arg[subargs]
+            new_args.append(arg)
+
+        # args[0] occurs due to things like Z[[int, str, bool]] from PEP 612
+        if not isinstance(new_args[0], (tuple, list)):
+            t_result = new_args[-1]
+            t_args = new_args[:-1]
+            new_args = (t_args, t_result)
+        return _CallableGenericAlias(Callable, tuple(new_args))
+
+def _is_typevarlike(arg):
+    obj = type(arg)
+    # looks like a TypeVar/ParamSpec
+    return (obj.__module__ == 'typing'
+            and any(obj.__name__ == name for name in ('ParamSpec', 'TypeVar')))
 
 def _has_special_args(args):
     """Checks if args[0] matches either ``...``, ``ParamSpec`` or
