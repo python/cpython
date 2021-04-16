@@ -145,7 +145,7 @@ For instance, consider the following code (notice the unclosed '{'):
 previous versions of the interpreter reported confusing places as the location of
 the syntax error:
 
-.. code-block:: text
+.. code-block:: python
 
    File "example.py", line 3
        some_other_code = foo()
@@ -154,7 +154,7 @@ the syntax error:
 
 but in Python3.10 a more informative error is emitted:
 
-.. code-block:: text
+.. code-block:: python
 
     File "example.py", line 1
         expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
@@ -169,6 +169,95 @@ These improvements are inspired by previous work in the PyPy interpreter.
 
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
+
+A considerable ammount of new specialized messages for :exc:`SyntaxError` exceptions
+have been incorporated. Some of the most notable ones:
+
+* Missing ``:`` before blocks:
+
+.. code-block:: python
+
+    >>> if rocket.position > event_horizon
+      File "<stdin>", line 1
+        if rocket.position > event_horizon
+                                          ^
+    SyntaxError: expected ':'
+
+
+* Unparenthesised tuples in comprehensions targets:
+
+.. code-block:: python
+
+    >>> {x,y for x,y in range(100)}
+      File "<stdin>", line 1
+        {x,y for x,y in range(100)}
+         ^
+    SyntaxError: did you forget parentheses around the comprehension target?
+
+* Missing commas in collection literals:
+
+.. code-block:: python
+
+    >>> items = {
+    ... x: 1,
+    ... y: 2
+    ... z: 3,
+      File "<stdin>", line 3
+        y: 2
+           ^
+    SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+* Exception groups without parentheses:
+
+.. code-block:: python
+
+    >>> try:
+    ...     build_dyson_sphere()
+    ... except NotEnoughScienceError, NotEnoughResourcesError:
+      File "<stdin>", line 3
+        except NotEnoughScienceError, NotEnoughResourcesError:
+               ^
+    SyntaxError: exception group must be parenthesized
+
+* Missing ``:`` and values in dictionary literals:
+
+.. code-block:: python
+
+    >>> values = {
+    ... x: 1,
+    ... y: 2,
+    ... z:
+    ... }
+      File "<stdin>", line 4
+        z:
+         ^
+    SyntaxError: expression expected after dictionary key and ':'
+
+    >>> values = {x:1, y:2, z w:3}
+      File "<stdin>", line 1
+        values = {x:1, y:2, z w:3}
+                            ^
+    SyntaxError: ':' expected after dictionary key
+
+* Usage of ``=`` instead of ``==`` in comparisons:
+
+.. code-block:: python
+
+    >>> if rocket.position = event_horizon:
+      File "<stdin>", line 1
+        if rocket.position = event_horizon:
+                           ^
+    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+* Usage of ``*`` in f-strings:
+
+.. code-block:: python
+
+    >>> f"Black holes {*all_black_holes} and revelations"
+      File "<stdin>", line 1
+        (*all_black_holes)
+         ^
+    SyntaxError: f-string: cannot use starred expression here
 
 
 AttributeErrors
