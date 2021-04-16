@@ -752,7 +752,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
-        globs = self.curframe.f_globals if hasattr(self, 'curframe') else None
+        try:
+            globs = self.curframe.f_globals
+        except AttributeError:
+            globs = None
         line = linecache.getline(filename, lineno, globs)
         if not line:
             self.message('End of file')

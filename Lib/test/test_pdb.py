@@ -1806,6 +1806,14 @@ def bœr():
             expected = '(Pdb) The correct file was executed'
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
+    def test_issue28528(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+        db.reset()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
 
 def load_tests(*args):
     from test import test_pdb
