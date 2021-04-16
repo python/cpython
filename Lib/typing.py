@@ -20,7 +20,6 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
-import ast
 import collections
 import collections.abc
 import contextlib
