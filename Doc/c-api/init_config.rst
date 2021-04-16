@@ -1135,6 +1135,13 @@ PyConfig
       item of :data:`warnings.filters` which is checked first (highest
       priority).
 
+      The :option:`-W` command line options adds its value to
+      :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
+
+      The :envvar:`PYTHONWARNINGS` environment variable can also be used to add
+      warning options. Multiple options can be specified, separated by commas
+      (``,``).
+
       Default: empty list.
 
    .. c:member:: int write_bytecode
