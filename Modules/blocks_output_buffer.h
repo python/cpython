@@ -241,7 +241,7 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
 
     // check max_length
     if (buffer->max_length >= 0) {
-        // If (rest == 0), should not grow the buffer.
+        // if (rest == 0), should not grow the buffer.
         Py_ssize_t rest = buffer->max_length - buffer->allocated;
         assert(rest > 0);
 
@@ -321,7 +321,7 @@ _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
         Py_ssize_t i = 0;
         for (; i < list_len-1; i++) {
             block = PyList_GET_ITEM(buffer->list, i);
-            memcpy(posi,  PyBytes_AS_STRING(block), Py_SIZE(block));
+            memcpy(posi, PyBytes_AS_STRING(block), Py_SIZE(block));
             posi += Py_SIZE(block);
         }
         // the last block
@@ -335,8 +335,7 @@ _BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
     return result;
 }
 
-/* Clean up the buffer when an error occurred.
-   Don't call this function after OutputBuffer_Finish() function succeeds. */
+/* Clean up the buffer when an error occurred. */
 static inline void
 _BlocksOutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 {
