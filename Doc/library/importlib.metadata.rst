@@ -9,6 +9,8 @@
 
 **Source code:** :source:`Lib/importlib/metadata.py`
 
+.. versionadded:: 3.8
+
 .. note::
    This functionality is provisional and may deviate from the usual
    version semantics of the standard library.
