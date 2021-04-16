@@ -188,22 +188,12 @@ class Server(object):
                 c = self.listener.accept()
             except OSError:
                 continue
-            t = threading.Thread(target=self._thread_handle_request, args=(c,))
+            t = threading.Thread(target=self.handle_request, args=(c,))
             t.daemon = True
             t.start()
 
-    def _thread_handle_request(self, c):
-        try:
-            self.handle_request(c)
-        except SystemExit:
-            # Server.serve_client() calls sys.exit(0) on EOF
-            c.close()
-
-    def handle_request(self, c):
-        '''
-        Handle a new connection
-        '''
-        funcname = result = request = None
+    def _handle_request(self, c):
+        request = None
         try:
             connection.deliver_challenge(c, self.authkey)
             connection.answer_challenge(c, self.authkey)
@@ -220,6 +210,7 @@ class Server(object):
                 msg = ('#TRACEBACK', format_exc())
             else:
                 msg = ('#RETURN', result)
+
         try:
             c.send(msg)
         except Exception as e:
@@ -231,7 +222,17 @@ class Server(object):
             util.info(' ... request was %r', request)
             util.info(' ... exception was %r', e)
 
-        c.close()
+    def handle_request(self, conn):
+        '''
+        Handle a new connection
+        '''
+        try:
+            self._handle_request(conn)
+        except SystemExit:
+            # Server.serve_client() calls sys.exit(0) on EOF
+            pass
+        finally:
+            conn.close()
 
     def serve_client(self, conn):
         '''
