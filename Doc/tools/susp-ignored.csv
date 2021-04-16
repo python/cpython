@@ -279,7 +279,11 @@ tutorial/stdlib2,,:start,"fields = struct.unpack('<IIIHH', data[start:start+16])
 tutorial/stdlib2,,:start,filename = data[start:start+filenamesize]
 tutorial/stdlib2,,:Warning,WARNING:root:Warning:config file server.conf not found
 using/cmdline,,:errorhandler,:errorhandler
-using/cmdline,,:line,file:line: category: message
+using/cmdline,,:message,action:message:category:module:lineno
+using/cmdline,,:category,action:message:category:module:lineno
+using/cmdline,,:module,action:message:category:module:lineno
+using/cmdline,,:lineno,action:message:category:module:lineno
+using/cmdline,,::,-W ignore::DeprecationWarning
 using/unix,,:Packaging,https://en.opensuse.org/Portal:Packaging
 whatsnew/2.0,,:len,
 whatsnew/2.3,,::,
