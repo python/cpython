@@ -1007,7 +1007,8 @@ ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
 /*
  *    ExceptionGroup extends BaseExceptionGroup, Exception
  */
-PyObject* create_exception_group_class() {
+static PyObject*
+create_exception_group_class() {
     PyObject *bases = PyTuple_Pack(
         2, PyExc_BaseExceptionGroup, PyExc_Exception);
     if (bases == NULL) {

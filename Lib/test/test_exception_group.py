@@ -187,7 +187,7 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
         # check msg
         self.assertEqual(eg.message, 'simple EG')
         self.assertEqual(eg.args[0], 'simple EG')
-        
+
         # check cause and context
         self.assertIsInstance(eg.exceptions[0], ValueError)
         self.assertIsInstance(eg.exceptions[0].__cause__, MemoryError)
@@ -380,7 +380,7 @@ class NestedExceptionGroupBasicsTest(ExceptionGroupTestBase):
         check(eg.exceptions[0], ['nested_group'])
         check(eg.exceptions[1], ['nested_group', 'raiseVE'])
         check(eg.exceptions[0].exceptions[0], ['nested_group', 'raiseTE'])
-            
+
     def test_iteration_full_tracebacks(self):
         eg = self.eg
         # check that iteration over leaves
@@ -471,7 +471,7 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
                     except Exception as e:
                         excs.append(e)
                 raise ExceptionGroup('msg1', excs)
-        
+
             def level2(i):
                 excs = []
                 for f, arg in [(level1, i), (level1, i+1), (raiseVE, i+2)]:
@@ -513,7 +513,7 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
             ],
             ValueError(7)]
 
-        typeErrors_template = [[[TypeError(int)], [TypeError(int)]]]        
+        typeErrors_template = [[[TypeError(int)], [TypeError(int)]]]
 
         self.assertMatchesTemplate(eg, ExceptionGroup, eg_template)
 
@@ -568,7 +568,7 @@ class ExceptionGroupSplitTests(ExceptionGroupTestBase):
         self.assertIsNone(match)
         self.assertMatchesTemplate(
             rest, BaseExceptionGroup, [ValueError(1), KeyboardInterrupt(2)])
-        
+
         # Match Everything
         match, rest = self._split_exception_group(beg, (ValueError, KeyboardInterrupt))
         self.assertMatchesTemplate(
