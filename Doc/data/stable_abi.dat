@@ -318,6 +318,7 @@ PyInterpreterState_Clear
 PyInterpreterState_Delete
 PyInterpreterState_Get
 PyInterpreterState_GetDict
+PyInterpreterState_GetID
 PyInterpreterState_New
 PyIter_Check
 PyIter_Next
@@ -453,7 +454,6 @@ PyOS_CheckStack
 PyOS_FSPath
 PyOS_InputHook
 PyOS_InterruptOccurred
-PyOS_ReadlineFunctionPointer
 PyOS_double_to_string
 PyOS_getsig
 PyOS_mystricmp
@@ -589,7 +589,6 @@ PySys_WriteStdout
 PyThreadState
 PyThreadState_Clear
 PyThreadState_Delete
-PyThreadState_DeleteCurrent
 PyThreadState_Get
 PyThreadState_GetDict
 PyThreadState_GetFrame
@@ -793,7 +792,6 @@ Py_FinalizeEx
 Py_FrozenMain
 Py_GenericAlias
 Py_GenericAliasType
-Py_GetArgcArgv
 Py_GetBuildInfo
 Py_GetCompiler
 Py_GetCopyright

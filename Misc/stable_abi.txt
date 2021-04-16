@@ -1010,8 +1010,6 @@ data PyOS_InputHook
     added 3.2
 function PyOS_InterruptOccurred
     added 3.2
-data PyOS_ReadlineFunctionPointer
-    added 3.2
 function PyOS_double_to_string
     added 3.2
 function PyOS_getsig
@@ -1248,7 +1246,7 @@ function PyThreadState_Delete
     added 3.2
 function PyThreadState_DeleteCurrent
     added 3.2
-    # See also: https://bugs.python.org/issue37878
+    abi_only
 function PyThreadState_Get
     added 3.2
 function PyThreadState_GetDict
@@ -1676,19 +1674,20 @@ const METH_COEXIST
 # METH_STACKLESS is undocumented
 # METH_FASTCALL is not part of limited API.
 
-# PEP 384 doesn't exclude PyMarshal_* in general, only functions
-# that take FILE*.
+# The following are defined in private headers, but historically
+# they were exported as part of the stable ABI.
 function PyMarshal_ReadObjectFromString
     added 3.2
+    abi_only
 function PyMarshal_WriteObjectToString
     added 3.2
-
+    abi_only
 function PyMember_GetOne
-    # Undocumented, which doesn't matter according to PEP 384
     added 3.2
+    abi_only
 function PyMember_SetOne
-    # Undocumented, which doesn't matter according to PEP 384
     added 3.2
+    abi_only
 
 # TLS api is deprecated; superseded by TSS API
 
@@ -1979,7 +1978,6 @@ function PySlice_Unpack
 
 function PyInterpreterState_GetID
     added 3.7
-    abi_only
 function PyThread_tss_alloc
     added 3.7
 function PyThread_tss_create
@@ -2062,6 +2060,7 @@ function PyObject_GC_IsTracked
 
 function Py_GetArgcArgv
     added 3.10
+    abi_only
 function PyIter_Send
     added 3.10
 function PyUnicode_AsUTF8AndSize
