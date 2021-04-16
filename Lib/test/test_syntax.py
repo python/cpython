@@ -926,6 +926,114 @@ Incomplete dictionary literals
    Traceback (most recent call last):
    SyntaxError: invalid syntax
 
+Specialized indentation errors:
+
+   >>> for x in range(10):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after for statement in line 1
+
+   >>> for x in range(10):
+   ...     pass
+   ... else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after else statement in line 3
+
+   >>> async for x in range(10):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after for statement in line 1
+
+   >>> async for x in range(10):
+   ...     pass
+   ... else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after else statement in line 3
+
+   >>> if something:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after if statement in line 1
+
+   >>> if something:
+   ...     pass
+   ... elif something_else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after elif statement in line 3
+
+   >>> if something:
+   ...     pass
+   ... elif something_else:
+   ...     pass
+   ... else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after else statement in line 5
+
+   >>> try:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after try statement in line 1
+
+   >>> try:
+   ...     something()
+   ... except A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after except statement in line 3
+
+   >>> try:
+   ...     something()
+   ... except A:
+   ...     pass
+   ... finally:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after finally statement in line 5
+
+   >>> with A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after with statement in line 1
+
+   >>> with A as a, B as b:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after with statement in line 1
+
+   >>> with (A as a, B as b):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after with statement in line 1
+
+   >>> async with A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after with statement in line 1
+
+   >>> async with A as a, B as b:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after with statement in line 1
+
+   >>> async with (A as a, B as b):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after with statement in line 1
+
+   >>> def foo(x, /, y, *, z=2):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after function definition in line 1
+
+   >>> class Blech(A):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after class definition in line 1
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
