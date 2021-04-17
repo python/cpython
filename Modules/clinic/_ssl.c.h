@@ -1105,40 +1105,6 @@ _ssl_RAND_status(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _ssl_RAND_status_impl(module);
 }
 
-#if !defined(OPENSSL_NO_EGD)
-
-PyDoc_STRVAR(_ssl_RAND_egd__doc__,
-"RAND_egd($module, path, /)\n"
-"--\n"
-"\n"
-"Queries the entropy gather daemon (EGD) on the socket named by \'path\'.\n"
-"\n"
-"Returns number of bytes read.  Raises SSLError if connection to EGD\n"
-"fails or if it does not provide enough data to seed PRNG.");
-
-#define _SSL_RAND_EGD_METHODDEF    \
-    {"RAND_egd", (PyCFunction)_ssl_RAND_egd, METH_O, _ssl_RAND_egd__doc__},
-
-static PyObject *
-_ssl_RAND_egd_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-_ssl_RAND_egd(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *path;
-
-    if (!PyUnicode_FSConverter(arg, &path)) {
-        goto exit;
-    }
-    return_value = _ssl_RAND_egd_impl(module, path);
-
-exit:
-    return return_value;
-}
-
-#endif /* !defined(OPENSSL_NO_EGD) */
-
 PyDoc_STRVAR(_ssl_get_default_verify_paths__doc__,
 "get_default_verify_paths($module, /)\n"
 "--\n"
@@ -1351,10 +1317,6 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
-#ifndef _SSL_RAND_EGD_METHODDEF
-    #define _SSL_RAND_EGD_METHODDEF
-#endif /* !defined(_SSL_RAND_EGD_METHODDEF) */
-
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -1362,4 +1324,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9468e58904a565a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae3d1851daba6562 input=a9049054013a1b77]*/
