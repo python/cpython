@@ -718,7 +718,7 @@ def _get_field(cls, a_name, a_type):
     # In addition to checking for actual types here, also check for
     # string annotations.  get_type_hints() won't always work for us
     # (see https://github.com/python/typing/issues/508 for example),
-    # plus it's expensive and would require an eval for every stirng
+    # plus it's expensive and would require an eval for every string
     # annotation.  So, make a best effort to see if this is a ClassVar
     # or InitVar using regex's and checking that the thing referenced
     # is actually of the correct type.
