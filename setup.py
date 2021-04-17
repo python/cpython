@@ -2428,14 +2428,6 @@ class PyBuildExt(build_ext):
             self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
-        self.add(Extension(
-            '_ssl', ['_ssl.c'],
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-            depends=['socketmodule.h', '_ssl/debughelpers.c'])
-        )
-
         if openssl_rpath == 'auto':
             runtime_library_dirs = openssl_libdirs[:]
         elif not openssl_rpath:
@@ -2469,7 +2461,7 @@ class PyBuildExt(build_ext):
             Extension(
                 '_ssl',
                 ['_ssl.c'],
-                depends=['socketmodule.h', '_ssl/debughelpers.c'],
+                depends=['socketmodule.h', '_ssl/debughelpers.c', '_ssl.h'],
                 **openssl_extension_kwargs
             )
         )
