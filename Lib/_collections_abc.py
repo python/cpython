@@ -471,14 +471,24 @@ class _CallableGenericAlias(GenericAlias):
     def __getitem__(self, item):
         # Called during TypeVar substitution, returns the custom subclass
         # rather than the default types.GenericAlias object.  Most of the
-        # code is copied from typing's _GenericAlias.
+        # code is copied from typing's _GenericAlias and the builtin
+        # types.GenericAlias.
 
         # A special case in PEP 612 where if X = Callable[P, int],
         # then X[int, str] == X[[int, str]].
-        if (len(self.__parameters__) == 1
+        param_len = len(self.__parameters__)
+        if param_len == 0:
+            raise TypeError(f'There are no type or parameter specification'
+                            f'variables left in {self}')
+        if (param_len == 1
                 and isinstance(item, (tuple, list))
                 and len(item) > 1) or not isinstance(item, tuple):
             item = (item,)
+        item_len = len(item)
+        if item_len != param_len:
+            raise TypeError(f'Too {"many" if item_len > param_len else "few"}'
+                            f' arguments for {self};'
+                            f' actual {item_len}, expected {param_len}')
         subst = dict(zip(self.__parameters__, item))
         new_args = []
         for arg in self.__args__:
