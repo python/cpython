@@ -1477,6 +1477,16 @@ class NameErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
         self.assertIn("global_for_suggestions?", err.getvalue())
 
+    def test_name_error_suggestions_from_builtins(self):
+        def func():
+            print(AttributeErrop)
+        try:
+            func()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+        self.assertIn("AttributeError?", err.getvalue())
+
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def f():
             somethingverywronghehehehehehe = None
@@ -1490,7 +1500,7 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertNotIn("somethingverywronghehe", err.getvalue())
 
-    def test_name_error_suggestions_do_not_trigger_for_big_dicts(self):
+    def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
         def f():
             # Mutating locals() is unreliable, so we need to do it by hand
             a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = a10 = a11 = a12 = a13 = \
@@ -1501,7 +1511,13 @@ class NameErrorTests(unittest.TestCase):
             a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = a70 = a71 = a72 = a73 = \
             a74 = a75 = a76 = a77 = a78 = a79 = a80 = a81 = a82 = a83 = a84 = a85 = \
             a86 = a87 = a88 = a89 = a90 = a91 = a92 = a93 = a94 = a95 = a96 = a97 = \
-            a98 = a99 = a100 = a101 = a102 = a103 = None
+            a98 = a99 = a100 = a101 = a102 = a103 = a104 = a105 = a106 = a107 = \
+            a108 = a109 = a110 = a111 = a112 = a113 = a114 = a115 = a116 = a117 = \
+            a118 = a119 = a120 = a121 = a122 = a123 = a124 = a125 = a126 = \
+            a127 = a128 = a129 = a130 = a131 = a132 = a133 = a134 = a135 = a136 = \
+            a137 = a138 = a139 = a140 = a141 = a142 = a143 = a144 = a145 = \
+            a146 = a147 = a148 = a149 = a150 = a151 = a152 = a153 = a154 = a155 = \
+            a156 = a157 = a158 = a159 = a160 = a161 = None
             print(a0)
 
         try:
@@ -1510,7 +1526,7 @@ class NameErrorTests(unittest.TestCase):
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
 
-        self.assertNotIn("a10", err.getvalue())
+        self.assertNotIn("a1", err.getvalue())
 
     def test_name_error_with_custom_exceptions(self):
         def f():
@@ -1643,7 +1659,7 @@ class AttributeErrorTests(unittest.TestCase):
             blech = None
         # A class with a very big __dict__ will not be consider
         # for suggestions.
-        for index in range(101):
+        for index in range(160):
             setattr(A, f"index_{index}", None)
 
         try:
