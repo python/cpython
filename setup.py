@@ -551,10 +551,7 @@ class PyBuildExt(build_ext):
                for l in (self.missing, self.failed, self.failed_on_import)):
             print()
             print("Could not build the ssl module!")
-            print("Python requires an OpenSSL 1.0.2 or 1.1 compatible "
-                  "libssl with X509_VERIFY_PARAM_set1_host().")
-            print("LibreSSL 2.6.4 and earlier do not provide the necessary "
-                  "APIs, https://github.com/libressl-portable/portable/issues/381")
+            print("Python requires a OpenSSL 1.1.1 or newer")
             if sysconfig.get_config_var("OPENSSL_LDFLAGS"):
                 print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
@@ -2431,13 +2428,13 @@ class PyBuildExt(build_ext):
             self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
-        # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
-        krb5_h = find_file(
-            'krb5.h', self.inc_dirs,
-            ['/usr/kerberos/include']
+        self.add(Extension(
+            '_ssl', ['_ssl.c'],
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+            depends=['socketmodule.h', '_ssl/debughelpers.c'])
         )
-        if krb5_h:
-            ssl_incs.extend(krb5_h)
 
         if openssl_rpath == 'auto':
             runtime_library_dirs = openssl_libdirs[:]
@@ -2468,24 +2465,14 @@ class PyBuildExt(build_ext):
             # don't link OpenSSL shared libraries.
             openssl_extension_kwargs["libraries"] = []
 
-        if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(
-                Extension(
-                    '_ssl',
-                    ['_ssl.c'],
-                    depends=[
-                        'socketmodule.h',
-                        '_ssl/debughelpers.c',
-                        '_ssl_data.h',
-                        '_ssl_data_111.h',
-                        '_ssl_data_300.h',
-                    ],
-                    **openssl_extension_kwargs
-                )
+        self.add(
+            Extension(
+                '_ssl',
+                ['_ssl.c'],
+                depends=['socketmodule.h', '_ssl/debughelpers.c'],
+                **openssl_extension_kwargs
             )
-        else:
-            self.missing.append('_ssl')
-
+        )
         self.add(
             Extension(
                 '_hashlib',

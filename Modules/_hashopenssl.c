@@ -38,51 +38,12 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
-/* OpenSSL < 1.1.0 */
-#define EVP_MD_CTX_new EVP_MD_CTX_create
-#define EVP_MD_CTX_free EVP_MD_CTX_destroy
-
-HMAC_CTX *
-HMAC_CTX_new(void)
-{
-    HMAC_CTX *ctx = OPENSSL_malloc(sizeof(HMAC_CTX));
-    if (ctx != NULL) {
-        memset(ctx, 0, sizeof(HMAC_CTX));
-        HMAC_CTX_init(ctx);
-    }
-    return ctx;
-}
-
-void
-HMAC_CTX_free(HMAC_CTX *ctx)
-{
-    if (ctx != NULL) {
-        HMAC_CTX_cleanup(ctx);
-        OPENSSL_free(ctx);
-    }
-}
-
-const EVP_MD *
-HMAC_CTX_get_md(const HMAC_CTX *ctx)
-{
-    return ctx->md;
-}
-#endif
-
 #define MUNCH_SIZE INT_MAX
 
-#ifdef NID_sha3_224
+#define PY_OPENSSL_HAS_SCRYPT 1
 #define PY_OPENSSL_HAS_SHA3 1
-#endif
-
-#if defined(EVP_MD_FLAG_XOF) && defined(NID_shake128)
 #define PY_OPENSSL_HAS_SHAKE 1
-#endif
-
-#if defined(NID_blake2b512) && !defined(OPENSSL_NO_BLAKE2)
 #define PY_OPENSSL_HAS_BLAKE2 1
-#endif
 
 static PyModuleDef _hashlibmodule;
 
@@ -1252,8 +1213,7 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
     return key_obj;
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
-#define PY_SCRYPT 1
+#ifdef PY_OPENSSL_HAS_SCRYPT
 
 /* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
    They are optional in the Argument Clinic declaration only due to a
@@ -1376,7 +1336,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
     return key_obj;
 }
-#endif
+#endif  /* PY_OPENSSL_HAS_SCRYPT */
 
 /* Fast HMAC for hmac.digest()
  */
@@ -1844,12 +1804,6 @@ hashlib_md_meth_names(PyObject *module)
     return 0;
 }
 
-/* LibreSSL doesn't support FIPS:
-   https://marc.info/?l=openbsd-misc&m=139819485423701&w=2
-
-   Ted Unangst wrote: "I figured I should mention our current libressl policy
-   wrt FIPS mode.  It's gone and it's not coming back." */
-#ifndef LIBRESSL_VERSION_NUMBER
 /*[clinic input]
 _hashlib.get_fips_mode -> int
 
@@ -1887,7 +1841,6 @@ _hashlib_get_fips_mode_impl(PyObject *module)
     return result;
 #endif
 }
-#endif  // !LIBRESSL_VERSION_NUMBER
 
 
 static int
@@ -2068,17 +2021,6 @@ hashlib_free(void *m)
 
 /* Py_mod_exec functions */
 static int
-hashlib_openssl_legacy_init(PyObject *module)
-{
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
-    /* Load all digest algorithms and initialize cpuid */
-    OPENSSL_add_all_algorithms_noconf();
-    ERR_load_crypto_strings();
-#endif
-    return 0;
-}
-
-static int
 hashlib_init_evptype(PyObject *module)
 {
     _hashlibstate *state = get_hashlib_state(module);
@@ -2200,8 +2142,6 @@ hashlib_exception(PyObject *module)
 
 
 static PyModuleDef_Slot hashlib_slots[] = {
-    /* OpenSSL 1.0.2 and LibreSSL */
-    {Py_mod_exec, hashlib_openssl_legacy_init},
     {Py_mod_exec, hashlib_init_evptype},
     {Py_mod_exec, hashlib_init_evpxoftype},
     {Py_mod_exec, hashlib_init_hmactype},
