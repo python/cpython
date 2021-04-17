@@ -4,7 +4,7 @@
 #include "pycore_pyerrors.h"
 
 #define MAX_DISTANCE 3
-#define MAX_CANDIDATE_ITEMS 100
+#define MAX_CANDIDATE_ITEMS 160
 #define MAX_STRING_SIZE 25
 
 /* Calculate the Levenshtein distance between string1 and string2 */
@@ -166,6 +166,16 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
     }
 
     dir = PySequence_List(frame->f_globals);
+    if (dir == NULL) {
+        return NULL;
+    }
+    suggestions = calculate_suggestions(dir, name);
+    Py_DECREF(dir);
+    if (suggestions != NULL) {
+        return suggestions;
+    }
+
+    dir = PySequence_List(frame->f_builtins);
     if (dir == NULL) {
         return NULL;
     }
