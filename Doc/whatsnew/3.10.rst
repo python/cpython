@@ -65,6 +65,7 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`644`, require OpenSSL 1.1.1 or newer
 
 
 New Features
@@ -1438,6 +1439,10 @@ CPython bytecode changes
 Build Changes
 =============
 
+* :pep:`644`: Python now requires OpenSSL 1.1.1 or newer. OpenSSL 1.0.2 is no
+  longer supported.
+  (Contributed by Christian Heimes in :issue:`43669`.)
+
 * The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
   to build Python.
   (Contributed by Victor Stinner in :issue:`36020`.)
@@ -1481,7 +1486,6 @@ Build Changes
   simplifies building Python with a custom OpenSSL installation, e.g.
   ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
   (Contributed by Christian Heimes in :issue:`43466`.)
-
 
 
 C API Changes

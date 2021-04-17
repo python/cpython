@@ -135,6 +135,7 @@ some Unices may not have the :program:`env` command, so you may need to hardcode
 
 To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
 
+.. _unix_custom_openssl:
 
 Custom OpenSSL
 ==============

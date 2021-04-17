@@ -114,8 +114,6 @@ _PySSLContext_set_msg_callback(PySSLContext *self, PyObject *arg, void *c) {
     return 0;
 }
 
-#ifdef HAVE_OPENSSL_KEYLOG
-
 static void
 _PySSL_keylog_callback(const SSL *ssl, const char *line)
 {
@@ -219,5 +217,3 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
     SSL_CTX_set_keylog_callback(self->ctx, _PySSL_keylog_callback);
     return 0;
 }
-
-#endif
