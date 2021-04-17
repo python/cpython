@@ -1,0 +1,2 @@
+Implementation for :pep:`612` now uses only Python; builtin ``GenericAlias``
+objects no longer identify ``typing.TypeVar`` in ``__parameters__``.
