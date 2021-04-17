@@ -1,2 +1,3 @@
-Implementation for :pep:`612` now uses only Python; builtin ``GenericAlias``
-objects no longer identify ``typing.TypeVar`` in ``__parameters__``.
+The implementation for :pep:`612` now uses only Python; builtin ``GenericAlias``
+objects no longer include ``typing.ParamSpec`` in ``__parameters__``
+(with the exception of the ``collections.abc.Callable``\ 's ``GenericAlias``).
