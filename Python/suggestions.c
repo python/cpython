@@ -8,7 +8,7 @@
 #define MAX_STRING_SIZE 25
 
 /* Calculate the Levenshtein distance between string1 and string2 */
-static size_t
+static Py_ssize_t
 levenshtein_distance(const char *a, size_t a_size,
                      const char *b, size_t b_size) {
 
@@ -33,7 +33,7 @@ levenshtein_distance(const char *a, size_t a_size,
 
     size_t *buffer = PyMem_Calloc(a_size, sizeof(size_t));
     if (buffer == NULL) {
-        return 0;
+        return -1;
     }
 
     // Initialize the buffer row
@@ -99,6 +99,9 @@ calculate_suggestions(PyObject *dir,
         }
         Py_ssize_t current_distance = levenshtein_distance(
                 name_str, name_size, item_str, item_size);
+        if (current_distance == -1) {
+            return NULL;
+        }
         if (current_distance == 0 || current_distance > MAX_DISTANCE) {
             continue;
         }
