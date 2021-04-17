@@ -2040,6 +2040,11 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
+   .. versionchanged:: 3.9.3
+
+      The flag had no effect with OpenSSL before version 1.1.1k. Python 3.8.9,
+      3.9.3, and 3.10 include workarounds for previous versions.
+
 .. attribute:: SSLContext.verify_flags
 
    The flags for certificate verification operations. You can set flags like
