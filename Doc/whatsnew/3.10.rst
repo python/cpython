@@ -176,90 +176,102 @@ have been incorporated. Some of the most notable ones:
 
 * Missing ``:`` before blocks:
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> if rocket.position > event_horizon
-      File "<stdin>", line 1
-        if rocket.position > event_horizon
-                                          ^
-    SyntaxError: expected ':'
+        >>> if rocket.position > event_horizon
+          File "<stdin>", line 1
+            if rocket.position > event_horizon
+                                              ^
+        SyntaxError: expected ':'
 
+    (Contributed by Pablo Galindo in :issue:`42997`)
 
 * Unparenthesised tuples in comprehensions targets:
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> {x,y for x,y in range(100)}
-      File "<stdin>", line 1
-        {x,y for x,y in range(100)}
-         ^
-    SyntaxError: did you forget parentheses around the comprehension target?
+        >>> {x,y for x,y in range(100)}
+          File "<stdin>", line 1
+            {x,y for x,y in range(100)}
+             ^
+        SyntaxError: did you forget parentheses around the comprehension target?
 
-* Missing commas in collection literals:
+    (Contributed by Pablo Galindo in :issue:`43017`)
 
-.. code-block:: python
+* Missing commas in collection literals and between expressions:
 
-    >>> items = {
-    ... x: 1,
-    ... y: 2
-    ... z: 3,
-      File "<stdin>", line 3
-        y: 2
-           ^
-    SyntaxError: invalid syntax. Perhaps you forgot a comma?
+    .. code-block:: python
+
+        >>> items = {
+        ... x: 1,
+        ... y: 2
+        ... z: 3,
+          File "<stdin>", line 3
+            y: 2
+               ^
+        SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+    (Contributed by Pablo Galindo in :issue:`43822`)
 
 * Exception groups without parentheses:
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> try:
-    ...     build_dyson_sphere()
-    ... except NotEnoughScienceError, NotEnoughResourcesError:
-      File "<stdin>", line 3
-        except NotEnoughScienceError, NotEnoughResourcesError:
-               ^
-    SyntaxError: exception group must be parenthesized
+        >>> try:
+        ...     build_dyson_sphere()
+        ... except NotEnoughScienceError, NotEnoughResourcesError:
+          File "<stdin>", line 3
+            except NotEnoughScienceError, NotEnoughResourcesError:
+                   ^
+        SyntaxError: exception group must be parenthesized
+
+    (Contributed by Pablo Galindo in :issue:`43149`)
 
 * Missing ``:`` and values in dictionary literals:
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> values = {
-    ... x: 1,
-    ... y: 2,
-    ... z:
-    ... }
-      File "<stdin>", line 4
-        z:
-         ^
-    SyntaxError: expression expected after dictionary key and ':'
+        >>> values = {
+        ... x: 1,
+        ... y: 2,
+        ... z:
+        ... }
+          File "<stdin>", line 4
+            z:
+             ^
+        SyntaxError: expression expected after dictionary key and ':'
 
-    >>> values = {x:1, y:2, z w:3}
-      File "<stdin>", line 1
-        values = {x:1, y:2, z w:3}
-                            ^
-    SyntaxError: ':' expected after dictionary key
+        >>> values = {x:1, y:2, z w:3}
+          File "<stdin>", line 1
+            values = {x:1, y:2, z w:3}
+                                ^
+        SyntaxError: ':' expected after dictionary key
+
+    (Contributed by Pablo Galindo in :issue:`43823`)
 
 * Usage of ``=`` instead of ``==`` in comparisons:
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> if rocket.position = event_horizon:
-      File "<stdin>", line 1
-        if rocket.position = event_horizon:
-                           ^
-    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+        >>> if rocket.position = event_horizon:
+          File "<stdin>", line 1
+            if rocket.position = event_horizon:
+                               ^
+        SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+    (Contributed by Pablo Galindo in :issue:`43797`)
 
 * Usage of ``*`` in f-strings:
 
-.. code-block:: python
+    .. code-block:: python
 
-    >>> f"Black holes {*all_black_holes} and revelations"
-      File "<stdin>", line 1
-        (*all_black_holes)
-         ^
-    SyntaxError: f-string: cannot use starred expression here
+        >>> f"Black holes {*all_black_holes} and revelations"
+          File "<stdin>", line 1
+            (*all_black_holes)
+             ^
+        SyntaxError: f-string: cannot use starred expression here
 
+    (Contributed by Pablo Galindo in :issue:`41064`)
 
 AttributeErrors
 ~~~~~~~~~~~~~~~
