@@ -7947,7 +7947,7 @@ PyDoc_STRVAR(os_cpu_count__doc__,
 "Return the number of CPUs in the system; return None if indeterminable.\n"
 "\n"
 "This number is not equivalent to the number of CPUs the current process can\n"
-"use.  The number of usable CPUs can be obtained with\n"
+"use.  On some Unix platforms, the number of usable CPUs can be obtained with\n"
 "``len(os.sched_getaffinity(0))``");
 
 #define OS_CPU_COUNT_METHODDEF    \
