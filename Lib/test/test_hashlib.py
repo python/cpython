@@ -60,13 +60,6 @@ except ImportError:
 
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
-try:
-    import _sha3
-except ImportError:
-    _sha3 = None
-
-requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
-
 
 def hexstr(s):
     assert isinstance(s, bytes), repr(s)
@@ -389,7 +382,6 @@ class HashLibTestCase(unittest.TestCase):
         self.check_no_unicode('blake2b')
         self.check_no_unicode('blake2s')
 
-    @requires_sha3
     def test_no_unicode_sha3(self):
         self.check_no_unicode('sha3_224')
         self.check_no_unicode('sha3_256')
@@ -425,7 +417,6 @@ class HashLibTestCase(unittest.TestCase):
         self.check_blocksize_name('sha384', 128, 48)
         self.check_blocksize_name('sha512', 128, 64)
 
-    @requires_sha3
     def test_blocksize_name_sha3(self):
         self.check_blocksize_name('sha3_224', 144, 28)
         self.check_blocksize_name('sha3_256', 136, 32)
@@ -446,7 +437,6 @@ class HashLibTestCase(unittest.TestCase):
             self.assertEqual(m._rate_bits, rate)
             self.assertEqual(m._suffix, suffix)
 
-    @requires_sha3
     def test_extra_sha3(self):
         self.check_sha3('sha3_224', 448, 1152, b'\x06')
         self.check_sha3('sha3_256', 512, 1088, b'\x06')
@@ -786,68 +776,56 @@ class HashLibTestCase(unittest.TestCase):
             key = bytes.fromhex(key)
             self.check('blake2s', msg, md, key=key)
 
-    @requires_sha3
     def test_case_sha3_224_0(self):
         self.check('sha3_224', b"",
           "6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7")
 
-    @requires_sha3
     def test_case_sha3_224_vector(self):
         for msg, md in read_vectors('sha3_224'):
             self.check('sha3_224', msg, md)
 
-    @requires_sha3
     def test_case_sha3_256_0(self):
         self.check('sha3_256', b"",
           "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a")
 
-    @requires_sha3
     def test_case_sha3_256_vector(self):
         for msg, md in read_vectors('sha3_256'):
             self.check('sha3_256', msg, md)
 
-    @requires_sha3
     def test_case_sha3_384_0(self):
         self.check('sha3_384', b"",
           "0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2a"+
           "c3713831264adb47fb6bd1e058d5f004")
 
-    @requires_sha3
     def test_case_sha3_384_vector(self):
         for msg, md in read_vectors('sha3_384'):
             self.check('sha3_384', msg, md)
 
-    @requires_sha3
     def test_case_sha3_512_0(self):
         self.check('sha3_512', b"",
           "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a6"+
           "15b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26")
 
-    @requires_sha3
     def test_case_sha3_512_vector(self):
         for msg, md in read_vectors('sha3_512'):
             self.check('sha3_512', msg, md)
 
-    @requires_sha3
     def test_case_shake_128_0(self):
         self.check('shake_128', b"",
           "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26",
           True)
         self.check('shake_128', b"", "7f9c", True)
 
-    @requires_sha3
     def test_case_shake128_vector(self):
         for msg, md in read_vectors('shake_128'):
             self.check('shake_128', msg, md, True)
 
-    @requires_sha3
     def test_case_shake_256_0(self):
         self.check('shake_256', b"",
           "46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762f",
           True)
         self.check('shake_256', b"", "46b9", True)
 
-    @requires_sha3
     def test_case_shake256_vector(self):
         for msg, md in read_vectors('shake_256'):
             self.check('shake_256', msg, md, True)
