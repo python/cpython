@@ -43,21 +43,17 @@ import tarfile
 log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
-    "1.0.2u",
-    "1.1.0l",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
     "1.1.1k",
-    # "3.0.0-alpha14"
+    "3.0.0-alpha14"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
-    "2.9.2",
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "3.2.4",
 ]
 
 # store files in ../multissl
