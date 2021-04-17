@@ -1477,6 +1477,16 @@ class NameErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
         self.assertIn("global_for_suggestions?", err.getvalue())
 
+    def test_name_error_suggestions_from_builtins(self):
+        def func():
+            print(AttributeErrop)
+        try:
+            func()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+        self.assertIn("AttributeError?", err.getvalue())
+
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def f():
             somethingverywronghehehehehehe = None

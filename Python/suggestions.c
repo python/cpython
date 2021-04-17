@@ -179,7 +179,6 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
     if (dir == NULL) {
         return NULL;
     }
-    assert(PyList_GET_SIZE(dir) <= MAX_CANDIDATE_ITEMS);
     suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
 
