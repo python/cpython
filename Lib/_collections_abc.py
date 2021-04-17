@@ -485,7 +485,7 @@ class _CallableGenericAlias(GenericAlias):
             if _is_typevarlike(arg):
                 arg = subst[arg]
             # Looks like a GenericAlias
-            elif hasattr(arg, '__parameters__'):
+            elif hasattr(arg, '__parameters__') and isinstance(arg.__parameters__, tuple):
                 subparams = arg.__parameters__
                 if subparams:
                     subargs = tuple(subst[x] for x in subparams)
