@@ -1741,6 +1741,16 @@ class AttributeErrorTests(unittest.TestCase):
         self.assertNotIn("blech", err.getvalue())
         self.assertNotIn("oh no!", err.getvalue())
 
+    def test_attribute_error_with_bad_name(self):
+        try:
+            raise AttributeError(name=12, obj=23)
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("?", err.getvalue())
+
+
 class ImportErrorTests(unittest.TestCase):
 
     def test_attributes(self):
