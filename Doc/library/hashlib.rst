@@ -280,8 +280,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
 
-   .. availability:: OpenSSL 1.1+.
-
    .. versionadded:: 3.6
 
 
