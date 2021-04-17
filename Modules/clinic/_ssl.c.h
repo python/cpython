@@ -374,7 +374,7 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     int proto_version;
 
-    if ((type == PySSLContext_Type) &&
+    if ((type == get_state_type(type)->PySSLContext_Type) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
@@ -619,8 +619,8 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], PySocketModule.Sock_Type)) {
-        _PyArg_BadArgument("_wrap_socket", "argument 'sock'", (PySocketModule.Sock_Type)->tp_name, args[0]);
+    if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->Sock_Type)) {
+        _PyArg_BadArgument("_wrap_socket", "argument 'sock'", (get_state_ctx(self)->Sock_Type)->tp_name, args[0]);
         goto exit;
     }
     sock = args[0];
@@ -689,13 +689,13 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (PySSLMemoryBIO_Type)->tp_name, args[0]);
+    if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (get_state_ctx(self)->PySSLMemoryBIO_Type)->tp_name, args[0]);
         goto exit;
     }
     incoming = (PySSLMemoryBIO *)args[0];
-    if (!PyObject_TypeCheck(args[1], PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (PySSLMemoryBIO_Type)->tp_name, args[1]);
+    if (!PyObject_TypeCheck(args[1], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (get_state_ctx(self)->PySSLMemoryBIO_Type)->tp_name, args[1]);
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
@@ -850,11 +850,11 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1324,4 +1324,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=ae3d1851daba6562 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83e68c77bd96789a input=a9049054013a1b77]*/
