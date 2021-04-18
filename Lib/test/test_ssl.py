@@ -1962,7 +1962,9 @@ class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
 
     def setUp(self):
-        server = ThreadedEchoServer(SIGNED_CERTFILE)
+        self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.server_context.load_cert_chain(SIGNED_CERTFILE)
+        server = ThreadedEchoServer(context=self.server_context)
         self.server_addr = (HOST, server.port)
         server.__enter__()
         self.addCleanup(server.__exit__, None, None, None)
@@ -2142,6 +2144,28 @@ class SimpleBackgroundTests(unittest.TestCase):
 
     def test_get_server_certificate(self):
         _test_get_server_certificate(self, *self.server_addr, cert=SIGNING_CA)
+
+    @needs_sni
+    def test_get_server_certificate_sni(self):
+        host, port = self.server_addr
+        server_names = []
+
+        # We store servername_cb arguments to make sure they match the host
+        def servername_cb(ssl_sock, server_name, initial_context):
+            server_names.append(server_name)
+        self.server_context.set_servername_callback(servername_cb)
+
+        pem = ssl.get_server_certificate((host, port))
+        if not pem:
+            self.fail("No server certificate on %s:%s!" % (host, port))
+
+        pem = ssl.get_server_certificate((host, port), ca_certs=SIGNING_CA)
+        if not pem:
+            self.fail("No server certificate on %s:%s!" % (host, port))
+        if support.verbose:
+            sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port, pem))
+
+        self.assertEqual(server_names, [host, host])
 
     def test_get_server_certificate_fail(self):
         # Connection failure crashes ThreadedEchoServer, so run this in an
