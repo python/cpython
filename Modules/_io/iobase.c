@@ -10,6 +10,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
@@ -349,8 +350,9 @@ iobase_dealloc(iobase *self)
     if (_PyIOBase_finalize((PyObject *) self) < 0) {
         /* When called from a heap type's dealloc, the type will be
            decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
-        if (PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE))
+        if (_PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE)) {
             Py_INCREF(Py_TYPE(self));
+        }
         return;
     }
     _PyObject_GC_UNTRACK(self);
@@ -555,7 +557,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
         PyObject *b;
 
         if (peek != NULL) {
-            PyObject *readahead = PyObject_CallOneArg(peek, _PyLong_One);
+            PyObject *readahead = PyObject_CallOneArg(peek, _PyLong_GetOne());
             if (readahead == NULL) {
                 /* NOTE: PyErr_SetFromErrno() calls PyErr_CheckSignals()
                    when EINTR occurs so we needn't do it ourselves. */

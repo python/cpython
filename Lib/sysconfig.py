@@ -18,6 +18,11 @@ __all__ = [
     'parse_config_h',
 ]
 
+# Keys for get_config_var() that are never converted to Python integers.
+_ALWAYS_STR = {
+    'MACOSX_DEPLOYMENT_TARGET',
+}
+
 _INSTALL_SCHEMES = {
     'posix_prefix': {
         'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
@@ -51,34 +56,65 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    # NOTE: When modifying "purelib" scheme, update site._get_path() too.
-    'nt_user': {
-        'stdlib': '{userbase}/Python{py_version_nodot}',
-        'platstdlib': '{userbase}/Python{py_version_nodot}',
-        'purelib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'platlib': '{userbase}/Python{py_version_nodot}/site-packages',
-        'include': '{userbase}/Python{py_version_nodot}/Include',
-        'scripts': '{userbase}/Python{py_version_nodot}/Scripts',
-        'data': '{userbase}',
-        },
-    'posix_user': {
-        'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
-        'include': '{userbase}/include/python{py_version_short}',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
-    'osx_framework_user': {
-        'stdlib': '{userbase}/lib/python',
-        'platstdlib': '{userbase}/lib/python',
-        'purelib': '{userbase}/lib/python/site-packages',
-        'platlib': '{userbase}/lib/python/site-packages',
-        'include': '{userbase}/include',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
+    }
+
+
+# NOTE: site.py has copy of this function.
+# Sync it when modify this function.
+def _getuserbase():
+    env_base = os.environ.get("PYTHONUSERBASE", None)
+    if env_base:
+        return env_base
+
+    # VxWorks has no home directories
+    if sys.platform == "vxworks":
+        return None
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or "~"
+        return joinuser(base, "Python")
+
+    if sys.platform == "darwin" and sys._framework:
+        return joinuser("~", "Library", sys._framework,
+                        "%d.%d" % sys.version_info[:2])
+
+    return joinuser("~", ".local")
+
+_HAS_USER_BASE = (_getuserbase() is not None)
+
+if _HAS_USER_BASE:
+    _INSTALL_SCHEMES |= {
+        # NOTE: When modifying "purelib" scheme, update site._get_path() too.
+        'nt_user': {
+            'stdlib': '{userbase}/Python{py_version_nodot_plat}',
+            'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
+            'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+            'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+            'include': '{userbase}/Python{py_version_nodot_plat}/Include',
+            'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
+            'data': '{userbase}',
+            },
+        'posix_user': {
+            'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+            'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+            'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
+            'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
+            'include': '{userbase}/include/python{py_version_short}',
+            'scripts': '{userbase}/bin',
+            'data': '{userbase}',
+            },
+        'osx_framework_user': {
+            'stdlib': '{userbase}/lib/python',
+            'platstdlib': '{userbase}/lib/python',
+            'purelib': '{userbase}/lib/python/site-packages',
+            'platlib': '{userbase}/lib/python/site-packages',
+            'include': '{userbase}/include',
+            'scripts': '{userbase}/bin',
+            'data': '{userbase}',
+            },
     }
 
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
@@ -140,19 +176,13 @@ def is_python_build(check_home=False):
 
 _PYTHON_BUILD = is_python_build(True)
 
-if _PYTHON_BUILD:
-    for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
-        _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
-
-
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
-    except KeyError:
+    except KeyError as var:
         try:
             return s.format(**os.environ)
-        except KeyError as var:
+        except KeyError:
             raise AttributeError('{%s}' % var) from None
 
 def _extend_dict(target_dict, other_dict):
@@ -183,25 +213,6 @@ def _get_default_scheme():
     return os.name
 
 
-# NOTE: site.py has copy of this function.
-# Sync it when modify this function.
-def _getuserbase():
-    env_base = os.environ.get("PYTHONUSERBASE", None)
-    if env_base:
-        return env_base
-
-    def joinuser(*args):
-        return os.path.expanduser(os.path.join(*args))
-
-    if os.name == "nt":
-        base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
-
-    if sys.platform == "darwin" and sys._framework:
-        return joinuser("~", "Library", sys._framework,
-                        "%d.%d" % sys.version_info[:2])
-
-    return joinuser("~", ".local")
 
 
 def _parse_makefile(filename, vars=None):
@@ -223,7 +234,8 @@ def _parse_makefile(filename, vars=None):
     done = {}
     notdone = {}
 
-    with open(filename, errors="surrogateescape") as f:
+    with open(filename, encoding=sys.getfilesystemencoding(),
+              errors="surrogateescape") as f:
         lines = f.readlines()
 
     for line in lines:
@@ -240,6 +252,9 @@ def _parse_makefile(filename, vars=None):
                 notdone[n] = v
             else:
                 try:
+                    if n in _ALWAYS_STR:
+                        raise ValueError
+
                     v = int(v)
                 except ValueError:
                     # insert literal `$'
@@ -298,6 +313,8 @@ def _parse_makefile(filename, vars=None):
                         notdone[name] = value
                     else:
                         try:
+                            if name in _ALWAYS_STR:
+                                raise ValueError
                             value = int(value)
                         except ValueError:
                             done[name] = value.strip()
@@ -366,7 +383,7 @@ def _generate_posix_vars():
     # load the installed pyconfig.h:
     config_h = get_config_h_filename()
     try:
-        with open(config_h) as f:
+        with open(config_h, encoding="utf-8") as f:
             parse_config_h(f, vars)
     except OSError as e:
         msg = "invalid Python installation: unable to open %s" % config_h
@@ -424,13 +441,15 @@ def _init_posix(vars):
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
+    import _imp
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    vars['EXT_SUFFIX'] = '.pyd'
+    vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
+    vars['TZPATH'] = ''
 
 #
 # public APIs
@@ -458,6 +477,8 @@ def parse_config_h(fp, vars=None):
         if m:
             n, v = m.group(1, 2)
             try:
+                if n in _ALWAYS_STR:
+                    raise ValueError
                 v = int(v)
             except ValueError:
                 pass
@@ -543,6 +564,10 @@ def get_config_vars(*args):
         except AttributeError:
             # sys.abiflags may not be defined on all platforms.
             _CONFIG_VARS['abiflags'] = ''
+        try:
+            _CONFIG_VARS['py_version_nodot_plat'] = sys.winver.replace('.', '')
+        except AttributeError:
+            _CONFIG_VARS['py_version_nodot_plat'] = ''
 
         if os.name == 'nt':
             _init_non_posix(_CONFIG_VARS)
@@ -552,10 +577,11 @@ def get_config_vars(*args):
         SO = _CONFIG_VARS.get('EXT_SUFFIX')
         if SO is not None:
             _CONFIG_VARS['SO'] = SO
-        # Setting 'userbase' is done below the call to the
-        # init function to enable using 'get_config_var' in
-        # the init-function.
-        _CONFIG_VARS['userbase'] = _getuserbase()
+        if _HAS_USER_BASE:
+            # Setting 'userbase' is done below the call to the
+            # init function to enable using 'get_config_var' in
+            # the init-function.
+            _CONFIG_VARS['userbase'] = _getuserbase()
 
         # Always convert srcdir to an absolute path
         srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)

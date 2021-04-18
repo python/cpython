@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_byteswap.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap32()
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -71,6 +71,18 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         Py_DECREF(self);
         return NULL;
     }
+
+#ifndef MS_WIN32
+    /* if we have a packed bitfield, calculate the minimum number of bytes we
+    need to fit it. otherwise use the specified size. */
+    if (pack && bitsize) {
+        size = (bitsize - 1) / 8 + 1;
+    } else
+#endif
+        size = dict->size;
+
+    proto = desc;
+
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
@@ -87,7 +99,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
         && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
+        /* if this is a packed bitfield, always expand it.
+           otherwise calculate if we need to expand it. */
+        && (((*pbitofs + bitsize) <= dict->size * 8) || pack)) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -95,16 +109,15 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+        /* use our calculated size (size) instead of type size (dict->size),
+           which can be different for packed bitfields */
+        *pfield_size = size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
         *pbitofs = 0;
         *pfield_size = 0;
     }
-
-    size = dict->size;
-    proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
@@ -125,13 +138,11 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-#ifdef CTYPES_UNICODE
             if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-#endif
         }
     }
 
@@ -172,10 +183,16 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
+        /* increase the size if it is a packed bitfield.
+           EXPAND_BITFIELD should not be selected for non-packed fields if the
+           current size isn't already enough. */
+        if (pack)
+            size = (*pbitofs + bitsize - 1) / 8 + 1;
 
-        *pfield_size = dict->size * 8;
+        *poffset += size - *pfield_size/8;
+        *psize += size - *pfield_size/8;
+
+        *pfield_size = size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
@@ -354,14 +371,7 @@ PyTypeObject PyCField_Type = {
 static int
 get_long(PyObject *v, long *p)
 {
-    long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    long x = PyLong_AsUnsignedLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -373,14 +383,7 @@ get_long(PyObject *v, long *p)
 static int
 get_ulong(PyObject *v, unsigned long *p)
 {
-    unsigned long x;
-
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongMask(v);
+    unsigned long x = PyLong_AsUnsignedLongMask(v);
     if (x == (unsigned long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -392,13 +395,7 @@ get_ulong(PyObject *v, unsigned long *p)
 static int
 get_longlong(PyObject *v, long long *p)
 {
-    long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -410,13 +407,7 @@ get_longlong(PyObject *v, long long *p)
 static int
 get_ulonglong(PyObject *v, unsigned long long *p)
 {
-    unsigned long long x;
-    if (PyFloat_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int expected instead of float");
-        return -1;
-    }
-    x = PyLong_AsUnsignedLongLongMask(v);
+    unsigned long long x = PyLong_AsUnsignedLongLongMask(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred())
         return -1;
     *p = x;
@@ -684,7 +675,11 @@ i_get_sw(void *ptr, Py_ssize_t size)
     return PyLong_FromLong(val);
 }
 
-#ifdef MS_WIN32
+#ifndef MS_WIN32
+/* http://msdn.microsoft.com/en-us/library/cc237864.aspx */
+#define VARIANT_FALSE 0x0000
+#define VARIANT_TRUE 0xFFFF
+#endif
 /* short BOOL - VARIANT_BOOL */
 static PyObject *
 vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -706,7 +701,6 @@ vBOOL_get(void *ptr, Py_ssize_t size)
 {
     return PyBool_FromLong((long)*(short int *)ptr);
 }
-#endif
 
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -1160,7 +1154,6 @@ c_get(void *ptr, Py_ssize_t size)
     return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
-#ifdef CTYPES_UNICODE
 /* u - a single wchar_t character */
 static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
@@ -1246,11 +1239,8 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
                      "string too long (%zd, maximum length %zd)",
                      size, length);
         return NULL;
-    } else if (size < length-1)
-        /* copy terminating NUL character if there is space */
-        size += 1;
-
-    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, size) == -1) {
+    }
+    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, length) == -1) {
         return NULL;
     }
 
@@ -1258,7 +1248,6 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     return value;
 }
 
-#endif
 
 static PyObject *
 s_get(void *ptr, Py_ssize_t size)
@@ -1289,7 +1278,9 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    size = strlen(data); /* XXX Why not Py_SIZE(value)? */
+    // bpo-39593: Use strlen() to truncate the string at the first null character.
+    size = strlen(data);
+
     if (size < length) {
         /* This will copy the terminating NUL character
          * if there is space for it.
@@ -1345,7 +1336,6 @@ z_get(void *ptr, Py_ssize_t size)
     }
 }
 
-#ifdef CTYPES_UNICODE
 static PyObject *
 Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1397,7 +1387,7 @@ Z_get(void *ptr, Py_ssize_t size)
         Py_RETURN_NONE;
     }
 }
-#endif
+
 
 #ifdef MS_WIN32
 static PyObject *
@@ -1531,15 +1521,13 @@ static struct fielddesc formattable[] = {
 #endif
     { 'P', P_set, P_get, &ffi_type_pointer},
     { 'z', z_set, z_get, &ffi_type_pointer},
-#ifdef CTYPES_UNICODE
     { 'u', u_set, u_get, NULL}, /* ffi_type set later */
     { 'U', U_set, U_get, &ffi_type_pointer},
     { 'Z', Z_set, Z_get, &ffi_type_pointer},
-#endif
 #ifdef MS_WIN32
     { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
-    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #endif
+    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
 #if SIZEOF__BOOL == 1
     { '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
 #elif SIZEOF__BOOL == SIZEOF_SHORT
@@ -1568,14 +1556,12 @@ _ctypes_get_fielddesc(const char *fmt)
 
     if (!initialized) {
         initialized = 1;
-#ifdef CTYPES_UNICODE
         if (sizeof(wchar_t) == sizeof(short))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sshort;
         else if (sizeof(wchar_t) == sizeof(int))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_sint;
         else if (sizeof(wchar_t) == sizeof(long))
             _ctypes_get_fielddesc("u")->pffi_type = &ffi_type_slong;
-#endif
     }
 
     for (; table->code; ++table) {

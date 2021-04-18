@@ -1,1 +1,0 @@
-Fix a syntax typo in ``turtledemo`` that now raises a ``SyntaxError``.

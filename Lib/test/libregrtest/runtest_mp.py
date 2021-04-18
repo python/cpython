@@ -11,6 +11,7 @@ import time
 import traceback
 import types
 from test import support
+from test.support import os_helper
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
@@ -70,7 +71,7 @@ def run_test_in_subprocess(testname, ns):
                             stderr=subprocess.PIPE,
                             universal_newlines=True,
                             close_fds=(os.name != 'nt'),
-                            cwd=support.SAVEDCWD,
+                            cwd=os_helper.SAVEDCWD,
                             **kw)
 
 

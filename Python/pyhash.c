@@ -200,18 +200,14 @@ void
 _PyHash_Fini(void)
 {
 #ifdef Py_HASH_STATS
-    int i;
-    Py_ssize_t total = 0;
-    const char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
-
     fprintf(stderr, "len   calls    total\n");
-    for (i = 1; i <= Py_HASH_STATS_MAX; i++) {
+    Py_ssize_t total = 0;
+    for (int i = 1; i <= Py_HASH_STATS_MAX; i++) {
         total += hashstats[i];
-        fprintf(stderr, fmt, i, hashstats[i], total);
+        fprintf(stderr, "%2i %8zd %8zd\n", i, hashstats[i], total);
     }
     total += hashstats[0];
-    fprintf(stderr, ">  %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n",
-            hashstats[0], total);
+    fprintf(stderr, ">  %8zd %8zd\n", hashstats[0], total);
 #endif
 }
 

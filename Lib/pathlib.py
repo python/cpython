@@ -13,16 +13,10 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
-supports_symlinks = True
 if os.name == 'nt':
-    import nt
-    if sys.getwindowsversion()[:2] >= (6, 0):
-        from nt import _getfinalpathname
-    else:
-        supports_symlinks = False
-        _getfinalpathname = None
+    from nt import _getfinalpathname
 else:
-    nt = None
+    _getfinalpathname = None
 
 
 __all__ = [
@@ -193,7 +187,7 @@ class _WindowsFlavour(_Flavour):
     def resolve(self, path, strict=False):
         s = str(path)
         if not s:
-            return os.getcwd()
+            return path._accessor.getcwd()
         previous_s = None
         if _getfinalpathname is not None:
             if strict:
@@ -252,34 +246,6 @@ class _WindowsFlavour(_Flavour):
             # It's a path on a network drive => 'file://host/share/a/b'
             return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
 
-    def gethomedir(self, username):
-        if 'USERPROFILE' in os.environ:
-            userhome = os.environ['USERPROFILE']
-        elif 'HOMEPATH' in os.environ:
-            try:
-                drv = os.environ['HOMEDRIVE']
-            except KeyError:
-                drv = ''
-            userhome = drv + os.environ['HOMEPATH']
-        else:
-            raise RuntimeError("Can't determine home directory")
-
-        if username:
-            # Try to guess user home directory.  By default all users
-            # directories are located in the same place and are named by
-            # corresponding usernames.  If current user home directory points
-            # to nonstandard place, this guess is likely wrong.
-            if os.environ['USERNAME'] != username:
-                drv, root, parts = self.parse_parts((userhome,))
-                if parts[-1] != os.environ['USERNAME']:
-                    raise RuntimeError("Can't determine home directory "
-                                       "for %r" % username)
-                parts[-1] = username
-                if drv or root:
-                    userhome = drv + root + self.join(parts[1:])
-                else:
-                    userhome = self.join(parts)
-        return userhome
 
 class _PosixFlavour(_Flavour):
     sep = '/'
@@ -329,7 +295,10 @@ class _PosixFlavour(_Flavour):
                     # parent dir
                     path, _, _ = path.rpartition(sep)
                     continue
-                newpath = path + sep + name
+                if path.endswith(sep):
+                    newpath = path + name
+                else:
+                    newpath = path + sep + name
                 if newpath in seen:
                     # Already seen this path
                     path = seen[newpath]
@@ -355,7 +324,7 @@ class _PosixFlavour(_Flavour):
             return path
         # NOTE: according to POSIX, getcwd() cannot contain path components
         # which are symlinks.
-        base = '' if path.is_absolute() else os.getcwd()
+        base = '' if path.is_absolute() else accessor.getcwd()
         return _resolve(base, str(path)) or sep
 
     def is_reserved(self, parts):
@@ -366,21 +335,6 @@ class _PosixFlavour(_Flavour):
         # for portability to other applications.
         bpath = bytes(path)
         return 'file://' + urlquote_from_bytes(bpath)
-
-    def gethomedir(self, username):
-        if not username:
-            try:
-                return os.environ['HOME']
-            except KeyError:
-                import pwd
-                return pwd.getpwuid(os.getuid()).pw_dir
-        else:
-            import pwd
-            try:
-                return pwd.getpwnam(username).pw_dir
-            except KeyError:
-                raise RuntimeError("Can't determine home directory "
-                                   "for %r" % username)
 
 
 _windows_flavour = _WindowsFlavour()
@@ -396,9 +350,7 @@ class _NormalAccessor(_Accessor):
 
     stat = os.stat
 
-    lstat = os.lstat
-
-    open = os.open
+    open = io.open
 
     listdir = os.listdir
 
@@ -406,21 +358,14 @@ class _NormalAccessor(_Accessor):
 
     chmod = os.chmod
 
-    if hasattr(os, "lchmod"):
-        lchmod = os.lchmod
-    else:
-        def lchmod(self, pathobj, mode):
-            raise NotImplementedError("lchmod() not available on this system")
-
     mkdir = os.mkdir
 
     unlink = os.unlink
 
     if hasattr(os, "link"):
-        link_to = os.link
+        link = os.link
     else:
-        @staticmethod
-        def link_to(self, target):
+        def link(self, src, dst):
             raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
@@ -429,23 +374,35 @@ class _NormalAccessor(_Accessor):
 
     replace = os.replace
 
-    if nt:
-        if supports_symlinks:
-            symlink = os.symlink
-        else:
-            def symlink(a, b, target_is_directory):
-                raise NotImplementedError("symlink() not available on this system")
+    if hasattr(os, "symlink"):
+        symlink = os.symlink
     else:
-        # Under POSIX, os.symlink() takes two args
-        @staticmethod
-        def symlink(a, b, target_is_directory):
-            return os.symlink(a, b)
+        def symlink(self, src, dst, target_is_directory=False):
+            raise NotImplementedError("os.symlink() not available on this system")
 
-    utime = os.utime
+    def touch(self, path, mode=0o666, exist_ok=True):
+        if exist_ok:
+            # First try to bump modification time
+            # Implementation note: GNU touch uses the UTIME_NOW option of
+            # the utimensat() / futimens() functions.
+            try:
+                os.utime(path, None)
+            except OSError:
+                # Avoid exception chaining
+                pass
+            else:
+                return
+        flags = os.O_CREAT | os.O_WRONLY
+        if not exist_ok:
+            flags |= os.O_EXCL
+        fd = os.open(path, flags, mode)
+        os.close(fd)
 
-    # Helper for resolve()
-    def readlink(self, path):
-        return os.readlink(path)
+    if hasattr(os, "readlink"):
+        readlink = os.readlink
+    else:
+        def readlink(self, path):
+            raise NotImplementedError("os.readlink() not available on this system")
 
     def owner(self, path):
         try:
@@ -460,6 +417,10 @@ class _NormalAccessor(_Accessor):
             return grp.getgrgid(self.stat(path).st_gid).gr_name
         except ImportError:
             raise NotImplementedError("Path.group() is unsupported on this system")
+
+    getcwd = os.getcwd
+
+    expanduser = staticmethod(os.path.expanduser)
 
 
 _normal_accessor = _NormalAccessor()
@@ -627,7 +588,10 @@ class _PathParents(Sequence):
             return len(self._parts)
 
     def __getitem__(self, idx):
-        if idx < 0 or idx >= len(self):
+        if isinstance(idx, slice):
+            return tuple(self[i] for i in range(*idx.indices(len(self))))
+
+        if idx >= len(self) or idx < -len(self):
             raise IndexError(idx)
         return self._pathcls._from_parsed_parts(self._drv, self._root,
                                                 self._parts[:-idx - 1])
@@ -686,7 +650,7 @@ class PurePath(object):
         return cls._flavour.parse_parts(parts)
 
     @classmethod
-    def _from_parts(cls, args, init=True):
+    def _from_parts(cls, args):
         # We need to call _parse_args on the instance, so as to get the
         # right flavour.
         self = object.__new__(cls)
@@ -694,18 +658,14 @@ class PurePath(object):
         self._drv = drv
         self._root = root
         self._parts = parts
-        if init:
-            self._init()
         return self
 
     @classmethod
-    def _from_parsed_parts(cls, drv, root, parts, init=True):
+    def _from_parsed_parts(cls, drv, root, parts):
         self = object.__new__(cls)
         self._drv = drv
         self._root = root
         self._parts = parts
-        if init:
-            self._init()
         return self
 
     @classmethod
@@ -714,10 +674,6 @@ class PurePath(object):
             return drv + root + cls._flavour.join(parts[1:])
         else:
             return cls._flavour.join(parts)
-
-    def _init(self):
-        # Overridden in concrete Path
-        pass
 
     def _make_child(self, args):
         drv, root, parts = self._parse_args(args)
@@ -922,7 +878,8 @@ class PurePath(object):
         cf = self._flavour.casefold_parts
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
-            raise ValueError("{!r} does not start with {!r}"
+            raise ValueError("{!r} is not in the subpath of {!r}"
+                    " OR one path is relative and the other is absolute."
                              .format(str(self), str(formatted)))
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
@@ -1057,28 +1014,17 @@ class Path(PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    __slots__ = (
-        '_accessor',
-    )
+    _accessor = _normal_accessor
+    __slots__ = ()
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args, init=False)
+        self = cls._from_parts(args)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
-        self._init()
         return self
-
-    def _init(self,
-              # Private non-constructor arguments
-              template=None,
-              ):
-        if template is not None:
-            self._accessor = template._accessor
-        else:
-            self._accessor = _normal_accessor
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
@@ -1100,17 +1046,6 @@ class Path(PurePath):
         # removed in the future.
         pass
 
-    def _opener(self, name, flags, mode=0o666):
-        # A stub for the opener argument to built-in open()
-        return self._accessor.open(self, flags, mode)
-
-    def _raw_open(self, flags, mode=0o777):
-        """
-        Open the file pointed by this path and return a file descriptor,
-        as os.open() does.
-        """
-        return self._accessor.open(self, flags, mode)
-
     # Public API
 
     @classmethod
@@ -1118,14 +1053,14 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(os.getcwd())
+        return cls(cls()._accessor.getcwd())
 
     @classmethod
     def home(cls):
         """Return a new path pointing to the user's home directory (as
         returned by os.path.expanduser('~')).
         """
-        return cls(cls()._flavour.gethomedir(None))
+        return cls("~").expanduser()
 
     def samefile(self, other_path):
         """Return whether other_path is the same or not as this file
@@ -1187,9 +1122,7 @@ class Path(PurePath):
             return self
         # FIXME this must defer to the specific flavour (and, under Windows,
         # use nt._getfullpathname())
-        obj = self._from_parts([os.getcwd()] + self._parts, init=False)
-        obj._init(template=self)
-        return obj
+        return self._from_parts([self._accessor.getcwd()] + self._parts)
 
     def resolve(self, strict=False):
         """
@@ -1205,16 +1138,14 @@ class Path(PurePath):
             s = str(self.absolute())
         # Now we have no symlinks in the path, it's safe to normalize it.
         normed = self._flavour.pathmod.normpath(s)
-        obj = self._from_parts((normed,), init=False)
-        obj._init(template=self)
-        return obj
+        return self._from_parts((normed,))
 
-    def stat(self):
+    def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return self._accessor.stat(self)
+        return self._accessor.stat(self, follow_symlinks=follow_symlinks)
 
     def owner(self):
         """
@@ -1234,8 +1165,10 @@ class Path(PurePath):
         Open the file pointed by this path and return a file object, as
         the built-in open() function does.
         """
-        return io.open(self, mode, buffering, encoding, errors, newline,
-                       opener=self._opener)
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+        return self._accessor.open(self, mode, buffering, encoding, errors,
+                                   newline)
 
     def read_bytes(self):
         """
@@ -1248,6 +1181,7 @@ class Path(PurePath):
         """
         Open the file in text mode, read it, and close the file.
         """
+        encoding = io.text_encoding(encoding)
         with self.open(mode='r', encoding=encoding, errors=errors) as f:
             return f.read()
 
@@ -1260,14 +1194,15 @@ class Path(PurePath):
         with self.open(mode='wb') as f:
             return f.write(view)
 
-    def write_text(self, data, encoding=None, errors=None):
+    def write_text(self, data, encoding=None, errors=None, newline=None):
         """
         Open the file in text mode, write to it, and close the file.
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors) as f:
+        encoding = io.text_encoding(encoding)
+        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
     def readlink(self):
@@ -1275,30 +1210,13 @@ class Path(PurePath):
         Return the path to which the symbolic link points.
         """
         path = self._accessor.readlink(self)
-        obj = self._from_parts((path,), init=False)
-        obj._init(template=self)
-        return obj
+        return self._from_parts((path,))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
         Create this file with the given access mode, if it doesn't exist.
         """
-        if exist_ok:
-            # First try to bump modification time
-            # Implementation note: GNU touch uses the UTIME_NOW option of
-            # the utimensat() / futimens() functions.
-            try:
-                self._accessor.utime(self, None)
-            except OSError:
-                # Avoid exception chaining
-                pass
-            else:
-                return
-        flags = os.O_CREAT | os.O_WRONLY
-        if not exist_ok:
-            flags |= os.O_EXCL
-        fd = self._raw_open(flags, mode)
-        os.close(fd)
+        self._accessor.touch(self, mode, exist_ok)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
@@ -1317,18 +1235,18 @@ class Path(PurePath):
             if not exist_ok or not self.is_dir():
                 raise
 
-    def chmod(self, mode):
+    def chmod(self, mode, *, follow_symlinks=True):
         """
         Change the permissions of the path, like os.chmod().
         """
-        self._accessor.chmod(self, mode)
+        self._accessor.chmod(self, mode, follow_symlinks=follow_symlinks)
 
     def lchmod(self, mode):
         """
         Like chmod(), except if the path points to a symlink, the symlink's
         permissions are changed, rather than its target's.
         """
-        self._accessor.lchmod(self, mode)
+        self.chmod(mode, follow_symlinks=False)
 
     def unlink(self, missing_ok=False):
         """
@@ -1352,37 +1270,52 @@ class Path(PurePath):
         Like stat(), except if the path points to a symlink, the symlink's
         status information is returned, rather than its target's.
         """
-        return self._accessor.lstat(self)
-
-    def link_to(self, target):
-        """
-        Create a hard link pointing to a path named target.
-        """
-        self._accessor.link_to(self, target)
+        return self.stat(follow_symlinks=False)
 
     def rename(self, target):
         """
-        Rename this path to the given path,
-        and return a new Path instance pointing to the given path.
+        Rename this path to the target path.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
         """
         self._accessor.rename(self, target)
         return self.__class__(target)
 
     def replace(self, target):
         """
-        Rename this path to the given path, clobbering the existing
-        destination if it exists, and return a new Path instance
-        pointing to the given path.
+        Rename this path to the target path, overwriting if that path exists.
+
+        The target path may be absolute or relative. Relative paths are
+        interpreted relative to the current working directory, *not* the
+        directory of the Path object.
+
+        Returns the new Path instance pointing to the target path.
         """
         self._accessor.replace(self, target)
         return self.__class__(target)
 
     def symlink_to(self, target, target_is_directory=False):
         """
-        Make this path a symlink pointing to the given path.
-        Note the order of arguments (self, target) is the reverse of os.symlink's.
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
         """
         self._accessor.symlink(target, self, target_is_directory)
+
+    def link_to(self, target):
+        """
+        Make the target path a hard link pointing to this path.
+
+        Note this function does not make this path a hard link to *target*,
+        despite the implication of the function and argument names. The order
+        of arguments (target, link) is the reverse of Path.symlink_to, but
+        matches that of os.link.
+
+        """
+        self._accessor.link(self, target)
 
     # Convenience functions for querying the stat results
 
@@ -1539,7 +1472,9 @@ class Path(PurePath):
         """
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
-            homedir = self._flavour.gethomedir(self._parts[0][1:])
+            homedir = self._accessor.expanduser(self._parts[0])
+            if homedir[:1] == "~":
+                raise RuntimeError("Could not determine home directory.")
             return self._from_parts([homedir] + self._parts[1:])
 
         return self

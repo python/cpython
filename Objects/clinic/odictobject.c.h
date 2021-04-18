@@ -83,6 +83,49 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(OrderedDict_pop__doc__,
+"pop($self, /, key, default=<unrepresentable>)\n"
+"--\n"
+"\n"
+"od.pop(key[,default]) -> v, remove specified key and return the corresponding value.\n"
+"\n"
+"If the key is not found, return the default if given; otherwise,\n"
+"raise a KeyError.");
+
+#define ORDEREDDICT_POP_METHODDEF    \
+    {"pop", (PyCFunction)(void(*)(void))OrderedDict_pop, METH_FASTCALL|METH_KEYWORDS, OrderedDict_pop__doc__},
+
+static PyObject *
+OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
+                     PyObject *default_value);
+
+static PyObject *
+OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"key", "default", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pop", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *key;
+    PyObject *default_value = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    key = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    default_value = args[1];
+skip_optional_pos:
+    return_value = OrderedDict_pop_impl(self, key, default_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "popitem($self, /, last=True)\n"
 "--\n"
@@ -168,4 +211,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8eb1296df9142908 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0afaad5b4bb47fe input=a9049054013a1b77]*/

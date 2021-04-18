@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pystate.h"   /* _PyErr_StackItem */
+#include "abstract.h" /* PySendResult */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
@@ -16,8 +17,6 @@ extern "C" {
     PyObject_HEAD                                                           \
     /* Note: gi_frame can be NULL if the generator is "finished" */         \
     PyFrameObject *prefix##_frame;                                          \
-    /* True if generator is being executed. */                              \
-    char prefix##_running;                                                  \
     /* The code object backing the generator */                             \
     PyObject *prefix##_code;                                                \
     /* List of weak reference. */                                           \
@@ -43,7 +42,6 @@ PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(PyFrameObject *,
     PyObject *name, PyObject *qualname);
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
-PyAPI_FUNC(PyObject *) _PyGen_Send(PyGenObject *, PyObject *);
 PyObject *_PyGen_yf(PyGenObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 

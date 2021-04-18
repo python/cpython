@@ -1,1 +1,0 @@
-test_gdb and test.pythoninfo now check gdb command exit code.

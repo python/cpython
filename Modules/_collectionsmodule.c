@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "structmember.h"         // PyMemberDef
 
 #ifdef STDC_HEADERS
@@ -898,8 +899,19 @@ deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t n=1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:rotate", &n)) {
+    if (!_PyArg_CheckPositional("deque.rotate", nargs, 0, 1)) {
         return NULL;
+    }
+    if (nargs) {
+        PyObject *index = _PyNumber_Index(args[0]);
+        if (index == NULL) {
+            return NULL;
+        }
+        n = PyLong_AsSsize_t(index);
+        Py_DECREF(index);
+        if (n == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (!_deque_rotate(deque, n))
@@ -1146,38 +1158,6 @@ deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 PyDoc_STRVAR(insert_doc,
 "D.insert(index, object) -- insert object before index");
 
-static PyObject *
-deque_remove(dequeobject *deque, PyObject *value)
-{
-    Py_ssize_t i, n=Py_SIZE(deque);
-
-    for (i=0 ; i<n ; i++) {
-        PyObject *item = deque->leftblock->data[deque->leftindex];
-        int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
-
-        if (Py_SIZE(deque) != n) {
-            PyErr_SetString(PyExc_IndexError,
-                "deque mutated during remove().");
-            return NULL;
-        }
-        if (cmp > 0) {
-            PyObject *tgt = deque_popleft(deque, NULL);
-            assert (tgt != NULL);
-            if (_deque_rotate(deque, i))
-                return NULL;
-            Py_DECREF(tgt);
-            Py_RETURN_NONE;
-        }
-        else if (cmp < 0) {
-            _deque_rotate(deque, i);
-            return NULL;
-        }
-        _deque_rotate(deque, -1);
-    }
-    PyErr_SetString(PyExc_ValueError, "deque.remove(x): x not in deque");
-    return NULL;
-}
-
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
@@ -1243,6 +1223,48 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
     assert (item != NULL);
     Py_DECREF(item);
     return rv;
+}
+
+static PyObject *
+deque_remove(dequeobject *deque, PyObject *value)
+{
+    PyObject *item;
+    block *b = deque->leftblock;
+    Py_ssize_t i, n = Py_SIZE(deque), index = deque->leftindex;
+    size_t start_state = deque->state;
+    int cmp, rv;
+
+    for (i = 0 ; i < n; i++) {
+        item = b->data[index];
+        Py_INCREF(item);
+        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (cmp < 0) {
+            return NULL;
+        }
+        if (start_state != deque->state) {
+            PyErr_SetString(PyExc_IndexError,
+                            "deque mutated during iteration");
+            return NULL;
+        }
+        if (cmp > 0) {
+            break;
+        }
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
+    }
+    if (i == n) {
+        PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
+        return NULL;
+    }
+    rv = deque_del_item(deque, i);
+    if (rv == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
@@ -2296,6 +2318,7 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
     PyObject *dict_get;
     PyObject *mapping_setitem;
     PyObject *dict_setitem;
+    PyObject *one = _PyLong_GetOne();  // borrowed reference
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
@@ -2342,10 +2365,10 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             if (oldval == NULL) {
                 if (PyErr_Occurred())
                     goto done;
-                if (_PyDict_SetItem_KnownHash(mapping, key, _PyLong_One, hash) < 0)
+                if (_PyDict_SetItem_KnownHash(mapping, key, one, hash) < 0)
                     goto done;
             } else {
-                newval = PyNumber_Add(oldval, _PyLong_One);
+                newval = PyNumber_Add(oldval, one);
                 if (newval == NULL)
                     goto done;
                 if (_PyDict_SetItem_KnownHash(mapping, key, newval, hash) < 0)
@@ -2354,19 +2377,21 @@ _collections__count_elements_impl(PyObject *module, PyObject *mapping,
             }
             Py_DECREF(key);
         }
-    } else {
+    }
+    else {
         bound_get = _PyObject_GetAttrId(mapping, &PyId_get);
         if (bound_get == NULL)
             goto done;
 
+        PyObject *zero = _PyLong_GetZero();  // borrowed reference
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
                 break;
-            oldval = PyObject_CallFunctionObjArgs(bound_get, key, _PyLong_Zero, NULL);
+            oldval = PyObject_CallFunctionObjArgs(bound_get, key, zero, NULL);
             if (oldval == NULL)
                 break;
-            newval = PyNumber_Add(oldval, _PyLong_One);
+            newval = PyNumber_Add(oldval, one);
             Py_DECREF(oldval);
             if (newval == NULL)
                 break;

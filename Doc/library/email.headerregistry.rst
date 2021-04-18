@@ -289,7 +289,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
     A :class:`ParameterizedMIMEHeader` class that handles the
     :mailheader:`Content-Disposition` header.
 
-    .. attribute:: content-disposition
+    .. attribute:: content_disposition
 
        ``inline`` and ``attachment`` are the only valid values in common use.
 

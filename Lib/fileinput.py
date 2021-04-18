@@ -3,7 +3,7 @@
 Typical use is:
 
     import fileinput
-    for line in fileinput.input():
+    for line in fileinput.input(encoding="utf-8"):
         process(line)
 
 This iterates over the lines of all files listed in sys.argv[1:],
@@ -63,15 +63,9 @@ file remains around; by default, the extension is ".bak" and it is
 deleted when the output file is closed.  In-place filtering is
 disabled when standard input is read.  XXX The current implementation
 does not work for MS-DOS 8+3 filesystems.
-
-XXX Possible additions:
-
-- optional getopt argument processing
-- isatty()
-- read(), read(size), even readlines()
-
 """
 
+import io
 import sys, os
 from types import GenericAlias
 
@@ -81,7 +75,8 @@ __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
 
 _state = None
 
-def input(files=None, inplace=False, backup="", *, mode="r", openhook=None):
+def input(files=None, inplace=False, backup="", *, mode="r", openhook=None,
+          encoding=None, errors=None):
     """Return an instance of the FileInput class, which can be iterated.
 
     The parameters are passed to the constructor of the FileInput class.
@@ -91,7 +86,8 @@ def input(files=None, inplace=False, backup="", *, mode="r", openhook=None):
     global _state
     if _state and _state._file:
         raise RuntimeError("input() already active")
-    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook)
+    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook,
+                       encoding=encoding, errors=errors)
     return _state
 
 def close():
@@ -186,7 +182,7 @@ class FileInput:
     """
 
     def __init__(self, files=None, inplace=False, backup="", *,
-                 mode="r", openhook=None):
+                 mode="r", openhook=None, encoding=None, errors=None):
         if isinstance(files, str):
             files = (files,)
         elif isinstance(files, os.PathLike):
@@ -209,6 +205,16 @@ class FileInput:
         self._file = None
         self._isstdin = False
         self._backupfilename = None
+        self._encoding = encoding
+        self._errors = errors
+
+        # We can not use io.text_encoding() here because old openhook doesn't
+        # take encoding parameter.
+        if "b" not in mode and encoding is None and sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn("'encoding' argument not specified.",
+                          EncodingWarning, 2)
+
         # restrict mode argument to reading modes
         if mode not in ('r', 'rU', 'U', 'rb'):
             raise ValueError("FileInput opening mode must be one of "
@@ -362,9 +368,20 @@ class FileInput:
             else:
                 # This may raise OSError
                 if self._openhook:
-                    self._file = self._openhook(self._filename, self._mode)
+                    # Custom hooks made previous to Python 3.10 didn't have
+                    # encoding argument
+                    if self._encoding is None:
+                        self._file = self._openhook(self._filename, self._mode)
+                    else:
+                        self._file = self._openhook(
+                            self._filename, self._mode, encoding=self._encoding, errors=self._errors)
                 else:
-                    self._file = open(self._filename, self._mode)
+                    # EncodingWarning is emitted in __init__() already
+                    if "b" not in self._mode:
+                        encoding = self._encoding or "locale"
+                    else:
+                        encoding = None
+                    self._file = open(self._filename, self._mode, encoding=encoding, errors=self._errors)
         self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()
 
@@ -395,16 +412,23 @@ class FileInput:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def hook_compressed(filename, mode):
+def hook_compressed(filename, mode, *, encoding=None, errors=None):
+    if encoding is None:  # EncodingWarning is emitted in FileInput() already.
+        encoding = "locale"
     ext = os.path.splitext(filename)[1]
     if ext == '.gz':
         import gzip
-        return gzip.open(filename, mode)
+        stream = gzip.open(filename, mode)
     elif ext == '.bz2':
         import bz2
-        return bz2.BZ2File(filename, mode)
+        stream = bz2.BZ2File(filename, mode)
     else:
-        return open(filename, mode)
+        return open(filename, mode, encoding=encoding, errors=errors)
+
+    # gzip and bz2 are binary mode by default.
+    if "b" not in mode:
+        stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors)
+    return stream
 
 
 def hook_encoded(encoding, errors=None):

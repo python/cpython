@@ -1,0 +1,19 @@
+The following ``threading`` methods are now deprecated and should be replaced:
+
+- ``currentThread`` => :func:`threading.current_thread`
+
+- ``activeCount`` => :func:`threading.active_count`
+
+- ``Condition.notifyAll`` => :meth:`threading.Condition.notify_all`
+
+- ``Event.isSet`` => :meth:`threading.Event.is_set`
+
+- ``Thread.setName`` => :attr:`threading.Thread.name`
+
+- ``thread.getName`` => :attr:`threading.Thread.name`
+
+- ``Thread.isDaemon`` => :attr:`threading.Thread.daemon`
+
+- ``Thread.setDaemon`` => :attr:`threading.Thread.daemon`
+
+Patch by Jelle Zijlstra.

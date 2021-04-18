@@ -22,3 +22,19 @@ This module allows a Python program to determine if a string is a
    Sequence containing all the :ref:`keywords <keywords>` defined for the
    interpreter.  If any keywords are defined to only be active when particular
    :mod:`__future__` statements are in effect, these will be included as well.
+
+
+.. function:: issoftkeyword(s)
+
+   Return ``True`` if *s* is a Python soft :ref:`keyword <keywords>`.
+
+   .. versionadded:: 3.9
+
+
+.. data:: softkwlist
+
+   Sequence containing all the soft :ref:`keywords <keywords>` defined for the
+   interpreter.  If any soft keywords are defined to only be active when particular
+   :mod:`__future__` statements are in effect, these will be included as well.
+
+   .. versionadded:: 3.9

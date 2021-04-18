@@ -146,7 +146,7 @@ def skip_unless_bind_unix_socket(test):
         return unittest.skip('No UNIX Sockets')(test)
     global _bind_nix_socket_error
     if _bind_nix_socket_error is None:
-        from test.support import TESTFN, unlink
+        from .os_helper import TESTFN, unlink
         path = TESTFN + "can_bind_unix_socket"
         with socket.socket(socket.AF_UNIX) as sock:
             try:
@@ -225,7 +225,7 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
 
     def filter_error(err):
         n = getattr(err, 'errno', None)
-        if (isinstance(err, socket.timeout) or
+        if (isinstance(err, TimeoutError) or
             (isinstance(err, socket.gaierror) and n in gai_errnos) or
             (isinstance(err, urllib.error.HTTPError) and
              500 <= err.code <= 599) or

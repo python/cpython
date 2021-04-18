@@ -67,8 +67,8 @@ PIP_VE_DATA = dict(
 IDLE_VE_DATA = dict(
     DisplayName="IDLE (Python {})".format(VER_DOT),
     Description="IDLE editor for Python {}".format(VER_DOT),
-    Square150x150Logo="_resources/pythonwx150.png",
-    Square44x44Logo="_resources/pythonwx44.png",
+    Square150x150Logo="_resources/idlex150.png",
+    Square44x44Logo="_resources/idlex44.png",
     BackgroundColor="transparent",
 )
 
@@ -498,6 +498,11 @@ def get_appx_layout(ns):
         src = icons / "pythonwx{}.png".format(px)
         yield f"_resources/pythonwx{px}.png", src
         yield f"_resources/pythonwx{px}$targetsize-{px}_altform-unplated.png", src
+    if ns.include_idle and ns.include_launchers:
+        for px in [44, 150]:
+            src = icons / "idlex{}.png".format(px)
+            yield f"_resources/idlex{px}.png", src
+            yield f"_resources/idlex{px}$targetsize-{px}_altform-unplated.png", src
     yield f"_resources/py.png", icons / "py.png"
     sccd = ns.source / SCCD_FILENAME
     if sccd.is_file():

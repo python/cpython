@@ -336,6 +336,8 @@ Pure paths provide the following methods and properties:
       >>> p.parents[2]
       PureWindowsPath('c:/')
 
+   .. versionchanged:: 3.10
+      The parents sequence now supports :term:`slices <slice>` and negative index values.
 
 .. data:: PurePath.parent
 
@@ -551,7 +553,9 @@ Pure paths provide the following methods and properties:
         File "<stdin>", line 1, in <module>
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
-      ValueError: '/etc/passwd' does not start with '/usr'
+      ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+
+   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 
 
 .. method:: PurePath.with_name(name)
@@ -701,7 +705,10 @@ call fails (for example because the path doesn't exist).
 .. classmethod:: Path.home()
 
    Return a new path object representing the user's home directory (as
-   returned by :func:`os.path.expanduser` with ``~`` construct)::
+   returned by :func:`os.path.expanduser` with ``~`` construct). If the home
+   directory can't be resolved, :exc:`RuntimeError` is raised.
+
+   ::
 
       >>> Path.home()
       PosixPath('/home/antoine')
@@ -709,10 +716,13 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.stat()
+.. method:: Path.stat(*, follow_symlinks=True)
 
    Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
+
+   This method normally follows symlinks; to stat a symlink add the argument
+   ``follow_symlinks=False``, or use :meth:`~Path.lstat`.
 
    ::
 
@@ -722,10 +732,18 @@ call fails (for example because the path doesn't exist).
       >>> p.stat().st_mtime
       1327883547.852554
 
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
-.. method:: Path.chmod(mode)
+.. method:: Path.chmod(mode, *, follow_symlinks=True)
 
-   Change the file mode and permissions, like :func:`os.chmod`::
+   Change the file mode and permissions, like :func:`os.chmod`.
+
+   This method normally follows symlinks. Some Unix flavours support changing
+   permissions on the symlink itself; on these platforms you may add the
+   argument ``follow_symlinks=False``, or use :meth:`~Path.lchmod`.
+
+   ::
 
       >>> p = Path('setup.py')
       >>> p.stat().st_mode
@@ -734,6 +752,8 @@ call fails (for example because the path doesn't exist).
       >>> p.stat().st_mode
       33060
 
+   .. versionchanged:: 3.10
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.exists()
 
@@ -756,7 +776,10 @@ call fails (for example because the path doesn't exist).
 .. method:: Path.expanduser()
 
    Return a new path with expanded ``~`` and ``~user`` constructs,
-   as returned by :meth:`os.path.expanduser`::
+   as returned by :meth:`os.path.expanduser`. If a home directory can't be
+   resolved, :exc:`RuntimeError` is raised.
+
+   ::
 
       >>> p = PosixPath('~/films/Monty Python')
       >>> p.expanduser()
@@ -888,6 +911,11 @@ call fails (for example because the path doesn't exist).
       PosixPath('docs/_static')
       PosixPath('docs/Makefile')
 
+   The children are yielded in arbitrary order, and the special entries
+   ``'.'`` and ``'..'`` are not included.  If a file is removed from or added
+   to the directory after creating the iterator, whether an path object for
+   that file be included is unspecified.
+
 .. method:: Path.lchmod(mode)
 
    Like :meth:`Path.chmod` but, if the path points to a symbolic link, the
@@ -1001,6 +1029,10 @@ call fails (for example because the path doesn't exist).
       >>> target.open().read()
       'some text'
 
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
+
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
 
@@ -1010,6 +1042,10 @@ call fails (for example because the path doesn't exist).
    Rename this file or directory to the given *target*, and return a new Path
    instance pointing to *target*.  If *target* points to an existing file or
    directory, it will be unconditionally replaced.
+
+   The target path may be absolute or relative. Relative paths are interpreted
+   relative to the current working directory, *not* the directory of the Path
+   object.
 
    .. versionchanged:: 3.8
       Added return value, return the new Path instance.
@@ -1104,6 +1140,20 @@ call fails (for example because the path doesn't exist).
       of :func:`os.symlink`'s.
 
 
+.. method:: Path.link_to(target)
+
+   Make *target* a hard link to this path.
+
+   .. warning::
+
+      This function does not make this path a hard link to *target*, despite
+      the implication of the function and argument names. The argument order
+      (target, link) is the reverse of :func:`Path.symlink_to`, but matches
+      that of :func:`os.link`.
+
+   .. versionadded:: 3.8
+
+
 .. method:: Path.touch(mode=0o666, exist_ok=True)
 
    Create a file at this given path.  If *mode* is given, it is combined
@@ -1128,13 +1178,6 @@ call fails (for example because the path doesn't exist).
       The *missing_ok* parameter was added.
 
 
-.. method:: Path.link_to(target)
-
-   Create a hard link pointing to a path named *target*.
-
-   .. versionchanged:: 3.8
-
-
 .. method:: Path.write_bytes(data)
 
    Open the file pointed to in bytes mode, write *data* to it, and close the
@@ -1151,7 +1194,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.write_text(data, encoding=None, errors=None)
+.. method:: Path.write_text(data, encoding=None, errors=None, newline=None)
 
    Open the file pointed to in text mode, write *data* to it, and close the
    file::
@@ -1167,6 +1210,9 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.10
+      The *newline* parameter was added.
+
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
 
@@ -1175,14 +1221,15 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. note::
 
-   Although :func:`os.path.relpath` and :meth:`PurePath.relative_to` have some
-   overlapping use-cases, their semantics differ enough to warrant not
-   considering them equivalent.
+   Not all pairs of functions/methods below are equivalent. Some of them,
+   despite having some overlapping use-cases, have different semantics. They
+   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
-os and os.path                         pathlib
+:mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve`
+:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1194,10 +1241,14 @@ os and os.path                         pathlib
 :func:`os.path.exists`                 :meth:`Path.exists`
 :func:`os.path.expanduser`             :meth:`Path.expanduser` and
                                        :meth:`Path.home`
+:func:`os.listdir`                     :meth:`Path.iterdir`
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
+:func:`os.path.relpath`                :meth:`Path.relative_to` [#]_
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`
@@ -1208,3 +1259,8 @@ os and os.path                         pathlib
 :func:`os.path.samefile`               :meth:`Path.samefile`
 :func:`os.path.splitext`               :data:`PurePath.suffix`
 ====================================   ==============================
+
+.. rubric:: Footnotes
+
+.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.

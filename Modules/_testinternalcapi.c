@@ -12,10 +12,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_byteswap.h"     // _Py_bswap32()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_hashtable.h"    // _Py_hashtable_new()
+#include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
+#include "pycore_bitutils.h"     // _Py_bswap32()
 #include "pycore_gc.h"           // PyGC_Head
+#include "pycore_hashtable.h"    // _Py_hashtable_new()
+#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 
 
 static PyObject *
@@ -63,6 +65,84 @@ test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static int
+check_popcount(uint32_t x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile uint32_t u = x;
+    int bits = _Py_popcount32(u);
+    if (bits != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_popcount32(%lu) returns %i, expected %i",
+                     (unsigned long)x, bits, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_popcount(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_popcount(X, RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
+
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x08080808, 4);
+    CHECK(0x10101010, 4);
+    CHECK(0x10204080, 4);
+    CHECK(0xDEADCAFE, 22);
+    CHECK(0xFFFFFFFF, 32);
+    Py_RETURN_NONE;
+
+#undef CHECK
+}
+
+
+static int
+check_bit_length(unsigned long x, int expected)
+{
+    // Use volatile to prevent the compiler to optimize out the whole test
+    volatile unsigned long u = x;
+    int len = _Py_bit_length(u);
+    if (len != expected) {
+        PyErr_Format(PyExc_AssertionError,
+                     "_Py_bit_length(%lu) returns %i, expected %i",
+                     x, len, expected);
+        return -1;
+    }
+    return 0;
+}
+
+
+static PyObject*
+test_bit_length(PyObject *self, PyObject *Py_UNUSED(args))
+{
+#define CHECK(X, RESULT) \
+    do { \
+        if (check_bit_length(X, RESULT) < 0) { \
+            return NULL; \
+        } \
+    } while (0)
+
+    CHECK(0, 0);
+    CHECK(1, 1);
+    CHECK(0x1000, 13);
+    CHECK(0x1234, 13);
+    CHECK(0x54321, 19);
+    CHECK(0x7FFFFFFF, 31);
+    CHECK(0xFFFFFFFF, 32);
+    Py_RETURN_NONE;
+
+#undef CHECK
+}
+
+
 #define TO_PTR(ch) ((void*)(uintptr_t)ch)
 #define FROM_PTR(ptr) ((uintptr_t)ptr)
 #define VALUE(key) (1 + ((int)(key) - 'a'))
@@ -98,6 +178,11 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
         return PyErr_NoMemory();
     }
 
+    // Using an newly allocated table must not crash
+    assert(table->nentries == 0);
+    assert(table->nbuckets > 0);
+    assert(_Py_hashtable_get(table, TO_PTR('x')) == NULL);
+
     // Test _Py_hashtable_set()
     char key;
     for (key='a'; key <= 'z'; key++) {
@@ -114,24 +199,22 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     for (key='a'; key <= 'z'; key++) {
         _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(table, TO_PTR(key));
         assert(entry != NULL);
-        assert(entry->key = TO_PTR(key));
-        assert(entry->value = TO_PTR(VALUE(key)));
+        assert(entry->key == TO_PTR(key));
+        assert(entry->value == TO_PTR(VALUE(key)));
     }
 
     // Test _Py_hashtable_get()
     for (key='a'; key <= 'z'; key++) {
         void *value_ptr = _Py_hashtable_get(table, TO_PTR(key));
-        int value = (int)FROM_PTR(value_ptr);
-        assert(value == VALUE(key));
+        assert((int)FROM_PTR(value_ptr) == VALUE(key));
     }
 
     // Test _Py_hashtable_steal()
     key = 'p';
     void *value_ptr = _Py_hashtable_steal(table, TO_PTR(key));
-    int value = (int)FROM_PTR(value_ptr);
-    assert(value == VALUE(key));
-
+    assert((int)FROM_PTR(value_ptr) == VALUE(key));
     assert(table->nentries == 25);
+    assert(_Py_hashtable_get_entry(table, TO_PTR(key)) == NULL);
 
     // Test _Py_hashtable_foreach()
     int count = 0;
@@ -142,9 +225,56 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
     // Test _Py_hashtable_clear()
     _Py_hashtable_clear(table);
     assert(table->nentries == 0);
+    assert(table->nbuckets > 0);
     assert(_Py_hashtable_get(table, TO_PTR('x')) == NULL);
 
     _Py_hashtable_destroy(table);
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_get_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        return NULL;
+    }
+    PyObject *dict = _PyConfig_AsDict(&config);
+    PyConfig_Clear(&config);
+    return dict;
+}
+
+
+static PyObject *
+test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
+{
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    if (_PyConfig_FromDict(&config, dict) < 0) {
+        goto error;
+    }
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        goto error;
+    }
+    PyConfig_Clear(&config);
+    Py_RETURN_NONE;
+
+error:
+    PyConfig_Clear(&config);
+    return NULL;
+}
+
+
+static PyObject*
+test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // Test _Py_atomic_size_get() and _Py_atomic_size_set()
+    Py_ssize_t var = 1;
+    _Py_atomic_size_set(&var, 2);
+    assert(_Py_atomic_size_get(&var) == 2);
     Py_RETURN_NONE;
 }
 
@@ -153,7 +283,12 @@ static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
+    {"test_popcount", test_popcount, METH_NOARGS},
+    {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
+    {"get_config", test_get_config, METH_NOARGS},
+    {"set_config", test_set_config, METH_O},
+    {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

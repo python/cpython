@@ -6,8 +6,9 @@ import inspect
 import keyword
 import builtins
 import functools
+import abc
 import _thread
-from types import GenericAlias
+from types import FunctionType, GenericAlias
 
 
 __all__ = ['dataclass',
@@ -150,6 +151,20 @@ __all__ = ['dataclass',
 # @dataclass).
 #
 # See _hash_action (below) for a coded version of this table.
+
+# __match_args__
+#
+#    +--- match_args= parameter
+#    |
+#    v    |       |       |
+#         |  no   |  yes  |  <--- class has __match_args__ in __dict__?
+# +=======+=======+=======+
+# | False |       |       |
+# +-------+-------+-------+
+# | True  | add   |       |  <- the default
+# +=======+=======+=======+
+# __match_args__ is a tuple of __init__ parameter names; non-init fields must
+# be matched by keyword.
 
 
 # Raised when an attempt is made to modify a frozen class.
@@ -398,8 +413,10 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
 
     ns = {}
     exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals)
-
+    func = ns['__create_fn__'](**locals)
+    for arg, annotation in func.__annotations__.copy().items():
+        func.__annotations__[arg] = locals[annotation]
+    return func
 
 def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
@@ -650,6 +667,11 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
+    # Strip away the extra quotes as a result of double-stringifying when the
+    # 'annotations' feature became default.
+    if annotation.startswith(("'", '"')) and annotation.endswith(("'", '"')):
+        annotation = annotation[1:-1]
+
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
@@ -696,7 +718,7 @@ def _get_field(cls, a_name, a_type):
     # In addition to checking for actual types here, also check for
     # string annotations.  get_type_hints() won't always work for us
     # (see https://github.com/python/typing/issues/508 for example),
-    # plus it's expensive and would require an eval for every stirng
+    # plus it's expensive and would require an eval for every string
     # annotation.  So, make a best effort to see if this is a ClassVar
     # or InitVar using regex's and checking that the thing referenced
     # is actually of the correct type.
@@ -749,12 +771,19 @@ def _get_field(cls, a_name, a_type):
 
     return f
 
+def _set_qualname(cls, value):
+    # Ensure that the functions returned from _create_fn uses the proper
+    # __qualname__ (the class they belong to).
+    if isinstance(value, FunctionType):
+        value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
+    return value
 
 def _set_new_attribute(cls, name, value):
     # Never overwrites an existing attribute.  Returns True if the
     # attribute already exists.
     if name in cls.__dict__:
         return True
+    _set_qualname(cls, value)
     setattr(cls, name, value)
     return False
 
@@ -769,7 +798,7 @@ def _hash_set_none(cls, fields, globals):
 
 def _hash_add(cls, fields, globals):
     flds = [f for f in fields if (f.compare if f.hash is None else f.hash)]
-    return _hash_fn(flds, globals)
+    return _set_qualname(cls, _hash_fn(flds, globals))
 
 def _hash_exception(cls, fields, globals):
     # Raise an exception.
@@ -806,7 +835,8 @@ _hash_action = {(False, False, False, False): None,
 # version of this table.
 
 
-def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
+def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
+                   match_args):
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
@@ -836,7 +866,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
         # Only process classes that have been processed by our
         # decorator.  That is, they have a _FIELDS attribute.
         base_fields = getattr(b, _FIELDS, None)
-        if base_fields:
+        if base_fields is not None:
             has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
@@ -990,13 +1020,19 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> None', ''))
+                       str(inspect.signature(cls)).replace(' -> NoneType', ''))
+
+    if match_args:
+        _set_new_attribute(cls, '__match_args__',
+                           tuple(f.name for f in field_list if f.init))
+
+    abc.update_abstractmethods(cls)
 
     return cls
 
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
-              unsafe_hash=False, frozen=False):
+              unsafe_hash=False, frozen=False, match_args=True):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -1006,11 +1042,13 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     repr is true, a __repr__() method is added. If order is true, rich
     comparison dunder methods are added. If unsafe_hash is true, a
     __hash__() method function is added. If frozen is true, fields may
-    not be assigned to after instance creation.
+    not be assigned to after instance creation. If match_args is true,
+    the __match_args__ tuple is added.
     """
 
     def wrap(cls):
-        return _process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
+        return _process_class(cls, init, repr, eq, order, unsafe_hash,
+                              frozen, match_args)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
@@ -1094,7 +1132,7 @@ def _asdict_inner(obj, dict_factory):
         # method, because:
         # - it does not recurse in to the namedtuple fields and
         #   convert them to dicts (using dict_factory).
-        # - I don't actually want to return a dict here.  The the main
+        # - I don't actually want to return a dict here.  The main
         #   use case here is json.dumps, and it handles converting
         #   namedtuples to lists.  Admittedly we're losing some
         #   information here when we produce a json list instead of a
@@ -1169,7 +1207,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False):
+                   frozen=False, match_args=True):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1195,14 +1233,12 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     if namespace is None:
         namespace = {}
-    else:
-        # Copy namespace since we're going to mutate it.
-        namespace = namespace.copy()
 
     # While we're looking through the field names, validate that they
     # are identifiers, are not keywords, and not duplicates.
     seen = set()
-    anns = {}
+    annotations = {}
+    defaults = {}
     for item in fields:
         if isinstance(item, str):
             name = item
@@ -1211,7 +1247,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             name, tp, = item
         elif len(item) == 3:
             name, tp, spec = item
-            namespace[name] = spec
+            defaults[name] = spec
         else:
             raise TypeError(f'Invalid field: {item!r}')
 
@@ -1223,14 +1259,22 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             raise TypeError(f'Field name duplicated: {name!r}')
 
         seen.add(name)
-        anns[name] = tp
+        annotations[name] = tp
 
-    namespace['__annotations__'] = anns
+    # Update 'ns' with the user-supplied namespace plus our calculated values.
+    def exec_body_callback(ns):
+        ns.update(namespace)
+        ns.update(defaults)
+        ns['__annotations__'] = annotations
+
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclassses.
-    cls = types.new_class(cls_name, bases, {}, lambda ns: ns.update(namespace))
+    cls = types.new_class(cls_name, bases, {}, exec_body_callback)
+
+    # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
-                     unsafe_hash=unsafe_hash, frozen=frozen)
+                     unsafe_hash=unsafe_hash, frozen=frozen,
+                     match_args=match_args)
 
 
 def replace(obj, /, **changes):
@@ -1271,7 +1315,7 @@ def replace(obj, /, **changes):
             continue
 
         if f.name not in changes:
-            if f._field_type is _FIELD_INITVAR:
+            if f._field_type is _FIELD_INITVAR and f.default is MISSING:
                 raise ValueError(f"InitVar {f.name!r} "
                                  'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)
