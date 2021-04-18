@@ -90,8 +90,13 @@ The following exceptions are used mostly as base classes for other exceptions.
    .. method:: with_traceback(tb)
 
       This method sets *tb* as the new traceback for the exception and returns
-      the exception object.  It is usually used in exception handling code like
-      this::
+      the exception object.  It was more commonly used before the exception
+      chaining features of :pep:`3134` became available.  The following example
+      shows how we can convert an instance of ``SomeException`` into an
+      instance of ``OtherException`` while preserving the traceback.  Once
+      raised, the current frame is pushed onto the traceback of the
+      ``OtherException``, as would have happened to the traceback of the
+      original ``SomeException`` had we allowed it to propagate to the caller.
 
          try:
              ...
@@ -144,6 +149,13 @@ The following exceptions are the exceptions that are usually raised.
    assignment fails.  (When an object does not support attribute references or
    attribute assignments at all, :exc:`TypeError` is raised.)
 
+   The :attr:`name` and :attr:`obj` attributes can be set using keyword-only
+   arguments to the constructor. When set they represent the name of the attribute
+   that was attempted to be accessed and the object that was accessed for said
+   attribute, respectively.
+
+   .. versionchanged:: 3.10
+      Added the :attr:`name` and :attr:`obj` attributes.
 
 .. exception:: EOFError
 
@@ -230,6 +242,13 @@ The following exceptions are the exceptions that are usually raised.
    unqualified names.  The associated value is an error message that includes the
    name that could not be found.
 
+   The :attr:`name` attribute can be set using a keyword-only argument to the
+   constructor. When set it represent the name of the variable that was attempted
+   to be accessed.
+
+   .. versionchanged:: 3.10
+      Added the :attr:`name` attribute.
+
 
 .. exception:: NotImplementedError
 
@@ -313,8 +332,8 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.4
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
-      filesystem encoding.  Also, the *filename2* constructor argument and
-      attribute was added.
+      :term:`filesystem encoding and error handler`. Also, the *filename2*
+      constructor argument and attribute was added.
 
 
 .. exception:: OverflowError
@@ -397,9 +416,25 @@ The following exceptions are the exceptions that are usually raised.
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
-   Instances of this class have attributes :attr:`filename`, :attr:`lineno`,
-   :attr:`offset` and :attr:`text` for easier access to the details.  :func:`str`
-   of the exception instance returns only the message.
+   The :func:`str` of the exception instance returns only the error message.
+
+   .. attribute:: filename
+
+      The name of the file the syntax error occurred in.
+
+   .. attribute:: lineno
+
+      Which line number in the file the error occurred in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
+
+   .. attribute:: offset
+
+      The column in the line where the error occurred. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
+
+   .. attribute:: text
+
+      The source code text involved in the error.
 
 
 .. exception:: IndentationError
@@ -734,6 +769,15 @@ The following exceptions are used as warning categories; see the
 .. exception:: UnicodeWarning
 
    Base class for warnings related to Unicode.
+
+
+.. exception:: EncodingWarning
+
+   Base class for warnings related to encodings.
+
+   See :ref:`io-encoding-warning` for details.
+
+   .. versionadded:: 3.10
 
 
 .. exception:: BytesWarning

@@ -446,7 +446,7 @@ class EnsurePipTest(BaseTest):
             # pip's cross-version compatibility may trigger deprecation
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.
-            envvars["PYTHONWARNINGS"] = "e"
+            envvars["PYTHONWARNINGS"] = "ignore"
             # ensurepip is different enough from a normal pip invocation
             # that we want to ensure it ignores the normal pip environment
             # variable settings. We set PIP_NO_INSTALL here specifically
@@ -485,7 +485,8 @@ class EnsurePipTest(BaseTest):
         # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         # Ignore DeprecationWarning since pip code is not part of Python
-        out, err = check_output([envpy, '-W', 'ignore::DeprecationWarning', '-I',
+        out, err = check_output([envpy, '-W', 'ignore::DeprecationWarning',
+               '-W', 'ignore::ImportWarning', '-I',
                '-m', 'pip', '--version'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
@@ -501,8 +502,12 @@ class EnsurePipTest(BaseTest):
         # Check the private uninstall command provided for the Windows
         # installers works (at least in a virtual environment)
         with EnvironmentVarGuard() as envvars:
+            # It seems ensurepip._uninstall calls subprocesses which do not
+            # inherit the interpreter settings.
+            envvars["PYTHONWARNINGS"] = "ignore"
             out, err = check_output([envpy,
-                '-W', 'ignore::DeprecationWarning', '-I',
+                '-W', 'ignore::DeprecationWarning',
+                '-W', 'ignore::ImportWarning', '-I',
                 '-m', 'ensurepip._uninstall'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results

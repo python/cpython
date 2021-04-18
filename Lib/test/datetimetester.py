@@ -1781,6 +1781,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassDate))
 
     def test_backdoor_resistance(self):
         # For fast unpickling, the constructor accepts a pickle byte string.
@@ -2308,6 +2309,7 @@ class TestDateTime(TestDate):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassDatetime))
 
     def test_compat_unpickle(self):
         tests = [
@@ -2607,6 +2609,7 @@ class TestDateTime(TestDate):
 
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
+        with self.assertRaises(ValueError): strptime("z", "%z")
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
@@ -3357,6 +3360,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassTime))
 
     def test_compat_unpickle(self):
         tests = [
@@ -5991,30 +5995,36 @@ class CapiTest(unittest.TestCase):
 
         for klass in [datetime, DateTimeSubclass]:
             for args in [(1993, 8, 26, 22, 12, 55, 99999),
-                         (1993, 8, 26, 22, 12, 55, 99999)]:
+                         (1993, 8, 26, 22, 12, 55, 99999,
+                          timezone.utc)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond = _testcapi.PyDateTime_DATE_GET(d)
+                    hour, minute, second, microsecond, tzinfo = \
+                                            _testcapi.PyDateTime_DATE_GET(d)
 
                     self.assertEqual(hour, d.hour)
                     self.assertEqual(minute, d.minute)
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
+                    self.assertIs(tzinfo, d.tzinfo)
 
     def test_PyDateTime_TIME_GET(self):
         class TimeSubclass(time):
             pass
 
         for klass in [time, TimeSubclass]:
-            for args in [(12, 30, 20, 10), (12, 30, 20, 10)]:
+            for args in [(12, 30, 20, 10),
+                         (12, 30, 20, 10, timezone.utc)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond = _testcapi.PyDateTime_TIME_GET(d)
+                    hour, minute, second, microsecond, tzinfo = \
+                                              _testcapi.PyDateTime_TIME_GET(d)
 
                     self.assertEqual(hour, d.hour)
                     self.assertEqual(minute, d.minute)
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
+                    self.assertIs(tzinfo, d.tzinfo)
 
     def test_timezones_offset_zero(self):
         utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()

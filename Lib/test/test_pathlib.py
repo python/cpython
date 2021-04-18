@@ -440,9 +440,18 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
         self.assertEqual(par[2], P('.'))
+        self.assertEqual(par[-1], P('.'))
+        self.assertEqual(par[-2], P('a'))
+        self.assertEqual(par[-3], P('a/b'))
+        self.assertEqual(par[0:1], (P('a/b'),))
+        self.assertEqual(par[:2], (P('a/b'), P('a')))
+        self.assertEqual(par[:-1], (P('a/b'), P('a')))
+        self.assertEqual(par[1:], (P('a'), P('.')))
+        self.assertEqual(par[::2], (P('a/b'), P('.')))
+        self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
         self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
         with self.assertRaises(IndexError):
-            par[-1]
+            par[-4]
         with self.assertRaises(IndexError):
             par[3]
         with self.assertRaises(TypeError):
@@ -454,6 +463,12 @@ class _BasePurePathTest(object):
         self.assertEqual(par[0], P('/a/b'))
         self.assertEqual(par[1], P('/a'))
         self.assertEqual(par[2], P('/'))
+        self.assertEqual(par[0:1], (P('/a/b'),))
+        self.assertEqual(par[:2], (P('/a/b'), P('/a')))
+        self.assertEqual(par[:-1], (P('/a/b'), P('/a')))
+        self.assertEqual(par[1:], (P('/a'), P('/')))
+        self.assertEqual(par[::2], (P('/a/b'), P('/')))
+        self.assertEqual(par[::-1], (P('/'), P('/a'), P('/a/b')))
         self.assertEqual(list(par), [P('/a/b'), P('/a'), P('/')])
         with self.assertRaises(IndexError):
             par[3]
@@ -905,6 +920,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:a'))
         self.assertEqual(par[1], P('z:'))
+        self.assertEqual(par[0:1], (P('z:a'),))
+        self.assertEqual(par[:-1], (P('z:a'),))
+        self.assertEqual(par[:2], (P('z:a'), P('z:')))
+        self.assertEqual(par[1:], (P('z:'),))
+        self.assertEqual(par[::2], (P('z:a'),))
+        self.assertEqual(par[::-1], (P('z:'), P('z:a')))
         self.assertEqual(list(par), [P('z:a'), P('z:')])
         with self.assertRaises(IndexError):
             par[2]
@@ -913,6 +934,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('z:/a'))
         self.assertEqual(par[1], P('z:/'))
+        self.assertEqual(par[0:1], (P('z:/a'),))
+        self.assertEqual(par[0:-1], (P('z:/a'),))
+        self.assertEqual(par[:2], (P('z:/a'), P('z:/')))
+        self.assertEqual(par[1:], (P('z:/'),))
+        self.assertEqual(par[::2], (P('z:/a'),))
+        self.assertEqual(par[::-1], (P('z:/'), P('z:/a'),))
         self.assertEqual(list(par), [P('z:/a'), P('z:/')])
         with self.assertRaises(IndexError):
             par[2]
@@ -921,6 +948,12 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(len(par), 2)
         self.assertEqual(par[0], P('//a/b/c'))
         self.assertEqual(par[1], P('//a/b'))
+        self.assertEqual(par[0:1], (P('//a/b/c'),))
+        self.assertEqual(par[0:-1], (P('//a/b/c'),))
+        self.assertEqual(par[:2], (P('//a/b/c'), P('//a/b')))
+        self.assertEqual(par[1:], (P('//a/b'),))
+        self.assertEqual(par[::2], (P('//a/b/c'),))
+        self.assertEqual(par[::-1], (P('//a/b'), P('//a/b/c')))
         self.assertEqual(list(par), [P('//a/b/c'), P('//a/b')])
         with self.assertRaises(IndexError):
             par[2]
@@ -1510,6 +1543,26 @@ class _BasePathTest(object):
         self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
         self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
 
+    def test_write_text_with_newlines(self):
+        p = self.cls(BASE)
+        # Check that `\n` character change nothing
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\n')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\nfghlk\n\rmnopq')
+        # Check that `\r` character replaces `\n`
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\rfghlk\r\rmnopq')
+        # Check that `\r\n` character replaces `\n`
+        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r\n')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                         b'abcde\r\r\nfghlk\r\n\rmnopq')
+        # Check that no argument passed will change `\n` to `os.linesep`
+        os_linesep_byte = bytes(os.linesep, encoding='ascii')
+        (p / 'fileA').write_text('abcde\nfghlk\n\rmnopq')
+        self.assertEqual((p / 'fileA').read_bytes(),
+                          b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
+
     def test_iterdir(self):
         P = self.cls
         p = P(BASE)
@@ -1775,6 +1828,21 @@ class _BasePathTest(object):
         p.chmod(new_mode)
         self.assertEqual(p.stat().st_mode, new_mode)
 
+    # On Windows, os.chmod does not follow symlinks (issue #15411)
+    @only_posix
+    def test_chmod_follow_symlinks_true(self):
+        p = self.cls(BASE) / 'linkA'
+        q = p.resolve()
+        mode = q.stat().st_mode
+        # Clear writable bit.
+        new_mode = mode & ~0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+        # Set writable bit
+        new_mode = mode | 0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+
     # XXX also need a test for lchmod.
 
     def test_stat(self):
@@ -1785,6 +1853,17 @@ class _BasePathTest(object):
         p.chmod(st.st_mode ^ 0o222)
         self.addCleanup(p.chmod, st.st_mode)
         self.assertNotEqual(p.stat(), st)
+
+    @os_helper.skip_unless_symlink
+    def test_stat_no_follow_symlinks(self):
+        p = self.cls(BASE) / 'linkA'
+        st = p.stat()
+        self.assertNotEqual(st, p.stat(follow_symlinks=False))
+
+    def test_stat_no_follow_symlinks_nosymlink(self):
+        p = self.cls(BASE) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.stat(follow_symlinks=False))
 
     @os_helper.skip_unless_symlink
     def test_lstat(self):
@@ -2166,6 +2245,8 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_fifo(), False)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_is_fifo_true(self):
         P = self.cls(BASE, 'myfifo')
         try:
@@ -2412,6 +2493,8 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
                          'pwd module does not expose getpwall()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                     "no home directory on VxWorks")
     def test_expanduser(self):
         P = self.cls
         import_helper.import_module('pwd')
@@ -2526,7 +2609,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 env.pop('USERNAME', None)
                 self.assertEqual(p1.expanduser(),
                                  P('C:/Users/alice/My Documents'))
-                self.assertRaises(KeyError, p2.expanduser)
+                self.assertRaises(RuntimeError, p2.expanduser)
                 env['USERNAME'] = 'alice'
                 self.assertEqual(p2.expanduser(),
                                  P('C:/Users/alice/My Documents'))

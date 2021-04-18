@@ -55,6 +55,7 @@ raised for division by zero and mod by zero.
 #include "Python.h"
 #include "pycore_bitutils.h"      // _Py_bit_length()
 #include "pycore_dtoa.h"
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -850,7 +851,7 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_One) {
+        if (res == _PyLong_GetOne()) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -923,7 +924,7 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_Zero) {
+        if (res == _PyLong_GetZero()) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -1837,7 +1838,7 @@ math_isqrt(PyObject *module, PyObject *n)
     }
 
     if (a_too_large) {
-        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_One));
+        Py_SETREF(a, PyNumber_Subtract(a, _PyLong_GetOne()));
     }
     Py_DECREF(n);
     return a;
@@ -1874,7 +1875,7 @@ math_isqrt(PyObject *module, PyObject *n)
  *        (1) *
  *        (1) *
  *        (1 * 3 * 5) *
- *        (1 * 3 * 5 * 7 * 9)
+ *        (1 * 3 * 5 * 7 * 9) *
  *        (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
  *
  * Here i goes from large to small: the first term corresponds to i=4 (any
@@ -2494,7 +2495,7 @@ References:
 3. Square root differential correction:  https://arxiv.org/pdf/1904.09481.pdf
 4. Data dependency graph:  https://bugs.python.org/file49439/hypot.png
 5. https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
-6. Analysis of internal accuracy:  https://bugs.python.org/file49435/best_frac.py
+6. Analysis of internal accuracy:  https://bugs.python.org/file49484/best_frac.py
 7. Commutativity test:  https://bugs.python.org/file49448/test_hypot_commutativity.py
 
 */
@@ -2502,8 +2503,8 @@ References:
 static inline double
 vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 {
-    const double T27 = 134217729.0;     /* ldexp(1.0, 27)+1.0) */
-    double x, csum = 1.0, oldcsum, scale, frac=0.0, frac_mid=0.0, frac_lo=0.0;
+    const double T27 = 134217729.0;     /* ldexp(1.0, 27) + 1.0) */
+    double x, scale, oldcsum, csum = 1.0, frac1 = 0.0, frac2 = 0.0, frac3 = 0.0;
     double t, hi, lo, h;
     int max_e;
     Py_ssize_t i;
@@ -2539,19 +2540,18 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac += (oldcsum - csum) + x;
+            frac1 += (oldcsum - csum) + x;
 
             x = 2.0 * hi * lo;
             assert(fabs(csum) >= fabs(x));
             oldcsum = csum;
             csum += x;
-            frac_mid += (oldcsum - csum) + x;
+            frac2 += (oldcsum - csum) + x;
 
             assert(csum + lo * lo == csum);
-            frac_lo += lo * lo;
+            frac3 += lo * lo;
         }
-        frac += frac_lo + frac_mid;
-        h = sqrt(csum - 1.0 + frac);
+        h = sqrt(csum - 1.0 + (frac1 + frac2 + frac3));
 
         x = h;
         t = x * T27;
@@ -2563,21 +2563,21 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
 
         x = -2.0 * hi * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac2 += (oldcsum - csum) + x;
 
         x = -lo * lo;
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac3 += (oldcsum - csum) + x;
 
-        x = csum - 1.0 + frac;
+        x = csum - 1.0 + (frac1 + frac2 + frac3);
         return (h + x / (2.0 * h)) / scale;
     }
     /* When max_e < -1023, ldexp(1.0, -max_e) overflows.
@@ -2592,9 +2592,9 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
         assert(fabs(csum) >= fabs(x));
         oldcsum = csum;
         csum += x;
-        frac += (oldcsum - csum) + x;
+        frac1 += (oldcsum - csum) + x;
     }
-    return max * sqrt(csum - 1.0 + frac);
+    return max * sqrt(csum - 1.0 + frac1);
 }
 
 #define NUM_STACK_ELEMS 16
@@ -3296,7 +3296,7 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
     factor = n;
     Py_INCREF(factor);
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
         if (factor == NULL) {
             goto error;
         }
@@ -3418,7 +3418,7 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
     factor = n;
     Py_INCREF(factor);
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
         if (factor == NULL) {
             goto error;
         }
@@ -3471,6 +3471,12 @@ math_nextafter_impl(PyObject *module, double x, double y)
     if (x == y) {
         /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
            Bug fixed in bos.adt.libm 7.2.2.0 by APAR IV95512. */
+        return PyFloat_FromDouble(y);
+    }
+    if (Py_IS_NAN(x)) {
+        return PyFloat_FromDouble(x);
+    }
+    if (Py_IS_NAN(y)) {
         return PyFloat_FromDouble(y);
     }
 #endif

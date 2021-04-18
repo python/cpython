@@ -62,6 +62,17 @@ typedef struct {
     PyObject *value;
 } PyStopIterationObject;
 
+typedef struct {
+    PyException_HEAD
+    PyObject *name;
+} PyNameErrorObject;
+
+typedef struct {
+    PyException_HEAD
+    PyObject *obj;
+    PyObject *name;
+} PyAttributeErrorObject;
+
 /* Compatibility typedefs */
 typedef PyOSErrorObject PyEnvironmentErrorObject;
 #ifdef MS_WINDOWS
@@ -77,10 +88,6 @@ PyAPI_FUNC(void) _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, Py
 /* Context manipulation (PEP 3134) */
 
 PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
-
-/* */
-
-#define PyExceptionClass_Name(x)  (((PyTypeObject*)(x))->tp_name)
 
 /* Convenience functions */
 

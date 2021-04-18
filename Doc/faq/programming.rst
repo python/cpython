@@ -942,7 +942,7 @@ There are various techniques.
      f()
 
 
-* Use :func:`locals` or :func:`eval` to resolve the function name::
+* Use :func:`locals` to resolve the function name::
 
      def myFunc():
          print("hello")
@@ -952,12 +952,6 @@ There are various techniques.
      f = locals()[fname]
      f()
 
-     f = eval(fname)
-     f()
-
-  Note: Using :func:`eval` is slow and dangerous.  If you don't have absolute
-  control over the contents of the string, someone could pass a string that
-  resulted in an arbitrary function being executed.
 
 Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
 -------------------------------------------------------------------------------------
@@ -1122,7 +1116,7 @@ trailing newline from a string.
 How do I iterate over a sequence in reverse order?
 --------------------------------------------------
 
-Use the :func:`reversed` built-in function, which is new in Python 2.4::
+Use the :func:`reversed` built-in function::
 
    for x in reversed(sequence):
        ...  # do something with x ...
@@ -1130,18 +1124,13 @@ Use the :func:`reversed` built-in function, which is new in Python 2.4::
 This won't touch your original sequence, but build a new copy with reversed
 order to iterate over.
 
-With Python 2.3, you can use an extended slice syntax::
-
-   for x in sequence[::-1]:
-       ...  # do something with x ...
-
 
 How do you remove duplicates from a list?
 -----------------------------------------
 
 See the Python Cookbook for a long discussion of many ways to do this:
 
-   https://github.com/ActiveState/code/tree/master/recipes/Python/52560_Remove_duplicates/recipe-52560.py
+   https://code.activestate.com/recipes/52560/
 
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::
@@ -1164,6 +1153,21 @@ This converts the list into a set, thereby removing duplicates, and then back
 into a list.
 
 
+How do you remove multiple items from a list
+--------------------------------------------
+
+As with removing duplicates, explicitly iterating in reverse with a
+delete condition is one possibility.  However, it is easier and faster
+to use slice replacement with an implicit or explicit forward iteration.
+Here are three variations.::
+
+   mylist[:] = filter(keep_function, mylist)
+   mylist[:] = (x for x in mylist if keep_condition)
+   mylist[:] = [x for x in mylist if keep_condition]
+
+The list comprehension may be fastest.
+
+
 How do you make an array in Python?
 -----------------------------------
 
@@ -1176,7 +1180,7 @@ difference is that a Python list can contain objects of many different types.
 
 The ``array`` module also provides methods for creating arrays of fixed types
 with compact representations, but they are slower to index than lists.  Also
-note that the Numeric extensions and others define array-like structures with
+note that NumPy and other third party packages define array-like structures with
 various characteristics as well.
 
 To get Lisp-style linked lists, you can emulate cons cells using tuples::
@@ -1366,20 +1370,6 @@ out the element you want. ::
    ['else', 'sort', 'to', 'something']
 
 
-An alternative for the last step is::
-
-   >>> result = []
-   >>> for p in pairs: result.append(p[1])
-
-If you find this more legible, you might prefer to use this instead of the final
-list comprehension.  However, it is almost twice as slow for long lists.  Why?
-First, the ``append()`` operation has to reallocate memory, and while it uses
-some tricks to avoid doing that each time, it still has to do it occasionally,
-and that costs quite a bit.  Second, the expression "result.append" requires an
-extra attribute lookup, and third, there's a speed reduction from having to make
-all those function calls.
-
-
 Objects
 =======
 
@@ -1429,6 +1419,41 @@ is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
 ``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
+
+Note that :func:`isinstance` also checks for virtual inheritance from an
+:term:`abstract base class`.  So, the test will return ``True`` for a
+registered class even if hasn't directly or indirectly inherited from it.  To
+test for "true inheritance", scan the :term:`MRO` of the class:
+
+.. testcode::
+
+    from collections.abc import Mapping
+
+    class P:
+         pass
+
+    class C(P):
+        pass
+
+    Mapping.register(P)
+
+.. doctest::
+
+    >>> c = C()
+    >>> isinstance(c, C)        # direct
+    True
+    >>> isinstance(c, P)        # indirect
+    True
+    >>> isinstance(c, Mapping)  # virtual
+    True
+
+    # Actual inheritance chain
+    >>> type(c).__mro__
+    (<class 'C'>, <class 'P'>, <class 'object'>)
+
+    # Test for "true inheritance"
+    >>> Mapping in type(c).__mro__
+    False
 
 Note that most programs do not use :func:`isinstance` on user-defined classes
 very often.  If you are developing the classes yourself, a more proper
@@ -1504,37 +1529,36 @@ Most :meth:`__setattr__` implementations must modify ``self.__dict__`` to store
 local state for self without causing an infinite recursion.
 
 
-How do I call a method defined in a base class from a derived class that overrides it?
---------------------------------------------------------------------------------------
+How do I call a method defined in a base class from a derived class that extends it?
+------------------------------------------------------------------------------------
 
 Use the built-in :func:`super` function::
 
    class Derived(Base):
        def meth(self):
-           super(Derived, self).meth()
+           super().meth()  # calls Base.meth
 
-For version prior to 3.0, you may be using classic classes: For a class
-definition such as ``class Derived(Base): ...`` you can call method ``meth()``
-defined in ``Base`` (or one of ``Base``'s base classes) as ``Base.meth(self,
-arguments...)``.  Here, ``Base.meth`` is an unbound method, so you need to
-provide the ``self`` argument.
+In the example, :func:`super` will automatically determine the instance from
+which it was called (the ``self`` value), look up the :term:`method resolution
+order` (MRO) with ``type(self).__mro__``, and return the next in line after
+``Derived`` in the MRO: ``Base``.
 
 
 How can I organize my code to make it easier to change the base class?
 ----------------------------------------------------------------------
 
-You could define an alias for the base class, assign the real base class to it
-before your class definition, and use the alias throughout your class.  Then all
+You could assign the base class to an alias and derive from the alias.  Then all
 you have to change is the value assigned to the alias.  Incidentally, this trick
 is also handy if you want to decide dynamically (e.g. depending on availability
 of resources) which base class to use.  Example::
 
-   BaseAlias = <real base class>
+   class Base:
+       ...
+
+   BaseAlias = Base
 
    class Derived(BaseAlias):
-       def meth(self):
-           BaseAlias.meth(self)
-           ...
+       ...
 
 
 How do I create static class data and static class methods?
@@ -1712,6 +1736,93 @@ to the object:
 13891296
 
 
+When can I rely on identity tests with the *is* operator?
+---------------------------------------------------------
+
+The ``is`` operator tests for object identity.  The test ``a is b`` is
+equivalent to ``id(a) == id(b)``.
+
+The most important property of an identity test is that an object is always
+identical to itself, ``a is a`` always returns ``True``.  Identity tests are
+usually faster than equality tests.  And unlike equality tests, identity tests
+are guaranteed to return a boolean ``True`` or ``False``.
+
+However, identity tests can *only* be substituted for equality tests when
+object identity is assured.  Generally, there are three circumstances where
+identity is guaranteed:
+
+1) Assignments create new names but do not change object identity.  After the
+assignment ``new = old``, it is guaranteed that ``new is old``.
+
+2) Putting an object in a container that stores object references does not
+change object identity.  After the list assignment ``s[0] = x``, it is
+guaranteed that ``s[0] is x``.
+
+3) If an object is a singleton, it means that only one instance of that object
+can exist.  After the assignments ``a = None`` and ``b = None``, it is
+guaranteed that ``a is b`` because ``None`` is a singleton.
+
+In most other circumstances, identity tests are inadvisable and equality tests
+are preferred.  In particular, identity tests should not be used to check
+constants such as :class:`int` and :class:`str` which aren't guaranteed to be
+singletons::
+
+    >>> a = 1000
+    >>> b = 500
+    >>> c = b + 500
+    >>> a is c
+    False
+
+    >>> a = 'Python'
+    >>> b = 'Py'
+    >>> c = b + 'thon'
+    >>> a is c
+    False
+
+Likewise, new instances of mutable containers are never identical::
+
+    >>> a = []
+    >>> b = []
+    >>> a is b
+    False
+
+In the standard library code, you will see several common patterns for
+correctly using identity tests:
+
+1) As recommended by :pep:`8`, an identity test is the preferred way to check
+for ``None``.  This reads like plain English in code and avoids confusion with
+other objects that may have boolean values that evaluate to false.
+
+2) Detecting optional arguments can be tricky when ``None`` is a valid input
+value.  In those situations, you can create an singleton sentinel object
+guaranteed to be distinct from other objects.  For example, here is how
+to implement a method that behaves like :meth:`dict.pop`::
+
+   _sentinel = object()
+
+   def pop(self, key, default=_sentinel):
+       if key in self:
+           value = self[key]
+           del self[key]
+           return value
+       if default is _sentinel:
+           raise KeyError(key)
+       return default
+
+3) Container implementations sometimes need to augment equality tests with
+identity tests.  This prevents the code from being confused by objects such as
+``float('NaN')`` that are not equal to themselves.
+
+For example, here is the implementation of
+:meth:`collections.abc.Sequence.__contains__`::
+
+    def __contains__(self, value):
+        for v in self:
+            if v is value or v == value:
+                return True
+        return False
+
+
 Modules
 =======
 
@@ -1787,26 +1898,26 @@ How can I have modules that mutually import each other?
 
 Suppose you have the following modules:
 
-foo.py::
+:file:`foo.py`::
 
    from bar import bar_var
    foo_var = 1
 
-bar.py::
+:file:`bar.py`::
 
    from foo import foo_var
    bar_var = 2
 
 The problem is that the interpreter will perform the following steps:
 
-* main imports foo
-* Empty globals for foo are created
-* foo is compiled and starts executing
-* foo imports bar
-* Empty globals for bar are created
-* bar is compiled and starts executing
-* bar imports foo (which is a no-op since there already is a module named foo)
-* bar.foo_var = foo.foo_var
+* main imports ``foo``
+* Empty globals for ``foo`` are created
+* ``foo`` is compiled and starts executing
+* ``foo`` imports ``bar``
+* Empty globals for ``bar`` are created
+* ``bar`` is compiled and starts executing
+* ``bar`` imports ``foo`` (which is a no-op since there already is a module named ``foo``)
+* The import mechanism tries to read ``foo_var`` from ``foo`` globals, to set ``bar.foo_var = foo.foo_var``
 
 The last step fails, because Python isn't done with interpreting ``foo`` yet and
 the global symbol dictionary for ``foo`` is still empty.

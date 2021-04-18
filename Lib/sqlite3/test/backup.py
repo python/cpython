@@ -17,9 +17,11 @@ class BackupTests(unittest.TestCase):
         self.assertEqual(result[0][0], 3)
         self.assertEqual(result[1][0], 4)
 
-    def test_bad_target_none(self):
+    def test_bad_target(self):
         with self.assertRaises(TypeError):
             self.cx.backup(None)
+        with self.assertRaises(TypeError):
+            self.cx.backup()
 
     def test_bad_target_filename(self):
         with self.assertRaises(TypeError):
@@ -34,6 +36,13 @@ class BackupTests(unittest.TestCase):
         bck.close()
         with self.assertRaises(sqlite.ProgrammingError):
             self.cx.backup(bck)
+
+    def test_bad_source_closed_connection(self):
+        bck = sqlite.connect(':memory:')
+        source = sqlite.connect(":memory:")
+        source.close()
+        with self.assertRaises(sqlite.ProgrammingError):
+            source.backup(bck)
 
     def test_bad_target_in_transaction(self):
         bck = sqlite.connect(':memory:')
@@ -140,10 +149,7 @@ class BackupTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError) as cm:
             with sqlite.connect(':memory:') as bck:
                 self.cx.backup(bck, name='non-existing')
-        self.assertIn(
-            str(cm.exception),
-            ['SQL logic error', 'SQL logic error or missing database']
-        )
+        self.assertIn("unknown database", str(cm.exception))
 
         self.cx.execute("ATTACH DATABASE ':memory:' AS attached_db")
         self.cx.execute('CREATE TABLE attached_db.foo (key INTEGER)')
@@ -155,7 +161,7 @@ class BackupTests(unittest.TestCase):
 
 
 def suite():
-    return unittest.makeSuite(BackupTests)
+    return unittest.TestLoader().loadTestsFromTestCase(BackupTests)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,2 +1,0 @@
-The PyType_FromSpec*() functions no longer overwrite the type's "__module__" attribute
-if it is set via "Py_tp_members" or "Py_tp_getset".

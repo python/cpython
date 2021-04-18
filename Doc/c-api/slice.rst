@@ -14,7 +14,8 @@ Slice Objects
 
 .. c:function:: int PySlice_Check(PyObject *ob)
 
-   Return true if *ob* is a slice object; *ob* must not be ``NULL``.
+   Return true if *ob* is a slice object; *ob* must not be ``NULL``.  This
+   function always succeeds.
 
 
 .. c:function:: PyObject* PySlice_New(PyObject *start, PyObject *stop, PyObject *step)

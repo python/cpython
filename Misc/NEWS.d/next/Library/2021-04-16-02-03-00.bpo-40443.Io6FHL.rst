@@ -1,0 +1,2 @@
+Remove unused imports: pyclbr no longer uses copy, and typing no longer uses
+ast. Patch by Victor Stinner.

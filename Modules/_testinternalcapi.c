@@ -12,10 +12,12 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_atomic_funcs.h" // _Py_atomic_int_get()
 #include "pycore_bitutils.h"     // _Py_bswap32()
-#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
-#include "pycore_hashtable.h"    // _Py_hashtable_new()
 #include "pycore_gc.h"           // PyGC_Head
+#include "pycore_hashtable.h"    // _Py_hashtable_new()
+#include "pycore_initconfig.h"   // _Py_GetConfigsAsDict()
+#include "pycore_interp.h"       // _PyInterpreterState_GetConfigCopy()
 
 
 static PyObject *
@@ -231,6 +233,52 @@ test_hashtable(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+test_get_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        return NULL;
+    }
+    PyObject *dict = _PyConfig_AsDict(&config);
+    PyConfig_Clear(&config);
+    return dict;
+}
+
+
+static PyObject *
+test_set_config(PyObject *Py_UNUSED(self), PyObject *dict)
+{
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    if (_PyConfig_FromDict(&config, dict) < 0) {
+        goto error;
+    }
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        goto error;
+    }
+    PyConfig_Clear(&config);
+    Py_RETURN_NONE;
+
+error:
+    PyConfig_Clear(&config);
+    return NULL;
+}
+
+
+static PyObject*
+test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    // Test _Py_atomic_size_get() and _Py_atomic_size_set()
+    Py_ssize_t var = 1;
+    _Py_atomic_size_set(&var, 2);
+    assert(_Py_atomic_size_get(&var) == 2);
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -238,6 +286,9 @@ static PyMethodDef TestMethods[] = {
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
     {"test_hashtable", test_hashtable, METH_NOARGS},
+    {"get_config", test_get_config, METH_NOARGS},
+    {"set_config", test_set_config, METH_O},
+    {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

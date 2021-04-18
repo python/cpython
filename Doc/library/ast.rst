@@ -80,12 +80,13 @@ Node classes
                   end_col_offset
 
       Instances of :class:`ast.expr` and :class:`ast.stmt` subclasses have
-      :attr:`lineno`, :attr:`col_offset`, :attr:`lineno`, and :attr:`col_offset`
-      attributes.  The :attr:`lineno` and :attr:`end_lineno` are the first and
-      last line numbers of source text span (1-indexed so the first line is line 1)
-      and the :attr:`col_offset` and :attr:`end_col_offset` are the corresponding
-      UTF-8 byte offsets of the first and last tokens that generated the node.
-      The UTF-8 offset is recorded because the parser uses UTF-8 internally.
+      :attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`, and
+      :attr:`end_col_offset` attributes.  The :attr:`lineno` and :attr:`end_lineno`
+      are the first and last line numbers of source text span (1-indexed so the
+      first line is line 1) and the :attr:`col_offset` and :attr:`end_col_offset`
+      are the corresponding UTF-8 byte offsets of the first and last tokens that
+      generated the node. The UTF-8 offset is recorded because the parser uses
+      UTF-8 internally.
 
       Note that the end positions are not required by the compiler and are
       therefore optional. The end offset is *after* the last symbol, for example
@@ -139,6 +140,11 @@ Node classes
    In the meantime, instantiating them will return an instance of
    a different class.
 
+.. note::
+    The descriptions of the specific node classes displayed here
+    were initially adapted from the fantastic `Green Tree
+    Snakes <https://greentreesnakes.readthedocs.io/en/latest/>`__ project and
+    all its contributors.
 
 Literals
 ^^^^^^^^
@@ -832,7 +838,7 @@ Statements
    context), ``op`` is :class:`Add`, and ``value`` is a :class:`Constant` with
    value for 1.
 
-   The ``target`` attribute connot be of class :class:`Tuple` or :class:`List`,
+   The ``target`` attribute cannot be of class :class:`Tuple` or :class:`List`,
    unlike the targets of :class:`Assign`.
 
    .. doctest::
@@ -1239,6 +1245,128 @@ Control flow
             type_ignores=[])
 
 
+.. class:: Match(subject, cases)
+
+   A ``match`` statement. ``subject`` holds the subject of the match (the object
+   that is being matched against the cases) and ``cases`` contains an iterable of
+   :class:`match_case` nodes with the different cases.
+
+
+.. class:: match_case(pattern, guard, body)
+
+    A single case pattern in a ``match`` statement. ``pattern`` contains the
+    match pattern that will be used to match the subject against. Notice that
+    the meaning of the :class:`AST` nodes in this attribute have a different
+    meaning than in other places, as they represent patterns to match against.
+    The ``guard`` attribute contains an expression that will be evaluated if
+    the pattern matches the subject. If the pattern matches and the ``guard`` condition
+    is truthy, the body of the case shall be executed. ``body`` contains a list
+    of nodes to execute if the guard is truthy.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] if x>0:
+        ...         ...
+        ...     case tuple():
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=List(
+                                elts=[
+                                    Name(id='x', ctx=Store())],
+                                ctx=Load()),
+                            guard=Compare(
+                                left=Name(id='x', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=0)]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=Call(
+                                func=Name(id='tuple', ctx=Load()),
+                                args=[],
+                                keywords=[]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+.. class:: MatchAs(pattern, name)
+
+    A match "as-pattern".  The as-pattern matches whatever pattern is on its
+    left-hand side, but also binds the value to a name. ``pattern`` contains
+    the match pattern that will be used to match the subject agsinst. The ``name``
+    attribute contains the name that will be binded if the pattern is successful.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] as y:
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchAs(
+                                pattern=List(
+                                    elts=[
+                                        Name(id='x', ctx=Store())],
+                                    ctx=Load()),
+                                name='y'),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+
+.. class:: MatchOr(patterns)
+
+    A match "or-pattern". An or-pattern matches each of its subpatterns in turn
+    to the subject, until one succeeds. The or-pattern is then deemed to
+    succeed. If none of the subpatterns succeed the or-pattern fails. The
+    ``patterns`` attribute contains a list of match patterns nodes that will be
+    matched against the subject.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("""
+        ... match x:
+        ...     case [x] | (y):
+        ...         ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Match(
+                    subject=Name(id='x', ctx=Load()),
+                    cases=[
+                        match_case(
+                            pattern=MatchOr(
+                                patterns=[
+                                    List(
+                                        elts=[
+                                            Name(id='x', ctx=Store())],
+                                        ctx=Load()),
+                                    Name(id='y', ctx=Store())]),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis))])])],
+            type_ignores=[])
+
+
 Function and class definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1503,6 +1631,13 @@ Async and await
    fields as :class:`For` and :class:`With`, respectively. Only valid in the
    body of an :class:`AsyncFunctionDef`.
 
+.. note::
+   When a string is parsed by :func:`ast.parse`, operator nodes (subclasses
+   of :class:`ast.operator`, :class:`ast.unaryop`, :class:`ast.cmpop`,
+   :class:`ast.boolop` and :class:`ast.expr_context`) on the returned tree
+   will be singletons. Changes to one will be reflected in all other
+   occurrences of the same value (e.g. :class:`ast.Add`).
+
 
 :mod:`ast` Helpers
 ------------------
@@ -1568,7 +1703,7 @@ and classes for traversing abstract syntax trees:
    Safely evaluate an expression node or a string containing a Python literal or
    container display.  The string or node provided may only consist of the
    following Python literal structures: strings, bytes, numbers, tuples, lists,
-   dicts, sets, booleans, and ``None``.
+   dicts, sets, booleans, ``None`` and ``Ellipsis``.
 
    This can be used for safely evaluating strings containing Python values from
    untrusted sources without the need to parse the values oneself.  It is not
@@ -1580,11 +1715,18 @@ and classes for traversing abstract syntax trees:
       sufficiently large/complex string due to stack depth limitations
       in Python's AST compiler.
 
+      It can raise :exc:`ValueError`, :exc:`TypeError`, :exc:`SyntaxError`,
+      :exc:`MemoryError` and :exc:`RecursionError` depending on the malformed
+      input.
+
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
 
    .. versionchanged:: 3.9
       Now supports creating empty sets with ``'set()'``.
+
+   .. versionchanged:: 3.10
+      For string inputs, leading spaces and tabs are now stripped.
 
 
 .. function:: get_docstring(node, clean=True)
@@ -1751,6 +1893,34 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.9
       Added the *indent* option.
+
+
+.. _ast-compiler-flags:
+
+Compiler Flags
+--------------
+
+The following flags may be passed to :func:`compile` in order to change
+effects on the compilation of a program:
+
+.. data:: PyCF_ALLOW_TOP_LEVEL_AWAIT
+
+   Enables support for top-level ``await``, ``async for``, ``async with``
+   and async comprehensions.
+
+   .. versionadded:: 3.8
+
+.. data:: PyCF_ONLY_AST
+
+   Generates and returns an abstract syntax tree instead of returning a
+   compiled code object.
+
+.. data:: PyCF_TYPE_COMMENTS
+
+   Enables support for :pep:`484` and :pep:`526` style type comments
+   (``# type: <type>``, ``# type: ignore <stuff>``).
+
+   .. versionadded:: 3.8
 
 
 .. _ast-cli:

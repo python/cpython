@@ -62,27 +62,52 @@ The :mod:`functools` module defines the following functions:
    Example::
 
        class DataSet:
+
            def __init__(self, sequence_of_numbers):
-               self._data = sequence_of_numbers
+               self._data = tuple(sequence_of_numbers)
 
            @cached_property
            def stdev(self):
                return statistics.stdev(self._data)
 
-           @cached_property
-           def variance(self):
-               return statistics.variance(self._data)
+   The mechanics of :func:`cached_property` are somewhat different from
+   :func:`property`.  A regular property blocks attribute writes unless a
+   setter is defined. In contrast, a *cached_property* allows writes.
+
+   The *cached_property* decorator only runs on lookups and only when an
+   attribute of the same name doesn't exist.  When it does run, the
+   *cached_property* writes to the attribute with the same name. Subsequent
+   attribute reads and writes take precedence over the *cached_property*
+   method and it works like a normal attribute.
+
+   The cached value can be cleared by deleting the attribute.  This
+   allows the *cached_property* method to run again.
+
+   Note, this decorator interferes with the operation of :pep:`412`
+   key-sharing dictionaries.  This means that instance dictionaries
+   can take more space than usual.
+
+   Also, this decorator requires that the ``__dict__`` attribute on each instance
+   be a mutable mapping. This means it will not work with some types, such as
+   metaclasses (since the ``__dict__`` attributes on type instances are
+   read-only proxies for the class namespace), and those that specify
+   ``__slots__`` without including ``__dict__`` as one of the defined slots
+   (as such classes don't provide a ``__dict__`` attribute at all).
+
+   If a mutable mapping is not available or if space-efficient key sharing
+   is desired, an effect similar to :func:`cached_property` can be achieved
+   by a stacking :func:`property` on top of :func:`cache`::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @property
+           @cache
+           def stdev(self):
+               return statistics.stdev(self._data)
 
    .. versionadded:: 3.8
-
-   .. note::
-
-      This decorator requires that the ``__dict__`` attribute on each instance
-      be a mutable mapping. This means it will not work with some types, such as
-      metaclasses (since the ``__dict__`` attributes on type instances are
-      read-only proxies for the class namespace), and those that specify
-      ``__slots__`` without including ``__dict__`` as one of the defined slots
-      (as such classes don't provide a ``__dict__`` attribute at all).
 
 
 .. function:: cmp_to_key(func)
@@ -253,6 +278,13 @@ The :mod:`functools` module defines the following functions:
       performance benchmarking indicates this is a bottleneck for a given
       application, implementing all six rich comparison methods instead is
       likely to provide an easy speed boost.
+
+   .. note::
+
+      This decorator makes no attempt to override methods that have been
+      declared in the class *or its superclasses*. Meaning that if a
+      superclass defines a comparison operator, *total_ordering* will not
+      implement it again, even if the original method is abstract.
 
    .. versionadded:: 3.2
 

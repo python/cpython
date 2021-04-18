@@ -98,7 +98,7 @@ to start a process.  These *start methods* are
   *spawn*
     The parent process starts a fresh python interpreter process.  The
     child process will only inherit those resources necessary to run
-    the process objects :meth:`~Process.run` method.  In particular,
+    the process object's :meth:`~Process.run` method.  In particular,
     unnecessary file descriptors and handles from the parent process
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
@@ -2569,9 +2569,9 @@ Address Formats
   filesystem.
 
 * An ``'AF_PIPE'`` address is a string of the form
-   :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
-   pipe on a remote computer called *ServerName* one should use an address of the
-   form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
+  :samp:`r'\\\\.\\pipe\\{PipeName}'`.  To use :func:`Client` to connect to a named
+  pipe on a remote computer called *ServerName* one should use an address of the
+  form :samp:`r'\\\\{ServerName}\\pipe\\{PipeName}'` instead.
 
 Note that any string beginning with two backslashes is assumed by default to be
 an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
@@ -2660,6 +2660,46 @@ The :mod:`multiprocessing.dummy` module
 
 :mod:`multiprocessing.dummy` replicates the API of :mod:`multiprocessing` but is
 no more than a wrapper around the :mod:`threading` module.
+
+.. currentmodule:: multiprocessing.pool
+
+In particular, the ``Pool`` function provided by :mod:`multiprocessing.dummy`
+returns an instance of :class:`ThreadPool`, which is a subclass of
+:class:`Pool` that supports all the same method calls but uses a pool of
+worker threads rather than worker processes.
+
+
+.. class:: ThreadPool([processes[, initializer[, initargs]]])
+
+   A thread pool object which controls a pool of worker threads to which jobs
+   can be submitted.  :class:`ThreadPool` instances are fully interface
+   compatible with :class:`Pool` instances, and their resources must also be
+   properly managed, either by using the pool as a context manager or by
+   calling :meth:`~multiprocessing.pool.Pool.close` and
+   :meth:`~multiprocessing.pool.Pool.terminate` manually.
+
+   *processes* is the number of worker threads to use.  If *processes* is
+   ``None`` then the number returned by :func:`os.cpu_count` is used.
+
+   If *initializer* is not ``None`` then each worker process will call
+   ``initializer(*initargs)`` when it starts.
+
+   Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
+
+    .. note::
+
+        A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
+        is designed around a pool of processes and predates the introduction of
+        the :class:`concurrent.futures` module.  As such, it inherits some
+        operations that don't make sense for a pool backed by threads, and it
+        has its own type for representing the status of asynchronous jobs,
+        :class:`AsyncResult`, that is not understood by any other libraries.
+
+        Users should generally prefer to use
+        :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
+        interface that was designed around threads from the start, and which
+        returns :class:`concurrent.futures.Future` instances that are
+        compatible with many other libraries, including :mod:`asyncio`.
 
 
 .. _multiprocessing-programming:

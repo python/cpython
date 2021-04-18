@@ -10,8 +10,15 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_unionobject.h"   // _Py_UnionType
 #include "frameobject.h"
 #include "interpreteridobject.h"
+
+#ifdef Py_LIMITED_API
+   // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
+#  error "Py_LIMITED_API macro must not be defined"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,6 +143,18 @@ Py_DecRef(PyObject *o)
     Py_XDECREF(o);
 }
 
+void
+_Py_IncRef(PyObject *o)
+{
+    Py_INCREF(o);
+}
+
+void
+_Py_DecRef(PyObject *o)
+{
+    Py_DECREF(o);
+}
+
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
@@ -161,7 +180,7 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 PyObject *
 _PyObject_New(PyTypeObject *tp)
 {
-    PyObject *op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
+    PyObject *op = (PyObject *) PyObject_Malloc(_PyObject_SIZE(tp));
     if (op == NULL) {
         return PyErr_NoMemory();
     }
@@ -174,7 +193,7 @@ _PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 {
     PyVarObject *op;
     const size_t size = _PyObject_VAR_SIZE(tp, nitems);
-    op = (PyVarObject *) PyObject_MALLOC(size);
+    op = (PyVarObject *) PyObject_Malloc(size);
     if (op == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
     }
@@ -855,17 +874,6 @@ _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 }
 
 int
-_PyObject_HasAttrId(PyObject *v, _Py_Identifier *name)
-{
-    int result;
-    PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
-    if (!oname)
-        return -1;
-    result = PyObject_HasAttr(v, oname);
-    return result;
-}
-
-int
 _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
 {
     int result;
@@ -876,29 +884,60 @@ _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
     return result;
 }
 
+static inline int
+set_attribute_error_context(PyObject* v, PyObject* name)
+{
+    assert(PyErr_Occurred());
+    _Py_IDENTIFIER(name);
+    _Py_IDENTIFIER(obj);
+    // Intercept AttributeError exceptions and augment them to offer
+    // suggestions later.
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)){
+        PyObject *type, *value, *traceback;
+        PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
+        if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
+            (_PyObject_SetAttrId(value, &PyId_name, name) ||
+             _PyObject_SetAttrId(value, &PyId_obj, v))) {
+            return 1;
+        }
+        PyErr_Restore(type, value, traceback);
+    }
+    return 0;
+}
+
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
-
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
                      Py_TYPE(name)->tp_name);
         return NULL;
     }
-    if (tp->tp_getattro != NULL)
-        return (*tp->tp_getattro)(v, name);
-    if (tp->tp_getattr != NULL) {
-        const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
-            return NULL;
-        return (*tp->tp_getattr)(v, (char *)name_str);
+
+    PyObject* result = NULL;
+    if (tp->tp_getattro != NULL) {
+        result = (*tp->tp_getattro)(v, name);
     }
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
-    return NULL;
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            return NULL;
+        }
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.50s' object has no attribute '%U'",
+                    tp->tp_name, name);
+    }
+
+    if (result == NULL) {
+        set_attribute_error_context(v, name);
+    }
+    return result;
 }
 
 int
@@ -1157,6 +1196,8 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     PyErr_Format(PyExc_AttributeError,
                  "'%.50s' object has no attribute '%U'",
                  tp->tp_name, name);
+
+    set_attribute_error_context(obj, name);
     return 0;
 }
 
@@ -1387,7 +1428,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 }
 
 
-/* Test a value used as condition, e.g., in a for or if statement.
+/* Test a value used as condition, e.g., in a while or if statement.
    Return -1 if an error occurred */
 
 int
@@ -1739,82 +1780,109 @@ _PyTypes_Init(void)
         return status;
     }
 
-#define INIT_TYPE(TYPE, NAME) \
+#define INIT_TYPE(TYPE) \
     do { \
-        if (PyType_Ready(TYPE) < 0) { \
-            return _PyStatus_ERR("Can't initialize " NAME " type"); \
+        if (PyType_Ready(&(TYPE)) < 0) { \
+            return _PyStatus_ERR("Can't initialize " #TYPE " type"); \
         } \
     } while (0)
 
-    INIT_TYPE(&PyBaseObject_Type, "object");
-    INIT_TYPE(&PyType_Type, "type");
-    INIT_TYPE(&_PyWeakref_RefType, "weakref");
-    INIT_TYPE(&_PyWeakref_CallableProxyType, "callable weakref proxy");
-    INIT_TYPE(&_PyWeakref_ProxyType, "weakref proxy");
-    INIT_TYPE(&PyLong_Type, "int");
-    INIT_TYPE(&PyBool_Type, "bool");
-    INIT_TYPE(&PyByteArray_Type, "bytearray");
-    INIT_TYPE(&PyBytes_Type, "str");
-    INIT_TYPE(&PyList_Type, "list");
-    INIT_TYPE(&_PyNone_Type, "None");
-    INIT_TYPE(&_PyNotImplemented_Type, "NotImplemented");
-    INIT_TYPE(&PyTraceBack_Type, "traceback");
-    INIT_TYPE(&PySuper_Type, "super");
-    INIT_TYPE(&PyRange_Type, "range");
-    INIT_TYPE(&PyDict_Type, "dict");
-    INIT_TYPE(&PyDictKeys_Type, "dict keys");
-    INIT_TYPE(&PyDictValues_Type, "dict values");
-    INIT_TYPE(&PyDictItems_Type, "dict items");
-    INIT_TYPE(&PyDictRevIterKey_Type, "reversed dict keys");
-    INIT_TYPE(&PyDictRevIterValue_Type, "reversed dict values");
-    INIT_TYPE(&PyDictRevIterItem_Type, "reversed dict items");
-    INIT_TYPE(&PyODict_Type, "OrderedDict");
-    INIT_TYPE(&PyODictKeys_Type, "odict_keys");
-    INIT_TYPE(&PyODictItems_Type, "odict_items");
-    INIT_TYPE(&PyODictValues_Type, "odict_values");
-    INIT_TYPE(&PyODictIter_Type, "odict_keyiterator");
-    INIT_TYPE(&PySet_Type, "set");
-    INIT_TYPE(&PyUnicode_Type, "str");
-    INIT_TYPE(&PySlice_Type, "slice");
-    INIT_TYPE(&PyStaticMethod_Type, "static method");
-    INIT_TYPE(&PyComplex_Type, "complex");
-    INIT_TYPE(&PyFloat_Type, "float");
-    INIT_TYPE(&PyFrozenSet_Type, "frozenset");
-    INIT_TYPE(&PyProperty_Type, "property");
-    INIT_TYPE(&_PyManagedBuffer_Type, "managed buffer");
-    INIT_TYPE(&PyMemoryView_Type, "memoryview");
-    INIT_TYPE(&PyTuple_Type, "tuple");
-    INIT_TYPE(&PyEnum_Type, "enumerate");
-    INIT_TYPE(&PyReversed_Type, "reversed");
-    INIT_TYPE(&PyStdPrinter_Type, "StdPrinter");
-    INIT_TYPE(&PyCode_Type, "code");
-    INIT_TYPE(&PyFrame_Type, "frame");
-    INIT_TYPE(&PyCFunction_Type, "builtin function");
-    INIT_TYPE(&PyCMethod_Type, "builtin method");
-    INIT_TYPE(&PyMethod_Type, "method");
-    INIT_TYPE(&PyFunction_Type, "function");
-    INIT_TYPE(&PyDictProxy_Type, "dict proxy");
-    INIT_TYPE(&PyGen_Type, "generator");
-    INIT_TYPE(&PyGetSetDescr_Type, "get-set descriptor");
-    INIT_TYPE(&PyWrapperDescr_Type, "wrapper");
-    INIT_TYPE(&_PyMethodWrapper_Type, "method wrapper");
-    INIT_TYPE(&PyEllipsis_Type, "ellipsis");
-    INIT_TYPE(&PyMemberDescr_Type, "member descriptor");
-    INIT_TYPE(&_PyNamespace_Type, "namespace");
-    INIT_TYPE(&PyCapsule_Type, "capsule");
-    INIT_TYPE(&PyLongRangeIter_Type, "long range iterator");
-    INIT_TYPE(&PyCell_Type, "cell");
-    INIT_TYPE(&PyInstanceMethod_Type, "instance method");
-    INIT_TYPE(&PyClassMethodDescr_Type, "class method descr");
-    INIT_TYPE(&PyMethodDescr_Type, "method descr");
-    INIT_TYPE(&PyCallIter_Type, "call iter");
-    INIT_TYPE(&PySeqIter_Type, "sequence iterator");
-    INIT_TYPE(&PyPickleBuffer_Type, "pickle.PickleBuffer");
-    INIT_TYPE(&PyCoro_Type, "coroutine");
-    INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
-    INIT_TYPE(&_PyInterpreterID_Type, "interpreter ID");
-    return _PyStatus_OK();
+    // Base types
+    INIT_TYPE(PyBaseObject_Type);
+    INIT_TYPE(PyType_Type);
+    assert(PyBaseObject_Type.tp_base == NULL);
+    assert(PyType_Type.tp_base == &PyBaseObject_Type);
 
+    // All other static types
+    INIT_TYPE(PyAsyncGen_Type);
+    INIT_TYPE(PyBool_Type);
+    INIT_TYPE(PyByteArrayIter_Type);
+    INIT_TYPE(PyByteArray_Type);
+    INIT_TYPE(PyBytesIter_Type);
+    INIT_TYPE(PyBytes_Type);
+    INIT_TYPE(PyCFunction_Type);
+    INIT_TYPE(PyCMethod_Type);
+    INIT_TYPE(PyCallIter_Type);
+    INIT_TYPE(PyCapsule_Type);
+    INIT_TYPE(PyCell_Type);
+    INIT_TYPE(PyClassMethodDescr_Type);
+    INIT_TYPE(PyClassMethod_Type);
+    INIT_TYPE(PyCode_Type);
+    INIT_TYPE(PyComplex_Type);
+    INIT_TYPE(PyCoro_Type);
+    INIT_TYPE(PyDictItems_Type);
+    INIT_TYPE(PyDictIterItem_Type);
+    INIT_TYPE(PyDictIterKey_Type);
+    INIT_TYPE(PyDictIterValue_Type);
+    INIT_TYPE(PyDictKeys_Type);
+    INIT_TYPE(PyDictProxy_Type);
+    INIT_TYPE(PyDictRevIterItem_Type);
+    INIT_TYPE(PyDictRevIterKey_Type);
+    INIT_TYPE(PyDictRevIterValue_Type);
+    INIT_TYPE(PyDictValues_Type);
+    INIT_TYPE(PyDict_Type);
+    INIT_TYPE(PyEllipsis_Type);
+    INIT_TYPE(PyEnum_Type);
+    INIT_TYPE(PyFloat_Type);
+    INIT_TYPE(PyFrame_Type);
+    INIT_TYPE(PyFrozenSet_Type);
+    INIT_TYPE(PyFunction_Type);
+    INIT_TYPE(PyGen_Type);
+    INIT_TYPE(PyGetSetDescr_Type);
+    INIT_TYPE(PyInstanceMethod_Type);
+    INIT_TYPE(PyListIter_Type);
+    INIT_TYPE(PyListRevIter_Type);
+    INIT_TYPE(PyList_Type);
+    INIT_TYPE(PyLongRangeIter_Type);
+    INIT_TYPE(PyLong_Type);
+    INIT_TYPE(PyMemberDescr_Type);
+    INIT_TYPE(PyMemoryView_Type);
+    INIT_TYPE(PyMethodDescr_Type);
+    INIT_TYPE(PyMethod_Type);
+    INIT_TYPE(PyModuleDef_Type);
+    INIT_TYPE(PyModule_Type);
+    INIT_TYPE(PyODictItems_Type);
+    INIT_TYPE(PyODictIter_Type);
+    INIT_TYPE(PyODictKeys_Type);
+    INIT_TYPE(PyODictValues_Type);
+    INIT_TYPE(PyODict_Type);
+    INIT_TYPE(PyPickleBuffer_Type);
+    INIT_TYPE(PyProperty_Type);
+    INIT_TYPE(PyRangeIter_Type);
+    INIT_TYPE(PyRange_Type);
+    INIT_TYPE(PyReversed_Type);
+    INIT_TYPE(PySTEntry_Type);
+    INIT_TYPE(PySeqIter_Type);
+    INIT_TYPE(PySetIter_Type);
+    INIT_TYPE(PySet_Type);
+    INIT_TYPE(PySlice_Type);
+    INIT_TYPE(PyStaticMethod_Type);
+    INIT_TYPE(PyStdPrinter_Type);
+    INIT_TYPE(PySuper_Type);
+    INIT_TYPE(PyTraceBack_Type);
+    INIT_TYPE(PyTupleIter_Type);
+    INIT_TYPE(PyTuple_Type);
+    INIT_TYPE(PyUnicodeIter_Type);
+    INIT_TYPE(PyUnicode_Type);
+    INIT_TYPE(PyWrapperDescr_Type);
+    INIT_TYPE(Py_GenericAliasType);
+    INIT_TYPE(_PyAnextAwaitable_Type);
+    INIT_TYPE(_PyAsyncGenASend_Type);
+    INIT_TYPE(_PyAsyncGenAThrow_Type);
+    INIT_TYPE(_PyAsyncGenWrappedValue_Type);
+    INIT_TYPE(_PyCoroWrapper_Type);
+    INIT_TYPE(_PyInterpreterID_Type);
+    INIT_TYPE(_PyManagedBuffer_Type);
+    INIT_TYPE(_PyMethodWrapper_Type);
+    INIT_TYPE(_PyNamespace_Type);
+    INIT_TYPE(_PyNone_Type);
+    INIT_TYPE(_PyNotImplemented_Type);
+    INIT_TYPE(_PyWeakref_CallableProxyType);
+    INIT_TYPE(_PyWeakref_ProxyType);
+    INIT_TYPE(_PyWeakref_RefType);
+    INIT_TYPE(_Py_UnionType);
+
+    return _PyStatus_OK();
 #undef INIT_TYPE
 }
 
@@ -2145,6 +2213,15 @@ _PyTrash_end(PyThreadState *tstate)
 }
 
 
+/* bpo-40170: It's only be used in Py_TRASHCAN_BEGIN macro to hide
+   implementation details. */
+int
+_PyTrash_cond(PyObject *op, destructor dealloc)
+{
+    return Py_TYPE(op)->tp_dealloc == dealloc;
+}
+
+
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
@@ -2218,6 +2295,49 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
     return _PyObject_GET_WEAKREFS_LISTPTR(op);
 }
 
+
+#undef Py_NewRef
+#undef Py_XNewRef
+
+// Export Py_NewRef() and Py_XNewRef() as regular functions for the stable ABI.
+PyObject*
+Py_NewRef(PyObject *obj)
+{
+    return _Py_NewRef(obj);
+}
+
+PyObject*
+Py_XNewRef(PyObject *obj)
+{
+    return _Py_XNewRef(obj);
+}
+
+#undef Py_Is
+#undef Py_IsNone
+#undef Py_IsTrue
+#undef Py_IsFalse
+
+// Export Py_Is(), Py_IsNone(), Py_IsTrue(), Py_IsFalse() as regular functions
+// for the stable ABI.
+int Py_Is(PyObject *x, PyObject *y)
+{
+    return (x == y);
+}
+
+int Py_IsNone(PyObject *x)
+{
+    return Py_Is(x, Py_None);
+}
+
+int Py_IsTrue(PyObject *x)
+{
+    return Py_Is(x, Py_True);
+}
+
+int Py_IsFalse(PyObject *x)
+{
+    return Py_Is(x, Py_False);
+}
 
 #ifdef __cplusplus
 }

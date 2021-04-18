@@ -79,10 +79,6 @@ PyAPI_FUNC(void) PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator);
 PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
 
 
-PyAPI_FUNC(Py_ssize_t) _PyGC_CollectNoFail(void);
-PyAPI_FUNC(Py_ssize_t) _PyGC_CollectIfEnabled(void);
-
-
 /* Test if an object implements the garbage collector protocol */
 PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 
