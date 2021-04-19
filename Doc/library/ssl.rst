@@ -650,6 +650,17 @@ Constants
 
    .. versionadded:: 3.4.4
 
+.. data:: VERIFY_X509_PARTIAL_CHAIN
+
+   Possible value for :attr:`SSLContext.verify_flags`. It instructs OpenSSL to
+   accept intermediate CAs in the trust store to be treated as trust-anchors,
+   in the same way as the self-signed root CA certificates. This makes it
+   possible to trust certificates issued by an intermediate CA without having
+   to trust its ancestor root CA.
+
+   .. versionadded:: 3.10
+
+
 .. class:: VerifyFlags
 
    :class:`enum.IntFlag` collection of VERIFY_* constants.
