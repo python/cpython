@@ -1663,6 +1663,11 @@ _PySignal_Fini(void)
 #endif
 }
 
+int
+PyErr_HasSignals(void) {
+    return _Py_atomic_load(&is_tripped);
+}
+
 
 /* Declared in pyerrors.h */
 int
@@ -1681,7 +1686,7 @@ PyErr_CheckSignals(void)
 int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
-    if (!_Py_atomic_load(&is_tripped)) {
+    if (!PyErr_HasSignals()) {
         return 0;
     }
 

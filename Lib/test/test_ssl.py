@@ -2258,6 +2258,35 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertEqual(buf, b'foo\n')
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
 
+    def test_bulk_nonblocking_read(self):
+        # This divides up into 4 TLS records (16 KB each)
+        # In nonblocking mode, we should be able to read all four in a single
+        # drop of the GIL.
+        size = 65536
+
+        client_context, server_context, hostname = testing_context()
+        server = ThreadedEchoServer(context=server_context, chatty=False,
+                                    buffer_size=size)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                s.settimeout(0.0)
+                s.send(b'\x00' * size)
+
+                remaining = size
+                trips = 0
+                while remaining:
+                    try:
+                        remaining -= len(s.recv(size))
+                    except ssl.SSLWantReadError:
+                        time.sleep(0.01)
+                    else:
+                        trips += 1
+
+                s.close()
+        self.assertEqual(trips, 1)
+
 
 class NetworkedTests(unittest.TestCase):
 
@@ -2316,7 +2345,7 @@ class ThreadedEchoServer(threading.Thread):
         with and without the SSL wrapper around the socket connection, so
         that we can test the STARTTLS functionality."""
 
-        def __init__(self, server, connsock, addr):
+        def __init__(self, server, connsock, addr, buffer_size):
             self.server = server
             self.running = False
             self.sock = connsock
@@ -2325,6 +2354,7 @@ class ThreadedEchoServer(threading.Thread):
             self.sslconn = None
             threading.Thread.__init__(self)
             self.daemon = True
+            self.buffer_size = buffer_size
 
         def wrap_conn(self):
             try:
@@ -2382,9 +2412,9 @@ class ThreadedEchoServer(threading.Thread):
 
         def read(self):
             if self.sslconn:
-                return self.sslconn.read()
+                return self.sslconn.read(self.buffer_size)
             else:
-                return self.sock.recv(1024)
+                return self.sock.recv(self.buffer_size)
 
         def write(self, bytes):
             if self.sslconn:
@@ -2505,8 +2535,8 @@ class ThreadedEchoServer(threading.Thread):
     def __init__(self, certificate=None, ssl_version=None,
                  certreqs=None, cacerts=None,
                  chatty=True, connectionchatty=False, starttls_server=False,
-                 alpn_protocols=None,
-                 ciphers=None, context=None):
+                 alpn_protocols=None, ciphers=None, context=None,
+                 buffer_size=1024):
         if context:
             self.context = context
         else:
@@ -2535,6 +2565,7 @@ class ThreadedEchoServer(threading.Thread):
         self.conn_errors = []
         threading.Thread.__init__(self)
         self.daemon = True
+        self.buffer_size = buffer_size
 
     def __enter__(self):
         self.start(threading.Event())
@@ -2562,7 +2593,8 @@ class ThreadedEchoServer(threading.Thread):
                 if support.verbose and self.chatty:
                     sys.stdout.write(' server:  new connection from '
                                      + repr(connaddr) + '\n')
-                handler = self.ConnectionHandler(self, newconn, connaddr)
+                handler = self.ConnectionHandler(self, newconn, connaddr,
+                    self.buffer_size)
                 handler.start()
                 handler.join()
             except TimeoutError:
