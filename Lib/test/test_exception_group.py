@@ -241,6 +241,16 @@ class ExceptionGroupBasicsTests(ExceptionGroupTestBase):
         for e, tbs in leaf_generator(eg):
             self.assertSequenceEqual(tbs, tbs_for_leaf(e, eg))
 
+    def test_basics_subgroup_split__bad_arg_type(self):
+        bad_args = ["bad arg",
+                    OSError('instance not type'),
+                    [OSError('instance not type')],]
+        for arg in bad_args:
+            with self.assertRaises(TypeError):
+                self.eg.subgroup(arg)
+            with self.assertRaises(TypeError):
+                self.eg.split(arg)
+
     def test_basics_subgroup_by_type__passthrough(self):
         eg = self.eg
         self.assertIs(eg, eg.subgroup(BaseException))
