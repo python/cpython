@@ -324,7 +324,7 @@ if ssl is not None:
         _ssl_closing = False
 
         def secure_connection(self):
-            context = ssl.SSLContext()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(CERTFILE)
             socket = context.wrap_socket(self.socket,
                                          suppress_ragged_eofs=False,

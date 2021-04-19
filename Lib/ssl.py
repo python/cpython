@@ -381,6 +381,11 @@ def match_hostname(cert, hostname):
     CertificateError is raised on failure. On success, the function
     returns nothing.
     """
+    warnings.warn(
+        "ssl module: match_hostname() is deprecated",
+        category=DeprecationWarning,
+        stacklevel=2
+    )
     if not cert:
         raise ValueError("empty or no certificate, match_hostname needs a "
                          "SSL socket or SSL context with either "
@@ -479,7 +484,15 @@ class SSLContext(_SSLContext):
     sslsocket_class = None  # SSLSocket is assigned later.
     sslobject_class = None  # SSLObject is assigned later.
 
-    def __new__(cls, protocol=PROTOCOL_TLS, *args, **kwargs):
+    def __new__(cls, protocol=None, *args, **kwargs):
+        if protocol is None:
+            warnings.warn(
+                "ssl module: "
+                "SSLContext() without protocol argument is deprecated.",
+                category=DeprecationWarning,
+                stacklevel=2
+            )
+            protocol = PROTOCOL_TLS
         self = _SSLContext.__new__(cls, protocol)
         return self
 
@@ -518,6 +531,7 @@ class SSLContext(_SSLContext):
         )
 
     def set_npn_protocols(self, npn_protocols):
+        warnings.warn("NPN is deprecated, use ALPN instead", stacklevel=2)
         protos = bytearray()
         for protocol in npn_protocols:
             b = bytes(protocol, 'ascii')
@@ -734,12 +748,15 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
     # OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE and OP_SINGLE_ECDH_USE
     # by default.
-    context = SSLContext(PROTOCOL_TLS)
-
     if purpose == Purpose.SERVER_AUTH:
         # verify certs and host name in client mode
+        context = SSLContext(PROTOCOL_TLS_CLIENT)
         context.verify_mode = CERT_REQUIRED
         context.check_hostname = True
+    elif purpose == Purpose.CLIENT_AUTH:
+        context = SSLContext(PROTOCOL_TLS_SERVER)
+    else:
+        raise ValueError(purpose)
 
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
@@ -755,7 +772,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
             context.keylog_filename = keylogfile
     return context
 
-def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
+def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
                            check_hostname=False, purpose=Purpose.SERVER_AUTH,
                            certfile=None, keyfile=None,
                            cafile=None, capath=None, cadata=None):
@@ -772,10 +789,18 @@ def _create_unverified_context(protocol=PROTOCOL_TLS, *, cert_reqs=CERT_NONE,
     # SSLContext sets OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_COMPRESSION,
     # OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE and OP_SINGLE_ECDH_USE
     # by default.
-    context = SSLContext(protocol)
+    if purpose == Purpose.SERVER_AUTH:
+        # verify certs and host name in client mode
+        if protocol is None:
+            protocol = PROTOCOL_TLS_CLIENT
+    elif purpose == Purpose.CLIENT_AUTH:
+        if protocol is None:
+            protocol = PROTOCOL_TLS_SERVER
+    else:
+        raise ValueError(purpose)
 
-    if not check_hostname:
-        context.check_hostname = False
+    context = SSLContext(protocol)
+    context.check_hostname = check_hostname
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
     if check_hostname:
@@ -909,6 +934,9 @@ class SSLObject:
         """Return the currently selected NPN protocol as a string, or ``None``
         if a next protocol was not negotiated or if NPN is not supported by one
         of the peers."""
+        warnings.warn(
+            "ssl module: NPN is deprecated, use ALPN instead", stacklevel=2
+        )
 
     def selected_alpn_protocol(self):
         """Return the currently selected ALPN protocol as a string, or ``None``
@@ -1123,6 +1151,9 @@ class SSLSocket(socket):
     @_sslcopydoc
     def selected_npn_protocol(self):
         self._checkClosed()
+        warnings.warn(
+            "ssl module: NPN is deprecated, use ALPN instead", stacklevel=2
+        )
         return None
 
     @_sslcopydoc
@@ -1382,7 +1413,11 @@ def wrap_socket(sock, keyfile=None, certfile=None,
                 do_handshake_on_connect=True,
                 suppress_ragged_eofs=True,
                 ciphers=None):
-
+    warnings.warn(
+        "ssl module: wrap_socket is deprecated, use SSLContext.wrap_socket()",
+        category=DeprecationWarning,
+        stacklevel=2
+    )
     if server_side and not certfile:
         raise ValueError("certfile must be specified for server-side "
                          "operations")
@@ -1460,7 +1495,7 @@ def PEM_cert_to_DER_cert(pem_cert_string):
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
     return base64.decodebytes(d.encode('ASCII', 'strict'))
 
-def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
+def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None):
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
     If 'ca_certs' is specified, validate the server cert against it.
