@@ -1453,12 +1453,12 @@ class NameErrorTests(unittest.TestCase):
             bluc = None
             print(bluch)
 
-        for func, suggestion in [(Substitution, "blech?"),
-                                (Elimination, "blch?"),
-                                (Addition, "bluchin?"),
-                                (EliminationOverAddition, "blucha?"),
-                                (SubstitutionOverElimination, "blach?"),
-                                (SubstitutionOverAddition, "blach?")]:
+        for func, suggestion in [(Substitution, "'blech'?"),
+                                (Elimination, "'blch'?"),
+                                (Addition, "'bluchin'?"),
+                                (EliminationOverAddition, "'blucha'?"),
+                                (SubstitutionOverElimination, "'blach'?"),
+                                (SubstitutionOverAddition, "'blach'?")]:
             err = None
             try:
                 func()
@@ -1475,7 +1475,7 @@ class NameErrorTests(unittest.TestCase):
         except NameError as exc:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
-        self.assertIn("global_for_suggestions?", err.getvalue())
+        self.assertIn("'global_for_suggestions'?", err.getvalue())
 
     def test_name_error_suggestions_from_builtins(self):
         def func():
@@ -1485,7 +1485,7 @@ class NameErrorTests(unittest.TestCase):
         except NameError as exc:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
-        self.assertIn("AttributeError?", err.getvalue())
+        self.assertIn("'AttributeError'?", err.getvalue())
 
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def f():
@@ -1628,12 +1628,12 @@ class AttributeErrorTests(unittest.TestCase):
             blucha = None
             bluc = None
 
-        for cls, suggestion in [(Substitution, "blech?"),
-                                (Elimination, "blch?"),
-                                (Addition, "bluchin?"),
-                                (EliminationOverAddition, "bluc?"),
-                                (SubstitutionOverElimination, "blach?"),
-                                (SubstitutionOverAddition, "blach?")]:
+        for cls, suggestion in [(Substitution, "'blech'?"),
+                                (Elimination, "'blch'?"),
+                                (Addition, "'bluchin'?"),
+                                (EliminationOverAddition, "'bluc'?"),
+                                (SubstitutionOverElimination, "'blach'?"),
+                                (SubstitutionOverAddition, "'blach'?")]:
             try:
                 cls().bluch
             except AttributeError as exc:
