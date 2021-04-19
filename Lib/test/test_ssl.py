@@ -1110,6 +1110,17 @@ class BasicSocketTests(unittest.TestCase):
         )
         self.assertIn(rc, errors)
 
+    def test_read_write_zero(self):
+        # empty reads and writes now work, bpo-42854, bpo-31711
+        client_context, server_context, hostname = testing_context()
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                self.assertEqual(s.recv(0), b"")
+                self.assertEqual(s.send(b""), 0)
+
 
 class ContextTests(unittest.TestCase):
 
