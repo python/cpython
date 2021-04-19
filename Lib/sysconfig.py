@@ -235,7 +235,10 @@ def _get_preferred_schemes():
 def get_preferred_scheme(key):
     scheme = _get_preferred_schemes()[key]
     if scheme not in _INSTALL_SCHEMES:
-        raise KeyError(key)
+        raise ValueError(
+            f"{key!r} returned {scheme!r}, which is not a valid scheme "
+            f"on this platform"
+        )
     return scheme
 
 
