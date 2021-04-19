@@ -956,10 +956,10 @@ print_exception(PyObject *f, PyObject *value)
     PyObject* suggestions = _Py_Offer_Suggestions(value);
     if (suggestions) {
         // Add a trailer ". Did you mean: (...)?"
-        err = PyFile_WriteString(". Did you mean: ", f);
+        err = PyFile_WriteString(". Did you mean: '", f);
         if (err == 0) {
             err = PyFile_WriteObject(suggestions, f, Py_PRINT_RAW);
-            err += PyFile_WriteString("?", f);
+            err += PyFile_WriteString("'?", f);
         }
         Py_DECREF(suggestions);
     } else if (PyErr_Occurred()) {
