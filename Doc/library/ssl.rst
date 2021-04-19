@@ -1122,6 +1122,11 @@ SSL Sockets
       to create instances directly. This was never documented or officially
       supported.
 
+   .. versionchanged:: 3.10
+      Python now uses ``SSL_read_ex`` and ``SSL_write_ex`` internally. The
+      functions support reading and writing of data larger than 2 GB. Writing
+      zero-length data no longer fails with a protocol violation error.
+
 SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.read(len=1024, buffer=None)
