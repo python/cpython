@@ -21,6 +21,7 @@ from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
+from test.support import warnings_helper
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -1021,7 +1022,10 @@ class KDFTests(unittest.TestCase):
 
     @unittest.skipIf(builtin_hashlib is None, "test requires builtin_hashlib")
     def test_pbkdf2_hmac_py(self):
-        self._test_pbkdf2_hmac(builtin_hashlib.pbkdf2_hmac, builtin_hashes)
+        with warnings_helper.check_warnings():
+            self._test_pbkdf2_hmac(
+                builtin_hashlib.pbkdf2_hmac, builtin_hashes
+            )
 
     @unittest.skipUnless(hasattr(openssl_hashlib, 'pbkdf2_hmac'),
                      '   test requires OpenSSL > 1.0')

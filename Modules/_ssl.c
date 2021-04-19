@@ -682,6 +682,17 @@ _setSSLError (_sslmodulestate *state, const char *errstr, int errcode, const cha
     return NULL;
 }
 
+static int
+_ssl_deprecated(const char* name, int stacklevel) {
+    return PyErr_WarnFormat(
+        PyExc_DeprecationWarning, stacklevel,
+        "ssl module: %s is deprecated", name
+    );
+}
+
+#define PY_SSL_DEPRECATED(name, stacklevel, ret) \
+    if (_ssl_deprecated((name), (stacklevel)) == -1) return (ret)
+
 /*
  * SSL objects
  */
@@ -2863,6 +2874,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 {
     PySSLContext *self;
     long options;
+    const SSL_METHOD *method = NULL;
     SSL_CTX *ctx = NULL;
     X509_VERIFY_PARAM *params;
     int result;
@@ -2876,54 +2888,62 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
 
-    PySSL_BEGIN_ALLOW_THREADS
     switch(proto_version) {
 #if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
     case PY_SSL_VERSION_SSL3:
-        ctx = SSL_CTX_new(SSLv3_method());
+        PY_SSL_DEPRECATED("PROTOCOL_SSLv3", 2, NULL);
+        method = SSLv3_method();
         break;
 #endif
 #if (defined(TLS1_VERSION) && \
         !defined(OPENSSL_NO_TLS1) && \
         !defined(OPENSSL_NO_TLS1_METHOD))
     case PY_SSL_VERSION_TLS1:
-        ctx = SSL_CTX_new(TLSv1_method());
+        PY_SSL_DEPRECATED("PROTOCOL_TLSv1", 2, NULL);
+        method = TLSv1_method();
         break;
 #endif
 #if (defined(TLS1_1_VERSION) && \
         !defined(OPENSSL_NO_TLS1_1) && \
         !defined(OPENSSL_NO_TLS1_1_METHOD))
     case PY_SSL_VERSION_TLS1_1:
-        ctx = SSL_CTX_new(TLSv1_1_method());
+        PY_SSL_DEPRECATED("PROTOCOL_TLSv1_1", 2, NULL);
+        method = TLSv1_1_method();
         break;
 #endif
 #if (defined(TLS1_2_VERSION) && \
         !defined(OPENSSL_NO_TLS1_2) && \
         !defined(OPENSSL_NO_TLS1_2_METHOD))
     case PY_SSL_VERSION_TLS1_2:
-        ctx = SSL_CTX_new(TLSv1_2_method());
+        PY_SSL_DEPRECATED("PROTOCOL_TLSv1_2", 2, NULL);
+        method = TLSv1_2_method();
         break;
 #endif
     case PY_SSL_VERSION_TLS:
-        /* SSLv23 */
-        ctx = SSL_CTX_new(TLS_method());
+        PY_SSL_DEPRECATED("PROTOCOL_TLS", 2, NULL);
+        method = TLS_method();
         break;
     case PY_SSL_VERSION_TLS_CLIENT:
-        ctx = SSL_CTX_new(TLS_client_method());
+        method = TLS_client_method();
         break;
     case PY_SSL_VERSION_TLS_SERVER:
-        ctx = SSL_CTX_new(TLS_server_method());
+        method = TLS_server_method();
         break;
     default:
-        proto_version = -1;
+        method = NULL;
     }
-    PySSL_END_ALLOW_THREADS
 
-    if (proto_version == -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "invalid or unsupported protocol version");
+    if (method == NULL) {
+        PyErr_Format(PyExc_ValueError,
+                     "invalid or unsupported protocol version %i",
+                     proto_version);
         return NULL;
     }
+
+    PySSL_BEGIN_ALLOW_THREADS
+    ctx = SSL_CTX_new(method);
+    PySSL_END_ALLOW_THREADS
+
     if (ctx == NULL) {
         _setSSLError(get_ssl_state(module), NULL, 0, __FILE__, __LINE__);
         return NULL;
@@ -3299,6 +3319,29 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
         return -1;
     }
 
+    /* check for deprecations and supported values */
+    switch(v) {
+        case PY_PROTO_SSLv3:
+            PY_SSL_DEPRECATED("TLSVersion.SSLv3", 2, -1);
+            break;
+        case PY_PROTO_TLSv1:
+            PY_SSL_DEPRECATED("TLSVersion.TLSv1", 2, -1);
+            break;
+        case PY_PROTO_TLSv1_1:
+            PY_SSL_DEPRECATED("TLSVersion.TLSv1_1", 2, -1);
+            break;
+        case PY_PROTO_MINIMUM_SUPPORTED:
+        case PY_PROTO_MAXIMUM_SUPPORTED:
+        case PY_PROTO_TLSv1_2:
+        case PY_PROTO_TLSv1_3:
+            /* ok */
+            break;
+        default:
+            PyErr_Format(PyExc_ValueError,
+                     "Unsupported TLS/SSL version 0x%x", v);
+            return -1;
+    }
+
     if (what == 0) {
         switch(v) {
         case PY_PROTO_MINIMUM_SUPPORTED:
@@ -3417,11 +3460,23 @@ static int
 set_options(PySSLContext *self, PyObject *arg, void *c)
 {
     long new_opts, opts, set, clear;
+    long opt_no = (
+        SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
+        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_2
+    );
+
     if (!PyArg_Parse(arg, "l", &new_opts))
         return -1;
     opts = SSL_CTX_get_options(self->ctx);
     clear = opts & ~new_opts;
     set = ~opts & new_opts;
+
+    if ((set & opt_no) != 0) {
+        if (_ssl_deprecated("Setting OP_NO_SSL* or SSL_NO_TLS* options is "
+                            "deprecated", 2) < 0) {
+            return -1;
+        }
+    }
     if (clear) {
         SSL_CTX_clear_options(self->ctx, clear);
     }
@@ -4961,6 +5016,7 @@ static PyObject *
 _ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
 /*[clinic end generated code: output=b1509e937000e52d input=58312bd53f9bbdd0]*/
 {
+    PY_SSL_DEPRECATED("RAND_pseudo_bytes", 1, NULL);
     return PySSL_RAND(module, n, 1);
 }
 
