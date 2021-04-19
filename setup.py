@@ -2447,8 +2447,13 @@ class PyBuildExt(build_ext):
         # features like DSO engines or external OSSL providers don't work.
         # Only tested on GCC and clang on X86_64.
         if os.environ.get("PY_UNSUPPORTED_OPENSSL_BUILD") == "static":
+            import subprocess, shutil
+            pkgconfig = os.getenv("PKG_CONFIG", shutil.which("pkg-config"))
+            libs_out = subprocess.check_output(
+                    [pkgconfig, "--static", "--libs-only-l", "openssl"]).decode()
+            openssl_libs_static =  {v.strip() for v in libs_out.split("-l") if v.strip()}
             extra_linker_args = []
-            for lib in openssl_extension_kwargs["libraries"]:
+            for lib in openssl_libs_static:
                 # link statically
                 extra_linker_args.append(f"-l:lib{lib}.a")
                 # don't export symbols
