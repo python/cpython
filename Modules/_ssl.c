@@ -2430,10 +2430,11 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     PyObject *dest = NULL;
     char *mem;
     size_t count = 0;
+    size_t got = 0;
     int retval;
     int sockstate;
     _PySSLError err;
-    int nonblocking;
+    int nonblocking = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
     _PyTime_t timeout, deadline = 0;
     int has_timeout;
@@ -2493,10 +2494,22 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 
     do {
         PySSL_BEGIN_ALLOW_THREADS
-        retval = SSL_read_ex(self->ssl, mem, (size_t)len, &count);
+        do {
+            retval = SSL_read_ex(self->ssl, mem + got, len, &count);
+            if(retval <= 0) {
+                break;
+            }
+
+            got += count;
+            len -= count;
+        } while(nonblocking && len > 0);
         err = _PySSL_errno(retval == 0, self->ssl, retval);
         PySSL_END_ALLOW_THREADS
         self->err = err;
+
+        if(got > 0) {
+            break;
+        }
 
         if (PyErr_CheckSignals())
             goto error;
@@ -2512,7 +2525,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
         } else if (err.ssl == SSL_ERROR_ZERO_RETURN &&
                    SSL_get_shutdown(self->ssl) == SSL_RECEIVED_SHUTDOWN)
         {
-            count = 0;
+            got = 0;
             goto done;
         }
         else
@@ -2528,7 +2541,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     } while (err.ssl == SSL_ERROR_WANT_READ ||
              err.ssl == SSL_ERROR_WANT_WRITE);
 
-    if (retval == 0) {
+    if (got == 0) {
         PySSL_SetError(self, retval, __FILE__, __LINE__);
         goto error;
     }
@@ -2538,11 +2551,11 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 done:
     Py_XDECREF(sock);
     if (!group_right_1) {
-        _PyBytes_Resize(&dest, count);
+        _PyBytes_Resize(&dest, got);
         return dest;
     }
     else {
-        return PyLong_FromSize_t(count);
+        return PyLong_FromSize_t(got);
     }
 
 error:

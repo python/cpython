@@ -1,0 +1,3 @@
+When reading from a nonblocking TLS socket, drop the GIL once to read up to
+the entire buffer. Previously we would read at most one TLS record (16 KB).
+Patch by Josh Snyder.
