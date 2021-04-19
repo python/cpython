@@ -5630,6 +5630,11 @@ sslmodule_init_constants(PyObject *m)
     PyModule_AddIntConstant(m, "VERIFY_X509_TRUSTED_FIRST",
                             X509_V_FLAG_TRUSTED_FIRST);
 
+#ifdef X509_V_FLAG_PARTIAL_CHAIN
+    PyModule_AddIntConstant(m, "VERIFY_X509_PARTIAL_CHAIN",
+                            X509_V_FLAG_PARTIAL_CHAIN);
+#endif
+
     /* Alert Descriptions from ssl.h */
     /* note RESERVED constants no longer intended for use have been removed */
     /* http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6 */
