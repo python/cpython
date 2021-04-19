@@ -103,6 +103,7 @@ extern "C" {
 #define RERAISE                 119
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
+#define SETUP_CLEANUP           123
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126
@@ -139,7 +140,7 @@ static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    67125248U,
+    201342976U,
     67141632U,
     0U,
     0U,
@@ -149,7 +150,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    101695488U,
+    235913216U,
     67141632U,
     0U,
     0U,

@@ -1005,9 +1005,9 @@ stack_effect(int opcode, int oparg, int jump)
 
         case SETUP_WITH:
             /* 1 in the normal flow.
-             * Restore the stack position and push 6 values before jumping to
+             * Restore the stack position and push 7 values before jumping to
              * the handler if an exception be raised. */
-            return jump ? 6 : 1;
+            return jump ? 7 : 1;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -1091,6 +1091,9 @@ stack_effect(int opcode, int oparg, int jump)
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
             return jump ? 6 : 0;
+        case SETUP_CLEANUP:
+            return jump ? 7 : 0;
+
         case RERAISE:
             return -3;
 
@@ -1142,9 +1145,9 @@ stack_effect(int opcode, int oparg, int jump)
         case SETUP_ASYNC_WITH:
             /* 0 in the normal flow.
              * Restore the stack position to the position before the result
-             * of __aenter__ and push 6 values before jumping to the handler
+             * of __aenter__ and push 7 values before jumping to the handler
              * if an exception be raised. */
-            return jump ? -1 + 6 : 0;
+            return jump ? -1 + 7 : 0;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -3162,7 +3165,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             */
 
             /* second try: */
-            ADDOP_JUMP(c, SETUP_FINALLY, cleanup_end);
+            ADDOP_JUMP(c, SETUP_CLEANUP, cleanup_end);
             compiler_use_next_block(c, cleanup_body);
             if (!compiler_push_fblock(c, HANDLER_CLEANUP, cleanup_body, NULL, handler->v.ExceptHandler.name))
                 return 0;
@@ -4913,6 +4916,7 @@ compiler_with_except_finish(struct compiler *c) {
     NEXT_BLOCK(c);
     ADDOP_I(c, RERAISE, 1);
     compiler_use_next_block(c, exit);
+    ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
@@ -7381,6 +7385,7 @@ propogate_line_numbers(struct assembler *a) {
                 case SETUP_ASYNC_WITH:
                 case SETUP_WITH:
                 case SETUP_FINALLY:
+                case SETUP_CLEANUP:
                     continue;
             }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;
@@ -7487,6 +7492,7 @@ ensure_exits_have_lineno(struct compiler *c)
                 case SETUP_ASYNC_WITH:
                 case SETUP_WITH:
                 case SETUP_FINALLY:
+                case SETUP_CLEANUP:
                     continue;
             }
             basicblock *target = b->b_instr[b->b_iused-1].i_target;

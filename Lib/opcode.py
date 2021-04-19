@@ -165,6 +165,7 @@ def_op('RERAISE', 119)
 
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 jrel_op('SETUP_FINALLY', 122)   # Distance to target address
+jrel_op('SETUP_CLEANUP', 123)   # Distance to target address
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)

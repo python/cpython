@@ -162,6 +162,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[j] = block_stack;
                     break;
                 case SETUP_FINALLY:
+                case SETUP_CLEANUP:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     except_stack = push_block(block_stack, Except);
