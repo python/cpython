@@ -1018,6 +1018,14 @@ Corner-cases that used to fail to raise the correct error:
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
+    >>> def f(*args:(lambda __debug__:0)): pass
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to __debug__
+
+    >>> def f(**kwargs:(lambda __debug__:0)): pass
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to __debug__
+
     >>> with (lambda *:0): pass
     Traceback (most recent call last):
     SyntaxError: named arguments must follow bare *
