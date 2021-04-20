@@ -87,6 +87,11 @@ typedef struct {
 } KeyValuePair;
 
 typedef struct {
+    expr_ty key;
+    pattern_ty pattern;
+} KeyPatternPair;
+
+typedef struct {
     arg_ty arg;
     expr_ty value;
 } NameDefaultPair;
@@ -248,6 +253,9 @@ expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);
+KeyPatternPair *_PyPegen_key_pattern_pair(Parser *, expr_ty, pattern_ty);
+asdl_expr_seq *_PyPegen_get_pattern_keys(Parser *, asdl_seq *);
+asdl_pattern_seq *_PyPegen_get_patterns(Parser *, asdl_seq *);
 NameDefaultPair *_PyPegen_name_default_pair(Parser *, arg_ty, expr_ty, Token *);
 SlashWithDefault *_PyPegen_slash_with_default(Parser *, asdl_arg_seq *, asdl_seq *);
 StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);

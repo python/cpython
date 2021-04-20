@@ -1794,6 +1794,51 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
     return new_seq;
 }
 
+/* Constructs a KeyPatternPair that is used when parsing a mapping pattern */
+KeyPatternPair *
+_PyPegen_key_pattern_pair(Parser *p, expr_ty key, pattern_ty pattern)
+{
+    KeyPatternPair *a = _PyArena_Malloc(p->arena, sizeof(KeyPatternPair));
+    if (!a) {
+        return NULL;
+    }
+    a->key = key;
+    a->pattern = pattern;
+    return a;
+}
+
+/* Extracts all keys from an asdl_seq* of KeyPatternPair*'s */
+asdl_expr_seq *
+_PyPegen_get_pattern_keys(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeyPatternPair *pair = asdl_seq_GET_UNTYPED(seq, i);
+        asdl_seq_SET(new_seq, i, pair->key);
+    }
+    return new_seq;
+}
+
+/* Extracts all patterns from an asdl_seq* of KeyPatternPair*'s */
+asdl_pattern_seq *
+_PyPegen_get_patterns(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_pattern_seq *new_seq = _Py_asdl_pattern_seq_new(len, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeyPatternPair *pair = asdl_seq_GET_UNTYPED(seq, i);
+        asdl_seq_SET(new_seq, i, pair->pattern);
+    }
+    return new_seq;
+}
+
 /* Constructs a NameDefaultPair */
 NameDefaultPair *
 _PyPegen_name_default_pair(Parser *p, arg_ty arg, expr_ty value, Token *tc)
