@@ -123,6 +123,9 @@ static void _PySSLFixErrno(void) {
 #endif
 
 /* OpenSSL API 1.1.0+ does not include version methods */
+#ifndef OPENSSL_NO_SSL3_METHOD
+extern const SSL_METHOD *SSLv3_method(void);
+#endif
 #ifndef OPENSSL_NO_TLS1_METHOD
 extern const SSL_METHOD *TLSv1_method(void);
 #endif
