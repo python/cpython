@@ -94,7 +94,6 @@ import sys
 import os
 from collections import namedtuple
 from enum import Enum as _Enum, IntEnum as _IntEnum, IntFlag as _IntFlag
-from enum import _simple_enum, _test_simple_enum
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -156,8 +155,7 @@ _PROTOCOL_NAMES = {value: name for name, value in _SSLMethod.__members__.items()
 _SSLv2_IF_EXISTS = getattr(_SSLMethod, 'PROTOCOL_SSLv2', None)
 
 
-@_simple_enum(_IntEnum)
-class TLSVersion:
+class TLSVersion(_IntEnum):
     MINIMUM_SUPPORTED = _ssl.PROTO_MINIMUM_SUPPORTED
     SSLv3 = _ssl.PROTO_SSLv3
     TLSv1 = _ssl.PROTO_TLSv1
@@ -167,8 +165,7 @@ class TLSVersion:
     MAXIMUM_SUPPORTED = _ssl.PROTO_MAXIMUM_SUPPORTED
 
 
-@_simple_enum(_IntEnum)
-class _TLSContentType:
+class _TLSContentType(_IntEnum):
     """Content types (record layer)
 
     See RFC 8446, section B.1
@@ -182,8 +179,7 @@ class _TLSContentType:
     INNER_CONTENT_TYPE = 0x101
 
 
-@_simple_enum(_IntEnum)
-class _TLSAlertType:
+class _TLSAlertType(_IntEnum):
     """Alert types for TLSContentType.ALERT messages
 
     See RFC 8466, section B.2
@@ -224,8 +220,7 @@ class _TLSAlertType:
     NO_APPLICATION_PROTOCOL = 120
 
 
-@_simple_enum(_IntEnum)
-class _TLSMessageType:
+class _TLSMessageType(_IntEnum):
     """Message types (handshake protocol)
 
     See RFC 8446, section B.3
