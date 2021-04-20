@@ -3023,6 +3023,11 @@ class GetTypeHintTests(BaseTestCase):
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
 
+    def test_whitespaces(self):
+        def testf() -> ' str': ...
+        self.assertEqual(gth(testf), {'return': str})
+        def testg(x: ' int'): ...
+        self.assertEqual(gth(testg), {'x': int})
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):

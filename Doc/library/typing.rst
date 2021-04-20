@@ -1925,6 +1925,9 @@ Introspection helpers
    .. versionchanged:: 3.9
       Added ``include_extras`` parameter as part of :pep:`593`.
 
+   .. versionchanged:: 3.10
+      For annotation strings, leading spaces and tabs are now stripped.
+
 .. function:: get_args(tp)
 .. function:: get_origin(tp)
 

@@ -585,7 +585,7 @@ class ForwardRef(_Final, _root=True):
             arg = arg[1:-1]
 
         try:
-            code = compile(arg, '<string>', 'eval')
+            code = compile(arg.lstrip(' \t'), '<string>', 'eval')
         except SyntaxError:
             raise SyntaxError(f"Forward reference must be an expression -- got {arg!r}")
         self.__forward_arg__ = arg
