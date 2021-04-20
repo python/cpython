@@ -144,8 +144,7 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
     return dict
 
 
-@enum._simple_enum(enum.StrEnum)
-class EventType:
+class EventType(enum.StrEnum):
     KeyPress = '2'
     Key = KeyPress
     KeyRelease = '3'
@@ -185,6 +184,8 @@ class EventType:
     Activate = '36'
     Deactivate = '37'
     MouseWheel = '38'
+
+    __str__ = str.__str__
 
 
 class Event:
