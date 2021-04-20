@@ -137,7 +137,7 @@ Extension types can easily be made to support weak references; see
    ``ProxyType`` or ``CallableProxyType``, depending on whether *object* is
    callable.  Proxy objects are not :term:`hashable` regardless of the referent; this
    avoids a number of problems related to their fundamentally mutable nature, and
-   prevent their use as dictionary keys.  *callback* is the same as the parameter
+   prevents their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
 
    .. versionchanged:: 3.8
