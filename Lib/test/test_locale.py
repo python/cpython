@@ -579,7 +579,7 @@ class TestMiscellaneous(unittest.TestCase):
 
 class TestGetFirstWeekDay(BaseLocalizedTest):
 
-    locale_type = locale.LC_ALL
+    locale_type = locale.LC_TIME
 
     def test_getfirstweekday(self):
         self.assertEqual(locale.getfirstweekday(), 0)
@@ -588,10 +588,8 @@ class TestGetFirstWeekDay(BaseLocalizedTest):
         platform.libc_ver()[0] == 'glibc',
         "Implemented and modifiable only with glibc")
     def test_getfirstweekday_fr(self):
-        oldlocale = locale.setlocale(locale.LC_ALL)
-        self.addCleanup(locale.setlocale, locale.LC_ALL, oldlocale)
         try:
-            locale.setlocale(locale.LC_ALL, 'fr_FR')
+            locale.setlocale(self.locale_type, 'fr_FR')
         except locale.Error:
             self.skipTest('test needs fr_FR locale')
         self.assertEqual(locale.getfirstweekday(), 1)
