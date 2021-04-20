@@ -23,14 +23,16 @@
               (c >= 'a' && c <= 'z')\
                || (c >= 'A' && c <= 'Z')\
                || (c == '_')\
-               || (c >= 128))
+               || (c >= 128)
+               )
 
 #define is_potential_identifier_char(c) (\
               (c >= 'a' && c <= 'z')\
                || (c >= 'A' && c <= 'Z')\
                || (c >= '0' && c <= '9')\
                || (c == '_')\
-               || (c >= 128))
+               || (c >= 128)
+               )
 
 
 /* Don't ever change this -- it would break the portability of Python code */
