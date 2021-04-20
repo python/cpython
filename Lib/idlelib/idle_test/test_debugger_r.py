@@ -2,8 +2,8 @@
 
 from idlelib import debugger_r
 import unittest
-from test.support import requires
-from tkinter import Tk
+## from test.support import requires
+## from tkinter import Tk
 
 
 class Test(unittest.TestCase):

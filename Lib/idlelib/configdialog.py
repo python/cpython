@@ -225,7 +225,7 @@ class ConfigDialog(Toplevel):
         # config must be done - remove the previous keybindings.
         win_instances = self.parent.instance_dict.keys()
         for instance in win_instances:
-            instance.RemoveKeybindings()
+            instance.remove_keybindings()
 
     def activate_config_changes(self):
         """Apply configuration changes to current windows.
@@ -235,10 +235,10 @@ class ConfigDialog(Toplevel):
         """
         win_instances = self.parent.instance_dict.keys()
         for instance in win_instances:
-            instance.ResetColorizer()
-            instance.ResetFont()
+            instance.reset_colors()
+            instance.reset_font()
             instance.set_notabs_indentwidth()
-            instance.ApplyKeybindings()
+            instance.apply_keybindings()
             instance.reset_help_menu_entries()
             instance.update_cursor_blink()
         for klass in reloadables:

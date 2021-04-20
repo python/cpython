@@ -12,7 +12,6 @@ from idlelib.squeezer import count_lines_with_wrapping, ExpandingButton, \
 from idlelib import macosx
 from idlelib.textview import view_text
 from idlelib.tooltip import Hovertip
-from idlelib.pyshell import PyShell
 
 
 SENTINEL_VALUE = sentinel.SENTINEL_VALUE
