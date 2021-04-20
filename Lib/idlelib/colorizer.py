@@ -191,7 +191,7 @@ class ColorDelegator(Delegator):
         if self.allow_colorizing and not self.colorizing:
             self.after_id = self.after(1, self.recolorize)
         if DEBUG:
-            print("auto colorizing turned", \
+            print("auto colorizing turned",
                   self.allow_colorizing and "on" or "off")
         return "break"
 
