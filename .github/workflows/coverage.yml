@@ -54,6 +54,7 @@ jobs:
         python -m test.pythoninfo
         export PYTHONPATH=`find .venv -name fullcoverage`
     - name: 'Tests with coverage'
+      timeout-minutes: 100  # 1h40m, ref https://bugs.python.org/issue43888
       run: >
         source ./.venv/bin/activate &&
         xvfb-run python -m coverage
