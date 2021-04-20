@@ -1677,7 +1677,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
-.. function:: super([type[, object-or-type]])
+.. class:: super([type[, object-or-type]])
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
