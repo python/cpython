@@ -798,8 +798,9 @@ call fails (for example because the path doesn't exist).
       >>> sorted(Path('.').glob('*/*.py'))
       [PosixPath('docs/conf.py')]
 
-   The "``**``" pattern means "this directory and all subdirectories,
-   recursively".  In other words, it enables recursive globbing::
+   Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
+   which means "this directory and all subdirectories, recursively".  In other
+   words, it enables recursive globbing::
 
       >>> sorted(Path('.').glob('**/*.py'))
       [PosixPath('build/lib/pathlib.py'),
