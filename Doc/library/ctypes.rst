@@ -2410,7 +2410,7 @@ Structured data types
 
    Abstract base class for structures in *little endian* byte order.
 
-Structures and unions with non-native byte order cannot contain pointer type 
+Structures and unions with non-native byte order cannot contain pointer type
 fields, or any other data types containing pointer type fields.
 
 
