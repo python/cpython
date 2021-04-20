@@ -18,17 +18,18 @@
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
 
+/* Helper macros for identifiers */
 #define is_potential_identifier_start(c) (\
               (c >= 'a' && c <= 'z')\
                || (c >= 'A' && c <= 'Z')\
-               || c == '_'\
+               || (c == '_')\
                || (c >= 128))
 
 #define is_potential_identifier_char(c) (\
               (c >= 'a' && c <= 'z')\
                || (c >= 'A' && c <= 'Z')\
                || (c >= '0' && c <= '9')\
-               || c == '_'\
+               || (c == '_')\
                || (c >= 128))
 
 
