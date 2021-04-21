@@ -4114,12 +4114,6 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(SETUP_EXCEPT): {
-            PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1,
-                               STACK_LEVEL());
-            DISPATCH();
-        }
-
         case TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);

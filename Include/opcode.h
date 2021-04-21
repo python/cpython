@@ -103,7 +103,6 @@ extern "C" {
 #define IS_OP                   117
 #define CONTAINS_OP             118
 #define RERAISE                 119
-#define SETUP_EXCEPT            120
 #define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define SETUP_CLEANUP           123

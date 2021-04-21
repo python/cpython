@@ -1095,8 +1095,6 @@ stack_effect(int opcode, int oparg, int jump)
             return jump ? 3 : 0;
         case SETUP_CLEANUP:
             return jump ? 4 : 0;
-        case SETUP_EXCEPT:
-            return 0; // jump > 0 ? -3 : 0;
 
         case RERAISE:
             return -3;
