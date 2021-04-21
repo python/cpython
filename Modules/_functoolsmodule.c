@@ -782,6 +782,7 @@ typedef struct lru_cache_object {
     PyObject *func;
     Py_ssize_t maxsize;
     Py_ssize_t misses;
+    /* the kwd_mark is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
     PyTypeObject *lru_list_elem_type;
     PyObject *cache_info_type;
@@ -874,10 +875,8 @@ static PyObject *
 infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
     PyObject *result;
-    PyObject *key;
     Py_hash_t hash;
-
-    key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
+    PyObject *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
