@@ -3618,7 +3618,7 @@ class TestStdLib(unittest.TestCase):
         self.assertEqual(list(CheckedMissing), [M.SIXTY_FOUR, M.ONE_TWENTY_EIGHT, M.TWENTY_FORTY_EIGHT])
         #
         _test_simple_enum(CheckedMissing, Missing)
-        
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -3688,7 +3688,7 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
-        # reset global constants, as previous tests could have converted the 
+        # reset global constants, as previous tests could have converted the
         # integer values to enums
         module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(

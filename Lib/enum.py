@@ -1694,4 +1694,3 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
     cls.__reduce_ex__ = _reduce_ex_by_name
     cls.__repr__ = global_enum_repr
     return cls
-
