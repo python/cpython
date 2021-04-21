@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -3582,7 +3583,7 @@ PyType_GetModuleState(PyTypeObject *type)
     if (m == NULL) {
         return NULL;
     }
-    return PyModule_GetState(m);
+    return _PyModule_GetState(m);
 }
 
 
@@ -3617,7 +3618,7 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
         PyObject *module = ht->ht_module;
-        if (module && PyModule_GetDef(module) == def) {
+        if (module && _PyModule_GetDef(module) == def) {
             return module;
         }
         i++;
