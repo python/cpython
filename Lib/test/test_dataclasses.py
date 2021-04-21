@@ -9,7 +9,6 @@ import pickle
 import inspect
 import builtins
 import unittest
-from textwrap import dedent
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from typing import get_type_hints
@@ -563,17 +562,17 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(the_fields), 3)
 
         self.assertEqual(the_fields[0].name, 'x')
-        self.assertEqual(the_fields[0].type, 'int')
+        self.assertEqual(the_fields[0].type, int)
         self.assertFalse(hasattr(C, 'x'))
         self.assertTrue (the_fields[0].init)
         self.assertTrue (the_fields[0].repr)
         self.assertEqual(the_fields[1].name, 'y')
-        self.assertEqual(the_fields[1].type, 'str')
+        self.assertEqual(the_fields[1].type, str)
         self.assertIsNone(getattr(C, 'y'))
         self.assertFalse(the_fields[1].init)
         self.assertTrue (the_fields[1].repr)
         self.assertEqual(the_fields[2].name, 'z')
-        self.assertEqual(the_fields[2].type, 'str')
+        self.assertEqual(the_fields[2].type, str)
         self.assertFalse(hasattr(C, 'z'))
         self.assertTrue (the_fields[2].init)
         self.assertFalse(the_fields[2].repr)
@@ -759,11 +758,11 @@ class TestCase(unittest.TestCase):
         def validate_class(cls):
             # First, check __annotations__, even though they're not
             #  function annotations.
-            self.assertEqual(cls.__annotations__['i'], 'int')
-            self.assertEqual(cls.__annotations__['j'], 'str')
-            self.assertEqual(cls.__annotations__['k'], 'F')
-            self.assertEqual(cls.__annotations__['l'], 'float')
-            self.assertEqual(cls.__annotations__['z'], 'complex')
+            self.assertEqual(cls.__annotations__['i'], int)
+            self.assertEqual(cls.__annotations__['j'], str)
+            self.assertEqual(cls.__annotations__['k'], F)
+            self.assertEqual(cls.__annotations__['l'], float)
+            self.assertEqual(cls.__annotations__['z'], complex)
 
             # Verify __init__.
 
@@ -778,22 +777,22 @@ class TestCase(unittest.TestCase):
             self.assertEqual(param.name, 'self')
             param = next(params)
             self.assertEqual(param.name, 'i')
-            self.assertIs   (param.annotation, 'int')
+            self.assertIs   (param.annotation, int)
             self.assertEqual(param.default, inspect.Parameter.empty)
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'j')
-            self.assertIs   (param.annotation, 'str')
+            self.assertIs   (param.annotation, str)
             self.assertEqual(param.default, inspect.Parameter.empty)
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'k')
-            self.assertIs   (param.annotation, 'F')
+            self.assertIs   (param.annotation, F)
             # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'l')
-            self.assertIs   (param.annotation, 'float')
+            self.assertIs   (param.annotation, float)
             # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             self.assertRaises(StopIteration, next, params)
@@ -2855,6 +2854,9 @@ class TestDescriptors(unittest.TestCase):
 
 class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
+        # Some expressions recognized as ClassVar really aren't.  But
+        #  if you're using string annotations, it's not an exact
+        #  science.
         # These tests assume that both "import typing" and "from
         # typing import *" have been run in this file.
         for typestr in ('ClassVar[int]',
@@ -2869,15 +2871,17 @@ class TestStringAnnotations(unittest.TestCase):
                         'typing. ClassVar[str]',
                         'typing.ClassVar [str]',
                         'typing.ClassVar [ str]',
-                        # Double stringified
-                        '"typing.ClassVar[int]"',
+
                         # Not syntactically valid, but these will
-                        # be treated as ClassVars.
+                        #  be treated as ClassVars.
                         'typing.ClassVar.[int]',
                         'typing.ClassVar+',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
+                @dataclass
+                class C:
+                    x: typestr
+
                 # x is a ClassVar, so C() takes no args.
                 C()
 
@@ -2898,7 +2902,9 @@ class TestStringAnnotations(unittest.TestCase):
                         'typingxClassVar[str]',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
+                @dataclass
+                class C:
+                    x: typestr
 
                 # x is not a ClassVar, so C() takes one arg.
                 self.assertEqual(C(10).x, 10)
@@ -2918,16 +2924,16 @@ class TestStringAnnotations(unittest.TestCase):
                         'dataclasses. InitVar[str]',
                         'dataclasses.InitVar [str]',
                         'dataclasses.InitVar [ str]',
-                        # Double stringified
-                        '"dataclasses.InitVar[int]"',
+
                         # Not syntactically valid, but these will
                         #  be treated as InitVars.
                         'dataclasses.InitVar.[int]',
                         'dataclasses.InitVar+',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
-
+                @dataclass
+                class C:
+                    x: typestr
 
                 # x is an InitVar, so doesn't create a member.
                 with self.assertRaisesRegex(AttributeError,
@@ -2941,22 +2947,30 @@ class TestStringAnnotations(unittest.TestCase):
                         'typing.xInitVar[int]',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
+                @dataclass
+                class C:
+                    x: typestr
 
                 # x is not an InitVar, so there will be a member x.
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
         from test import dataclass_module_1
+        from test import dataclass_module_1_str
         from test import dataclass_module_2
+        from test import dataclass_module_2_str
 
-        for m in (dataclass_module_1,
-                  dataclass_module_2):
+        for m in (dataclass_module_1, dataclass_module_1_str,
+                  dataclass_module_2, dataclass_module_2_str,
+                  ):
             with self.subTest(m=m):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
                 # not. See the imported modules for details.
-                c = m.CV(10)
+                if m.USING_STRINGS:
+                    c = m.CV(10)
+                else:
+                    c = m.CV()
                 self.assertEqual(c.cv0, 20)
 
 
@@ -2972,9 +2986,14 @@ class TestStringAnnotations(unittest.TestCase):
                             # not an instance field.
                             getattr(c, field_name)
 
-                # iv4 is interpreted as a normal field.
-                self.assertIn('not_iv4', c.__dict__)
-                self.assertEqual(c.not_iv4, 4)
+                if m.USING_STRINGS:
+                    # iv4 is interpreted as a normal field.
+                    self.assertIn('not_iv4', c.__dict__)
+                    self.assertEqual(c.not_iv4, 4)
+                else:
+                    # iv4 is interpreted as an InitVar, so it
+                    # won't exist on the instance.
+                    self.assertNotIn('not_iv4', c.__dict__)
 
     def test_text_annotations(self):
         from test import dataclass_textanno
