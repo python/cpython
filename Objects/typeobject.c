@@ -3590,24 +3590,23 @@ PyObject *
 _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 {
     assert(PyType_Check(type));
-    assert(type->tp_mro);
-    int i;
-    for (i = 0; i < PyTuple_GET_SIZE(type->tp_mro); i++) {
-        PyObject *super = PyTuple_GET_ITEM(type->tp_mro, i);
-        if (!PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
-            /* Currently, there's no way for static types to inherit
-             * from heap types, but to allow that possibility,
-             * we `continue` rather than `break`.
-             * We'll just potentially loop a few more times before throwing
-             * the error.
-             */
-            continue;
-        }
+    PyObject *mro = type->tp_mro;
+    assert(mro != NULL);
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(mro); i++) {
+        PyObject *super = PyTuple_GET_ITEM(mro, i);
+        // _PyType_GetModuleByDef() must only be called on a heap type created
+        // by PyType_FromModuleAndSpec() or on its subclasses.
+        // type_ready_mro() ensures that a static type cannot inherit from a
+        // heap type.
+        assert(_PyType_HasFeature((PyTypeObject *)type, Py_TPFLAGS_HEAPTYPE));
+
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
-        if (ht->ht_module && PyModule_GetDef(ht->ht_module) == def) {
-            return ht->ht_module;
+        PyObject *module = ht->ht_module;
+        if (module && PyModule_GetDef(module) == def) {
+            return module;
         }
     }
+
     PyErr_Format(
         PyExc_TypeError,
         "_PyType_GetModuleByDef: No superclass of '%s' has the given module",
