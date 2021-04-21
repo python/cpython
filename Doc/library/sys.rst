@@ -855,7 +855,7 @@ always available.
    +---------------------+--------------------------------------------------+
    | :const:`inf`        | hash value returned for a positive infinity      |
    +---------------------+--------------------------------------------------+
-   | :const:`nan`        | hash value returned for a nan                    |
+   | :const:`nan`        | (this attribute is no longer used)               |
    +---------------------+--------------------------------------------------+
    | :const:`imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |

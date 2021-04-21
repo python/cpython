@@ -7,7 +7,7 @@ extern "C" {
 
 /* Helpers for hash functions */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
+PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
 PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
 // Similar to _Py_HashPointer(), but don't replace -1 with -2
 PyAPI_FUNC(Py_hash_t) _Py_HashPointerRaw(const void*);
@@ -29,7 +29,6 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
 #define _PyHASH_INF 314159
-#define _PyHASH_NAN 0
 #define _PyHASH_IMAG _PyHASH_MULTIPLIER
 
 
