@@ -1,2 +1,1 @@
-Added :class:BigEndianUnion and :class:LittleEndianUnion classes to the ctypes library, as 
-originally documented in the library docs but not yet implemented.
+Added :class:BigEndianUnion and :class:LittleEndianUnion classes to the ctypes library, as originally documented in the library docs but not yet implemented.
