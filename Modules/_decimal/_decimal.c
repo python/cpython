@@ -4554,7 +4554,7 @@ _dec_hash(PyDecObject *v)
             return -1;
         }
         else if (mpd_isnan(MPD(v))) {
-            return (Py_hash_t) v;
+            return _Py_HashPointer(v);
         }
         else {
             return py_hash_inf * mpd_arith_sign(MPD(v));
@@ -5938,5 +5938,3 @@ error:
 
     return NULL; /* GCOV_NOT_REACHED */
 }
-
-

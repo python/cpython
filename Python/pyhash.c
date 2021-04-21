@@ -86,6 +86,8 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 
    */
 
+Py_hash_t _Py_HashPointer(const void *);
+
 Py_hash_t
 _Py_HashDouble(PyObject *inst, double v)
 {
@@ -97,7 +99,7 @@ _Py_HashDouble(PyObject *inst, double v)
         if (Py_IS_INFINITY(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return (Py_hash_t) inst;
+            return _Py_HashPointer(inst);
     }
 
     m = frexp(v, &e);
