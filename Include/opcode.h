@@ -160,12 +160,6 @@ static uint32_t _PyOpcode_Jump[8] = {
 };
 #endif /* OPCODE_TABLES */
 
-/* EXCEPT_HANDLER is a special, implicit block type which is created when
-   entering an except handler. It is not an opcode but we define it here
-   as we want it to be available to both frameobject.c and ceval.c, while
-   remaining private.*/
-#define EXCEPT_HANDLER 257
-
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
 #ifdef __cplusplus

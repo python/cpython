@@ -1448,34 +1448,6 @@ eval_frame_handle_pending(PyThreadState *tstate)
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
 
-
-#define UNWIND_BLOCK(b) \
-    while (STACK_LEVEL() > (b)->b_level) { \
-        PyObject *v = POP(); \
-        Py_XDECREF(v); \
-    }
-
-#define UNWIND_EXCEPT_HANDLER(b) \
-    do { \
-        PyObject *type, *value, *traceback; \
-        _PyErr_StackItem *exc_info; \
-        assert(STACK_LEVEL() >= (b)->b_level); \
-        while (STACK_LEVEL() > (b)->b_level) { \
-            value = POP(); \
-            Py_XDECREF(value); \
-        } \
-        exc_info = tstate->exc_info; \
-        type = exc_info->exc_type; \
-        value = exc_info->exc_value; \
-        traceback = exc_info->exc_traceback; \
-        exc_info->exc_type = POP(); \
-        exc_info->exc_value = POP(); \
-        exc_info->exc_traceback = POP(); \
-        Py_XDECREF(type); \
-        Py_XDECREF(value); \
-        Py_XDECREF(traceback); \
-    } while(0)
-
     /* macros for opcode cache */
 #define OPCACHE_CHECK() \
     do { \
@@ -4181,7 +4153,7 @@ main_loop:
         case TARGET(WITH_EXCEPT_START): {
             /* At the top of the stack are 8 values:
                - (TOP, SECOND, THIRD) = exc_info()
-               - (FOURTH, FIFTH, SIXTH) = previous exception for EXCEPT_HANDLER
+               - (FOURTH, FIFTH, SIXTH) = previous exception
                - SEVENTH: lasti of exception in exc_info()
                - EIGHTH: the context.__exit__ bound method
                We call SEVENTH(TOP, SECOND, THIRD).
@@ -4566,57 +4538,52 @@ error:
         }
 exception_unwind:
         f->f_state = FRAME_UNWINDING;
-        /* Unwind stacks if an exception occurred */
-        while (f->f_iblock > 0) {
-            /* Pop the current block. */
-            PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
-            assert(STACK_LEVEL() >= b->b_level);
-            if (b->b_type == EXCEPT_HANDLER) {
-                UNWIND_EXCEPT_HANDLER(b);
-                continue;
+        if (f->f_iblock == 0) {
+            // No handlers, so exit.
+            break;
+        }
+        /* Pop the current block. */
+        PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
+        assert(b->b_type == SETUP_FINALLY || b->b_type == SETUP_CLEANUP);
+        assert(STACK_LEVEL() >= b->b_level);
+        while (STACK_LEVEL() > (b)->b_level) {
+            PyObject *v = POP();
+            Py_XDECREF(v);
+        }
+        PyObject *exc, *val, *tb;
+        int handler = b->b_handler;
+        if (b->b_type == SETUP_CLEANUP) {
+            PyObject *lasti = PyLong_FromLong(f->f_lasti);
+            if (lasti == NULL) {
+                goto exception_unwind;
             }
-            UNWIND_BLOCK(b);
-            assert(b->b_type == SETUP_FINALLY || b->b_type == SETUP_CLEANUP);
-            PyObject *exc, *val, *tb;
-            int handler = b->b_handler;
-            int cleanup = b->b_type == SETUP_CLEANUP;
-            if (cleanup) {
-                PyObject *lasti = PyLong_FromLong(f->f_lasti);
-                if (lasti == NULL) {
-                    goto exception_unwind;
-                }
-                PUSH(lasti);
-            }
-            /* Beware, this invalidates all b->b_* fields */
-            _PyErr_Fetch(tstate, &exc, &val, &tb);
-            /* Make the raw exception data
-                available to the handler,
-                so a program can emulate the
-                Python main loop. */
-            _PyErr_NormalizeException(tstate, &exc, &val, &tb);
-            if (tb != NULL)
-                PyException_SetTraceback(val, tb);
-            else
-                PyException_SetTraceback(val, Py_None);
-            if (tb == NULL) {
-                tb = Py_None;
-                Py_INCREF(Py_None);
-            }
-            PUSH(tb);
-            PUSH(val);
-            PUSH(exc);
-            JUMPTO(handler);
-            if (trace_info.cframe.use_tracing) {
-                trace_info.instr_prev = INT_MAX;
-            }
-            /* Resume normal execution */
-            f->f_state = FRAME_EXECUTING;
-            NEXTOPARG();
-            goto dispatch_opcode;
-        } /* unwind stack */
-
-        /* End the loop as we still have an error */
-        break;
+            PUSH(lasti);
+        }
+        _PyErr_Fetch(tstate, &exc, &val, &tb);
+        /* Make the raw exception data
+            available to the handler,
+            so a program can emulate the
+            Python main loop. */
+        _PyErr_NormalizeException(tstate, &exc, &val, &tb);
+        if (tb != NULL)
+            PyException_SetTraceback(val, tb);
+        else
+            PyException_SetTraceback(val, Py_None);
+        if (tb == NULL) {
+            tb = Py_None;
+            Py_INCREF(Py_None);
+        }
+        PUSH(tb);
+        PUSH(val);
+        PUSH(exc);
+        JUMPTO(handler);
+        if (trace_info.cframe.use_tracing) {
+            trace_info.instr_prev = INT_MAX;
+        }
+        /* Resume normal execution */
+        f->f_state = FRAME_EXECUTING;
+        NEXTOPARG();
+        goto dispatch_opcode;
     } /* main loop */
 
     assert(retval == NULL);
