@@ -931,43 +931,43 @@ Specialized indentation errors:
    >>> while condition:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after while statement on line 1
+   IndentationError: expected an indented block after 'while' statement on line 1
 
    >>> for x in range(10):
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after for statement on line 1
+   IndentationError: expected an indented block after 'for' statement on line 1
 
    >>> for x in range(10):
    ...     pass
    ... else:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after else statement on line 3
+   IndentationError: expected an indented block after 'else' statement on line 3
 
    >>> async for x in range(10):
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after for statement on line 1
+   IndentationError: expected an indented block after 'for' statement on line 1
 
    >>> async for x in range(10):
    ...     pass
    ... else:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after else statement on line 3
+   IndentationError: expected an indented block after 'else' statement on line 3
 
    >>> if something:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after if statement on line 1
+   IndentationError: expected an indented block after 'if' statement on line 1
 
    >>> if something:
    ...     pass
    ... elif something_else:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after elif statement on line 3
+   IndentationError: expected an indented block after 'elif' statement on line 3
 
    >>> if something:
    ...     pass
@@ -976,19 +976,19 @@ Specialized indentation errors:
    ... else:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after else statement on line 5
+   IndentationError: expected an indented block after 'else' statement on line 5
 
    >>> try:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after try statement on line 1
+   IndentationError: expected an indented block after 'try' statement on line 1
 
    >>> try:
    ...     something()
    ... except A:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after except statement on line 3
+   IndentationError: expected an indented block after 'except' statement on line 3
 
    >>> try:
    ...     something()
@@ -997,37 +997,37 @@ Specialized indentation errors:
    ... finally:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after finally statement on line 5
+   IndentationError: expected an indented block after 'finally' statement on line 5
 
    >>> with A:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after with statement on line 1
+   IndentationError: expected an indented block after 'with' statement on line 1
 
    >>> with A as a, B as b:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after with statement on line 1
+   IndentationError: expected an indented block after 'with' statement on line 1
 
    >>> with (A as a, B as b):
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after with statement on line 1
+   IndentationError: expected an indented block after 'with' statement on line 1
 
    >>> async with A:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after with statement on line 1
+   IndentationError: expected an indented block after 'with' statement on line 1
 
    >>> async with A as a, B as b:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after with statement on line 1
+   IndentationError: expected an indented block after 'with' statement on line 1
 
    >>> async with (A as a, B as b):
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after with statement on line 1
+   IndentationError: expected an indented block after 'with' statement on line 1
 
    >>> def foo(x, /, y, *, z=2):
    ... pass
@@ -1042,13 +1042,13 @@ Specialized indentation errors:
    >>> match something:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after match statement on line 1
+   IndentationError: expected an indented block after 'match' statement on line 1
 
    >>> match something:
    ...     case []:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after case statement on line 2
+   IndentationError: expected an indented block after 'case' statement on line 2
 
    >>> match something:
    ...     case []:
@@ -1056,7 +1056,7 @@ Specialized indentation errors:
    ...     case {}:
    ... pass
    Traceback (most recent call last):
-   IndentationError: expected an indented block after case statement on line 4
+   IndentationError: expected an indented block after 'case' statement on line 4
 
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
