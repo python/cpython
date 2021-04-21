@@ -1,5 +1,4 @@
 Add BigEndianUnion and LittleEndianUnion classes to the ctypes library, as
 originally documented in the `ctypes`_ library documentation.
 
-.. _ctypes:
-https://docs.python.org/3/library/ctypes.html#structure-union-alignment-and-byte-order
+.. _ctypes: https://docs.python.org/3/library/ctypes.html#structure-union-alignment-and-byte-order
