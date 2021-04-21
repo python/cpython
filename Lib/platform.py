@@ -238,7 +238,10 @@ def _norm_version(version, build=''):
     l = version.split('.')
     if build:
         l.append(build)
-    strings = list(map(str, map(int, l)))
+    try:
+        strings = list(map(str, map(int, l)))
+    except ValueError:
+        strings = l
     version = '.'.join(strings[:3])
     return version
 
