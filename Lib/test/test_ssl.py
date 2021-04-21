@@ -1118,23 +1118,10 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(default | ssl.OP_NO_TLSv1, ctx.options)
         with warnings_helper.check_warnings():
             ctx.options = (ctx.options & ~ssl.OP_NO_TLSv1)
-        # <<<<<<< HEAD  FIXME
         self.assertEqual(default, ctx.options)
         ctx.options = 0
         # Ubuntu has OP_NO_SSLv3 forced on by default
         self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
-        # =======
-            self.assertEqual(
-                    default, ctx.options,
-                    'Failed comparison:\n   ssl.OP_ALL: %50s %s\n      default: %50s %s\n  ctx.options: %50s %s' % (enum.bin(ssl.OP_ALL), ssl.OP_ALL, enum.bin(default), default, enum.bin(ctx.options), ctx.options),
-                    )
-            ctx.options = 0
-            # Ubuntu has OP_NO_SSLv3 forced on by default
-            self.assertEqual(0, ctx.options & ~ssl.OP_NO_SSLv3)
-        else:
-            with self.assertRaises(ValueError):
-                ctx.options = 0
-        # >>>>>>> changes:
 
     def test_verify_mode_protocol(self):
         with warnings_helper.check_warnings():
