@@ -164,22 +164,25 @@ dotted_name[expr_ty]:
     | NAME
 
 if_stmt[stmt_ty]:
+    | invalid_if_stmt
     | 'if' a=named_expression ':' b=block c=elif_stmt {
         _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
     | 'if' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
-    | invalid_if_stmt
 elif_stmt[stmt_ty]:
+    | invalid_elif_stmt
     | 'elif' a=named_expression ':' b=block c=elif_stmt {
         _PyAST_If(a, b, CHECK(asdl_stmt_seq*, _PyPegen_singleton_seq(p, c)), EXTRA) }
     | 'elif' a=named_expression ':' b=block c=[else_block] { _PyAST_If(a, b, c, EXTRA) }
-    | invalid_elif_stmt
-else_block[asdl_stmt_seq*]: 'else' &&':' b=block { b }
+else_block[asdl_stmt_seq*]:
+    | invalid_else_stmt
+    | 'else' &&':' b=block { b }
 
 while_stmt[stmt_ty]:
-    | 'while' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
     | invalid_while_stmt
+    | 'while' a=named_expression ':' b=block c=[else_block] { _PyAST_While(a, b, c, EXTRA) }
 
 for_stmt[stmt_ty]:
+    | invalid_for_stmt
     | 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
         _PyAST_For(t, ex, b, el, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'for' t=star_targets 'in' ~ ex=star_expressions &&':' tc=[TYPE_COMMENT] b=block el=[else_block] {
@@ -187,6 +190,7 @@ for_stmt[stmt_ty]:
     | invalid_for_target
 
 with_stmt[stmt_ty]:
+    | invalid_with_stmt_indent
     | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
         _PyAST_With(a, b, NULL, EXTRA) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
@@ -203,14 +207,18 @@ with_item[withitem_ty]:
     | e=expression { _PyAST_withitem(e, NULL, p->arena) }
 
 try_stmt[stmt_ty]:
+    | invalid_try_stmt
     | 'try' &&':' b=block f=finally_block { _PyAST_Try(b, NULL, NULL, f, EXTRA) }
     | 'try' &&':' b=block ex[asdl_excepthandler_seq*]=except_block+ el=[else_block] f=[finally_block] { _PyAST_Try(b, ex, el, f, EXTRA) }
 except_block[excepthandler_ty]:
+    | invalid_except_stmt_indent
     | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
         _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
     | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
-    | invalid_except_block
-finally_block[asdl_stmt_seq*]: 'finally' ':' a=block { a }
+    | invalid_except_stmt
+finally_block[asdl_stmt_seq*]:
+    | invalid_finally_stmt
+    | 'finally' &&':' a=block { a }
 
 match_stmt[stmt_ty]:
     | "match" subject=subject_expr ':' NEWLINE INDENT cases[asdl_match_case_seq*]=case_block+ DEDENT {
@@ -221,9 +229,9 @@ subject_expr[expr_ty]:
         _PyAST_Tuple(CHECK(asdl_expr_seq*, _PyPegen_seq_insert_in_front(p, value, values)), Load, EXTRA) }
     | named_expression
 case_block[match_case_ty]:
+    | invalid_case_block
     | "case" pattern=patterns guard=guard? ':' body=block {
         _PyAST_match_case(pattern, guard, body, p->arena) }
-    | invalid_case_block
 guard[expr_ty]: 'if' guard=named_expression { guard }
 
 patterns[expr_ty]:
@@ -334,6 +342,7 @@ function_def[stmt_ty]:
     | function_def_raw
 
 function_def_raw[stmt_ty]:
+    | invalid_def_raw
     | 'def' n=NAME '(' params=[params] ')' a=['->' z=expression { z }] &&':' tc=[func_type_comment] b=block {
         _PyAST_FunctionDef(n->v.Name.id,
                         (params) ? params : CHECK(arguments_ty, _PyPegen_empty_arguments(p)),
@@ -418,6 +427,7 @@ class_def[stmt_ty]:
     | a=decorators b=class_def_raw { _PyPegen_class_def_decorators(p, a, b) }
     | class_def_raw
 class_def_raw[stmt_ty]:
+    | invalid_class_def_raw
     | 'class' a=NAME b=['(' z=[arguments] ')' { z }] &&':' c=block {
         _PyAST_ClassDef(a->v.Name.id,
                      (b) ? ((expr_ty) b)->v.Call.args : NULL,
@@ -876,23 +886,59 @@ invalid_import_from_targets:
 invalid_with_stmt:
     | [ASYNC] 'with' ','.(expression ['as' star_target])+ &&':'
     | [ASYNC] 'with' '(' ','.(expressions ['as' star_target])+ ','? ')' &&':'
+invalid_with_stmt_indent:
+    | [ASYNC] a='with' ','.(expression ['as' star_target])+ ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
+    | [ASYNC] a='with' '(' ','.(expressions ['as' star_target])+ ','? ')' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'with' statement on line %d", a->lineno) }
 
-invalid_except_block:
+invalid_try_stmt:
+    | a='try' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
+invalid_except_stmt:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "exception group must be parenthesized") }
-    | 'except' expression ['as' NAME ] &&':'
-    | 'except' &&':'
-
+    | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+invalid_finally_stmt:
+    | a='finally' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'finally' statement on line %d", a->lineno) }
+invalid_except_stmt_indent:
+    | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT { 
+        RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
+    | a='except' ':' NEWLINE !INDENT { RAISE_SYNTAX_ERROR("expected an indented block after except statement on line %d", a->lineno) }
 invalid_match_stmt:
     | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
+    | a="match" subject=subject_expr ':' NEWLINE !INDENT { 
+        RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
 invalid_case_block:
     | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a="case" patterns guard? ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
 invalid_if_stmt:
     | 'if' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='if' a=named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'if' statement on line %d", a->lineno) }
 invalid_elif_stmt:
     | 'elif' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='elif' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'elif' statement on line %d", a->lineno) }
+invalid_else_stmt:
+    | a='else' ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'else' statement on line %d", a->lineno) }
 invalid_while_stmt:
     | 'while' named_expression NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
+    | a='while' named_expression ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'while' statement on line %d", a->lineno) }
+invalid_for_stmt:
+    | [ASYNC] a='for' star_targets 'in' star_expressions ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after 'for' statement on line %d", a->lineno) }
+invalid_def_raw:
+    | [ASYNC] a='def' NAME '(' [params] ')' ['->' expression] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after function definition on line %d", a->lineno) }
+invalid_class_def_raw:
+    | a='class' NAME ['('[arguments] ')'] ':' NEWLINE !INDENT {
+        RAISE_INDENTATION_ERROR("expected an indented block after class definition on line %d", a->lineno) }
 
 invalid_double_starred_kvpairs:
     | ','.double_starred_kvpair+ ',' invalid_kvpair

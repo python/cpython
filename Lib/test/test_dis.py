@@ -237,26 +237,28 @@ dis_annot_stmt_str = """\
   2           0 SETUP_ANNOTATIONS
               2 LOAD_CONST               0 (1)
               4 STORE_NAME               0 (x)
-              6 LOAD_CONST               1 ('int')
-              8 LOAD_NAME                1 (__annotations__)
-             10 LOAD_CONST               2 ('x')
+              6 LOAD_NAME                1 (int)
+              8 LOAD_NAME                2 (__annotations__)
+             10 LOAD_CONST               1 ('x')
              12 STORE_SUBSCR
 
-  3          14 LOAD_CONST               3 ('fun(1)')
-             16 LOAD_NAME                1 (__annotations__)
-             18 LOAD_CONST               4 ('y')
-             20 STORE_SUBSCR
+  3          14 LOAD_NAME                3 (fun)
+             16 LOAD_CONST               0 (1)
+             18 CALL_FUNCTION            1
+             20 LOAD_NAME                2 (__annotations__)
+             22 LOAD_CONST               2 ('y')
+             24 STORE_SUBSCR
 
-  4          22 LOAD_CONST               0 (1)
-             24 LOAD_NAME                2 (lst)
-             26 LOAD_NAME                3 (fun)
-             28 LOAD_CONST               5 (0)
-             30 CALL_FUNCTION            1
-             32 STORE_SUBSCR
-             34 LOAD_NAME                4 (int)
-             36 POP_TOP
-             38 LOAD_CONST               6 (None)
-             40 RETURN_VALUE
+  4          26 LOAD_CONST               0 (1)
+             28 LOAD_NAME                4 (lst)
+             30 LOAD_NAME                3 (fun)
+             32 LOAD_CONST               3 (0)
+             34 CALL_FUNCTION            1
+             36 STORE_SUBSCR
+             38 LOAD_NAME                1 (int)
+             40 POP_TOP
+             42 LOAD_CONST               4 (None)
+             44 RETURN_VALUE
 """
 
 compound_stmt_str = """\
