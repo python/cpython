@@ -2666,11 +2666,6 @@ main_loop:
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
             PyTryBlock *b = PyFrame_BlockPop(f);
-            if (b->b_type != EXCEPT_HANDLER) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "popped block is not an except handler");
-                goto error;
-            }
             assert(STACK_LEVEL() == (b)->b_level ||
                    STACK_LEVEL() == (b)->b_level + 1);
             exc_info = tstate->exc_info;
@@ -2686,6 +2681,28 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(POP_EXCEPT_AND_RERAISE): {
+            PyTryBlock *b = &f->f_blockstack[f->f_iblock];
+            PyObject *type, *value, *traceback;
+            _PyErr_StackItem *exc_info;
+            assert(STACK_LEVEL() == (b)->b_level + 3);
+            type = POP();
+            value = POP();
+            traceback = POP();
+            _PyErr_Restore(tstate, type, value, traceback);
+            exc_info = tstate->exc_info;
+            type = exc_info->exc_type;
+            value = exc_info->exc_value;
+            traceback = exc_info->exc_traceback;
+            exc_info->exc_type = POP();
+            exc_info->exc_value = POP();
+            exc_info->exc_traceback = POP();
+            Py_XDECREF(type);
+            Py_XDECREF(value);
+            Py_XDECREF(traceback);
+            goto exception_unwind;
+        }
+
         case TARGET(POP_BLOCK): {
             PyFrame_BlockPop(f);
             DISPATCH();
@@ -2696,7 +2713,7 @@ main_loop:
             PyObject *val = POP();
             PyObject *tb = POP();
             if (oparg) {
-                PyObject *lasti = PEEK(4);
+                PyObject *lasti = PEEK(oparg);
                 if (PyLong_Check(lasti)) {
                     f->f_lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -4597,7 +4614,6 @@ exception_unwind:
             PUSH(val);
             PUSH(exc);
             JUMPTO(handler);
-            assert(_Py_OPCODE(*next_instr) == SETUP_EXCEPT);
             if (trace_info.cframe.use_tracing) {
                 trace_info.instr_prev = INT_MAX;
             }

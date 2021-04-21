@@ -36,6 +36,7 @@ extern "C" {
 #define MATCH_KEYS               33
 #define COPY_DICT_WITHOUT_KEYS   34
 #define PUSH_EXC_INFO            35
+#define POP_EXCEPT_AND_RERAISE   36
 #define WITH_EXCEPT_START        49
 #define GET_AITER                50
 #define GET_ANEXT                51

@@ -1005,8 +1005,8 @@ stack_effect(int opcode, int oparg, int jump)
 
         case SETUP_WITH:
             /* 1 in the normal flow.
-             * Restore the stack position and push 7 values before jumping to
-             * the handler if an exception be raised. */
+             * Restore the stack position and push 4 values before jumping to
+             * the handler if an exception is raised. */
             return jump ? 4 : 1;
         case RETURN_VALUE:
             return -1;
@@ -1022,6 +1022,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 0;
         case POP_EXCEPT:
             return -3;
+        case POP_EXCEPT_AND_RERAISE:
+            return -6;
 
         case STORE_NAME:
             return -1;
@@ -3041,14 +3043,15 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *end, *exit;
+    basicblock *body, *end, *exit, *cleanup;
 
     body = compiler_new_block(c);
     end = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (body == NULL || end == NULL || exit == NULL)
+    cleanup = compiler_new_block(c);
+    if (body == NULL || end == NULL || exit == NULL || cleanup == NULL) {
         return 0;
-
+    }
     /* `try` block */
     ADDOP_JUMP(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
@@ -3068,13 +3071,15 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     /* `finally` block */
     compiler_use_next_block(c, end);
 
-    ADDOP_I(c, SETUP_EXCEPT, 0);
+    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
     ADDOP_I(c, RERAISE, 0);
+    compiler_use_next_block(c, cleanup);
+    ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, exit);
     return 1;
 }
@@ -3112,14 +3117,15 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 static int
 compiler_try_except(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *orelse, *except, *end;
+    basicblock *body, *orelse, *except, *end, *cleanup;
     Py_ssize_t i, n;
 
     body = compiler_new_block(c);
     except = compiler_new_block(c);
     orelse = compiler_new_block(c);
     end = compiler_new_block(c);
-    if (body == NULL || except == NULL || orelse == NULL || end == NULL)
+    cleanup = compiler_new_block(c);
+    if (body == NULL || except == NULL || orelse == NULL || end == NULL || cleanup == NULL)
         return 0;
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     compiler_use_next_block(c, body);
@@ -3132,7 +3138,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
 
-    ADDOP_I(c, SETUP_EXCEPT, 0);
+    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
     if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
@@ -3200,8 +3206,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* name = None; del name; # Mark as artificial */
             c->u->u_lineno = -1;
 
-            ADDOP_I(c, SETUP_EXCEPT, 0);
-            ADDOP(c, PUSH_EXC_INFO);
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
@@ -3233,6 +3237,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     c->u->u_lineno = -1;
     compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP_I(c, RERAISE, 0);
+    compiler_use_next_block(c, cleanup);
+    ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
     compiler_use_next_block(c, end);
@@ -4933,7 +4939,7 @@ compiler_with_except_finish(struct compiler *c) {
         return 0;
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
-    ADDOP_I(c, RERAISE, 1);
+    ADDOP_I(c, RERAISE, 4);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
