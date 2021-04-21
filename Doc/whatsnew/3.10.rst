@@ -273,6 +273,23 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`41064`)
 
+IndentationErrors
+~~~~~~~~~~~~~~~~~
+
+Many :exc:`IndentationError` exceptions now have more context regarding what kind of block
+was expecting an indentation, including the location of the statement:
+
+.. code-block:: python
+
+    >>> def foo():
+    ...    if lel:
+    ...    x = 2
+      File "<stdin>", line 3
+        x = 2
+        ^
+    IndentationError: expected an indented block after 'if' statement in line 2
+
+
 AttributeErrors
 ~~~~~~~~~~~~~~~
 
