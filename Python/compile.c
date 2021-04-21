@@ -4932,7 +4932,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
  */
 
 static int
-compiler_with_except_finish(struct compiler *c) {
+compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     basicblock *exit;
     exit = compiler_new_block(c);
     if (exit == NULL)
@@ -4940,6 +4940,8 @@ compiler_with_except_finish(struct compiler *c) {
     ADDOP_JUMP(c, POP_JUMP_IF_TRUE, exit);
     NEXT_BLOCK(c);
     ADDOP_I(c, RERAISE, 4);
+    compiler_use_next_block(c, cleanup);
+    ADDOP(c, POP_EXCEPT_AND_RERAISE);
     compiler_use_next_block(c, exit);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
@@ -4977,7 +4979,7 @@ compiler_with_except_finish(struct compiler *c) {
 static int
 compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final, *exit;
+    basicblock *block, *final, *exit, *cleanup;
     withitem_ty item = asdl_seq_GET(s->v.AsyncWith.items, pos);
 
     assert(s->kind == AsyncWith_kind);
@@ -4990,7 +4992,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     block = compiler_new_block(c);
     final = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (!block || !final || !exit)
+    cleanup = compiler_new_block(c);
+    if (!block || !final || !exit || !cleanup)
         return 0;
 
     /* Evaluate EXPR */
@@ -5045,16 +5048,16 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     compiler_use_next_block(c, final);
     c->u->u_lineno = -1;
 
-    ADDOP_I(c, SETUP_EXCEPT, 0);
+    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
-    compiler_with_except_finish(c);
+    compiler_with_except_finish(c, cleanup);
 
-compiler_use_next_block(c, exit);
+    compiler_use_next_block(c, exit);
     return 1;
 }
 
@@ -5083,7 +5086,7 @@ compiler_use_next_block(c, exit);
 static int
 compiler_with(struct compiler *c, stmt_ty s, int pos)
 {
-    basicblock *block, *final, *exit;
+    basicblock *block, *final, *exit, *cleanup;
     withitem_ty item = asdl_seq_GET(s->v.With.items, pos);
 
     assert(s->kind == With_kind);
@@ -5091,7 +5094,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     block = compiler_new_block(c);
     final = compiler_new_block(c);
     exit = compiler_new_block(c);
-    if (!block || !final || !exit)
+    cleanup = compiler_new_block(c);
+    if (!block || !final || !exit || !cleanup)
         return 0;
 
     /* Evaluate EXPR */
@@ -5140,11 +5144,11 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     compiler_use_next_block(c, final);
     c->u->u_lineno = -1;
 
-    ADDOP_I(c, SETUP_EXCEPT, 0);
+    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);
-    compiler_with_except_finish(c);
+    compiler_with_except_finish(c, cleanup);
 
     compiler_use_next_block(c, exit);
     return 1;
@@ -6342,7 +6346,8 @@ stackdepth(struct compiler *c)
                 instr->i_opcode == JUMP_FORWARD ||
                 instr->i_opcode == RETURN_VALUE ||
                 instr->i_opcode == RAISE_VARARGS ||
-                instr->i_opcode == RERAISE)
+                instr->i_opcode == RERAISE ||
+                instr->i_opcode == POP_EXCEPT_AND_RERAISE)
             {
                 /* remaining code is dead */
                 next = NULL;
@@ -7299,6 +7304,7 @@ normalize_basic_block(basicblock *bb) {
             case RETURN_VALUE:
             case RAISE_VARARGS:
             case RERAISE:
+            case POP_EXCEPT_AND_RERAISE:
                 bb->b_exit = 1;
                 bb->b_nofallthrough = 1;
                 break;
