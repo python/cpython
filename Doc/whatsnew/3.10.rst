@@ -776,6 +776,13 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+-------
+
+Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+method.
+(Contributed by Alex Grönholm in :issue:`41332`.)
+
 argparse
 --------
 
@@ -794,6 +801,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+bdb
+---
+
+Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+(Contributed by Irit Katriel in :issue:`24160`.)
 
 codecs
 ------
@@ -825,6 +838,9 @@ and objects representing asynchronously released resources.
 
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
+
+Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
+as decorators.
 
 curses
 ------
@@ -879,6 +895,9 @@ enum
 :func:`__str__` now returns ``member_name``.  Stdlib enums available as
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
+
+Add :class:`enum.StrEnum` for enums where all members are strings.
+(Contributed by Ethan Furman in :issue:`41816`.)
 
 fileinput
 ---------
@@ -1089,6 +1108,10 @@ and to match the behavior of static type checkers specified in the PEP.
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
 
+Add new function :func:`typing.is_typeddict` to introspect if an annotation
+is a :class:`typing.TypedDict`.
+(Contributed by Patrick Reader in :issue:`41792`)
+
 unittest
 --------
 
@@ -1121,7 +1144,10 @@ zipimport
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 :meth:`zipimport.zipimporter.create_module`, and
 :meth:`zipimport.zipimporter.exec_module`.
-(Contributed by Brett Cannon in :issue:`42131`.
+(Contributed by Brett Cannon in :issue:`42131`.)
+
+Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
+(Contributed by Desmond Cheong in :issue:`14678`.)
 
 
 Optimizations
