@@ -1093,6 +1093,9 @@ stack_effect(int opcode, int oparg, int jump)
             return jump ? 3 : 0;
         case SETUP_CLEANUP:
             return jump ? 4 : 0;
+        case SETUP_EXCEPT:
+            return 0; // jump > 0 ? -3 : 0;
+
         case RERAISE:
             return -3;
         case PUSH_EXC_INFO:
@@ -2887,6 +2890,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, except);
 
     c->u->u_lineno = -1;
+    ADDOP_I(c, SETUP_EXCEPT, 0);
     ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, END_ASYNC_FOR);
 
@@ -3064,6 +3068,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     /* `finally` block */
     compiler_use_next_block(c, end);
 
+    ADDOP_I(c, SETUP_EXCEPT, 0);
     ADDOP(c, PUSH_EXC_INFO);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
         return 0;
@@ -3126,6 +3131,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
+
+    ADDOP_I(c, SETUP_EXCEPT, 0);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
     if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
@@ -3192,6 +3199,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* name = None; del name; # Mark as artificial */
             c->u->u_lineno = -1;
+
+            ADDOP_I(c, SETUP_EXCEPT, 0);
             ADDOP(c, PUSH_EXC_INFO);
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
@@ -4734,6 +4743,8 @@ compiler_async_comprehension_generator(struct compiler *c,
 
     compiler_use_next_block(c, except);
     c->u->u_lineno = -1;
+
+    ADDOP_I(c, SETUP_EXCEPT, 0);
     ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, END_ASYNC_FOR);
 
@@ -5027,6 +5038,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
     c->u->u_lineno = -1;
+
+    ADDOP_I(c, SETUP_EXCEPT, 0);
     ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);
@@ -5120,6 +5133,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
     c->u->u_lineno = -1;
+
+    ADDOP_I(c, SETUP_EXCEPT, 0);
     ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);

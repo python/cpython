@@ -1459,8 +1459,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
     do { \
         PyObject *type, *value, *traceback; \
         _PyErr_StackItem *exc_info; \
-        assert(STACK_LEVEL() >= (b)->b_level + 3); \
-        while (STACK_LEVEL() > (b)->b_level + 3) { \
+        assert(STACK_LEVEL() >= (b)->b_level); \
+        while (STACK_LEVEL() > (b)->b_level) { \
             value = POP(); \
             Py_XDECREF(value); \
         } \
@@ -2671,8 +2671,8 @@ main_loop:
                                  "popped block is not an except handler");
                 goto error;
             }
-            assert(STACK_LEVEL() >= (b)->b_level + 3 &&
-                   STACK_LEVEL() <= (b)->b_level + 4);
+            assert(STACK_LEVEL() == (b)->b_level ||
+                   STACK_LEVEL() == (b)->b_level + 1);
             exc_info = tstate->exc_info;
             type = exc_info->exc_type;
             value = exc_info->exc_value;
@@ -4099,6 +4099,12 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(SETUP_EXCEPT): {
+            PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1,
+                               STACK_LEVEL());
+            DISPATCH();
+        }
+
         case TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
@@ -4555,7 +4561,7 @@ exception_unwind:
         while (f->f_iblock > 0) {
             /* Pop the current block. */
             PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
-
+            assert(STACK_LEVEL() >= b->b_level);
             if (b->b_type == EXCEPT_HANDLER) {
                 UNWIND_EXCEPT_HANDLER(b);
                 continue;
@@ -4590,9 +4596,8 @@ exception_unwind:
             PUSH(tb);
             PUSH(val);
             PUSH(exc);
-            PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL()-3);
             JUMPTO(handler);
-            assert(_Py_OPCODE(*next_instr) == PUSH_EXC_INFO);
+            assert(_Py_OPCODE(*next_instr) == SETUP_EXCEPT);
             if (trace_info.cframe.use_tracing) {
                 trace_info.instr_prev = INT_MAX;
             }

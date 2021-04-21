@@ -164,6 +164,7 @@ def_op('IS_OP', 117)
 def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 
+def_op('SETUP_EXCEPT', 120)   # Distance to target address # Currently ignored.
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 jrel_op('SETUP_FINALLY', 122)   # Distance to target address
 jrel_op('SETUP_CLEANUP', 123)   # Distance to target address
