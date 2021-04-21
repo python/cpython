@@ -1205,8 +1205,10 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->func = func;
     obj->misses = obj->hits = 0;
     obj->maxsize = maxsize;
-    obj->kwd_mark = state->kwd_mark;                        // Borrowed
-    obj->lru_list_elem_type = state->lru_list_elem_type;    // Borrowed
+    Py_INCREF(state->kwd_mark);
+    obj->kwd_mark = state->kwd_mark;
+    Py_INCREF(state->lru_list_elem_type);
+    obj->lru_list_elem_type = state->lru_list_elem_type;
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
     obj->dict = NULL;
@@ -1242,6 +1244,8 @@ lru_cache_tp_clear(lru_cache_object *self)
     lru_list_elem *list = lru_cache_unlink_list(self);
     Py_CLEAR(self->func);
     Py_CLEAR(self->cache);
+    Py_CLEAR(self->kwd_mark);
+    Py_CLEAR(self->lru_list_elem_type);
     Py_CLEAR(self->cache_info_type);
     Py_CLEAR(self->dict);
     lru_cache_clear_list(list);
@@ -1334,6 +1338,8 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     }
     Py_VISIT(self->func);
     Py_VISIT(self->cache);
+    Py_VISIT(self->kwd_mark);
+    Py_VISIT(self->lru_list_elem_type);
     Py_VISIT(self->cache_info_type);
     Py_VISIT(self->dict);
     return 0;
