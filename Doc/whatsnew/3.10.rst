@@ -274,7 +274,7 @@ was expecting an indentation, including the location of the statement:
       File "<stdin>", line 3
         x = 2
         ^
-    IndentationError: expected an indented block after if statement in line 2
+    IndentationError: expected an indented block after 'if' statement in line 2
 
 
 AttributeErrors
