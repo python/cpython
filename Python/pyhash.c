@@ -59,9 +59,9 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
    _PyHASH_INF and -_PyHASH_INF are also used for the
    hashes of float and Decimal infinities.
 
-   NaNs hash to their object id.  Having distinct hash values prevents
-   catastrophic piles-up for unique NaNs which used to always have
-   the same hash value but would compare unequal.
+   NaNs hash with a pointer hash.  Having distinct hash values prevents
+   catastrophic pileups from distinct NaN instances which used to always
+   have the same hash value but would compare unequal.
 
    A selling point for the above strategy is that it makes it possible
    to compute hashes of decimal and binary floating-point numbers
