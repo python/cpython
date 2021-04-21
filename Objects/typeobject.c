@@ -1987,14 +1987,20 @@ mro_invoke(PyTypeObject *type)
 
     new_mro = PySequence_Tuple(mro_result);
     Py_DECREF(mro_result);
-    if (new_mro == NULL)
+    if (new_mro == NULL) {
         return NULL;
+    }
+
+    if (PyTuple_GET_SIZE(new_mro) == 0) {
+        Py_DECREF(new_mro);
+        PyErr_Format(PyExc_TypeError, "type MRO must not be empty");
+        return NULL;
+    }
 
     if (custom && mro_check(type, new_mro) < 0) {
         Py_DECREF(new_mro);
         return NULL;
     }
-
     return new_mro;
 }
 
@@ -2034,8 +2040,9 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     new_mro = mro_invoke(type);  /* might cause reentrance */
     reent = (type->tp_mro != old_mro);
     Py_XDECREF(old_mro);
-    if (new_mro == NULL)
+    if (new_mro == NULL) {
         return -1;
+    }
 
     if (reent) {
         Py_DECREF(new_mro);
@@ -3590,9 +3597,17 @@ PyObject *
 _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 {
     assert(PyType_Check(type));
+
     PyObject *mro = type->tp_mro;
+    // The type must be ready
     assert(mro != NULL);
-    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(mro); i++) {
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty, so we don't have
+    // to check i < PyTuple_GET_SIZE(mro) at the first loop iteration.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+
+    Py_ssize_t i = 0;
+    do {
         PyObject *super = PyTuple_GET_ITEM(mro, i);
         // _PyType_GetModuleByDef() must only be called on a heap type created
         // by PyType_FromModuleAndSpec() or on its subclasses.
@@ -3605,7 +3620,8 @@ _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
         if (module && PyModule_GetDef(module) == def) {
             return module;
         }
-    }
+        i++;
+    } while (i < PyTuple_GET_SIZE(mro));
 
     PyErr_Format(
         PyExc_TypeError,
