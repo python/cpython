@@ -365,7 +365,10 @@ def win32_ver(release='', version='', csd='', ptype=''):
         return release, version, csd, ptype
 
     winver = getwindowsversion()
-    maj, min, build = winver.platform_version or winver[:3]
+    cmdwinver = _syscmd_ver()[2].split('.')
+    for x in range(3):
+        cmdwinver[x] = int(cmdwinver[x])
+    maj, min, build = tuple(cmdwinver) or winver[:3]
     version = '{0}.{1}.{2}'.format(maj, min, build)
 
     release = (_WIN32_CLIENT_RELEASES.get((maj, min)) or
