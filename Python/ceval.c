@@ -2731,19 +2731,17 @@ main_loop:
 
         case TARGET(END_ASYNC_FOR): {
             PyObject *exc = POP();
+            PyObject *val = POP();
+            PyObject *tb = POP();
             assert(PyExceptionClass_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
-                PyTryBlock *b = PyFrame_BlockPop(f);
-                assert(b->b_type == EXCEPT_HANDLER);
                 Py_DECREF(exc);
-                UNWIND_EXCEPT_HANDLER(b);
+                Py_DECREF(val);
+                Py_DECREF(tb);
                 Py_DECREF(POP());
-                JUMPBY(oparg);
                 DISPATCH();
             }
             else {
-                PyObject *val = POP();
-                PyObject *tb = POP();
                 _PyErr_Restore(tstate, exc, val, tb);
                 goto exception_unwind;
             }

@@ -1163,7 +1163,7 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_YIELD_FROM_ITER:
             return 0;
         case END_ASYNC_FOR:
-            return -7;
+            return -4;
         case FORMAT_VALUE:
             /* If there's a fmt_spec on the stack, we go from 2->1,
                else 1->1. */
@@ -2892,8 +2892,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, except);
 
     c->u->u_lineno = -1;
-    ADDOP_I(c, SETUP_EXCEPT, 0);
-    ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, END_ASYNC_FOR);
 
     /* `else` block */
@@ -4750,8 +4748,6 @@ compiler_async_comprehension_generator(struct compiler *c,
     compiler_use_next_block(c, except);
     c->u->u_lineno = -1;
 
-    ADDOP_I(c, SETUP_EXCEPT, 0);
-    ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, END_ASYNC_FOR);
 
     return 1;
