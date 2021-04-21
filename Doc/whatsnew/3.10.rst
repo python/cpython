@@ -171,7 +171,7 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
-A considerable ammount of new specialized messages for :exc:`SyntaxError` exceptions
+A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
 have been incorporated. Some of the most notable ones:
 
 * Missing ``:`` before blocks:
@@ -310,7 +310,7 @@ NameErrors
 ~~~~~~~~~~
 
 When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
-will offer suggestions of simmilar variable names in the function that the exception
+will offer suggestions of similar variable names in the function that the exception
 was raised from:
 
 .. code-block:: python
