@@ -1159,6 +1159,11 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    state = get_functools_state_by_type(type);
+    if (state == NULL) {
+        return NULL;
+    }
+
     /* select the caching function, and make/inc maxsize_O */
     if (maxsize_O == Py_None) {
         wrapper = infinite_lru_cache_wrapper;
@@ -1186,13 +1191,6 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj = (lru_cache_object *)type->tp_alloc(type, 0);
     if (obj == NULL) {
         Py_DECREF(cachedict);
-        return NULL;
-    }
-
-    state = get_functools_state_by_type(Py_TYPE(obj));
-    if (state == NULL) {
-        Py_DECREF(cachedict);
-        Py_DECREF(obj);
         return NULL;
     }
 
