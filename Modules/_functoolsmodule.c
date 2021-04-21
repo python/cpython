@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -23,7 +24,7 @@ typedef struct _functools_state {
 static inline _functools_state *
 get_functools_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_functools_state *)state;
 }
@@ -53,8 +54,7 @@ get_functools_state_by_type(PyTypeObject *type)
     if (module == NULL) {
         return NULL;
     }
-    _functools_state *state = get_functools_state(module);
-    return state;
+    return get_functools_state(module);
 }
 
 static PyObject *
