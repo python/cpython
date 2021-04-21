@@ -171,7 +171,6 @@ markblocks(PyCodeObject *code_obj, int len)
                     block_stack = push_block(block_stack, Try);
                     blocks[i+1] = block_stack;
                     break;
-                case SETUP_WITH:
                 case SETUP_ASYNC_WITH:
                     j = get_arg(code, i) + i + 1;
                     assert(j < len);

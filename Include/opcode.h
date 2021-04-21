@@ -41,6 +41,7 @@ extern "C" {
 #define GET_AITER                50
 #define GET_ANEXT                51
 #define BEFORE_ASYNC_WITH        52
+#define BEFORE_WITH              53
 #define END_ASYNC_FOR            54
 #define INPLACE_ADD              55
 #define INPLACE_SUBTRACT         56
@@ -120,7 +121,6 @@ extern "C" {
 #define DELETE_DEREF            138
 #define CALL_FUNCTION_KW        141
 #define CALL_FUNCTION_EX        142
-#define SETUP_WITH              143
 #define EXTENDED_ARG            144
 #define LIST_APPEND             145
 #define SET_ADD                 146
@@ -143,7 +143,7 @@ static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     536870912U,
     201342976U,
-    67141632U,
+    67108864U,
     0U,
     0U,
     0U,
@@ -153,7 +153,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     536870912U,
     235913216U,
-    67141632U,
+    67108864U,
     0U,
     0U,
     0U,

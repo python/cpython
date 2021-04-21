@@ -1728,7 +1728,6 @@ main_loop:
             opcode = _Py_OPCODE(*next_instr);
             if (opcode != SETUP_FINALLY &&
                 opcode != SETUP_CLEANUP &&
-                opcode != SETUP_WITH &&
                 opcode != BEFORE_ASYNC_WITH &&
                 opcode != YIELD_FROM) {
                 /* Few cases where we skip running signal handlers and other
@@ -2637,9 +2636,6 @@ main_loop:
         case TARGET(POP_EXCEPT): {
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
-            PyTryBlock *b = PyFrame_BlockPop(f);
-            assert(STACK_LEVEL() == (b)->b_level ||
-                   STACK_LEVEL() == (b)->b_level + 1);
             exc_info = tstate->exc_info;
             type = exc_info->exc_type;
             value = exc_info->exc_value;
@@ -4086,6 +4082,15 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(SETUP_ASYNC_WITH): {
+            PREDICTED(SETUP_ASYNC_WITH);
+            /* Setup the finally block before pushing the result
+               of __aenter__ on the stack. */
+            PyFrame_BlockSetup(f, SETUP_CLEANUP, INSTR_OFFSET() + oparg,
+                               STACK_LEVEL()-1);
+            DISPATCH();
+        }
+
         case TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
@@ -4111,17 +4116,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(SETUP_ASYNC_WITH): {
-            PyObject *res = POP();
-            /* Setup the finally block before pushing the result
-               of __aenter__ on the stack. */
-            PyFrame_BlockSetup(f, SETUP_CLEANUP, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL());
-            PUSH(res);
-            DISPATCH();
-        }
-
-        case TARGET(SETUP_WITH): {
+        case TARGET(BEFORE_WITH): {
             _Py_IDENTIFIER(__enter__);
             _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
@@ -4139,14 +4134,11 @@ main_loop:
             Py_DECREF(mgr);
             res = _PyObject_CallNoArg(enter);
             Py_DECREF(enter);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
-            /* Setup the finally block before pushing the result
-               of __enter__ on the stack. */
-            PyFrame_BlockSetup(f, SETUP_CLEANUP, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL());
-
+            }
             PUSH(res);
+            PREDICT(SETUP_ASYNC_WITH);
             DISPATCH();
         }
 

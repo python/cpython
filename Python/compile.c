@@ -1003,11 +1003,6 @@ stack_effect(int opcode, int oparg, int jump)
         case INPLACE_OR:
             return -1;
 
-        case SETUP_WITH:
-            /* 1 in the normal flow.
-             * Restore the stack position and push 4 values before jumping to
-             * the handler if an exception is raised. */
-            return jump ? 4 : 1;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -1152,7 +1147,9 @@ stack_effect(int opcode, int oparg, int jump)
              * of __aenter__ and push 7 values before jumping to the handler
              * if an exception be raised. */
             return jump ? -1 + 4 : 0;
+
         case BEFORE_ASYNC_WITH:
+        case BEFORE_WITH:
             return 1;
         case GET_AITER:
             return 0;
@@ -1793,6 +1790,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (preserve_tos) {
                 ADDOP(c, ROT_FOUR);
             }
+            ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
             return 1;
 
@@ -1820,6 +1818,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             if (preserve_tos) {
                 ADDOP(c, ROT_FOUR);
             }
+            ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
             if (info->fb_datum) {
                 ADDOP_LOAD_CONST(c, Py_None);
@@ -3188,6 +3187,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             VISIT_SEQ(c, stmt, handler->v.ExceptHandler.body);
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             ADDOP(c, POP_BLOCK);
+            ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
             /* name = None; del name; # Mark as artificial */
             c->u->u_lineno = -1;
@@ -3224,6 +3224,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             /* name = None; del name; # Mark as artificial */
             c->u->u_lineno = -1;
+            ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
             ADDOP_JUMP(c, JUMP_FORWARD, end);
         }
@@ -4940,6 +4941,7 @@ compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
+    ADDOP(c, POP_BLOCK);
     ADDOP(c, POP_EXCEPT);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
@@ -5095,9 +5097,10 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    ADDOP_JUMP(c, SETUP_WITH, final);
+    ADDOP(c, BEFORE_WITH);
+    ADDOP_JUMP(c, SETUP_ASYNC_WITH, final);
 
-    /* SETUP_WITH pushes a finally block. */
+    /* SETUP_ASYNC_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, WITH, block, final, NULL)) {
         return 0;
@@ -7416,7 +7419,6 @@ propogate_line_numbers(struct assembler *a) {
             switch (b->b_instr[b->b_iused-1].i_opcode) {
                 /* Note: Only actual jumps, not exception handlers */
                 case SETUP_ASYNC_WITH:
-                case SETUP_WITH:
                 case SETUP_FINALLY:
                 case SETUP_CLEANUP:
                     continue;
@@ -7523,7 +7525,6 @@ ensure_exits_have_lineno(struct compiler *c)
             switch (b->b_instr[b->b_iused-1].i_opcode) {
                 /* Note: Only actual jumps, not exception handlers */
                 case SETUP_ASYNC_WITH:
-                case SETUP_WITH:
                 case SETUP_FINALLY:
                 case SETUP_CLEANUP:
                     continue;
