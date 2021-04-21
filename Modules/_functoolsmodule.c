@@ -781,13 +781,15 @@ typedef struct lru_cache_object {
     PyObject *func;
     Py_ssize_t maxsize;
     Py_ssize_t misses;
+    PyObject *kwd_mark;
+    PyTypeObject *lru_list_elem_type;
     PyObject *cache_info_type;
     PyObject *dict;
     PyObject *weakreflist;
 } lru_cache_object;
 
 static PyObject *
-lru_cache_make_key(_functools_state *state, PyObject *args,
+lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
                    PyObject *kwds, int typed)
 {
     PyObject *key, *keyword, *value;
@@ -827,8 +829,8 @@ lru_cache_make_key(_functools_state *state, PyObject *args,
         PyTuple_SET_ITEM(key, key_pos++, item);
     }
     if (kwds_size) {
-        Py_INCREF(state->kwd_mark);
-        PyTuple_SET_ITEM(key, key_pos++, state->kwd_mark);
+        Py_INCREF(kwd_mark);
+        PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
         for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
             Py_INCREF(keyword);
             PyTuple_SET_ITEM(key, key_pos++, keyword);
@@ -871,13 +873,10 @@ static PyObject *
 infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
     PyObject *result;
+    PyObject *key;
     Py_hash_t hash;
-    _functools_state *state;
-    state = get_functools_state_by_type(Py_TYPE(self));
-    if (state == NULL) {
-        return NULL;
-    }
-    PyObject *key = lru_cache_make_key(state, args, kwds, self->typed);
+
+    key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -977,13 +976,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     lru_list_elem *link;
     PyObject *key, *result, *testresult;
     Py_hash_t hash;
-    _functools_state *state;
 
-    state = get_functools_state_by_type(Py_TYPE(self));
-    if (state == NULL) {
-        return NULL;
-    }
-    key = lru_cache_make_key(state, args, kwds, self->typed);
+    key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -1038,7 +1032,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     {
         /* Cache is not full, so put the result in a new link */
         link = (lru_list_elem *)PyObject_New(lru_list_elem,
-                                             state->lru_list_elem_type);
+                                             self->lru_list_elem_type);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -1149,6 +1143,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     lru_cache_object *obj;
     Py_ssize_t maxsize;
     PyObject *(*wrapper)(lru_cache_object *, PyObject *, PyObject *);
+    _functools_state *state;
     static char *keywords[] = {"user_function", "maxsize", "typed",
                                "cache_info_type", NULL};
 
@@ -1194,6 +1189,13 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    state = get_functools_state_by_type(Py_TYPE(obj));
+    if (state == NULL) {
+        Py_DECREF(cachedict);
+        Py_DECREF(obj);
+        return NULL;
+    }
+
     obj->root.prev = &obj->root;
     obj->root.next = &obj->root;
     obj->wrapper = wrapper;
@@ -1203,6 +1205,8 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->func = func;
     obj->misses = obj->hits = 0;
     obj->maxsize = maxsize;
+    obj->kwd_mark = state->kwd_mark;                        // Borrowed
+    obj->lru_list_elem_type = state->lru_list_elem_type;    // Borrowed
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
     obj->dict = NULL;
