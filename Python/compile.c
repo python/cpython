@@ -1007,7 +1007,7 @@ stack_effect(int opcode, int oparg, int jump)
             /* 1 in the normal flow.
              * Restore the stack position and push 7 values before jumping to
              * the handler if an exception be raised. */
-            return jump ? 7 : 1;
+            return jump ? 4 : 1;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -1090,12 +1090,13 @@ stack_effect(int opcode, int oparg, int jump)
             /* 0 in the normal flow.
              * Restore the stack position and push 6 values before jumping to
              * the handler if an exception be raised. */
-            return jump ? 6 : 0;
+            return jump ? 3 : 0;
         case SETUP_CLEANUP:
-            return jump ? 7 : 0;
-
+            return jump ? 4 : 0;
         case RERAISE:
             return -3;
+        case PUSH_EXC_INFO:
+            return 3;
 
         case WITH_EXCEPT_START:
             return 1;
@@ -1147,7 +1148,7 @@ stack_effect(int opcode, int oparg, int jump)
              * Restore the stack position to the position before the result
              * of __aenter__ and push 7 values before jumping to the handler
              * if an exception be raised. */
-            return jump ? -1 + 7 : 0;
+            return jump ? -1 + 4 : 0;
         case BEFORE_ASYNC_WITH:
             return 1;
         case GET_AITER:
@@ -2886,6 +2887,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     compiler_use_next_block(c, except);
 
     c->u->u_lineno = -1;
+    ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, END_ASYNC_FOR);
 
     /* `else` block */
@@ -3061,6 +3063,8 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, exit);
     /* `finally` block */
     compiler_use_next_block(c, end);
+
+    ADDOP(c, PUSH_EXC_INFO);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
         return 0;
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
@@ -3122,6 +3126,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     ADDOP_JUMP_NOLINE(c, JUMP_FORWARD, orelse);
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
+    ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
     if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
         return 0;
@@ -3187,6 +3192,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* name = None; del name; # Mark as artificial */
             c->u->u_lineno = -1;
+            ADDOP(c, PUSH_EXC_INFO);
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
@@ -3214,9 +3220,9 @@ compiler_try_except(struct compiler *c, stmt_ty s)
         }
         compiler_use_next_block(c, except);
     }
-    compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     /* Mark as artificial */
     c->u->u_lineno = -1;
+    compiler_pop_fblock(c, EXCEPTION_HANDLER, NULL);
     ADDOP_I(c, RERAISE, 0);
     compiler_use_next_block(c, orelse);
     VISIT_SEQ(c, stmt, s->v.Try.orelse);
@@ -4727,6 +4733,8 @@ compiler_async_comprehension_generator(struct compiler *c,
     compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
     compiler_use_next_block(c, except);
+    c->u->u_lineno = -1;
+    ADDOP(c, PUSH_EXC_INFO);
     ADDOP(c, END_ASYNC_FOR);
 
     return 1;
@@ -4919,8 +4927,8 @@ compiler_with_except_finish(struct compiler *c) {
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
     ADDOP(c, POP_EXCEPT);
+    ADDOP(c, POP_TOP);
     ADDOP(c, POP_TOP);
     return 1;
 }
@@ -5018,6 +5026,8 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
+    c->u->u_lineno = -1;
+    ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);
     ADDOP(c, GET_AWAITABLE);
@@ -5109,6 +5119,8 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
+    c->u->u_lineno = -1;
+    ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);
     compiler_with_except_finish(c);

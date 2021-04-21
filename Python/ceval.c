@@ -2696,16 +2696,16 @@ main_loop:
             PyObject *val = POP();
             PyObject *tb = POP();
             if (oparg) {
-                PyObject *lasti = POP();
+                PyObject *lasti = PEEK(4);
                 if (PyLong_Check(lasti)) {
                     f->f_lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
-                    _PyErr_SetString(tstate, PyExc_SystemError, "TOS is not an int");
+                    assert(PyLong_Check(lasti));
+                    _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
                     goto error;
                 }
-                Py_DECREF(lasti);
             }
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
@@ -4166,8 +4166,8 @@ main_loop:
         case TARGET(WITH_EXCEPT_START): {
             /* At the top of the stack are 8 values:
                - (TOP, SECOND, THIRD) = exc_info()
-               - FOURTH: lasti of exception in exc_info()
-               - (FIFTH, SIXTH, SEVENTH) = previous exception for EXCEPT_HANDLER
+               - (FOURTH, FIFTH, SIXTH) = previous exception for EXCEPT_HANDLER
+               - SEVENTH: lasti of exception in exc_info()
                - EIGHTH: the context.__exit__ bound method
                We call SEVENTH(TOP, SECOND, THIRD).
                Then we push again the TOP exception and the __exit__
@@ -4181,6 +4181,7 @@ main_loop:
             tb = THIRD();
             assert(!Py_IsNone(exc));
             assert(!PyLong_Check(exc));
+            assert(PyLong_Check(PEEK(7)));
             exit_func = PEEK(8);
             PyObject *stack[4] = {NULL, exc, val, tb};
             res = PyObject_Vectorcall(exit_func, stack + 1,
@@ -4189,6 +4190,37 @@ main_loop:
                 goto error;
 
             PUSH(res);
+            DISPATCH();
+        }
+
+        case TARGET(PUSH_EXC_INFO): {
+            PyObject *type = TOP();
+            PyObject *value = SECOND();
+            PyObject *tb = THIRD();
+            _PyErr_StackItem *exc_info = tstate->exc_info;
+            SET_THIRD(exc_info->exc_traceback);
+            SET_SECOND(exc_info->exc_value);
+            if (exc_info->exc_type != NULL) {
+                SET_TOP(exc_info->exc_type);
+            }
+            else {
+                Py_INCREF(Py_None);
+                SET_TOP(Py_None);
+            }
+            Py_INCREF(tb);
+            PUSH(tb);
+            exc_info->exc_traceback = tb;
+
+            Py_INCREF(value);
+            PUSH(value);
+            assert(PyExceptionInstance_Check(value));
+            exc_info->exc_value = value;
+
+            Py_INCREF(type);
+            PUSH(type);
+            assert(PyExceptionClass_Check(type));
+            exc_info->exc_type = type;
+
             DISPATCH();
         }
 
@@ -4533,18 +4565,6 @@ exception_unwind:
             PyObject *exc, *val, *tb;
             int handler = b->b_handler;
             int cleanup = b->b_type == SETUP_CLEANUP;
-            _PyErr_StackItem *exc_info = tstate->exc_info;
-            /* Beware, this invalidates all b->b_* fields */
-            PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL());
-            PUSH(exc_info->exc_traceback);
-            PUSH(exc_info->exc_value);
-            if (exc_info->exc_type != NULL) {
-                PUSH(exc_info->exc_type);
-            }
-            else {
-                Py_INCREF(Py_None);
-                PUSH(Py_None);
-            }
             if (cleanup) {
                 PyObject *lasti = PyLong_FromLong(f->f_lasti);
                 if (lasti == NULL) {
@@ -4552,6 +4572,7 @@ exception_unwind:
                 }
                 PUSH(lasti);
             }
+            /* Beware, this invalidates all b->b_* fields */
             _PyErr_Fetch(tstate, &exc, &val, &tb);
             /* Make the raw exception data
                 available to the handler,
@@ -4562,24 +4583,23 @@ exception_unwind:
                 PyException_SetTraceback(val, tb);
             else
                 PyException_SetTraceback(val, Py_None);
-            Py_INCREF(exc);
-            exc_info->exc_type = exc;
-            Py_INCREF(val);
-            exc_info->exc_value = val;
-            exc_info->exc_traceback = tb;
-            if (tb == NULL)
+            if (tb == NULL) {
                 tb = Py_None;
-            Py_INCREF(tb);
+                Py_INCREF(Py_None);
+            }
             PUSH(tb);
             PUSH(val);
             PUSH(exc);
+            PyFrame_BlockSetup(f, EXCEPT_HANDLER, -1, STACK_LEVEL()-3);
             JUMPTO(handler);
+            assert(_Py_OPCODE(*next_instr) == PUSH_EXC_INFO);
             if (trace_info.cframe.use_tracing) {
                 trace_info.instr_prev = INT_MAX;
             }
             /* Resume normal execution */
             f->f_state = FRAME_EXECUTING;
-            goto main_loop;
+            NEXTOPARG();
+            goto dispatch_opcode;
         } /* unwind stack */
 
         /* End the loop as we still have an error */

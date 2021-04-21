@@ -1210,7 +1210,6 @@ class BytecodeTests(unittest.TestCase):
         self.assertEqual(b.current_offset, tb.tb_lasti)
 
     def test_from_traceback_dis(self):
-        self.maxDiff = None
         tb = get_tb()
         b = dis.Bytecode.from_traceback(tb)
         self.assertEqual(b.dis(), dis_traceback)

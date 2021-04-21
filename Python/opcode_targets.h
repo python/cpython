@@ -34,7 +34,7 @@ static void *opcode_targets[256] = {
     &&TARGET_MATCH_SEQUENCE,
     &&TARGET_MATCH_KEYS,
     &&TARGET_COPY_DICT_WITHOUT_KEYS,
-    &&_unknown_opcode,
+    &&TARGET_PUSH_EXC_INFO,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
