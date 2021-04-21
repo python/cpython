@@ -802,6 +802,7 @@ always available.
    than for feature detection.
 
    .. note::
+   
       *platform_version* derives the version from kernel32.dll which can be of 
       a different version than the OS version. Use :mod:`platform` module for achieving
       accurate OS version.
