@@ -12,18 +12,6 @@
    All rights reserved.
 */
 
-/* partial object **********************************************************/
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *fn;
-    PyObject *args;
-    PyObject *kw;
-    PyObject *dict;        /* __dict__ */
-    PyObject *weakreflist; /* List of weak references */
-    vectorcallfunc vectorcall;
-} partialobject;
-
 typedef struct _functools_state {
     /* this object is used delimit args and keywords in the cache keys */
     PyObject *kwd_mark;
@@ -39,6 +27,19 @@ get_functools_state(PyObject *module)
     assert(state != NULL);
     return (_functools_state *)state;
 }
+
+
+/* partial object **********************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *fn;
+    PyObject *args;
+    PyObject *kw;
+    PyObject *dict;        /* __dict__ */
+    PyObject *weakreflist; /* List of weak references */
+    vectorcallfunc vectorcall;
+} partialobject;
 
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
