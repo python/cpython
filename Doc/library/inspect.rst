@@ -562,7 +562,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globalns=None, localns=None)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=inspect.ONLY_IF_ALL_STR)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -587,8 +587,13 @@ function.
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.
 
-   ``globalns`` and ``localns`` are passed into
-   :func:`typing.get_type_hints` when resolving the annotations.
+   For objects defined in modules using stringized annotations
+   (``from __future__ import annotations``), :func:`signature` will
+   attempt to automatically un-stringize the annotations using
+   :func:`inspect.get_annotations()`.  The
+   ``global``, ``locals``, and ``eval_str`` parameters are passed
+   into :func:`inspect.get_annotations()` when resolving the
+   annotations.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
@@ -600,19 +605,13 @@ function.
       unwrap decorated callables.)
 
    .. versionadded:: 3.10
-      ``globalns`` and ``localns`` parameters.
+      ``globals``, ``locals``, and ``eval_str`` parameters.
 
    .. note::
 
       Some callables may not be introspectable in certain implementations of
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
-
-   .. note::
-
-      Will first try to resolve the annotations, but when it fails and
-      encounters with an error while that operation, the annotations will be
-      returned unchanged (as strings).
 
 
 .. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
@@ -1113,6 +1112,66 @@ Classes and functions
    :exc:`ValueError` is raised if a cycle is encountered.
 
    .. versionadded:: 3.4
+
+
+.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZED)
+
+   Compute the annotations dict for an object.
+
+   ``obj`` may be a callable, class, or module.
+   Passing in an object of any other type raises :exc:`TypeError`.
+
+   Returns a dict.  ``get_annotations()`` returns a new dict every time
+   it's called; calling it twice on the same object will return two
+   different but equivalent dicts.
+
+   This function handles several details for you:
+
+   * Values of type ``str`` may be un-stringized using :func:`eval()`,
+     depending on the value of ``eval_str``.  This is intended
+     for use with stringized annotations
+     (``from __future__ import annotations``).
+   * If ``obj`` doesn't have an annotations dict, returns an
+     empty dict.  (Functions and methods always have an
+     annotations dict; classes, modules, and other types of
+     callables may not.)
+   * Ignores inherited annotations on classes.  If a class
+     doesn't have its own annotations dict, returns an empty dict.
+   * All accesses to object members and dict values are done
+     using ``getattr()`` and ``dict.get()`` for safety.
+   * Always, always, always returns a freshly-created dict.
+
+   ``eval_str`` controls whether or not values of type ``str`` are replaced
+   with the result of calling :func:`eval()` on those values:
+
+   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
+   * If eval_str is false, values of type ``str`` are unchanged.
+   * If eval_str is ``inspect.ONLY_IF_STRINGIZED`` (the default),
+     :func:`eval()` is called on values of type ``str`` only if *every* value
+     in the dict is of type ``str``.  This is a heuristic; the goal is
+     to only call :func:`eval()` on stringized annotations.  If, in a future
+     version of Python, ``get_annotations()`` is able to determine
+     authoritatively whether or not an annotations dict contains
+     stringized annotations, ``inspect.ONLY_IF_STRINGIZED`` will use that
+     authoritative source instead of the heuristic.
+
+   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
+   for :func:`eval()` for more information.  If ``globals`` is ``None``, this function
+   uses a context-specific default value, contingent on ``type(obj)``:
+
+   * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
+   * If ``obj`` is a class, ``globals`` defaults to
+     ``sys.modules[obj.__module__].__dict__``.
+   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+     although if ``obj`` is a wrapped function (using
+     ``functools.update_wrapper()``) it is first unwrapped.
+
+   If ``get_annotations()`` doesn't have a usable ``globals`` dict--one
+   was not passed in, and the context-specific ``globals`` dict
+   was not set--and ``eval_str`` is ``inspect.ONLY_IF_STRINGIZED``,
+   ``get_annotations()`` will behave as if ``eval_str`` is false.
+
+   .. versionadded:: 3.10
 
 
 .. _inspect-stack:
