@@ -91,13 +91,13 @@ Extension types can easily be made to support weak references; see
 
 .. class:: ref(object[, callback])
 
-   Return a weak reference to *object*.  The original object can be retrieved by
-   calling the reference object if the referent is still alive; if the referent is
-   no longer alive, calling the reference object will cause :const:`None` to be
-   returned.  If *callback* is provided and not :const:`None`, and the returned
-   weakref object is still alive, the callback will be called when the object is
-   about to be finalized; the weak reference object will be passed as the only
-   parameter to the callback; the referent will no longer be available.
+   Return a weak reference to *object*.  The referent can be retrieved by
+   calling the weak reference if the referent is still alive; if the referent is
+   no longer alive, calling the weak reference will cause :const:`None` to be
+   returned.  If *callback* is provided and not :const:`None`, and the weak
+   reference is still alive, the callback will be called when the referent is
+   about to be finalized; the weak reference will be passed as the only
+   argument to the callback; the referent will no longer be available.
 
    It is allowable for many weak references to be constructed for the same object.
    Callbacks registered for each weak reference will be called from the most
@@ -113,9 +113,9 @@ Extension types can easily be made to support weak references; see
    the call will raise :exc:`TypeError`.
 
    Weak references support tests for equality, but not ordering.  If the referents
-   are still alive, two references have the same equality relationship as their
+   are still alive, two weak references have the same equality relationship as their
    referents (regardless of the *callback*).  If either referent has been deleted,
-   the references are equal only if the reference objects are the same object.
+   two weak references are equal only if the weak references are the same object.
 
    This is a subclassable type rather than a factory function.
 
@@ -133,15 +133,15 @@ Extension types can easily be made to support weak references; see
 
    Return a proxy to *object* which uses a weak reference.  This supports use of
    the proxy in most contexts instead of requiring the explicit dereferencing used
-   with weak reference objects.  The returned object will have a type of either
+   with weak references.  The returned object will have a type of either
    ``ProxyType`` or ``CallableProxyType``, depending on whether *object* is
-   callable.  Proxy objects are not :term:`hashable` regardless of the referent; this
+   callable.  Proxies are not :term:`hashable` regardless of the referent; this
    avoids a number of problems related to their fundamentally mutable nature, and
    prevents their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
 
    .. versionchanged:: 3.8
-      Extended the operator support on proxy objects to include the matrix
+      Extended the operator support on proxies to include the matrix
       multiplication operators ``@`` and ``@=``.
 
 
@@ -152,7 +152,7 @@ Extension types can easily be made to support weak references; see
 
 .. function:: getweakrefs(object)
 
-   Return a list of all weak reference and proxy objects which refer to *object*.
+   Return a list of all weak references and proxies which refer to *object*.
 
 
 .. class:: WeakKeyDictionary([dict])
@@ -233,9 +233,9 @@ objects.
 
 .. class:: finalize(obj, func, /, *args, **kwargs)
 
-   Return a callable finalizer object which will be called when *obj*
-   is garbage collected. Unlike an ordinary weak reference, a finalizer
-   will always survive until the reference object is collected, greatly
+   Return a callable finalizer which will be called when *obj*
+   is garbage collected.  Unlike an ordinary weak reference, a finalizer
+   will always survive until the referent is collected, greatly
    simplifying lifecycle management.
 
    A finalizer is considered *alive* until it is called (either explicitly
@@ -297,17 +297,17 @@ objects.
 
 .. data:: ReferenceType
 
-   The type object for weak references objects.
+   The type object for weak references.
 
 
 .. data:: ProxyType
 
-   The type object for proxies of objects which are not callable.
+   The type object for proxies to objects which are not callable.
 
 
 .. data:: CallableProxyType
 
-   The type object for proxies of callable objects.
+   The type object for proxies to callable objects.
 
 
 .. data:: ProxyTypes
@@ -329,8 +329,8 @@ objects.
 Weak Reference Objects
 ----------------------
 
-Weak reference objects have no methods and no attributes besides
-:attr:`ref.__callback__`. A weak reference object allows the referent to be
+Weak references have no methods and no attributes besides
+:attr:`ref.__callback__`. A weak reference allows the referent to be
 obtained, if it still exists, by calling it:
 
    >>> import weakref
@@ -350,11 +350,11 @@ If the referent no longer exists, calling the reference object returns
    >>> print(r())
    None
 
-Testing that a weak reference object is still live should be done using the
+Testing that a weak reference is still live should be done using the
 expression ``ref() is not None``.  Normally, application code that needs to use
-a reference object should follow this pattern::
+a weak reference should follow this pattern::
 
-   # r is a weak reference object
+   # r is a weak reference
    o = r()
    if o is None:
        # referent has been garbage collected
@@ -431,8 +431,8 @@ Finalizer Objects
 -----------------
 
 The main benefit of using :class:`finalize` is that it makes it simple
-to register a callback without needing to preserve the returned finalizer
-object.  For instance
+to register a callback without needing to preserve the returned finalizer.
+For instance
 
     >>> import weakref
     >>> class Object:
@@ -488,7 +488,7 @@ is still alive.  For instance
    obj dead or exiting
 
 
-Comparing finalizers with :meth:`__del__` methods
+Comparing Finalizers with :meth:`__del__` Methods
 -------------------------------------------------
 
 Suppose we want to create a class whose instances represent temporary
@@ -547,8 +547,8 @@ Defined like this, our finalizer only receives a reference to the details
 it needs to clean up the directory appropriately. If the object never gets
 garbage collected the finalizer will still be called at exit.
 
-The other advantage of weakref based finalizers is that they can be used to
-register finalizers for classes where the definition is controlled by a
+The other advantage of finalizers is that they can be used
+for classes where the definition is controlled by a
 third party, such as running code when a module is unloaded::
 
     import weakref, sys
@@ -559,7 +559,7 @@ third party, such as running code when a module is unloaded::
 
 .. note::
 
-   If you create a finalizer object in a daemonic thread just as the program
+   If you create a finalizer in a daemonic thread just as the program
    exits then there is the possibility that the finalizer
    does not get called at exit.  However, in a daemonic thread
    :func:`atexit.register`, ``try: ... finally: ...`` and ``with: ...``
