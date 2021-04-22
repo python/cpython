@@ -212,36 +212,42 @@ def parse_multipart(fp, pdict, encoding="utf-8", errors="replace", separator='&'
         environ={'REQUEST_METHOD': 'POST'}, separator=separator)
     return {k: fs.getlist(k) for k in fs}
 
-def _parseparam(s):
-    while s[:1] == ';':
-        s = s[1:]
-        end = s.find(';')
-        while end > 0 and (s.count('"', 0, end) - s.count('\\"', 0, end)) % 2:
-            end = s.find(';', end + 1)
-        if end < 0:
-            end = len(s)
-        f = s[:end]
-        yield f.strip()
-        s = s[end:]
-
 def parse_header(line):
     """Parse a Content-type like header.
 
     Return the main content-type and a dictionary of options.
 
     """
-    parts = _parseparam(';' + line)
-    key = parts.__next__()
+    i = line.find(';')
+    if i == -1:
+        i = len(line)
+
+    key = line[:i].strip()
     pdict = {}
-    for p in parts:
-        i = p.find('=')
-        if i >= 0:
-            name = p[:i].strip().lower()
-            value = p[i+1:].strip()
-            if len(value) >= 2 and value[0] == value[-1] == '"':
-                value = value[1:-1]
-                value = value.replace('\\\\', '\\').replace('\\"', '"')
-            pdict[name] = value
+
+    quot = False
+    tokarr = []
+    pkey = None
+    while i < len(line):
+        i += 1
+        if i == len(line) or (not quot and line[i] == ';'):
+            if pkey is not None:
+                pdict[pkey] = ''.join(tokarr).strip()
+            pkey = None
+            tokarr.clear()
+            continue
+
+        if line[i] == '"':
+            quot = not quot
+        elif quot and line[i] == '\\' and i + 1 < len(line):
+            tokarr.append(line[i + 1])
+            i += 1
+        elif pkey is None and line[i] == '=':
+            pkey = ''.join(tokarr).strip()
+            tokarr.clear()
+        else:
+            tokarr.append(line[i])
+
     return key, pdict
 
 

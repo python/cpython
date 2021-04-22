@@ -570,6 +570,12 @@ this is the content of the fake file
         self.assertEqual(
             cgi.parse_header('form-data; name="files"; filename="fo\\"o;bar"'),
             ("form-data", {"name": "files", "filename": 'fo"o;bar'}))
+        self.assertEqual(
+            cgi.parse_header('form-data; filename="foo;bar\\\\"; name="files"'),
+            ("form-data", {"name": "files", "filename": 'foo;bar\\'}))
+        self.assertEqual(
+            cgi.parse_header('form-data; filename="fo\\o;bar"'),
+            ("form-data", {"filename": 'foo;bar'}))
 
     def test_all(self):
         not_exported = {
