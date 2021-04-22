@@ -467,7 +467,12 @@ Connection Objects
 
       Loadable extensions are disabled by default. See [#f1]_.
 
+      .. audit-event:: sqlite3.enable_load_extension enabled sqlite3.enable_load_extension
+
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.10
+         Added auditing event.
 
       .. literalinclude:: ../includes/sqlite3/load_extension.py
 
@@ -479,7 +484,12 @@ Connection Objects
 
       Loadable extensions are disabled by default. See [#f1]_.
 
+      .. audit-event:: sqlite3.load_extension path sqlite3.load_extension
+
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.10
+         Added auditing event.
 
    .. attribute:: row_factory
 
