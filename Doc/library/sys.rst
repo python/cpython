@@ -803,7 +803,7 @@ always available.
 
    .. note::
       *platform_version* derives the version from kernel32.dll which can be of a different
-      version than the OS version. Please use :mod:`platform` module for achieving accurate 
+      version than the OS version. Please use :mod:`platform` module for achieving accurate
       OS version.
 
    .. availability:: Windows.
