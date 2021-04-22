@@ -3642,6 +3642,14 @@ CONVERT_STRING_TEST_NAME_E = 5
 CONVERT_STRING_TEST_NAME_F = 5
 
 class TestIntEnumConvert(unittest.TestCase):
+    def setUp(self):
+        # Reset the module-level test variables to their original integer
+        # values, otherwise the already created enum values get converted
+        # instead.
+        for suffix in ['A', 'B', 'C', 'D', 'E', 'F']:
+            globals()[f'CONVERT_TEST_NAME_{suffix}'] = 5
+            globals()[f'CONVERT_STRING_TEST_NAME_{suffix}'] = 5
+
     def test_convert_value_lookup_priority(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
@@ -3688,8 +3696,6 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     def test_convert_repr_and_str(self):
-        # reset global constants, as previous tests could have converted the
-        # integer values to enums
         module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
@@ -3704,6 +3710,11 @@ CONVERT_STR_TEST_2 = 'goodbye'
 CONVERT_STR_TEST_1 = 'hello'
 
 class TestStrEnumConvert(unittest.TestCase):
+    def setUp(self):
+        global CONVERT_STR_TEST_1
+        global CONVERT_STR_TEST_2
+        CONVERT_STR_TEST_2 = 'goodbye'
+        CONVERT_STR_TEST_1 = 'hello'
 
     def test_convert(self):
         test_type = enum.StrEnum._convert_(
