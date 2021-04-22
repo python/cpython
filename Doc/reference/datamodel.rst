@@ -208,7 +208,7 @@ Ellipsis
    Python distinguishes between integers, floating point numbers, and complex
    numbers:
 
-   :class:`numbers.Integral`
+   :class:`numbers.Integer`
       .. index:: object: integer
 
       These represent elements from the mathematical set of integers (positive and
@@ -2338,7 +2338,7 @@ Emulating numeric types
 
 The following methods can be defined to emulate numeric objects. Methods
 corresponding to operations that are not supported by the particular kind of
-number implemented (e.g., bitwise operations for non-integral numbers) should be
+number implemented (e.g., bitwise operations for non-integer numbers) should be
 left undefined.
 
 
@@ -2495,7 +2495,7 @@ left undefined.
    Called to implement the built-in function :func:`round` and :mod:`math`
    functions :func:`~math.trunc`, :func:`~math.floor` and :func:`~math.ceil`.
    Unless *ndigits* is passed to :meth:`!__round__` all these methods should
-   return the value of the object truncated to an :class:`~numbers.Integral`
+   return the value of the object truncated to an :class:`~numbers.Integer`
    (typically an :class:`int`).
 
    If :meth:`__int__` is not defined then the built-in function :func:`int`

@@ -1290,7 +1290,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.pow(-2.3, -0.), 1.)
         self.assertEqual(math.pow(NAN, -0.), 1.)
 
-        # pow(x, y) is invalid if x is negative and y is not integral
+        # pow(x, y) is invalid if x is negative and y is not integer
         self.assertRaises(ValueError, math.pow, -1., 2.3)
         self.assertRaises(ValueError, math.pow, -15., -3.1)
 

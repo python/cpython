@@ -24,7 +24,7 @@ PyDoc_STRVAR(float___trunc____doc__,
 "__trunc__($self, /)\n"
 "--\n"
 "\n"
-"Return the Integral closest to x between 0 and x.");
+"Return the Integer closest to x between 0 and x.");
 
 #define FLOAT___TRUNC___METHODDEF    \
     {"__trunc__", (PyCFunction)float___trunc__, METH_NOARGS, float___trunc____doc__},
@@ -42,7 +42,7 @@ PyDoc_STRVAR(float___floor____doc__,
 "__floor__($self, /)\n"
 "--\n"
 "\n"
-"Return the floor as an Integral.");
+"Return the floor as an Integer.");
 
 #define FLOAT___FLOOR___METHODDEF    \
     {"__floor__", (PyCFunction)float___floor__, METH_NOARGS, float___floor____doc__},
@@ -60,7 +60,7 @@ PyDoc_STRVAR(float___ceil____doc__,
 "__ceil__($self, /)\n"
 "--\n"
 "\n"
-"Return the ceiling as an Integral.");
+"Return the ceiling as an Integer.");
 
 #define FLOAT___CEIL___METHODDEF    \
     {"__ceil__", (PyCFunction)float___ceil__, METH_NOARGS, float___ceil____doc__},
@@ -78,7 +78,7 @@ PyDoc_STRVAR(float___round____doc__,
 "__round__($self, ndigits=None, /)\n"
 "--\n"
 "\n"
-"Return the Integral closest to x, rounding half toward even.\n"
+"Return the Integer closest to x, rounding half toward even.\n"
 "\n"
 "When an argument is passed, work like built-in round(x, ndigits).");
 

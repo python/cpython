@@ -33,7 +33,7 @@ Number-theoretic and representation functions
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
    If *x* is not a float, delegates to ``x.__ceil__()``, which should return an
-   :class:`~numbers.Integral` value.
+   :class:`~numbers.Integer` value.
 
 
 .. function:: comb(n, k)
@@ -68,18 +68,18 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integer or
    is negative.
 
    .. deprecated:: 3.9
-      Accepting floats with integral values (like ``5.0``) is deprecated.
+      Accepting floats with integer values (like ``5.0``) is deprecated.
 
 
 .. function:: floor(x)
 
    Return the floor of *x*, the largest integer less than or equal to *x*.
    If *x* is not a float, delegates to ``x.__floor__()``, which should return an
-   :class:`~numbers.Integral` value.
+   :class:`~numbers.Integer` value.
 
 
 .. function:: fmod(x, y)
@@ -299,7 +299,7 @@ Number-theoretic and representation functions
 .. function:: trunc(x)
 
    Return the :class:`~numbers.Real` value *x* truncated to an
-   :class:`~numbers.Integral` (usually an integer). Delegates to
+   :class:`~numbers.Integer` (usually an integer). Delegates to
    :meth:`x.__trunc__() <object.__trunc__>`.
 
 .. function:: ulp(x)

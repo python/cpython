@@ -207,7 +207,7 @@ Integers
 --------
 
 * :pep:`237`: Essentially, :class:`long` renamed to :class:`int`.
-  That is, there is only one built-in integral type, named
+  That is, there is only one built-in integer type, named
   :class:`int`; but it behaves mostly like the old :class:`long` type.
 
 * :pep:`238`: An expression like ``1/2`` returns a float.  Use

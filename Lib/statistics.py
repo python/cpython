@@ -231,7 +231,7 @@ def _exact_ratio(x):
         if type(x) is float or type(x) is Decimal:
             return x.as_integer_ratio()
         try:
-            # x may be an int, Fraction, or Integral ABC.
+            # x may be an int, Fraction, or Integer ABC.
             return (x.numerator, x.denominator)
         except AttributeError:
             try:

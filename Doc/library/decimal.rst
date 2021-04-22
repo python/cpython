@@ -400,7 +400,7 @@ Decimal objects
       trap is set. By default the trap is off.
 
    .. versionchanged:: 3.6
-      Underscores are allowed for grouping, as with integral and floating-point
+      Underscores are allowed for grouping, as with integer and floating-point
       literals in code.
 
    Decimal floating point objects share many properties with the other built-in
@@ -1352,7 +1352,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       Return ``x`` to the power of ``y``, reduced modulo ``modulo`` if given.
 
       With two arguments, compute ``x**y``.  If ``x`` is negative then ``y``
-      must be integral.  The result will be inexact unless ``y`` is integral and
+      must be integer.  The result will be inexact unless ``y`` is integer and
       the result is finite and can be expressed exactly in 'precision' digits.
       The rounding mode of the context is used. Results are always correctly-rounded
       in the Python version.
@@ -1368,7 +1368,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
 
-         - all three arguments must be integral
+         - all three arguments must be integer
          - ``y`` must be nonnegative
          - at least one of ``x`` or ``y`` must be nonzero
          - ``modulo`` must be nonzero and have at most 'precision' digits

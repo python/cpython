@@ -3,10 +3,11 @@
 import math
 import operator
 import unittest
-from numbers import Complex, Real, Rational, Integral
+from numbers import Complex, Real, Rational, Integer, Integral
 
 class TestNumbers(unittest.TestCase):
     def test_int(self):
+        self.assertTrue(issubclass(int, Integer))
         self.assertTrue(issubclass(int, Integral))
         self.assertTrue(issubclass(int, Complex))
 

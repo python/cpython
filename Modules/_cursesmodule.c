@@ -3290,9 +3290,9 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("ACS_PLUS",          (ACS_PLUS));
 #if !defined(__hpux) || defined(HAVE_NCURSES_H)
     /* On HP/UX 11, these are of type cchar_t, which is not an
-       integral type. If this is a problem on more platforms, a
+       integer type. If this is a problem on more platforms, a
        configure test should be added to determine whether ACS_S1
-       is of integral type. */
+       is of integer type. */
     SetDictInt("ACS_S1",            (ACS_S1));
     SetDictInt("ACS_S9",            (ACS_S9));
     SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));

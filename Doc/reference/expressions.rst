@@ -1184,7 +1184,7 @@ The unary ``+`` (plus) operator yields its numeric argument unchanged.
 
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
-applies to integral numbers.
+applies to integer numbers.
 
 .. index:: exception: TypeError
 

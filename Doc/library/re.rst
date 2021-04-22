@@ -736,7 +736,7 @@ form.
    This means that the two following regular expression objects that match a
    decimal number are functionally equal::
 
-      a = re.compile(r"""\d +  # the integral part
+      a = re.compile(r"""\d +  # the integer part
                          \.    # the decimal point
                          \d *  # some fractional digits""", re.X)
       b = re.compile(r"\d+\.\d*")

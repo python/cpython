@@ -362,17 +362,17 @@ the following operations:
 +--------------------+---------------------------------------------+
 | Operation          | Result                                      |
 +====================+=============================================+
-| :func:`math.trunc(\| *x* truncated to :class:`~numbers.Integral` |
+| :func:`math.trunc(\| *x* truncated to :class:`~numbers.Integer`  |
 | x) <math.trunc>`   |                                             |
 +--------------------+---------------------------------------------+
 | :func:`round(x[,   | *x* rounded to *n* digits,                  |
 | n]) <round>`       | rounding half to even. If *n* is            |
 |                    | omitted, it defaults to 0.                  |
 +--------------------+---------------------------------------------+
-| :func:`math.floor(\| the greatest :class:`~numbers.Integral`     |
+| :func:`math.floor(\| the greatest :class:`~numbers.Integer`      |
 | x) <math.floor>`   | <= *x*                                      |
 +--------------------+---------------------------------------------+
-| :func:`math.ceil(x)| the least :class:`~numbers.Integral` >= *x* |
+| :func:`math.ceil(x)| the least :class:`~numbers.Integer` >= *x*  |
 | <math.ceil>`       |                                             |
 +--------------------+---------------------------------------------+
 
@@ -449,7 +449,7 @@ Notes:
 Additional Methods on Integer Types
 -----------------------------------
 
-The int type implements the :class:`numbers.Integral` :term:`abstract base
+The int type implements the :class:`numbers.Integer` :term:`abstract base
 class`. In addition, it provides a few more methods:
 
 .. method:: int.bit_length()
@@ -585,7 +585,7 @@ class`. float also has the following additional methods.
 
 .. method:: float.is_integer()
 
-   Return ``True`` if the float instance is finite with integral
+   Return ``True`` if the float instance is finite with integer
    value, and ``False`` otherwise::
 
       >>> (-2.0).is_integer()

@@ -91,7 +91,7 @@ PyDoc_STRVAR(int___round____doc__,
 "__round__($self, ndigits=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"Rounding an Integral returns itself.\n"
+"Rounding an Integer returns itself.\n"
 "\n"
 "Rounding with an ndigits argument also returns an integer.");
 

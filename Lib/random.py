@@ -719,7 +719,7 @@ class Random(_random.Random):
         if alpha > 1.0:
 
             # Uses R.C.H. Cheng, "The generation of Gamma
-            # variables with non-integral shape parameters",
+            # variables with non-integer shape parameters",
             # Applied Statistics, (1977), 26, No. 1, p71-74
 
             ainv = _sqrt(2.0 * alpha - 1.0)

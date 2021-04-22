@@ -1812,7 +1812,7 @@ class UsabilityTest(unittest.TestCase):
                 Decimal("56531E100"),
                 ])
 
-        # check that hash(d) == hash(int(d)) for integral values
+        # check that hash(d) == hash(int(d)) for integer values
         for value in test_values:
             self.assertEqual(hashit(value), hashit(int(value)))
 

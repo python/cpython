@@ -37,7 +37,7 @@ Config #defines referenced here:
 
 SIGNED_RIGHT_SHIFT_ZERO_FILLS
 Meaning:  To be defined iff i>>j does not extend the sign bit when i is a
-          signed integral type and i < 0.
+          signed integer type and i < 0.
 Used in:  Py_ARITHMETIC_RIGHT_SHIFT
 
 Py_DEBUG
@@ -46,7 +46,7 @@ Used in:  Py_SAFE_DOWNCAST
 
 **************************************************************************/
 
-/* typedefs for some C9X-defined synonyms for integral types.
+/* typedefs for some C9X-defined synonyms for integer types.
  *
  * The names in Python are exactly the same as the C9X names, except with a
  * Py_ prefix.  Until C9X is universally implemented, this is the only way
@@ -55,7 +55,7 @@ Used in:  Py_SAFE_DOWNCAST
  * names.
  *
  * NOTE: don't go nuts here!  Python has no use for *most* of the C9X
- * integral synonyms.  Only define the ones we actually need.
+ * integer synonyms.  Only define the ones we actually need.
  */
 
 /* long long is required. Ensure HAVE_LONG_LONG is defined for compatibility. */
@@ -89,17 +89,17 @@ Used in:  Py_SAFE_DOWNCAST
 #endif
 #endif
 
-/* uintptr_t is the C9X name for an unsigned integral type such that a
+/* uintptr_t is the C9X name for an unsigned integer type such that a
  * legitimate void* can be cast to uintptr_t and then back to void* again
  * without loss of information.  Similarly for intptr_t, wrt a signed
- * integral type.
+ * integer type.
  */
 typedef uintptr_t       Py_uintptr_t;
 typedef intptr_t        Py_intptr_t;
 
-/* Py_ssize_t is a signed integral type such that sizeof(Py_ssize_t) ==
+/* Py_ssize_t is a signed integer type such that sizeof(Py_ssize_t) ==
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
- * unsigned integral type).  See PEP 353 for details.
+ * unsigned integer type).  See PEP 353 for details.
  */
 #ifdef HAVE_PY_SSIZE_T
 

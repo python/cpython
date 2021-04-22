@@ -294,7 +294,7 @@ PyLong_FromDouble(double dval)
 {
     /* Try to get out cheap if this fits in a long. When a finite value of real
      * floating type is converted to an integer type, the value is truncated
-     * toward zero. If the value of the integral part cannot be represented by
+     * toward zero. If the value of the integer part cannot be represented by
      * the integer type, the behavior is undefined. Thus, we must check that
      * value is in range (LONG_MIN - 1, LONG_MAX + 1). If a long has more bits
      * of precision than a double, casting LONG_MIN - 1 to double may yield an
@@ -5153,7 +5153,7 @@ int.__round__
     ndigits as o_ndigits: object = NULL
     /
 
-Rounding an Integral returns itself.
+Rounding an Integer returns itself.
 
 Rounding with an ndigits argument also returns an integer.
 [clinic start generated code]*/
@@ -5533,11 +5533,11 @@ static PyMethodDef long_methods[] = {
     INT_FROM_BYTES_METHODDEF
     INT_AS_INTEGER_RATIO_METHODDEF
     {"__trunc__",       long_long_meth, METH_NOARGS,
-     "Truncating an Integral returns itself."},
+     "Truncating an Integer returns itself."},
     {"__floor__",       long_long_meth, METH_NOARGS,
-     "Flooring an Integral returns itself."},
+     "Flooring an Integer returns itself."},
     {"__ceil__",        long_long_meth, METH_NOARGS,
-     "Ceiling of an Integral returns itself."},
+     "Ceiling of an Integer returns itself."},
     INT___ROUND___METHODDEF
     INT___GETNEWARGS___METHODDEF
     INT___FORMAT___METHODDEF

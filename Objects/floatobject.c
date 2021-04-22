@@ -640,7 +640,7 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
     /* fmod is typically exact, so vx-mod is *mathematically* an
        exact multiple of wx.  But this is fp arithmetic, and fp
        vx - mod is an approximation; the result is that div may
-       not be an exact integral value after the division, although
+       not be an exact integer value after the division, although
        it will always be very close to one.
     */
     div = (vx - *mod) / wx;
@@ -657,7 +657,7 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
            it has the same sign as the denominator. */
         *mod = copysign(0.0, wx);
     }
-    /* snap quotient to nearest integral value */
+    /* snap quotient to nearest integer value */
     if (div) {
         *floordiv = floor(div);
         if (div - *floordiv > 0.5) {
@@ -875,7 +875,7 @@ float_is_integer_impl(PyObject *self)
 /*[clinic input]
 float.__trunc__
 
-Return the Integral closest to x between 0 and x.
+Return the Integer closest to x between 0 and x.
 [clinic start generated code]*/
 
 static PyObject *
@@ -888,7 +888,7 @@ float___trunc___impl(PyObject *self)
 /*[clinic input]
 float.__floor__
 
-Return the floor as an Integral.
+Return the floor as an Integer.
 [clinic start generated code]*/
 
 static PyObject *
@@ -902,7 +902,7 @@ float___floor___impl(PyObject *self)
 /*[clinic input]
 float.__ceil__
 
-Return the ceiling as an Integral.
+Return the ceiling as an Integer.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1035,7 +1035,7 @@ float.__round__
     ndigits as o_ndigits: object = None
     /
 
-Return the Integral closest to x, rounding half toward even.
+Return the Integer closest to x, rounding half toward even.
 
 When an argument is passed, work like built-in round(x, ndigits).
 [clinic start generated code]*/
@@ -1563,7 +1563,7 @@ float_as_integer_ratio_impl(PyObject *self)
         float_part *= 2.0;
         exponent--;
     }
-    /* self == float_part * 2**exponent exactly and float_part is integral.
+    /* self == float_part * 2**exponent exactly and float_part is integer.
        If FLT_RADIX != 2, the 300 steps may leave a tiny fractional part
        to be truncated by PyLong_FromDouble(). */
 

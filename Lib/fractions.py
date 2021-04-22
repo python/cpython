@@ -171,7 +171,7 @@ class Fraction(numbers.Rational):
         Beware that Fraction.from_float(0.3) != Fraction(3, 10).
 
         """
-        if isinstance(f, numbers.Integral):
+        if isinstance(f, numbers.Integer):
             return cls(f)
         elif not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
@@ -182,7 +182,7 @@ class Fraction(numbers.Rational):
     def from_decimal(cls, dec):
         """Converts a finite Decimal instance to a rational number, exactly."""
         from decimal import Decimal
-        if isinstance(dec, numbers.Integral):
+        if isinstance(dec, numbers.Integer):
             dec = Decimal(int(dec))
         elif not isinstance(dec, Decimal):
             raise TypeError(

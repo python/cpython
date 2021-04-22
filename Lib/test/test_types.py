@@ -144,14 +144,14 @@ class TypesTests(unittest.TestCase):
             if type(prod) is not int:
                 self.fail("expected type(prod) to be int, not %r" %
                                    type(prod))
-        # Check for unified integral type
+        # Check for unified integer type
         for divisor in 1, 2, 4, 8, 16, 32:
             j = m // divisor - 1
             prod = divisor * j
             if type(prod) is not int:
                 self.fail("expected type(%r) to be int, not %r" %
                                    (prod, type(prod)))
-        # Check for unified integral type
+        # Check for unified integer type
         m = sys.maxsize
         for divisor in 1, 2, 4, 8, 16, 32:
             j = m // divisor + 1

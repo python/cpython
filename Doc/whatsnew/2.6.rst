@@ -1415,7 +1415,7 @@ converted to floats.  Python 2.6 adds a simple rational-number class,
 :class:`Fraction` instead of :class:`Rational` to avoid
 a name clash with :class:`numbers.Rational`.)
 
-:class:`Integral` numbers derive from :class:`Rational`, and
+``Integral`` numbers derive from :class:`Rational`, and
 can be shifted left and right with ``<<`` and ``>>``,
 combined using bitwise operations such as ``&`` and ``|``,
 and can be used as array indexes and slice boundaries.
@@ -1424,7 +1424,7 @@ In Python 3.0, the PEP slightly redefines the existing builtins
 :func:`round`, :func:`math.floor`, :func:`math.ceil`, and adds a new
 one, :func:`math.trunc`, that's been backported to Python 2.6.
 :func:`math.trunc` rounds toward zero, returning the closest
-:class:`Integral` that's between the function's argument and zero.
+``Integral`` that's between the function's argument and zero.
 
 .. seealso::
 
@@ -1445,7 +1445,7 @@ values as a numerator and denominator forming a fraction, and can
 exactly represent numbers such as ``2/3`` that floating-point numbers
 can only approximate.
 
-The :class:`Fraction` constructor takes two :class:`Integral` values
+The :class:`Fraction` constructor takes two ``Integral`` values
 that will be the numerator and denominator of the resulting fraction. ::
 
     >>> from fractions import Fraction
@@ -2111,7 +2111,7 @@ changes, or look through the Subversion logs for all the details.
     (base *e*).
 
   * :func:`trunc` rounds a number toward zero, returning the closest
-    :class:`Integral` that's between the function's argument and zero.
+    ``Integral`` that's between the function's argument and zero.
     Added as part of the backport of
     `PEP 3141's type hierarchy for numbers <#pep-3141>`__.
 

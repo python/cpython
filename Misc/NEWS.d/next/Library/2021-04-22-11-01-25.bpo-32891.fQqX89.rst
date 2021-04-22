@@ -1,0 +1,2 @@
+Added :class:`~numbers.Integer` as a synonym for old :class:`~numbers.Integral`,
+which is deprecated.  Contributed by Sergey B Kirpichev.

@@ -1506,12 +1506,12 @@ PyNumber_Long(PyObject *o)
             Py_SETREF(result, _PyLong_Copy((PyLongObject *)result));
             return result;
         }
-        /* __trunc__ is specified to return an Integral type,
+        /* __trunc__ is specified to return an Integer type,
            but int() needs to return an int. */
         if (!PyIndex_Check(result)) {
             PyErr_Format(
                 PyExc_TypeError,
-                "__trunc__ returned non-Integral (type %.200s)",
+                "__trunc__ returned non-Integer (type %.200s)",
                 Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;

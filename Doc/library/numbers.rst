@@ -2,7 +2,7 @@
 ================================================
 
 .. module:: numbers
-   :synopsis: Numeric abstract base classes (Complex, Real, Integral, etc.).
+   :synopsis: Numeric abstract base classes (Complex, Real, Integer, etc.).
 
 **Source code:** :source:`Lib/numbers.py`
 
@@ -72,12 +72,18 @@ The numeric tower
       Abstract.
 
 
-.. class:: Integral
+.. class:: Integer
 
    Subtypes :class:`Rational` and adds a conversion to :class:`int`.  Provides
    defaults for :func:`float`, :attr:`~Rational.numerator`, and
    :attr:`~Rational.denominator`.  Adds abstract methods for ``**`` and
    bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``, ``~``.
+
+.. class:: Integral
+
+   Alias for :class:`Integer`.
+
+   .. deprecated:: 3.10
 
 
 Notes for type implementors
@@ -121,13 +127,13 @@ Implementing the arithmetic operations
 We want to implement the arithmetic operations so that mixed-mode
 operations either call an implementation whose author knew about the
 types of both arguments, or convert both to the nearest built in type
-and do the operation there. For subtypes of :class:`Integral`, this
+and do the operation there. For subtypes of :class:`Integer`, this
 means that :meth:`__add__` and :meth:`__radd__` should be defined as::
 
-    class MyIntegral(Integral):
+    class MyInteger(Integer):
 
         def __add__(self, other):
-            if isinstance(other, MyIntegral):
+            if isinstance(other, MyInteger):
                 return do_my_adding_stuff(self, other)
             elif isinstance(other, OtherTypeIKnowAbout):
                 return do_my_other_adding_stuff(self, other)
@@ -135,11 +141,11 @@ means that :meth:`__add__` and :meth:`__radd__` should be defined as::
                 return NotImplemented
 
         def __radd__(self, other):
-            if isinstance(other, MyIntegral):
+            if isinstance(other, MyInteger):
                 return do_my_adding_stuff(other, self)
             elif isinstance(other, OtherTypeIKnowAbout):
                 return do_my_other_adding_stuff(other, self)
-            elif isinstance(other, Integral):
+            elif isinstance(other, Integer):
                 return int(other) + int(self)
             elif isinstance(other, Real):
                 return float(other) + float(self)
@@ -151,7 +157,7 @@ means that :meth:`__add__` and :meth:`__radd__` should be defined as::
 
 There are 5 different cases for a mixed-type operation on subclasses
 of :class:`Complex`. I'll refer to all of the above code that doesn't
-refer to ``MyIntegral`` and ``OtherTypeIKnowAbout`` as
+refer to ``MyInteger`` and ``OtherTypeIKnowAbout`` as
 "boilerplate". ``a`` will be an instance of ``A``, which is a subtype
 of :class:`Complex` (``a : A <: Complex``), and ``b : B <:
 Complex``. I'll consider ``a + b``:

@@ -396,20 +396,20 @@ class IntTestCases(unittest.TestCase):
                         return Intable()
                 self.assertEqual(int(TruncReturnsNonInt()), 42)
 
-                class NonIntegral(trunc_result_base):
+                class NonInteger(trunc_result_base):
                     def __trunc__(self):
                         # Check that we avoid infinite recursion.
-                        return NonIntegral()
+                        return NonInteger()
 
-                class TruncReturnsNonIntegral(base):
+                class TruncReturnsNonInteger(base):
                     def __trunc__(self):
-                        return NonIntegral()
+                        return NonInteger()
                 try:
-                    int(TruncReturnsNonIntegral())
+                    int(TruncReturnsNonInteger())
                 except TypeError as e:
                     self.assertEqual(str(e),
-                                      "__trunc__ returned non-Integral"
-                                      " (type NonIntegral)")
+                                      "__trunc__ returned non-Integer"
+                                      " (type NonInteger)")
                 else:
                     self.fail("Failed to raise TypeError with %s" %
                               ((base, trunc_result_base),))

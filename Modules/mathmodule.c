@@ -68,7 +68,7 @@ module math
 
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
-   integral or close to an integer).  This is here for use in the
+   integer or close to an integer).  This is here for use in the
    reflection formula for the gamma function.  It conforms to IEEE
    754-2008 for finite arguments, but not for infinities or nans.
 */
@@ -1185,7 +1185,7 @@ math.ceil
     x as number: object
     /
 
-Return the ceiling of x as an Integral.
+Return the ceiling of x as an Integer.
 
 This is the smallest integer >= x.
 [clinic start generated code]*/
@@ -1248,7 +1248,7 @@ math.floor
     x as number: object
     /
 
-Return the floor of x as an Integral.
+Return the floor of x as an Integer.
 
 This is the largest integer <= x.
 [clinic start generated code]*/
@@ -2045,7 +2045,7 @@ math.factorial
 
 Find x!.
 
-Raise a ValueError if x is negative or non-integral.
+Raise a ValueError if x is negative or non-integer.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2094,7 +2094,7 @@ math.trunc
     x: object
     /
 
-Truncates the Real x to the nearest Integral toward 0.
+Truncates the Real x to the nearest Integer toward 0.
 
 Uses the __trunc__ magic method.
 [clinic start generated code]*/

@@ -6,7 +6,7 @@ PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
 "\n"
-"Return the ceiling of x as an Integral.\n"
+"Return the ceiling of x as an Integer.\n"
 "\n"
 "This is the smallest integer >= x.");
 
@@ -17,7 +17,7 @@ PyDoc_STRVAR(math_floor__doc__,
 "floor($module, x, /)\n"
 "--\n"
 "\n"
-"Return the floor of x as an Integral.\n"
+"Return the floor of x as an Integer.\n"
 "\n"
 "This is the largest integer <= x.");
 
@@ -50,7 +50,7 @@ PyDoc_STRVAR(math_factorial__doc__,
 "\n"
 "Find x!.\n"
 "\n"
-"Raise a ValueError if x is negative or non-integral.");
+"Raise a ValueError if x is negative or non-integer.");
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
@@ -59,7 +59,7 @@ PyDoc_STRVAR(math_trunc__doc__,
 "trunc($module, x, /)\n"
 "--\n"
 "\n"
-"Truncates the Real x to the nearest Integral toward 0.\n"
+"Truncates the Real x to the nearest Integer toward 0.\n"
 "\n"
 "Uses the __trunc__ magic method.");
 

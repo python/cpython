@@ -7,7 +7,7 @@ TODO: Fill out more detailed documentation on the operators."""
 
 from abc import ABCMeta, abstractmethod
 
-__all__ = ["Number", "Complex", "Real", "Rational", "Integral"]
+__all__ = ["Number", "Complex", "Real", "Rational", "Integer", "Integral"]
 
 class Number(metaclass=ABCMeta):
     """All numbers inherit from this class.
@@ -164,12 +164,12 @@ class Real(Complex):
 
     @abstractmethod
     def __trunc__(self):
-        """trunc(self): Truncates self to an Integral.
+        """trunc(self): Truncates self to an Integer.
 
-        Returns an Integral i such that:
+        Returns an Integer i such that:
           * i>0 iff self>0;
           * abs(i) <= abs(self);
-          * for any Integral j satisfying the first two conditions,
+          * for any Integer j satisfying the first two conditions,
             abs(i) >= abs(j) [i.e. i has "maximal" abs among those].
         i.e. "truncate towards 0".
         """
@@ -177,19 +177,19 @@ class Real(Complex):
 
     @abstractmethod
     def __floor__(self):
-        """Finds the greatest Integral <= self."""
+        """Finds the greatest Integer <= self."""
         raise NotImplementedError
 
     @abstractmethod
     def __ceil__(self):
-        """Finds the least Integral >= self."""
+        """Finds the least Integer >= self."""
         raise NotImplementedError
 
     @abstractmethod
     def __round__(self, ndigits=None):
         """Rounds self to ndigits decimal places, defaulting to 0.
 
-        If ndigits is omitted or None, returns an Integral, otherwise
+        If ndigits is omitted or None, returns an Integer, otherwise
         returns a Real. Rounds half toward even.
         """
         raise NotImplementedError
@@ -291,8 +291,8 @@ class Rational(Real):
         return self.numerator / self.denominator
 
 
-class Integral(Rational):
-    """Integral adds a conversion to int and the bit-string operations."""
+class Integer(Rational):
+    """Integer adds a conversion to int and the bit-string operations."""
 
     __slots__ = ()
 
@@ -311,7 +311,7 @@ class Integral(Rational):
 
         Accept the modulus argument if you want to support the
         3-argument version of pow(). Raise a TypeError if exponent < 0
-        or any argument isn't Integral. Otherwise, just implement the
+        or any argument isn't Integer. Otherwise, just implement the
         2-argument version described in Complex.
         """
         raise NotImplementedError
@@ -386,4 +386,7 @@ class Integral(Rational):
         """Integers have a denominator of 1."""
         return 1
 
-Integral.register(int)
+Integer.register(int)
+
+# Compatibility alias.
+Integral = Integer
