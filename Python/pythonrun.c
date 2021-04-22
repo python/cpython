@@ -11,13 +11,11 @@
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch
+#include "pycore_pyerrors.h"      // _PyErr_Fetch, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
@@ -955,6 +953,18 @@ print_exception(PyObject *f, PyObject *value)
     if (err < 0) {
         PyErr_Clear();
     }
+    PyObject* suggestions = _Py_Offer_Suggestions(value);
+    if (suggestions) {
+        // Add a trailer ". Did you mean: (...)?"
+        err = PyFile_WriteString(". Did you mean: '", f);
+        if (err == 0) {
+            err = PyFile_WriteObject(suggestions, f, Py_PRINT_RAW);
+            err += PyFile_WriteString("'?", f);
+        }
+        Py_DECREF(suggestions);
+    } else if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
     err += PyFile_WriteString("\n", f);
     Py_XDECREF(tb);
     Py_DECREF(value);
@@ -1082,8 +1092,9 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
     if (file == Py_None) {
         return;
     }
-
+    Py_INCREF(file);
     _PyErr_Display(file, exception, value, tb);
+    Py_DECREF(file);
 }
 
 PyObject *

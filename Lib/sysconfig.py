@@ -176,12 +176,6 @@ def is_python_build(check_home=False):
 
 _PYTHON_BUILD = is_python_build(True)
 
-if _PYTHON_BUILD:
-    for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
-        _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
-
-
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
@@ -240,7 +234,8 @@ def _parse_makefile(filename, vars=None):
     done = {}
     notdone = {}
 
-    with open(filename, errors="surrogateescape") as f:
+    with open(filename, encoding=sys.getfilesystemencoding(),
+              errors="surrogateescape") as f:
         lines = f.readlines()
 
     for line in lines:
@@ -388,7 +383,7 @@ def _generate_posix_vars():
     # load the installed pyconfig.h:
     config_h = get_config_h_filename()
     try:
-        with open(config_h) as f:
+        with open(config_h, encoding="utf-8") as f:
             parse_config_h(f, vars)
     except OSError as e:
         msg = "invalid Python installation: unable to open %s" % config_h

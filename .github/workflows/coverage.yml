@@ -25,7 +25,7 @@ jobs:
     name: 'Ubuntu (Coverage)'
     runs-on: ubuntu-latest
     env:
-      OPENSSL_VER: 1.1.1f
+      OPENSSL_VER: 1.1.1k
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
@@ -54,6 +54,7 @@ jobs:
         python -m test.pythoninfo
         export PYTHONPATH=`find .venv -name fullcoverage`
     - name: 'Tests with coverage'
+      timeout-minutes: 100  # 1h40m, ref https://bugs.python.org/issue43888
       run: >
         source ./.venv/bin/activate &&
         xvfb-run python -m coverage

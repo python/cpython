@@ -257,6 +257,10 @@ ABC hierarchy::
          Returns ``None`` when called instead of raising
          :exc:`NotImplementedError`.
 
+      .. deprecated:: 3.10
+         Implement :meth:`MetaPathFinder.find_spec` or
+         :meth:`PathEntryFinder.find_spec` instead.
+
 
 .. class:: MetaPathFinder
 
@@ -264,6 +268,9 @@ ABC hierarchy::
    compatibility, this is a subclass of :class:`Finder`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      No longer a subclass of :class:`Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -313,10 +320,12 @@ ABC hierarchy::
    An abstract base class representing a :term:`path entry finder`.  Though
    it bears some similarities to :class:`MetaPathFinder`, ``PathEntryFinder``
    is meant for use only within the path-based import subsystem provided
-   by :class:`PathFinder`. This ABC is a subclass of :class:`Finder` for
-   compatibility reasons only.
+   by :class:`importlib.machinery.PathFinder`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      No longer a subclass of :class:`Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
@@ -363,7 +372,8 @@ ABC hierarchy::
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
-      cache used by the finder. Used by :meth:`PathFinder.invalidate_caches`
+      cache used by the finder. Used by
+      :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
 
 
@@ -891,6 +901,22 @@ The following functions are available.
 
     .. versionadded:: 3.9
 
+.. function:: as_file(traversable)
+
+    Given a :class:`importlib.resources.abc.Traversable` object representing
+    a file, typically from :func:`importlib.resources.files`, return
+    a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary file created when the
+    resource was extracted from e.g. a zip file.
+
+    Use ``as_file`` when the Traversable methods
+    (``read_text``, etc) are insufficient and an actual file on
+    the file system is required.
+
+    .. versionadded:: 3.9
+
 .. function:: open_binary(package, resource)
 
     Open for binary reading the *resource* within *package*.
@@ -1176,6 +1202,9 @@ find and load modules.
    .. method:: find_loader(fullname)
 
       Attempt to find the loader to handle *fullname* within :attr:`path`.
+
+      .. deprecated:: 3.10
+         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 

@@ -59,6 +59,7 @@ typedef struct {
     int fill, size;
     PyArena *arena;
     KeywordToken **keywords;
+    char **soft_keywords;
     int n_keyword_lists;
     int start_rule;
     int *errcode;
@@ -107,8 +108,10 @@ typedef struct {
     int is_keyword;
 } KeywordOrStarred;
 
+#if defined(Py_DEBUG)
 void _PyPegen_clear_memo_statistics(void);
 PyObject *_PyPegen_get_memo_statistics(void);
+#endif
 
 int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
@@ -123,6 +126,7 @@ int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
 Token *_PyPegen_expect_token(Parser *p, int type);
 Token *_PyPegen_expect_forced_token(Parser *p, int type, const char* expected);
 expr_ty _PyPegen_expect_soft_keyword(Parser *p, const char *keyword);
+expr_ty _PyPegen_soft_keyword_token(Parser *p);
 Token *_PyPegen_get_last_nonnwhitespace_token(Parser *);
 int _PyPegen_fill_token(Parser *p);
 expr_ty _PyPegen_name_token(Parser *p);
@@ -150,7 +154,7 @@ RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
 
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define EXTRA_EXPR(head, tail) head->lineno, head->col_offset, tail->end_lineno, tail->end_col_offset, p->arena
+#define EXTRA_EXPR(head, tail) head->lineno, (head)->col_offset, (tail)->end_lineno, (tail)->end_col_offset, p->arena
 #define EXTRA _start_lineno, _start_col_offset, _end_lineno, _end_col_offset, p->arena
 #define RAISE_SYNTAX_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_SyntaxError, msg, ##__VA_ARGS__)
 #define RAISE_INDENTATION_ERROR(msg, ...) _PyPegen_raise_error(p, PyExc_IndentationError, msg, ##__VA_ARGS__)
@@ -235,7 +239,7 @@ asdl_seq *_PyPegen_seq_append_to_end(Parser *, asdl_seq *, void *);
 asdl_seq *_PyPegen_seq_flatten(Parser *, asdl_seq *);
 expr_ty _PyPegen_join_names_with_dot(Parser *, expr_ty, expr_ty);
 int _PyPegen_seq_count_dots(asdl_seq *);
-alias_ty _PyPegen_alias_for_star(Parser *);
+alias_ty _PyPegen_alias_for_star(Parser *, int, int, int, int, PyArena *);
 asdl_identifier_seq *_PyPegen_map_names_to_ids(Parser *, asdl_expr_seq *);
 CmpopExprPair *_PyPegen_cmpop_expr_pair(Parser *, cmpop_ty, expr_ty);
 asdl_int_seq *_PyPegen_get_cmpops(Parser *p, asdl_seq *);

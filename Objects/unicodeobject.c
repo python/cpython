@@ -5070,25 +5070,16 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
 
-    /*
-     * Issue #17237: m68k is a bit different from most architectures in
-     * that objects do not use "natural alignment" - for example, int and
-     * long are only aligned at 2-byte boundaries.  Therefore the assert()
-     * won't work; also, tests have shown that skipping the "optimised
-     * version" will even speed up m68k.
-     */
-#if !defined(__m68k__)
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    assert(_Py_IS_ALIGNED(dest, SIZEOF_SIZE_T));
-    if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+    assert(_Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T));
+    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help allocation */
         const char *_p = p;
         Py_UCS1 * q = dest;
-        while (_p < aligned_end) {
+        while (_p + SIZEOF_SIZE_T <= end) {
             size_t value = *(const size_t *) _p;
             if (value & ASCII_CHAR_MASK)
                 break;
@@ -5105,14 +5096,13 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         return p - start;
     }
 #endif
-#endif
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help allocation */
             const char *_p = p;
-            while (_p < aligned_end) {
+            while (_p + SIZEOF_SIZE_T <= end) {
                 size_t value = *(const size_t *) _p;
                 if (value & ASCII_CHAR_MASK)
                     break;
@@ -15686,18 +15676,6 @@ PyTypeObject PyUnicode_Type = {
 PyStatus
 _PyUnicode_Init(PyInterpreterState *interp)
 {
-    /* XXX - move this array to unicodectype.c ? */
-    const Py_UCS2 linebreak[] = {
-        0x000A, /* LINE FEED */
-        0x000D, /* CARRIAGE RETURN */
-        0x001C, /* FILE SEPARATOR */
-        0x001D, /* GROUP SEPARATOR */
-        0x001E, /* RECORD SEPARATOR */
-        0x0085, /* NEXT LINE */
-        0x2028, /* LINE SEPARATOR */
-        0x2029, /* PARAGRAPH SEPARATOR */
-    };
-
     struct _Py_unicode_state *state = &interp->unicode;
     if (unicode_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
@@ -15705,23 +15683,39 @@ _PyUnicode_Init(PyInterpreterState *interp)
 
     if (_Py_IsMainInterpreter(interp)) {
         /* initialize the linebreak bloom filter */
+        const Py_UCS2 linebreak[] = {
+            0x000A, /* LINE FEED */
+            0x000D, /* CARRIAGE RETURN */
+            0x001C, /* FILE SEPARATOR */
+            0x001D, /* GROUP SEPARATOR */
+            0x001E, /* RECORD SEPARATOR */
+            0x0085, /* NEXT LINE */
+            0x2028, /* LINE SEPARATOR */
+            0x2029, /* PARAGRAPH SEPARATOR */
+        };
         bloom_linebreak = make_bloom_mask(
             PyUnicode_2BYTE_KIND, linebreak,
             Py_ARRAY_LENGTH(linebreak));
+    }
 
-        if (PyType_Ready(&PyUnicode_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize unicode type");
-        }
+    return _PyStatus_OK();
+}
 
-        if (PyType_Ready(&EncodingMapType) < 0) {
-             return _PyStatus_ERR("Can't initialize encoding map type");
-        }
-        if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize field name iterator type");
-        }
-        if (PyType_Ready(&PyFormatterIter_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize formatter iter type");
-        }
+
+PyStatus
+_PyUnicode_InitTypes(void)
+{
+    if (PyType_Ready(&PyUnicode_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize unicode type");
+    }
+    if (PyType_Ready(&EncodingMapType) < 0) {
+         return _PyStatus_ERR("Can't initialize encoding map type");
+    }
+    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize field name iterator type");
+    }
+    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize formatter iter type");
     }
     return _PyStatus_OK();
 }

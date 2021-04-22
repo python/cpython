@@ -10,7 +10,8 @@ try:
 except ImportError:
     gc = None
 
-from test.libregrtest.utils import setup_unraisable_hook
+from test.libregrtest.utils import (setup_unraisable_hook,
+                                    setup_threading_excepthook)
 
 
 def setup_tests(ns):
@@ -81,6 +82,7 @@ def setup_tests(ns):
         sys.addaudithook(_test_audit_hook)
 
     setup_unraisable_hook()
+    setup_threading_excepthook()
 
     if ns.timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT

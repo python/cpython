@@ -799,7 +799,7 @@ os.close(fd)
 
         # Start the server thread and wait for it to be listening.
         thread = threading.Thread(target=server)
-        thread.setDaemon(True)
+        thread.daemon = True
         thread.start()
         addr = q.get()
 

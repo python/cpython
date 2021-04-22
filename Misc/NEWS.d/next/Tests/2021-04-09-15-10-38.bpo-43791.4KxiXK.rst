@@ -1,0 +1,2 @@
+OpenSSL 3.0.0: Disable testing of legacy protocols TLS 1.0 and 1.1. Tests
+are failing with TLSV1_ALERT_INTERNAL_ERROR.

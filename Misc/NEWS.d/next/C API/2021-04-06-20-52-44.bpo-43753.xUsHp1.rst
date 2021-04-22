@@ -1,0 +1,6 @@
+Add the :c:func:`Py_Is(x, y) <Py_Is>` function to test if the *x* object is the
+*y* object, the same as ``x is y`` in Python. Add also the :c:func:`Py_IsNone`,
+:c:func:`Py_IsTrue`, :c:func:`Py_IsFalse` functions to test if an object is,
+respectively, the ``None`` singleton, the ``True`` singleton or the ``False``
+singleton.
+Patch by Victor Stinner.

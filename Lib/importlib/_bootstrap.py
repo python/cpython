@@ -302,8 +302,6 @@ def _module_repr(module):
         except Exception:
             pass
     # Fall through to a catch-all which always succeeds.
-    # We could use module.__class__.__name__ instead of 'module' in the
-    # various repr permutations.
     try:
         name = module.__name__
     except AttributeError:
@@ -741,6 +739,8 @@ class BuiltinImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("BuiltinImporter.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return f'<module {module.__name__!r} ({BuiltinImporter._ORIGIN})>'
 
     @classmethod
@@ -761,6 +761,9 @@ class BuiltinImporter:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("BuiltinImporter.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         return spec.loader if spec is not None else None
 
@@ -816,6 +819,8 @@ class FrozenImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("FrozenImporter.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} ({})>'.format(m.__name__, FrozenImporter._ORIGIN)
 
     @classmethod
@@ -832,6 +837,9 @@ class FrozenImporter:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FrozenImporter.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         return cls if _imp.is_frozen(fullname) else None
 
     @staticmethod
@@ -901,8 +909,9 @@ def _resolve_name(name, package, level):
 
 
 def _find_spec_legacy(finder, name, path):
-    # This would be a good place for a DeprecationWarning if
-    # we ended up going that route.
+    msg = (f"{_object_name(finder)}.find_spec() not found; "
+                           "falling back to find_module()")
+    _warnings.warn(msg, ImportWarning)
     loader = finder.find_module(name, path)
     if loader is None:
         return None

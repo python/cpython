@@ -1594,7 +1594,7 @@ Optional Packages:
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
-  --with-openssl=DIR      override root of the OpenSSL directory to DIR
+  --with-openssl=DIR      root of the OpenSSL directory
   --with-openssl-rpath=[DIR|auto|no]
                           Set runtime library directory (rpath) for OpenSSL
                           libraries, no (default): don't set rpath, auto:
@@ -8644,7 +8644,7 @@ $as_echo "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 fi
 
 
-# Sizes of various common basic types
+# Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
@@ -8709,6 +8709,41 @@ $as_echo "$ac_cv_sizeof_long" >&6; }
 
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_LONG $ac_cv_sizeof_long
+_ACEOF
+
+
+# The cast to long int works around a bug in the HP C Compiler,
+# see AC_CHECK_SIZEOF for more information.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking alignment of long" >&5
+$as_echo_n "checking alignment of long... " >&6; }
+if ${ac_cv_alignof_long+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) offsetof (ac__type_alignof_, y)" "ac_cv_alignof_long"        "$ac_includes_default
+#ifndef offsetof
+# define offsetof(type, member) ((char *) &((type *) 0)->member - (char *) 0)
+#endif
+typedef struct { char x; long y; } ac__type_alignof_;"; then :
+
+else
+  if test "$ac_cv_type_long" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute alignment of long
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_alignof_long=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_alignof_long" >&5
+$as_echo "$ac_cv_alignof_long" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define ALIGNOF_LONG $ac_cv_alignof_long
 _ACEOF
 
 
@@ -8940,6 +8975,41 @@ $as_echo "$ac_cv_sizeof_size_t" >&6; }
 
 cat >>confdefs.h <<_ACEOF
 #define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
+_ACEOF
+
+
+# The cast to long int works around a bug in the HP C Compiler,
+# see AC_CHECK_SIZEOF for more information.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking alignment of size_t" >&5
+$as_echo_n "checking alignment of size_t... " >&6; }
+if ${ac_cv_alignof_size_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) offsetof (ac__type_alignof_, y)" "ac_cv_alignof_size_t"        "$ac_includes_default
+#ifndef offsetof
+# define offsetof(type, member) ((char *) &((type *) 0)->member - (char *) 0)
+#endif
+typedef struct { char x; size_t y; } ac__type_alignof_;"; then :
+
+else
+  if test "$ac_cv_type_size_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute alignment of size_t
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_alignof_size_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_alignof_size_t" >&5
+$as_echo "$ac_cv_alignof_size_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define ALIGNOF_SIZE_T $ac_cv_alignof_size_t
 _ACEOF
 
 
@@ -14571,10 +14641,10 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 
-if $GREP noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest.$ac_objext >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if $GREP seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest.$ac_objext >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -17636,60 +17706,6 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
-
-if test "$have_openssl" = yes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X509_VERIFY_PARAM_set1_host in libssl" >&5
-$as_echo_n "checking for X509_VERIFY_PARAM_set1_host in libssl... " >&6; }
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-        #include <openssl/x509_vfy.h>
-
-int
-main ()
-{
-
-        X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();
-        X509_VERIFY_PARAM_set1_host(p, "localhost", 0);
-        X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");
-        X509_VERIFY_PARAM_set_hostflags(p, 0);
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-        ac_cv_has_x509_verify_param_set1_host=yes
-
-else
-
-        ac_cv_has_x509_verify_param_set1_host=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_x509_verify_param_set1_host" >&5
-$as_echo "$ac_cv_has_x509_verify_param_set1_host" >&6; }
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-
-$as_echo "#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1" >>confdefs.h
-
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
 
 # rpath to libssl and libcrypto
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-openssl-rpath" >&5

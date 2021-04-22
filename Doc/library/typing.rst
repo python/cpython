@@ -1058,8 +1058,10 @@ These are not used in annotations. They are building blocks for creating generic
       components.  ``P.args`` represents the tuple of positional parameters in a
       given call and should only be used to annotate ``*args``.  ``P.kwargs``
       represents the mapping of keyword parameters to their values in a given call,
-      and should be only be used to annotate ``**kwargs`` or ``**kwds``.  Both
-      attributes require the annotated parameter to be in scope.
+      and should be only be used to annotate ``**kwargs``.  Both
+      attributes require the annotated parameter to be in scope. At runtime,
+      ``P.args`` and ``P.kwargs`` are instances respectively of
+      :class:`ParamSpecArgs` and :class:`ParamSpecKwargs`.
 
    Parameter specification variables created with ``covariant=True`` or
    ``contravariant=True`` can be used to declare covariant or contravariant
@@ -1077,6 +1079,24 @@ These are not used in annotations. They are building blocks for creating generic
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
         ``ParamSpec`` and ``Concatenate``).
       * :class:`Callable` and :class:`Concatenate`.
+
+.. data:: ParamSpecArgs
+.. data:: ParamSpecKwargs
+
+   Arguments and keyword arguments attributes of a :class:`ParamSpec`. The
+   ``P.args`` attribute of a ``ParamSpec`` is an instance of ``ParamSpecArgs``,
+   and ``P.kwargs`` is an instance of ``ParamSpecKwargs``. They are intended
+   for runtime introspection and have no special meaning to static type checkers.
+
+   Calling :func:`get_origin` on either of these objects will return the
+   original ``ParamSpec``::
+
+      P = ParamSpec("P")
+      get_origin(P.args)  # returns P
+      get_origin(P.kwargs)  # returns P
+
+   .. versionadded:: 3.10
+
 
 .. data:: AnyStr
 
@@ -1144,10 +1164,7 @@ These are not used in annotations. They are building blocks for creating generic
    .. note::
 
         :func:`runtime_checkable` will check only the presence of the required methods,
-        not their type signatures! For example, :class:`builtins.complex <complex>`
-        implements :func:`__float__`, therefore it passes an :func:`issubclass` check
-        against :class:`SupportsFloat`. However, the ``complex.__float__`` method
-        exists only to raise a :class:`TypeError` with a more informative message.
+        not their type signatures.
 
    .. versionadded:: 3.8
 
@@ -1948,9 +1965,14 @@ Introspection helpers
 .. class:: ForwardRef
 
    A class used for internal typing representation of string forward references.
-   For example, ``list["SomeClass"]`` is implicitly transformed into
-   ``list[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
+
+   .. note::
+      :pep:`585` generic types such as ``list["SomeClass"]`` will not be
+      implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
+      will not automatically resolve to ``list[SomeClass]``.
 
    .. versionadded:: 3.7.4
 

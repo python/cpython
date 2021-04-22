@@ -363,7 +363,7 @@ class GrammarTests(unittest.TestCase):
             z = 2
             def __init__(self, x):
                 self.x: int = x
-        self.assertEqual(C.__annotations__, {'_C__foo': 'int', 's': 'str'})
+        self.assertEqual(C.__annotations__, {'_C__foo': int, 's': str})
         with self.assertRaises(NameError):
             class CBad:
                 no_such_name_defined.attr: int = 0
@@ -379,15 +379,15 @@ class GrammarTests(unittest.TestCase):
                 return {'__annotations__': CNS()}
         class CC(metaclass=CMeta):
             XX: 'ANNOT'
-        self.assertEqual(CC.__annotations__['xx'], repr('ANNOT'))
+        self.assertEqual(CC.__annotations__['xx'], 'ANNOT')
 
     def test_var_annot_module_semantics(self):
         with self.assertRaises(AttributeError):
             print(test.__annotations__)
         self.assertEqual(ann_module.__annotations__,
-                     {1: 2, 'x': 'int', 'y': 'str', 'f': 'Tuple[int, int]'})
+                     {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int]})
         self.assertEqual(ann_module.M.__annotations__,
-                              {'123': 123, 'o': 'type'})
+                              {'123': 123, 'o': type})
         self.assertEqual(ann_module2.__annotations__, {})
 
     def test_var_annot_in_module(self):
@@ -406,7 +406,7 @@ class GrammarTests(unittest.TestCase):
         exec("'docstring'\n"
              "__annotations__[1] = 2\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotations__"], {1: 2, 'x': 'int'})
+        self.assertEqual(lns["__annotations__"], {1: 2, 'x': int})
         with self.assertRaises(KeyError):
             gns['__annotations__']
 
@@ -414,8 +414,8 @@ class GrammarTests(unittest.TestCase):
         # tests with custom locals() and __annotations__
         ns = {'__annotations__': CNS()}
         exec('X: int; Z: str = "Z"; (w): complex = 1j', ns)
-        self.assertEqual(ns['__annotations__']['x'], 'int')
-        self.assertEqual(ns['__annotations__']['z'], 'str')
+        self.assertEqual(ns['__annotations__']['x'], int)
+        self.assertEqual(ns['__annotations__']['z'], str)
         with self.assertRaises(KeyError):
             ns['__annotations__']['w']
         nonloc_ns = {}
@@ -429,7 +429,7 @@ class GrammarTests(unittest.TestCase):
             def __getitem__(self, item):
                 return self._dct[item]
         exec('x: int = 1', {}, CNS2())
-        self.assertEqual(nonloc_ns['__annotations__']['x'], 'int')
+        self.assertEqual(nonloc_ns['__annotations__']['x'], int)
 
     def test_var_annot_refleak(self):
         # complex case: custom locals plus custom __annotations__
@@ -446,7 +446,7 @@ class GrammarTests(unittest.TestCase):
             def __getitem__(self, item):
                 return self._dct[item]
         exec('X: str', {}, CNS2())
-        self.assertEqual(nonloc_ns['__annotations__']['x'], 'str')
+        self.assertEqual(nonloc_ns['__annotations__']['x'], str)
 
     def test_var_annot_rhs(self):
         ns = {}
@@ -626,46 +626,50 @@ class GrammarTests(unittest.TestCase):
 
         # argument annotation tests
         def f(x) -> list: pass
-        self.assertEqual(f.__annotations__, {'return': 'list'})
+        self.assertEqual(f.__annotations__, {'return': list})
         def f(x: int): pass
-        self.assertEqual(f.__annotations__, {'x': 'int'})
+        self.assertEqual(f.__annotations__, {'x': int})
         def f(x: int, /): pass
-        self.assertEqual(f.__annotations__, {'x': 'int'})
+        self.assertEqual(f.__annotations__, {'x': int})
         def f(x: int = 34, /): pass
-        self.assertEqual(f.__annotations__, {'x': 'int'})
+        self.assertEqual(f.__annotations__, {'x': int})
         def f(*x: str): pass
-        self.assertEqual(f.__annotations__, {'x': 'str'})
+        self.assertEqual(f.__annotations__, {'x': str})
         def f(**x: float): pass
-        self.assertEqual(f.__annotations__, {'x': 'float'})
+        self.assertEqual(f.__annotations__, {'x': float})
+        def f(x, y: 1+2): pass
+        self.assertEqual(f.__annotations__, {'y': 3})
+        def f(x, y: 1+2, /): pass
+        self.assertEqual(f.__annotations__, {'y': 3})
         def f(a, b: 1, c: 2, d): pass
-        self.assertEqual(f.__annotations__, {'b': '1', 'c': '2'})
+        self.assertEqual(f.__annotations__, {'b': 1, 'c': 2})
         def f(a, b: 1, /, c: 2, d): pass
-        self.assertEqual(f.__annotations__, {'b': '1', 'c': '2'})
+        self.assertEqual(f.__annotations__, {'b': 1, 'c': 2})
         def f(a, b: 1, c: 2, d, e: 3 = 4, f=5, *g: 6): pass
         self.assertEqual(f.__annotations__,
-                         {'b': '1', 'c': '2', 'e': '3', 'g': '6'})
+                         {'b': 1, 'c': 2, 'e': 3, 'g': 6})
         def f(a, b: 1, c: 2, d, e: 3 = 4, f=5, *g: 6, h: 7, i=8, j: 9 = 10,
               **k: 11) -> 12: pass
         self.assertEqual(f.__annotations__,
-                         {'b': '1', 'c': '2', 'e': '3', 'g': '6', 'h': '7', 'j': '9',
-                          'k': '11', 'return': '12'})
+                         {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
+                          'k': 11, 'return': 12})
         def f(a, b: 1, c: 2, d, e: 3 = 4, f: int = 5, /, *g: 6, h: 7, i=8, j: 9 = 10,
               **k: 11) -> 12: pass
         self.assertEqual(f.__annotations__,
-                          {'b': '1', 'c': '2', 'e': '3', 'f': 'int', 'g': '6', 'h': '7', 'j': '9',
-                           'k': '11', 'return': '12'})
+                          {'b': 1, 'c': 2, 'e': 3, 'f': int, 'g': 6, 'h': 7, 'j': 9,
+                           'k': 11, 'return': 12})
         # Check for issue #20625 -- annotations mangling
         class Spam:
             def f(self, *, __kw: 1):
                 pass
         class Ham(Spam): pass
-        self.assertEqual(Spam.f.__annotations__, {'_Spam__kw': '1'})
-        self.assertEqual(Ham.f.__annotations__, {'_Spam__kw': '1'})
+        self.assertEqual(Spam.f.__annotations__, {'_Spam__kw': 1})
+        self.assertEqual(Ham.f.__annotations__, {'_Spam__kw': 1})
         # Check for SF Bug #1697248 - mixing decorators and a return annotation
         def null(x): return x
         @null
         def f(x) -> list: pass
-        self.assertEqual(f.__annotations__, {'return': 'list'})
+        self.assertEqual(f.__annotations__, {'return': list})
 
         # Test expressions as decorators (PEP 614):
         @False or null
@@ -1113,6 +1117,8 @@ class GrammarTests(unittest.TestCase):
         # Not allowed at class scope
         check_syntax_error(self, "class foo:yield 1")
         check_syntax_error(self, "class foo:yield from ()")
+        # Check annotation refleak on SyntaxError
+        check_syntax_error(self, "def g(a:(yield)): pass")
 
     def test_yield_in_comprehensions(self):
         # Check yield in comprehensions

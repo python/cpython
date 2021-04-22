@@ -3,6 +3,7 @@ apt-get update
 
 apt-get -yq install \
     build-essential \
+    ccache \
     gdb \
     lcov \
     libbz2-dev \
