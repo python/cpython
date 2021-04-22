@@ -469,7 +469,11 @@ static PyObject *
 _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
 /*[clinic end generated code: output=006fa74ce3b5cfbf input=079adc330ddaabe6]*/
 {
-    if (self->fd < 0 && self->handle != INVALID_HANDLE_VALUE) {
+    if (self->handle == INVALID_HANDLE_VALUE) {
+        return err_closed();
+    }
+
+    if (self->fd < 0) {
         _Py_BEGIN_SUPPRESS_IPH
         if (self->writable)
             self->fd = _open_osfhandle((intptr_t)self->handle, _O_WRONLY | _O_BINARY);
@@ -477,8 +481,13 @@ _io__WindowsConsoleIO_fileno_impl(winconsoleio *self)
             self->fd = _open_osfhandle((intptr_t)self->handle, _O_RDONLY | _O_BINARY);
         _Py_END_SUPPRESS_IPH
     }
-    if (self->fd < 0)
-        return err_mode("fileno");
+
+    if (self->fd < 0) {
+        if (self->closehandle)
+            CloseHandle(self->handle);
+        self->handle = INVALID_HANDLE_VALUE;
+        return err_closed();
+    }
     return PyLong_FromLong(self->fd);
 }
 
