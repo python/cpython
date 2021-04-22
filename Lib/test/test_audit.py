@@ -131,7 +131,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_http(self):
-        support.import_module("http.client")
+        import_helper.import_module("http.client")
         returncode, events, stderr = self.run_python("test_http_client")
         if returncode:
             self.fail(stderr)
