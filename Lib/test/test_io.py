@@ -2601,8 +2601,8 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(t.encoding, "utf-8")
         self.assertEqual(t.line_buffering, True)
         self.assertEqual("\xe9\n", t.readline())
-        self.assertRaises(TypeError, t.__init__, b, newline=42)
-        self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
+        self.assertRaises(TypeError, t.__init__, b, encoding="utf-8", newline=42)
+        self.assertRaises(ValueError, t.__init__, b, encoding="utf-8", newline='xyzzy')
 
     def test_uninitialized(self):
         t = self.TextIOWrapper.__new__(self.TextIOWrapper)
@@ -3732,7 +3732,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
         t = self.TextIOWrapper(b, encoding="utf-8")
-        self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
+        self.assertRaises(ValueError, t.__init__, b, encoding="utf-8", newline='xyzzy')
         self.assertRaises(ValueError, t.read)
 
         t = self.TextIOWrapper.__new__(self.TextIOWrapper)
@@ -4283,6 +4283,14 @@ class MiscIOTest(unittest.TestCase):
         self.assertTrue(
             warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
+    @support.cpython_only
+    # Depending if OpenWrapper was already created or not, the warning is
+    # emitted or not. For example, the attribute is already created when this
+    # test is run multiple times.
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
+    def test_openwrapper(self):
+        self.assertIs(self.io.OpenWrapper, self.io.open)
+
 
 class CMiscIOTest(MiscIOTest):
     io = io
@@ -4598,8 +4606,6 @@ def load_tests(*args):
     globs = globals()
     c_io_ns.update((x.__name__, globs["C" + x.__name__]) for x in mocks)
     py_io_ns.update((x.__name__, globs["Py" + x.__name__]) for x in mocks)
-    # Avoid turning open into a bound method.
-    py_io_ns["open"] = pyio.OpenWrapper
     for test in tests:
         if test.__name__.startswith("C"):
             for name, obj in c_io_ns.items():

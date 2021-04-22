@@ -1,6 +1,5 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()

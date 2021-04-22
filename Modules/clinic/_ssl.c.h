@@ -139,29 +139,6 @@ _ssl__SSLSocket_version(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_version_impl(self);
 }
 
-#if (HAVE_NPN)
-
-PyDoc_STRVAR(_ssl__SSLSocket_selected_npn_protocol__doc__,
-"selected_npn_protocol($self, /)\n"
-"--\n"
-"\n");
-
-#define _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF    \
-    {"selected_npn_protocol", (PyCFunction)_ssl__SSLSocket_selected_npn_protocol, METH_NOARGS, _ssl__SSLSocket_selected_npn_protocol__doc__},
-
-static PyObject *
-_ssl__SSLSocket_selected_npn_protocol_impl(PySSLSocket *self);
-
-static PyObject *
-_ssl__SSLSocket_selected_npn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
-{
-    return _ssl__SSLSocket_selected_npn_protocol_impl(self);
-}
-
-#endif /* (HAVE_NPN) */
-
-#if (HAVE_ALPN)
-
 PyDoc_STRVAR(_ssl__SSLSocket_selected_alpn_protocol__doc__,
 "selected_alpn_protocol($self, /)\n"
 "--\n"
@@ -178,8 +155,6 @@ _ssl__SSLSocket_selected_alpn_protocol(PySSLSocket *self, PyObject *Py_UNUSED(ig
 {
     return _ssl__SSLSocket_selected_alpn_protocol_impl(self);
 }
-
-#endif /* (HAVE_ALPN) */
 
 PyDoc_STRVAR(_ssl__SSLSocket_compression__doc__,
 "compression($self, /)\n"
@@ -399,7 +374,7 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     int proto_version;
 
-    if ((type == PySSLContext_Type) &&
+    if ((type == get_state_type(type)->PySSLContext_Type) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
@@ -452,8 +427,6 @@ exit:
     return return_value;
 }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10002000UL)
-
 PyDoc_STRVAR(_ssl__SSLContext_get_ciphers__doc__,
 "get_ciphers($self, /)\n"
 "--\n"
@@ -469,44 +442,6 @@ static PyObject *
 _ssl__SSLContext_get_ciphers(PySSLContext *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl__SSLContext_get_ciphers_impl(self);
-}
-
-#endif /* (OPENSSL_VERSION_NUMBER >= 0x10002000UL) */
-
-PyDoc_STRVAR(_ssl__SSLContext__set_npn_protocols__doc__,
-"_set_npn_protocols($self, protos, /)\n"
-"--\n"
-"\n");
-
-#define _SSL__SSLCONTEXT__SET_NPN_PROTOCOLS_METHODDEF    \
-    {"_set_npn_protocols", (PyCFunction)_ssl__SSLContext__set_npn_protocols, METH_O, _ssl__SSLContext__set_npn_protocols__doc__},
-
-static PyObject *
-_ssl__SSLContext__set_npn_protocols_impl(PySSLContext *self,
-                                         Py_buffer *protos);
-
-static PyObject *
-_ssl__SSLContext__set_npn_protocols(PySSLContext *self, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    Py_buffer protos = {NULL, NULL};
-
-    if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_npn_protocols", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = _ssl__SSLContext__set_npn_protocols_impl(self, &protos);
-
-exit:
-    /* Cleanup for protos */
-    if (protos.obj) {
-       PyBuffer_Release(&protos);
-    }
-
-    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLContext__set_alpn_protocols__doc__,
@@ -684,8 +619,8 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], PySocketModule.Sock_Type)) {
-        _PyArg_BadArgument("_wrap_socket", "argument 'sock'", (PySocketModule.Sock_Type)->tp_name, args[0]);
+    if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->Sock_Type)) {
+        _PyArg_BadArgument("_wrap_socket", "argument 'sock'", (get_state_ctx(self)->Sock_Type)->tp_name, args[0]);
         goto exit;
     }
     sock = args[0];
@@ -754,13 +689,13 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (PySSLMemoryBIO_Type)->tp_name, args[0]);
+    if (!PyObject_TypeCheck(args[0], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'incoming'", (get_state_ctx(self)->PySSLMemoryBIO_Type)->tp_name, args[0]);
         goto exit;
     }
     incoming = (PySSLMemoryBIO *)args[0];
-    if (!PyObject_TypeCheck(args[1], PySSLMemoryBIO_Type)) {
-        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (PySSLMemoryBIO_Type)->tp_name, args[1]);
+    if (!PyObject_TypeCheck(args[1], get_state_ctx(self)->PySSLMemoryBIO_Type)) {
+        _PyArg_BadArgument("_wrap_bio", "argument 'outgoing'", (get_state_ctx(self)->PySSLMemoryBIO_Type)->tp_name, args[1]);
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
@@ -829,8 +764,6 @@ _ssl__SSLContext_set_default_verify_paths(PySSLContext *self, PyObject *Py_UNUSE
     return _ssl__SSLContext_set_default_verify_paths_impl(self);
 }
 
-#if !defined(OPENSSL_NO_ECDH)
-
 PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 "set_ecdh_curve($self, name, /)\n"
 "--\n"
@@ -838,8 +771,6 @@ PyDoc_STRVAR(_ssl__SSLContext_set_ecdh_curve__doc__,
 
 #define _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF    \
     {"set_ecdh_curve", (PyCFunction)_ssl__SSLContext_set_ecdh_curve, METH_O, _ssl__SSLContext_set_ecdh_curve__doc__},
-
-#endif /* !defined(OPENSSL_NO_ECDH) */
 
 PyDoc_STRVAR(_ssl__SSLContext_cert_store_stats__doc__,
 "cert_store_stats($self, /)\n"
@@ -919,11 +850,11 @@ _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
 
-    if ((type == PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == PySSLMemoryBIO_Type) &&
+    if ((type == get_state_type(type)->PySSLMemoryBIO_Type) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1174,40 +1105,6 @@ _ssl_RAND_status(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _ssl_RAND_status_impl(module);
 }
 
-#if !defined(OPENSSL_NO_EGD)
-
-PyDoc_STRVAR(_ssl_RAND_egd__doc__,
-"RAND_egd($module, path, /)\n"
-"--\n"
-"\n"
-"Queries the entropy gather daemon (EGD) on the socket named by \'path\'.\n"
-"\n"
-"Returns number of bytes read.  Raises SSLError if connection to EGD\n"
-"fails or if it does not provide enough data to seed PRNG.");
-
-#define _SSL_RAND_EGD_METHODDEF    \
-    {"RAND_egd", (PyCFunction)_ssl_RAND_egd, METH_O, _ssl_RAND_egd__doc__},
-
-static PyObject *
-_ssl_RAND_egd_impl(PyObject *module, PyObject *path);
-
-static PyObject *
-_ssl_RAND_egd(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *path;
-
-    if (!PyUnicode_FSConverter(arg, &path)) {
-        goto exit;
-    }
-    return_value = _ssl_RAND_egd_impl(module, path);
-
-exit:
-    return return_value;
-}
-
-#endif /* !defined(OPENSSL_NO_EGD) */
-
 PyDoc_STRVAR(_ssl_get_default_verify_paths__doc__,
 "get_default_verify_paths($module, /)\n"
 "--\n"
@@ -1420,26 +1317,6 @@ exit:
 
 #endif /* defined(_MSC_VER) */
 
-#ifndef _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
-    #define _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
-#endif /* !defined(_SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF) */
-
-#ifndef _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
-    #define _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
-#endif /* !defined(_SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF) */
-
-#ifndef _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
-    #define _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
-#endif /* !defined(_SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF) */
-
-#ifndef _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF
-    #define _SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF
-#endif /* !defined(_SSL__SSLCONTEXT_SET_ECDH_CURVE_METHODDEF) */
-
-#ifndef _SSL_RAND_EGD_METHODDEF
-    #define _SSL_RAND_EGD_METHODDEF
-#endif /* !defined(_SSL_RAND_EGD_METHODDEF) */
-
 #ifndef _SSL_ENUM_CERTIFICATES_METHODDEF
     #define _SSL_ENUM_CERTIFICATES_METHODDEF
 #endif /* !defined(_SSL_ENUM_CERTIFICATES_METHODDEF) */
@@ -1447,4 +1324,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2bb53a80040c9b35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=83e68c77bd96789a input=a9049054013a1b77]*/

@@ -617,7 +617,7 @@ class TestUpdateWrapper(unittest.TestCase):
 
 
     def _default_update(self):
-        def f(a: int):
+        def f(a:'This is a new annotation'):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
@@ -634,7 +634,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
-        self.assertEqual(wrapper.__annotations__['a'], 'int')
+        self.assertEqual(wrapper.__annotations__['a'], 'This is a new annotation')
         self.assertNotIn('b', wrapper.__annotations__)
 
     @unittest.skipIf(sys.flags.optimize >= 2,

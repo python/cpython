@@ -1343,7 +1343,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef NCURSES_MOUSE_VERSION
 /*[clinic input]
-_curses.window.enclose -> long
+_curses.window.enclose
 
     y: int
         Y-coordinate.
@@ -1354,11 +1354,11 @@ _curses.window.enclose -> long
 Return True if the screen-relative coordinates are enclosed by the window.
 [clinic start generated code]*/
 
-static long
+static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
-/*[clinic end generated code: output=5251c961cbe3df63 input=dfe1d9d4d05d8642]*/
+/*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
 {
-    return wenclose(self->win, y, x);
+    return PyBool_FromLong(wenclose(self->win, y, x));
 }
 #endif
 

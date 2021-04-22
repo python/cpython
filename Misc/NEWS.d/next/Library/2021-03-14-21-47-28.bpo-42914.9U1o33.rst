@@ -1,3 +1,0 @@
-:func:`pprint.pprint` gains a new boolean ``underscore_numbers`` optional
-argument to emit integers with thousands separated by an underscore character
-for improved readability (for example ``1_000_000`` instead of ``1000000``).

@@ -240,7 +240,6 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
 {
     int i, numcols;
     PyObject* row;
-    PyObject* item = NULL;
     int coltype;
     PyObject* converter;
     PyObject* converted;
@@ -282,18 +281,22 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
          */
         if (converter != Py_None) {
             const void *blob = sqlite3_column_blob(self->statement->st, i);
-            if (blob == NULL && sqlite3_errcode(db) == SQLITE_NOMEM) {
-                PyErr_NoMemory();
-                goto error;
+            if (blob == NULL) {
+                if (sqlite3_errcode(db) == SQLITE_NOMEM) {
+                    PyErr_NoMemory();
+                    goto error;
+                }
+                converted = Py_NewRef(Py_None);
             }
-
-            nbytes = sqlite3_column_bytes(self->statement->st, i);
-            item = PyBytes_FromStringAndSize(blob, nbytes);
-            if (item == NULL) {
-                goto error;
+            else {
+                nbytes = sqlite3_column_bytes(self->statement->st, i);
+                PyObject *item = PyBytes_FromStringAndSize(blob, nbytes);
+                if (item == NULL) {
+                    goto error;
+                }
+                converted = PyObject_CallOneArg(converter, item);
+                Py_DECREF(item);
             }
-            converted = PyObject_CallOneArg(converter, item);
-            Py_DECREF(item);
         } else {
             Py_BEGIN_ALLOW_THREADS
             coltype = sqlite3_column_type(self->statement->st, i);

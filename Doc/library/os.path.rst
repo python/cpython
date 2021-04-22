@@ -175,8 +175,8 @@ the :mod:`glob` module.)
 
    On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
    of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
-   ``~user`` is handled by stripping the last directory component from the created
-   user path derived above.
+   ``~user`` is handled by checking that the last directory component of the current
+   user's home directory matches :envvar:`USERNAME`, and replacing it if so.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
@@ -366,7 +366,8 @@ the :mod:`glob` module.)
    Return a relative filepath to *path* either from the current directory or
    from an optional *start* directory.  This is a path computation:  the
    filesystem is not accessed to confirm the existence or nature of *path* or
-   *start*.
+   *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
+   are on different drives.
 
    *start* defaults to :attr:`os.curdir`.
 

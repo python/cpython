@@ -1,0 +1,2 @@
+Improve the error message for :exc:`IndentationError` exceptions. Patch by
+Pablo Galindo

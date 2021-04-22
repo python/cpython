@@ -1,2 +1,0 @@
-The :meth:`~array.array.index` method of :class:`array.array` now has
-optional *start* and *stop* parameters.

@@ -388,7 +388,16 @@ class Condition:
         """
         self.notify(len(self._waiters))
 
-    notifyAll = notify_all
+    def notifyAll(self):
+        """Wake up all threads waiting on this condition.
+
+        This method is deprecated, use notify_all() instead.
+
+        """
+        import warnings
+        warnings.warn('notifyAll() is deprecated, use notify_all() instead',
+                      DeprecationWarning, stacklevel=2)
+        self.notify_all()
 
 
 class Semaphore:
@@ -538,7 +547,16 @@ class Event:
         """Return true if and only if the internal flag is true."""
         return self._flag
 
-    isSet = is_set
+    def isSet(self):
+        """Return true if and only if the internal flag is true.
+
+        This method is deprecated, use notify_all() instead.
+
+        """
+        import warnings
+        warnings.warn('isSet() is deprecated, use is_set() instead',
+                      DeprecationWarning, stacklevel=2)
+        return self.is_set()
 
     def set(self):
         """Set the internal flag to true.
@@ -1146,15 +1164,47 @@ class Thread:
         self._daemonic = daemonic
 
     def isDaemon(self):
+        """Return whether this thread is a daemon.
+
+        This method is deprecated, use the daemon attribute instead.
+
+        """
+        import warnings
+        warnings.warn('isDaemon() is deprecated, get the daemon attribute instead',
+                      DeprecationWarning, stacklevel=2)
         return self.daemon
 
     def setDaemon(self, daemonic):
+        """Set whether this thread is a daemon.
+
+        This method is deprecated, use the .daemon property instead.
+
+        """
+        import warnings
+        warnings.warn('setDaemon() is deprecated, set the daemon attribute instead',
+                      DeprecationWarning, stacklevel=2)
         self.daemon = daemonic
 
     def getName(self):
+        """Return a string used for identification purposes only.
+
+        This method is deprecated, use the name attribute instead.
+
+        """
+        import warnings
+        warnings.warn('getName() is deprecated, get the name attribute instead',
+                      DeprecationWarning, stacklevel=2)
         return self.name
 
     def setName(self, name):
+        """Set the name string for this thread.
+
+        This method is deprecated, use the name attribute instead.
+
+        """
+        import warnings
+        warnings.warn('setName() is deprecated, set the name attribute instead',
+                      DeprecationWarning, stacklevel=2)
         self.name = name
 
 
@@ -1349,7 +1399,16 @@ def current_thread():
     except KeyError:
         return _DummyThread()
 
-currentThread = current_thread
+def currentThread():
+    """Return the current Thread object, corresponding to the caller's thread of control.
+
+    This function is deprecated, use current_thread() instead.
+
+    """
+    import warnings
+    warnings.warn('currentThread() is deprecated, use current_thread() instead',
+                  DeprecationWarning, stacklevel=2)
+    return current_thread()
 
 def active_count():
     """Return the number of Thread objects currently alive.
@@ -1361,7 +1420,16 @@ def active_count():
     with _active_limbo_lock:
         return len(_active) + len(_limbo)
 
-activeCount = active_count
+def activeCount():
+    """Return the number of Thread objects currently alive.
+
+    This function is deprecated, use active_count() instead.
+
+    """
+    import warnings
+    warnings.warn('activeCount() is deprecated, use active_count() instead',
+                  DeprecationWarning, stacklevel=2)
+    return active_count()
 
 def _enumerate():
     # Same as enumerate(), but without the lock. Internal use only.

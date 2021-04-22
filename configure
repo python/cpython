@@ -17707,60 +17707,6 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
-if test "$have_openssl" = yes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X509_VERIFY_PARAM_set1_host in libssl" >&5
-$as_echo_n "checking for X509_VERIFY_PARAM_set1_host in libssl... " >&6; }
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-        #include <openssl/x509_vfy.h>
-
-int
-main ()
-{
-
-        X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();
-        X509_VERIFY_PARAM_set1_host(p, "localhost", 0);
-        X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");
-        X509_VERIFY_PARAM_set_hostflags(p, 0);
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-        ac_cv_has_x509_verify_param_set1_host=yes
-
-else
-
-        ac_cv_has_x509_verify_param_set1_host=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_x509_verify_param_set1_host" >&5
-$as_echo "$ac_cv_has_x509_verify_param_set1_host" >&6; }
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-
-$as_echo "#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1" >>confdefs.h
-
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
-
 # rpath to libssl and libcrypto
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-openssl-rpath" >&5
 $as_echo_n "checking for --with-openssl-rpath... " >&6; }

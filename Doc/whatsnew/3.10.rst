@@ -65,6 +65,7 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`644`, require OpenSSL 1.1.1 or newer
 
 
 New Features
@@ -125,8 +126,11 @@ Check :pep:`617` for more details.
 in :issue:`12782` and :issue:`40334`.)
 
 
-Better error messages in the parser
------------------------------------
+Better error messages
+---------------------
+
+SyntaxErrors
+~~~~~~~~~~~~
 
 When parsing code that contains unclosed parentheses or brackets the interpreter
 now includes the location of the unclosed bracket of parentheses instead of displaying
@@ -142,7 +146,7 @@ For instance, consider the following code (notice the unclosed '{'):
 previous versions of the interpreter reported confusing places as the location of
 the syntax error:
 
-.. code-block:: text
+.. code-block:: python
 
    File "example.py", line 3
        some_other_code = foo()
@@ -151,7 +155,7 @@ the syntax error:
 
 but in Python3.10 a more informative error is emitted:
 
-.. code-block:: text
+.. code-block:: python
 
     File "example.py", line 1
         expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
@@ -167,13 +171,165 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
+A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
+have been incorporated. Some of the most notable ones:
+
+* Missing ``:`` before blocks:
+
+    .. code-block:: python
+
+        >>> if rocket.position > event_horizon
+          File "<stdin>", line 1
+            if rocket.position > event_horizon
+                                              ^
+        SyntaxError: expected ':'
+
+    (Contributed by Pablo Galindo in :issue:`42997`)
+
+* Unparenthesised tuples in comprehensions targets:
+
+    .. code-block:: python
+
+        >>> {x,y for x,y in range(100)}
+          File "<stdin>", line 1
+            {x,y for x,y in range(100)}
+             ^
+        SyntaxError: did you forget parentheses around the comprehension target?
+
+    (Contributed by Pablo Galindo in :issue:`43017`)
+
+* Missing commas in collection literals and between expressions:
+
+    .. code-block:: python
+
+        >>> items = {
+        ... x: 1,
+        ... y: 2
+        ... z: 3,
+          File "<stdin>", line 3
+            y: 2
+               ^
+        SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+    (Contributed by Pablo Galindo in :issue:`43822`)
+
+* Exception groups without parentheses:
+
+    .. code-block:: python
+
+        >>> try:
+        ...     build_dyson_sphere()
+        ... except NotEnoughScienceError, NotEnoughResourcesError:
+          File "<stdin>", line 3
+            except NotEnoughScienceError, NotEnoughResourcesError:
+                   ^
+        SyntaxError: exception group must be parenthesized
+
+    (Contributed by Pablo Galindo in :issue:`43149`)
+
+* Missing ``:`` and values in dictionary literals:
+
+    .. code-block:: python
+
+        >>> values = {
+        ... x: 1,
+        ... y: 2,
+        ... z:
+        ... }
+          File "<stdin>", line 4
+            z:
+             ^
+        SyntaxError: expression expected after dictionary key and ':'
+
+        >>> values = {x:1, y:2, z w:3}
+          File "<stdin>", line 1
+            values = {x:1, y:2, z w:3}
+                                ^
+        SyntaxError: ':' expected after dictionary key
+
+    (Contributed by Pablo Galindo in :issue:`43823`)
+
+* Usage of ``=`` instead of ``==`` in comparisons:
+
+    .. code-block:: python
+
+        >>> if rocket.position = event_horizon:
+          File "<stdin>", line 1
+            if rocket.position = event_horizon:
+                               ^
+        SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+    (Contributed by Pablo Galindo in :issue:`43797`)
+
+* Usage of ``*`` in f-strings:
+
+    .. code-block:: python
+
+        >>> f"Black holes {*all_black_holes} and revelations"
+          File "<stdin>", line 1
+            (*all_black_holes)
+             ^
+        SyntaxError: f-string: cannot use starred expression here
+
+    (Contributed by Pablo Galindo in :issue:`41064`)
+
+IndentationErrors
+~~~~~~~~~~~~~~~~~
+
+Many :exc:`IndentationError` exceptions now have more context regarding what kind of block
+was expecting an indentation, including the location of the statement:
+
+.. code-block:: python
+
+    >>> def foo():
+    ...    if lel:
+    ...    x = 2
+      File "<stdin>", line 3
+        x = 2
+        ^
+    IndentationError: expected an indented block after 'if' statement in line 2
+
+
+AttributeErrors
+~~~~~~~~~~~~~~~
+
+When printing :exc:`AttributeError`, :c:func:`PyErr_Display` will offer
+suggestions of similar attribute names in the object that the exception was
+raised from:
+
+.. code-block:: python
+
+    >>> collections.namedtoplo
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    AttributeError: module 'collections' has no attribute 'namedtoplo'. Did you mean: namedtuple?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
+
+NameErrors
+~~~~~~~~~~
+
+When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
+will offer suggestions of similar variable names in the function that the exception
+was raised from:
+
+.. code-block:: python
+
+    >>> schwarzschild_black_hole = None
+    >>> schwarschild_black_hole
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
+
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
 
 PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
 Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
 
-The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+The ``f_lineno`` attribute of frame objects will always contain the expected line number.
 
 The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
 Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
@@ -383,7 +539,7 @@ For example::
        case ('warning', code, 40):
            print("A warning has been received.")
        case ('error', code, _):
-           print(f"An error {code} occured.")
+           print(f"An error {code} occurred.")
 
 In the above case, ``test_variable`` will match for ('error', code, 100) and
 ('error', code, 800).
@@ -485,22 +641,6 @@ This section covers major changes affecting :pep:`484` type annotations and
 the :mod:`typing` module.
 
 
-PEP 563: Postponed Evaluation of Annotations Becomes Default
-------------------------------------------------------------
-
-In Python 3.7, postponed evaluation of annotations was added,
-to be enabled with a ``from __future__ import annotations``
-directive.  In 3.10 this became the default behavior, even
-without that future directive.  With this being default, all
-annotations stored in :attr:`__annotations__` will be strings.
-If needed, annotations can be resolved at runtime using
-:func:`typing.get_type_hints`.  See :pep:`563` for a full
-description.  Also, the :func:`inspect.signature` will try to
-resolve types from now on, and when it fails it will fall back to
-showing the string annotations.  (Contributed by Batuhan Taskaya
-in :issue:`38605`.)
-
-
 PEP 604: New Type Union Operator
 --------------------------------
 
@@ -550,9 +690,11 @@ which adds or removes parameters of another callable.  Examples of usage can
 be found in :class:`typing.Concatenate`.
 
 See :class:`typing.Callable`, :class:`typing.ParamSpec`,
-:class:`typing.Concatenate` and :pep:`612` for more details.
+:class:`typing.Concatenate`, :class:`typing.ParamSpecArgs`,
+:class:`typing.ParamSpecKwargs`, and :pep:`612` for more details.
 
-(Contributed by Ken Jin in :issue:`41559`.)
+(Contributed by Ken Jin in :issue:`41559`, with minor enhancements by Jelle
+Zijlstra in :issue:`43783`.  PEP written by Mark Mendoza.)
 
 
 PEP 613: TypeAlias Annotation
@@ -617,6 +759,13 @@ Other Language Changes
   respectively.
   (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
+* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
+  (:func:`@classmethod <classmethod>`) now inherit the method attributes
+  (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
+  ``__annotations__``) and have a new ``__wrapped__`` attribute.
+  Moreover, static methods are now callable as regular functions.
+  (Contributed by Victor Stinner in :issue:`43682`.)
+
 
 New Modules
 ===========
@@ -626,6 +775,13 @@ New Modules
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+method.
+(Contributed by Alex Grönholm in :issue:`41332`.)
 
 argparse
 --------
@@ -645,6 +801,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+bdb
+---
+
+Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+(Contributed by Irit Katriel in :issue:`24160`.)
 
 codecs
 ------
@@ -676,6 +838,9 @@ and objects representing asynchronously released resources.
 
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
+
+Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
+as decorators.
 
 curses
 ------
@@ -730,6 +895,20 @@ enum
 :func:`__str__` now returns ``member_name``.  Stdlib enums available as
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
+
+Add :class:`enum.StrEnum` for enums where all members are strings.
+(Contributed by Ethan Furman in :issue:`41816`.)
+
+fileinput
+---------
+
+Added *encoding* and *errors* parameters in :func:`fileinput.input` and
+:class:`fileinput.FileInput`.
+(Contributed by Inada Naoki in :issue:`43712`.)
+
+:func:`fileinput.hook_compressed` now returns :class:`TextIOWrapper` object
+when *mode* is "r" and file is compressed, like uncompressed files.
+(Contributed by Inada Naoki in :issue:`5758`.)
 
 gc
 --
@@ -810,6 +989,12 @@ Added :func:`platform.freedesktop_os_release()` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
 (Contributed by Christian Heimes in :issue:`28468`)
+
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
+(Contributed by Lewis Gaul in :issue:`43080`.)
 
 py_compile
 ----------
@@ -923,6 +1108,10 @@ and to match the behavior of static type checkers specified in the PEP.
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
 
+Add new function :func:`typing.is_typeddict` to introspect if an annotation
+is a :class:`typing.TypedDict`.
+(Contributed by Patrick Reader in :issue:`41792`)
+
 unittest
 --------
 
@@ -955,7 +1144,10 @@ zipimport
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 :meth:`zipimport.zipimporter.create_module`, and
 :meth:`zipimport.zipimporter.exec_module`.
-(Contributed by Brett Cannon in :issue:`42131`.
+(Contributed by Brett Cannon in :issue:`42131`.)
+
+Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
+(Contributed by Desmond Cheong in :issue:`14678`.)
 
 
 Optimizations
@@ -977,9 +1169,9 @@ Optimizations
   van Rossum in :issue:`42927`, based on ideas implemented originally in PyPy
   and MicroPython.)
 
-* When building Python with ``--enable-optimizations`` now
+* When building Python with :option:`--enable-optimizations` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.
-  This speeds builds of the Python interpreter created with ``--enable-shared``
+  This speeds builds of the Python interpreter created with :option:`--enable-shared`
   with ``gcc`` by up to 30%. See `this article
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
@@ -999,6 +1191,15 @@ Optimizations
 * Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
   performance in the common case of cache hits. This makes the interpreter 1.04 times faster
   in average (Contributed by Dino Viehland in :issue:`43452`)
+
+* Following built-in functions now support the faster :pep:`590` vectorcall calling convention:
+  :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
+  (Contributed by Dong-hee Na and Jeroen Demeyerin in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+
+* :class:`BZ2File` performance is improved by removing internal ``RLock``.
+  This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
+  readers or writers, just like its equivalent classes in :mod:`gzip` and
+  :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
 
 Deprecated
 ==========
@@ -1058,6 +1259,39 @@ Deprecated
   :func:`importlib.util.spec_from_loader` to help in porting.
   (Contributed by Brett Cannon in :issue:`43672`.)
 
+* The various implementations of
+  :meth:`importlib.abc.MetaPathFinder.find_module` (
+  :meth:`importlib.machinery.BuiltinImporter.find_module`,
+  :meth:`importlib.machinery.FrozenImporter.find_module`,
+  :meth:`importlib.machinery.WindowsRegistryFinder.find_module`,
+  :meth:`importlib.machinery.PathFinder.find_module`,
+  :meth:`importlib.abc.MetaPathFinder.find_module`),
+  :meth:`importlib.abc.PathEntryFinder.find_module` (
+  :meth:`importlib.machinery.FileFinder.find_module`,
+  ), and
+  :meth:`importlib.abc.PathEntryFinder.find_loader` (
+  :meth:`importlib.machinery.FileFinder.find_loader`
+  ) now raise :exc:`DeprecationWarning` and are slated for removal in
+  Python 3.12 (previously they were documented as deprecated in Python 3.4).
+  (Contributed by Brett Cannon in :issue:`42135`.)
+
+* :class:`importlib.abc.Finder` is deprecated (including its sole method,
+  :meth:`~importlib.abc.Finder.find_module`). Both
+  :class:`importlib.abc.MetaPathFinder` and :class:`importlib.abc.PathEntryFinder`
+  no longer inherit from the class. Users should inherit from one of these two
+  classes as appropriate instead.
+  (Contributed by Brett Cannon in :issue:`42135`.)
+
+* The deprecations of :mod:`imp`, :func:`importlib.find_loader`,
+  :func:`importlib.util.set_package_wrapper`,
+  :func:`importlib.util.set_loader_wrapper`,
+  :func:`importlib.util.module_for_loader`,
+  :class:`pkgutil.ImpImporter`, and
+  :class:`pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
+  slated version of removal (they began raising :exc:`DeprecationWarning` in
+  previous versions of Python).
+  (Contributed by Brett Cannon in :issue:`43720`.)
+
 * The import system now uses the ``__spec__`` attribute on modules before
   falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
   ``__repr__()`` method. Removal of the use of ``module_repr()`` is scheduled
@@ -1082,6 +1316,27 @@ Deprecated
   If shared cache must be used, open the database in URI mode using the
   ``cache=shared`` query parameter.
   (Contributed by Erlend E. Aasland in :issue:`24464`.)
+
+* The following ``threading`` methods are now deprecated:
+
+  * ``threading.currentThread`` => :func:`threading.current_thread`
+
+  * ``threading.activeCount`` => :func:`threading.active_count`
+
+  * ``threading.Condition.notifyAll`` =>
+    :meth:`threading.Condition.notify_all`
+
+  * ``threading.Event.isSet`` => :meth:`threading.Event.is_set`
+
+  * ``threading.Thread.setName`` => :attr:`threading.Thread.name`
+
+  * ``threading.thread.getName`` => :attr:`threading.Thread.name`
+
+  * ``threading.Thread.isDaemon`` => :attr:`threading.Thread.daemon`
+
+  * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
+
+  (Contributed by Jelle Zijlstra in :issue:`21574`.)
 
 
 Removed
@@ -1223,6 +1478,10 @@ CPython bytecode changes
 Build Changes
 =============
 
+* :pep:`644`: Python now requires OpenSSL 1.1.1 or newer. OpenSSL 1.0.2 is no
+  longer supported.
+  (Contributed by Christian Heimes in :issue:`43669`.)
+
 * The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
   to build Python.
   (Contributed by Victor Stinner in :issue:`36020`.)
@@ -1233,11 +1492,12 @@ Build Changes
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
-* Added ``--disable-test-modules`` option to the ``configure`` script:
+* Added :option:`--disable-test-modules` option to the ``configure`` script:
   don't build nor install test modules.
   (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
-* Add ``--with-wheel-pkg-dir=PATH`` option to the ``./configure`` script. If
+* Add :option:`--with-wheel-pkg-dir=PATH option <--with-wheel-pkg-dir>`
+  to the ``./configure`` script. If
   specified, the :mod:`ensurepip` module looks for ``setuptools`` and ``pip``
   wheel packages in this directory: if both are present, these wheel packages
   are used instead of ensurepip bundled wheel packages.
@@ -1249,23 +1509,22 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`42856`.)
 
-* Add a new configure ``--without-static-libpython`` option to not build the
-  ``libpythonMAJOR.MINOR.a`` static library and not install the ``python.o``
-  object file.
+* Add a new :option:`configure --without-static-libpython option
+  <--without-static-libpython>` to not build the ``libpythonMAJOR.MINOR.a``
+  static library and not install the ``python.o`` object file.
 
   (Contributed by Victor Stinner in :issue:`43103`.)
 
 * The ``configure`` script now uses the ``pkg-config`` utility, if available,
   to detect the location of Tcl/Tk headers and libraries.  As before, those
-  locations can be explicitly specified with the ``--with-tcltk-includes``
-  and ``--with-tcltk-libs`` configuration options.
+  locations can be explicitly specified with the :option:`--with-tcltk-includes`
+  and :option:`--with-tcltk-libs` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
-* Add ``--with-openssl-rpath`` option to ``configure`` script. The option
+* Add :option:`--with-openssl-rpath` option to ``configure`` script. The option
   simplifies building Python with a custom OpenSSL installation, e.g.
   ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
   (Contributed by Christian Heimes in :issue:`43466`.)
-
 
 
 C API Changes
@@ -1328,18 +1587,26 @@ New Features
   to simulate.
   (Contributed by Antoine Pitrou in :issue:`43356`.)
 
-* The limited C API is now supported if Python is built in debug mode (if the
-  ``Py_DEBUG`` macro is defined). In the limited C API, the :c:func:`Py_INCREF`
-  and :c:func:`Py_DECREF` functions are now implemented as opaque function
+* The limited C API is now supported if :ref:`Python is built in debug mode
+  <debug-build>` (if the ``Py_DEBUG`` macro is defined). In the limited C API,
+  the :c:func:`Py_INCREF` and :c:func:`Py_DECREF` functions are now implemented
+  as opaque function
   calls, rather than accessing directly the :c:member:`PyObject.ob_refcnt`
   member, if Python is built in debug mode and the ``Py_LIMITED_API`` macro
   targets Python 3.10 or newer. It became possible to support the limited C API
   in debug mode because the :c:type:`PyObject` structure is the same in release
   and debug mode since Python 3.8 (see :issue:`36465`).
 
-  The limited C API is still not supported in the ``--with-trace-refs`` special
-  build (``Py_TRACE_REFS`` macro).
+  The limited C API is still not supported in the :option:`--with-trace-refs`
+  special build (``Py_TRACE_REFS`` macro).
   (Contributed by Victor Stinner in :issue:`43688`.)
+
+* Add the :c:func:`Py_Is(x, y) <Py_Is>` function to test if the *x* object is
+  the *y* object, the same as ``x is y`` in Python. Add also the
+  :c:func:`Py_IsNone`, :c:func:`Py_IsTrue`, :c:func:`Py_IsFalse` functions to
+  test if an object is, respectively, the ``None`` singleton, the ``True``
+  singleton or the ``False`` singleton.
+  (Contributed by Victor Stinner in :issue:`43753`.)
 
 Porting to Python 3.10
 ----------------------
