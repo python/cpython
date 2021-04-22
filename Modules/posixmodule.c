@@ -1660,8 +1660,8 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
         while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
             ((LPWSTR)filename)[n] = L'\0';
         }
-        if (!n || filename[n] == L':') {
-            // Nothing left te query
+        if (!n || (n == 1 && filename[1] == L':')) {
+            // Nothing left to query
             free((void *)filename);
             return FALSE;
         }
