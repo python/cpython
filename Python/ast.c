@@ -319,7 +319,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 static int
 validate_pattern(pattern_ty p)
 {
-    // Coming soon (thanks Batuhan)!
+    // Coming soon: https://bugs.python.org/issue43897 (thanks Batuhan)!
     // TODO: Potentially ensure no subnodes use "_" as an ordinary identifier
     switch (p->kind) {
         case MatchAlways_kind:
