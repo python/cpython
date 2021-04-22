@@ -179,7 +179,7 @@ class ExceptionTests(unittest.TestCase):
 
         # should not apply to subclasses, see issue #31161
         s = '''if True:\nprint "No indent"'''
-        ckmsg(s, "expected an indented block", IndentationError)
+        ckmsg(s, "expected an indented block after 'if' statement on line 1", IndentationError)
 
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)

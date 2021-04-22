@@ -171,7 +171,7 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
-A considerable ammount of new specialized messages for :exc:`SyntaxError` exceptions
+A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
 have been incorporated. Some of the most notable ones:
 
 * Missing ``:`` before blocks:
@@ -273,6 +273,23 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`41064`)
 
+IndentationErrors
+~~~~~~~~~~~~~~~~~
+
+Many :exc:`IndentationError` exceptions now have more context regarding what kind of block
+was expecting an indentation, including the location of the statement:
+
+.. code-block:: python
+
+    >>> def foo():
+    ...    if lel:
+    ...    x = 2
+      File "<stdin>", line 3
+        x = 2
+        ^
+    IndentationError: expected an indented block after 'if' statement in line 2
+
+
 AttributeErrors
 ~~~~~~~~~~~~~~~
 
@@ -293,7 +310,7 @@ NameErrors
 ~~~~~~~~~~
 
 When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
-will offer suggestions of simmilar variable names in the function that the exception
+will offer suggestions of similar variable names in the function that the exception
 was raised from:
 
 .. code-block:: python
@@ -624,22 +641,6 @@ This section covers major changes affecting :pep:`484` type annotations and
 the :mod:`typing` module.
 
 
-PEP 563: Postponed Evaluation of Annotations Becomes Default
-------------------------------------------------------------
-
-In Python 3.7, postponed evaluation of annotations was added,
-to be enabled with a ``from __future__ import annotations``
-directive.  In 3.10 this became the default behavior, even
-without that future directive.  With this being default, all
-annotations stored in :attr:`__annotations__` will be strings.
-If needed, annotations can be resolved at runtime using
-:func:`typing.get_type_hints`.  See :pep:`563` for a full
-description.  Also, the :func:`inspect.signature` will try to
-resolve types from now on, and when it fails it will fall back to
-showing the string annotations.  (Contributed by Batuhan Taskaya
-in :issue:`38605`.)
-
-
 PEP 604: New Type Union Operator
 --------------------------------
 
@@ -775,6 +776,13 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+-------
+
+Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+method.
+(Contributed by Alex Grönholm in :issue:`41332`.)
+
 argparse
 --------
 
@@ -793,6 +801,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+bdb
+---
+
+Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+(Contributed by Irit Katriel in :issue:`24160`.)
 
 codecs
 ------
@@ -824,6 +838,9 @@ and objects representing asynchronously released resources.
 
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
+
+Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
+as decorators.
 
 curses
 ------
@@ -878,6 +895,9 @@ enum
 :func:`__str__` now returns ``member_name``.  Stdlib enums available as
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
+
+Add :class:`enum.StrEnum` for enums where all members are strings.
+(Contributed by Ethan Furman in :issue:`41816`.)
 
 fileinput
 ---------
@@ -1088,6 +1108,10 @@ and to match the behavior of static type checkers specified in the PEP.
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
 
+Add new function :func:`typing.is_typeddict` to introspect if an annotation
+is a :class:`typing.TypedDict`.
+(Contributed by Patrick Reader in :issue:`41792`)
+
 unittest
 --------
 
@@ -1120,7 +1144,10 @@ zipimport
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 :meth:`zipimport.zipimporter.create_module`, and
 :meth:`zipimport.zipimporter.exec_module`.
-(Contributed by Brett Cannon in :issue:`42131`.
+(Contributed by Brett Cannon in :issue:`42131`.)
+
+Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
+(Contributed by Desmond Cheong in :issue:`14678`.)
 
 
 Optimizations
