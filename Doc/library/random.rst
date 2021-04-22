@@ -326,9 +326,9 @@ be found in any statistics text.
 
 .. function:: gauss(mu, sigma)
 
-   Gaussian distribution.  *mu* is the mean, and *sigma* is the standard
-   deviation.  This is slightly faster than the :func:`normalvariate` function
-   defined below.
+   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   and *sigma* is the standard deviation.  This is slightly faster than
+   the :func:`normalvariate` function defined below.
 
    Multithreading note:  When two threads call this function
    simultaneously, it is possible that they will receive the

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
 #include "frameobject.h"          // PyFrameObject
@@ -1176,7 +1177,7 @@ _PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
     PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
     if (builtins) {
         if (PyModule_Check(builtins)) {
-            builtins = PyModule_GetDict(builtins);
+            builtins = _PyModule_GetDict(builtins);
             assert(builtins != NULL);
         }
         return builtins;

@@ -11,6 +11,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:
 
@@ -994,7 +995,7 @@ typedef struct {
 static inline _posixstate*
 get_posix_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_posixstate *)state;
 }
