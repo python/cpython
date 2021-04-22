@@ -74,9 +74,22 @@
 struct instr {
     unsigned char i_opcode;
     int i_oparg;
-    struct basicblock_ *i_target; /* target block (if jump instruction) */
+    /* target block (if jump instruction) */
+    struct basicblock_ *i_target;
+     /* target block when exception is raised, should not be set by front-end. */
+    struct basicblock_ *i_except;
     int i_lineno;
 };
+
+typedef struct excepthandler {
+    struct instr *setup;
+    int offset;
+} ExceptHandler;
+
+typedef struct exceptstack {
+    struct basicblock_ *handlers[CO_MAXBLOCKS+1];
+    int depth;
+} ExceptStack;
 
 #define LOG_BITS_PER_INT 5
 #define MASK_LOW_LOG_BITS 31
@@ -124,12 +137,18 @@ typedef struct basicblock_ {
     int b_predecessors;
     /* Basic block has no fall through (it ends with a return, raise or jump) */
     unsigned b_nofallthrough : 1;
+    /* Basic block is an exception handler that preserves lasti */
+    unsigned b_preserve_lasti : 1;
+    /* Used by compiler passes to mark whether they have visited a basic block. */
+    unsigned b_visited : 1;
     /* Basic block exits scope (it ends with a return or raise) */
     unsigned b_exit : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
     /* instruction offset for block, computed by assemble_jump_offsets() */
     int b_offset;
+    /* Exception stack at start of block, used by assembler to create the exception handling table */
+    ExceptStack *b_exceptstack;
 } basicblock;
 
 /* fblockinfo tracks the current frame block.
@@ -6260,11 +6279,13 @@ compiler_match(struct compiler *c, stmt_ty s)
 */
 
 struct assembler {
-    PyObject *a_bytecode;  /* string containing bytecode */
+    PyObject *a_bytecode;  /* bytes containing bytecode */
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    PyObject *a_lnotab;    /* string containing lnotab */
+    PyObject *a_lnotab;    /* bytes containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
+    PyObject *a_except_table;  /* bytes containing exception table */
+    int a_except_table_off;    /* offset into exception table */
     int a_prevlineno;     /* lineno of last emitted line in line table */
     int a_lineno;          /* lineno of last emitted instruction */
     int a_lineno_start;    /* bytecode start offset of current lineno */
@@ -6366,12 +6387,17 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     memset(a, 0, sizeof(struct assembler));
     a->a_prevlineno = a->a_lineno = firstlineno;
     a->a_lnotab = NULL;
+    a->a_except_table = NULL;
     a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
     if (a->a_bytecode == NULL) {
         goto error;
     }
     a->a_lnotab = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
     if (a->a_lnotab == NULL) {
+        goto error;
+    }
+    a->a_except_table = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
+    if (a->a_except_table == NULL) {
         goto error;
     }
     if ((size_t)nblocks > SIZE_MAX / sizeof(basicblock *)) {
@@ -6382,6 +6408,7 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
 error:
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_lnotab);
+    Py_XDECREF(a->a_except_table);
     return 0;
 }
 
@@ -6416,6 +6443,230 @@ assemble_emit_linetable_pair(struct assembler *a, int bdelta, int ldelta)
     a->a_lnotab_off += 2;
     *lnotab++ = bdelta;
     *lnotab++ = ldelta;
+    return 1;
+}
+
+static int
+is_block_push(struct instr *instr)
+{
+    int opcode = instr->i_opcode;
+    return opcode == SETUP_FINALLY || opcode == SETUP_ASYNC_WITH || opcode == SETUP_CLEANUP;
+}
+
+static basicblock *
+push_except_block(ExceptStack *stack, struct instr *setup) {
+    assert(is_block_push(setup));
+    int opcode = setup->i_opcode;
+    basicblock * target = setup->i_target;
+    if (opcode == SETUP_ASYNC_WITH || opcode == SETUP_CLEANUP) {
+        target->b_preserve_lasti = 1;
+    }
+    stack->handlers[++stack->depth] = target;
+    return target;
+}
+
+static basicblock *
+pop_except_block(ExceptStack *stack) {
+    assert(stack->depth > 0);
+    return stack->handlers[--stack->depth];
+}
+
+static basicblock *
+except_stack_top(ExceptStack *stack) {
+    return stack->handlers[stack->depth];
+}
+
+static ExceptStack *
+make_except_stack(void) {
+    ExceptStack *new = PyMem_Malloc(sizeof(ExceptStack));
+    if (new == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    new->depth = 0;
+    new->handlers[0] = NULL;
+    return new;
+}
+
+static ExceptStack *
+copy_except_stack(ExceptStack *stack) {
+    ExceptStack *copy = PyMem_Malloc(sizeof(ExceptStack));
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memcpy(copy, stack, sizeof(ExceptStack));
+    return copy;
+}
+
+static int
+label_exception_targets(basicblock *entry) {
+    int nblocks = 0;
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        b->b_visited = 0;
+        nblocks++;
+    }
+    basicblock **todo_stack = PyMem_Malloc(sizeof(basicblock *)*nblocks);
+    if (todo_stack == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    ExceptStack *except_stack = make_except_stack();
+    if (except_stack == NULL) {
+        PyMem_Free(todo_stack);
+        PyErr_NoMemory();
+        return -1;
+    }
+    except_stack->depth = 0;
+    todo_stack[0] = entry;
+    entry->b_visited = 1;
+    entry->b_exceptstack = except_stack;
+    basicblock **todo = &todo_stack[1];
+    basicblock *handler = NULL;
+    while (todo > todo_stack) {
+        todo--;
+        basicblock *b = todo[0];
+        assert(b->b_visited == 1);
+        except_stack = b->b_exceptstack;
+        assert(except_stack != NULL);
+        b->b_exceptstack = NULL;
+        handler = except_stack_top(except_stack);
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_block_push(instr)) {
+                if (!instr->i_target->b_visited) {
+                    ExceptStack *copy = copy_except_stack(except_stack);
+                    if (copy == NULL) {
+                        PyMem_Free(todo_stack);
+                        PyMem_Free(except_stack);
+                        return 0;
+                    }
+                    instr->i_target->b_exceptstack = copy;
+                    todo[0] = instr->i_target;
+                    instr->i_target->b_visited = 1;
+                    todo++;
+                }
+                handler = push_except_block(except_stack, instr);
+            }
+            else if (instr->i_opcode == POP_BLOCK) {
+                handler = pop_except_block(except_stack);
+            }
+            else if (is_jump(instr)) {
+                instr->i_except = handler;
+                assert(i == b->b_iused -1);
+                if (!instr->i_target->b_visited) {
+                    if (b->b_nofallthrough == 0) {
+                        ExceptStack *copy = copy_except_stack(except_stack);
+                        if (copy == NULL) {
+                            return 0;
+                        }
+                        instr->i_target->b_exceptstack = copy;
+                    }
+                    else {
+                        instr->i_target->b_exceptstack = except_stack;
+                        except_stack = NULL;
+                    }
+                    todo[0] = instr->i_target;
+                    instr->i_target->b_visited = 1;
+                    todo++;
+                }
+            }
+            else {
+                instr->i_except = handler;
+            }
+        }
+        if (b->b_nofallthrough == 0 && !b->b_next->b_visited) {
+            assert(except_stack != NULL);
+            b->b_next->b_exceptstack = except_stack;
+            todo[0] = b->b_next;
+            b->b_next->b_visited = 1;
+            todo++;
+        }
+        else if (except_stack != NULL) {
+           PyMem_Free(except_stack);
+        }
+    }
+    return 0;
+}
+
+static inline void
+write_except_byte(struct assembler *a, int byte) {
+    unsigned char *p = (unsigned char *) PyBytes_AS_STRING(a->a_except_table);
+    p[a->a_except_table_off++] = byte;
+}
+
+static void
+assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
+{
+    assert ((msb | 128) == 128);
+    assert(value >= 0 && value < (1 << 30));
+    if (value >= 1 << 24) {
+        write_except_byte(a, (value >> 24) | msb);
+        msb = 0;
+    }
+    if (value >= 1 << 18) {
+        write_except_byte(a, ((value >> 18)&0x3f) | msb);
+        msb = 0;
+    }
+    if (value >= 1 << 12) {
+        write_except_byte(a, ((value >> 12)&0x3f) | msb);
+        msb = 0;
+    }
+    if (value >= 1 << 6) {
+        write_except_byte(a, ((value >> 6)&0x3f) | msb);
+        msb = 0;
+    }
+    write_except_byte(a, (value&0x3f) | msb);
+}
+
+/* See Objects/exception_table_notes.txt for details of layout */
+#define MAX_SIZE_OF_ENTRY 20
+
+static int
+assemble_emit_exception_table_entry(struct assembler *a, int start, int end, basicblock *handler)
+{
+    Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
+    if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
+        if (_PyBytes_Resize(&a->a_except_table, len * 2) < 0)
+            return 0;
+    }
+    int size = end-start;
+    assert(end > start);
+    int target = handler->b_offset;
+    int depth = handler->b_preserve_lasti ? handler->b_startdepth-4 : handler->b_startdepth-3;
+    assert(depth >= 0);
+    int depth_lasti = (depth<<1) | handler->b_preserve_lasti;
+    assemble_emit_exception_table_item(a, start, (1<<7));
+    assemble_emit_exception_table_item(a, size, 0);
+    assemble_emit_exception_table_item(a, target, 0);
+    assemble_emit_exception_table_item(a, depth_lasti, 0);
+    return 1;
+}
+
+static int
+assemble_exception_table(struct assembler *a)
+{
+    basicblock *b;
+    int ioffset = 0;
+    basicblock *handler = NULL;
+    int start = -1;
+    for (b = a->a_entry; b != NULL; b = b->b_next) {
+        ioffset = b->b_offset;
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (instr->i_except != handler) {
+                if (handler != NULL) {
+                    RETURN_IF_FALSE(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+                }
+                start = ioffset;
+                handler = instr->i_except;
+            }
+            ioffset += instrsize(instr->i_oparg);
+        }
+    }
+    if (handler != NULL) {
+        RETURN_IF_FALSE(assemble_emit_exception_table_entry(a, start, ioffset, handler));
+    }
     return 1;
 }
 
@@ -6671,7 +6922,7 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 static PyCodeObject *
-makecode(struct compiler *c, struct assembler *a, PyObject *consts)
+makecode(struct compiler *c, struct assembler *a, PyObject *consts, int maxdepth)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
@@ -6682,7 +6933,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
-    int posorkeywordargcount, posonlyargcount, kwonlyargcount, maxdepth;
+    int posorkeywordargcount, posonlyargcount, kwonlyargcount;
 
     names = dict_keys_inorder(c->u->u_names, 0);
     varnames = dict_keys_inorder(c->u->u_varnames, 0);
@@ -6724,23 +6975,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
     posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
     posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
-    maxdepth = stackdepth(c);
-    if (maxdepth < 0) {
-        Py_DECREF(consts);
-        goto error;
-    }
-    if (maxdepth > MAX_ALLOWED_STACK_USE) {
-        PyErr_Format(PyExc_SystemError,
-                     "excessive stack use: stack is %d deep",
-                     maxdepth);
-        Py_DECREF(consts);
-        goto error;
-    }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, a->a_bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
-                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
+                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab, a->a_except_table);
     Py_DECREF(consts);
  error:
     Py_XDECREF(names);
@@ -6893,6 +7132,10 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
+    if (label_exception_targets(entryblock)) {
+        goto error;
+    }
+
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
@@ -6901,6 +7144,20 @@ assemble(struct compiler *c, int addNone)
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
+    }
+    /* We need to compute stack depths before the exception table */
+    int maxdepth = stackdepth(c);
+    if (maxdepth < 0) {
+        goto error;
+    }
+    if (maxdepth > MAX_ALLOWED_STACK_USE) {
+        PyErr_Format(PyExc_SystemError,
+                     "excessive stack use: stack is %d deep",
+                     maxdepth);
+        goto error;
+    }
+    if (!assemble_exception_table(&a)) {
+        return 0;
     }
     if (!assemble_line_range(&a)) {
         return 0;
@@ -6913,6 +7170,11 @@ assemble(struct compiler *c, int addNone)
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0) {
         goto error;
     }
+
+    if (_PyBytes_Resize(&a.a_except_table, a.a_except_table_off) < 0) {
+        goto error;
+    }
+
     if (!merge_const_one(c, &a.a_lnotab)) {
         goto error;
     }
@@ -6923,7 +7185,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    co = makecode(c, &a, consts);
+    co = makecode(c, &a, consts, maxdepth);
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
