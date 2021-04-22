@@ -203,7 +203,7 @@ objects.
    discarded when no strong reference to it exists any more.
 
 
-.. class:: WeakMethod(method)
+.. class:: WeakMethod(method[, callback])
 
    A custom :class:`ref` subclass which simulates a weak reference to a bound
    method (i.e., a method defined on a class and looked up on an instance).
