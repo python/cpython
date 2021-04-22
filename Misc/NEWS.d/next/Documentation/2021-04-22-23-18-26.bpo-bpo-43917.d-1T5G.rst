@@ -1,0 +1,1 @@
+Fixed example python implementation of classmethod in the documentation of descriptor.
