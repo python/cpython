@@ -1143,7 +1143,7 @@ The :mod:`socket` module also offers various network-related services:
       "Interface name" is a name as documented in :func:`if_nameindex`.
 
 
-.. function:: socket.send_fds(sock, buffers, fds[, flags[, address]])
+.. function:: send_fds(sock, buffers, fds[, flags[, address]])
 
    Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket *sock*.
    The *fds* parameter is a sequence of file descriptors.
@@ -1154,7 +1154,7 @@ The :mod:`socket` module also offers various network-related services:
    .. versionadded:: 3.9
 
 
-.. function:: socket.recv_fds(sock, bufsize, maxfds[, flags])
+.. function:: recv_fds(sock, bufsize, maxfds[, flags])
 
    Receive up to *maxfds* file descriptors from an :const:`AF_UNIX` socket *sock*.
    Return ``(msg, list(fds), flags, addr)``.
