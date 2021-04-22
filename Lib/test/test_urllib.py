@@ -1526,6 +1526,8 @@ class Pathname_Tests(unittest.TestCase):
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the nturl2path functions.')
     def test_prefixes(self):
         # Test special prefixes are correctly handled in pathname2url()
         given = '\\\\?\\C:\\dir'
