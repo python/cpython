@@ -1651,9 +1651,28 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
-    hFindFile = FindFirstFileW(pszFile, &FileData);
-    if (hFindFile == INVALID_HANDLE_VALUE)
+    LPCWSTR filename = pszFile;
+    size_t n = wcslen(pszFile);
+    if (n && (pszFile[n - 1] == L'\\' || pszFile[n - 1] == L'/')) {
+        // cannot use PyMem_Malloc here because we do not hold the GIL
+        filename = (LPCWSTR)malloc((n + 1) * sizeof(filename[0]));
+        wcsncpy_s((LPWSTR)filename, n + 1, pszFile, n);
+        while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
+            ((LPWSTR)filename)[n] = L'\0';
+        }
+        if (!n || filename[n] == L':') {
+            // Nothing left te query
+            free((void *)filename);
+            return FALSE;
+        }
+    }
+    hFindFile = FindFirstFileW(filename, &FileData);
+    if (pszFile != filename) {
+        free((void *)filename);
+    }
+    if (hFindFile == INVALID_HANDLE_VALUE) {
         return FALSE;
+    }
     FindClose(hFindFile);
     find_data_to_file_info(&FileData, info, reparse_tag);
     return TRUE;
