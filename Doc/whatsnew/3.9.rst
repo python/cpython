@@ -658,7 +658,7 @@ The socket module now supports the :data:`~socket.CAN_J1939` protocol on
 platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
 
 The socket module now has the :func:`socket.send_fds` and
-:func:`socket.recv.fds` methods. (Contributed by Joannah Nanjekye, Shinya
+:func:`socket.recv_fds` functions. (Contributed by Joannah Nanjekye, Shinya
 Okano and Victor Stinner in :issue:`28724`.)
 
 
