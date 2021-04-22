@@ -230,7 +230,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         super().__init__(loop=loop)
         if lock is None:
             lock = Lock()
-        elif lock._loop is not self._get_loop():
+        elif lock._loop is not None and lock._loop is not self._get_loop():
             raise ValueError("loop argument must agree with lock")
 
         self._lock = lock
