@@ -17,7 +17,7 @@ def any(name, alternates):
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     builtinlist = [str(name) for name in dir(builtins)
-                   if not name.startswith('_') and \
+                   if not name.startswith('_') and
                    name not in keyword.kwlist]
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
@@ -27,8 +27,8 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return kw + "|" + builtin + "|" + comment + "|" + string + \
-           "|" + any("SYNC", [r"\n"])
+    return (kw + "|" + builtin + "|" + comment + "|" + string +
+            "|" + any("SYNC", [r"\n"]))
 
 
 prog = re.compile(make_pat(), re.S)
@@ -53,7 +53,7 @@ def color_config(text):
         selectforeground=select_colors['foreground'],
         selectbackground=select_colors['background'],
         inactiveselectbackground=select_colors['background'],  # new in 8.5
-    )
+        )
 
 
 class ColorDelegator(Delegator):
@@ -132,7 +132,7 @@ class ColorDelegator(Delegator):
             # when fixing the "hit" tag's visibility, or when the replace dialog is replaced with a
             # non-modal alternative.
             "hit": idleConf.GetHighlight(theme, "hit"),
-        }
+            }
 
         if DEBUG: print('tagdefs', self.tagdefs)
 
@@ -192,7 +192,7 @@ class ColorDelegator(Delegator):
             self.after_id = self.after(1, self.recolorize)
         if DEBUG:
             print("auto colorizing turned",
-                  self.allow_colorizing and "on" or "off")
+                  "on" if self.allow_colorizing else "off")
         return "break"
 
     def recolorize(self):
@@ -222,7 +222,7 @@ class ColorDelegator(Delegator):
             t0 = time.perf_counter()
             self.recolorize_main()
             t1 = time.perf_counter()
-            if DEBUG: print("%.3f seconds" % (t1 - t0))
+            if DEBUG: print("%.3f seconds" % (t1-t0))
         finally:
             self.colorizing = False
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
@@ -239,10 +239,7 @@ class ColorDelegator(Delegator):
             head, tail = item
             self.tag_remove("SYNC", head, tail)
             item = self.tag_prevrange("SYNC", head)
-            if item:
-                head = item[1]
-            else:
-                head = "1.0"
+            head = item[1] if item else "1.0"
 
             chars = ""
             next = head
@@ -314,7 +311,7 @@ def _color_delegator(parent):  # htest #
         "elif False: print(0)\n"
         "else: float(None)\n"
         "if iF + If + IF: 'keyword matching must respect case'\n"
-        "if'': x or''  # valid string-keyword no-space combinations\n"
+        "if'': x or''  # valid keyword-string no-space combinations\n"
         "async def f(): await g()\n"
         "# All valid prefixes for unicode and byte strings should be colored.\n"
         "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
@@ -323,7 +320,7 @@ def _color_delegator(parent):  # htest #
         "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'\n"
         "# Invalid combinations of legal characters should be half colored.\n"
         "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'\n"
-    )
+        )
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
     text.insert("insert", source)
