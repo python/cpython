@@ -308,14 +308,6 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_exprs(exp->v.Tuple.elts, ctx, 0);
     case NamedExpr_kind:
         return validate_expr(exp->v.NamedExpr.value, Load);
-    case MatchAs_kind:
-        PyErr_SetString(PyExc_ValueError,
-                        "MatchAs is only valid in match_case patterns");
-        return 0;
-    case MatchOr_kind:
-        PyErr_SetString(PyExc_ValueError,
-                        "MatchOr is only valid in match_case patterns");
-        return 0;
     /* This last case doesn't have any checking. */
     case Name_kind:
         return 1;
@@ -325,10 +317,68 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 }
 
 static int
-validate_pattern(expr_ty p)
+validate_pattern(pattern_ty p)
 {
     // Coming soon (thanks Batuhan)!
-    return 1;
+    // TODO: Potentially ensure no subnodes use "_" as an ordinary identifier
+    switch (p->kind) {
+        case MatchAlways_kind:
+            // Nothing to check
+            return 1;
+        case MatchValue_kind:
+            // TODO: Check value is a constant or an attribute lookup
+            // (will need to allow selected unary ops & binops if
+            // validation is performed before constant folding...)
+            return validate_expr(p->v.MatchValue.value, Load);
+        case MatchConstant_kind:
+            // TODO: Check constant is specifically None, True, or False
+            return validate_constant(p->v.MatchConstant.value);
+        case MatchSequence_kind:
+            // TODO: Validate all subpatterns
+            // return validate_patterns(p->v.MatchSequence.patterns);
+            return 1;
+        case MatchMapping_kind:
+            if (asdl_seq_LEN(p->v.MatchMapping.keys) != asdl_seq_LEN(p->v.MatchMapping.patterns)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchMapping doesn't have the same number of keys as patterns");
+                return 0;
+            }
+            // null_ok=1 for key expressions to allow rest-of-mapping capture in patterns
+            // TODO: replace with more restrictive expression validator, as per MatchValue above
+            if (!validate_exprs(p->v.MatchMapping.keys, Load, /*null_ok=*/ 1)) {
+                return 0;
+            }
+            // TODO: Validate all subpatterns
+            // return validate_patterns(p->v.MatchMapping.patterns);
+            return 1;
+        case MatchClass_kind:
+            if (asdl_seq_LEN(p->v.MatchMapping.keys) != asdl_seq_LEN(p->v.MatchMapping.patterns)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchMapping doesn't have the same number of keys as patterns");
+                return 0;
+            }
+            // TODO: Restrict cls lookup to being a name or attribute
+            if (!validate_expr(p->v.MatchClass.cls, Load)) {
+                return 0;
+            }
+            // TODO: Validate all subpatterns
+            // return validate_patterns(p->v.MatchClass.patterns) &&
+            //        validate_patterns(p->v.MatchClass.kwd_patterns);
+            return 1;
+        case MatchStar_kind:
+            // Nothing to check (except to potentially block "_" as an identifer)
+            break;
+        case MatchAs_kind:
+            return validate_pattern(p->v.MatchAs.pattern);
+        case MatchOr_kind:
+            // TODO: Validate all subpatterns
+            // return validate_patterns(p->v.MatchOr.patterns);
+            return 1;
+    // No default case, so the compiler will emit a warning if new pattern
+    // kinds are added without being handled here
+    }
+    PyErr_SetString(PyExc_SystemError, "unexpected pattern");
+    return 0;
 }
 
 static int

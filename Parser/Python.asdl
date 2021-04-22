@@ -131,9 +131,9 @@ module Python
          | MatchConstant(constant value)
          | MatchSequence(pattern* patterns)
          | MatchMapping(expr* keys, pattern* patterns)
-         | MatchClass(expr cls, pattern* patterns, identifier* extra_attrs, pattern* extra_patterns)
+         | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)
 
-         | MatchRestOfSequence(identifier? target)
+         | MatchStar(identifier? target)
          -- A NULL entry in the MatchMapping key list handles capturing extra mapping keys
 
          | MatchAs(pattern? pattern, identifier target)

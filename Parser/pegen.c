@@ -1794,7 +1794,7 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
     return new_seq;
 }
 
-/* Constructs a KeyPatternPair that is used when parsing a mapping pattern */
+/* Constructs a KeyPatternPair that is used when parsing mapping & class patterns */
 KeyPatternPair *
 _PyPegen_key_pattern_pair(Parser *p, expr_ty key, pattern_ty pattern)
 {

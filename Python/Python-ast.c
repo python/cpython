@@ -111,8 +111,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->MatchConstant_type);
     Py_CLEAR(state->MatchMapping_type);
     Py_CLEAR(state->MatchOr_type);
-    Py_CLEAR(state->MatchRestOfSequence_type);
     Py_CLEAR(state->MatchSequence_type);
+    Py_CLEAR(state->MatchStar_type);
     Py_CLEAR(state->MatchValue_type);
     Py_CLEAR(state->Match_type);
     Py_CLEAR(state->Mod_singleton);
@@ -198,8 +198,6 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->excepthandler_type);
     Py_CLEAR(state->expr_context_type);
     Py_CLEAR(state->expr_type);
-    Py_CLEAR(state->extra_attrs);
-    Py_CLEAR(state->extra_patterns);
     Py_CLEAR(state->finalbody);
     Py_CLEAR(state->format_spec);
     Py_CLEAR(state->func);
@@ -218,6 +216,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->kind);
     Py_CLEAR(state->kw_defaults);
     Py_CLEAR(state->kwarg);
+    Py_CLEAR(state->kwd_attrs);
+    Py_CLEAR(state->kwd_patterns);
     Py_CLEAR(state->kwonlyargs);
     Py_CLEAR(state->left);
     Py_CLEAR(state->level);
@@ -300,8 +300,6 @@ static int init_identifiers(struct ast_state *state)
     if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return 0;
     if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return 0;
     if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return 0;
-    if ((state->extra_attrs = PyUnicode_InternFromString("extra_attrs")) == NULL) return 0;
-    if ((state->extra_patterns = PyUnicode_InternFromString("extra_patterns")) == NULL) return 0;
     if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return 0;
     if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return 0;
     if ((state->func = PyUnicode_InternFromString("func")) == NULL) return 0;
@@ -319,6 +317,8 @@ static int init_identifiers(struct ast_state *state)
     if ((state->kind = PyUnicode_InternFromString("kind")) == NULL) return 0;
     if ((state->kw_defaults = PyUnicode_InternFromString("kw_defaults")) == NULL) return 0;
     if ((state->kwarg = PyUnicode_InternFromString("kwarg")) == NULL) return 0;
+    if ((state->kwd_attrs = PyUnicode_InternFromString("kwd_attrs")) == NULL) return 0;
+    if ((state->kwd_patterns = PyUnicode_InternFromString("kwd_patterns")) == NULL) return 0;
     if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return 0;
     if ((state->left = PyUnicode_InternFromString("left")) == NULL) return 0;
     if ((state->level = PyUnicode_InternFromString("level")) == NULL) return 0;
@@ -727,10 +727,10 @@ static const char * const MatchMapping_fields[]={
 static const char * const MatchClass_fields[]={
     "cls",
     "patterns",
-    "extra_attrs",
-    "extra_patterns",
+    "kwd_attrs",
+    "kwd_patterns",
 };
-static const char * const MatchRestOfSequence_fields[]={
+static const char * const MatchStar_fields[]={
     "target",
 };
 static const char * const MatchAs_fields[]={
@@ -1777,8 +1777,8 @@ init_types(struct ast_state *state)
         "        | MatchConstant(constant value)\n"
         "        | MatchSequence(pattern* patterns)\n"
         "        | MatchMapping(expr* keys, pattern* patterns)\n"
-        "        | MatchClass(expr cls, pattern* patterns, identifier* extra_attrs, pattern* extra_patterns)\n"
-        "        | MatchRestOfSequence(identifier? target)\n"
+        "        | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)\n"
+        "        | MatchStar(identifier? target)\n"
         "        | MatchAs(pattern? pattern, identifier target)\n"
         "        | MatchOr(pattern* patterns)");
     if (!state->pattern_type) return 0;
@@ -1816,15 +1816,13 @@ init_types(struct ast_state *state)
     state->MatchClass_type = make_type(state, "MatchClass",
                                        state->pattern_type, MatchClass_fields,
                                        4,
-        "MatchClass(expr cls, pattern* patterns, identifier* extra_attrs, pattern* extra_patterns)");
+        "MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)");
     if (!state->MatchClass_type) return 0;
-    state->MatchRestOfSequence_type = make_type(state, "MatchRestOfSequence",
-                                                state->pattern_type,
-                                                MatchRestOfSequence_fields, 1,
-        "MatchRestOfSequence(identifier? target)");
-    if (!state->MatchRestOfSequence_type) return 0;
-    if (PyObject_SetAttr(state->MatchRestOfSequence_type, state->target,
-        Py_None) == -1)
+    state->MatchStar_type = make_type(state, "MatchStar", state->pattern_type,
+                                      MatchStar_fields, 1,
+        "MatchStar(identifier? target)");
+    if (!state->MatchStar_type) return 0;
+    if (PyObject_SetAttr(state->MatchStar_type, state->target, Py_None) == -1)
         return 0;
     state->MatchAs_type = make_type(state, "MatchAs", state->pattern_type,
                                     MatchAs_fields, 2,
@@ -3494,8 +3492,8 @@ _PyAST_MatchMapping(asdl_expr_seq * keys, asdl_pattern_seq * patterns, int
 
 pattern_ty
 _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns, asdl_identifier_seq
-                  * extra_attrs, asdl_pattern_seq * extra_patterns, int lineno,
-                  int col_offset, int end_lineno, int end_col_offset, PyArena
+                  * kwd_attrs, asdl_pattern_seq * kwd_patterns, int lineno, int
+                  col_offset, int end_lineno, int end_col_offset, PyArena
                   *arena)
 {
     pattern_ty p;
@@ -3510,8 +3508,8 @@ _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns, asdl_identifier_seq
     p->kind = MatchClass_kind;
     p->v.MatchClass.cls = cls;
     p->v.MatchClass.patterns = patterns;
-    p->v.MatchClass.extra_attrs = extra_attrs;
-    p->v.MatchClass.extra_patterns = extra_patterns;
+    p->v.MatchClass.kwd_attrs = kwd_attrs;
+    p->v.MatchClass.kwd_patterns = kwd_patterns;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -3520,15 +3518,15 @@ _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns, asdl_identifier_seq
 }
 
 pattern_ty
-_PyAST_MatchRestOfSequence(identifier target, int lineno, int col_offset, int
-                           end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_MatchStar(identifier target, int lineno, int col_offset, int end_lineno,
+                 int end_col_offset, PyArena *arena)
 {
     pattern_ty p;
     p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
-    p->kind = MatchRestOfSequence_kind;
-    p->v.MatchRestOfSequence.target = target;
+    p->kind = MatchStar_kind;
+    p->v.MatchStar.target = target;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -5245,24 +5243,24 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         if (PyObject_SetAttr(result, state->patterns, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.extra_attrs,
+        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.kwd_attrs,
                              ast2obj_identifier);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->extra_attrs, value) == -1)
+        if (PyObject_SetAttr(result, state->kwd_attrs, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.extra_patterns,
+        value = ast2obj_list(state, (asdl_seq*)o->v.MatchClass.kwd_patterns,
                              ast2obj_pattern);
         if (!value) goto failed;
-        if (PyObject_SetAttr(result, state->extra_patterns, value) == -1)
+        if (PyObject_SetAttr(result, state->kwd_patterns, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
-    case MatchRestOfSequence_kind:
-        tp = (PyTypeObject *)state->MatchRestOfSequence_type;
+    case MatchStar_kind:
+        tp = (PyTypeObject *)state->MatchStar_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_identifier(state, o->v.MatchRestOfSequence.target);
+        value = ast2obj_identifier(state, o->v.MatchStar.target);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->target, value) == -1)
             goto failed;
@@ -10513,8 +10511,8 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     if (isinstance) {
         expr_ty cls;
         asdl_pattern_seq* patterns;
-        asdl_identifier_seq* extra_attrs;
-        asdl_pattern_seq* extra_patterns;
+        asdl_identifier_seq* kwd_attrs;
+        asdl_pattern_seq* kwd_patterns;
 
         if (_PyObject_LookupAttr(obj, state->cls, &tmp) < 0) {
             return 1;
@@ -10562,11 +10560,11 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->extra_attrs, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->kwd_attrs, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"extra_attrs\" missing from MatchClass");
+            PyErr_SetString(PyExc_TypeError, "required field \"kwd_attrs\" missing from MatchClass");
             return 1;
         }
         else {
@@ -10574,12 +10572,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchClass field \"extra_attrs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchClass field \"kwd_attrs\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
-            extra_attrs = _Py_asdl_identifier_seq_new(len, arena);
-            if (extra_attrs == NULL) goto failed;
+            kwd_attrs = _Py_asdl_identifier_seq_new(len, arena);
+            if (kwd_attrs == NULL) goto failed;
             for (i = 0; i < len; i++) {
                 identifier val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
@@ -10588,18 +10586,18 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "MatchClass field \"extra_attrs\" changed size during iteration");
+                    PyErr_SetString(PyExc_RuntimeError, "MatchClass field \"kwd_attrs\" changed size during iteration");
                     goto failed;
                 }
-                asdl_seq_SET(extra_attrs, i, val);
+                asdl_seq_SET(kwd_attrs, i, val);
             }
             Py_CLEAR(tmp);
         }
-        if (_PyObject_LookupAttr(obj, state->extra_patterns, &tmp) < 0) {
+        if (_PyObject_LookupAttr(obj, state->kwd_patterns, &tmp) < 0) {
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"extra_patterns\" missing from MatchClass");
+            PyErr_SetString(PyExc_TypeError, "required field \"kwd_patterns\" missing from MatchClass");
             return 1;
         }
         else {
@@ -10607,12 +10605,12 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             Py_ssize_t len;
             Py_ssize_t i;
             if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "MatchClass field \"extra_patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                PyErr_Format(PyExc_TypeError, "MatchClass field \"kwd_patterns\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
                 goto failed;
             }
             len = PyList_GET_SIZE(tmp);
-            extra_patterns = _Py_asdl_pattern_seq_new(len, arena);
-            if (extra_patterns == NULL) goto failed;
+            kwd_patterns = _Py_asdl_pattern_seq_new(len, arena);
+            if (kwd_patterns == NULL) goto failed;
             for (i = 0; i < len; i++) {
                 pattern_ty val;
                 PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
@@ -10621,20 +10619,20 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
                 Py_DECREF(tmp2);
                 if (res != 0) goto failed;
                 if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "MatchClass field \"extra_patterns\" changed size during iteration");
+                    PyErr_SetString(PyExc_RuntimeError, "MatchClass field \"kwd_patterns\" changed size during iteration");
                     goto failed;
                 }
-                asdl_seq_SET(extra_patterns, i, val);
+                asdl_seq_SET(kwd_patterns, i, val);
             }
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_MatchClass(cls, patterns, extra_attrs, extra_patterns,
+        *out = _PyAST_MatchClass(cls, patterns, kwd_attrs, kwd_patterns,
                                  lineno, col_offset, end_lineno,
                                  end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
-    tp = state->MatchRestOfSequence_type;
+    tp = state->MatchStar_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
         return 1;
@@ -10655,8 +10653,8 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_MatchRestOfSequence(target, lineno, col_offset,
-                                          end_lineno, end_col_offset, arena);
+        *out = _PyAST_MatchStar(target, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -11182,8 +11180,7 @@ astmodule_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "MatchClass", state->MatchClass_type) < 0) {
         return -1;
     }
-    if (PyModule_AddObjectRef(m, "MatchRestOfSequence",
-        state->MatchRestOfSequence_type) < 0) {
+    if (PyModule_AddObjectRef(m, "MatchStar", state->MatchStar_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "MatchAs", state->MatchAs_type) < 0) {

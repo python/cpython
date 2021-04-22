@@ -561,9 +561,8 @@ struct _match_case {
 
 enum _pattern_kind {MatchAlways_kind=1, MatchValue_kind=2,
                      MatchConstant_kind=3, MatchSequence_kind=4,
-                     MatchMapping_kind=5, MatchClass_kind=6,
-                     MatchRestOfSequence_kind=7, MatchAs_kind=8,
-                     MatchOr_kind=9};
+                     MatchMapping_kind=5, MatchClass_kind=6, MatchStar_kind=7,
+                     MatchAs_kind=8, MatchOr_kind=9};
 struct _pattern {
     enum _pattern_kind kind;
     union {
@@ -587,13 +586,13 @@ struct _pattern {
         struct {
             expr_ty cls;
             asdl_pattern_seq *patterns;
-            asdl_identifier_seq *extra_attrs;
-            asdl_pattern_seq *extra_patterns;
+            asdl_identifier_seq *kwd_attrs;
+            asdl_pattern_seq *kwd_patterns;
         } MatchClass;
 
         struct {
             identifier target;
-        } MatchRestOfSequence;
+        } MatchStar;
 
         struct {
             pattern_ty pattern;
@@ -821,13 +820,11 @@ pattern_ty _PyAST_MatchMapping(asdl_expr_seq * keys, asdl_pattern_seq *
                                patterns, int lineno, int col_offset, int
                                end_lineno, int end_col_offset, PyArena *arena);
 pattern_ty _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns,
-                             asdl_identifier_seq * extra_attrs,
-                             asdl_pattern_seq * extra_patterns, int lineno, int
-                             col_offset, int end_lineno, int end_col_offset,
-                             PyArena *arena);
-pattern_ty _PyAST_MatchRestOfSequence(identifier target, int lineno, int
-                                      col_offset, int end_lineno, int
-                                      end_col_offset, PyArena *arena);
+                             asdl_identifier_seq * kwd_attrs, asdl_pattern_seq
+                             * kwd_patterns, int lineno, int col_offset, int
+                             end_lineno, int end_col_offset, PyArena *arena);
+pattern_ty _PyAST_MatchStar(identifier target, int lineno, int col_offset, int
+                            end_lineno, int end_col_offset, PyArena *arena);
 pattern_ty _PyAST_MatchAs(pattern_ty pattern, identifier target, int lineno,
                           int col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);

@@ -318,9 +318,9 @@ maybe_star_pattern[pattern_ty]:
     | pattern
 star_pattern[pattern_ty]:
     | '*' target=pattern_capture_target {
-        _PyAST_MatchRestOfSequence(target->v.Name.id, EXTRA) }
+        _PyAST_MatchStar(target->v.Name.id, EXTRA) }
     | '*' wildcard_pattern {
-        _PyAST_MatchRestOfSequence(NULL, EXTRA) }
+        _PyAST_MatchStar(NULL, EXTRA) }
 
 mapping_pattern[pattern_ty]:
     | '{' items=items_pattern? '}' {
@@ -362,7 +362,7 @@ positional_patterns[asdl_pattern_seq*]:
     | args[asdl_pattern_seq*]=','.pattern+ { args }
 keyword_patterns[asdl_seq*]:
     | keywords[asdl_seq*]=','.keyword_pattern+ { keywords }
-keyword_pattern[pattern_ty]:
+keyword_pattern[KeyPatternPair*]:
     | arg=NAME '=' value=pattern { _PyPegen_key_pattern_pair(p, arg, value) }
 
 return_stmt[stmt_ty]:

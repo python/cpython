@@ -559,7 +559,7 @@ static KeyPatternPair* double_star_pattern_rule(Parser *p);
 static pattern_ty class_pattern_rule(Parser *p);
 static asdl_pattern_seq* positional_patterns_rule(Parser *p);
 static asdl_seq* keyword_patterns_rule(Parser *p);
-static pattern_ty keyword_pattern_rule(Parser *p);
+static KeyPatternPair* keyword_pattern_rule(Parser *p);
 static stmt_ty return_stmt_rule(Parser *p);
 static stmt_ty raise_stmt_rule(Parser *p);
 static stmt_ty function_def_rule(Parser *p);
@@ -7218,7 +7218,7 @@ star_pattern_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_MatchRestOfSequence ( target -> v . Name . id , EXTRA );
+            _res = _PyAST_MatchStar ( target -> v . Name . id , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -7254,7 +7254,7 @@ star_pattern_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_MatchRestOfSequence ( NULL , EXTRA );
+            _res = _PyAST_MatchStar ( NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -7806,7 +7806,7 @@ keyword_patterns_rule(Parser *p)
 }
 
 // keyword_pattern: NAME '=' pattern
-static pattern_ty
+static KeyPatternPair*
 keyword_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -7814,7 +7814,7 @@ keyword_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    pattern_ty _res = NULL;
+    KeyPatternPair* _res = NULL;
     int _mark = p->mark;
     { // NAME '=' pattern
         if (p->error_indicator) {
@@ -24474,7 +24474,7 @@ _loop0_65_rule(Parser *p)
         }
         D(fprintf(stderr, "%*c> _loop0_65[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "',' keyword_pattern"));
         Token * _literal;
-        pattern_ty elem;
+        KeyPatternPair* elem;
         while (
             (_literal = _PyPegen_expect_token(p, 12))  // token=','
             &&
@@ -24538,7 +24538,7 @@ _gather_64_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> _gather_64[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "keyword_pattern _loop0_65"));
-        pattern_ty elem;
+        KeyPatternPair* elem;
         asdl_seq * seq;
         if (
             (elem = keyword_pattern_rule(p))  // keyword_pattern
