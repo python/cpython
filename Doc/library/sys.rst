@@ -796,10 +796,15 @@ always available.
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
 
-   *platform_version* returns the accurate major version, minor version and
+   *platform_version* returns the major version, minor version and
    build number of the current operating system, rather than the version that
    is being emulated for the process. It is intended for use in logging rather
    than for feature detection.
+
+   .. note::
+      *platform_version* derives the version from kernel32.dll which can be of a different
+      version than the OS version. Please use :mod:`platform` module for achieving accurate
+      OS version.
 
    .. availability:: Windows.
 
