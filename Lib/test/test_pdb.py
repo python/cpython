@@ -1331,7 +1331,7 @@ def test_pdb_issue_43318():
     ...     print(2)
     ...     print(3)
     ...     print(4)
-
+    >>> reset_Breakpoint()
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'break 3',
     ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
@@ -1341,9 +1341,9 @@ def test_pdb_issue_43318():
     > <doctest test.test_pdb.test_pdb_issue_43318[0]>(3)test_function()
     -> print(1)
     (Pdb) break 3
-    Breakpoint 6 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
     (Pdb) clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
-    Deleted breakpoint 6 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
     (Pdb) continue
     1
     2
