@@ -1405,7 +1405,7 @@ get_hash_info(PyThreadState *tstate)
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(_PyHASH_INF));
     PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(_PyHASH_NAN));
+                              PyLong_FromLong(0));  // This is no longer used
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(_PyHASH_IMAG));
     PyStructSequence_SET_ITEM(hash_info, field++,
