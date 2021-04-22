@@ -7126,8 +7126,7 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(os_startfile__doc__,
 "startfile($module, /, filepath, operation=<unrepresentable>,\n"
-"          arguments=<unrepresentable>, cwd=<unrepresentable>,\n"
-"          show_cmd=1)\n"
+"          arguments=<unrepresentable>, cwd=None, show_cmd=1)\n"
 "--\n"
 "\n"
 "Start a file with its associated application.\n"
@@ -7163,7 +7162,7 @@ PyDoc_STRVAR(os_startfile__doc__,
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
                   const Py_UNICODE *operation, const Py_UNICODE *arguments,
-                  PyObject *cwd, int show_cmd);
+                  path_t *cwd, int show_cmd);
 
 static PyObject *
 os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -7176,7 +7175,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
     const Py_UNICODE *operation = NULL;
     const Py_UNICODE *arguments = NULL;
-    PyObject *cwd = NULL;
+    path_t cwd = PATH_T_INITIALIZE("startfile", "cwd", 1, 0);
     int show_cmd = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, argsbuf);
@@ -7224,7 +7223,9 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         }
     }
     if (args[3]) {
-        cwd = args[3];
+        if (!path_converter(args[3], &cwd)) {
+            goto exit;
+        }
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -7234,7 +7235,7 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
 skip_optional_pos:
-    return_value = os_startfile_impl(module, &filepath, operation, arguments, cwd, show_cmd);
+    return_value = os_startfile_impl(module, &filepath, operation, arguments, &cwd, show_cmd);
 
 exit:
     /* Cleanup for filepath */
@@ -7247,6 +7248,8 @@ exit:
     #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)arguments);
     #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for cwd */
+    path_cleanup(&cwd);
 
     return return_value;
 }
@@ -9260,4 +9263,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=b8db5ec02c53c241 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65a85d7d3f2c487e input=a9049054013a1b77]*/
