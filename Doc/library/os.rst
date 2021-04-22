@@ -3871,6 +3871,8 @@ written in Python, such as a mail server's external command delivery program.
 
    See the :manpage:`pidfd_open(2)` man page for more details.
 
+   .. audit-event:: os.pidfd_open pid,flags os.pidfd_open
+
    .. availability:: Linux 5.3+
    .. versionadded:: 3.9
 

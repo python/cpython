@@ -8485,6 +8485,9 @@ static PyObject *
 os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
 /*[clinic end generated code: output=5c7252698947dc41 input=c3fd99ce947ccfef]*/
 {
+    if (PySys_Audit("os.pidfd_open", "iI", pid, flags) < 0) {
+        return NULL;
+    }
     int fd = syscall(__NR_pidfd_open, pid, flags);
     if (fd < 0) {
         return posix_error();

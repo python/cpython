@@ -1,0 +1,2 @@
+Add audit events to :func:`os.pidfd_open` and
+:func:`signal.pidfd_send_signal`.

@@ -360,6 +360,8 @@ The :mod:`signal` module defines the following functions:
 
    See the :manpage:`pidfd_send_signal(2)` man page for more information.
 
+   .. audit-event:: signal.pidfd_send_signal pidfd,sig,siginfo,flags signal.pidfd_send_signal
+
    .. availability:: Linux 5.1+
    .. versionadded:: 3.9
 

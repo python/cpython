@@ -1305,6 +1305,10 @@ signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
         PyErr_SetString(PyExc_TypeError, "siginfo must be None");
         return NULL;
     }
+    if (PySys_Audit("signal.pidfd_send_signal", "iiOi", pidfd, signalnum,
+                    siginfo, flags) < 0) {
+        return NULL;
+    }
     if (syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags) < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
