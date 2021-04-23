@@ -4097,7 +4097,7 @@ _add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
 {
     BIO *biobuf = NULL;
     X509_STORE *store;
-    int retval = 0, err, loaded = 0;
+    int retval = -1, err, loaded = 0;
 
     assert(filetype == SSL_FILETYPE_ASN1 || filetype == SSL_FILETYPE_PEM);
 
@@ -4151,23 +4151,32 @@ _add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
     }
 
     err = ERR_peek_last_error();
-    if ((filetype == SSL_FILETYPE_ASN1) &&
-            (loaded > 0) &&
-            (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
-            (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
+    if (loaded == 0) {
+        const char *msg = NULL;
+        if (filetype == SSL_FILETYPE_PEM) {
+            msg = "no start line: cadata does not contain a certificate";
+        } else {
+            msg = "not enough data: cadata does not contain a certificate";
+        }
+        _setSSLError(msg, 0, __FILE__, __LINE__);
+        retval = -1;
+    } else if ((filetype == SSL_FILETYPE_ASN1) &&
+                    (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
+                    (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
         /* EOF ASN1 file, not an error */
         ERR_clear_error();
         retval = 0;
     } else if ((filetype == SSL_FILETYPE_PEM) &&
-                   (loaded > 0) &&
                    (ERR_GET_LIB(err) == ERR_LIB_PEM) &&
                    (ERR_GET_REASON(err) == PEM_R_NO_START_LINE)) {
         /* EOF PEM file, not an error */
         ERR_clear_error();
         retval = 0;
-    } else {
+    } else if (err != 0) {
         _setSSLError(NULL, 0, __FILE__, __LINE__);
         retval = -1;
+    } else {
+        retval = 0;
     }
 
     BIO_free(biobuf);
