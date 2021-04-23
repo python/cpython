@@ -133,7 +133,7 @@ class EditorWindow:
             'tabstyle': 'wordprocessor',  # new in 8.5
             'height': idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'),
-        }
+            }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
         self.top.focused_widget = self.text
 
@@ -390,8 +390,8 @@ class EditorWindow:
         lineat = int(self.text.index("insert").split('.')[1])
         if insertpt == lineat:
             insertpt = 0
-        dest = "insert linestart+" + str(insertpt) + "c"
-        if (event.state & 1) == 0:
+        dest = "insert linestart+"+str(insertpt)+"c"
+        if (event.state&1) == 0:
             # shift was not pressed
             self.text.tag_remove("sel", "1.0", "end")
         else:
@@ -443,7 +443,7 @@ class EditorWindow:
         ("options", "_Options"),
         ("window", "_Window"),
         ("help", "_Help"),
-    ]
+        ]
 
     def createmenubar(self):
         mbar = self.menubar
@@ -474,7 +474,7 @@ class EditorWindow:
         if end is None:
             end = -1
         if end > self.wmenu_end:
-            menu.delete(self.wmenu_end + 1, end)
+            menu.delete(self.wmenu_end+1, end)
         window.add_windows_to_menu(menu)
 
     def update_menu_label(self, menu, index, label):
@@ -538,7 +538,7 @@ class EditorWindow:
     rmenu_specs = [
         # ("Label", "<<virtual-event>>", "statefuncname"), ...
         ("Close", "<<close-window>>", None),  # Example
-    ]
+        ]
 
     def make_rmenu(self):
         rmenu = Menu(self.text, tearoff=0)
@@ -689,7 +689,7 @@ class EditorWindow:
             text, "Go To Line",
             "Enter a positive integer\n"
             "('big' = end of file):"
-        ).result
+            ).result
         if lineno is not None:
             text.tag_remove("sel", "1.0", "end")
             text.mark_set("insert", f'{lineno}.0')
@@ -1126,7 +1126,7 @@ class EditorWindow:
 
     extfiles = {  # Map built-in config-extension section names to file names.
         'ZzDummy': 'zzdummy',
-    }
+        }
 
     def load_extension(self, name):
         fname = self.extfiles.get(name, name)
@@ -1628,7 +1628,7 @@ keynames = {
     'bracketleft': '[',
     'bracketright': ']',
     'slash': '/',
-}
+    }
 
 
 def get_accelerator(keydefs, eventname):
