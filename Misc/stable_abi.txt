@@ -1674,7 +1674,7 @@ const METH_STATIC
 const METH_COEXIST
     added 3.2
 # METH_STACKLESS is undocumented
-# METH_FASTCALL is undocumented
+# METH_FASTCALL is not part of limited API.
 
 # PEP 384 doesn't exclude PyMarshal_* in general, only functions
 # that take FILE*.
@@ -1689,11 +1689,6 @@ function PyMember_GetOne
 function PyMember_SetOne
     # Undocumented, which doesn't matter according to PEP 384
     added 3.2
-
-# These had declarations but no implementations; removed in bpo-39372:
-#data PyNullImporter_Type
-#data PySortWrapper_Type
-#struct PyNoArgsFunction
 
 # TLS api is deprecated; superseded by TSS API
 
