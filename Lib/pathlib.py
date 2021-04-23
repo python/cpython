@@ -33,6 +33,7 @@ _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
     21,  # ERROR_NOT_READY - drive exists but is not accessible
+    123, # ERROR_INVALID_NAME - fix for bpo-35306
     1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
 )
 
@@ -350,7 +351,7 @@ class _NormalAccessor(_Accessor):
 
     stat = os.stat
 
-    open = os.open
+    open = io.open
 
     listdir = os.listdir
 
@@ -1046,10 +1047,6 @@ class Path(PurePath):
         # removed in the future.
         pass
 
-    def _opener(self, name, flags, mode=0o666):
-        # A stub for the opener argument to built-in open()
-        return self._accessor.open(self, flags, mode)
-
     # Public API
 
     @classmethod
@@ -1171,8 +1168,8 @@ class Path(PurePath):
         """
         if "b" not in mode:
             encoding = io.text_encoding(encoding)
-        return io.open(self, mode, buffering, encoding, errors, newline,
-                       opener=self._opener)
+        return self._accessor.open(self, mode, buffering, encoding, errors,
+                                   newline)
 
     def read_bytes(self):
         """

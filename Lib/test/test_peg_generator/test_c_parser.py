@@ -70,6 +70,7 @@ unittest.main()
 
 class TestCParser(TempdirManager, unittest.TestCase):
     def setUp(self):
+        self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
@@ -81,6 +82,8 @@ class TestCParser(TempdirManager, unittest.TestCase):
 
     def tearDown(self):
         super(TestCParser, self).tearDown()
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(self._backup_config_vars)
 
     def build_extension(self, grammar_source):
         grammar = parse_string(grammar_source, GrammarParser)
@@ -314,7 +317,7 @@ class TestCParser(TempdirManager, unittest.TestCase):
                             )
         simple_name[expr_ty]: NAME
         import_as_names_from[asdl_alias_seq*]: a[asdl_alias_seq*]=','.import_as_name_from+ { a }
-        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _PyAST_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, p->arena) }
+        import_as_name_from[alias_ty]: a=NAME 'as' b=NAME { _PyAST_alias(((expr_ty) a)->v.Name.id, ((expr_ty) b)->v.Name.id, EXTRA) }
         """
         test_source = """
         for stmt in ("from a import b as c", "from . import a as b"):

@@ -1898,26 +1898,26 @@ How can I have modules that mutually import each other?
 
 Suppose you have the following modules:
 
-foo.py::
+:file:`foo.py`::
 
    from bar import bar_var
    foo_var = 1
 
-bar.py::
+:file:`bar.py`::
 
    from foo import foo_var
    bar_var = 2
 
 The problem is that the interpreter will perform the following steps:
 
-* main imports foo
-* Empty globals for foo are created
-* foo is compiled and starts executing
-* foo imports bar
-* Empty globals for bar are created
-* bar is compiled and starts executing
-* bar imports foo (which is a no-op since there already is a module named foo)
-* bar.foo_var = foo.foo_var
+* main imports ``foo``
+* Empty globals for ``foo`` are created
+* ``foo`` is compiled and starts executing
+* ``foo`` imports ``bar``
+* Empty globals for ``bar`` are created
+* ``bar`` is compiled and starts executing
+* ``bar`` imports ``foo`` (which is a no-op since there already is a module named ``foo``)
+* The import mechanism tries to read ``foo_var`` from ``foo`` globals, to set ``bar.foo_var = foo.foo_var``
 
 The last step fails, because Python isn't done with interpreting ``foo`` yet and
 the global symbol dictionary for ``foo`` is still empty.

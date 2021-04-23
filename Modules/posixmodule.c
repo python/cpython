@@ -11,6 +11,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:
 
@@ -994,7 +995,7 @@ typedef struct {
 static inline _posixstate*
 get_posix_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_posixstate *)state;
 }
@@ -1850,9 +1851,28 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
-    hFindFile = FindFirstFileW(pszFile, &FileData);
-    if (hFindFile == INVALID_HANDLE_VALUE)
+    LPCWSTR filename = pszFile;
+    size_t n = wcslen(pszFile);
+    if (n && (pszFile[n - 1] == L'\\' || pszFile[n - 1] == L'/')) {
+        // cannot use PyMem_Malloc here because we do not hold the GIL
+        filename = (LPCWSTR)malloc((n + 1) * sizeof(filename[0]));
+        wcsncpy_s((LPWSTR)filename, n + 1, pszFile, n);
+        while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
+            ((LPWSTR)filename)[n] = L'\0';
+        }
+        if (!n || (n == 1 && filename[1] == L':')) {
+            // Nothing left to query
+            free((void *)filename);
+            return FALSE;
+        }
+    }
+    hFindFile = FindFirstFileW(filename, &FileData);
+    if (pszFile != filename) {
+        free((void *)filename);
+    }
+    if (hFindFile == INVALID_HANDLE_VALUE) {
         return FALSE;
+    }
     FindClose(hFindFile);
     find_data_to_file_info(&FileData, info, reparse_tag);
     return TRUE;

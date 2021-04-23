@@ -28,6 +28,9 @@ Dictionaries are sorted by key before the display is computed.
 .. versionchanged:: 3.9
    Added support for pretty-printing :class:`types.SimpleNamespace`.
 
+.. versionchanged:: 3.10
+   Added support for pretty-printing :class:`dataclasses.dataclass`.
+
 The :mod:`pprint` module defines one class:
 
 .. First the implementation class:

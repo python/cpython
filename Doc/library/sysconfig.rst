@@ -224,6 +224,7 @@ Other functions
 
    Return the path of :file:`Makefile`.
 
+
 Using :mod:`sysconfig` as a script
 ----------------------------------
 

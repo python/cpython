@@ -147,8 +147,8 @@ byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset)
         return 0;
     }
     Py_ssize_t len = strlen(str);
-    if (col_offset > len) {
-        col_offset = len;
+    if (col_offset > len + 1) {
+        col_offset = len + 1;
     }
     assert(col_offset >= 0);
     PyObject *text = PyUnicode_DecodeUTF8(str, col_offset, "replace");
@@ -184,7 +184,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case BoolOp_kind:
         case BinOp_kind:
         case UnaryOp_kind:
-            return "operator";
+            return "expression";
         case GeneratorExp_kind:
             return "generator expression";
         case Yield_kind:
@@ -199,7 +199,7 @@ _PyPegen_get_expr_name(expr_ty e)
         case DictComp_kind:
             return "dict comprehension";
         case Dict_kind:
-            return "dict display";
+            return "dict literal";
         case Set_kind:
             return "set display";
         case JoinedStr_kind:
@@ -943,6 +943,23 @@ _PyPegen_string_token(Parser *p)
     return _PyPegen_expect_token(p, STRING);
 }
 
+
+expr_ty _PyPegen_soft_keyword_token(Parser *p) {
+    Token *t = _PyPegen_expect_token(p, NAME);
+    if (t == NULL) {
+        return NULL;
+    }
+    char *the_token;
+    Py_ssize_t size;
+    PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
+    for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
+        if (strncmp(*keyword, the_token, size) == 0) {
+            return _PyPegen_name_token(p);
+        }
+    }
+    return NULL;
+}
+
 static PyObject *
 parsenumber_raw(const char *s)
 {
@@ -1151,6 +1168,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
+    p->soft_keywords = NULL;
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyMem_Free(p);
@@ -1555,8 +1573,8 @@ _PyPegen_seq_count_dots(asdl_seq *seq)
 
 /* Creates an alias with '*' as the identifier name */
 alias_ty
-_PyPegen_alias_for_star(Parser *p)
-{
+_PyPegen_alias_for_star(Parser *p, int lineno, int col_offset, int end_lineno,
+                        int end_col_offset, PyArena *arena) {
     PyObject *str = PyUnicode_InternFromString("*");
     if (!str) {
         return NULL;
@@ -1565,7 +1583,7 @@ _PyPegen_alias_for_star(Parser *p)
         Py_DECREF(str);
         return NULL;
     }
-    return _PyAST_alias(str, NULL, p->arena);
+    return _PyAST_alias(str, NULL, lineno, col_offset, end_lineno, end_col_offset, arena);
 }
 
 /* Creates a new asdl_seq* with the identifiers of all the names in seq */
