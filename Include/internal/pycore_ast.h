@@ -560,7 +560,7 @@ struct _match_case {
 };
 
 enum _pattern_kind {MatchAlways_kind=1, MatchValue_kind=2,
-                     MatchConstant_kind=3, MatchSequence_kind=4,
+                     MatchSingleton_kind=3, MatchSequence_kind=4,
                      MatchMapping_kind=5, MatchClass_kind=6, MatchStar_kind=7,
                      MatchAs_kind=8, MatchOr_kind=9};
 struct _pattern {
@@ -572,7 +572,7 @@ struct _pattern {
 
         struct {
             constant value;
-        } MatchConstant;
+        } MatchSingleton;
 
         struct {
             asdl_pattern_seq *patterns;
@@ -811,8 +811,9 @@ pattern_ty _PyAST_MatchAlways(int lineno, int col_offset, int end_lineno, int
                               end_col_offset, PyArena *arena);
 pattern_ty _PyAST_MatchValue(expr_ty value, int lineno, int col_offset, int
                              end_lineno, int end_col_offset, PyArena *arena);
-pattern_ty _PyAST_MatchConstant(constant value, int lineno, int col_offset, int
-                                end_lineno, int end_col_offset, PyArena *arena);
+pattern_ty _PyAST_MatchSingleton(constant value, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset, PyArena
+                                 *arena);
 pattern_ty _PyAST_MatchSequence(asdl_pattern_seq * patterns, int lineno, int
                                 col_offset, int end_lineno, int end_col_offset,
                                 PyArena *arena);

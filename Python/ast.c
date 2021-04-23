@@ -330,9 +330,9 @@ validate_pattern(pattern_ty p)
             // (will need to allow selected unary ops & binops if
             // validation is performed before constant folding...)
             return validate_expr(p->v.MatchValue.value, Load);
-        case MatchConstant_kind:
+        case MatchSingleton_kind:
             // TODO: Check constant is specifically None, True, or False
-            return validate_constant(p->v.MatchConstant.value);
+            return validate_constant(p->v.MatchSingleton.value);
         case MatchSequence_kind:
             // TODO: Validate all subpatterns
             // return validate_patterns(p->v.MatchSequence.patterns);

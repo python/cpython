@@ -262,9 +262,9 @@ literal_pattern[pattern_ty]:
     | value=signed_number !('+' | '-') { _PyAST_MatchValue(value, EXTRA) }
     | value=complex_number { _PyAST_MatchValue(value, EXTRA) }
     | value=strings { _PyAST_MatchValue(value, EXTRA) }
-    | 'None' { _PyAST_MatchConstant(Py_None, EXTRA) }
-    | 'True' { _PyAST_MatchConstant(Py_True, EXTRA) }
-    | 'False' { _PyAST_MatchConstant(Py_False, EXTRA) }
+    | 'None' { _PyAST_MatchSingleton(Py_None, EXTRA) }
+    | 'True' { _PyAST_MatchSingleton(Py_True, EXTRA) }
+    | 'False' { _PyAST_MatchSingleton(Py_False, EXTRA) }
 
 # Literal expressions are used to restrict permitted mapping pattern keys
 literal_expr[expr_ty]:

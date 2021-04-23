@@ -1682,7 +1682,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
     case MatchValue_kind:
         VISIT(st, expr, p->v.MatchValue.value);
         break;
-    case MatchConstant_kind:
+    case MatchSingleton_kind:
         /* Nothing to do here. */
         break;
     case MatchSequence_kind:

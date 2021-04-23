@@ -128,7 +128,7 @@ module Python
 
     pattern = MatchAlways
          | MatchValue(expr value)
-         | MatchConstant(constant value)
+         | MatchSingleton(constant value)
          | MatchSequence(pattern* patterns)
          | MatchMapping(expr* keys, pattern* patterns)
          | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)

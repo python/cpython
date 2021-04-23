@@ -108,10 +108,10 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->MatchAlways_type);
     Py_CLEAR(state->MatchAs_type);
     Py_CLEAR(state->MatchClass_type);
-    Py_CLEAR(state->MatchConstant_type);
     Py_CLEAR(state->MatchMapping_type);
     Py_CLEAR(state->MatchOr_type);
     Py_CLEAR(state->MatchSequence_type);
+    Py_CLEAR(state->MatchSingleton_type);
     Py_CLEAR(state->MatchStar_type);
     Py_CLEAR(state->MatchValue_type);
     Py_CLEAR(state->Match_type);
@@ -714,7 +714,7 @@ static PyObject* ast2obj_pattern(struct ast_state *state, void*);
 static const char * const MatchValue_fields[]={
     "value",
 };
-static const char * const MatchConstant_fields[]={
+static const char * const MatchSingleton_fields[]={
     "value",
 };
 static const char * const MatchSequence_fields[]={
@@ -1774,7 +1774,7 @@ init_types(struct ast_state *state)
     state->pattern_type = make_type(state, "pattern", state->AST_type, NULL, 0,
         "pattern = MatchAlways\n"
         "        | MatchValue(expr value)\n"
-        "        | MatchConstant(constant value)\n"
+        "        | MatchSingleton(constant value)\n"
         "        | MatchSequence(pattern* patterns)\n"
         "        | MatchMapping(expr* keys, pattern* patterns)\n"
         "        | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)\n"
@@ -1783,11 +1783,6 @@ init_types(struct ast_state *state)
         "        | MatchOr(pattern* patterns)");
     if (!state->pattern_type) return 0;
     if (!add_attributes(state, state->pattern_type, pattern_attributes, 4))
-        return 0;
-    if (PyObject_SetAttr(state->pattern_type, state->end_lineno, Py_None) == -1)
-        return 0;
-    if (PyObject_SetAttr(state->pattern_type, state->end_col_offset, Py_None)
-        == -1)
         return 0;
     state->MatchAlways_type = make_type(state, "MatchAlways",
                                         state->pattern_type, NULL, 0,
@@ -1798,11 +1793,11 @@ init_types(struct ast_state *state)
                                        1,
         "MatchValue(expr value)");
     if (!state->MatchValue_type) return 0;
-    state->MatchConstant_type = make_type(state, "MatchConstant",
-                                          state->pattern_type,
-                                          MatchConstant_fields, 1,
-        "MatchConstant(constant value)");
-    if (!state->MatchConstant_type) return 0;
+    state->MatchSingleton_type = make_type(state, "MatchSingleton",
+                                           state->pattern_type,
+                                           MatchSingleton_fields, 1,
+        "MatchSingleton(constant value)");
+    if (!state->MatchSingleton_type) return 0;
     state->MatchSequence_type = make_type(state, "MatchSequence",
                                           state->pattern_type,
                                           MatchSequence_fields, 1,
@@ -3433,20 +3428,20 @@ _PyAST_MatchValue(expr_ty value, int lineno, int col_offset, int end_lineno,
 }
 
 pattern_ty
-_PyAST_MatchConstant(constant value, int lineno, int col_offset, int
-                     end_lineno, int end_col_offset, PyArena *arena)
+_PyAST_MatchSingleton(constant value, int lineno, int col_offset, int
+                      end_lineno, int end_col_offset, PyArena *arena)
 {
     pattern_ty p;
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
-                        "field 'value' is required for MatchConstant");
+                        "field 'value' is required for MatchSingleton");
         return NULL;
     }
     p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
-    p->kind = MatchConstant_kind;
-    p->v.MatchConstant.value = value;
+    p->kind = MatchSingleton_kind;
+    p->v.MatchSingleton.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -5190,11 +5185,11 @@ ast2obj_pattern(struct ast_state *state, void* _o)
             goto failed;
         Py_DECREF(value);
         break;
-    case MatchConstant_kind:
-        tp = (PyTypeObject *)state->MatchConstant_type;
+    case MatchSingleton_kind:
+        tp = (PyTypeObject *)state->MatchSingleton_type;
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
-        value = ast2obj_constant(state, o->v.MatchConstant.value);
+        value = ast2obj_constant(state, o->v.MatchSingleton.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->value, value) == -1)
             goto failed;
@@ -10290,9 +10285,9 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     if (_PyObject_LookupAttr(obj, state->end_lineno, &tmp) < 0) {
         return 1;
     }
-    if (tmp == NULL || tmp == Py_None) {
-        Py_CLEAR(tmp);
-        end_lineno = 0;
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"end_lineno\" missing from pattern");
+        return 1;
     }
     else {
         int res;
@@ -10303,9 +10298,9 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     if (_PyObject_LookupAttr(obj, state->end_col_offset, &tmp) < 0) {
         return 1;
     }
-    if (tmp == NULL || tmp == Py_None) {
-        Py_CLEAR(tmp);
-        end_col_offset = 0;
+    if (tmp == NULL) {
+        PyErr_SetString(PyExc_TypeError, "required field \"end_col_offset\" missing from pattern");
+        return 1;
     }
     else {
         int res;
@@ -10351,7 +10346,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (*out == NULL) goto failed;
         return 0;
     }
-    tp = state->MatchConstant_type;
+    tp = state->MatchSingleton_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
         return 1;
@@ -10363,7 +10358,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             return 1;
         }
         if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from MatchConstant");
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from MatchSingleton");
             return 1;
         }
         else {
@@ -10372,8 +10367,8 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_MatchConstant(value, lineno, col_offset, end_lineno,
-                                    end_col_offset, arena);
+        *out = _PyAST_MatchSingleton(value, lineno, col_offset, end_lineno,
+                                     end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -11165,8 +11160,8 @@ astmodule_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "MatchValue", state->MatchValue_type) < 0) {
         return -1;
     }
-    if (PyModule_AddObjectRef(m, "MatchConstant", state->MatchConstant_type) <
-        0) {
+    if (PyModule_AddObjectRef(m, "MatchSingleton", state->MatchSingleton_type)
+        < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "MatchSequence", state->MatchSequence_type) <

@@ -6179,8 +6179,8 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 static int
 compiler_pattern_constant(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
-    assert(p->kind == MatchConstant_kind);
-    ADDOP_LOAD_CONST(c, p->v.MatchConstant.value);
+    assert(p->kind == MatchSingleton_kind);
+    ADDOP_LOAD_CONST(c, p->v.MatchSingleton.value);
     ADDOP_COMPARE(c, Is);
     return 1;
 }
@@ -6194,7 +6194,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
             return compiler_pattern_wildcard(c, p, pc);
         case MatchValue_kind:
             return compiler_pattern_value(c, p, pc);
-        case MatchConstant_kind:
+        case MatchSingleton_kind:
             return compiler_pattern_constant(c, p, pc);
         case MatchSequence_kind:
             return compiler_pattern_sequence(c, p, pc);

@@ -94,10 +94,10 @@ struct ast_state {
     PyObject *MatchAlways_type;
     PyObject *MatchAs_type;
     PyObject *MatchClass_type;
-    PyObject *MatchConstant_type;
     PyObject *MatchMapping_type;
     PyObject *MatchOr_type;
     PyObject *MatchSequence_type;
+    PyObject *MatchSingleton_type;
     PyObject *MatchStar_type;
     PyObject *MatchValue_type;
     PyObject *Match_type;
