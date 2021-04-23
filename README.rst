@@ -241,7 +241,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 .. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
 
 
-Release Schedule
+## Release Schedule
 ----------------
 
 See :pep:`619` for Python 3.10 release details.
@@ -265,6 +265,6 @@ DISCLAIMER OF ALL WARRANTIES.
 
 This Python distribution contains *no* GNU General Public License (GPL) code,
 so it may be used in proprietary projects.  There are interfaces to some GNU
-code but these are entirely optional.
+code but these are entirely optional on it .
 
 All trademarks referenced herein are property of their respective holders.
