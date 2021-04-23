@@ -2482,31 +2482,18 @@ class ThreadedEchoServer(threading.Thread):
                             sys.stdout.write(" server: read %r (%s), sending back %r (%s)...\n"
                                              % (msg, ctype, msg.lower(), ctype))
                         self.write(msg.lower())
-                except (ConnectionResetError, ConnectionAbortedError):
-                    # XXX: OpenSSL 1.1.1 sometimes raises ConnectionResetError
-                    # when connection is not shut down gracefully.
+                except OSError as e:
+                    # handles SSLError and socket errors
                     if self.server.chatty and support.verbose:
-                        sys.stdout.write(
-                            " Connection reset by peer: {}\n".format(
-                                self.addr)
-                        )
-                    self.close()
-                    self.running = False
-                except ssl.SSLError as err:
-                    # On Windows sometimes test_pha_required_nocert receives the
-                    # PEER_DID_NOT_RETURN_A_CERTIFICATE exception
-                    # before the 'tlsv13 alert certificate required' exception.
-                    # If the server is stopped when PEER_DID_NOT_RETURN_A_CERTIFICATE
-                    # is received test_pha_required_nocert fails with ConnectionResetError
-                    # because the underlying socket is closed
-                    if 'PEER_DID_NOT_RETURN_A_CERTIFICATE' == err.reason:
-                        if self.server.chatty and support.verbose:
-                            sys.stdout.write(err.args[1])
-                        # test_pha_required_nocert is expecting this exception
-                        raise ssl.SSLError('tlsv13 alert certificate required')
-                except OSError:
-                    if self.server.chatty:
-                        handle_error("Test server failure:\n")
+                        if isinstance(e, ConnectionError):
+                            # OpenSSL 1.1.1 sometimes raises
+                            # ConnectionResetError when connection is not
+                            # shut down gracefully.
+                            print(
+                                f" Connection reset by peer: {self.addr}"
+                            )
+                        else:
+                            handle_error("Test server failure:\n")
                     self.close()
                     self.running = False
 
