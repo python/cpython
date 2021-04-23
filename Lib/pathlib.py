@@ -33,6 +33,7 @@ _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
     21,  # ERROR_NOT_READY - drive exists but is not accessible
+    123, # ERROR_INVALID_NAME - fix for bpo-35306
     1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
 )
 

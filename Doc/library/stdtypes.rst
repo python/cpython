@@ -692,10 +692,9 @@ Here are the rules in detail:
   as ``-hash(-x)``.  If the resulting hash is ``-1``, replace it with
   ``-2``.
 
-- The particular values ``sys.hash_info.inf``, ``-sys.hash_info.inf``
-  and ``sys.hash_info.nan`` are used as hash values for positive
-  infinity, negative infinity, or nans (respectively).  (All hashable
-  nans have the same hash value.)
+- The particular values ``sys.hash_info.inf`` and ``-sys.hash_info.inf``
+  are used as hash values for positive
+  infinity or negative infinity (respectively).
 
 - For a :class:`complex` number ``z``, the hash values of the real
   and imaginary parts are combined by computing ``hash(z.real) +
@@ -740,7 +739,7 @@ number, :class:`float`, or :class:`complex`::
        """Compute the hash of a float x."""
 
        if math.isnan(x):
-           return sys.hash_info.nan
+           return super().__hash__()
        elif math.isinf(x):
            return sys.hash_info.inf if x > 0 else -sys.hash_info.inf
        else:
