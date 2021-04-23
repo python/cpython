@@ -8,6 +8,7 @@ import unittest
 import pickle
 import weakref
 import errno
+from textwrap import dedent
 
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
@@ -1832,6 +1833,130 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+class SyntaxErrorTests(unittest.TestCase):
+    def test_range_of_offsets(self):
+        cases = [
+            # Basic range from 2->7
+            (("bad.py", 1, 2, "abcdefg", 1, 7),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^^^^^
+             SyntaxError: bad bad
+             """)),
+            # end_offset = start_offset + 1
+            (("bad.py", 1, 2, "abcdefg", 1, 3),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^
+             SyntaxError: bad bad
+             """)),
+            # Negative end offset
+            (("bad.py", 1, 2, "abcdefg", 1, -2),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^
+             SyntaxError: bad bad
+             """)),
+            # end offset before starting offset
+            (("bad.py", 1, 4, "abcdefg", 1, 2),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                    ^
+             SyntaxError: bad bad
+             """)),
+            # Both offsets negative
+            (("bad.py", 1, -4, "abcdefg", 1, -2),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # Both offsets negative and the end more negatibe
+            (("bad.py", 1, -4, "abcdefg", 1, -5),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # Both offsets 0
+            (("bad.py", 1, 0, "abcdefg", 1, 0),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # Start offset 0 and end offset not 0
+            (("bad.py", 1, 0, "abcdefg", 1, 5),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # End offset pass the source lenght
+            (("bad.py", 1, 2, "abcdefg", 1, 100),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^^^^^^
+             SyntaxError: bad bad
+             """)),
+        ]
+        for args, expected in cases:
+            with self.subTest(args=args):
+                try:
+                    raise SyntaxError("bad bad", args)
+                except SyntaxError as exc:
+                    with support.captured_stderr() as err:
+                        sys.__excepthook__(*sys.exc_info())
+                    the_exception = exc
+
+    def test_attributes_new_constructor(self):
+        args = ("bad.py", 1, 2, "abcdefg", 1, 100)
+        the_exception = SyntaxError("bad bad", args)
+        filename, lineno, offset, error, end_lineno, end_offset = args
+        self.assertEqual(filename, the_exception.filename)
+        self.assertEqual(lineno, the_exception.lineno)
+        self.assertEqual(end_lineno, the_exception.end_lineno)
+        self.assertEqual(offset, the_exception.offset)
+        self.assertEqual(end_offset, the_exception.end_offset)
+        self.assertEqual(error, the_exception.text)
+        self.assertEqual("bad bad", the_exception.msg)
+
+    def test_attributes_old_constructor(self):
+        args = ("bad.py", 1, 2, "abcdefg")
+        the_exception = SyntaxError("bad bad", args)
+        filename, lineno, offset, error = args
+        self.assertEqual(filename, the_exception.filename)
+        self.assertEqual(lineno, the_exception.lineno)
+        self.assertEqual(None, the_exception.end_lineno)
+        self.assertEqual(offset, the_exception.offset)
+        self.assertEqual(None, the_exception.end_offset)
+        self.assertEqual(error, the_exception.text)
+        self.assertEqual("bad bad", the_exception.msg)
+
+    def test_incorrect_constructor(self):
+        args = ("bad.py", 1, 2)
+        self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+        args = ("bad.py", 1, 2, 4, 5, 6, 7)
+        self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+        args = ("bad.py", 1, 2, "abcdefg", 1)
+        self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
 
 class PEP626Tests(unittest.TestCase):

@@ -1494,8 +1494,9 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
         info = PySequence_Tuple(info);
-        if (!info)
+        if (!info) {
             return -1;
+        }
 
         self->end_lineno = NULL;
         self->end_offset = NULL;
@@ -1505,7 +1506,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
                               &self->end_lineno, &self->end_offset)) {
             Py_DECREF(info);
             return -1;
-        }
+        } 
 
         Py_INCREF(self->filename);
         Py_INCREF(self->lineno);
@@ -1514,6 +1515,11 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         Py_XINCREF(self->end_lineno);
         Py_XINCREF(self->end_offset);
         Py_DECREF(info);
+
+        if (self->end_lineno != NULL && self->end_offset == NULL) {
+            PyErr_SetString(PyExc_TypeError, "end_offset must be provided when end_lineno is provided");
+            return -1;
+        }
 
         /*
          * Issue #21669: Custom error for 'print' & 'exec' as statements

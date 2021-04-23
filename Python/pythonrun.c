@@ -628,7 +628,7 @@ finally:
 static void
 print_error_text(PyObject *f, Py_ssize_t offset, Py_ssize_t end_offset, PyObject *text_obj)
 {
-    size_t caret_repetitions = end_offset > 0 && end_offset != offset ? end_offset - offset : 1;
+    size_t caret_repetitions = (end_offset > 0 && end_offset > offset) ? end_offset - offset : 1;
     /* Convert text to a char pointer; return if error */
     const char *text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)
@@ -945,7 +945,7 @@ print_exception(PyObject *f, PyObject *value)
                 // Limit the ammount of '^' that we can display to
                 // the size of the text in the source line.
                 if (error_line != NULL && end_offset > line_size + 1) {
-                    end_offset = line_size;
+                    end_offset = line_size + 1;
                 }
                 print_error_text(f, offset, end_offset, text);
                 Py_DECREF(text);
