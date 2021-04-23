@@ -95,6 +95,7 @@ static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
+static PyTryBlock get_exception_handler(PyCodeObject *, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -4536,6 +4537,12 @@ exception_unwind:
         }
         /* Pop the current block. */
         PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
+        /* We can't use f->f_lasti here, as RERAISE may have set it */
+        int lasti = INSTR_OFFSET()-1;
+        PyTryBlock from_table = get_exception_handler(co, lasti);
+        assert(from_table.b_handler == b->b_handler);
+        assert(from_table.b_type == b->b_type);
+        assert(from_table.b_level == b->b_level);
         assert(b->b_type == SETUP_FINALLY || b->b_type == SETUP_CLEANUP);
         assert(STACK_LEVEL() >= b->b_level);
         while (STACK_LEVEL() > (b)->b_level) {
@@ -4574,6 +4581,7 @@ exception_unwind:
         }
         /* Resume normal execution */
         f->f_state = FRAME_EXECUTING;
+        f->f_lasti = handler;
         NEXTOPARG();
         goto dispatch_opcode;
     } /* main loop */
@@ -4840,6 +4848,96 @@ fail:
 
 }
 
+static inline unsigned char *
+parse_varint(unsigned char *p, int *result) {
+    int val = p[0]&63;
+    while (p[0] & 64) {
+        p++;
+        val = (val << 6) | (p[0] & 63);
+    }
+    *result = val;
+    return p+1;
+}
+
+static inline unsigned char *
+scan_back_to_entry_start(unsigned char *p) {
+    for (; (p[0]&128) == 0; p--);
+    return p;
+}
+static inline unsigned char *
+skip_to_next_entry(unsigned char *p) {
+    for (; (p[0]&128) == 0; p++);
+    return p;
+}
+static inline unsigned char *
+parse_range(unsigned char *p, int *start, int*end)
+{
+    p = parse_varint(p, start);
+    int size;
+    p = parse_varint(p, &size);
+    *end = *start + size;
+    return p;
+}
+
+static inline void
+parse_block(unsigned char *p, PyTryBlock *block) {
+    int depth_and_lasti;
+    p = parse_varint(p, &block->b_handler);
+    p = parse_varint(p, &depth_and_lasti);
+    block->b_level = depth_and_lasti >> 1;
+    block->b_type = (depth_and_lasti & 1) ? SETUP_CLEANUP : SETUP_FINALLY;
+}
+
+#define MAX_LINEAR_SEARCH 40
+
+static PyTryBlock
+get_exception_handler(PyCodeObject *code, int index)
+{
+    PyTryBlock res;
+    unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code->co_exceptiontable);
+    unsigned char *end = start + PyBytes_GET_SIZE(code->co_exceptiontable);
+    /* Invariants:
+     * start_table == end_table OR
+     * start_table points to a legal entry and end_table points
+     * beyond the table or to a legal entry that is after index.
+     */
+    if (end - start > MAX_LINEAR_SEARCH) {
+        int offset;
+        parse_varint(start, &offset);
+        if (offset > index) {
+            res.b_handler = -1;
+            return res;
+        }
+        do {
+            unsigned char * mid = start + ((end-start)>>1);
+            mid = scan_back_to_entry_start(mid);
+            parse_varint(mid, &offset);
+            if (offset > index) {
+                end = mid;
+            }
+            else {
+                start = mid;
+            }
+
+        } while (end - start > MAX_LINEAR_SEARCH);
+    }
+    unsigned char *scan = start;
+    while (scan < end) {
+        int start_offset, size;
+        scan = parse_varint(scan, &start_offset);
+        if (start_offset > index) {
+            break;
+        }
+        scan = parse_varint(scan, &size);
+        if (start_offset + size > index) {
+            parse_block(scan, &res);
+            return res;
+        }
+        scan = skip_to_next_entry(scan);
+    }
+    res.b_handler = -1;
+    return res;
+}
 
 PyFrameObject *
 _PyEval_MakeFrameVector(PyThreadState *tstate,

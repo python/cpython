@@ -6595,25 +6595,27 @@ write_except_byte(struct assembler *a, int byte) {
     p[a->a_except_table_off++] = byte;
 }
 
+#define CONTINUATION_BIT 64
+
 static void
 assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
 {
     assert ((msb | 128) == 128);
     assert(value >= 0 && value < (1 << 30));
     if (value >= 1 << 24) {
-        write_except_byte(a, (value >> 24) | msb);
+        write_except_byte(a, (value >> 24) | CONTINUATION_BIT | msb);
         msb = 0;
     }
     if (value >= 1 << 18) {
-        write_except_byte(a, ((value >> 18)&0x3f) | msb);
+        write_except_byte(a, ((value >> 18)&0x3f) | CONTINUATION_BIT | msb);
         msb = 0;
     }
     if (value >= 1 << 12) {
-        write_except_byte(a, ((value >> 12)&0x3f) | msb);
+        write_except_byte(a, ((value >> 12)&0x3f) | CONTINUATION_BIT | msb);
         msb = 0;
     }
     if (value >= 1 << 6) {
-        write_except_byte(a, ((value >> 6)&0x3f) | msb);
+        write_except_byte(a, ((value >> 6)&0x3f) | CONTINUATION_BIT | msb);
         msb = 0;
     }
     write_except_byte(a, (value&0x3f) | msb);
