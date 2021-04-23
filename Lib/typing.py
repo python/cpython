@@ -20,7 +20,6 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
-import ast
 import collections
 import collections.abc
 import contextlib
@@ -578,13 +577,6 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
-
-        # Double-stringified forward references is a result of activating
-        # the 'annotations' future by default. This way, we eliminate them in
-        # the runtime.
-        if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
-            arg = arg[1:-1]
-
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
@@ -1628,16 +1620,20 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         for base in reversed(obj.__mro__):
             if globalns is None:
-                base_globals = sys.modules[base.__module__].__dict__
+                try:
+                    base_globals = sys.modules[base.__module__].__dict__
+                except KeyError:
+                    continue
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
+            base_locals = dict(vars(base)) if localns is None else localns
             for name, value in ann.items():
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
-                value = _eval_type(value, base_globals, localns)
+                value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 

@@ -130,6 +130,20 @@ class AuditTest(unittest.TestCase):
             ["gc.get_objects", "gc.get_referrers", "gc.get_referents"]
         )
 
+    def test_http(self):
+        import_helper.import_module("http.client")
+        returncode, events, stderr = self.run_python("test_http_client")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "http.client.connect")
+        self.assertEqual(events[0][2], "www.python.org 80")
+        self.assertEqual(events[1][0], "http.client.send")
+        if events[1][2] != '[cannot send]':
+            self.assertIn('HTTP', events[1][2])
+
 
 if __name__ == "__main__":
     unittest.main()

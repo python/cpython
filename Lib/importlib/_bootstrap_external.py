@@ -349,7 +349,8 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a6 3434 (PEP 634: Structural Pattern Matching)
 #     Python 3.10a7 3435 Use instruction offsets (as opposed to byte offsets).
 #     Python 3.10b1 3436 (Add GEN_START bytecode #43683)
-#     Python 3.10b1 3437 (add ROT_N opcode)
+#     Python 3.10b1 3437 (Undo making 'annotations' future by default - We like to dance among core devs!)
+#     Python 3.10b1 3438 (add ROT_N opcode)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

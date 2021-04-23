@@ -413,10 +413,8 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
 
     ns = {}
     exec(txt, globals, ns)
-    func = ns['__create_fn__'](**locals)
-    for arg, annotation in func.__annotations__.copy().items():
-        func.__annotations__[arg] = locals[annotation]
-    return func
+    return ns['__create_fn__'](**locals)
+
 
 def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
@@ -667,11 +665,6 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # a eval() penalty for every single field of every dataclass
     # that's defined.  It was judged not worth it.
 
-    # Strip away the extra quotes as a result of double-stringifying when the
-    # 'annotations' feature became default.
-    if annotation.startswith(("'", '"')) and annotation.endswith(("'", '"')):
-        annotation = annotation[1:-1]
-
     match = _MODULE_IDENTIFIER_RE.match(annotation)
     if match:
         ns = None
@@ -718,7 +711,7 @@ def _get_field(cls, a_name, a_type):
     # In addition to checking for actual types here, also check for
     # string annotations.  get_type_hints() won't always work for us
     # (see https://github.com/python/typing/issues/508 for example),
-    # plus it's expensive and would require an eval for every stirng
+    # plus it's expensive and would require an eval for every string
     # annotation.  So, make a best effort to see if this is a ClassVar
     # or InitVar using regex's and checking that the thing referenced
     # is actually of the correct type.
@@ -1020,7 +1013,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
         cls.__doc__ = (cls.__name__ +
-                       str(inspect.signature(cls)).replace(' -> NoneType', ''))
+                       str(inspect.signature(cls)).replace(' -> None', ''))
 
     if match_args:
         _set_new_attribute(cls, '__match_args__',
@@ -1233,14 +1226,12 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
 
     if namespace is None:
         namespace = {}
-    else:
-        # Copy namespace since we're going to mutate it.
-        namespace = namespace.copy()
 
     # While we're looking through the field names, validate that they
     # are identifiers, are not keywords, and not duplicates.
     seen = set()
-    anns = {}
+    annotations = {}
+    defaults = {}
     for item in fields:
         if isinstance(item, str):
             name = item
@@ -1249,7 +1240,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             name, tp, = item
         elif len(item) == 3:
             name, tp, spec = item
-            namespace[name] = spec
+            defaults[name] = spec
         else:
             raise TypeError(f'Invalid field: {item!r}')
 
@@ -1261,12 +1252,19 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             raise TypeError(f'Field name duplicated: {name!r}')
 
         seen.add(name)
-        anns[name] = tp
+        annotations[name] = tp
 
-    namespace['__annotations__'] = anns
+    # Update 'ns' with the user-supplied namespace plus our calculated values.
+    def exec_body_callback(ns):
+        ns.update(namespace)
+        ns.update(defaults)
+        ns['__annotations__'] = annotations
+
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclassses.
-    cls = types.new_class(cls_name, bases, {}, lambda ns: ns.update(namespace))
+    cls = types.new_class(cls_name, bases, {}, exec_body_callback)
+
+    # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      unsafe_hash=unsafe_hash, frozen=frozen,
                      match_args=match_args)

@@ -406,6 +406,7 @@ static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
 static int astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -625,8 +626,22 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState
 static int
 astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    CALL_SEQ(astfold_arg, arg, node_->posonlyargs);
+    CALL_SEQ(astfold_arg, arg, node_->args);
+    CALL_OPT(astfold_arg, arg_ty, node_->vararg);
+    CALL_SEQ(astfold_arg, arg, node_->kwonlyargs);
     CALL_SEQ(astfold_expr, expr, node_->kw_defaults);
+    CALL_OPT(astfold_arg, arg_ty, node_->kwarg);
     CALL_SEQ(astfold_expr, expr, node_->defaults);
+    return 1;
+}
+
+static int
+astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+        CALL_OPT(astfold_expr, expr_ty, node_->annotation);
+    }
     return 1;
 }
 
@@ -638,11 +653,17 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
+        if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+            CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
+        }
         break;
     case AsyncFunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
+        if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+            CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
+        }
         break;
     case ClassDef_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
@@ -666,6 +687,9 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case AnnAssign_kind:
         CALL(astfold_expr, expr_ty, node_->v.AnnAssign.target);
+        if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+            CALL(astfold_expr, expr_ty, node_->v.AnnAssign.annotation);
+        }
         CALL_OPT(astfold_expr, expr_ty, node_->v.AnnAssign.value);
         break;
     case For_kind:

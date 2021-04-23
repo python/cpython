@@ -90,7 +90,8 @@ sys.path = {additional_paths or []} + sys.path
 sys.argv[1:] = {args}
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
-    return subprocess.run([sys.executable, "-c", code], check=True).returncode
+    return subprocess.run([sys.executable, '-W', 'ignore::DeprecationWarning',
+                           "-c", code], check=True).returncode
 
 
 def version():
