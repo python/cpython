@@ -1088,7 +1088,7 @@ PyDoc_STRVAR(_ssl_RAND_status__doc__,
 "RAND_status($module, /)\n"
 "--\n"
 "\n"
-"Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n"
+"Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.\n"
 "\n"
 "It is necessary to seed the PRNG with RAND_add() on some platforms before\n"
 "using the ssl() function.");
@@ -1324,4 +1324,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=83e68c77bd96789a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8736d838c9059151 input=a9049054013a1b77]*/
