@@ -779,32 +779,32 @@ t_atom[expr_ty]:
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
-    | args ',' '*' { RAISE_SYNTAX_ERROR("iterable argument unpacking follows keyword argument unpacking") }
-    | a=expression for_if_clauses ',' [args | expression for_if_clauses] {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
+    | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
+    | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, comprehension_ty)->target, "Generator expression must be parenthesized") }
     | a=args for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a) }
-    | args ',' a=expression for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "Generator expression must be parenthesized") }
+    | args ',' a=expression b=for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | expression a='=' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            a, "expression cannot contain assignment, perhaps you meant \"==\"?") }
+    | a=expression b='=' {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
 
 invalid_expression:
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
-    | !(NAME STRING | SOFT_KEYWORD) a=disjunction expression {
-        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, "invalid syntax. Perhaps you forgot a comma?") }
+    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
 
 invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
-    | a=NAME b='=' bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
+    | a=NAME '=' b=bitwise_or !('='|':='|',') {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
     | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
 invalid_assignment:
@@ -841,25 +841,28 @@ invalid_primary:
 invalid_comprehension:
     | ('[' | '(' | '{') a=starred_expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable unpacking cannot be used in comprehension") }
-    | ('[' | '{') a=star_named_expression ',' [star_named_expressions] for_if_clauses {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "did you forget parentheses around the comprehension target?") }
+    | ('[' | '{') a=star_named_expression ',' b=star_named_expressions for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, expr_ty),
+        "did you forget parentheses around the comprehension target?") }
+    | ('[' | '{') a=star_named_expression b=',' for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "did you forget parentheses around the comprehension target?") }
 invalid_dict_comprehension:
     | '{' a='**' bitwise_or for_if_clauses '}' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "dict unpacking cannot be used in dict comprehension") }
 invalid_parameters:
-    | param_no_default* invalid_parameters_helper param_no_default {
-        RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+    | param_no_default* invalid_parameters_helper a=param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
 invalid_parameters_helper: # This is only there to avoid type errors
     | a=slash_with_default { _PyPegen_singleton_seq(p, a) }
     | param_with_default+
 invalid_lambda_parameters:
-    | lambda_param_no_default* invalid_lambda_parameters_helper lambda_param_no_default {
-        RAISE_SYNTAX_ERROR("non-default argument follows default argument") }
+    | lambda_param_no_default* invalid_lambda_parameters_helper a=lambda_param_no_default {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "non-default argument follows default argument") }
 invalid_lambda_parameters_helper:
     | a=lambda_slash_with_default { _PyPegen_singleton_seq(p, a) }
     | lambda_param_with_default+
 invalid_star_etc:
-    | '*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
+    | a='*' (')' | ',' (')' | '**')) { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "named arguments must follow bare *") }
     | '*' ',' TYPE_COMMENT { RAISE_SYNTAX_ERROR("bare * has associated type comment") }
 invalid_lambda_star_etc:
     | '*' (':' | ',' (':' | '**')) { RAISE_SYNTAX_ERROR("named arguments must follow bare *") }
@@ -897,7 +900,7 @@ invalid_try_stmt:
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
 invalid_except_stmt:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "exception group must be parenthesized") }
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "exception group must be parenthesized") }
     | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_finally_stmt:
@@ -942,10 +945,10 @@ invalid_class_def_raw:
 
 invalid_double_starred_kvpairs:
     | ','.double_starred_kvpair+ ',' invalid_kvpair
-    | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use a starred expression in a dictionary value") }
+    | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' &('}'|',') { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
 invalid_kvpair:
     | a=expression !(':') {
-        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, "':' expected after dictionary key") }
-    | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use a starred expression in a dictionary value") }
+        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError, a->lineno, a->end_col_offset - 1, a->end_lineno, -1, "':' expected after dictionary key") }
+    | expression ':' a='*' bitwise_or { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "cannot use a starred expression in a dictionary value") }
     | expression a=':' {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
