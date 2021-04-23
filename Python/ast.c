@@ -352,9 +352,9 @@ validate_pattern(pattern_ty p)
             // return validate_patterns(p->v.MatchMapping.patterns);
             return 1;
         case MatchClass_kind:
-            if (asdl_seq_LEN(p->v.MatchMapping.keys) != asdl_seq_LEN(p->v.MatchMapping.patterns)) {
+            if (asdl_seq_LEN(p->v.MatchClass.kwd_attrs) != asdl_seq_LEN(p->v.MatchClass.kwd_patterns)) {
                 PyErr_SetString(PyExc_ValueError,
-                                "MatchMapping doesn't have the same number of keys as patterns");
+                                "MatchClass doesn't have the same number of keyword attributes as patterns");
                 return 0;
             }
             // TODO: Restrict cls lookup to being a name or attribute
