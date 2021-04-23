@@ -880,7 +880,7 @@ Return the Integer closest to x between 0 and x.
 
 static PyObject *
 float___trunc___impl(PyObject *self)
-/*[clinic end generated code: output=dd3e289dd4c6b538 input=591b9ba0d650fdff]*/
+/*[clinic end generated code: output=dd3e289dd4c6b538 input=eefcc6ff76192e0d]*/
 {
     return PyLong_FromDouble(PyFloat_AS_DOUBLE(self));
 }
@@ -893,7 +893,7 @@ Return the floor as an Integer.
 
 static PyObject *
 float___floor___impl(PyObject *self)
-/*[clinic end generated code: output=e0551dbaea8c01d1 input=77bb13eb12e268df]*/
+/*[clinic end generated code: output=e0551dbaea8c01d1 input=2a296a9cff7dc684]*/
 {
     double x = PyFloat_AS_DOUBLE(self);
     return PyLong_FromDouble(floor(x));
@@ -907,7 +907,7 @@ Return the ceiling as an Integer.
 
 static PyObject *
 float___ceil___impl(PyObject *self)
-/*[clinic end generated code: output=a2fd8858f73736f9 input=79e41ae94aa0a516]*/
+/*[clinic end generated code: output=a2fd8858f73736f9 input=c41118a42bf6f83c]*/
 {
     double x = PyFloat_AS_DOUBLE(self);
     return PyLong_FromDouble(ceil(x));
@@ -1042,7 +1042,7 @@ When an argument is passed, work like built-in round(x, ndigits).
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=374c36aaa0f13980 input=fc0fe25924fbc9ed]*/
+/*[clinic end generated code: output=374c36aaa0f13980 input=7121091402918db5]*/
 {
     double x, rounded;
     Py_ssize_t ndigits;

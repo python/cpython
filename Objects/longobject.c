@@ -5160,7 +5160,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=1614cf23ec9e18c3]*/
+/*[clinic end generated code: output=954fda6b18875998 input=3ee1ce59e9f0235c]*/
 {
     PyObject *temp, *result, *ndigits;
 

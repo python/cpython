@@ -1192,7 +1192,7 @@ This is the smallest integer >= x.
 
 static PyObject *
 math_ceil(PyObject *module, PyObject *number)
-/*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
+/*[clinic end generated code: output=6c3b8a78bc201c67 input=241105afc3ed79f0]*/
 {
     _Py_IDENTIFIER(__ceil__);
 
@@ -1255,7 +1255,7 @@ This is the largest integer <= x.
 
 static PyObject *
 math_floor(PyObject *module, PyObject *number)
-/*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
+/*[clinic end generated code: output=c6a65c4884884b8a input=51997fb61226178b]*/
 {
     double x;
 
@@ -2050,7 +2050,7 @@ Raise a ValueError if x is negative or non-integer.
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=c42347eb2d25c780]*/
 {
     long x, two_valuation;
     int overflow;
@@ -2101,7 +2101,7 @@ Uses the __trunc__ magic method.
 
 static PyObject *
 math_trunc(PyObject *module, PyObject *x)
-/*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
+/*[clinic end generated code: output=34b9697b707e1031 input=474e3f3f5ecdf91d]*/
 {
     _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
