@@ -176,27 +176,12 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(f));
-    if (f->f_lasti == -1) {
-        if (arg && arg != Py_None) {
-            const char *msg = "can't send non-None value to a "
-                              "just-started generator";
-            if (PyCoro_CheckExact(gen)) {
-                msg = NON_INIT_CORO_MSG;
-            }
-            else if (PyAsyncGen_CheckExact(gen)) {
-                msg = "can't send non-None value to a "
-                      "just-started async generator";
-            }
-            PyErr_SetString(PyExc_TypeError, msg);
-            return PYGEN_ERROR;
-        }
-    } else {
-        /* Push arg onto the frame's value stack */
-        result = arg ? arg : Py_None;
-        Py_INCREF(result);
-        gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
-        gen->gi_frame->f_stackdepth++;
-    }
+    assert(f->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(f->f_code->co_code))[0] == GEN_START);
+    /* Push arg onto the frame's value stack */
+    result = arg ? arg : Py_None;
+    Py_INCREF(result);
+    gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
+    gen->gi_frame->f_stackdepth++;
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -357,7 +342,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[(f->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
         assert(f->f_stackdepth > 0);
         yf = f->f_valuestack[f->f_stackdepth-1];
@@ -481,7 +466,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
             assert(gen->gi_frame->f_lasti >= 0);
-            gen->gi_frame->f_lasti += sizeof(_Py_CODEUNIT);
+            gen->gi_frame->f_lasti += 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);

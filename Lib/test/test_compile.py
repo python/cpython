@@ -427,7 +427,7 @@ if 1:
         fname = __file__
         if fname.lower().endswith('pyc'):
             fname = fname[:-1]
-        with open(fname, 'r') as f:
+        with open(fname, encoding='utf-8') as f:
             fcontents = f.read()
         sample_code = [
             ['<assign>', 'x = 5'],
@@ -960,6 +960,32 @@ class TestExpressionStackSize(unittest.TestCase):
 
     def test_binop(self):
         self.check_stack_size("x + " * self.N + "x")
+
+    def test_list(self):
+        self.check_stack_size("[" + "x, " * self.N + "x]")
+
+    def test_tuple(self):
+        self.check_stack_size("(" + "x, " * self.N + "x)")
+
+    def test_set(self):
+        self.check_stack_size("{" + "x, " * self.N + "x}")
+
+    def test_dict(self):
+        self.check_stack_size("{" + "x:x, " * self.N + "x:x}")
+
+    def test_func_args(self):
+        self.check_stack_size("f(" + "x, " * self.N + ")")
+
+    def test_func_kwargs(self):
+        kwargs = (f'a{i}=x' for i in range(self.N))
+        self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
+
+    def test_func_args(self):
+        self.check_stack_size("o.m(" + "x, " * self.N + ")")
+
+    def test_meth_kwargs(self):
+        kwargs = (f'a{i}=x' for i in range(self.N))
+        self.check_stack_size("o.m(" +  ", ".join(kwargs) + ")")
 
     def test_func_and(self):
         code = "def f(x):\n"

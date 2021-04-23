@@ -722,8 +722,8 @@ for the following events in the interpreter:
 * line of code executed.
 
 This can be used to instrument running interpreters in production,
-without the need to recompile specific debug builds or providing
-application-specific profiling/debugging code.
+without the need to recompile specific :ref:`debug builds <debug-build>` or
+providing application-specific profiling/debugging code.
 
 More details in :ref:`instrumentation`.
 

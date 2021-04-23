@@ -1417,6 +1417,9 @@ Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
 
+If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
+third-party `idna module <https://pypi.org/project/idna/>_`.
+
 These RFCs together define a protocol to support non-ASCII characters in domain
 names. A domain name containing non-ASCII characters (such as
 ``www.Alliancefrançaise.nu``) is converted into an ASCII-compatible encoding

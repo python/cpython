@@ -276,6 +276,10 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
 
+    def test_empty_blob(self):
+        cur = self.con.execute("select isblob(x'')")
+        self.assertTrue(cur.fetchone()[0])
+
     # Regarding deterministic functions:
     #
     # Between 3.8.3 and 3.15.0, deterministic functions were only used to

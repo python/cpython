@@ -10,7 +10,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1f
+    - OPENSSL=1.1.1k
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     - CFLAGS="-I${OPENSSL_DIR}/include"
@@ -53,7 +53,7 @@ matrix:
         - cd Doc
         - make venv PYTHON=python
       script:
-        - make check html SPHINXOPTS="-q -W -j4"
+        - make check html suspicious SPHINXOPTS="-q -W -j4"
     - name: "Documentation tests"
       os: linux
       language: c

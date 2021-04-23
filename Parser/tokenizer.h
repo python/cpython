@@ -15,8 +15,8 @@ extern "C" {
 
 enum decoding_state {
     STATE_INIT,
-    STATE_RAW,
-    STATE_NORMAL        /* have a codec associated with input */
+    STATE_SEEK_CODING,
+    STATE_NORMAL
 };
 
 /* Tokenizer state */
@@ -54,7 +54,6 @@ struct tok_state {
     /* Stuff for PEP 0263 */
     enum decoding_state decoding_state;
     int decoding_erred;         /* whether erred in decoding  */
-    int read_coding_spec;       /* whether 'coding:...' has been read  */
     char *encoding;         /* Source encoding. */
     int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */

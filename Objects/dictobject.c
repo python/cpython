@@ -4972,10 +4972,12 @@ PyDictKeysObject *
 _PyDict_NewKeysForClass(void)
 {
     PyDictKeysObject *keys = new_keys_object(PyDict_MINSIZE);
-    if (keys == NULL)
+    if (keys == NULL) {
         PyErr_Clear();
-    else
+    }
+    else {
         keys->dk_lookup = lookdict_split;
+    }
     return keys;
 }
 

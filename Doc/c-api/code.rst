@@ -51,3 +51,11 @@ bound into a function.
    Return a new empty code object with the specified filename,
    function name, and first line number.  It is illegal to
    :func:`exec` or :func:`eval` the resulting code object.
+
+.. c:function:: int PyCode_Addr2Line(PyCodeObject *co, int byte_offset)
+
+    Return the line number of the instruction that occurs on or before ``byte_offset`` and ends after it.
+    If you just need the line number of a frame, use :c:func:`PyFrame_GetLineNumber` instead.
+
+    For efficiently iterating over the line numbers in a code object, use `the API described in PEP 626
+    <https://www.python.org/dev/peps/pep-0626/#out-of-process-debuggers-and-profilers>`_.

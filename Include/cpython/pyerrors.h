@@ -62,6 +62,17 @@ typedef struct {
     PyObject *value;
 } PyStopIterationObject;
 
+typedef struct {
+    PyException_HEAD
+    PyObject *name;
+} PyNameErrorObject;
+
+typedef struct {
+    PyException_HEAD
+    PyObject *obj;
+    PyObject *name;
+} PyAttributeErrorObject;
+
 /* Compatibility typedefs */
 typedef PyOSErrorObject PyEnvironmentErrorObject;
 #ifdef MS_WINDOWS

@@ -3,8 +3,7 @@
  * of the given abstract syntax tree (potentially constructed manually).
  */
 #include "Python.h"
-#include "Python-ast.h"
-#include "ast.h"
+#include "pycore_ast.h"           // asdl_stmt_seq
 
 #include <assert.h>
 
@@ -551,7 +550,7 @@ validate_exprs(asdl_expr_seq *exprs, expr_context_ty ctx, int null_ok)
 }
 
 int
-PyAST_Validate(mod_ty mod)
+_PyAST_Validate(mod_ty mod)
 {
     int res = 0;
 

@@ -15,10 +15,10 @@ class FileCompareTestCase(unittest.TestCase):
         self.name_diff = os_helper.TESTFN + '-diff'
         data = 'Contents of file go here.\n'
         for name in [self.name, self.name_same, self.name_diff]:
-            with open(name, 'w') as output:
+            with open(name, 'w', encoding="utf-8") as output:
                 output.write(data)
 
-        with open(self.name_diff, 'a+') as output:
+        with open(self.name_diff, 'a+', encoding="utf-8") as output:
             output.write('An extra line.\n')
         self.dir = tempfile.gettempdir()
 
@@ -72,10 +72,10 @@ class DirCompareTestCase(unittest.TestCase):
                 fn = 'FiLe'     # Verify case-insensitive comparison
             else:
                 fn = 'file'
-            with open(os.path.join(dir, fn), 'w') as output:
+            with open(os.path.join(dir, fn), 'w', encoding="utf-8") as output:
                 output.write(data)
 
-        with open(os.path.join(self.dir_diff, 'file2'), 'w') as output:
+        with open(os.path.join(self.dir_diff, 'file2'), 'w', encoding="utf-8") as output:
             output.write('An extra file.\n')
 
     def tearDown(self):
@@ -103,7 +103,7 @@ class DirCompareTestCase(unittest.TestCase):
                         "Comparing directory to same fails")
 
         # Add different file2
-        with open(os.path.join(self.dir, 'file2'), 'w') as output:
+        with open(os.path.join(self.dir, 'file2'), 'w', encoding="utf-8") as output:
             output.write('Different contents.\n')
 
         self.assertFalse(filecmp.cmpfiles(self.dir, self.dir_same,
@@ -188,7 +188,7 @@ class DirCompareTestCase(unittest.TestCase):
         self._assert_report(d.report, expected_report)
 
         # Add different file2
-        with open(os.path.join(self.dir_diff, 'file2'), 'w') as output:
+        with open(os.path.join(self.dir_diff, 'file2'), 'w', encoding="utf-8") as output:
             output.write('Different contents.\n')
         d = filecmp.dircmp(self.dir, self.dir_diff)
         self.assertEqual(d.same_files, ['file'])

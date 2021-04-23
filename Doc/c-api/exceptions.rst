@@ -512,7 +512,7 @@ Signal Handling
    and if so, invokes the corresponding signal handler.  If the :mod:`signal`
    module is supported, this can invoke a signal handler written in Python.
 
-   The function attemps to handle all pending signals, and then returns ``0``.
+   The function attempts to handle all pending signals, and then returns ``0``.
    However, if a Python signal handler raises an exception, the error
    indicator is set and the function returns ``-1`` immediately (such that
    other pending signals may not have been handled yet: they will be on the

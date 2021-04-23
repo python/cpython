@@ -231,7 +231,7 @@ Other Language Changes
   absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
-* In the :ref:`Python Development Mode <devmode>` and in debug build, the
+* In the :ref:`Python Development Mode <devmode>` and in :ref:`debug build <debug-build>`, the
   *encoding* and *errors* arguments are now checked for string encoding and
   decoding operations. Examples: :func:`open`, :meth:`str.encode` and
   :meth:`bytes.decode`.
@@ -266,6 +266,10 @@ Other Language Changes
   :func:`~operator.contains`, :func:`~operator.indexOf` and
   :func:`~operator.countOf` of the :mod:`operator` module.
   (Contributed by Serhiy Storchaka in :issue:`40824`.)
+
+* Unparenthesized lambda expressions can no longer be the expression part in an
+  ``if`` clause in comprehensions and generator expressions. See :issue:`41848`
+  and :issue:`43755` for details.
 
 
 New Modules
@@ -654,7 +658,7 @@ The socket module now supports the :data:`~socket.CAN_J1939` protocol on
 platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
 
 The socket module now has the :func:`socket.send_fds` and
-:func:`socket.recv.fds` methods. (Contributed by Joannah Nanjekye, Shinya
+:func:`socket.recv_fds` functions. (Contributed by Joannah Nanjekye, Shinya
 Okano and Victor Stinner in :issue:`28724`.)
 
 
@@ -1110,6 +1114,12 @@ Changes in the Python API
   compatible classes that don't inherit from those mentioned types.
   (Contributed by Roger Aiudi in :issue:`34775`).
 
+* :func:`codecs.lookup` now normalizes the encoding name the same way as
+  :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
+  converts the name to lower case. For example, ``"latex+latin1"`` encoding
+  name is now normalized to ``"latex_latin1"``.
+  (Contributed by Jordon Xu in :issue:`37751`.)
+
 
 Changes in the C API
 --------------------
@@ -1207,9 +1217,9 @@ Build Changes
   non-system Tcl and Tk frameworks if they are installed in
   ``/Library/Frameworks``, as had been the case on older releases
   of macOS. If a macOS SDK is explicitly configured, by using
-  ``--enable-universalsdk=`` or ``-isysroot``, only the SDK itself is
+  :option:`--enable-universalsdk` or ``-isysroot``, only the SDK itself is
   searched. The default behavior can still be overridden with
-  ``--with-tcltk-includes`` and ``--with-tcltk-libs``.
+  :option:`--with-tcltk-includes` and :option:`--with-tcltk-libs`.
   (Contributed by Ned Deily in :issue:`34956`.)
 
 * Python can now be built for Windows 10 ARM64.
