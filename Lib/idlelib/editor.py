@@ -951,7 +951,7 @@ class EditorWindow:
             with open(file_path, 'r',
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
-        if new_file is not None:
+        if new_file:
             new_file = os.path.abspath(new_file) + '\n'
             if new_file in rf_list:
                 rf_list.remove(new_file)  # move to top
@@ -1285,7 +1285,7 @@ class EditorWindow:
     def smart_backspace_event(self, event):
         text = self.text
         first, last = self.get_selection_indices()
-        if first is not None and last is not None:
+        if first and last:
             text.delete(first, last)
             text.mark_set("insert", first)
             return "break"
@@ -1337,7 +1337,7 @@ class EditorWindow:
         first, last = self.get_selection_indices()
         text.undo_block_start()
         try:
-            if first is not None and last is not None:
+            if first and last:
                 if index2line(first) != index2line(last):
                     return self.fregion.indent_region_event(event)
                 text.delete(first, last)
@@ -1374,7 +1374,7 @@ class EditorWindow:
         first, last = self.get_selection_indices()
         text.undo_block_start()
         try:  # Close undo block and expose new line in finally clause.
-            if first is not None and last is not None:
+            if first and last:
                 text.delete(first, last)
                 text.mark_set("insert", first)
             line = text.get("insert linestart", "insert")
