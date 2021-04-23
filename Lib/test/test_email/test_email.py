@@ -4573,6 +4573,12 @@ two line"""), """\
 one line
 
 two line""")
+        # Ensure a line doesn't start with a dot
+        eq(quoprimime.body_encode('example.com', maxlinelen=8), "example=\n=2Ecom")
+        eq(quoprimime.body_encode('........com', maxlinelen=8), "=2E....=\n=2E..com")
+        eq(quoprimime.body_encode('e...p...com', maxlinelen=4), "e..=\n=2E=\np..=\n=2E=\ncom")
+        eq(quoprimime.body_encode('...........', maxlinelen=4), "=2E=\n" * 9 + "=2E.")
+        #                                 ^ 8th char
 
 
 

@@ -184,18 +184,27 @@ def body_encode(body, maxlinelen=76, eol=NL):
     append = encoded_body.append
 
     for line in body.splitlines():
+        if line.startswith('.'):
+            line = quote('.') + line[1:]
         # break up the line into pieces no longer than maxlinelen - 1
         start = 0
         laststart = len(line) - 1 - maxlinelen
         while start <= laststart:
             stop = start + maxlinelen1
             # make sure we don't break up an escape sequence
+            # make sure the next line doesn't start with a dot, because some
+            # mail libraries don't implement RFC 5321 section-4.5.2 correctly
             if line[stop - 2] == '=':
                 append(line[start:stop - 1])
                 start = stop - 2
             elif line[stop - 1] == '=':
                 append(line[start:stop])
                 start = stop - 1
+            elif line[stop] == '.':
+                append(line[start:stop] + '=')
+                line = line[:stop] + quote('.') + line[stop+1:]
+                laststart += 2
+                start = stop
             else:
                 append(line[start:stop] + '=')
                 start = stop
