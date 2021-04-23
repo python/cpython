@@ -436,6 +436,18 @@ The following exceptions are the exceptions that are usually raised.
 
       The source code text involved in the error.
 
+   .. attribute:: end_lineno
+
+      Which line number in the file the error occurred ends in. This is
+      1-indexed: the first line in the file has a ``lineno`` of 1.
+
+   .. attribute:: end_offset
+
+      The column in the end line where the error occurred finishes. This is
+      1-indexed: the first character in the line has an ``offset`` of 1.
+
+   .. versionchanged:: 3.10
+      Added the :attr:`end_lineno` and :attr:`end_offset` attributes.
 
 .. exception:: IndentationError
 
