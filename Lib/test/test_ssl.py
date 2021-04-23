@@ -1362,6 +1362,24 @@ class ContextTests(unittest.TestCase):
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
 
+    def test_load_cert_privkey(self):
+        chain = ssl.Certificate.chain_from_file(ONLYCERT)
+        self.assertEqual(len(chain), 1)
+        cas = ssl.Certificate.bundle_from_file(SIGNING_CA)
+        self.assertEqual(len(cas), 1)
+        pkey = ssl.PrivateKey.from_file(ONLYKEY)
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(chain, pkey)
+        ctx.load_verify_locations(cadata=cas)
+        self.assertEqual(len(ctx.get_ca_certs()), 1)
+
+        pkey = ssl.PrivateKey.from_file(
+            ONLYKEY_PROTECTED, password=KEY_PASSWORD
+        )
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(chain, pkey)
+
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_verify_locations(CERTFILE)
