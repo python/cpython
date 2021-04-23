@@ -76,7 +76,7 @@ class EditorWindow:
 
         if EditorWindow.help_url is None:
             dochome = os.path.join(sys.base_prefix, 'Doc', 'index.html')
-            if sys.platform.count('linux'):
+            if 'linux' in sys.platform:
                 # look for html docs in a couple of standard places
                 pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
                 if os.path.isdir('/var/www/html/python/'):  # "python2" rpm
@@ -108,7 +108,7 @@ class EditorWindow:
         self.root = root
         self.menubar = Menu(root)
         self.top = top = window.ListedToplevel(root, menu=self.menubar)
-        if flist:
+        if flist is not None:
             self.tkinter_vars = flist.vars
             # self.top.instance_dict makes flist.inversedict available to
             # configdialog.py so it can access all EditorWindow instances
@@ -196,9 +196,9 @@ class EditorWindow:
         text.bind("<<del-word-right>>", self.del_word_right)
         text.bind("<<beginning-of-line>>", self.home_callback)
 
-        if flist:
+        if flist is not None:
             flist.inversedict[self] = key
-            if key:
+            if key is not None:
                 flist.dict[key] = self
             text.bind("<<open-new-window>>", self.new_callback)
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
@@ -270,7 +270,7 @@ class EditorWindow:
         self.color = None  # initialized below in self.ResetColorizer
         self.code_context = None  # optionally initialized later below
         self.line_numbers = None  # optionally initialized later below
-        if filename:
+        if filename is not None:
             if os.path.exists(filename) and not os.path.isdir(filename):
                 if io.loadfile(filename):
                     self.good_load = True
@@ -285,7 +285,7 @@ class EditorWindow:
         self.update_recent_files_list()
         self.load_extensions()
         menu = self.menudict.get('window')
-        if menu:
+        if menu is not None:
             end = menu.index("end")
             if end is None:
                 end = -1
@@ -382,8 +382,8 @@ class EditorWindow:
             insertpt = int(self.text.index("iomark").split(".")[1])
         else:
             line = self.text.get("insert linestart", "insert lineend")
-            for insertpt in range(len(line)):
-                if line[insertpt] not in (' ', '\t'):
+            for insertpt, char in enumerate(line):
+                if char not in (' ', '\t'):
                     break
             else:
                 insertpt = len(line)
@@ -391,7 +391,7 @@ class EditorWindow:
         if insertpt == lineat:
             insertpt = 0
         dest = "insert linestart+"+str(insertpt)+"c"
-        if (event.state&1) == 0:
+        if (event.state & 1) == 0:
             # shift was not pressed
             self.text.tag_remove("sel", "1.0", "end")
         else:
@@ -511,7 +511,7 @@ class EditorWindow:
         if not in_selection:
             text.tag_remove("sel", "1.0", "end")
             text.mark_set("insert", newdex)
-        if not self.rmenu:
+        if self.rmenu is not None:
             self.make_rmenu()
         rmenu = self.rmenu
         self.event = event
@@ -587,7 +587,7 @@ class EditorWindow:
     def help_dialog(self, event=None):
         """Handle Help 'IDLE Help' event."""
         # Synchronize with macosx.overrideRootMenu.help_dialog.
-        if self.root:
+        if self.root is not None:
             parent = self.root
         else:
             parent = self.top
@@ -715,7 +715,7 @@ class EditorWindow:
             "to search on sys.path and open:",
             name).result
         if file_path is not None:
-            if self.flist:
+            if self.flist is not None:
                 self.flist.open(file_path)
             else:
                 self.io.loadfile(file_path)
@@ -767,7 +767,7 @@ class EditorWindow:
         return line.startswith('#!') and 'python' in line
 
     def close_hook(self):
-        if self.flist:
+        if self.flist is not None:
             self.flist.unregister_maybe_terminate(self)
             self.flist = None
 
@@ -775,7 +775,7 @@ class EditorWindow:
         self.close_hook = close_hook
 
     def filename_change_hook(self):
-        if self.flist:
+        if self.flist is not None:
             self.flist.filename_changed_edit(self)
         self.saved_change_hook()
         self.top.update_windowlist_registry(self)
@@ -787,7 +787,7 @@ class EditorWindow:
         if self.ispythonsource(self.io.filename):
             self.color = self.ColorDelegator()
         # can add more colorizers here...
-        if self.color:
+        if self.color is not None:
             self.per.removefilter(self.undo)
             self.per.insertfilter(self.color)
             self.per.insertfilter(self.undo)
@@ -819,7 +819,7 @@ class EditorWindow:
         char = text.get(pos)
         if char and char in self.IDENTCHARS:
             text.tag_add("ERROR", pos + " wordstart", pos)
-        if '\n' == text.get(pos):  # error at line end
+        if char == '\n':  # error at line end
             text.mark_set("insert", pos)
         else:
             text.mark_set("insert", pos + "+1c")
@@ -858,8 +858,8 @@ class EditorWindow:
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
             self.text.event_delete(event, *keylist)
-        for extensionName in self.get_standard_extension_names():
-            xkeydefs = idleConf.GetExtensionBindings(extensionName)
+        for extension_name in self.get_standard_extension_names():
+            xkeydefs = idleConf.GetExtensionBindings(extension_name)
             if xkeydefs:
                 for event, keylist in xkeydefs.items():
                     self.text.event_delete(event, *keylist)
@@ -951,7 +951,7 @@ class EditorWindow:
             with open(file_path, 'r',
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
-        if new_file:
+        if new_file is not None:
             new_file = os.path.abspath(new_file) + '\n'
             if new_file in rf_list:
                 rf_list.remove(new_file)  # move to top
@@ -1066,7 +1066,7 @@ class EditorWindow:
         return "break"
 
     def maybesave(self):
-        if self.io:
+        if self.io is not None:
             if not self.get_saved():
                 if self.top.state() != 'normal':
                     self.top.deiconify()
@@ -1091,7 +1091,7 @@ class EditorWindow:
         self.io.close()
         self.io = None
         self.undo = None
-        if self.color:
+        if self.color is not None:
             self.color.close()
             self.color = None
         self.text = None
@@ -1178,14 +1178,14 @@ class EditorWindow:
         text = self.text
         for mname, entrylist in menudefs:
             menu = menudict.get(mname)
-            if not menu:
+            if menu is None:
                 continue
             for entry in entrylist:
-                if not entry:
+                if entry is None:
                     menu.add_separator()
                 else:
                     label, eventname = entry
-                    checkbutton = (label[:1] == '!')
+                    checkbutton = label[:1] == '!'
                     if checkbutton:
                         label = label[1:]
                     underline, label = prepstr(label)
@@ -1206,22 +1206,21 @@ class EditorWindow:
 
     def getvar(self, name):
         var = self.get_var_obj(name)
-        if var:
+        if var is not None:
             value = var.get()
             return value
-        else:
-            raise NameError(name)
+        raise NameError(name)
 
     def setvar(self, name, value, vartype=None):
         var = self.get_var_obj(name, vartype)
-        if var:
+        if var is not None:
             var.set(value)
         else:
             raise NameError(name)
 
     def get_var_obj(self, name, vartype=None):
         var = self.tkinter_vars.get(name)
-        if not var and vartype:
+        if var is None and vartype:
             # create a Tkinter variable object with self.text as master:
             self.tkinter_vars[name] = var = vartype(self.text)
         return var
@@ -1236,14 +1235,13 @@ class EditorWindow:
     # platform's colorizer.
 
     def is_char_in_string(self, text_index):
-        if self.color:
+        if self.color is not None:
             # Return true iff colorizer hasn't (re)gotten this far
             # yet, or the character is tagged as being in a string
             return self.text.tag_prevrange("TODO", text_index) or \
                    "STRING" in self.text.tag_names(text_index)
-        else:
-            # The colorizer is missing: assume the worst
-            return 1
+        # The colorizer is missing: assume the worst
+        return 1
 
     # If a selection is defined in the text widget, return (start,
     # end) as Tkinter text indices, otherwise return (None, None)
@@ -1287,7 +1285,7 @@ class EditorWindow:
     def smart_backspace_event(self, event):
         text = self.text
         first, last = self.get_selection_indices()
-        if first and last:
+        if first is not None and last is not None:
             text.delete(first, last)
             text.mark_set("insert", first)
             return "break"
@@ -1339,7 +1337,7 @@ class EditorWindow:
         first, last = self.get_selection_indices()
         text.undo_block_start()
         try:
-            if first and last:
+            if first is not None and last is not None:
                 if index2line(first) != index2line(last):
                     return self.fregion.indent_region_event(event)
                 text.delete(first, last)
@@ -1376,7 +1374,7 @@ class EditorWindow:
         first, last = self.get_selection_indices()
         text.undo_block_start()
         try:  # Close undo block and expose new line in finally clause.
-            if first and last:
+            if first is not None and last is not None:
                 text.delete(first, last)
                 text.mark_set("insert", first)
             line = text.get("insert linestart", "insert")
@@ -1502,8 +1500,7 @@ class EditorWindow:
         if self.usetabs:
             ntabs, nspaces = divmod(n, self.tabwidth)
             return '\t' * ntabs + ' ' * nspaces
-        else:
-            return ' ' * n
+        return ' ' * n
 
     # Delete from beginning of line to insert point, then reinsert
     # column logical (meaning use tabs if appropriate) spaces.
