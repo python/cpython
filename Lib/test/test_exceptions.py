@@ -1881,7 +1881,7 @@ class SyntaxErrorTests(unittest.TestCase):
                  abcdefg
              SyntaxError: bad bad
              """)),
-            # Both offsets negative and the end more negatibe
+            # Both offsets negative and the end more negative
             (("bad.py", 1, -4, "abcdefg", 1, -5),
              dedent(
              """
