@@ -953,6 +953,20 @@ The documentation shows a typical use to define a managed attribute ``x``:
         def delx(self): del self.__x
         x = property(getx, setx, delx, "I'm the 'x' property.")
 
+.. doctest::
+    :hide:
+
+    >>> C.x.__doc__
+    "I'm the 'x' property."
+    >>> c.x = 2.71828
+    >>> c.x
+    2.71828
+    >>> del c.x
+    >>> c.x
+    Traceback (most recent call last):
+      ...
+    AttributeError: 'C' object has no attribute '_C__x'
+
 To see how :func:`property` is implemented in terms of the descriptor protocol,
 here is a pure Python equivalent:
 
@@ -1364,9 +1378,10 @@ Using the non-data descriptor protocol, a pure Python version of
     "A doc for 'T'"
 
 
-The code path for ``hasattr(obj, '__get__')`` was added in Python 3.9 and
-makes it possible for :func:`classmethod` to support chained decorators.
-For example, a classmethod and property could be chained together:
+The code path for ``hasattr(type(self.f), '__get__')`` was added in
+Python 3.9 and makes it possible for :func:`classmethod` to support
+chained decorators.  For example, a classmethod and property could be
+chained together:
 
 .. testcode::
 
