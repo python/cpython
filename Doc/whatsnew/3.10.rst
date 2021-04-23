@@ -1007,6 +1007,11 @@ Added negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
 
+Added :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
+supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+order as :meth:`~pathlib.Path.symlink_to`.
+(Contributed by Barney Gale in :issue:`39950`.)
+
 platform
 --------
 
@@ -1362,6 +1367,10 @@ Deprecated
   * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
 
   (Contributed by Jelle Zijlstra in :issue:`21574`.)
+
+* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+  Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
+  (Contributed by Barney Gale in :issue:`39950`.)
 
 
 Removed
