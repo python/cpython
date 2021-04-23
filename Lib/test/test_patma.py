@@ -2430,10 +2430,30 @@ class TestPatma(unittest.TestCase):
         """)
 
     @no_perf
+    def _disabled_test_patma_240b(self):
+        # Test disabled until bpo-43897 fleshes out the AST validator
+        # (the initial skeleton doesn't recurse into mapping patterns)
+        # Ensure mapping keys are also restricted
+        self.assert_syntax_error("""
+        match ...:
+            case {0+0:_}:
+                pass
+        """)
+
+    @no_perf
     def test_patma_241(self):
         self.assert_syntax_error("""
         match ...:
             case f"":
+                pass
+        """)
+
+    @no_perf
+    def test_patma_241b(self):
+        # Ensure mapping keys are also restricted
+        self.assert_syntax_error("""
+        match ...:
+            case {f"":_}:
                 pass
         """)
 
@@ -2885,8 +2905,6 @@ class PerfPatma(TestPatma):
     @staticmethod
     def setUpClass():
         raise unittest.SkipTest("performance testing")
-''' # Disable compilation
-''' # End disable compilation
 
 
 """

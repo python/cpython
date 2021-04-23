@@ -5589,6 +5589,10 @@ compiler_slice(struct compiler *c, expr_ty s)
 #define WILDCARD_STAR_CHECK(N) \
     ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.target)
 
+// Limit permitted subexpressions, even if the parser & AST validator let them through
+#define MATCH_VALUE_EXPR(N) \
+    ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
+
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
@@ -5967,6 +5971,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
             c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
             return compiler_error(c, e);
         }
+        if (!MATCH_VALUE_EXPR(key)) {
+            const char *e = "mapping pattern keys may only match literals and attribute lookups";
+            return compiler_error(c, e);
+        }
         VISIT(c, expr, key);
     }
     ADDOP_I(c, BUILD_TUPLE, size - star);
@@ -6171,7 +6179,12 @@ static int
 compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
-    VISIT(c, expr, p->v.MatchValue.value);
+    expr_ty value = p->v.MatchValue.value;
+    if (!MATCH_VALUE_EXPR(value)) {
+        const char *e = "patterns may only match literals and attribute lookups";
+        return compiler_error(c, e);
+    }
+    VISIT(c, expr, value);
     ADDOP_COMPARE(c, Eq);
     return 1;
 }

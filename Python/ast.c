@@ -6,6 +6,7 @@
 #include "pycore_ast.h"           // asdl_stmt_seq
 
 #include <assert.h>
+#include <stdbool.h>
 
 static int validate_stmts(asdl_stmt_seq *);
 static int validate_exprs(asdl_expr_seq*, expr_context_ty, int);
@@ -317,18 +318,121 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
 }
 
 static int
+ensure_literal_number(expr_ty exp, bool allow_real, bool allow_imaginary)
+{
+    assert(exp->kind == Constant_kind);
+    PyObject *value = exp->v.Constant.value;
+    return (allow_real && PyFloat_CheckExact(value)) ||
+           (allow_real && PyLong_CheckExact(value)) ||
+           (allow_imaginary && PyComplex_CheckExact(value));
+}
+
+static int
+ensure_literal_negative(expr_ty exp, bool allow_real, bool allow_imaginary)
+{
+    assert(exp->kind == UnaryOp_kind);
+    // Must be negation ...
+    if (exp->v.UnaryOp.op != USub) {
+        return 0;
+    }
+    // ... of a constant ...
+    expr_ty operand = exp->v.UnaryOp.operand;
+    if (operand->kind != Constant_kind) {
+        return 0;
+    }
+    // ... number
+    return ensure_literal_number(operand, allow_real, allow_imaginary);
+}
+
+static int
+ensure_literal_complex(expr_ty exp)
+{
+    assert(exp->kind == BinOp_kind);
+    expr_ty left = exp->v.BinOp.left;
+    expr_ty right = exp->v.BinOp.right;
+    // Ensure op is addition or subtraction
+    if (exp->v.BinOp.op != Add && exp->v.BinOp.op != Sub) {
+        return 0;
+    }
+    // Check LHS is a real number
+    switch (left->kind)
+    {
+        case Constant_kind:
+            if (!ensure_literal_number(left, /*real=*/true, /*imaginary=*/false)) {
+                return 0;
+            }
+            break;
+        case UnaryOp_kind:
+            if (!ensure_literal_negative(left, /*real=*/true, /*imaginary=*/false)) {
+                return 0;
+            }
+            break;
+        default:
+            return 0;
+    }
+    // Check RHS is an imaginary number
+    switch (right->kind)
+    {
+        case Constant_kind:
+            if (!ensure_literal_number(right, /*real=*/false, /*imaginary=*/true)) {
+                return 0;
+            }
+            break;
+        case UnaryOp_kind:
+            if (!ensure_literal_negative(right, /*real=*/false, /*imaginary=*/true)) {
+                return 0;
+            }
+            break;
+        default:
+            return 0;
+    }
+    return 1;
+}
+
+static int
+validate_pattern_match_value(expr_ty exp)
+{
+    switch (exp->kind)
+    {
+        case Constant_kind:
+        case Attribute_kind:
+            // Constants and attribute lookups are always permitted
+            return 1;
+        case UnaryOp_kind:
+            // Negated numbers are permitted (whether real or imaginary)
+            // Compiler will complain if AST folding doesn't create a constant
+            if (ensure_literal_negative(exp, /*real=*/true, /*imaginary=*/true)) {
+                return 1;
+            }
+            break;
+        case BinOp_kind:
+            // Complex literals are permitted
+            // Compiler will complain if AST folding doesn't create a constant
+            if (ensure_literal_complex(exp)) {
+                return 1;
+            }
+            break;
+        default:
+            break;
+    }
+    PyErr_SetString(PyExc_SyntaxError,
+        "patterns may only match literals and attribute lookups");
+    return 0;
+}
+
+static int
 validate_pattern(pattern_ty p)
 {
     // Coming soon: https://bugs.python.org/issue43897 (thanks Batuhan)!
-    // TODO: Potentially ensure no subnodes use "_" as an ordinary identifier
+    // TODO: Ensure no subnodes use "_" as an ordinary identifier
     switch (p->kind) {
         case MatchAlways_kind:
             // Nothing to check
             return 1;
         case MatchValue_kind:
-            // TODO: Check value is a constant or an attribute lookup
-            // (will need to allow selected unary ops & binops if
-            // validation is performed before constant folding...)
+            if (!validate_pattern_match_value(p->v.MatchValue.value)) {
+                return 0;
+            }
             return validate_expr(p->v.MatchValue.value, Load);
         case MatchSingleton_kind:
             // TODO: Check constant is specifically None, True, or False
