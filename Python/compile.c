@@ -5480,7 +5480,7 @@ compiler_error(struct compiler *c, const char *format, ...)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    PyObject *args = Py_BuildValue("O(OiiOi)", msg, c->c_filename,
+    PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
                                    c->u->u_lineno, c->u->u_col_offset + 1, loc,
                                    c->u->u_end_lineno, c->u->u_end_col_offset + 1);
     Py_DECREF(msg);
