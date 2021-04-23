@@ -138,7 +138,7 @@ module Python
 
          | MatchAs(pattern? pattern, identifier target)
          | MatchOr(pattern* patterns)
-          attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
+          attributes (int lineno, int col_offset, int end_lineno, int end_col_offset)
 
     type_ignore = TypeIgnore(int lineno, string tag)
 }
