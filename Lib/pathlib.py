@@ -6,6 +6,7 @@ import os
 import posixpath
 import re
 import sys
+import warnings
 from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
@@ -1306,6 +1307,14 @@ class Path(PurePath):
         """
         self._accessor.symlink(target, self, target_is_directory)
 
+    def hardlink_to(self, target):
+        """
+        Make this path a hard link pointing to the same file as *target*.
+
+        Note the order of arguments (self, target) is the reverse of os.link's.
+        """
+        self._accessor.link(target, self)
+
     def link_to(self, target):
         """
         Make the target path a hard link pointing to this path.
@@ -1315,7 +1324,13 @@ class Path(PurePath):
         of arguments (target, link) is the reverse of Path.symlink_to, but
         matches that of os.link.
 
+        Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
+        Use `hardlink_to()` instead.
         """
+        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
+                      "for removal in Python 3.12. "
+                      "Use pathlib.Path.hardlink_to() instead.",
+                      DeprecationWarning)
         self._accessor.link(self, target)
 
     # Convenience functions for querying the stat results
