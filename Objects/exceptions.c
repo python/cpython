@@ -1494,29 +1494,32 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
         info = PySequence_Tuple(info);
-        if (!info)
-            return -1;
-
-        if (PyTuple_GET_SIZE(info) != 4) {
-            /* not a very good error message, but it's what Python 2.4 gives */
-            PyErr_SetString(PyExc_IndexError, "tuple index out of range");
-            Py_DECREF(info);
+        if (!info) {
             return -1;
         }
 
-        Py_INCREF(PyTuple_GET_ITEM(info, 0));
-        Py_XSETREF(self->filename, PyTuple_GET_ITEM(info, 0));
+        self->end_lineno = NULL;
+        self->end_offset = NULL;
+        if (!PyArg_ParseTuple(info, "OOOO|OO",
+                              &self->filename, &self->lineno,
+                              &self->offset, &self->text,
+                              &self->end_lineno, &self->end_offset)) {
+            Py_DECREF(info);
+            return -1;
+        } 
 
-        Py_INCREF(PyTuple_GET_ITEM(info, 1));
-        Py_XSETREF(self->lineno, PyTuple_GET_ITEM(info, 1));
-
-        Py_INCREF(PyTuple_GET_ITEM(info, 2));
-        Py_XSETREF(self->offset, PyTuple_GET_ITEM(info, 2));
-
-        Py_INCREF(PyTuple_GET_ITEM(info, 3));
-        Py_XSETREF(self->text, PyTuple_GET_ITEM(info, 3));
-
+        Py_INCREF(self->filename);
+        Py_INCREF(self->lineno);
+        Py_INCREF(self->offset);
+        Py_INCREF(self->text);
+        Py_XINCREF(self->end_lineno);
+        Py_XINCREF(self->end_offset);
         Py_DECREF(info);
+
+        if (self->end_lineno != NULL && self->end_offset == NULL) {
+            PyErr_SetString(PyExc_TypeError, "end_offset must be provided when end_lineno is provided");
+            return -1;
+        }
 
         /*
          * Issue #21669: Custom error for 'print' & 'exec' as statements
@@ -1540,6 +1543,8 @@ SyntaxError_clear(PySyntaxErrorObject *self)
     Py_CLEAR(self->filename);
     Py_CLEAR(self->lineno);
     Py_CLEAR(self->offset);
+    Py_CLEAR(self->end_lineno);
+    Py_CLEAR(self->end_offset);
     Py_CLEAR(self->text);
     Py_CLEAR(self->print_file_and_line);
     return BaseException_clear((PyBaseExceptionObject *)self);
@@ -1560,6 +1565,8 @@ SyntaxError_traverse(PySyntaxErrorObject *self, visitproc visit, void *arg)
     Py_VISIT(self->filename);
     Py_VISIT(self->lineno);
     Py_VISIT(self->offset);
+    Py_VISIT(self->end_lineno);
+    Py_VISIT(self->end_offset);
     Py_VISIT(self->text);
     Py_VISIT(self->print_file_and_line);
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
@@ -1650,6 +1657,10 @@ static PyMemberDef SyntaxError_members[] = {
         PyDoc_STR("exception offset")},
     {"text", T_OBJECT, offsetof(PySyntaxErrorObject, text), 0,
         PyDoc_STR("exception text")},
+    {"end_lineno", T_OBJECT, offsetof(PySyntaxErrorObject, end_lineno), 0,
+                   PyDoc_STR("exception end lineno")},
+    {"end_offset", T_OBJECT, offsetof(PySyntaxErrorObject, end_offset), 0,
+                   PyDoc_STR("exception end offset")},
     {"print_file_and_line", T_OBJECT,
         offsetof(PySyntaxErrorObject, print_file_and_line), 0,
         PyDoc_STR("exception print_file_and_line")},
