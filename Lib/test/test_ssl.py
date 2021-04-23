@@ -2386,7 +2386,10 @@ class ThreadedEchoServer(threading.Thread):
                         sys.stdout.write(" client cert is " + pprint.pformat(cert) + "\n")
                     cert_binary = self.sslconn.getpeercert(True)
                     if support.verbose and self.server.chatty:
-                        sys.stdout.write(" cert binary is " + str(len(cert_binary)) + " bytes\n")
+                        if cert_binary is None:
+                            sys.stdout.write(" client did not provide a cert\n")
+                        else:
+                            sys.stdout.write(f" cert binary is {len(cert_binary)}b\n")
                 cipher = self.sslconn.cipher()
                 if support.verbose and self.server.chatty:
                     sys.stdout.write(" server: connection cipher is now " + str(cipher) + "\n")
@@ -2494,6 +2497,10 @@ class ThreadedEchoServer(threading.Thread):
                             )
                         else:
                             handle_error("Test server failure:\n")
+                    try:
+                        self.write(b"ERROR\n")
+                    except OSError:
+                        pass
                     self.close()
                     self.running = False
 
@@ -4399,24 +4406,30 @@ class TestPostHandshakeAuth(unittest.TestCase):
         server_context.verify_mode = ssl.CERT_REQUIRED
         client_context.post_handshake_auth = True
 
-        # Ignore expected SSLError in ConnectionHandler of ThreadedEchoServer
-        # (it is only raised sometimes on Windows)
-        with threading_helper.catch_threading_exception() as cm:
-            server = ThreadedEchoServer(context=server_context, chatty=False)
-            with server:
-                with client_context.wrap_socket(socket.socket(),
-                                                server_hostname=hostname) as s:
-                    s.connect((HOST, server.port))
-                    s.write(b'PHA')
+        def msg_cb(conn, direction, version, content_type, msg_type, data):
+            if support.verbose and content_type == _TLSContentType.ALERT:
+                info = (conn, direction, version, content_type, msg_type, data)
+                sys.stdout.write(f"TLS: {info!r}\n")
+
+        server_context._msg_callback = msg_cb
+        client_context._msg_callback = msg_cb
+
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                s.write(b'PHA')
+                with self.assertRaisesRegex(
+                    ssl.SSLError,
+                    'tlsv13 alert certificate required'
+                ):
                     # receive CertificateRequest
                     self.assertEqual(s.recv(1024), b'OK\n')
                     # send empty Certificate + Finish
                     s.write(b'HASCERT')
                     # receive alert
-                    with self.assertRaisesRegex(
-                            ssl.SSLError,
-                            'tlsv13 alert certificate required'):
-                        s.recv(1024)
+                    s.recv(1024)
 
     def test_pha_optional(self):
         if support.verbose:
