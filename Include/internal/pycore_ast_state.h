@@ -225,6 +225,7 @@ struct ast_state {
     PyObject *pattern_type;
     PyObject *patterns;
     PyObject *posonlyargs;
+    PyObject *rest;
     PyObject *returns;
     PyObject *right;
     PyObject *simple;

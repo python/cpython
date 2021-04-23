@@ -555,7 +555,7 @@ static pattern_ty star_pattern_rule(Parser *p);
 static pattern_ty mapping_pattern_rule(Parser *p);
 static asdl_seq* items_pattern_rule(Parser *p);
 static KeyPatternPair* key_value_pattern_rule(Parser *p);
-static KeyPatternPair* double_star_pattern_rule(Parser *p);
+static expr_ty double_star_pattern_rule(Parser *p);
 static pattern_ty class_pattern_rule(Parser *p);
 static asdl_pattern_seq* positional_patterns_rule(Parser *p);
 static asdl_seq* keyword_patterns_rule(Parser *p);
@@ -7272,7 +7272,11 @@ star_pattern_rule(Parser *p)
     return _res;
 }
 
-// mapping_pattern: '{' items_pattern? '}'
+// mapping_pattern:
+//     | '{' '}'
+//     | '{' double_star_pattern ','? '}'
+//     | '{' items_pattern ',' double_star_pattern ','? '}'
+//     | '{' items_pattern ','? '}'
 static pattern_ty
 mapping_pattern_rule(Parser *p)
 {
@@ -7292,24 +7296,21 @@ mapping_pattern_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // '{' items_pattern? '}'
+    { // '{' '}'
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' items_pattern? '}'"));
+        D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' '}'"));
         Token * _literal;
         Token * _literal_1;
-        void *items;
         if (
             (_literal = _PyPegen_expect_token(p, 25))  // token='{'
-            &&
-            (items = items_pattern_rule(p), 1)  // items_pattern?
             &&
             (_literal_1 = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' items_pattern? '}'"));
+            D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 D(p->level--);
@@ -7319,7 +7320,7 @@ mapping_pattern_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_MatchMapping ( CHECK ( asdl_expr_seq * , _PyPegen_get_pattern_keys ( p , items ) ) , CHECK ( asdl_pattern_seq * , _PyPegen_get_patterns ( p , items ) ) , EXTRA );
+            _res = _PyAST_MatchMapping ( NULL , NULL , NULL , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);
@@ -7329,7 +7330,142 @@ mapping_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s mapping_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' items_pattern? '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' '}'"));
+    }
+    { // '{' double_star_pattern ','? '}'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' double_star_pattern ','? '}'"));
+        Token * _literal;
+        Token * _literal_1;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
+        expr_ty rest;
+        if (
+            (_literal = _PyPegen_expect_token(p, 25))  // token='{'
+            &&
+            (rest = double_star_pattern_rule(p))  // double_star_pattern
+            &&
+            (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 26))  // token='}'
+        )
+        {
+            D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' double_star_pattern ','? '}'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_MatchMapping ( NULL , NULL , rest -> v . Name . id , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s mapping_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' double_star_pattern ','? '}'"));
+    }
+    { // '{' items_pattern ',' double_star_pattern ','? '}'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ',' double_star_pattern ','? '}'"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * _literal_2;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
+        asdl_seq* items;
+        expr_ty rest;
+        if (
+            (_literal = _PyPegen_expect_token(p, 25))  // token='{'
+            &&
+            (items = items_pattern_rule(p))  // items_pattern
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 12))  // token=','
+            &&
+            (rest = double_star_pattern_rule(p))  // double_star_pattern
+            &&
+            (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
+            &&
+            (_literal_2 = _PyPegen_expect_token(p, 26))  // token='}'
+        )
+        {
+            D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ',' double_star_pattern ','? '}'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_MatchMapping ( CHECK ( asdl_expr_seq * , _PyPegen_get_pattern_keys ( p , items ) ) , CHECK ( asdl_pattern_seq * , _PyPegen_get_patterns ( p , items ) ) , rest -> v . Name . id , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s mapping_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' items_pattern ',' double_star_pattern ','? '}'"));
+    }
+    { // '{' items_pattern ','? '}'
+        if (p->error_indicator) {
+            D(p->level--);
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> mapping_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ','? '}'"));
+        Token * _literal;
+        Token * _literal_1;
+        void *_opt_var;
+        UNUSED(_opt_var); // Silence compiler warnings
+        asdl_seq* items;
+        if (
+            (_literal = _PyPegen_expect_token(p, 25))  // token='{'
+            &&
+            (items = items_pattern_rule(p))  // items_pattern
+            &&
+            (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 26))  // token='}'
+        )
+        {
+            D(fprintf(stderr, "%*c+ mapping_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'{' items_pattern ','? '}'"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                D(p->level--);
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_MatchMapping ( CHECK ( asdl_expr_seq * , _PyPegen_get_pattern_keys ( p , items ) ) , CHECK ( asdl_pattern_seq * , _PyPegen_get_patterns ( p , items ) ) , NULL , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                D(p->level--);
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s mapping_pattern[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{' items_pattern ','? '}'"));
     }
     _res = NULL;
   done:
@@ -7337,7 +7473,7 @@ mapping_pattern_rule(Parser *p)
     return _res;
 }
 
-// items_pattern: ','.key_value_pattern+ ','?
+// items_pattern: ','.key_value_pattern+
 static asdl_seq*
 items_pattern_rule(Parser *p)
 {
@@ -7348,22 +7484,18 @@ items_pattern_rule(Parser *p)
     }
     asdl_seq* _res = NULL;
     int _mark = p->mark;
-    { // ','.key_value_pattern+ ','?
+    { // ','.key_value_pattern+
         if (p->error_indicator) {
             D(p->level--);
             return NULL;
         }
-        D(fprintf(stderr, "%*c> items_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+ ','?"));
-        void *_opt_var;
-        UNUSED(_opt_var); // Silence compiler warnings
+        D(fprintf(stderr, "%*c> items_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+"));
         asdl_seq * items;
         if (
             (items = _gather_59_rule(p))  // ','.key_value_pattern+
-            &&
-            (_opt_var = _PyPegen_expect_token(p, 12), 1)  // ','?
         )
         {
-            D(fprintf(stderr, "%*c+ items_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+ ','?"));
+            D(fprintf(stderr, "%*c+ items_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+"));
             _res = items;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -7374,7 +7506,7 @@ items_pattern_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s items_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.key_value_pattern+ ','?"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "','.key_value_pattern+"));
     }
     _res = NULL;
   done:
@@ -7382,7 +7514,7 @@ items_pattern_rule(Parser *p)
     return _res;
 }
 
-// key_value_pattern: (literal_expr | attr) ':' pattern | double_star_pattern
+// key_value_pattern: (literal_expr | attr) ':' pattern
 static KeyPatternPair*
 key_value_pattern_rule(Parser *p)
 {
@@ -7423,25 +7555,6 @@ key_value_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c%s key_value_pattern[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "(literal_expr | attr) ':' pattern"));
     }
-    { // double_star_pattern
-        if (p->error_indicator) {
-            D(p->level--);
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> key_value_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "double_star_pattern"));
-        KeyPatternPair* double_star_pattern_var;
-        if (
-            (double_star_pattern_var = double_star_pattern_rule(p))  // double_star_pattern
-        )
-        {
-            D(fprintf(stderr, "%*c+ key_value_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "double_star_pattern"));
-            _res = double_star_pattern_var;
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s key_value_pattern[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "double_star_pattern"));
-    }
     _res = NULL;
   done:
     D(p->level--);
@@ -7449,7 +7562,7 @@ key_value_pattern_rule(Parser *p)
 }
 
 // double_star_pattern: '**' pattern_capture_target
-static KeyPatternPair*
+static expr_ty
 double_star_pattern_rule(Parser *p)
 {
     D(p->level++);
@@ -7457,17 +7570,8 @@ double_star_pattern_rule(Parser *p)
         D(p->level--);
         return NULL;
     }
-    KeyPatternPair* _res = NULL;
+    expr_ty _res = NULL;
     int _mark = p->mark;
-    if (p->mark == p->fill && _PyPegen_fill_token(p) < 0) {
-        p->error_indicator = 1;
-        D(p->level--);
-        return NULL;
-    }
-    int _start_lineno = p->tokens[_mark]->lineno;
-    UNUSED(_start_lineno); // Only used by EXTRA macro
-    int _start_col_offset = p->tokens[_mark]->col_offset;
-    UNUSED(_start_col_offset); // Only used by EXTRA macro
     { // '**' pattern_capture_target
         if (p->error_indicator) {
             D(p->level--);
@@ -7483,16 +7587,7 @@ double_star_pattern_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ double_star_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'**' pattern_capture_target"));
-            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
-            if (_token == NULL) {
-                D(p->level--);
-                return NULL;
-            }
-            int _end_lineno = _token->end_lineno;
-            UNUSED(_end_lineno); // Only used by EXTRA macro
-            int _end_col_offset = _token->end_col_offset;
-            UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyPegen_key_pattern_pair ( p , NULL , _PyAST_MatchAs ( NULL , target -> v . Name . id , EXTRA ) );
+            _res = target;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

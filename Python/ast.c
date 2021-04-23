@@ -442,14 +442,15 @@ validate_pattern(pattern_ty p)
             // return validate_patterns(p->v.MatchSequence.patterns);
             return 1;
         case MatchMapping_kind:
+            // TODO: check "rest" target name is valid
             if (asdl_seq_LEN(p->v.MatchMapping.keys) != asdl_seq_LEN(p->v.MatchMapping.patterns)) {
                 PyErr_SetString(PyExc_ValueError,
                                 "MatchMapping doesn't have the same number of keys as patterns");
                 return 0;
             }
-            // null_ok=1 for key expressions to allow rest-of-mapping capture in patterns
+            // null_ok=0 for key expressions, as rest-of-mapping is captured in "rest"
             // TODO: replace with more restrictive expression validator, as per MatchValue above
-            if (!validate_exprs(p->v.MatchMapping.keys, Load, /*null_ok=*/ 1)) {
+            if (!validate_exprs(p->v.MatchMapping.keys, Load, /*null_ok=*/ 0)) {
                 return 0;
             }
             // TODO: Validate all subpatterns
@@ -470,9 +471,10 @@ validate_pattern(pattern_ty p)
             //        validate_patterns(p->v.MatchClass.kwd_patterns);
             return 1;
         case MatchStar_kind:
-            // Nothing to check (except to potentially block "_" as an identifer)
+            // TODO: check target name is valid
             break;
         case MatchAs_kind:
+            // TODO: check target name is valid
             if (p->v.MatchAs.pattern) {
                 return validate_pattern(p->v.MatchAs.pattern);
             }

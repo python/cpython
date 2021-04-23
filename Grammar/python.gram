@@ -323,20 +323,29 @@ star_pattern[pattern_ty]:
         _PyAST_MatchStar(NULL, EXTRA) }
 
 mapping_pattern[pattern_ty]:
-    | '{' items=items_pattern? '}' {
+    | '{' '}' {
+        _PyAST_MatchMapping(NULL, NULL, NULL, EXTRA) }
+    | '{' rest=double_star_pattern ','? '}' {
+        _PyAST_MatchMapping(NULL, NULL, rest->v.Name.id, EXTRA) }
+    | '{' items=items_pattern ',' rest=double_star_pattern ','? '}' {
         _PyAST_MatchMapping(
             CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, items)),
             CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, items)),
+            rest->v.Name.id,
+            EXTRA) }
+    | '{' items=items_pattern ','? '}' {
+        _PyAST_MatchMapping(
+            CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, items)),
+            CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, items)),
+            NULL,
             EXTRA) }
 items_pattern[asdl_seq*]:
-    | items=','.key_value_pattern+ ','? { items }
+    | items=','.key_value_pattern+ { items }
 key_value_pattern[KeyPatternPair*]:
     | key=(literal_expr | attr) ':' pattern=pattern {
         _PyPegen_key_pattern_pair(p, key, pattern) }
-    | double_star_pattern
-double_star_pattern[KeyPatternPair*]:
-    | '**' target=pattern_capture_target {
-        _PyPegen_key_pattern_pair(p, NULL, _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA)) }
+double_star_pattern[expr_ty]:
+    | '**' target=pattern_capture_target { target }
 
 class_pattern[pattern_ty]:
     | cls=name_or_attr '(' ')' {

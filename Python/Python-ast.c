@@ -239,6 +239,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->pattern_type);
     Py_CLEAR(state->patterns);
     Py_CLEAR(state->posonlyargs);
+    Py_CLEAR(state->rest);
     Py_CLEAR(state->returns);
     Py_CLEAR(state->right);
     Py_CLEAR(state->simple);
@@ -336,6 +337,7 @@ static int init_identifiers(struct ast_state *state)
     if ((state->pattern = PyUnicode_InternFromString("pattern")) == NULL) return 0;
     if ((state->patterns = PyUnicode_InternFromString("patterns")) == NULL) return 0;
     if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
+    if ((state->rest = PyUnicode_InternFromString("rest")) == NULL) return 0;
     if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
     if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
     if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return 0;
@@ -723,6 +725,7 @@ static const char * const MatchSequence_fields[]={
 static const char * const MatchMapping_fields[]={
     "keys",
     "patterns",
+    "rest",
 };
 static const char * const MatchClass_fields[]={
     "cls",
@@ -1776,7 +1779,7 @@ init_types(struct ast_state *state)
         "        | MatchValue(expr value)\n"
         "        | MatchSingleton(constant value)\n"
         "        | MatchSequence(pattern* patterns)\n"
-        "        | MatchMapping(expr* keys, pattern* patterns)\n"
+        "        | MatchMapping(expr* keys, pattern* patterns, identifier? rest)\n"
         "        | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)\n"
         "        | MatchStar(identifier? target)\n"
         "        | MatchAs(pattern? pattern, identifier target)\n"
@@ -1805,9 +1808,11 @@ init_types(struct ast_state *state)
     if (!state->MatchSequence_type) return 0;
     state->MatchMapping_type = make_type(state, "MatchMapping",
                                          state->pattern_type,
-                                         MatchMapping_fields, 2,
-        "MatchMapping(expr* keys, pattern* patterns)");
+                                         MatchMapping_fields, 3,
+        "MatchMapping(expr* keys, pattern* patterns, identifier? rest)");
     if (!state->MatchMapping_type) return 0;
+    if (PyObject_SetAttr(state->MatchMapping_type, state->rest, Py_None) == -1)
+        return 0;
     state->MatchClass_type = make_type(state, "MatchClass",
                                        state->pattern_type, MatchClass_fields,
                                        4,
@@ -3467,9 +3472,9 @@ _PyAST_MatchSequence(asdl_pattern_seq * patterns, int lineno, int col_offset,
 }
 
 pattern_ty
-_PyAST_MatchMapping(asdl_expr_seq * keys, asdl_pattern_seq * patterns, int
-                    lineno, int col_offset, int end_lineno, int end_col_offset,
-                    PyArena *arena)
+_PyAST_MatchMapping(asdl_expr_seq * keys, asdl_pattern_seq * patterns,
+                    identifier rest, int lineno, int col_offset, int
+                    end_lineno, int end_col_offset, PyArena *arena)
 {
     pattern_ty p;
     p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
@@ -3478,6 +3483,7 @@ _PyAST_MatchMapping(asdl_expr_seq * keys, asdl_pattern_seq * patterns, int
     p->kind = MatchMapping_kind;
     p->v.MatchMapping.keys = keys;
     p->v.MatchMapping.patterns = patterns;
+    p->v.MatchMapping.rest = rest;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -5220,6 +5226,11 @@ ast2obj_pattern(struct ast_state *state, void* _o)
                              ast2obj_pattern);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->patterns, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_identifier(state, o->v.MatchMapping.rest);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->rest, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -10426,6 +10437,7 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
     if (isinstance) {
         asdl_expr_seq* keys;
         asdl_pattern_seq* patterns;
+        identifier rest;
 
         if (_PyObject_LookupAttr(obj, state->keys, &tmp) < 0) {
             return 1;
@@ -10493,7 +10505,20 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
             }
             Py_CLEAR(tmp);
         }
-        *out = _PyAST_MatchMapping(keys, patterns, lineno, col_offset,
+        if (_PyObject_LookupAttr(obj, state->rest, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            rest = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_identifier(state, tmp, &rest, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_MatchMapping(keys, patterns, rest, lineno, col_offset,
                                    end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;

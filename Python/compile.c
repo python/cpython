@@ -5934,12 +5934,13 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         // just fail, don't crash out of the interpreter
         const char * e = "keys (%d) / patterns (%d) length mismatch in mapping pattern";
         return compiler_error(c, e, size, npatterns);
-    }    // A starred pattern will be a keyless value. It is guaranteed to be last:
-    int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
+    }
+    // We have a double-star target if "rest" is set
+    PyObject *star_target = p->v.MatchMapping.rest;
     ADDOP(c, MATCH_MAPPING);
     ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
     NEXT_BLOCK(c);
-    if (!size) {
+    if (!size && !star_target) {
         // If the pattern is just "{}", we're done!
         ADDOP(c, POP_TOP);
         ADDOP_LOAD_CONST(c, Py_True);
@@ -5950,24 +5951,24 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         compiler_use_next_block(c, end);
         return 1;
     }
-    if (size - star) {
+    if (size) {
         // If the pattern has any keys in it, perform a length check:
         ADDOP(c, GET_LEN);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, GtE);
         ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
         NEXT_BLOCK(c);
     }
-    if (INT_MAX < size - star - 1) {
+    if (INT_MAX < size - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
-    for (Py_ssize_t i = 0; i < size - star; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
-            const char *e = "can't use starred name here "
-                            "(consider moving to end)";
+            const char *e = "can't use NULL keys in MatchMapping "
+                            "(set 'rest' parameter instead)";
             c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
             return compiler_error(c, e);
         }
@@ -5977,13 +5978,13 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
         VISIT(c, expr, key);
     }
-    ADDOP_I(c, BUILD_TUPLE, size - star);
+    ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
     ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_3);
     NEXT_BLOCK(c);
     // So far so good. There's now a tuple of values on the stack to match
     // sub-patterns against:
-    for (Py_ssize_t i = 0; i < size - star; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         pattern_ty pattern = asdl_seq_GET(patterns, i);
         if (WILDCARD_CHECK(pattern)) {
             continue;
@@ -5997,11 +5998,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     // If we get this far, it's a match! We're done with that tuple of values.
     ADDOP(c, POP_TOP);
-    if (star) {
-        // If we had a starred name, bind a dict of remaining items to it:
+    if (star_target) {
+        // If we have a starred name, bind a dict of remaining items to it:
         ADDOP(c, COPY_DICT_WITHOUT_KEYS);
-        identifier id = asdl_seq_GET(patterns, size - 1)->v.MatchAs.target;
-        RETURN_IF_FALSE(pattern_helper_store_name(c, id, pc));
+        RETURN_IF_FALSE(pattern_helper_store_name(c, star_target, pc));
     }
     else {
         // Otherwise, we don't care about this tuple of keys anymore:

@@ -1689,17 +1689,17 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchSequence.patterns);
         break;
     case MatchStar_kind:
-        {
-            PyObject *target_name = p->v.MatchStar.target;
-            if (target_name) {
-                symtable_add_def(st, target_name, DEF_LOCAL);
-            }
+        if (p->v.MatchStar.target) {
+            symtable_add_def(st, p->v.MatchStar.target, DEF_LOCAL);
         }
         break;
     case MatchMapping_kind:
         if (p->v.MatchMapping.keys) {
             VISIT_SEQ_WITH_NULL(st, expr, p->v.MatchMapping.keys);
             VISIT_SEQ(st, pattern, p->v.MatchMapping.patterns);
+        }
+        if (p->v.MatchMapping.rest) {
+            symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL);
         }
         break;
     case MatchClass_kind:

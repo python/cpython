@@ -130,11 +130,11 @@ module Python
          | MatchValue(expr value)
          | MatchSingleton(constant value)
          | MatchSequence(pattern* patterns)
-         | MatchMapping(expr* keys, pattern* patterns)
+         | MatchMapping(expr* keys, pattern* patterns, identifier? rest)
          | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)
 
          | MatchStar(identifier? target)
-         -- A NULL entry in the MatchMapping key list handles capturing extra mapping keys
+         -- The optional "rest" MatchMapping parameter handles capturing extra mapping keys
 
          | MatchAs(pattern? pattern, identifier target)
          | MatchOr(pattern* patterns)
