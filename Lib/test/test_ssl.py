@@ -3183,7 +3183,9 @@ class ThreadedTests(unittest.TestCase):
             s.connect((HOST, server.port))
             try:
                 s.write(b'data')
-                s.read(4)
+                s.read(1000)
+                s.write(b'should have failed already')
+                s.read(1000)
             except ssl.SSLError as e:
                 if support.verbose:
                     sys.stdout.write("\nSSLError is %r\n" % e)
@@ -3193,7 +3195,13 @@ class ThreadedTests(unittest.TestCase):
                 if support.verbose:
                     sys.stdout.write("\nsocket.error is %r\n" % e)
             else:
-                self.fail("Use of invalid cert should have failed!")
+                if sys.platform == "win32":
+                    self.skipTest(
+                        "Ignoring failed test_wrong_cert_tls13 test case. "
+                        "The test is flaky on Windows, see bpo-43921."
+                    )
+                else:
+                    self.fail("Use of invalid cert should have failed!")
 
     def test_rude_shutdown(self):
         """A brutal shutdown of an SSL server should raise an OSError
