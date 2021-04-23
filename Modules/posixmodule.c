@@ -12485,6 +12485,9 @@ check_ShellExecute()
 os.startfile
     filepath: path_t
     operation: Py_UNICODE = NULL
+    arguments: Py_UNICODE = NULL
+    cwd: path_t(nullable=True) = None
+    show_cmd: int = 1
 
 Start a file with its associated application.
 
@@ -12494,6 +12497,16 @@ argument to the DOS "start" command: the file is opened with whatever
 application (if any) its extension is associated.
 When another "operation" is given, it specifies what should be done with
 the file.  A typical operation is "print".
+
+"arguments" is passed to the application, but should be omitted if the
+file is a document.
+
+"cwd" is the working directory for the operation. If "filepath" is
+relative, it will be resolved against this directory. This argument
+should usually be an absolute path.
+
+"show_cmd" can be used to override the recommended visibility option.
+See the Windows ShellExecute documentation for values.
 
 startfile returns as soon as the associated application is launched.
 There is no option to wait for the application to close, and no way
@@ -12506,8 +12519,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation)
-/*[clinic end generated code: output=66dc311c94d50797 input=c940888a5390f039]*/
+                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  path_t *cwd, int show_cmd)
+/*[clinic end generated code: output=3baa4f9795841880 input=8248997b80669622]*/
 {
     HINSTANCE rc;
 
@@ -12521,10 +12535,15 @@ os_startfile_impl(PyObject *module, path_t *filepath,
     if (PySys_Audit("os.startfile", "Ou", filepath->object, operation) < 0) {
         return NULL;
     }
+    if (PySys_Audit("os.startfile/2", "OuuOi", filepath->object, operation,
+                    arguments, cwd->object ? cwd->object : Py_None,
+                    show_cmd) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     rc = Py_ShellExecuteW((HWND)0, operation, filepath->wide,
-                          NULL, NULL, SW_SHOWNORMAL);
+                          arguments, cwd->wide, show_cmd);
     Py_END_ALLOW_THREADS
 
     if (rc <= (HINSTANCE)32) {
