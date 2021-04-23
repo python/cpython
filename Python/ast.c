@@ -369,7 +369,10 @@ validate_pattern(pattern_ty p)
             // Nothing to check (except to potentially block "_" as an identifer)
             break;
         case MatchAs_kind:
-            return validate_pattern(p->v.MatchAs.pattern);
+            if (p->v.MatchAs.pattern) {
+                return validate_pattern(p->v.MatchAs.pattern);
+            }
+            return 1;
         case MatchOr_kind:
             // TODO: Validate all subpatterns
             // return validate_patterns(p->v.MatchOr.patterns);

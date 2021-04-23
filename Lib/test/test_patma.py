@@ -2885,6 +2885,8 @@ class PerfPatma(TestPatma):
     @staticmethod
     def setUpClass():
         raise unittest.SkipTest("performance testing")
+''' # Disable compilation
+''' # End disable compilation
 
 
 """
