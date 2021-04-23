@@ -1463,21 +1463,20 @@ class UnicodeTest(string_tests.CommonTest,
             PI = 3.1415926
         class Int(enum.IntEnum):
             IDES = 15
-        class Str(enum.StrEnum):
-            # StrEnum uses the value and not the name for %s etc.
+        class Str(str, enum.Enum):
             ABC = 'abc'
         # Testing Unicode formatting strings...
         self.assertEqual("%s, %s" % (Str.ABC, Str.ABC),
-                         'abc, abc')
+                         'ABC, ABC')
         self.assertEqual("%s, %s, %d, %i, %u, %f, %5.2f" %
                         (Str.ABC, Str.ABC,
                          Int.IDES, Int.IDES, Int.IDES,
                          Float.PI, Float.PI),
-                         'abc, abc, 15, 15, 15, 3.141593,  3.14')
+                         'ABC, ABC, 15, 15, 15, 3.141593,  3.14')
 
         # formatting jobs delegated from the string implementation:
         self.assertEqual('...%(foo)s...' % {'foo':Str.ABC},
-                         '...abc...')
+                         '...ABC...')
         self.assertEqual('...%(foo)s...' % {'foo':Int.IDES},
                          '...IDES...')
         self.assertEqual('...%(foo)i...' % {'foo':Int.IDES},
