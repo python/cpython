@@ -1016,9 +1016,7 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
     HANDLE h;
     int type;
 
-    _Py_BEGIN_SUPPRESS_IPH
-    h = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
+    h = _Py_get_osfhandle_noraise(fd);
 
     if (h == INVALID_HANDLE_VALUE) {
         /* errno is already set by _get_osfhandle, but we also set
@@ -1157,9 +1155,7 @@ get_inheritable(int fd, int raise)
     HANDLE handle;
     DWORD flags;
 
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
+    handle = _Py_get_osfhandle_noraise(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -1230,9 +1226,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
 
 #ifdef MS_WINDOWS
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
+    handle = _Py_get_osfhandle_noraise(fd);
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -2006,13 +2000,9 @@ _Py_dup(int fd)
     assert(PyGILState_Check());
 
 #ifdef MS_WINDOWS
-    _Py_BEGIN_SUPPRESS_IPH
-    handle = (HANDLE)_get_osfhandle(fd);
-    _Py_END_SUPPRESS_IPH
-    if (handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetFromErrno(PyExc_OSError);
+    handle = _Py_get_osfhandle(fd);
+    if (handle == INVALID_HANDLE_VALUE)
         return -1;
-    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -2122,8 +2112,47 @@ error:
     PyErr_SetFromErrno(PyExc_OSError);
     return -1;
 }
-#endif
+#else   /* MS_WINDOWS */
+void*
+_Py_get_osfhandle_noraise(int fd)
+{
+    void *handle;
+    _Py_BEGIN_SUPPRESS_IPH
+    handle = (void*)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+    return handle;
+}
 
+void*
+_Py_get_osfhandle(int fd)
+{
+    void *handle = _Py_get_osfhandle_noraise(fd);
+    if (handle == INVALID_HANDLE_VALUE)
+        PyErr_SetFromErrno(PyExc_OSError);
+
+    return handle;
+}
+
+int
+_Py_open_osfhandle_noraise(void *handle, int flags)
+{
+    int fd;
+    _Py_BEGIN_SUPPRESS_IPH
+    fd = _open_osfhandle((intptr_t)handle, flags);
+    _Py_END_SUPPRESS_IPH
+    return fd;
+}
+
+int
+_Py_open_osfhandle(void *handle, int flags)
+{
+    int fd = _Py_open_osfhandle_noraise(handle, flags);
+    if (fd == -1)
+        PyErr_SetFromErrno(PyExc_OSError);
+
+    return fd;
+}
+#endif  /* MS_WINDOWS */
 
 int
 _Py_GetLocaleconvNumeric(struct lconv *lc,
