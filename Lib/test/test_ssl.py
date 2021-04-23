@@ -1433,11 +1433,16 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertRaises(TypeError, ctx.load_verify_locations, cadata=object)
 
-        with self.assertRaisesRegex(ssl.SSLError, "no start line"):
+        with self.assertRaisesRegex(
+            ssl.SSLError,
+            "no start line: cadata does not contain a certificate"
+        ):
             ctx.load_verify_locations(cadata="broken")
-        with self.assertRaisesRegex(ssl.SSLError, "not enough data"):
+        with self.assertRaisesRegex(
+            ssl.SSLError,
+            "not enough data: cadata does not contain a certificate"
+        ):
             ctx.load_verify_locations(cadata=b"broken")
-
 
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_load_dh_params(self):
