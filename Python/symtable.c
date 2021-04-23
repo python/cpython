@@ -1694,7 +1694,8 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
             if (target_name) {
                 symtable_add_def(st, target_name, DEF_LOCAL);
             }
-        } break;
+        }
+        break;
     case MatchMapping_kind:
         if (p->v.MatchMapping.keys) {
             VISIT_SEQ_WITH_NULL(st, expr, p->v.MatchMapping.keys);
