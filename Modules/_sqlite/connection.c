@@ -592,8 +592,7 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
             goto error;
         }
 
-        PyTuple_SetItem(args, i, cur_py_value);
-
+        PyTuple_SET_ITEM(args, i, cur_py_value);
     }
 
     return args;
