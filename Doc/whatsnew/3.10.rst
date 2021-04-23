@@ -1740,6 +1740,12 @@ Removed
   Use Python :mod:`symtable` module instead.
   (Contributed by Victor Stinner in :issue:`43244`.)
 
+* Remove :c:func:`PyOS_ReadlineFunctionPointer` from the limited C API headers
+  and from ``python3.dll``, the library that provides the stable ABI on
+  Windows. Since the function takes a ``FILE*`` argument, its ABI stability
+  cannot be guaranteed.
+  (Contributed by Petr Viktorin in :issue:`43868`.)
+
 * Remove ``ast.h``, ``asdl.h``, and ``Python-ast.h`` header files.
   These functions were undocumented and excluded from the limited C API.
   Most names defined by these header files were not prefixed by ``Py`` and so
