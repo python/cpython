@@ -1062,6 +1062,12 @@ The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
 
+ssl
+---
+
+Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
+(Contributed by Zackery Spytz in :issue:`31870`.)
+
 sys
 ---
 
