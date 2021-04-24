@@ -171,7 +171,7 @@ the values are returned unparsed from the distribution metadata::
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
 
 ``PackageMetadata`` also presents a ``json`` attribute that returns
-all the metadata in a JSON-compatible form per PEP 566::
+all the metadata in a JSON-compatible form per :PEP:`566`::
 
     >>> wheel_metadata.json['requires_python']
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
