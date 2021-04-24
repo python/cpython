@@ -4424,9 +4424,11 @@ class TestPostHandshakeAuth(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 s.connect((HOST, server.port))
                 s.write(b'PHA')
+                # test sometimes fails with EOF error. Test passes as long as
+                # server aborts connection with an error.
                 with self.assertRaisesRegex(
                     ssl.SSLError,
-                    'tlsv13 alert certificate required'
+                    '(certificate required|EOF occurred)'
                 ):
                     # receive CertificateRequest
                     self.assertEqual(s.recv(1024), b'OK\n')
