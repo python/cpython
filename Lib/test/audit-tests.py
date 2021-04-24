@@ -370,16 +370,14 @@ def test_sqlite3():
     cx = sqlite3.connect(":memory:")
 
     # Configured without --enable-loadable-sqlite-extensions
-    if not hasattr(sqlite3.Connection, "enable_load_extension"):
-        return
-
-    cx.enable_load_extension(False)
-    try:
-        cx.load_extension("test")
-    except sqlite3.OperationalError:
-        pass
-    else:
-        raise RuntimeError("Expected sqlite3.load_extension to fail")
+    if hasattr(sqlite3.Connection, "enable_load_extension"):
+        cx.enable_load_extension(False)
+        try:
+            cx.load_extension("test")
+        except sqlite3.OperationalError:
+            pass
+        else:
+            raise RuntimeError("Expected sqlite3.load_extension to fail")
 
 
 if __name__ == "__main__":
