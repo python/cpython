@@ -426,7 +426,8 @@ Certificate handling
       previously. Return an integer (no fractions of a second in the
       input format)
 
-.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None)
+.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, \
+                                     ca_certs=None[, timeout])
 
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
    *port-number*) pair, fetches the server's certificate, and returns it as a
@@ -436,7 +437,8 @@ Certificate handling
    same format as used for the same parameter in
    :meth:`SSLContext.wrap_socket`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
-   if the validation attempt fails.
+   if the validation attempt fails.  A timeout can be specified with the
+   ``timeout`` parameter.
 
    .. versionchanged:: 3.3
       This function is now IPv6-compatible.
@@ -444,6 +446,9 @@ Certificate handling
    .. versionchanged:: 3.5
       The default *ssl_version* is changed from :data:`PROTOCOL_SSLv3` to
       :data:`PROTOCOL_TLS` for maximum compatibility with modern servers.
+
+   .. versionchanged:: 3.10
+      The *timeout* parameter was added.
 
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 

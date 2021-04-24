@@ -2136,6 +2136,11 @@ class SimpleBackgroundTests(unittest.TestCase):
         # independent test method
         _test_get_server_certificate_fail(self, *self.server_addr)
 
+    def test_get_server_certificate_timeout(self):
+        with self.assertRaises(socket.timeout):
+            ssl.get_server_certificate(self.server_addr, ca_certs=SIGNING_CA,
+                                       timeout=0.0001)
+
     def test_ciphers(self):
         with test_wrap_socket(socket.socket(socket.AF_INET),
                              cert_reqs=ssl.CERT_NONE, ciphers="ALL") as s:
