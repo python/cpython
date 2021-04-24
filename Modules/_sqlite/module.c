@@ -29,8 +29,9 @@
 #include "microprotocols.h"
 #include "row.h"
 
-#if SQLITE_VERSION_NUMBER < 3007015
-#error "SQLite 3.7.15 or higher required"
+#define MINIMAL_SQLITE_VERSION_NUMBER 3026000
+#if SQLITE_VERSION_NUMBER < MINIMAL_SQLITE_VERSION_NUMBER
+#error "SQLite 3.26.0 or higher required"
 #endif
 
 #include "clinic/module.c.h"
@@ -364,8 +365,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module;
 
-    if (sqlite3_libversion_number() < 3007015) {
-        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.15 or higher required");
+    if (sqlite3_libversion_number() < MINIMAL_SQLITE_VERSION_NUMBER) {
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.26.0 or higher required");
         return NULL;
     }
 
