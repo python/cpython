@@ -1645,7 +1645,7 @@ class TNavigator(object):
         Argument:
         distance -- a number
 
-        Move the turtle backward by distance ,opposite to the direction the
+        Move the turtle backward by distance, opposite to the direction the
         turtle is headed. Do not change the turtle's heading.
 
         Example (for a Turtle instance named turtle):
