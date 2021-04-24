@@ -5676,6 +5676,9 @@ cleanup_fail_pop(struct compiler *c, pattern_context *pc)
         }
         compiler_use_next_block(c, pc->fail_pop[0]);
     }
+    else {
+        compiler_next_block(c);
+    }
     PyObject_Free(pc->fail_pop);
     pc->fail_pop = NULL;
     return 1;
