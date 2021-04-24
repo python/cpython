@@ -538,6 +538,10 @@ class Event:
     def __init__(self):
         self._cond = Condition(Lock())
         self._flag = False
+        
+    def __bool__(self):
+        raise ValueError('The truth value of an Event is ambiguous. '
+                         'Use Event.is_set()')
 
     def _at_fork_reinit(self):
         # Private method called by Thread._reset_internal_locks()
