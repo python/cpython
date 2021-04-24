@@ -5664,21 +5664,21 @@ jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
 static int
 cleanup_fail_pop(struct compiler *c, pattern_context *pc)
 {
-    if (pc->fail_pop_size) {
-        while (--pc->fail_pop_size) {
-            compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
-            if (!compiler_addop(c, POP_TOP)) {
-                PyObject_Free(pc->fail_pop);
-                pc->fail_pop_size = 0;
-                pc->fail_pop = NULL;
-                return 0;
-            }
+    if (!pc->fail_pop_size) {
+        assert(pc->fail_pop == NULL);
+        NEXT_BLOCK(c);
+        return 1;
+    }
+    while (--pc->fail_pop_size) {
+        compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
+        if (!compiler_addop(c, POP_TOP)) {
+            pc->fail_pop_size = 0;
+            PyObject_Free(pc->fail_pop);
+            pc->fail_pop = NULL;
+            return 0;
         }
-        compiler_use_next_block(c, pc->fail_pop[0]);
     }
-    else {
-        compiler_next_block(c);
-    }
+    compiler_use_next_block(c, pc->fail_pop[0]);
     PyObject_Free(pc->fail_pop);
     pc->fail_pop = NULL;
     return 1;
