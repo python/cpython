@@ -8,11 +8,57 @@
 #include <bzlib.h>
 #include <stdio.h>
 
-// _BlocksOutputBuffer
-#define BOB_BUFFER_TYPE char       // type of next_out pointer
-#define BOB_SIZE_TYPE   uint32_t   // type of avail_out
-#include "blocks_output_buffer.h"
-#define OutputBuffer(F) _BlocksOutputBuffer_##F
+// Blocks output buffer wrappers
+#include "pycore_blocks_output_buffer.h"
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
+                   char **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    // The maximum block size accepted by the lib is UINT32_MAX
+    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= UINT32_MAX);
+
+    allocated = _BlocksOutputBuffer_InitAndGrow(
+                    buffer, max_length, (void**) next_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+Buffer_Grow(_BlocksOutputBuffer *buffer,
+            char **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    allocated = _BlocksOutputBuffer_Grow(
+                    buffer, (void**) next_out, (Py_ssize_t) *avail_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+static inline Py_ssize_t
+Buffer_GetDataSize(_BlocksOutputBuffer *buffer, uint32_t avail_out)
+{
+    return _BlocksOutputBuffer_GetDataSize(buffer, (Py_ssize_t) avail_out);
+}
+
+static inline PyObject *
+Buffer_Finish(_BlocksOutputBuffer *buffer, uint32_t avail_out)
+{
+    return _BlocksOutputBuffer_Finish(buffer, (Py_ssize_t) avail_out);
+}
+
+static inline void
+Buffer_OnError(_BlocksOutputBuffer *buffer)
+{
+    _BlocksOutputBuffer_OnError(buffer);
+}
 
 
 #ifndef BZ_CONFIG_ERROR
@@ -128,9 +174,9 @@ static PyObject *
 compress(BZ2Compressor *c, char *data, size_t len, int action)
 {
     PyObject *result;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
-    if (OutputBuffer(InitAndGrow)(&buffer, -1, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
+    if (Buffer_InitAndGrow(&buffer, -1, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
         goto error;
     }
     c->bzs.next_in = data;
@@ -151,7 +197,7 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
             break;
 
         if (c->bzs.avail_out == 0) {
-            if (OutputBuffer(Grow)(&buffer, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
+            if (Buffer_Grow(&buffer, &c->bzs.next_out, &c->bzs.avail_out) < 0) {
                 goto error;
             }
         }
@@ -168,13 +214,13 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
             break;
     }
 
-    result = OutputBuffer(Finish)(&buffer, c->bzs.avail_out);
+    result = Buffer_Finish(&buffer, c->bzs.avail_out);
     if (result != NULL) {
         return result;
     }
 
 error:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     return NULL;
 }
 
@@ -392,10 +438,10 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
        compare against max_length and PyBytes_GET_SIZE we declare it as
        signed */
     PyObject *result;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
     bz_stream *bzs = &d->bzs;
 
-    if (OutputBuffer(InitAndGrow)(&buffer, max_length, &bzs->next_out, &bzs->avail_out) < 0) {
+    if (Buffer_InitAndGrow(&buffer, max_length, &bzs->next_out, &bzs->avail_out) < 0) {
         goto error;
     }
 
@@ -422,21 +468,21 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         } else if (d->bzs_avail_in_real == 0) {
             break;
         } else if (bzs->avail_out == 0) {
-            if (OutputBuffer(GetDataSize)(&buffer, bzs->avail_out) == max_length)
+            if (Buffer_GetDataSize(&buffer, bzs->avail_out) == max_length)
                 break;
-            if (OutputBuffer(Grow)(&buffer, &bzs->next_out, &bzs->avail_out) < 0) {
+            if (Buffer_Grow(&buffer, &bzs->next_out, &bzs->avail_out) < 0) {
                 goto error;
             }
         }
     }
 
-    result = OutputBuffer(Finish)(&buffer, bzs->avail_out);
+    result = Buffer_Finish(&buffer, bzs->avail_out);
     if (result != NULL) {
         return result;
     }
 
 error:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     return NULL;
 }
 
@@ -631,7 +677,7 @@ static int
 _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    
+
     if (!_PyArg_NoPositional("BZ2Decompressor", args)) {
         goto exit;
     }

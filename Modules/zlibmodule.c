@@ -9,11 +9,80 @@
 #include "structmember.h"         // PyMemberDef
 #include "zlib.h"
 
-// _BlocksOutputBuffer
-#define BOB_BUFFER_TYPE Bytef      // type of next_out pointer
-#define BOB_SIZE_TYPE   uint32_t   // type of avail_out
-#include "blocks_output_buffer.h"
-#define OutputBuffer(F) _BlocksOutputBuffer_##F
+// Blocks output buffer wrappers
+#include "pycore_blocks_output_buffer.h"
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
+                   Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    // The maximum block size accepted by the lib is UINT32_MAX
+    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= UINT32_MAX);
+
+    allocated = _BlocksOutputBuffer_InitAndGrow(
+                    buffer, max_length, (void**) next_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+Buffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_size,
+                    Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    // The maximum block size accepted by the lib is UINT32_MAX
+    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= UINT32_MAX);
+
+    if (init_size < 0 || init_size > UINT32_MAX) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Initial buffer size should (0 <= size <= UINT32_MAX)");
+        return -1;
+    }
+
+    allocated = _BlocksOutputBuffer_InitWithSize(
+                    buffer, init_size, (void**) next_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+/* On success, return value >= 0
+   On failure, return -1 */
+static inline Py_ssize_t
+Buffer_Grow(_BlocksOutputBuffer *buffer,
+            Bytef **next_out, uint32_t *avail_out)
+{
+    Py_ssize_t allocated;
+
+    allocated = _BlocksOutputBuffer_Grow(
+                    buffer, (void**) next_out, (Py_ssize_t) *avail_out);
+    *avail_out = (uint32_t) allocated;
+    return allocated;
+}
+
+static inline Py_ssize_t
+Buffer_GetDataSize(_BlocksOutputBuffer *buffer, uint32_t avail_out)
+{
+    return _BlocksOutputBuffer_GetDataSize(buffer, (Py_ssize_t) avail_out);
+}
+
+static inline PyObject *
+Buffer_Finish(_BlocksOutputBuffer *buffer, uint32_t avail_out)
+{
+    return _BlocksOutputBuffer_Finish(buffer, (Py_ssize_t) avail_out);
+}
+
+static inline void
+Buffer_OnError(_BlocksOutputBuffer *buffer)
+{
+    _BlocksOutputBuffer_OnError(buffer);
+}
 
 
 #define ENTER_ZLIB(obj) \
@@ -172,16 +241,14 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
     PyObject *RetVal;
     int flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
     zlibstate *state = get_zlib_state(module);
 
     Byte *ibuf = data->buf;
     Py_ssize_t ibuflen = data->len;
 
-    // OutputBuffer(OnError)(&buffer) is after `error` label,
-    // so initialize the buffer before any `goto error` statement.
-    if (OutputBuffer(InitAndGrow)(&buffer, -1, &zst.next_out, &zst.avail_out) < 0) {
+    if (Buffer_InitAndGrow(&buffer, -1, &zst.next_out, &zst.avail_out) < 0) {
         goto error;
     }
 
@@ -213,7 +280,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 
         do {
             if (zst.avail_out == 0) {
-                if (OutputBuffer(Grow)(&buffer, &zst.next_out, &zst.avail_out) < 0) {
+                if (Buffer_Grow(&buffer, &zst.next_out, &zst.avail_out) < 0) {
                     deflateEnd(&zst);
                     goto error;
                 }
@@ -237,7 +304,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
 
     err = deflateEnd(&zst);
     if (err == Z_OK) {
-        RetVal = OutputBuffer(Finish)(&buffer, zst.avail_out);
+        RetVal = Buffer_Finish(&buffer, zst.avail_out);
         if (RetVal == NULL) {
             goto error;
         }
@@ -246,7 +313,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
     else
         zlib_error(state, zst, err, "while finishing compression");
  error:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     return NULL;
 }
 
@@ -274,7 +341,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
     Py_ssize_t ibuflen;
     int err, flush;
     z_stream zst;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
     zlibstate *state = get_zlib_state(module);
 
@@ -285,9 +352,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         bufsize = 1;
     }
 
-    // OutputBuffer(OnError)(&buffer) is after `error` label,
-    // so initialize the buffer before any `goto error` statement.
-    if (OutputBuffer(InitWithSize)(&buffer, bufsize, &zst.next_out, &zst.avail_out) < 0) {
+    if (Buffer_InitWithSize(&buffer, bufsize, &zst.next_out, &zst.avail_out) < 0) {
         goto error;
     }
 
@@ -320,7 +385,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
 
         do {
             if (zst.avail_out == 0) {
-                if (OutputBuffer(Grow)(&buffer, &zst.next_out, &zst.avail_out) < 0) {
+                if (Buffer_Grow(&buffer, &zst.next_out, &zst.avail_out) < 0) {
                     inflateEnd(&zst);
                     goto error;
                 }
@@ -363,13 +428,13 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
         goto error;
     }
 
-    RetVal = OutputBuffer(Finish)(&buffer, zst.avail_out);
+    RetVal = Buffer_Finish(&buffer, zst.avail_out);
     if (RetVal != NULL) {
         return RetVal;
     }
 
  error:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     return NULL;
 }
 
@@ -604,7 +669,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 {
     PyObject *RetVal;
     int err;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
 
@@ -613,7 +678,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
     ENTER_ZLIB(self);
 
-    if (OutputBuffer(InitAndGrow)(&buffer, -1, &self->zst.next_out, &self->zst.avail_out) < 0) {
+    if (Buffer_InitAndGrow(&buffer, -1, &self->zst.next_out, &self->zst.avail_out) < 0) {
         goto error;
     }
 
@@ -622,7 +687,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
                     goto error;
             }
 
@@ -640,13 +705,13 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
     } while (ibuflen != 0);
 
-    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    RetVal = Buffer_Finish(&buffer, self->zst.avail_out);
     if (RetVal != NULL) {
         goto success;
     }
 
  error:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     RetVal = NULL;
  success:
     LEAVE_ZLIB(self);
@@ -725,7 +790,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     int err = Z_OK;
     Py_ssize_t ibuflen;
     PyObject *RetVal;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL)
@@ -743,7 +808,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
 
     ENTER_ZLIB(self);
 
-    if (OutputBuffer(InitAndGrow)(&buffer, max_length, &self->zst.next_out, &self->zst.avail_out) < 0) {
+    if (Buffer_InitAndGrow(&buffer, max_length, &self->zst.next_out, &self->zst.avail_out) < 0) {
         goto abort;
     }
 
@@ -752,10 +817,10 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (OutputBuffer(GetDataSize)(&buffer, self->zst.avail_out) == max_length) {
+                if (Buffer_GetDataSize(&buffer, self->zst.avail_out) == max_length) {
                     goto save;
                 }
-                if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
                     goto abort;
                 }
             }
@@ -801,13 +866,13 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         goto abort;
     }
 
-    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    RetVal = Buffer_Finish(&buffer, self->zst.avail_out);
     if (RetVal != NULL) {
         goto success;
     }
 
  abort:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     RetVal = NULL;
  success:
     LEAVE_ZLIB(self);
@@ -834,7 +899,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 {
     int err;
     PyObject *RetVal;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
     zlibstate *state = PyType_GetModuleState(cls);
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
@@ -847,13 +912,13 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
 
     self->zst.avail_in = 0;
 
-    if (OutputBuffer(InitAndGrow)(&buffer, -1, &self->zst.next_out, &self->zst.avail_out) < 0) {
+    if (Buffer_InitAndGrow(&buffer, -1, &self->zst.next_out, &self->zst.avail_out) < 0) {
         goto error;
     }
 
     do {
         if (self->zst.avail_out == 0) {
-            if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
+            if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
                 goto error;
             }
         }
@@ -890,13 +955,13 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
         goto error;
     }
 
-    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    RetVal = Buffer_Finish(&buffer, self->zst.avail_out);
     if (RetVal != NULL) {
         goto success;
     }
 
 error:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     RetVal = NULL;
 success:
     LEAVE_ZLIB(self);
@@ -1102,7 +1167,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     Py_buffer data;
     PyObject *RetVal;
     Py_ssize_t ibuflen;
-    _BlocksOutputBuffer buffer;
+    _BlocksOutputBuffer buffer = {.list = NULL};
 
     PyObject *module = PyType_GetModule(cls);
     if (module == NULL) {
@@ -1125,7 +1190,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
     self->zst.next_in = data.buf;
     ibuflen = data.len;
 
-    if (OutputBuffer(InitWithSize)(&buffer, length, &self->zst.next_out, &self->zst.avail_out) < 0) {
+    if (Buffer_InitWithSize(&buffer, length, &self->zst.next_out, &self->zst.avail_out) < 0) {
         goto abort;
     }
 
@@ -1135,7 +1200,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (OutputBuffer(Grow)(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
                     goto abort;
             }
 
@@ -1179,13 +1244,13 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
         }
     }
 
-    RetVal = OutputBuffer(Finish)(&buffer, self->zst.avail_out);
+    RetVal = Buffer_Finish(&buffer, self->zst.avail_out);
     if (RetVal != NULL) {
         goto success;
     }
 
  abort:
-    OutputBuffer(OnError)(&buffer);
+    Buffer_OnError(&buffer);
     RetVal = NULL;
  success:
     PyBuffer_Release(&data);

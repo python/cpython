@@ -6,15 +6,14 @@
         stream->next_out:  point to the next output position.
         stream->avail_out: the number of available bytes left in the buffer.
 
-   It maintains a list of bytes object, so there is no overhead
-   of resizing the buffer.
+   It maintains a list of bytes object, so there is no overhead of resizing
+   the buffer.
 
    Usage:
 
-   1, Define BOB_BUFFER_TYPE and BOB_SIZE_TYPE, and include this file:
-        #define BOB_BUFFER_TYPE uint8_t  // type of next_out pointer
-        #define BOB_SIZE_TYPE   size_t   // type of avail_out
-        #include "blocks_output_buffer.h"
+   1, Initialize the struct instance like this:
+        _BlocksOutputBuffer buffer = {.list = NULL};
+      Set .list to NULL for _BlocksOutputBuffer_OnError()
 
    2, Initialize the buffer use one of these functions:
         _BlocksOutputBuffer_Init()
@@ -34,6 +33,14 @@
         _BlocksOutputBuffer_OnError()
 */
 
+#ifndef Py_INTERNAL_BLOCKS_OUTPUT_BUFFER_H
+#define Py_INTERNAL_BLOCKS_OUTPUT_BUFFER_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "Python.h"
+
 typedef struct {
     // List of bytes objects
     PyObject *list;
@@ -43,32 +50,18 @@ typedef struct {
     Py_ssize_t max_length;
 } _BlocksOutputBuffer;
 
-#if defined(__GNUC__)
-#  define UNUSED_ATTR __attribute__((unused))
-#else
-#  define UNUSED_ATTR
-#endif
+static const char unable_allocate_msg[] = "Unable to allocate output buffer.";
 
-#if BOB_SIZE_TYPE == uint32_t
-    #define BOB_SIZE_MAX UINT32_MAX
-#elif BOB_SIZE_TYPE == size_t
-    #define BOB_SIZE_MAX UINTPTR_MAX
-#else
-    #error "Please define BOB_SIZE_MAX to BOB_SIZE_TYPE's max value"
-#endif
+/* In 32-bit build, the max block size should <= INT32_MAX. */
+#define OUTPUT_BUFFER_MAX_BLOCK_SIZE (256*1024*1024)
 
-const char unable_allocate_msg[] = "Unable to allocate output buffer.";
-
-/* Block size sequence.
-   In 32-bit build Py_ssize_t is int, so the type is int. Below functions
-   assume the type is int.
-*/
+/* Block size sequence */
 #define KB (1024)
 #define MB (1024*1024)
-const int BUFFER_BLOCK_SIZE[] =
+const Py_ssize_t BUFFER_BLOCK_SIZE[] =
     { 32*KB, 64*KB, 256*KB, 1*MB, 4*MB, 8*MB, 16*MB, 16*MB,
       32*MB, 32*MB, 32*MB, 32*MB, 64*MB, 64*MB, 128*MB, 128*MB,
-      256*MB };
+      OUTPUT_BUFFER_MAX_BLOCK_SIZE };
 #undef KB
 #undef MB
 
@@ -103,13 +96,17 @@ const int BUFFER_BLOCK_SIZE[] =
 
    max_length: Max length of the buffer, -1 for unlimited length.
 
-   Return 0 on success
-   Return -1 on failure
+   On success, return allocated size (>=0)
+   On failure, return -1
 */
-static UNUSED_ATTR int
-_BlocksOutputBuffer_Init(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
-                         BOB_BUFFER_TYPE **next_out, BOB_SIZE_TYPE *avail_out)
+static inline Py_ssize_t
+_BlocksOutputBuffer_Init(_BlocksOutputBuffer *buffer,
+                         const Py_ssize_t max_length,
+                         void **next_out)
 {
+    // ensure .list was set to NULL
+    assert(buffer->list == NULL);
+
     buffer->list = PyList_New(0);
     if (buffer->list == NULL) {
         return -1;
@@ -117,8 +114,7 @@ _BlocksOutputBuffer_Init(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
     buffer->allocated = 0;
     buffer->max_length = max_length;
 
-    *next_out = (BOB_BUFFER_TYPE*) 1; // some libs don't accept NULL
-    *avail_out = 0;
+    *next_out = (void*) 1; // some libs don't accept NULL
     return 0;
 }
 
@@ -126,20 +122,23 @@ _BlocksOutputBuffer_Init(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
 
    max_length: Max length of the buffer, -1 for unlimited length.
 
-   Return 0 on success
-   Return -1 on failure
+   On success, return allocated size (>=0)
+   On failure, return -1
 */
-static UNUSED_ATTR int
-_BlocksOutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
-                                BOB_BUFFER_TYPE **next_out, BOB_SIZE_TYPE *avail_out)
+static inline Py_ssize_t
+_BlocksOutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer,
+                                const Py_ssize_t max_length,
+                                void **next_out)
 {
     PyObject *b;
-    int block_size;
+    Py_ssize_t block_size;
 
-    // set & check max_length
-    buffer->max_length = max_length;
+    // ensure .list was set to NULL
+    assert(buffer->list == NULL);
+
+    // get block size
     if (0 <= max_length && max_length < BUFFER_BLOCK_SIZE[0]) {
-        block_size = (int) max_length;
+        block_size = max_length;
     } else {
         block_size = BUFFER_BLOCK_SIZE[0];
     }
@@ -147,7 +146,6 @@ _BlocksOutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_leng
     // the first block
     b = PyBytes_FromStringAndSize(NULL, block_size);
     if (b == NULL) {
-        buffer->list = NULL; // for _BlocksOutputBuffer_OnError()
         return -1;
     }
 
@@ -161,36 +159,33 @@ _BlocksOutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_leng
 
     // set variables
     buffer->allocated = block_size;
+    buffer->max_length = max_length;
 
-    *next_out = (BOB_BUFFER_TYPE*) PyBytes_AS_STRING(b);
-    *avail_out = block_size;
-    return 0;
+    *next_out = PyBytes_AS_STRING(b);
+    return block_size;
 }
 
 /* Initialize the buffer, with an initial size.
 
-   Return 0 on success
-   Return -1 on failure
+   Check block size limit in the outer wrapper function. For example, some libs
+   accept UINT32_MAX as the maximum block size, then init_size should <= it.
+
+   On success, return allocated size (>=0)
+   On failure, return -1
 */
-static UNUSED_ATTR int
-_BlocksOutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_size,
-                                 BOB_BUFFER_TYPE **next_out, BOB_SIZE_TYPE *avail_out)
+static inline Py_ssize_t
+_BlocksOutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer,
+                                 const Py_ssize_t init_size,
+                                 void **next_out)
 {
     PyObject *b;
 
-    // check block size limit
-    if (init_size > BOB_SIZE_MAX) {
-        buffer->list = NULL; // for _BlocksOutputBuffer_OnError()
-
-        PyErr_SetString(PyExc_ValueError, "Initial buffer size is too large.");
-        return -1;
-    }
+    // ensure .list was set to NULL
+    assert(buffer->list == NULL);
 
     // the first block
     b = PyBytes_FromStringAndSize(NULL, init_size);
     if (b == NULL) {
-        buffer->list = NULL; // for OutputBuffer_OnError()
-
         PyErr_SetString(PyExc_MemoryError, unable_allocate_msg);
         return -1;
     }
@@ -207,28 +202,28 @@ _BlocksOutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_si
     buffer->allocated = init_size;
     buffer->max_length = -1;
 
-    *next_out = (BOB_BUFFER_TYPE*) PyBytes_AS_STRING(b);
-    *avail_out = (BOB_SIZE_TYPE) init_size;
-    return 0;
+    *next_out = PyBytes_AS_STRING(b);
+    return init_size;
 }
 
 /* Grow the buffer. The avail_out must be 0, please check it before calling.
 
-   Return 0 on success
-   Return -1 on failure
+   On success, return allocated size (>=0)
+   On failure, return -1
 */
-static int
+static inline Py_ssize_t
 _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
-                         BOB_BUFFER_TYPE **next_out, BOB_SIZE_TYPE *avail_out)
+                         void **next_out,
+                         const Py_ssize_t avail_out)
 {
     PyObject *b;
     const Py_ssize_t list_len = Py_SIZE(buffer->list);
-    int block_size;
+    Py_ssize_t block_size;
 
     // ensure no gaps in the data
-    if (*avail_out != 0) {
+    if (avail_out != 0) {
         PyErr_SetString(PyExc_SystemError,
-                        "*avail_out is non-zero in _BlocksOutputBuffer_Grow().");
+                        "avail_out is non-zero in _BlocksOutputBuffer_Grow().");
         return -1;
     }
 
@@ -247,7 +242,7 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
 
         // block_size of the last block
         if (block_size > rest) {
-            block_size = (int) rest;
+            block_size = rest;
         }
     }
 
@@ -272,14 +267,14 @@ _BlocksOutputBuffer_Grow(_BlocksOutputBuffer *buffer,
     // set variables
     buffer->allocated += block_size;
 
-    *next_out = (BOB_BUFFER_TYPE*) PyBytes_AS_STRING(b);
-    *avail_out = block_size;
-    return 0;
+    *next_out = PyBytes_AS_STRING(b);
+    return block_size;
 }
 
 /* Return the current outputted data size. */
 static inline Py_ssize_t
-_BlocksOutputBuffer_GetDataSize(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
+_BlocksOutputBuffer_GetDataSize(_BlocksOutputBuffer *buffer,
+                                const Py_ssize_t avail_out)
 {
     return buffer->allocated - avail_out;
 }
@@ -289,15 +284,16 @@ _BlocksOutputBuffer_GetDataSize(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail
    Return a bytes object on success
    Return NULL on failure
 */
-static PyObject *
-_BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer, BOB_SIZE_TYPE avail_out)
+static inline PyObject *
+_BlocksOutputBuffer_Finish(_BlocksOutputBuffer *buffer,
+                           const Py_ssize_t avail_out)
 {
     PyObject *result, *block;
     const Py_ssize_t list_len = Py_SIZE(buffer->list);
 
     // fast path for single block
-    if ( (list_len == 1 && avail_out == 0) ||
-         (list_len == 2 && Py_SIZE(PyList_GET_ITEM(buffer->list, 1)) == (Py_ssize_t) avail_out))
+    if ((list_len == 1 && avail_out == 0) ||
+        (list_len == 2 && Py_SIZE(PyList_GET_ITEM(buffer->list, 1)) == avail_out))
     {
         block = PyList_GET_ITEM(buffer->list, 0);
         Py_INCREF(block);
@@ -342,6 +338,7 @@ _BlocksOutputBuffer_OnError(_BlocksOutputBuffer *buffer)
     Py_CLEAR(buffer->list);
 }
 
-#undef BOB_BUFFER_TYPE
-#undef BOB_SIZE_TYPE
-#undef BOB_SIZE_MAX
+#ifdef __cplusplus
+}
+#endif
+#endif /* Py_INTERNAL_BLOCKS_OUTPUT_BUFFER_H */
