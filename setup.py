@@ -33,8 +33,16 @@ except ImportError:
 
 with warnings.catch_warnings():
     # bpo-41282 (PEP 632) deprecated distutils but setup.py still uses it
-    warnings.filterwarnings("ignore", "The distutils package is deprecated",
-                            DeprecationWarning)
+    warnings.filterwarnings(
+        "ignore",
+        "The distutils package is deprecated",
+        DeprecationWarning
+    )
+    warnings.filterwarnings(
+        "ignore",
+        "The distutils.sysconfig module is deprecated, use sysconfig instead",
+        DeprecationWarning
+    )
 
     from distutils import log
     from distutils.command.build_ext import build_ext
