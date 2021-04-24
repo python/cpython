@@ -1044,6 +1044,10 @@ All of the following opcodes use their arguments.
 .. opcode:: LOAD_FAST (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack.
+   Closures are also handled by this operation.
+
+   .. versionchanged:: 3.10
+      Closures are handled here now instead of ``LOAD_CLOSURE`` (removed).
 
 
 .. opcode:: STORE_FAST (var_num)
@@ -1054,13 +1058,6 @@ All of the following opcodes use their arguments.
 .. opcode:: DELETE_FAST (var_num)
 
    Deletes local ``co_varnames[var_num]``.
-
-
-.. opcode:: LOAD_CLOSURE (i)
-
-   Pushes a reference to the cell contained in slot *i* of the cell and free
-   variable storage.  The name of the variable is
-   ``co_fastlocalnames[i + len(co_varnames)]``.
 
 
 .. opcode:: LOAD_DEREF (i)
