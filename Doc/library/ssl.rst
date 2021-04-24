@@ -25,8 +25,8 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior. For example, TLSv1.1 and TLSv1.2 come with
-   openssl version 1.0.1.
+   cause variations in behavior. For example, TLSv1.3 with OpenSSL version
+   1.1.1.
 
 .. warning::
    Don't use this module without reading the :ref:`ssl-security`.  Doing so
@@ -62,6 +62,8 @@ by SSL sockets created through the :meth:`SSLContext.wrap_socket` method.
 
    :pep:`644` has been implemented. The ssl module requires OpenSSL 1.1.1
    or newer.
+
+   Use of deprecated constants and functions result in deprecation warnings.
 
 
 Functions, Constants, and Exceptions
@@ -136,8 +138,9 @@ purposes.
    :const:`None`, this function can choose to trust the system's default
    CA certificates instead.
 
-   The settings are: :data:`PROTOCOL_TLS`, :data:`OP_NO_SSLv2`, and
-   :data:`OP_NO_SSLv3` with high encryption cipher suites without RC4 and
+   The settings are: :data:`PROTOCOL_TLS_CLIENT` or
+   :data:`PROTOCOL_TLS_SERVER`, :data:`OP_NO_SSLv2`, and :data:`OP_NO_SSLv3`
+   with high encryption cipher suites without RC4 and
    without unauthenticated cipher suites. Passing :data:`~Purpose.SERVER_AUTH`
    as *purpose* sets :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED`
    and either loads CA certificates (when at least one of *cafile*, *capath* or
@@ -184,6 +187,12 @@ purposes.
    .. versionchanged:: 3.8
 
       Support for key logging to :envvar:`SSLKEYLOGFILE` was added.
+
+   .. versionchanged:: 3.10
+
+      The context now uses :data:`PROTOCOL_TLS_CLIENT` or
+      :data:`PROTOCOL_TLS_SERVER` protocol instead of generic
+      :data:`PROTOCOL_TLS`.
 
 
 Exceptions
@@ -417,7 +426,7 @@ Certificate handling
       previously. Return an integer (no fractions of a second in the
       input format)
 
-.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS, \
+.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, \
                                      ca_certs=None[, timeout])
 
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
@@ -646,6 +655,17 @@ Constants
 
    .. versionadded:: 3.4.4
 
+.. data:: VERIFY_X509_PARTIAL_CHAIN
+
+   Possible value for :attr:`SSLContext.verify_flags`. It instructs OpenSSL to
+   accept intermediate CAs in the trust store to be treated as trust-anchors,
+   in the same way as the self-signed root CA certificates. This makes it
+   possible to trust certificates issued by an intermediate CA without having
+   to trust its ancestor root CA.
+
+   .. versionadded:: 3.10
+
+
 .. class:: VerifyFlags
 
    :class:`enum.IntFlag` collection of VERIFY_* constants.
@@ -658,6 +678,8 @@ Constants
    Despite the name, this option can select both "SSL" and "TLS" protocols.
 
    .. versionadded:: 3.6
+
+   .. deprecated:: 3.10
 
 .. data:: PROTOCOL_TLS_CLIENT
 
@@ -712,7 +734,10 @@ Constants
    .. deprecated:: 3.6
 
       OpenSSL has deprecated all version specific protocols. Use the default
-      protocol :data:`PROTOCOL_TLS` with flags like :data:`OP_NO_SSLv3` instead.
+      protocol :data:`PROTOCOL_TLS_SERVER` or :data:`PROTOCOL_TLS_CLIENT`
+      with :attr:`SSLContext.minimum_version` and
+      :attr:`SSLContext.maximum_version` instead.
+
 
 .. data:: PROTOCOL_TLSv1
 
@@ -720,8 +745,7 @@ Constants
 
    .. deprecated:: 3.6
 
-      OpenSSL has deprecated all version specific protocols. Use the default
-      protocol :data:`PROTOCOL_TLS` with flags like :data:`OP_NO_SSLv3` instead.
+      OpenSSL has deprecated all version specific protocols.
 
 .. data:: PROTOCOL_TLSv1_1
 
@@ -732,8 +756,7 @@ Constants
 
    .. deprecated:: 3.6
 
-      OpenSSL has deprecated all version specific protocols. Use the default
-      protocol :data:`PROTOCOL_TLS` with flags like :data:`OP_NO_SSLv3` instead.
+      OpenSSL has deprecated all version specific protocols.
 
 .. data:: PROTOCOL_TLSv1_2
 
@@ -744,8 +767,7 @@ Constants
 
    .. deprecated:: 3.6
 
-      OpenSSL has deprecated all version specific protocols. Use the default
-      protocol :data:`PROTOCOL_TLS` with flags like :data:`OP_NO_SSLv3` instead.
+      OpenSSL has deprecated all version specific protocols.
 
 .. data:: OP_ALL
 
@@ -766,7 +788,6 @@ Constants
    .. deprecated:: 3.6
 
       SSLv2 is deprecated
-
 
 .. data:: OP_NO_SSLv3
 
@@ -1073,6 +1094,11 @@ Constants
 
    SSL 3.0 to TLS 1.3.
 
+   .. deprecated:: 3.10
+
+      All :class:`TLSVersion` members except :attr:`TLSVersion.TLSv1_2` and
+      :attr:`TLSVersion.TLSv1_3` are deprecated.
+
 
 SSL Sockets
 -----------
@@ -1126,6 +1152,11 @@ SSL Sockets
       :meth:`~SSLContext.wrap_socket`. In earlier versions, it was possible
       to create instances directly. This was never documented or officially
       supported.
+
+   .. versionchanged:: 3.10
+      Python now uses ``SSL_read_ex`` and ``SSL_write_ex`` internally. The
+      functions support reading and writing of data larger than 2 GB. Writing
+      zero-length data no longer fails with a protocol violation error.
 
 SSL sockets also have the following additional methods and attributes:
 
@@ -1423,7 +1454,7 @@ such as SSL configuration options, certificate(s) and private key(s).
 It also manages a cache of SSL sessions for server-side sockets, in order
 to speed up repeated connections from the same clients.
 
-.. class:: SSLContext(protocol=PROTOCOL_TLS)
+.. class:: SSLContext(protocol=None)
 
    Create a new SSL context.  You may pass *protocol* which must be one
    of the ``PROTOCOL_*`` constants defined in this module.  The parameter
@@ -1471,6 +1502,12 @@ to speed up repeated connections from the same clients.
       set by default. The initial cipher suite list contains only ``HIGH``
       ciphers, no ``NULL`` ciphers and no ``MD5`` ciphers (except for
       :data:`PROTOCOL_SSLv2`).
+
+   .. deprecated:: 3.10
+
+      :class:`SSLContext` without protocol argument is deprecated. The
+      context class will either require :data:`PROTOCOL_TLS_CLIENT` or
+      :data:`PROTOCOL_TLS_SERVER` protocol in the future.
 
 
 :class:`SSLContext` objects have the following methods and attributes:
@@ -1934,7 +1971,7 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.num_tickets
 
    Control the number of TLS 1.3 session tickets of a
-   :attr:`TLS_PROTOCOL_SERVER` context. The setting has no impact on TLS
+   :attr:`PROTOCOL_TLS_SERVER` context. The setting has no impact on TLS
    1.0 to 1.2 connections.
 
    .. versionadded:: 3.8
@@ -1950,6 +1987,12 @@ to speed up repeated connections from the same clients.
 
          >>> ssl.create_default_context().options  # doctest: +SKIP
          <Options.OP_ALL|OP_NO_SSLv3|OP_NO_SSLv2|OP_NO_COMPRESSION: 2197947391>
+
+   .. deprecated:: 3.7
+
+      All ``OP_NO_SSL*`` and ``OP_NO_TLS*`` options have been deprecated since
+      Python 3.7. Use :attr:`SSLContext.minimum_version` and
+      :attr:`SSLContext.maximum_version` instead.
 
 .. attribute:: SSLContext.post_handshake_auth
 
@@ -2623,8 +2666,8 @@ disabled by default.
 ::
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-   >>> client_context.options |= ssl.OP_NO_TLSv1
-   >>> client_context.options |= ssl.OP_NO_TLSv1_1
+   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+   >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
 The SSL context created above will only allow TLSv1.2 and later (if

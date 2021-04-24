@@ -91,7 +91,7 @@ def dummy_ssl_context():
     if ssl is None:
         return None
     else:
-        return ssl.SSLContext(ssl.PROTOCOL_TLS)
+        return simple_client_sslcontext(disable_verify=True)
 
 
 def run_briefly(loop):
@@ -158,7 +158,7 @@ class SSLWSGIServerMixin:
         # contains the ssl key and certificate files) differs
         # between the stdlib and stand-alone asyncio.
         # Prefer our own if we can find it.
-        context = ssl.SSLContext()
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(ONLYCERT, ONLYKEY)
 
         ssock = context.wrap_socket(request, server_side=True)

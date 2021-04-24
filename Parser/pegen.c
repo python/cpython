@@ -274,7 +274,7 @@ raise_unclosed_parentheses_error(Parser *p) {
        int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
        int error_col = p->tok->parencolstack[p->tok->level-1];
        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
-                                  error_lineno, error_col,
+                                  error_lineno, error_col, error_lineno, -1,
                                   "'%c' was never closed",
                                   p->tok->parenstack[p->tok->level-1]);
 }
@@ -366,7 +366,7 @@ tokenizer_error(Parser *p)
             msg = "unknown parsing error";
     }
 
-    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, msg);
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, p->tok->lineno, -1, msg);
     return -1;
 }
 
@@ -375,6 +375,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
+    Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
         col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
                                       intptr_t, int);
@@ -382,10 +383,13 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
         col_offset = t->col_offset + 1;
     }
 
+    if (t->end_col_offset != -1) {
+        end_col_offset = t->end_col_offset + 1;
+    }
+
     va_list va;
     va_start(va, errmsg);
-    _PyPegen_raise_error_known_location(p, errtype, t->lineno,
-                                        col_offset, errmsg, va);
+    _PyPegen_raise_error_known_location(p, errtype, t->lineno, col_offset, t->end_lineno, end_col_offset, errmsg, va);
     va_end(va);
 
     return NULL;
@@ -416,6 +420,7 @@ get_error_line(Parser *p, Py_ssize_t lineno)
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
+                                    Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
@@ -423,6 +428,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *error_line = NULL;
     PyObject *tmp = NULL;
     p->error_indicator = 1;
+
+    if (end_lineno == CURRENT_POS) {
+        end_lineno = p->tok->lineno;
+    }
+    if (end_col_offset == CURRENT_POS) {
+        end_col_offset = p->tok->cur - p->tok->line_start;
+    }
 
     if (p->start_rule == Py_fstring_input) {
         const char *fstring_msg = "f-string: ";
@@ -475,14 +487,19 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (p->start_rule == Py_fstring_input) {
         col_offset -= p->starting_col_offset;
+        end_col_offset -= p->starting_col_offset;
     }
+
     Py_ssize_t col_number = col_offset;
+    Py_ssize_t end_col_number = end_col_offset;
 
     if (p->tok->encoding != NULL) {
         col_number = byte_offset_to_character_offset(error_line, col_offset);
+        end_col_number = end_col_number > 0 ?
+                         byte_offset_to_character_offset(error_line, end_col_offset) :
+                         end_col_number;
     }
-
-    tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
+    tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
     }
@@ -1494,6 +1511,13 @@ _PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
     return flattened_seq;
 }
 
+void *
+_PyPegen_seq_last_item(asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    return asdl_seq_GET_UNTYPED(seq, len - 1);
+}
+
 /* Creates a new name of the form <first_name>.<second_name> */
 expr_ty
 _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
@@ -2398,7 +2422,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         return NULL;
     }
 
-    return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+    return RAISE_SYNTAX_ERROR_STARTING_FROM(
         (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
         "Generator expression must be parenthesized"
     );

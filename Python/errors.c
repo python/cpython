@@ -1545,14 +1545,17 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
    If the exception is not a SyntaxError, also sets additional attributes
    to make printing of exceptions believe it is a syntax error. */
 
-void
-PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
+static void
+PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
+                             int end_lineno, int end_col_offset)
 {
     PyObject *exc, *v, *tb, *tmp;
     _Py_IDENTIFIER(filename);
     _Py_IDENTIFIER(lineno);
+    _Py_IDENTIFIER(end_lineno);
     _Py_IDENTIFIER(msg);
     _Py_IDENTIFIER(offset);
+    _Py_IDENTIFIER(end_offset);
     _Py_IDENTIFIER(print_file_and_line);
     _Py_IDENTIFIER(text);
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1582,6 +1585,32 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(tmp);
+
+    tmp = NULL;
+    if (end_lineno >= 0) {
+        tmp = PyLong_FromLong(end_lineno);
+        if (tmp == NULL) {
+            _PyErr_Clear(tstate);
+        }
+    }
+    if (_PyObject_SetAttrId(v, &PyId_end_lineno, tmp ? tmp : Py_None)) {
+        _PyErr_Clear(tstate);
+    }
+    Py_XDECREF(tmp);
+
+    tmp = NULL;
+    if (end_col_offset >= 0) {
+        tmp = PyLong_FromLong(end_col_offset);
+        if (tmp == NULL) {
+            _PyErr_Clear(tstate);
+        }
+    }
+    if (_PyObject_SetAttrId(v, &PyId_end_offset, tmp ? tmp : Py_None)) {
+        _PyErr_Clear(tstate);
+    }
+    Py_XDECREF(tmp);
+
+    tmp = NULL;
     if (filename != NULL) {
         if (_PyObject_SetAttrId(v, &PyId_filename, filename)) {
             _PyErr_Clear(tstate);
@@ -1631,6 +1660,17 @@ PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
         }
     }
     _PyErr_Restore(tstate, exc, v, tb);
+}
+
+void
+PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset) {
+    PyErr_SyntaxLocationObjectEx(filename, lineno, col_offset, lineno, -1);
+}
+
+void
+PyErr_RangedSyntaxLocationObject(PyObject *filename, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset) {
+    PyErr_SyntaxLocationObjectEx(filename, lineno, col_offset, end_lineno, end_col_offset);
 }
 
 void
