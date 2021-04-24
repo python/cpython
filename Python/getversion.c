@@ -13,3 +13,7 @@ Py_GetVersion(void)
                   PY_VERSION, Py_GetBuildInfo(), Py_GetCompiler());
     return version;
 }
+
+
+/* Export version as API data */
+const char * Py_Version = PY_VERSION_HEX;

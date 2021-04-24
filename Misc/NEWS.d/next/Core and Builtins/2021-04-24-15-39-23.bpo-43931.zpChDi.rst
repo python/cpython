@@ -1,0 +1,1 @@
+Add the Python version to the API data. Patch by Gabriele N. Tornetta

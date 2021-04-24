@@ -146,4 +146,6 @@
 #include "cpython/pyfpe.h"
 #include "tracemalloc.h"
 
+PyAPI_DATA(const char *) Py_Version;
+
 #endif /* !Py_PYTHON_H */
