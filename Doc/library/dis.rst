@@ -1237,6 +1237,7 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.10
 
+
 .. opcode:: ROTATE (count)
 
    Lift the top *count* stack items one position up, and move TOS down to
