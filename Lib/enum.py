@@ -1616,8 +1616,8 @@ def _test_simple_enum(checked_enum, simple_enum):
                 simple_member_dict = simple_enum[name].__dict__
                 simple_member_keys = list(simple_member_dict.keys())
                 for key in set(checked_member_keys + simple_member_keys):
-                    if key in ('__module__', '__objclass__'):
-                        # keys known to be different
+                    if key in ('__module__', '__objclass__', '_inverted_'):
+                        # keys known to be different or absent
                         continue
                     elif key not in simple_member_keys:
                         failed_member.append("missing key %r not in the simple enum member %r" % (key, name))
