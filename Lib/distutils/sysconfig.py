@@ -57,7 +57,7 @@ if os.name == "nt":
     from sysconfig import _fix_pcbuild
 
 warnings.warn(
-    'the distutils.sysconfig module is deprecated, use sysconfig instead',
+    'The distutils.sysconfig module is deprecated, use sysconfig instead',
     DeprecationWarning,
     stacklevel=2
 )
