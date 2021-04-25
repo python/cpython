@@ -5600,7 +5600,7 @@ compiler_slice(struct compiler *c, expr_ty s)
     ((N)->kind == MatchAlways_kind)
 
 #define WILDCARD_STAR_CHECK(N) \
-    ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.target)
+    ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
 
 // Limit permitted subexpressions, even if the parser & AST validator let them through
 #define MATCH_VALUE_EXPR(N) \
@@ -5798,9 +5798,9 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
         if (!pc->allow_irrefutable) {
             // Whoops, can't have a name capture here!
             const char *e = "name capture %R makes remaining patterns unreachable";
-            return compiler_error(c, e, p->v.MatchAs.target);
+            return compiler_error(c, e, p->v.MatchAs.name);
         }
-        return compiler_pattern_capture(c, p->v.MatchAs.target, pc);
+        return compiler_pattern_capture(c, p->v.MatchAs.name, pc);
     }
     basicblock *end, *fail_pop_1;
     RETURN_IF_FALSE(end = compiler_new_block(c));
@@ -5810,7 +5810,7 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
     ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
     NEXT_BLOCK(c);
-    RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.target, pc));
+    RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
     ADDOP_LOAD_CONST(c, Py_True);
     ADDOP_JUMP(c, JUMP_FORWARD, end);
     compiler_use_next_block(c, fail_pop_1);
@@ -5830,7 +5830,7 @@ compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
         const char *e = "star captures are only allowed as part of sequence patterns";
         return compiler_error(c, e);
     }
-    return compiler_pattern_capture(c, p->v.MatchStar.target, pc);
+    return compiler_pattern_capture(c, p->v.MatchStar.name, pc);
 }
 
 static int

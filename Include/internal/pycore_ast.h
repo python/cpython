@@ -592,12 +592,12 @@ struct _pattern {
         } MatchClass;
 
         struct {
-            identifier target;
+            identifier name;
         } MatchStar;
 
         struct {
             pattern_ty pattern;
-            identifier target;
+            identifier name;
         } MatchAs;
 
         struct {
@@ -826,10 +826,10 @@ pattern_ty _PyAST_MatchClass(expr_ty cls, asdl_pattern_seq * patterns,
                              asdl_identifier_seq * kwd_attrs, asdl_pattern_seq
                              * kwd_patterns, int lineno, int col_offset, int
                              end_lineno, int end_col_offset, PyArena *arena);
-pattern_ty _PyAST_MatchStar(identifier target, int lineno, int col_offset, int
+pattern_ty _PyAST_MatchStar(identifier name, int lineno, int col_offset, int
                             end_lineno, int end_col_offset, PyArena *arena);
-pattern_ty _PyAST_MatchAs(pattern_ty pattern, identifier target, int lineno,
-                          int col_offset, int end_lineno, int end_col_offset,
+pattern_ty _PyAST_MatchAs(pattern_ty pattern, identifier name, int lineno, int
+                          col_offset, int end_lineno, int end_col_offset,
                           PyArena *arena);
 pattern_ty _PyAST_MatchOr(asdl_pattern_seq * patterns, int lineno, int
                           col_offset, int end_lineno, int end_col_offset,

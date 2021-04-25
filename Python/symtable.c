@@ -1721,8 +1721,8 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchSequence.patterns);
         break;
     case MatchStar_kind:
-        if (p->v.MatchStar.target) {
-            symtable_add_def(st, p->v.MatchStar.target, DEF_LOCAL);
+        if (p->v.MatchStar.name) {
+            symtable_add_def(st, p->v.MatchStar.name, DEF_LOCAL);
         }
         break;
     case MatchMapping_kind:
@@ -1747,7 +1747,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         if (p->v.MatchAs.pattern) {
             VISIT(st, pattern, p->v.MatchAs.pattern);
         }
-        symtable_add_def(st, p->v.MatchAs.target, DEF_LOCAL);
+        symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL);
         break;
     case MatchOr_kind:
         VISIT_SEQ(st, pattern, p->v.MatchOr.patterns);

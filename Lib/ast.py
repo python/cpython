@@ -1589,9 +1589,13 @@ class _Unparser(NodeVisitor):
 
     def visit_MatchAs(self, node):
         with self.require_parens(_Precedence.TEST, node):
-            self.set_precedence(_Precedence.BOR, node.pattern)
-            self.traverse(node.pattern)
-            self.write(f" as {node.name}")
+            pattern = node.pattern
+            if pattern is not None:
+                self.set_precedence(_Precedence.BOR, node.pattern)
+                self.traverse(node.pattern)
+                self.write(f" as {node.name}")
+            else:
+                self.write(node.name)
 
     def visit_MatchOr(self, node):
         with self.require_parens(_Precedence.BOR, node):
