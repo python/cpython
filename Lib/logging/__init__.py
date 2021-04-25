@@ -1612,7 +1612,7 @@ class Logger(Filterer):
                 exc_info = sys.exc_info()
         record = self.makeRecord(self.name, level, fn, lno, msg, args,
                                  exc_info, func, extra, sinfo)
-        self.handle(record)
+        return self.handle(record)
 
     def handle(self, record):
         """
