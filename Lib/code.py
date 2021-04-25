@@ -53,10 +53,10 @@ class InteractiveInterpreter:
         object.  The code is executed by calling self.runcode() (which
         also handles run-time exceptions, except for SystemExit).
 
-        Return whether the code was complete and successfully compiled: True
-        if complete, False if incomplete, None if there was a complication
-        error.  The return value can be used to decide whether to use sys.ps1
-        or sys.ps2 to prompt the next line.
+        The return value is True in case 2, False in the other cases (unless
+        an exception is raised).  The return value can be used to
+        decide whether to use sys.ps1 or sys.ps2 to prompt the next
+        line.
 
         """
         try:
@@ -64,15 +64,15 @@ class InteractiveInterpreter:
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
             self.showsyntaxerror(filename)
-            return None
+            return False
 
         if code is None:
             # Case 2
-            return False
+            return True
 
         # Case 3
         self.runcode(code)
-        return True
+        return False
 
     def runcode(self, code):
         """Execute a code object.

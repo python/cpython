@@ -1311,11 +1311,8 @@ class PyShell(OutputWindow):
         # (To allow you to hit return twice to end a statement.)
         line = re.sub(r"[ \t]*\n?[ \t]*$", "", line)
         input_is_complete = self.interp.runsource(line)
-        if input_is_complete or input_is_complete is None:
-            if (
-                self.user_input_insert_tags and
-                self.text.get(index_before) == '\n'
-            ):
+        if not input_is_complete:
+            if self.text.get(index_before) == '\n':
                 self.text.tag_remove(self.user_input_insert_tags, index_before)
             self.shell_sidebar.update_sidebar()
 
