@@ -791,6 +791,10 @@ Other Language Changes
   Moreover, static methods are now callable as regular functions.
   (Contributed by Victor Stinner in :issue:`43682`.)
 
+* Annotations for complex targets (everything beside ``simple name`` targets
+  defined by :pep:`526`) no longer cause any runtime effects with ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42737`.)
+
 
 New Modules
 ===========
