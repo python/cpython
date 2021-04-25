@@ -1593,8 +1593,8 @@ def plain(text):
 
 def pipepager(text, cmd):
     """Page through text by feeding it to another program."""
-    import subprocess
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE)
+    import subprocess, shlex
+    proc = subprocess.Popen(shlex.split(cmd), stdin=subprocess.PIPE)
     try:
         with io.TextIOWrapper(proc.stdin, errors='backslashreplace') as pipe:
             try:
