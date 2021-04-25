@@ -553,7 +553,7 @@ class HandlerTest(BaseTest):
                 os.close(fd)
                 if not existing:
                     os.unlink(fn)
-                h = logging.handlers.WatchedFileHandler(fn, delay=True)
+                h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=True)
                 if existing:
                     dev, ino = h.dev, h.ino
                     self.assertEqual(dev, -1)
@@ -616,7 +616,7 @@ class HandlerTest(BaseTest):
         if sys.platform in ('linux', 'darwin'):
             cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
         for cls, args in cases:
-            h = cls(*args)
+            h = cls(*args, encoding="utf-8")
             self.assertTrue(os.path.exists(fn))
             h.close()
             os.unlink(fn)
@@ -645,7 +645,7 @@ class HandlerTest(BaseTest):
             remover = threading.Thread(target=remove_loop, args=(fn, del_count))
             remover.daemon = True
             remover.start()
-            h = logging.handlers.WatchedFileHandler(fn, delay=delay)
+            h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=delay)
             f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
             h.setFormatter(f)
             try:
@@ -677,7 +677,7 @@ class HandlerTest(BaseTest):
             def __init__(self):
                 super().__init__()
                 self.sub_handler = logging.StreamHandler(
-                    stream=open('/dev/null', 'wt'))
+                    stream=open('/dev/null', 'wt', encoding='utf-8'))
 
             def emit(self, record):
                 self.sub_handler.acquire()
@@ -829,6 +829,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         self.port = self.socket.getsockname()[1]
         self._handler = handler
         self._thread = None
+        self._quit = False
         self.poll_interval = poll_interval
 
     def process_message(self, peer, mailfrom, rcpttos, data):
@@ -849,7 +850,7 @@ class TestSMTPServer(smtpd.SMTPServer):
         """
         self._thread = t = threading.Thread(target=self.serve_forever,
                                             args=(self.poll_interval,))
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
 
     def serve_forever(self, poll_interval):
@@ -860,16 +861,18 @@ class TestSMTPServer(smtpd.SMTPServer):
                               :func:`select` or :func:`poll` call by
                               :func:`asyncore.loop`.
         """
-        asyncore.loop(poll_interval, map=self._map)
+        while not self._quit:
+            asyncore.loop(poll_interval, map=self._map, count=1)
 
     def stop(self):
         """
         Stop the thread by closing the server instance.
         Wait for the server thread to terminate.
         """
-        self.close()
+        self._quit = True
         threading_helper.join_thread(self._thread)
         self._thread = None
+        self.close()
         asyncore.close_all(map=self._map, ignore_all=True)
 
 
@@ -901,7 +904,7 @@ class ControlMixin(object):
         """
         self._thread = t = threading.Thread(target=self.serve_forever,
                                             args=(self.poll_interval,))
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
 
     def serve_forever(self, poll_interval):
@@ -4219,6 +4222,15 @@ class ModuleLevelMiscTest(BaseTest):
         logging.disable(83)
         self.assertEqual(logging.root.manager.disable, 83)
 
+        self.assertRaises(ValueError, logging.disable, "doesnotexists")
+
+        class _NotAnIntOrString:
+            pass
+
+        self.assertRaises(TypeError, logging.disable, _NotAnIntOrString())
+
+        logging.disable("WARN")
+
         # test the default value introduced in 3.7
         # (Issue #28524)
         logging.disable()
@@ -4346,7 +4358,7 @@ class ModuleLevelMiscTest(BaseTest):
             # basicConfig() opens the file, but logging.shutdown() closes
             # it at Python exit. When A.__del__() is called,
             # FileHandler._open() must be called again to re-open the file.
-            logging.basicConfig(filename={filename!r})
+            logging.basicConfig(filename={filename!r}, encoding="utf-8")
 
             a = A()
 
@@ -4356,7 +4368,7 @@ class ModuleLevelMiscTest(BaseTest):
         """)
         assert_python_ok("-c", code)
 
-        with open(filename) as fp:
+        with open(filename, encoding="utf-8") as fp:
             self.assertEqual(fp.read().rstrip(), "ERROR:root:log in __del__")
 
     def test_recursion_error(self):
@@ -4548,13 +4560,13 @@ class BasicConfigTest(unittest.TestCase):
             h2.close()
             os.remove(fn)
 
-        logging.basicConfig(filename='test.log')
+        logging.basicConfig(filename='test.log', encoding='utf-8')
 
         self.assertEqual(len(logging.root.handlers), 1)
         handler = logging.root.handlers[0]
         self.assertIsInstance(handler, logging.FileHandler)
 
-        expected = logging.FileHandler('test.log', 'a')
+        expected = logging.FileHandler('test.log', 'a', encoding='utf-8')
         self.assertEqual(handler.stream.mode, expected.stream.mode)
         self.assertEqual(handler.stream.name, expected.stream.name)
         self.addCleanup(cleanup, handler, expected, 'test.log')
@@ -5152,7 +5164,7 @@ class BaseFileTest(BaseTest):
 class FileHandlerTest(BaseFileTest):
     def test_delay(self):
         os.unlink(self.fn)
-        fh = logging.FileHandler(self.fn, delay=True)
+        fh = logging.FileHandler(self.fn, encoding='utf-8', delay=True)
         self.assertIsNone(fh.stream)
         self.assertFalse(os.path.exists(self.fn))
         fh.handle(logging.makeLogRecord({}))
@@ -5167,19 +5179,20 @@ class RotatingFileHandlerTest(BaseFileTest):
 
     def test_should_not_rollover(self):
         # If maxbytes is zero rollover never occurs
-        rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=0)
+        rh = logging.handlers.RotatingFileHandler(
+                self.fn, encoding="utf-8", maxBytes=0)
         self.assertFalse(rh.shouldRollover(None))
         rh.close()
 
     def test_should_rollover(self):
-        rh = logging.handlers.RotatingFileHandler(self.fn, maxBytes=1)
+        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=1)
         self.assertTrue(rh.shouldRollover(self.next_rec()))
         rh.close()
 
     def test_file_created(self):
         # checks that the file is created and assumes it was created
         # by us
-        rh = logging.handlers.RotatingFileHandler(self.fn)
+        rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8")
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
         rh.close()
@@ -5188,7 +5201,7 @@ class RotatingFileHandlerTest(BaseFileTest):
         def namer(name):
             return name + ".test"
         rh = logging.handlers.RotatingFileHandler(
-            self.fn, backupCount=2, maxBytes=1)
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
         rh.namer = namer
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
@@ -5209,7 +5222,7 @@ class RotatingFileHandlerTest(BaseFileTest):
                     os.rename(source, dest + ".rotated")
 
         rh = HandlerWithNamerAndRotator(
-            self.fn, backupCount=2, maxBytes=1)
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
         self.assertEqual(rh.namer(self.fn), self.fn + ".test")
         rh.emit(self.next_rec())
         self.assertLogFile(self.fn)
@@ -5232,7 +5245,7 @@ class RotatingFileHandlerTest(BaseFileTest):
             os.remove(source)
 
         rh = logging.handlers.RotatingFileHandler(
-            self.fn, backupCount=2, maxBytes=1)
+            self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
         rh.rotator = rotator
         rh.namer = namer
         m1 = self.next_rec()

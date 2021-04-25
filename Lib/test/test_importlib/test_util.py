@@ -845,22 +845,20 @@ class MagicNumberTests(unittest.TestCase):
         'only applies to candidate or final python release levels'
     )
     def test_magic_number(self):
-        """
-        Each python minor release should generally have a MAGIC_NUMBER
-        that does not change once the release reaches candidate status.
+        # Each python minor release should generally have a MAGIC_NUMBER
+        # that does not change once the release reaches candidate status.
 
-        Once a release reaches candidate status, the value of the constant
-        EXPECTED_MAGIC_NUMBER in this test should be changed.
-        This test will then check that the actual MAGIC_NUMBER matches
-        the expected value for the release.
+        # Once a release reaches candidate status, the value of the constant
+        # EXPECTED_MAGIC_NUMBER in this test should be changed.
+        # This test will then check that the actual MAGIC_NUMBER matches
+        # the expected value for the release.
 
-        In exceptional cases, it may be required to change the MAGIC_NUMBER
-        for a maintenance release. In this case the change should be
-        discussed in python-dev. If a change is required, community
-        stakeholders such as OS package maintainers must be notified
-        in advance. Such exceptional releases will then require an
-        adjustment to this test case.
-        """
+        # In exceptional cases, it may be required to change the MAGIC_NUMBER
+        # for a maintenance release. In this case the change should be
+        # discussed in python-dev. If a change is required, community
+        # stakeholders such as OS package maintainers must be notified
+        # in advance. Such exceptional releases will then require an
+        # adjustment to this test case.
         EXPECTED_MAGIC_NUMBER = 3413
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 

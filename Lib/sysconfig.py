@@ -18,6 +18,11 @@ __all__ = [
     'parse_config_h',
 ]
 
+# Keys for get_config_var() that are never converted to Python integers.
+_ALWAYS_STR = {
+    'MACOSX_DEPLOYMENT_TARGET',
+}
+
 _INSTALL_SCHEMES = {
     'posix_prefix': {
         'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
@@ -51,34 +56,65 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    # NOTE: When modifying "purelib" scheme, update site._get_path() too.
-    'nt_user': {
-        'stdlib': '{userbase}/Python{py_version_nodot_plat}',
-        'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
-        'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-        'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-        'include': '{userbase}/Python{py_version_nodot_plat}/Include',
-        'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
-        'data': '{userbase}',
-        },
-    'posix_user': {
-        'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-        'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
-        'include': '{userbase}/include/python{py_version_short}',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
-    'osx_framework_user': {
-        'stdlib': '{userbase}/lib/python',
-        'platstdlib': '{userbase}/lib/python',
-        'purelib': '{userbase}/lib/python/site-packages',
-        'platlib': '{userbase}/lib/python/site-packages',
-        'include': '{userbase}/include',
-        'scripts': '{userbase}/bin',
-        'data': '{userbase}',
-        },
+    }
+
+
+# NOTE: site.py has copy of this function.
+# Sync it when modify this function.
+def _getuserbase():
+    env_base = os.environ.get("PYTHONUSERBASE", None)
+    if env_base:
+        return env_base
+
+    # VxWorks has no home directories
+    if sys.platform == "vxworks":
+        return None
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or "~"
+        return joinuser(base, "Python")
+
+    if sys.platform == "darwin" and sys._framework:
+        return joinuser("~", "Library", sys._framework,
+                        "%d.%d" % sys.version_info[:2])
+
+    return joinuser("~", ".local")
+
+_HAS_USER_BASE = (_getuserbase() is not None)
+
+if _HAS_USER_BASE:
+    _INSTALL_SCHEMES |= {
+        # NOTE: When modifying "purelib" scheme, update site._get_path() too.
+        'nt_user': {
+            'stdlib': '{userbase}/Python{py_version_nodot_plat}',
+            'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
+            'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+            'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
+            'include': '{userbase}/Python{py_version_nodot_plat}/Include',
+            'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
+            'data': '{userbase}',
+            },
+        'posix_user': {
+            'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+            'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
+            'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
+            'platlib': '{userbase}/{platlibdir}/python{py_version_short}/site-packages',
+            'include': '{userbase}/include/python{py_version_short}',
+            'scripts': '{userbase}/bin',
+            'data': '{userbase}',
+            },
+        'osx_framework_user': {
+            'stdlib': '{userbase}/lib/python',
+            'platstdlib': '{userbase}/lib/python',
+            'purelib': '{userbase}/lib/python/site-packages',
+            'platlib': '{userbase}/lib/python/site-packages',
+            'include': '{userbase}/include',
+            'scripts': '{userbase}/bin',
+            'data': '{userbase}',
+            },
     }
 
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
@@ -93,6 +129,12 @@ _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
+
+# Regexes needed for parsing Makefile (and similar syntaxes,
+# like old-style Setup files).
+_variable_rx = r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)"
+_findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+_findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
 
 def _safe_realpath(path):
@@ -140,12 +182,6 @@ def is_python_build(check_home=False):
 
 _PYTHON_BUILD = is_python_build(True)
 
-if _PYTHON_BUILD:
-    for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
-        _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
-
-
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
@@ -183,53 +219,30 @@ def _get_default_scheme():
     return os.name
 
 
-# NOTE: site.py has copy of this function.
-# Sync it when modify this function.
-def _getuserbase():
-    env_base = os.environ.get("PYTHONUSERBASE", None)
-    if env_base:
-        return env_base
-
-    def joinuser(*args):
-        return os.path.expanduser(os.path.join(*args))
-
-    if os.name == "nt":
-        base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
-
-    if sys.platform == "darwin" and sys._framework:
-        return joinuser("~", "Library", sys._framework,
-                        "%d.%d" % sys.version_info[:2])
-
-    return joinuser("~", ".local")
 
 
-def _parse_makefile(filename, vars=None):
+def _parse_makefile(filename, vars=None, keep_unresolved=True):
     """Parse a Makefile-style file.
 
     A dictionary containing name/value pairs is returned.  If an
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    # Regexes needed for parsing Makefile (and similar syntaxes,
-    # like old-style Setup files).
     import re
-    _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
-    _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
 
     if vars is None:
         vars = {}
     done = {}
     notdone = {}
 
-    with open(filename, errors="surrogateescape") as f:
+    with open(filename, encoding=sys.getfilesystemencoding(),
+              errors="surrogateescape") as f:
         lines = f.readlines()
 
     for line in lines:
         if line.startswith('#') or line.strip() == '':
             continue
-        m = _variable_rx.match(line)
+        m = re.match(_variable_rx, line)
         if m:
             n, v = m.group(1, 2)
             v = v.strip()
@@ -240,6 +253,9 @@ def _parse_makefile(filename, vars=None):
                 notdone[n] = v
             else:
                 try:
+                    if n in _ALWAYS_STR:
+                        raise ValueError
+
                     v = int(v)
                 except ValueError:
                     # insert literal `$'
@@ -259,8 +275,8 @@ def _parse_makefile(filename, vars=None):
     while len(variables) > 0:
         for name in tuple(variables):
             value = notdone[name]
-            m1 = _findvar1_rx.search(value)
-            m2 = _findvar2_rx.search(value)
+            m1 = re.search(_findvar1_rx, value)
+            m2 = re.search(_findvar2_rx, value)
             if m1 and m2:
                 m = m1 if m1.start() < m2.start() else m2
             else:
@@ -298,6 +314,8 @@ def _parse_makefile(filename, vars=None):
                         notdone[name] = value
                     else:
                         try:
+                            if name in _ALWAYS_STR:
+                                raise ValueError
                             value = int(value)
                         except ValueError:
                             done[name] = value.strip()
@@ -313,9 +331,12 @@ def _parse_makefile(filename, vars=None):
                                 done[name] = value
 
             else:
+                # Adds unresolved variables to the done dict.
+                # This is disabled when called from distutils.sysconfig
+                if keep_unresolved:
+                    done[name] = value
                 # bogus variable reference (e.g. "prefix=$/opt/python");
                 # just drop it since we can't deal
-                done[name] = value
                 variables.remove(name)
 
     # strip spurious spaces
@@ -366,7 +387,7 @@ def _generate_posix_vars():
     # load the installed pyconfig.h:
     config_h = get_config_h_filename()
     try:
-        with open(config_h) as f:
+        with open(config_h, encoding="utf-8") as f:
             parse_config_h(f, vars)
     except OSError as e:
         msg = "invalid Python installation: unable to open %s" % config_h
@@ -460,6 +481,8 @@ def parse_config_h(fp, vars=None):
         if m:
             n, v = m.group(1, 2)
             try:
+                if n in _ALWAYS_STR:
+                    raise ValueError
                 v = int(v)
             except ValueError:
                 pass
@@ -558,10 +581,11 @@ def get_config_vars(*args):
         SO = _CONFIG_VARS.get('EXT_SUFFIX')
         if SO is not None:
             _CONFIG_VARS['SO'] = SO
-        # Setting 'userbase' is done below the call to the
-        # init function to enable using 'get_config_var' in
-        # the init-function.
-        _CONFIG_VARS['userbase'] = _getuserbase()
+        if _HAS_USER_BASE:
+            # Setting 'userbase' is done below the call to the
+            # init function to enable using 'get_config_var' in
+            # the init-function.
+            _CONFIG_VARS['userbase'] = _getuserbase()
 
         # Always convert srcdir to an absolute path
         srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
@@ -690,6 +714,32 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
+
+
+def expand_makefile_vars(s, vars):
+    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
+    'string' according to 'vars' (a dictionary mapping variable names to
+    values).  Variables not present in 'vars' are silently expanded to the
+    empty string.  The variable values in 'vars' should not contain further
+    variable expansions; if 'vars' is the output of 'parse_makefile()',
+    you're fine.  Returns a variable-expanded version of 's'.
+    """
+    import re
+
+    # This algorithm does multiple expansion, so if vars['foo'] contains
+    # "${bar}", it will expand ${foo} to ${bar}, and then expand
+    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
+    # 'parse_makefile()', which takes care of such expansions eagerly,
+    # according to make's variable expansion semantics.
+
+    while True:
+        m = re.search(_findvar1_rx, s) or re.search(_findvar2_rx, s)
+        if m:
+            (beg, end) = m.span()
+            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
+        else:
+            break
+    return s
 
 
 def _print_dict(title, data):

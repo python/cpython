@@ -32,7 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
-* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
+* On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -1090,6 +1090,16 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    The above constants are only available on Windows.
 
+.. data:: O_EVTONLY
+          O_FSYNC
+          O_SYMLINK
+          O_NOFOLLOW_ANY
+
+   The above constants are only available on macOS.
+
+   .. versionchanged:: 3.10
+      Add :data:`O_EVTONLY`, :data:`O_FSYNC`, :data:`O_SYMLINK`
+      and :data:`O_NOFOLLOW_ANY` constants.
 
 .. data:: O_ASYNC
           O_DIRECT
@@ -1323,12 +1333,12 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. data:: RWF_APPEND
 
-    Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
-    flag. This flag is meaningful only for :func:`os.pwritev`, and its
-    effect applies only to the data range written by the system call. The
-    *offset* argument does not affect the write operation; the data is always
-    appended to the end of the file. However, if the *offset* argument is
-    ``-1``, the current file *offset* is updated.
+   Provide a per-write equivalent of the :data:`O_APPEND` :func:`os.open`
+   flag. This flag is meaningful only for :func:`os.pwritev`, and its
+   effect applies only to the data range written by the system call. The
+   *offset* argument does not affect the write operation; the data is always
+   appended to the end of the file. However, if the *offset* argument is
+   ``-1``, the current file *offset* is updated.
 
    .. availability:: Linux 4.16 and newer.
 
@@ -1991,7 +2001,7 @@ features:
       Accepts a :term:`path-like object`.
 
 
-.. function:: lstat(path, \*, dir_fd=None)
+.. function:: lstat(path, *, dir_fd=None)
 
    Perform the equivalent of an :c:func:`lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
@@ -2498,7 +2508,7 @@ features:
       On the first, uncached call, a system call is required on Windows but
       not on Unix.
 
-   .. method:: is_dir(\*, follow_symlinks=True)
+   .. method:: is_dir(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a directory or a symbolic link pointing
       to a directory; return ``False`` if the entry is or points to any other
@@ -2522,7 +2532,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: is_file(\*, follow_symlinks=True)
+   .. method:: is_file(*, follow_symlinks=True)
 
       Return ``True`` if this entry is a file or a symbolic link pointing to a
       file; return ``False`` if the entry is or points to a directory or other
@@ -2552,7 +2562,7 @@ features:
       This method can raise :exc:`OSError`, such as :exc:`PermissionError`,
       but :exc:`FileNotFoundError` is caught and not raised.
 
-   .. method:: stat(\*, follow_symlinks=True)
+   .. method:: stat(*, follow_symlinks=True)
 
       Return a :class:`stat_result` object for this entry. This method
       follows symbolic links by default; to stat a symbolic link add the
@@ -2584,7 +2594,7 @@ features:
       for :class:`bytes` paths on Windows.
 
 
-.. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
+.. function:: stat(path, *, dir_fd=None, follow_symlinks=True)
 
    Get the status of a file or a file descriptor. Perform the equivalent of a
    :c:func:`stat` system call on the given path. *path* may be specified as
@@ -4145,7 +4155,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Windows.
 
 
-.. function:: startfile(path[, operation])
+.. function:: startfile(path, [operation], [arguments], [cwd], [show_cmd])
 
    Start a file with its associated application.
 
@@ -4159,13 +4169,25 @@ written in Python, such as a mail server's external command delivery program.
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
+   When launching an application, specify *arguments* to be passed as a single
+   string. This argument may have no effect when using this function to launch a
+   document.
+
+   The default working directory is inherited, but may be overridden by the *cwd*
+   argument. This should be an absolute path. A relative *path* will be resolved
+   against this argument.
+
+   Use *show_cmd* to override the default window style. Whether this has any
+   effect will depend on the application being launched. Values are integers as
+   supported by the Win32 :c:func:`ShellExecute` function.
+
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
    the application's exit status.  The *path* parameter is relative to the current
-   directory.  If you want to use an absolute path, make sure the first character
-   is not a slash (``'/'``); the underlying Win32 :c:func:`ShellExecute` function
-   doesn't work if it is.  Use the :func:`os.path.normpath` function to ensure that
-   the path is properly encoded for Win32.
+   directory or *cwd*.  If you want to use an absolute path, make sure the first
+   character is not a slash (``'/'``)  Use :mod:`pathlib` or the
+   :func:`os.path.normpath` function to ensure that paths are properly encoded for
+   Win32.
 
    To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
    function is not resolved until this function is first called.  If the function
@@ -4173,7 +4195,13 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.startfile path,operation os.startfile
 
+   .. audit-event:: os.startfile/2 path,operation,arguments,cwd,show_cmd os.startfile
+
    .. availability:: Windows.
+
+   .. versionchanged:: 3.10
+      Added the *arguments*, *cwd* and *show_cmd* arguments, and the
+      ``os.startfile/2`` audit event.
 
 
 .. function:: system(command)

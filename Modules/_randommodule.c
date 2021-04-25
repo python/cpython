@@ -67,6 +67,7 @@
 /* ---------------------------------------------------------------*/
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif
@@ -86,7 +87,7 @@ typedef struct {
 static inline _randomstate*
 get_random_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_randomstate *)state;
 }
@@ -519,6 +520,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     RandomObject *self;
     PyObject *tmp;
+    PyObject *arg = NULL;
     _randomstate *state = _randomstate_type(type);
 
     if (type == (PyTypeObject*)state->Random_Type &&
@@ -529,12 +531,22 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (RandomObject *)PyType_GenericAlloc(type, 0);
     if (self == NULL)
         return NULL;
-    tmp = random_seed(self, args);
+
+    if (PyTuple_GET_SIZE(args) > 1) {
+        PyErr_SetString(PyExc_TypeError, "Random() requires 0 or 1 argument");
+        return NULL;
+    }
+
+    if (PyTuple_GET_SIZE(args) == 1)
+        arg = PyTuple_GET_ITEM(args, 0);
+
+    tmp = random_seed(self, arg);
     if (tmp == NULL) {
         Py_DECREF(self);
         return NULL;
     }
     Py_DECREF(tmp);
+
     return (PyObject *)self;
 }
 

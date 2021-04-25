@@ -174,7 +174,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         The file is read and scanned in chunks of chunksize bytes.
 
     """
-    if executable is None:
+    if not executable:
         try:
             ver = os.confstr('CS_GNU_LIBC_VERSION')
             # parse 'glibc 2.28' as ('glibc', '2.28')
@@ -239,11 +239,9 @@ def _norm_version(version, build=''):
     if build:
         l.append(build)
     try:
-        ints = map(int, l)
+        strings = list(map(str, map(int, l)))
     except ValueError:
         strings = l
-    else:
-        strings = list(map(str, ints))
     version = '.'.join(strings[:3])
     return version
 
@@ -365,17 +363,20 @@ def win32_ver(release='', version='', csd='', ptype=''):
         return release, version, csd, ptype
 
     winver = getwindowsversion()
-    maj, min, build = winver.platform_version or winver[:3]
-    version = '{0}.{1}.{2}'.format(maj, min, build)
+    try:
+        major, minor, build = map(int, _syscmd_ver()[2].split('.'))
+    except ValueError:
+        major, minor, build = winver.platform_version or winver[:3]
+    version = '{0}.{1}.{2}'.format(major, minor, build)
 
-    release = (_WIN32_CLIENT_RELEASES.get((maj, min)) or
-               _WIN32_CLIENT_RELEASES.get((maj, None)) or
+    release = (_WIN32_CLIENT_RELEASES.get((major, minor)) or
+               _WIN32_CLIENT_RELEASES.get((major, None)) or
                release)
 
     # getwindowsversion() reflect the compatibility mode Python is
     # running under, and so the service pack value is only going to be
     # valid if the versions match.
-    if winver[:2] == (maj, min):
+    if winver[:2] == (major, minor):
         try:
             csd = 'SP{}'.format(winver.service_pack_major)
         except AttributeError:
@@ -384,8 +385,8 @@ def win32_ver(release='', version='', csd='', ptype=''):
 
     # VER_NT_SERVER = 3
     if getattr(winver, 'product_type', None) == 3:
-        release = (_WIN32_SERVER_RELEASES.get((maj, min)) or
-                   _WIN32_SERVER_RELEASES.get((maj, None)) or
+        release = (_WIN32_SERVER_RELEASES.get((major, minor)) or
+                   _WIN32_SERVER_RELEASES.get((major, None)) or
                    release)
 
     try:
@@ -769,7 +770,7 @@ class uname_result(
         ):
     """
     A uname_result that's largely compatible with a
-    simple namedtuple except that 'platform' is
+    simple namedtuple except that 'processor' is
     resolved late and cached to avoid calling "uname"
     except when needed.
     """
@@ -784,11 +785,24 @@ class uname_result(
             (self.processor,)
         )
 
+    @classmethod
+    def _make(cls, iterable):
+        # override factory to affect length check
+        num_fields = len(cls._fields)
+        result = cls.__new__(cls, *iterable)
+        if len(result) != num_fields + 1:
+            msg = f'Expected {num_fields} arguments, got {len(result)}'
+            raise TypeError(msg)
+        return result
+
     def __getitem__(self, key):
-        return tuple(iter(self))[key]
+        return tuple(self)[key]
 
     def __len__(self):
         return len(tuple(iter(self)))
+
+    def __reduce__(self):
+        return uname_result, tuple(self)[:len(self._fields)]
 
 
 _uname_cache = None
@@ -1241,7 +1255,7 @@ _os_release_line = re.compile(
 # unescape five special characters mentioned in the standard
 _os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
 # /etc takes precedence over /usr/lib
-_os_release_candidates = ("/etc/os-release", "/usr/lib/os-relesase")
+_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
 _os_release_cache = None
 
 

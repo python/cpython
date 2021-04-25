@@ -6,6 +6,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <ctype.h>
 
@@ -24,7 +25,7 @@ typedef struct {
 static inline _structmodulestate*
 get_struct_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_structmodulestate *)state;
 }
@@ -1442,8 +1443,7 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = alloc_func(type, 0);
     if (self != NULL) {
         PyStructObject *s = (PyStructObject*)self;
-        Py_INCREF(Py_None);
-        s->s_format = Py_None;
+        s->s_format = Py_NewRef(Py_None);
         s->s_codes = NULL;
         s->s_size = -1;
         s->s_len = -1;

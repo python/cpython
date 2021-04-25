@@ -389,6 +389,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'site_import': 1,
         'bytes_warning': 0,
+        'warn_default_encoding': 0,
         'inspect': 0,
         'interactive': 0,
         'optimization_level': 0,
@@ -1471,6 +1472,12 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_audit_run_stdin",
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
+
+class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
+    def test_unicode_id_init(self):
+        # bpo-42882: Test that _PyUnicode_FromId() works
+        # when Python is initialized multiples times.
+        self.run_embedded_interpreter("test_unicode_id_init")
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,9 +3,8 @@
  * of the given abstract syntax tree (potentially constructed manually).
  */
 #include "Python.h"
-#include "Python-ast.h"
-#include "ast.h"
-#include "pycore_pystate.h"   // _PyThreadState_GET()
+#include "pycore_ast.h"           // asdl_stmt_seq
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include <assert.h>
 
@@ -352,6 +351,14 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     case NamedExpr_kind:
         ret = validate_expr(state, exp->v.NamedExpr.value, Load);
         break;
+    case MatchAs_kind:
+        PyErr_SetString(PyExc_ValueError,
+                        "MatchAs is only valid in match_case patterns");
+        return 0;
+    case MatchOr_kind:
+        PyErr_SetString(PyExc_ValueError,
+                        "MatchOr is only valid in match_case patterns");
+        return 0;
     /* This last case doesn't have any checking. */
     case Name_kind:
         ret = 1;
@@ -362,6 +369,13 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     }
     state->recursion_depth--;
     return ret;
+}
+
+static int
+validate_pattern(expr_ty p)
+{
+    // Coming soon (thanks Batuhan)!
+    return 1;
 }
 
 static int
@@ -480,6 +494,21 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                 return 0;
         }
         ret = validate_body(state, stmt->v.AsyncWith.body, "AsyncWith");
+        break;
+    case Match_kind:
+        if (!validate_expr(state, stmt->v.Match.subject, Load)
+            || !validate_nonempty_seq(stmt->v.Match.cases, "cases", "Match")) {
+            return 0;
+        }
+        for (i = 0; i < asdl_seq_LEN(stmt->v.Match.cases); i++) {
+            match_case_ty m = asdl_seq_GET(stmt->v.Match.cases, i);
+            if (!validate_pattern(m->pattern)
+                || (m->guard && !validate_expr(state, m->guard, Load))
+                || !validate_body(state, m->body, "match_case")) {
+                return 0;
+            }
+        }
+        ret = 1;
         break;
     case Raise_kind:
         if (stmt->v.Raise.exc) {
@@ -604,7 +633,7 @@ validate_exprs(struct validator *state, asdl_expr_seq *exprs, expr_context_ty ct
 #define COMPILER_STACK_FRAME_SCALE 3
 
 int
-PyAST_Validate(mod_ty mod)
+_PyAST_Validate(mod_ty mod)
 {
     int res = 0;
     struct validator state;

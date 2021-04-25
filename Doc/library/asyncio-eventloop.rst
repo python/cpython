@@ -321,7 +321,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, \*, name=None)
+.. method:: loop.create_task(coro, *, name=None)
 
    Schedule the execution of a :ref:`coroutine`.
    Return a :class:`Task` object.
@@ -356,7 +356,7 @@ Opening network connections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. coroutinemethod:: loop.create_connection(protocol_factory, \
-                          host=None, port=None, \*, ssl=None, \
+                          host=None, port=None, *, ssl=None, \
                           family=0, proto=0, flags=0, sock=None, \
                           local_addr=None, server_hostname=None, \
                           ssl_handshake_timeout=None, \
@@ -482,7 +482,7 @@ Opening network connections
       that can be used directly in async/await code.
 
 .. coroutinemethod:: loop.create_datagram_endpoint(protocol_factory, \
-                        local_addr=None, remote_addr=None, \*, \
+                        local_addr=None, remote_addr=None, *, \
                         family=0, proto=0, flags=0, \
                         reuse_address=None, reuse_port=None, \
                         allow_broadcast=None, sock=None)
@@ -559,7 +559,7 @@ Opening network connections
       Added support for Windows.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
-                        path=None, \*, ssl=None, sock=None, \
+                        path=None, *, ssl=None, sock=None, \
                         server_hostname=None, ssl_handshake_timeout=None)
 
    Create a Unix connection.
@@ -592,7 +592,7 @@ Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. coroutinemethod:: loop.create_server(protocol_factory, \
-                        host=None, port=None, \*, \
+                        host=None, port=None, *, \
                         family=socket.AF_UNSPEC, \
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
@@ -683,7 +683,7 @@ Creating network servers
 
 
 .. coroutinemethod:: loop.create_unix_server(protocol_factory, path=None, \
-                          \*, sock=None, backlog=100, ssl=None, \
+                          *, sock=None, backlog=100, ssl=None, \
                           ssl_handshake_timeout=None, start_serving=True)
 
    Similar to :meth:`loop.create_server` but works with the
@@ -708,7 +708,7 @@ Creating network servers
       The *path* parameter can now be a :class:`~pathlib.Path` object.
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
-                        sock, \*, ssl=None, ssl_handshake_timeout=None)
+                        sock, *, ssl=None, ssl_handshake_timeout=None)
 
    Wrap an already accepted connection into a transport/protocol pair.
 
@@ -773,7 +773,7 @@ TLS Upgrade
 ^^^^^^^^^^^
 
 .. coroutinemethod:: loop.start_tls(transport, protocol, \
-                        sslcontext, \*, server_side=False, \
+                        sslcontext, *, server_side=False, \
                         server_hostname=None, ssl_handshake_timeout=None)
 
    Upgrade an existing transport-based connection to TLS.
@@ -806,7 +806,7 @@ TLS Upgrade
 Watching file descriptors
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: loop.add_reader(fd, callback, \*args)
+.. method:: loop.add_reader(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for read availability and
    invoke *callback* with the specified arguments once *fd* is available for
@@ -816,7 +816,7 @@ Watching file descriptors
 
    Stop monitoring the *fd* file descriptor for read availability.
 
-.. method:: loop.add_writer(fd, callback, \*args)
+.. method:: loop.add_writer(fd, callback, *args)
 
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
@@ -930,7 +930,7 @@ convenient.
       :meth:`loop.create_server` and :func:`start_server`.
 
 .. coroutinemethod:: loop.sock_sendfile(sock, file, offset=0, count=None, \
-                                        \*, fallback=True)
+                                        *, fallback=True)
 
    Send a file using high-performance :mod:`os.sendfile` if possible.
    Return the total number of bytes sent.
@@ -964,7 +964,7 @@ convenient.
 DNS
 ^^^
 
-.. coroutinemethod:: loop.getaddrinfo(host, port, \*, family=0, \
+.. coroutinemethod:: loop.getaddrinfo(host, port, *, family=0, \
                         type=0, proto=0, flags=0)
 
    Asynchronous version of :meth:`socket.getaddrinfo`.
@@ -1029,7 +1029,7 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
-.. method:: loop.add_signal_handler(signum, callback, \*args)
+.. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
 
@@ -1064,7 +1064,7 @@ Unix signals
 Executing code in thread or process pools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. awaitablemethod:: loop.run_in_executor(executor, func, \*args)
+.. awaitablemethod:: loop.run_in_executor(executor, func, *args)
 
    Arrange for *func* to be called in the specified executor.
 
@@ -1237,9 +1237,9 @@ async/await code consider using the high-level
    subprocesses. See :ref:`Subprocess Support on Windows
    <asyncio-windows-subprocess>` for details.
 
-.. coroutinemethod:: loop.subprocess_exec(protocol_factory, \*args, \
+.. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                      stderr=subprocess.PIPE, \*\*kwargs)
+                      stderr=subprocess.PIPE, **kwargs)
 
    Create a subprocess from one or more string arguments specified by
    *args*.
@@ -1319,9 +1319,9 @@ async/await code consider using the high-level
    conforms to the :class:`asyncio.SubprocessTransport` base class and
    *protocol* is an object instantiated by the *protocol_factory*.
 
-.. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, \*, \
+.. coroutinemethod:: loop.subprocess_shell(protocol_factory, cmd, *, \
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                        stderr=subprocess.PIPE, \*\*kwargs)
+                        stderr=subprocess.PIPE, **kwargs)
 
    Create a subprocess from *cmd*, which can be a :class:`str` or a
    :class:`bytes` string encoded to the

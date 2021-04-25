@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from tkinter import font
 from test.support import requires, run_unittest, gc_collect, ALWAYS_EQ
-from tkinter.test.support import AbstractTkTest
+from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
 requires('gui')
 
@@ -63,14 +63,21 @@ class FontTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(self.font.name, fontname)
         self.assertEqual(str(self.font), fontname)
 
-    def test_eq(self):
+    def test_equality(self):
         font1 = font.Font(root=self.root, name=fontname, exists=True)
         font2 = font.Font(root=self.root, name=fontname, exists=True)
         self.assertIsNot(font1, font2)
         self.assertEqual(font1, font2)
         self.assertNotEqual(font1, font1.copy())
+
         self.assertNotEqual(font1, 0)
         self.assertEqual(font1, ALWAYS_EQ)
+
+        root2 = tkinter.Tk()
+        self.addCleanup(root2.destroy)
+        font3 = font.Font(root=root2, name=fontname, exists=True)
+        self.assertEqual(str(font1), str(font3))
+        self.assertNotEqual(font1, font3)
 
     def test_measure(self):
         self.assertIsInstance(self.font.measure('abc'), int)
@@ -101,13 +108,58 @@ class FontTest(AbstractTkTest, unittest.TestCase):
             self.assertTrue(name)
         self.assertIn(fontname, names)
 
+    def test_nametofont(self):
+        testfont = font.nametofont(fontname, root=self.root)
+        self.assertIsInstance(testfont, font.Font)
+        self.assertEqual(testfont.name, fontname)
+
     def test_repr(self):
         self.assertEqual(
             repr(self.font), f'<tkinter.font.Font object {fontname!r}>'
         )
 
 
-tests_gui = (FontTest, )
+class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
+
+    def test_families(self):
+        self.assertRaises(RuntimeError, font.families)
+        root = tkinter.Tk()
+        families = font.families()
+        self.assertIsInstance(families, tuple)
+        self.assertTrue(families)
+        for family in families:
+            self.assertIsInstance(family, str)
+            self.assertTrue(family)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, font.families)
+
+    def test_names(self):
+        self.assertRaises(RuntimeError, font.names)
+        root = tkinter.Tk()
+        names = font.names()
+        self.assertIsInstance(names, tuple)
+        self.assertTrue(names)
+        for name in names:
+            self.assertIsInstance(name, str)
+            self.assertTrue(name)
+        self.assertIn(fontname, names)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, font.names)
+
+    def test_nametofont(self):
+        self.assertRaises(RuntimeError, font.nametofont, fontname)
+        root = tkinter.Tk()
+        testfont = font.nametofont(fontname)
+        self.assertIsInstance(testfont, font.Font)
+        self.assertEqual(testfont.name, fontname)
+        root.destroy()
+        tkinter.NoDefaultRoot()
+        self.assertRaises(RuntimeError, font.nametofont, fontname)
+
+
+tests_gui = (FontTest, DefaultRootTest)
 
 if __name__ == "__main__":
     run_unittest(*tests_gui)

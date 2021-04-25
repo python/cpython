@@ -45,8 +45,8 @@ class PosixTester(unittest.TestCase):
 
     def setUp(self):
         # create empty file
-        fp = open(os_helper.TESTFN, 'w+')
-        fp.close()
+        with open(os_helper.TESTFN, "wb"):
+            pass
         self.teardown_files = [ os_helper.TESTFN ]
         self._warnings_manager = warnings_helper.check_warnings()
         self._warnings_manager.__enter__()
@@ -724,10 +724,19 @@ class PosixTester(unittest.TestCase):
         chown_func(first_param, uid, -1)
         check_stat(uid, gid)
 
-        if uid == 0:
+        if sys.platform == "vxworks":
+            # On VxWorks, root user id is 1 and 0 means no login user:
+            # both are super users.
+            is_root = (uid in (0, 1))
+        else:
+            is_root = (uid == 0)
+        if is_root:
             # Try an amusingly large uid/gid to make sure we handle
             # large unsigned values.  (chown lets you use any
             # uid/gid you like, even if they aren't defined.)
+            #
+            # On VxWorks uid_t is defined as unsigned short. A big
+            # value greater than 65535 will result in underflow error.
             #
             # This problem keeps coming up:
             #   http://bugs.python.org/issue1747858
@@ -738,7 +747,7 @@ class PosixTester(unittest.TestCase):
             # This part of the test only runs when run as root.
             # Only scary people run their tests as root.
 
-            big_value = 2**31
+            big_value = (2**31 if sys.platform != "vxworks" else 2**15)
             chown_func(first_param, big_value, big_value)
             check_stat(big_value, big_value)
             chown_func(first_param, -1, -1)
@@ -1045,6 +1054,7 @@ class PosixTester(unittest.TestCase):
 
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
+    @unittest.skipUnless(hasattr(os, 'popen'), "test needs os.popen()")
     def test_getgroups(self):
         with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
@@ -1061,7 +1071,7 @@ class PosixTester(unittest.TestCase):
         if sys.platform == 'darwin':
             import sysconfig
             dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'
-            if tuple(int(n) for n in str(dt).split('.')[0:2]) < (10, 6):
+            if tuple(int(n) for n in dt.split('.')[0:2]) < (10, 6):
                 raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
 
         # 'id -G' and 'os.getgroups()' should return the same
@@ -1569,7 +1579,7 @@ class _PosixSpawnMixin:
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ)
         support.wait_process(pid, exitcode=0)
-        with open(pidfile) as f:
+        with open(pidfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), str(pid))
 
     def test_no_such_executable(self):
@@ -1592,14 +1602,14 @@ class _PosixSpawnMixin:
         self.addCleanup(os_helper.unlink, envfile)
         script = f"""if 1:
             import os
-            with open({envfile!r}, "w") as envfile:
+            with open({envfile!r}, "w", encoding="utf-8") as envfile:
                 envfile.write(os.environ['foo'])
         """
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args,
                               {**os.environ, 'foo': 'bar'})
         support.wait_process(pid, exitcode=0)
-        with open(envfile) as f:
+        with open(envfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'bar')
 
     def test_none_file_actions(self):
@@ -1851,7 +1861,7 @@ class _PosixSpawnMixin:
                               file_actions=file_actions)
 
         support.wait_process(pid, exitcode=0)
-        with open(outfile) as f:
+        with open(outfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
     def test_close_file(self):
@@ -1862,7 +1872,7 @@ class _PosixSpawnMixin:
             try:
                 os.fstat(0)
             except OSError as e:
-                with open({closefile!r}, 'w') as closefile:
+                with open({closefile!r}, 'w', encoding='utf-8') as closefile:
                     closefile.write('is closed %d' % e.errno)
             """
         args = self.python_args('-c', script)
@@ -1870,7 +1880,7 @@ class _PosixSpawnMixin:
                               file_actions=[(os.POSIX_SPAWN_CLOSE, 0)])
 
         support.wait_process(pid, exitcode=0)
-        with open(closefile) as f:
+        with open(closefile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'is closed %d' % errno.EBADF)
 
     def test_dup2(self):
@@ -1888,7 +1898,7 @@ class _PosixSpawnMixin:
             pid = self.spawn_func(args[0], args, os.environ,
                                   file_actions=file_actions)
             support.wait_process(pid, exitcode=0)
-        with open(dupfile) as f:
+        with open(dupfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
 

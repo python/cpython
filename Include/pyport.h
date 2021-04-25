@@ -101,7 +101,9 @@ typedef intptr_t        Py_intptr_t;
  * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
  * unsigned integral type).  See PEP 353 for details.
  */
-#ifdef HAVE_SSIZE_T
+#ifdef HAVE_PY_SSIZE_T
+
+#elif HAVE_SSIZE_T
 typedef ssize_t         Py_ssize_t;
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
 typedef Py_intptr_t     Py_ssize_t;
@@ -181,8 +183,9 @@ typedef int Py_ssize_clean_t;
 
 #if defined(_MSC_VER)
 #  if defined(PY_LOCAL_AGGRESSIVE)
-   /* enable more aggressive optimization for visual studio */
-#  pragma optimize("agtw", on)
+   /* enable more aggressive optimization for MSVC */
+   /* active in both release and debug builds - see bpo-43271 */
+#  pragma optimize("gt", on)
 #endif
    /* ignore warnings if the compiler decides not to inline a function */
 #  pragma warning(disable: 4710)
@@ -858,6 +861,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
    PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
    XLC support is intentionally omitted due to bpo-40244 */
+#ifndef _Py_NO_RETURN
 #if defined(__clang__) || \
     (defined(__GNUC__) && \
      ((__GNUC__ >= 3) || \
@@ -867,6 +871,7 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #  define _Py_NO_RETURN __declspec(noreturn)
 #else
 #  define _Py_NO_RETURN
+#endif
 #endif
 
 

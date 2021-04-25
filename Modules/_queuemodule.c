@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -10,12 +11,12 @@ typedef struct {
 static simplequeue_state *
 simplequeue_get_state(PyObject *module)
 {
-    simplequeue_state *state = PyModule_GetState(module);
+    simplequeue_state *state = _PyModule_GetState(module);
     assert(state);
     return state;
 }
 static struct PyModuleDef queuemodule;
-#define simplequeue_get_state_by_type(tp) \
+#define simplequeue_get_state_by_type(type) \
     (simplequeue_get_state(_PyType_GetModuleByDef(type, &queuemodule)))
 
 typedef struct {

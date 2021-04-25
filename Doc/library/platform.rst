@@ -290,4 +290,4 @@ Linux Platforms
               ids.extend(info["ID_LIKE"].split())
           return ids
 
-  .. versionadded:: 3.10
+   .. versionadded:: 3.10

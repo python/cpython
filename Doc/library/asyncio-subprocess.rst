@@ -61,8 +61,8 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, \*args, stdin=None, \
-                          stdout=None, stderr=None, limit=None, \*\*kwds)
+.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Create a subprocess.
 
@@ -77,7 +77,7 @@ Creating Subprocesses
 
 
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, limit=None, \*\*kwds)
+                          stdout=None, stderr=None, limit=None, **kwds)
 
    Run the *cmd* shell command.
 

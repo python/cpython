@@ -427,7 +427,7 @@ if 1:
         fname = __file__
         if fname.lower().endswith('pyc'):
             fname = fname[:-1]
-        with open(fname, 'r') as f:
+        with open(fname, encoding='utf-8') as f:
             fcontents = f.read()
         sample_code = [
             ['<assign>', 'x = 5'],
@@ -635,6 +635,17 @@ if 1:
         self.check_constant(f1, frozenset({0}))
         self.assertTrue(f1(0))
 
+    # Merging equal co_linetable and co_code is not a strict requirement
+    # for the Python semantics, it's a more an implementation detail.
+    @support.cpython_only
+    def test_merge_code_attrs(self):
+        # See https://bugs.python.org/issue42217
+        f1 = lambda x: x.y.z
+        f2 = lambda a: a.b.c
+
+        self.assertIs(f1.__code__.co_linetable, f2.__code__.co_linetable)
+        self.assertIs(f1.__code__.co_code, f2.__code__.co_code)
+
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
     # that peephole optimization was actually done though that isn't an
@@ -731,10 +742,10 @@ if 1:
 
         for func in funcs:
             opcodes = list(dis.get_instructions(func))
-            self.assertEqual(2, len(opcodes))
-            self.assertEqual('LOAD_CONST', opcodes[0].opname)
-            self.assertEqual(None, opcodes[0].argval)
-            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+            self.assertLessEqual(len(opcodes), 3)
+            self.assertEqual('LOAD_CONST', opcodes[-2].opname)
+            self.assertEqual(None, opcodes[-2].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[-1].opname)
 
     def test_false_while_loop(self):
         def break_in_while():
@@ -777,6 +788,14 @@ if 1:
                 self.assertEqual(2, len(opcodes))
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_lineno_procedure_call(self):
+        def call():
+            (
+                print()
+            )
+        line1 = call.__code__.co_firstlineno + 1
+        assert line1 not in [line for (_, _, line) in call.__code__.co_lines()]
 
     def test_lineno_after_implicit_return(self):
         TRUE = True
@@ -829,6 +848,51 @@ if 1:
                 self.assertEqual(end, len(code.co_code))
                 self.assertEqual(line, code.co_firstlineno)
 
+    def test_lineno_attribute(self):
+        def load_attr():
+            return (
+                o.
+                a
+            )
+        load_attr_lines = [ 2, 3, 1 ]
+
+        def load_method():
+            return (
+                o.
+                m(
+                    0
+                )
+            )
+        load_method_lines = [ 2, 3, 4, 3, 1 ]
+
+        def store_attr():
+            (
+                o.
+                a
+            ) = (
+                v
+            )
+        store_attr_lines = [ 5, 2, 3 ]
+
+        def aug_store_attr():
+            (
+                o.
+                a
+            ) += (
+                v
+            )
+        aug_store_attr_lines = [ 2, 3, 5, 1, 3 ]
+
+        funcs = [ load_attr, load_method, store_attr, aug_store_attr]
+        func_lines = [ load_attr_lines, load_method_lines,
+                 store_attr_lines, aug_store_attr_lines]
+
+        for func, lines in zip(funcs, func_lines, strict=True):
+            with self.subTest(func=func):
+                code_lines = [ line-func.__code__.co_firstlineno
+                              for (_, _, line) in func.__code__.co_lines() ]
+                self.assertEqual(lines, code_lines)
+
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -839,6 +903,34 @@ if 1:
         dict_size = 0xFFFF + 1
         the_dict = "{" + ",".join(f"{x}:{x}" for x in range(dict_size)) + "}"
         self.assertEqual(len(eval(the_dict)), dict_size)
+
+    def test_redundant_jump_in_if_else_break(self):
+        # Check if bytecode containing jumps that simply point to the next line
+        # is generated around if-else-break style structures. See bpo-42615.
+
+        def if_else_break():
+            val = 1
+            while True:
+                if val > 0:
+                    val -= 1
+                else:
+                    break
+                val = -1
+
+        INSTR_SIZE = 2
+        HANDLED_JUMPS = (
+            'POP_JUMP_IF_FALSE',
+            'POP_JUMP_IF_TRUE',
+            'JUMP_ABSOLUTE',
+            'JUMP_FORWARD',
+        )
+
+        for line, instr in enumerate(dis.Bytecode(if_else_break)):
+            if instr.opname == 'JUMP_FORWARD':
+                self.assertNotEqual(instr.arg, 0)
+            elif instr.opname in HANDLED_JUMPS:
+                self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
+
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
@@ -871,6 +963,32 @@ class TestExpressionStackSize(unittest.TestCase):
 
     def test_binop(self):
         self.check_stack_size("x + " * self.N + "x")
+
+    def test_list(self):
+        self.check_stack_size("[" + "x, " * self.N + "x]")
+
+    def test_tuple(self):
+        self.check_stack_size("(" + "x, " * self.N + "x)")
+
+    def test_set(self):
+        self.check_stack_size("{" + "x, " * self.N + "x}")
+
+    def test_dict(self):
+        self.check_stack_size("{" + "x:x, " * self.N + "x:x}")
+
+    def test_func_args(self):
+        self.check_stack_size("f(" + "x, " * self.N + ")")
+
+    def test_func_kwargs(self):
+        kwargs = (f'a{i}=x' for i in range(self.N))
+        self.check_stack_size("f(" +  ", ".join(kwargs) + ")")
+
+    def test_func_args(self):
+        self.check_stack_size("o.m(" + "x, " * self.N + ")")
+
+    def test_meth_kwargs(self):
+        kwargs = (f'a{i}=x' for i in range(self.N))
+        self.check_stack_size("o.m(" +  ", ".join(kwargs) + ")")
 
     def test_func_and(self):
         code = "def f(x):\n"

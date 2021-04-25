@@ -25,7 +25,8 @@
 #include <limits.h>
 
 /* only used internally */
-pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
+static pysqlite_Node *
+pysqlite_new_node(PyObject *key, PyObject *data)
 {
     pysqlite_Node* node;
 
@@ -34,11 +35,8 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
         return NULL;
     }
 
-    Py_INCREF(key);
-    node->key = key;
-
-    Py_INCREF(data);
-    node->data = data;
+    node->key = Py_NewRef(key);
+    node->data = Py_NewRef(data);
 
     node->prev = NULL;
     node->next = NULL;
@@ -46,7 +44,8 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
     return node;
 }
 
-void pysqlite_node_dealloc(pysqlite_Node* self)
+static void
+pysqlite_node_dealloc(pysqlite_Node *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -57,7 +56,8 @@ void pysqlite_node_dealloc(pysqlite_Node* self)
     Py_DECREF(tp);
 }
 
-int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
+static int
+pysqlite_cache_init(pysqlite_Cache *self, PyObject *args, PyObject *kwargs)
 {
     PyObject* factory;
     int size = 10;
@@ -81,15 +81,15 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
         return -1;
     }
 
-    Py_INCREF(factory);
-    self->factory = factory;
+    self->factory = Py_NewRef(factory);
 
     self->decref_factory = 1;
 
     return 0;
 }
 
-void pysqlite_cache_dealloc(pysqlite_Cache* self)
+static void
+pysqlite_cache_dealloc(pysqlite_Cache *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     pysqlite_Node* node;
@@ -218,11 +218,11 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* key)
         self->last = node;
     }
 
-    Py_INCREF(node->data);
-    return node->data;
+    return Py_NewRef(node->data);
 }
 
-PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
+static PyObject *
+pysqlite_cache_display(pysqlite_Cache *self, PyObject *args)
 {
     pysqlite_Node* ptr;
     PyObject* prevkey;
@@ -296,7 +296,8 @@ static PyType_Spec cache_spec = {
 };
 PyTypeObject *pysqlite_CacheType = NULL;
 
-extern int pysqlite_cache_setup_types(PyObject *mod)
+int
+pysqlite_cache_setup_types(PyObject *mod)
 {
     pysqlite_NodeType = (PyTypeObject *)PyType_FromModuleAndSpec(mod, &node_spec, NULL);
     if (pysqlite_NodeType == NULL) {

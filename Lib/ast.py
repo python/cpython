@@ -27,7 +27,7 @@
 import sys
 from _ast import *
 from contextlib import contextmanager, nullcontext
-from enum import IntEnum, auto
+from enum import IntEnum, auto, _simple_enum
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -63,7 +63,10 @@ def literal_eval(node_or_string):
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _raise_malformed_node(node):
-        raise ValueError(f'malformed node or string: {node!r}')
+        msg = "malformed node or string"
+        if lno := getattr(node, 'lineno', None):
+            msg += f' on line {lno}'
+        raise ValueError(msg + f': {node!r}')
     def _convert_num(node):
         if not isinstance(node, Constant) or type(node.value) not in (int, float, complex):
             _raise_malformed_node(node)
@@ -633,7 +636,8 @@ class Param(expr_context):
 # We unparse those infinities to INFSTR.
 _INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
 
-class _Precedence(IntEnum):
+@_simple_enum(IntEnum)
+class _Precedence:
     """Precedence table that originated from python grammar."""
 
     TUPLE = auto()
@@ -1196,8 +1200,13 @@ class _Unparser(NodeVisitor):
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
-            # Substitute overflowing decimal literal for AST infinities.
-            self.write(repr(value).replace("inf", _INFSTR))
+            # Substitute overflowing decimal literal for AST infinities,
+            # and inf - inf for NaNs.
+            self.write(
+                repr(value)
+                .replace("inf", _INFSTR)
+                .replace("nan", f"({_INFSTR}-{_INFSTR})")
+            )
         elif self._avoid_backslashes and isinstance(value, str):
             self._write_str_avoiding_backslashes(value)
         else:
@@ -1270,10 +1279,13 @@ class _Unparser(NodeVisitor):
             self.traverse(node.orelse)
 
     def visit_Set(self, node):
-        if not node.elts:
-            raise ValueError("Set node should have at least one item")
-        with self.delimit("{", "}"):
-            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+        if node.elts:
+            with self.delimit("{", "}"):
+                self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+        else:
+            # `{}` would be interpreted as a dictionary literal, and
+            # `set` might be shadowed. Thus:
+            self.write('{*()}')
 
     def visit_Dict(self, node):
         def write_key_value_pair(k, v):
@@ -1475,6 +1487,13 @@ class _Unparser(NodeVisitor):
             self.write(":")
             self.traverse(node.step)
 
+    def visit_Match(self, node):
+        self.fill("match ")
+        self.traverse(node.subject)
+        with self.block():
+            for case in node.cases:
+                self.traverse(case)
+
     def visit_arg(self, node):
         self.write(node.arg)
         if node.annotation:
@@ -1558,6 +1577,26 @@ class _Unparser(NodeVisitor):
         if node.optional_vars:
             self.write(" as ")
             self.traverse(node.optional_vars)
+
+    def visit_match_case(self, node):
+        self.fill("case ")
+        self.traverse(node.pattern)
+        if node.guard:
+            self.write(" if ")
+            self.traverse(node.guard)
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_MatchAs(self, node):
+        with self.require_parens(_Precedence.TEST, node):
+            self.set_precedence(_Precedence.BOR, node.pattern)
+            self.traverse(node.pattern)
+            self.write(f" as {node.name}")
+
+    def visit_MatchOr(self, node):
+        with self.require_parens(_Precedence.BOR, node):
+            self.set_precedence(_Precedence.BOR.next(), *node.patterns)
+            self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
 
 def unparse(ast_obj):
     unparser = _Unparser()

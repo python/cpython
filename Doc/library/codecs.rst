@@ -697,7 +697,7 @@ compatible with the Python codec registry.
 
    .. method:: reset()
 
-      Flushes and resets the codec buffers used for keeping state.
+      Resets the codec buffers used for keeping internal state.
 
       Calling this method should ensure that the data on the output is put into
       a clean state that allows appending of new fresh data without having to
@@ -792,7 +792,7 @@ compatible with the Python codec registry.
 
    .. method:: reset()
 
-      Resets the codec buffers used for keeping state.
+      Resets the codec buffers used for keeping internal state.
 
       Note that no stream repositioning should take place. This method is
       primarily intended to be able to recover from decoding errors.
@@ -1416,6 +1416,9 @@ This module implements :rfc:`3490` (Internationalized Domain Names in
 Applications) and :rfc:`3492` (Nameprep: A Stringprep Profile for
 Internationalized Domain Names (IDN)). It builds upon the ``punycode`` encoding
 and :mod:`stringprep`.
+
+If you need the IDNA 2008 standard from :rfc:`5891` and :rfc:`5895`, use the
+third-party `idna module <https://pypi.org/project/idna/>_`.
 
 These RFCs together define a protocol to support non-ASCII characters in domain
 names. A domain name containing non-ASCII characters (such as

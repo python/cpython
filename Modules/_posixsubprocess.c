@@ -900,7 +900,7 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
     if (groups_list != Py_None) {
 #ifdef HAVE_SETGROUPS
         Py_ssize_t i;
-        unsigned long gid;
+        gid_t gid;
 
         if (!PyList_Check(groups_list)) {
             PyErr_SetString(PyExc_TypeError,
@@ -934,10 +934,6 @@ subprocess_fork_exec(PyObject *module, PyObject *args)
                 Py_DECREF(elem);
                 goto cleanup;
             } else {
-                /* In posixmodule.c UnsignedLong is used as a fallback value
-                * if the value provided does not fit in a Long. Since we are
-                * already doing the bounds checking on the Python side, we
-                * can go directly to an UnsignedLong here. */
                 if (!_Py_Gid_Converter(elem, &gid)) {
                     Py_DECREF(elem);
                     PyErr_SetString(PyExc_ValueError, "invalid group id");

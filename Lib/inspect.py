@@ -45,7 +45,6 @@ import sys
 import tokenize
 import token
 import types
-import typing
 import warnings
 import functools
 import builtins
@@ -408,7 +407,7 @@ def classify_class_attrs(cls):
     # attribute with the same name as a DynamicClassAttribute exists.
     for base in mro:
         for k, v in base.__dict__.items():
-            if isinstance(v, types.DynamicClassAttribute):
+            if isinstance(v, types.DynamicClassAttribute) and v.fget is not None:
                 names.append(k)
     result = []
     processed = set()
@@ -1893,10 +1892,7 @@ def _signature_is_functionlike(obj):
     code = getattr(obj, '__code__', None)
     defaults = getattr(obj, '__defaults__', _void) # Important to use _void ...
     kwdefaults = getattr(obj, '__kwdefaults__', _void) # ... and not None here
-    try:
-        annotations = _get_type_hints(obj)
-    except AttributeError:
-        annotations = None
+    annotations = getattr(obj, '__annotations__', None)
 
     return (isinstance(code, types.CodeType) and
             isinstance(name, str) and
@@ -2137,16 +2133,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     return cls(parameters, return_annotation=cls.empty)
 
-def _get_type_hints(func):
-    try:
-        return typing.get_type_hints(func)
-    except Exception:
-        # First, try to use the get_type_hints to resolve
-        # annotations. But for keeping the behavior intact
-        # if there was a problem with that (like the namespace
-        # can't resolve some annotation) continue to use
-        # string annotations
-        return func.__annotations__
 
 def _signature_from_builtin(cls, func, skip_bound_arg=True):
     """Private helper function to get signature for
@@ -2164,7 +2150,8 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
     return _signature_fromstr(cls, func, s, skip_bound_arg)
 
 
-def _signature_from_function(cls, func, skip_bound_arg=True):
+def _signature_from_function(cls, func, skip_bound_arg=True,
+                             globalns=None, localns=None):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2190,8 +2177,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = _get_type_hints(func)
-
+    annotations = func.__annotations__
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
@@ -2262,11 +2248,20 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
 def _signature_from_callable(obj, *,
                              follow_wrapper_chains=True,
                              skip_bound_arg=True,
+                             globalns=None,
+                             localns=None,
                              sigcls):
 
     """Private helper function to get signature for arbitrary
     callable objects.
     """
+
+    _get_signature_of = functools.partial(_signature_from_callable,
+                                follow_wrapper_chains=follow_wrapper_chains,
+                                skip_bound_arg=skip_bound_arg,
+                                globalns=globalns,
+                                localns=localns,
+                                sigcls=sigcls)
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
@@ -2274,11 +2269,7 @@ def _signature_from_callable(obj, *,
     if isinstance(obj, types.MethodType):
         # In this case we skip the first parameter of the underlying
         # function (usually `self` or `cls`).
-        sig = _signature_from_callable(
-            obj.__func__,
-            follow_wrapper_chains=follow_wrapper_chains,
-            skip_bound_arg=skip_bound_arg,
-            sigcls=sigcls)
+        sig = _get_signature_of(obj.__func__)
 
         if skip_bound_arg:
             return _signature_bound_method(sig)
@@ -2292,11 +2283,7 @@ def _signature_from_callable(obj, *,
             # If the unwrapped object is a *method*, we might want to
             # skip its first parameter (self).
             # See test_signature_wrapped_bound_method for details.
-            return _signature_from_callable(
-                obj,
-                follow_wrapper_chains=follow_wrapper_chains,
-                skip_bound_arg=skip_bound_arg,
-                sigcls=sigcls)
+            return _get_signature_of(obj)
 
     try:
         sig = obj.__signature__
@@ -2323,11 +2310,7 @@ def _signature_from_callable(obj, *,
             # (usually `self`, or `cls`) will not be passed
             # automatically (as for boundmethods)
 
-            wrapped_sig = _signature_from_callable(
-                partialmethod.func,
-                follow_wrapper_chains=follow_wrapper_chains,
-                skip_bound_arg=skip_bound_arg,
-                sigcls=sigcls)
+            wrapped_sig = _get_signature_of(partialmethod.func)
 
             sig = _signature_get_partial(wrapped_sig, partialmethod, (None,))
             first_wrapped_param = tuple(wrapped_sig.parameters.values())[0]
@@ -2346,18 +2329,15 @@ def _signature_from_callable(obj, *,
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
         return _signature_from_function(sigcls, obj,
-                                        skip_bound_arg=skip_bound_arg)
+                                        skip_bound_arg=skip_bound_arg,
+                                        globalns=globalns, localns=localns)
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
                                        skip_bound_arg=skip_bound_arg)
 
     if isinstance(obj, functools.partial):
-        wrapped_sig = _signature_from_callable(
-            obj.func,
-            follow_wrapper_chains=follow_wrapper_chains,
-            skip_bound_arg=skip_bound_arg,
-            sigcls=sigcls)
+        wrapped_sig = _get_signature_of(obj.func)
         return _signature_get_partial(wrapped_sig, obj)
 
     sig = None
@@ -2368,29 +2348,17 @@ def _signature_from_callable(obj, *,
         # in its metaclass
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
-            sig = _signature_from_callable(
-                call,
-                follow_wrapper_chains=follow_wrapper_chains,
-                skip_bound_arg=skip_bound_arg,
-                sigcls=sigcls)
+            sig = _get_signature_of(call)
         else:
             # Now we check if the 'obj' class has a '__new__' method
             new = _signature_get_user_defined_method(obj, '__new__')
             if new is not None:
-                sig = _signature_from_callable(
-                    new,
-                    follow_wrapper_chains=follow_wrapper_chains,
-                    skip_bound_arg=skip_bound_arg,
-                    sigcls=sigcls)
+                sig = _get_signature_of(new)
             else:
                 # Finally, we should have at least __init__ implemented
                 init = _signature_get_user_defined_method(obj, '__init__')
                 if init is not None:
-                    sig = _signature_from_callable(
-                        init,
-                        follow_wrapper_chains=follow_wrapper_chains,
-                        skip_bound_arg=skip_bound_arg,
-                        sigcls=sigcls)
+                    sig = _get_signature_of(init)
 
         if sig is None:
             # At this point we know, that `obj` is a class, with no user-
@@ -2436,11 +2404,7 @@ def _signature_from_callable(obj, *,
         call = _signature_get_user_defined_method(type(obj), '__call__')
         if call is not None:
             try:
-                sig = _signature_from_callable(
-                    call,
-                    follow_wrapper_chains=follow_wrapper_chains,
-                    skip_bound_arg=skip_bound_arg,
-                    sigcls=sigcls)
+                sig = _get_signature_of(call)
             except ValueError as ex:
                 msg = 'no signature found for {!r}'.format(obj)
                 raise ValueError(msg) from ex
@@ -2475,9 +2439,6 @@ class _ParameterKind(enum.IntEnum):
     VAR_POSITIONAL = 2
     KEYWORD_ONLY = 3
     VAR_KEYWORD = 4
-
-    def __str__(self):
-        return self._name_
 
     @property
     def description(self):
@@ -2892,10 +2853,12 @@ class Signature:
         return _signature_from_builtin(cls, func)
 
     @classmethod
-    def from_callable(cls, obj, *, follow_wrapped=True):
+    def from_callable(cls, obj, *,
+                      follow_wrapped=True, globalns=None, localns=None):
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
-                                        follow_wrapper_chains=follow_wrapped)
+                                        follow_wrapper_chains=follow_wrapped,
+                                        globalns=globalns, localns=localns)
 
     @property
     def parameters(self):
@@ -3143,9 +3106,10 @@ class Signature:
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True):
+def signature(obj, *, follow_wrapped=True, globalns=None, localns=None):
     """Get a signature object for the passed callable."""
-    return Signature.from_callable(obj, follow_wrapped=follow_wrapped)
+    return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
+                                   globalns=globalns, localns=localns)
 
 
 def _main():

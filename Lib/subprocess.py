@@ -5,7 +5,6 @@
 # Copyright (c) 2003-2005 by Peter Astrand <astrand@lysator.liu.se>
 #
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/2.4/license for licensing details.
 
 r"""Subprocesses with accessible I/O streams
 
@@ -54,14 +53,6 @@ import contextlib
 from time import monotonic as _time
 import types
 
-try:
-    import pwd
-except ImportError:
-    pwd = None
-try:
-    import grp
-except ImportError:
-    grp = None
 try:
     import fcntl
 except ImportError:
@@ -420,7 +411,11 @@ def check_output(*popenargs, timeout=None, **kwargs):
     if 'input' in kwargs and kwargs['input'] is None:
         # Explicitly passing input=None was previously equivalent to passing an
         # empty string. That is maintained here for backwards compatibility.
-        kwargs['input'] = '' if kwargs.get('universal_newlines', False) else b''
+        if kwargs.get('universal_newlines') or kwargs.get('text'):
+            empty = ''
+        else:
+            empty = b''
+        kwargs['input'] = empty
 
     return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
                **kwargs).stdout
@@ -698,7 +693,7 @@ def _use_posix_spawn():
 _USE_POSIX_SPAWN = _use_posix_spawn()
 
 
-class Popen(object):
+class Popen:
     """ Execute a child program in a new process.
 
     For a complete description of the arguments see the Python documentation.
@@ -849,6 +844,13 @@ class Popen(object):
 
         self.text_mode = encoding or errors or text or universal_newlines
 
+        # PEP 597: We suppress the EncodingWarning in subprocess module
+        # for now (at Python 3.10), because we focus on files for now.
+        # This will be changed to encoding = io.text_encoding(encoding)
+        # in the future.
+        if self.text_mode and encoding is None:
+            self.encoding = encoding = "locale"
+
         # How long to resume waiting on a child after the first ^C.
         # There is no right value for this.  The purpose is to be polite
         # yet remain good for interactive users trying to exit a tool.
@@ -872,7 +874,9 @@ class Popen(object):
                                  "current platform")
 
             elif isinstance(group, str):
-                if grp is None:
+                try:
+                    import grp
+                except ImportError:
                     raise ValueError("The group parameter cannot be a string "
                                      "on systems without the grp module")
 
@@ -898,7 +902,9 @@ class Popen(object):
             gids = []
             for extra_group in extra_groups:
                 if isinstance(extra_group, str):
-                    if grp is None:
+                    try:
+                        import grp
+                    except ImportError:
                         raise ValueError("Items in extra_groups cannot be "
                                          "strings on systems without the "
                                          "grp module")
@@ -924,10 +930,11 @@ class Popen(object):
                                  "the current platform")
 
             elif isinstance(user, str):
-                if pwd is None:
+                try:
+                    import pwd
+                except ImportError:
                     raise ValueError("The user parameter cannot be a string "
                                      "on systems without the pwd module")
-
                 uid = pwd.getpwnam(user).pw_uid
             elif isinstance(user, int):
                 uid = user
@@ -1532,10 +1539,8 @@ class Popen(object):
                 self.stderr.close()
 
             # All data exchanged.  Translate lists into strings.
-            if stdout is not None:
-                stdout = stdout[0]
-            if stderr is not None:
-                stderr = stderr[0]
+            stdout = stdout[0] if stdout else None
+            stderr = stderr[0] if stderr else None
 
             return (stdout, stderr)
 

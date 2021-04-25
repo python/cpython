@@ -263,7 +263,7 @@ FORMATS = {
 def add_output_cli(parser, *, default='summary'):
     parser.add_argument('--format', dest='fmt', default=default, choices=tuple(FORMATS))
 
-    def process_args(args):
+    def process_args(args, *, argv=None):
         pass
     return process_args
 
@@ -280,7 +280,7 @@ def _cli_check(parser, checks=None, **kwargs):
         process_checks = add_checks_cli(parser)
     elif len(checks) == 1 and type(checks) is not dict and re.match(r'^<.*>$', checks[0]):
         check = checks[0][1:-1]
-        def process_checks(args):
+        def process_checks(args, *, argv=None):
             args.checks = [check]
     else:
         process_checks = add_checks_cli(parser, checks=checks)
@@ -428,9 +428,9 @@ def _cli_data(parser, filenames=None, known=None):
     if known is None:
         sub.add_argument('--known', required=True)
 
-    def process_args(args):
+    def process_args(args, *, argv):
         if args.datacmd == 'dump':
-            process_progress(args)
+            process_progress(args, argv)
     return process_args
 
 
@@ -515,6 +515,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset=None):
 
     verbosity, traceback_cm = process_args_by_key(
         args,
+        argv,
         processors[cmd],
         ['verbosity', 'traceback_cm'],
     )

@@ -232,6 +232,29 @@ class TracebackCases(unittest.TestCase):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    def test_exception_is_None(self):
+        NONE_EXC_STRING = 'NoneType: None\n'
+        excfile = StringIO()
+        traceback.print_exception(None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        excfile = StringIO()
+        traceback.print_exception(None, None, None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        excfile = StringIO()
+        traceback.print_exc(None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        self.assertEqual(traceback.format_exc(None), NONE_EXC_STRING)
+        self.assertEqual(traceback.format_exception(None), [NONE_EXC_STRING])
+        self.assertEqual(
+            traceback.format_exception(None, None, None), [NONE_EXC_STRING])
+        self.assertEqual(
+            traceback.format_exception_only(None), [NONE_EXC_STRING])
+        self.assertEqual(
+            traceback.format_exception_only(None, None), [NONE_EXC_STRING])
+
 
 class TracebackFormatTests(unittest.TestCase):
 
@@ -687,6 +710,31 @@ class BaseExceptionReportingTests:
         msg = self.get_report(e).splitlines()
         self.assertEqual(msg[-2], '               ^')
 
+    def test_syntax_error_no_lineno(self):
+        # See #34463.
+
+        # Without filename
+        e = SyntaxError('bad syntax')
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['SyntaxError: bad syntax'])
+        e.lineno = 100
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['  File "<string>", line 100', 'SyntaxError: bad syntax'])
+
+        # With filename
+        e = SyntaxError('bad syntax')
+        e.filename = 'myfile.py'
+
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['SyntaxError: bad syntax (myfile.py)'])
+        e.lineno = 100
+        msg = self.get_report(e).splitlines()
+        self.assertEqual(msg,
+            ['  File "myfile.py", line 100', 'SyntaxError: bad syntax'])
+
     def test_message_none(self):
         # A message that looks like "None" should not be treated specially
         err = self.get_report(Exception(None))
@@ -1114,6 +1162,71 @@ class TestTracebackException(unittest.TestCase):
         except Exception:
             exc_info = sys.exc_info()
             exc = traceback.TracebackException(*exc_info)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        self.assertEqual(None, exc.__cause__)
+        self.assertEqual(exc_context, exc.__context__)
+        self.assertEqual(False, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_long_context_chain(self):
+        def f():
+            try:
+                1/0
+            except:
+                f()
+
+        try:
+            f()
+        except RecursionError:
+            exc_info = sys.exc_info()
+        else:
+            self.fail("Exception not raised")
+
+        te = traceback.TracebackException(*exc_info)
+        res = list(te.format())
+
+        # many ZeroDiv errors followed by the RecursionError
+        self.assertGreater(len(res), sys.getrecursionlimit())
+        self.assertGreater(
+            len([l for l in res if 'ZeroDivisionError:' in l]),
+            sys.getrecursionlimit() * 0.5)
+        self.assertIn(
+            "RecursionError: maximum recursion depth exceeded", res[-1])
+
+    def test_compact_with_cause(self):
+        try:
+            try:
+                1/0
+            finally:
+                cause = Exception("cause")
+                raise Exception("uh oh") from cause
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info, compact=True)
+            expected_stack = traceback.StackSummary.extract(
+                traceback.walk_tb(exc_info[2]))
+        exc_cause = traceback.TracebackException(Exception, cause, None)
+        self.assertEqual(exc_cause, exc.__cause__)
+        self.assertEqual(None, exc.__context__)
+        self.assertEqual(True, exc.__suppress_context__)
+        self.assertEqual(expected_stack, exc.stack)
+        self.assertEqual(exc_info[0], exc.exc_type)
+        self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_compact_no_cause(self):
+        try:
+            try:
+                1/0
+            finally:
+                exc_info_context = sys.exc_info()
+                exc_context = traceback.TracebackException(*exc_info_context)
+                raise Exception("uh oh")
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info, compact=True)
             expected_stack = traceback.StackSummary.extract(
                 traceback.walk_tb(exc_info[2]))
         self.assertEqual(None, exc.__cause__)
