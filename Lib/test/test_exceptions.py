@@ -1507,6 +1507,61 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertNotIn("somethingverywronghehe", err.getvalue())
 
+    def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        vvv = mom = w = id = python = None
+
+        with self.subTest(name="b"):
+            try:
+                b
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'python'", err.getvalue())
+
+        with self.subTest(name="v"):
+            try:
+                v
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'python'", err.getvalue())
+
+        with self.subTest(name="m"):
+            try:
+                m
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'python'", err.getvalue())
+
+        with self.subTest(name="py"):
+            try:
+                py
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'python'", err.getvalue())
+
     def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
         def f():
             # Mutating locals() is unreliable, so we need to do it by hand
