@@ -10,6 +10,7 @@ import weakref
 
 import unittest
 from test import support
+from test.support import import_helper
 
 from test.pickletester import AbstractHookTests
 from test.pickletester import AbstractUnpickleTests
@@ -203,6 +204,13 @@ class PyChainDispatchTableTests(AbstractDispatchTableTests):
         return collections.ChainMap({}, pickle.dispatch_table)
 
 
+class PyPicklerHookTests(AbstractHookTests):
+    class CustomPyPicklerClass(pickle._Pickler,
+                               AbstractCustomPicklerClass):
+        pass
+    pickler_class = CustomPyPicklerClass
+
+
 if has_c_implementation:
     class CPickleTests(AbstractPickleModuleTests):
         from _pickle import dump, dumps, load, loads, Pickler, Unpickler
@@ -254,12 +262,6 @@ if has_c_implementation:
         pickler_class = pickle.Pickler
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
-
-    class PyPicklerHookTests(AbstractHookTests):
-        class CustomPyPicklerClass(pickle._Pickler,
-                                   AbstractCustomPicklerClass):
-            pass
-        pickler_class = CustomPyPicklerClass
 
     class CPicklerHookTests(AbstractHookTests):
         class CustomCPicklerClass(_pickle.Pickler, AbstractCustomPicklerClass):
@@ -481,7 +483,8 @@ class CompatPickleTests(unittest.TestCase):
                 if exc in (BlockingIOError,
                            ResourceWarning,
                            StopAsyncIteration,
-                           RecursionError):
+                           RecursionError,
+                           EncodingWarning):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
@@ -498,7 +501,7 @@ class CompatPickleTests(unittest.TestCase):
                                      ('builtins', name))
 
     def test_multiprocessing_exceptions(self):
-        module = support.import_module('multiprocessing.context')
+        module = import_helper.import_module('multiprocessing.context')
         for name, exc in get_exceptions(module):
             with self.subTest(name):
                 self.assertEqual(reverse_mapping('multiprocessing.context', name),

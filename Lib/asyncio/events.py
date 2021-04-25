@@ -19,7 +19,6 @@ import sys
 import threading
 
 from . import format_helpers
-from . import exceptions
 
 
 class Handle:
@@ -119,20 +118,24 @@ class TimerHandle(Handle):
         return hash(self._when)
 
     def __lt__(self, other):
-        return self._when < other._when
+        if isinstance(other, TimerHandle):
+            return self._when < other._when
+        return NotImplemented
 
     def __le__(self, other):
-        if self._when < other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when < other._when or self.__eq__(other)
+        return NotImplemented
 
     def __gt__(self, other):
-        return self._when > other._when
+        if isinstance(other, TimerHandle):
+            return self._when > other._when
+        return NotImplemented
 
     def __ge__(self, other):
-        if self._when > other._when:
-            return True
-        return self.__eq__(other)
+        if isinstance(other, TimerHandle):
+            return self._when > other._when or self.__eq__(other)
+        return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, TimerHandle):
@@ -141,10 +144,6 @@ class TimerHandle(Handle):
                     self._args == other._args and
                     self._cancelled == other._cancelled)
         return NotImplemented
-
-    def __ne__(self, other):
-        equal = self.__eq__(other)
-        return NotImplemented if equal is NotImplemented else not equal
 
     def cancel(self):
         if not self._cancelled:
@@ -249,6 +248,10 @@ class AbstractEventLoop:
         """Shutdown all active asynchronous generators."""
         raise NotImplementedError
 
+    async def shutdown_default_executor(self):
+        """Schedule the shutdown of the default executor."""
+        raise NotImplementedError
+
     # Methods scheduling callbacks.  All these return Handles.
 
     def _timer_handle_cancelled(self, handle):
@@ -280,7 +283,7 @@ class AbstractEventLoop:
     def call_soon_threadsafe(self, callback, *args):
         raise NotImplementedError
 
-    async def run_in_executor(self, executor, func, *args):
+    def run_in_executor(self, executor, func, *args):
         raise NotImplementedError
 
     def set_default_executor(self, executor):
@@ -393,7 +396,7 @@ class AbstractEventLoop:
         The return value is a Server object, which can be used to stop
         the service.
 
-        path is a str, representing a file systsem path to bind the
+        path is a str, representing a file system path to bind the
         server socket to.
 
         sock can optionally be specified in order to use a preexisting
@@ -412,6 +415,20 @@ class AbstractEventLoop:
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
         to make the server to start accepting connections.
+        """
+        raise NotImplementedError
+
+    async def connect_accepted_socket(
+            self, protocol_factory, sock,
+            *, ssl=None,
+            ssl_handshake_timeout=None):
+        """Handle an accepted connection.
+
+        This is used by servers that accept connections outside of
+        asyncio, but use asyncio to handle connections.
+
+        This method is a coroutine.  When completed, the coroutine
+        returns a (transport, protocol) pair.
         """
         raise NotImplementedError
 
@@ -626,13 +643,13 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         self._local = self._Local()
 
     def get_event_loop(self):
-        """Get the event loop.
+        """Get the event loop for the current context.
 
-        This may be None or an instance of EventLoop.
+        Returns an instance of EventLoop or raises an exception.
         """
         if (self._local._loop is None and
                 not self._local._set_called and
-                isinstance(threading.current_thread(), threading._MainThread)):
+                threading.current_thread() is threading.main_thread()):
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:
@@ -742,9 +759,16 @@ def get_event_loop():
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
+    return _py__get_event_loop()
+
+
+def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
+    import warnings
+    warnings.warn('There is no current event loop',
+                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 
@@ -774,6 +798,7 @@ _py__get_running_loop = _get_running_loop
 _py__set_running_loop = _set_running_loop
 _py_get_running_loop = get_running_loop
 _py_get_event_loop = get_event_loop
+_py__get_event_loop = _get_event_loop
 
 
 try:
@@ -781,7 +806,7 @@ try:
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
     from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop)
+                          get_running_loop, get_event_loop, _get_event_loop)
 except ImportError:
     pass
 else:
@@ -790,3 +815,4 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
+    _c__get_event_loop = _get_event_loop

@@ -1,2 +1,0 @@
-Do not clear :data:`sys.flags` and :data:`sys.float_info` during shutdown.
-Patch by Zackery Spytz.

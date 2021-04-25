@@ -42,7 +42,6 @@ BaseException
       |    +-- NotImplementedError
       |    +-- RecursionError
       +-- SyntaxError
-      |    +-- TargetScopeError
       |    +-- IndentationError
       |         +-- TabError
       +-- SystemError
@@ -62,4 +61,5 @@ BaseException
            +-- ImportWarning
            +-- UnicodeWarning
            +-- BytesWarning
+           +-- EncodingWarning
            +-- ResourceWarning

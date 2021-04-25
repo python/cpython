@@ -46,7 +46,6 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
-import locale
 import os
 import re
 import sys
@@ -210,6 +209,7 @@ def c2py(plural):
 
 
 def _expand_lang(loc):
+    import locale
     loc = locale.normalize(loc)
     COMPONENT_CODESET   = 1 << 0
     COMPONENT_TERRITORY = 1 << 1
@@ -278,6 +278,7 @@ class NullTranslations:
         import warnings
         warnings.warn('lgettext() is deprecated, use gettext() instead',
                       DeprecationWarning, 2)
+        import locale
         if self._fallback:
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore', r'.*\blgettext\b.*',
@@ -299,6 +300,7 @@ class NullTranslations:
         import warnings
         warnings.warn('lngettext() is deprecated, use ngettext() instead',
                       DeprecationWarning, 2)
+        import locale
         if self._fallback:
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore', r'.*\blngettext\b.*',
@@ -462,6 +464,7 @@ class GNUTranslations(NullTranslations):
         import warnings
         warnings.warn('lgettext() is deprecated, use gettext() instead',
                       DeprecationWarning, 2)
+        import locale
         missing = object()
         tmsg = self._catalog.get(message, missing)
         if tmsg is missing:
@@ -476,6 +479,7 @@ class GNUTranslations(NullTranslations):
         import warnings
         warnings.warn('lngettext() is deprecated, use ngettext() instead',
                       DeprecationWarning, 2)
+        import locale
         try:
             tmsg = self._catalog[(msgid1, self.plural(n))]
         except KeyError:
@@ -668,6 +672,7 @@ def ldgettext(domain, message):
     import warnings
     warnings.warn('ldgettext() is deprecated, use dgettext() instead',
                   DeprecationWarning, 2)
+    import locale
     codeset = _localecodesets.get(domain)
     try:
         with warnings.catch_warnings():
@@ -695,6 +700,7 @@ def ldngettext(domain, msgid1, msgid2, n):
     import warnings
     warnings.warn('ldngettext() is deprecated, use dngettext() instead',
                   DeprecationWarning, 2)
+    import locale
     codeset = _localecodesets.get(domain)
     try:
         with warnings.catch_warnings():

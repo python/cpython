@@ -1,2 +1,0 @@
-:func:`symtable.symtable` now accepts the same input types for source code as the
-built-in :func:`compile` function. Patch by Dino Viehland.

@@ -33,11 +33,6 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. deprecated-removed:: 3.3 3.9
-    Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
-    For backwards compatibility, they continue to be visible in this module through
-    Python 3.8.
-
 
 :class:`ChainMap` objects
 -------------------------
@@ -77,18 +72,22 @@ The class can be used to simulate nested scopes and is useful in templating.
         be modified to change which mappings are searched.  The list should
         always contain at least one mapping.
 
-    .. method:: new_child(m=None)
+    .. method:: new_child(m=None, **kwargs)
 
         Returns a new :class:`ChainMap` containing a new map followed by
         all of the maps in the current instance.  If ``m`` is specified,
         it becomes the new map at the front of the list of mappings; if not
         specified, an empty dict is used, so that a call to ``d.new_child()``
-        is equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
-        creating subcontexts that can be updated without altering values in any
-        of the parent mappings.
+        is equivalent to: ``ChainMap({}, *d.maps)``. If any keyword arguments
+        are specified, they update passed map or new empty dict. This method
+        is used for creating subcontexts that can be updated without altering
+        values in any of the parent mappings.
 
         .. versionchanged:: 3.4
            The optional ``m`` parameter was added.
+
+        .. versionchanged:: 3.10
+           Keyword arguments support was added.
 
     .. attribute:: parents
 
@@ -116,6 +115,9 @@ The class can be used to simulate nested scopes and is useful in templating.
         >>> list(combined)
         ['music', 'art', 'opera']
 
+    .. versionchanged:: 3.9
+       Added support for ``|`` and ``|=`` operators, specified in :pep:`584`.
+
 .. seealso::
 
     * The `MultiContext class
@@ -125,7 +127,7 @@ The class can be used to simulate nested scopes and is useful in templating.
       writing to any mapping in the chain.
 
     * Django's `Context class
-      <https://github.com/django/django/blob/master/django/template/context.py>`_
+      <https://github.com/django/django/blob/main/django/template/context.py>`_
       for templating is a read-only chain of mappings.  It also features
       pushing and popping of contexts similar to the
       :meth:`~collections.ChainMap.new_child` method and the
@@ -162,7 +164,7 @@ environment variables which in turn take precedence over default values::
         parser.add_argument('-u', '--user')
         parser.add_argument('-c', '--color')
         namespace = parser.parse_args()
-        command_line_args = {k:v for k, v in vars(namespace).items() if v}
+        command_line_args = {k: v for k, v in vars(namespace).items() if v is not None}
 
         combined = ChainMap(command_line_args, os.environ, defaults)
         print(combined['color'])
@@ -324,6 +326,19 @@ For example::
         *mapping* (or counter).  Like :meth:`dict.update` but adds counts
         instead of replacing them.  Also, the *iterable* is expected to be a
         sequence of elements, not a sequence of ``(key, value)`` pairs.
+
+Counters support rich comparison operators for equality, subset, and
+superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
+All of those tests treat missing elements as having zero counts so that
+``Counter(a=1) == Counter(a=1, b=0)`` returns true.
+
+.. versionadded:: 3.10
+   Rich comparison operations we were added
+
+.. versionchanged:: 3.10
+   In equality tests, missing elements are treated as having zero counts.
+   Formerly, ``Counter(a=3)`` and ``Counter(a=3, b=0)`` were considered
+   distinct.
 
 Common patterns for working with :class:`Counter` objects::
 
@@ -729,6 +744,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         initialized from the first argument to the constructor, if present, or to
         ``None``, if absent.
 
+    .. versionchanged:: 3.9
+       Added merge (``|``) and update (``|=``) operators, specified in
+       :pep:`584`.
+
 
 :class:`defaultdict` Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -841,6 +860,9 @@ they add the ability to access fields by name instead of position index.
 
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
+
+    To support pickling, the named tuple class should be assigned to a variable
+    that matches *typename*.
 
     .. versionchanged:: 3.1
        Added support for *rename*.
@@ -1119,6 +1141,10 @@ anywhere a regular dictionary is used.
    passed to the :class:`OrderedDict` constructor and its :meth:`update`
    method.
 
+.. versionchanged:: 3.9
+    Added merge (``|``) and update (``|=``) operators, specified in :pep:`584`.
+
+
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1140,7 +1166,7 @@ variants of :func:`functools.lru_cache`::
     class LRU(OrderedDict):
         'Limit size, evicting the least recently looked-up key when full'
 
-        def __init__(self, maxsize=128, *args, **kwds):
+        def __init__(self, maxsize=128, /, *args, **kwds):
             self.maxsize = maxsize
             super().__init__(*args, **kwds)
 
@@ -1150,6 +1176,8 @@ variants of :func:`functools.lru_cache`::
             return value
 
         def __setitem__(self, key, value):
+            if key in self:
+                self.move_to_end(key)
             super().__setitem__(key, value)
             if len(self) > self.maxsize:
                 oldest = next(iter(self))

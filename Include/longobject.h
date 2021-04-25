@@ -13,7 +13,7 @@ PyAPI_DATA(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) \
         PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LONG_SUBCLASS)
-#define PyLong_CheckExact(op) (Py_TYPE(op) == &PyLong_Type)
+#define PyLong_CheckExact(op) Py_IS_TYPE(op, &PyLong_Type)
 
 PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
 PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
@@ -74,7 +74,7 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 #endif
 
 /* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscapeRecode(), etc. */
+   _PyBytes_DecodeEscape(), etc. */
 #ifndef Py_LIMITED_API
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 #endif
@@ -102,8 +102,6 @@ PyAPI_FUNC(long long) PyLong_AsLongLongAndOverflow(PyObject *, int *);
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);
 #ifndef Py_LIMITED_API
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
 PyAPI_FUNC(PyObject *) PyLong_FromUnicodeObject(PyObject *u, int base);
 PyAPI_FUNC(PyObject *) _PyLong_FromBytes(const char *, Py_ssize_t, int);
 #endif
@@ -173,23 +171,6 @@ PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
     unsigned char* bytes, size_t n,
     int little_endian, int is_signed);
 
-/* _PyLong_FromNbInt: Convert the given object to a PyLongObject
-   using the nb_int slot, if available.  Raise TypeError if either the
-   nb_int slot is not available or the result of the call to nb_int
-   returns something not of type int.
-*/
-PyAPI_FUNC(PyObject *) _PyLong_FromNbInt(PyObject *);
-
-/* Convert the given object to a PyLongObject using the nb_index or
-   nb_int slots, if available (the latter is deprecated).
-   Raise TypeError if either nb_index and nb_int slots are not
-   available or the result of the call to nb_index or nb_int
-   returns something not of type int.
-   Should be replaced with PyNumber_Index after the end of the
-   deprecation period.
-*/
-PyAPI_FUNC(PyObject *) _PyLong_FromNbIndexOrNbInt(PyObject *);
-
 /* _PyLong_Format: Convert the long to a string object with given base,
    appending a base prefix of 0[box] if base is 2, 8 or 16. */
 PyAPI_FUNC(PyObject *) _PyLong_Format(PyObject *obj, int base);
@@ -229,9 +210,6 @@ PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
 #endif /* !Py_LIMITED_API */
 
 #ifndef Py_LIMITED_API
-PyAPI_DATA(PyObject *) _PyLong_Zero;
-PyAPI_DATA(PyObject *) _PyLong_One;
-
 PyAPI_FUNC(PyObject *) _PyLong_Rshift(PyObject *, size_t);
 PyAPI_FUNC(PyObject *) _PyLong_Lshift(PyObject *, size_t);
 #endif

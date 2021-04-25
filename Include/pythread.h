@@ -3,7 +3,6 @@
 #define Py_PYTHREAD_H
 
 typedef void *PyThread_type_lock;
-typedef void *PyThread_type_sema;
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +25,7 @@ PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
 PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
-#if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || defined(_WIN32)
+#if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(_WIN32) || defined(_AIX)
 #define PY_HAVE_THREAD_NATIVE_ID
 PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
 #endif
@@ -36,6 +35,15 @@ PyAPI_FUNC(void) PyThread_free_lock(PyThread_type_lock);
 PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define WAIT_LOCK       1
 #define NOWAIT_LOCK     0
+
+#ifndef Py_LIMITED_API
+#ifdef HAVE_FORK
+/* Private function to reinitialize a lock at fork in the child process.
+   Reset the lock to the unlocked state.
+   Return 0 on success, return -1 on error. */
+PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
+#endif  /* HAVE_FORK */
+#endif  /* !Py_LIMITED_API */
 
 /* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
    on a lock (see PyThread_acquire_lock_timed() below).
@@ -51,16 +59,16 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #if defined(_POSIX_THREADS)
    /* PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
       convert microseconds to nanoseconds. */
-#  define PY_TIMEOUT_MAX (PY_LLONG_MAX / 1000)
+#  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
    /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
-#  if 0xFFFFFFFFLL * 1000 < PY_LLONG_MAX
+#  if 0xFFFFFFFFLL * 1000 < LLONG_MAX
 #    define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
 #  else
-#    define PY_TIMEOUT_MAX PY_LLONG_MAX
+#    define PY_TIMEOUT_MAX LLONG_MAX
 #  endif
 #else
-#  define PY_TIMEOUT_MAX PY_LLONG_MAX
+#  define PY_TIMEOUT_MAX LLONG_MAX
 #endif
 
 

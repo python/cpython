@@ -36,8 +36,40 @@ BlockingIOError = BlockingIOError
 # Does io.IOBase finalizer log the exception if the close() method fails?
 # The exception is ignored silently by default in release build.
 _IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+# Does open() check its 'errors' argument?
+_CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
 
 
+def text_encoding(encoding, stacklevel=2):
+    """
+    A helper function to choose the text encoding.
+
+    When encoding is not None, just return it.
+    Otherwise, return the default text encoding (i.e. "locale").
+
+    This function emits an EncodingWarning if *encoding* is None and
+    sys.flags.warn_default_encoding is true.
+
+    This can be used in APIs with an encoding=None parameter
+    that pass it to TextIOWrapper or open.
+    However, please consider using encoding="utf-8" for new APIs.
+    """
+    if encoding is None:
+        encoding = "locale"
+        if sys.flags.warn_default_encoding:
+            import warnings
+            warnings.warn("'encoding' argument not specified.",
+                          EncodingWarning, stacklevel + 1)
+    return encoding
+
+
+# Wrapper for builtins.open
+#
+# Trick so that open() won't become a bound method when stored
+# as a class variable (as dbm.dumb does).
+#
+# See init_set_builtins_open() in Python/pylifecycle.c.
+@staticmethod
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
 
@@ -246,6 +278,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         result = buffer
         if binary:
             return result
+        encoding = text_encoding(encoding)
         text = TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
         result = text
         text.mode = mode
@@ -278,27 +311,20 @@ except AttributeError:
     open_code = _open_code_with_warning
 
 
-class DocDescriptor:
-    """Helper for builtins.open.__doc__
-    """
-    def __get__(self, obj, typ):
-        return (
-            "open(file, mode='r', buffering=-1, encoding=None, "
-                 "errors=None, newline=None, closefd=True)\n\n" +
-            open.__doc__)
-
-class OpenWrapper:
-    """Wrapper for builtins.open
-
-    Trick so that open won't become a bound method when stored
-    as a class variable (as dbm.dumb does).
-
-    See initstdio() in Python/pylifecycle.c.
-    """
-    __doc__ = DocDescriptor()
-
-    def __new__(cls, *args, **kwargs):
-        return open(*args, **kwargs)
+def __getattr__(name):
+    if name == "OpenWrapper":
+        # bpo-43680: Until Python 3.9, _pyio.open was not a static method and
+        # builtins.open was set to OpenWrapper to not become a bound method
+        # when set to a class variable. _io.open is a built-in function whereas
+        # _pyio.open is a Python function. In Python 3.10, _pyio.open() is now
+        # a static method, and builtins.open() is now io.open().
+        import warnings
+        warnings.warn('OpenWrapper is deprecated, use open instead',
+                      DeprecationWarning, stacklevel=2)
+        global OpenWrapper
+        OpenWrapper = open
+        return OpenWrapper
+    raise AttributeError(name)
 
 
 # In normal operation, both `UnsupportedOperation`s should be bound to the
@@ -405,6 +431,16 @@ class IOBase(metaclass=abc.ABCMeta):
 
     def __del__(self):
         """Destructor.  Calls close()."""
+        try:
+            closed = self.closed
+        except AttributeError:
+            # If getting closed fails, then the object is probably
+            # in an unusable state, so ignore.
+            return
+
+        if closed:
+            return
+
         if _IOBASE_EMITS_UNRAISABLE:
             self.close()
         else:
@@ -792,6 +828,9 @@ class _BufferedIOMixin(BufferedIOBase):
         return pos
 
     def truncate(self, pos=None):
+        self._checkClosed()
+        self._checkWritable()
+
         # Flush the stream.  We're mixing buffered I/O with lower-level I/O,
         # and a flush may be necessary to synch both views of the current
         # file state.
@@ -855,7 +894,7 @@ class _BufferedIOMixin(BufferedIOBase):
         clsname = self.__class__.__qualname__
         try:
             name = self.name
-        except Exception:
+        except AttributeError:
             return "<{}.{}>".format(modname, clsname)
         else:
             return "<{}.{} name={!r}>".format(modname, clsname, name)
@@ -1561,7 +1600,7 @@ class FileIO(RawIOBase):
                     raise IsADirectoryError(errno.EISDIR,
                                             os.strerror(errno.EISDIR), file)
             except AttributeError:
-                # Ignore the AttribueError if stat.S_ISDIR or errno.EISDIR
+                # Ignore the AttributeError if stat.S_ISDIR or errno.EISDIR
                 # don't exist.
                 pass
             self._blksize = getattr(fdfstat, 'st_blksize', 0)
@@ -1577,7 +1616,11 @@ class FileIO(RawIOBase):
                 # For consistent behaviour, we explicitly seek to the
                 # end of file (otherwise, it might be done only on the
                 # first write()).
-                os.lseek(fd, 0, SEEK_END)
+                try:
+                    os.lseek(fd, 0, SEEK_END)
+                except OSError as e:
+                    if e.errno != errno.ESPIPE:
+                        raise
         except:
             if owned_fd is not None:
                 os.close(owned_fd)
@@ -1985,19 +2028,22 @@ class TextIOWrapper(TextIOBase):
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False, write_through=False):
         self._check_newline(newline)
-        if encoding is None:
+        encoding = text_encoding(encoding)
+
+        if encoding == "locale":
             try:
-                encoding = os.device_encoding(buffer.fileno())
+                encoding = os.device_encoding(buffer.fileno()) or "locale"
             except (AttributeError, UnsupportedOperation):
                 pass
-            if encoding is None:
-                try:
-                    import locale
-                except ImportError:
-                    # Importing locale may fail if Python is being built
-                    encoding = "ascii"
-                else:
-                    encoding = locale.getpreferredencoding(False)
+
+        if encoding == "locale":
+            try:
+                import locale
+            except ImportError:
+                # Importing locale may fail if Python is being built
+                encoding = "utf-8"
+            else:
+                encoding = locale.getpreferredencoding(False)
 
         if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
@@ -2012,6 +2058,8 @@ class TextIOWrapper(TextIOBase):
         else:
             if not isinstance(errors, str):
                 raise ValueError("invalid errors: %r" % errors)
+            if _CHECK_ERRORS:
+                codecs.lookup_error(errors)
 
         self._buffer = buffer
         self._decoded_chars = ''  # buffer for text returned from decoder
@@ -2069,13 +2117,13 @@ class TextIOWrapper(TextIOBase):
                                  self.__class__.__qualname__)
         try:
             name = self.name
-        except Exception:
+        except AttributeError:
             pass
         else:
             result += " name={0!r}".format(name)
         try:
             mode = self.mode
-        except Exception:
+        except AttributeError:
             pass
         else:
             result += " mode={0!r}".format(mode)
@@ -2281,7 +2329,7 @@ class TextIOWrapper(TextIOBase):
         return not eof
 
     def _pack_cookie(self, position, dec_flags=0,
-                           bytes_to_feed=0, need_eof=0, chars_to_skip=0):
+                           bytes_to_feed=0, need_eof=False, chars_to_skip=0):
         # The meaning of a tell() cookie is: seek to position, set the
         # decoder flags to dec_flags, read bytes_to_feed bytes, feed them
         # into the decoder with need_eof as the EOF flag, then skip
@@ -2295,7 +2343,7 @@ class TextIOWrapper(TextIOBase):
         rest, dec_flags = divmod(rest, 1<<64)
         rest, bytes_to_feed = divmod(rest, 1<<64)
         need_eof, chars_to_skip = divmod(rest, 1<<64)
-        return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
+        return position, dec_flags, bytes_to_feed, bool(need_eof), chars_to_skip
 
     def tell(self):
         if not self._seekable:
@@ -2369,7 +2417,7 @@ class TextIOWrapper(TextIOBase):
             # (a point where the decoder has nothing buffered, so seek()
             # can safely start from there and advance to this location).
             bytes_fed = 0
-            need_eof = 0
+            need_eof = False
             # Chars decoded since `start_pos`
             chars_decoded = 0
             for i in range(skip_bytes, len(next_input)):
@@ -2386,7 +2434,7 @@ class TextIOWrapper(TextIOBase):
             else:
                 # We didn't get enough decoded data; signal EOF to get more.
                 chars_decoded += len(decoder.decode(b'', final=True))
-                need_eof = 1
+                need_eof = True
                 if chars_decoded < chars_to_skip:
                     raise OSError("can't reconstruct logical file position")
 

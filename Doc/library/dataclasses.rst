@@ -19,9 +19,11 @@ in :pep:`557`.
 The member variables to use in these generated methods are defined
 using :pep:`526` type annotations.  For example this code::
 
+  from dataclasses import dataclass
+
   @dataclass
   class InventoryItem:
-      '''Class for keeping track of an item in inventory.'''
+      """Class for keeping track of an item in inventory."""
       name: str
       unit_price: float
       quantity_on_hand: int = 0
@@ -44,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module-level decorators, classes, and functions
 -----------------------------------------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -60,8 +62,9 @@ Module-level decorators, classes, and functions
 
    The :func:`dataclass` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
-   exist on the class, a :exc:`TypeError` will be raised.  The decorator
-   returns the same class that is called on: no new class is created.
+   exist on the class, the behavior depends on the parameter, as documented
+   below. The decorator returns the same class that is called on; no new
+   class is created.
 
    If :func:`dataclass` is used just as a simple decorator with no parameters,
    it acts as if it has the default values documented in this
@@ -76,7 +79,7 @@ Module-level decorators, classes, and functions
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True)
      class C:
         ...
 
@@ -115,7 +118,7 @@ Module-level decorators, classes, and functions
 
      If the class already defines any of :meth:`__lt__`,
      :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`, then
-     :exc:`ValueError` is raised.
+     :exc:`TypeError` is raised.
 
    - ``unsafe_hash``: If ``False`` (the default), a :meth:`__hash__` method
      is generated according to how ``eq`` and ``frozen`` are set.
@@ -133,7 +136,7 @@ Module-level decorators, classes, and functions
      attribute ``__hash__ = None`` has a specific meaning to Python, as
      described in the :meth:`__hash__` documentation.
 
-     If :meth:`__hash__` is not explicit defined, or if it is set to ``None``,
+     If :meth:`__hash__` is not explicitly defined, or if it is set to ``None``,
      then :func:`dataclass` *may* add an implicit :meth:`__hash__` method.
      Although not recommended, you can force :func:`dataclass` to create a
      :meth:`__hash__` method with ``unsafe_hash=True``. This might be the case
@@ -153,10 +156,18 @@ Module-level decorators, classes, and functions
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
 
-   - ``frozen``: If true (the default is False), assigning to fields will
+   - ``frozen``: If true (the default is ``False``), assigning to fields will
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
+
+   - ``match_args``: If true (the default is ``True``), the
+     ``__match_args__`` tuple will be created from the list of
+     parameters to the generated :meth:`__init__` method (even if
+     :meth:`__init__` is not generated, see above).  If false, or if
+     ``__match_args__`` is already defined in the class, then
+     ``__match_args__`` will not be generated.
+
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -185,7 +196,7 @@ Module-level decorators, classes, and functions
 
      @dataclass
      class C:
-         mylist: List[int] = field(default_factory=list)
+         mylist: list[int] = field(default_factory=list)
 
      c = C()
      c.mylist += [1, 2, 3]
@@ -298,7 +309,7 @@ Module-level decorators, classes, and functions
 
      @dataclass
      class C:
-          mylist: List[Point]
+          mylist: list[Point]
 
      p = Point(10, 20)
      assert asdict(p) == {'x': 10, 'y': 20}
@@ -322,7 +333,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -330,8 +341,9 @@ Module-level decorators, classes, and functions
    iterable whose elements are each either ``name``, ``(name, type)``,
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
-   ``repr``, ``eq``, ``order``, ``unsafe_hash``, and ``frozen`` have
-   the same meaning as they do in :func:`dataclass`.
+   ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``, and
+   ``match_args`` have the same meaning as they do in
+   :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -356,7 +368,7 @@ Module-level decorators, classes, and functions
          def add_one(self):
              return self.x + 1
 
-.. function:: replace(instance, **changes)
+.. function:: replace(instance, /, **changes)
 
    Creates a new object of the same type of ``instance``, replacing
    fields with values from ``changes``.  If ``instance`` is not a Data
@@ -386,8 +398,8 @@ Module-level decorators, classes, and functions
 
 .. function:: is_dataclass(class_or_instance)
 
-   Returns True if its parameter is a dataclass or an instance of one,
-   otherwise returns False.
+   Return ``True`` if its parameter is a dataclass or an instance of one,
+   otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not

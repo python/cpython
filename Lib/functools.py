@@ -10,14 +10,16 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'total_ordering', 'cache', 'cmp_to_key', 'lru_cache', 'reduce',
+           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod',
+           'cached_property']
 
 from abc import get_cache_token
 from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from types import GenericAlias
 
 
 ################################################################################
@@ -94,6 +96,8 @@ def _gt_from_lt(self, other, NotImplemented=NotImplemented):
 def _le_from_lt(self, other, NotImplemented=NotImplemented):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
     op_result = self.__lt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _ge_from_lt(self, other, NotImplemented=NotImplemented):
@@ -134,6 +138,8 @@ def _lt_from_gt(self, other, NotImplemented=NotImplemented):
 def _ge_from_gt(self, other, NotImplemented=NotImplemented):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
     op_result = self.__gt__(other)
+    if op_result is NotImplemented:
+        return op_result
     return op_result or self == other
 
 def _le_from_gt(self, other, NotImplemented=NotImplemented):
@@ -230,14 +236,14 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, sequence[, initial]) -> value
+    reduce(function, iterable[, initial]) -> value
 
-    Apply a function of two arguments cumulatively to the items of a sequence,
-    from left to right, so as to reduce the sequence to a single value.
-    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    Apply a function of two arguments cumulatively to the items of a sequence
+    or iterable, from left to right, so as to reduce the iterable to a single
+    value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
     ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
-    of the sequence in the calculation, and serves as a default when the
-    sequence is empty.
+    of the iterable in the calculation, and serves as a default when the
+    iterable is empty.
     """
 
     it = iter(sequence)
@@ -246,7 +252,8 @@ def reduce(function, sequence, initial=_initial_missing):
         try:
             value = next(it)
         except StopIteration:
-            raise TypeError("reduce() of empty sequence with no initial value") from None
+            raise TypeError(
+                "reduce() of empty iterable with no initial value") from None
     else:
         value = initial
 
@@ -273,15 +280,9 @@ class partial:
 
     __slots__ = "func", "args", "keywords", "__dict__", "__weakref__"
 
-    def __new__(*args, **keywords):
-        if not args:
-            raise TypeError("descriptor '__new__' of partial needs an argument")
-        if len(args) < 2:
-            raise TypeError("type 'partial' takes at least one argument")
-        cls, func, *args = args
+    def __new__(cls, func, /, *args, **keywords):
         if not callable(func):
             raise TypeError("the first argument must be callable")
-        args = tuple(args)
 
         if hasattr(func, "func"):
             args = func.args + args
@@ -295,10 +296,7 @@ class partial:
         self.keywords = keywords
         return self
 
-    def __call__(*args, **keywords):
-        if not args:
-            raise TypeError("descriptor '__call__' of partial needs an argument")
-        self, *args = args
+    def __call__(self, /, *args, **keywords):
         keywords = {**self.keywords, **keywords}
         return self.func(*self.args, *args, **keywords)
 
@@ -354,23 +352,7 @@ class partialmethod(object):
     callables as instance methods.
     """
 
-    def __init__(*args, **keywords):
-        if len(args) >= 2:
-            self, func, *args = args
-        elif not args:
-            raise TypeError("descriptor '__init__' of partialmethod "
-                            "needs an argument")
-        elif 'func' in keywords:
-            func = keywords.pop('func')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'func' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError("type 'partialmethod' takes at least one argument, "
-                            "got %d" % (len(args)-1))
-        args = tuple(args)
-
+    def __init__(self, func, /, *args, **keywords):
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError("{!r} is not callable or a descriptor"
                                  .format(func))
@@ -388,7 +370,6 @@ class partialmethod(object):
             self.func = func
             self.args = args
             self.keywords = keywords
-    __init__.__text_signature__ = '($self, func, /, *args, **keywords)'
 
     def __repr__(self):
         args = ", ".join(map(repr, self.args))
@@ -402,15 +383,14 @@ class partialmethod(object):
                                     keywords=keywords)
 
     def _make_unbound_method(self):
-        def _method(*args, **keywords):
-            cls_or_self, *args = args
+        def _method(cls_or_self, /, *args, **keywords):
             keywords = {**self.keywords, **keywords}
             return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method._partialmethod = self
         return _method
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
         if get is not None:
@@ -432,6 +412,9 @@ class partialmethod(object):
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, "__isabstractmethod__", False)
+
+    __class_getitem__ = classmethod(GenericAlias)
+
 
 # Helper functions
 
@@ -509,7 +492,7 @@ def lru_cache(maxsize=128, typed=False):
     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
-    See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
+    See:  http://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
     """
 
@@ -526,6 +509,7 @@ def lru_cache(maxsize=128, typed=False):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
     elif maxsize is not None:
         raise TypeError(
@@ -533,6 +517,7 @@ def lru_cache(maxsize=128, typed=False):
 
     def decorating_function(user_function):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
 
     return decorating_function
@@ -657,6 +642,15 @@ try:
     from _functools import _lru_cache_wrapper
 except ImportError:
     pass
+
+
+################################################################################
+### cache -- simplified access to the infinity cache
+################################################################################
+
+def cache(user_function, /):
+    'Simple lightweight unbounded cache.  Sometimes called "memoize".'
+    return lru_cache(maxsize=None)(user_function)
 
 
 ################################################################################
@@ -915,7 +909,7 @@ class singledispatchmethod:
         """
         return self.dispatcher.register(cls, func=method)
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
@@ -953,7 +947,7 @@ class cached_property:
                 f"({self.attrname!r} and {name!r})."
             )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         if instance is None:
             return self
         if self.attrname is None:
@@ -983,3 +977,5 @@ class cached_property:
                         )
                         raise TypeError(msg) from None
         return val
+
+    __class_getitem__ = classmethod(GenericAlias)

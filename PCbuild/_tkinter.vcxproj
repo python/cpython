@@ -122,7 +122,7 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="_CopyTclTkDLL" Inputs="@(_TclTkDLL)" Outputs="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
-    <Copy SourceFiles="@(_TclTkDLL)" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="@(_TclTkDLL)" DestinationFolder="$(OutDir)" UseHardlinksIfPossible="true" />
   </Target>
   <Target Name="_CleanTclTkDLL" BeforeTargets="Clean">
     <Delete Files="@(_TclTkDLL->'$(OutDir)%(Filename)%(Extension)')" />

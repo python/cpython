@@ -7,12 +7,6 @@
 #include <winuser.h>
 2 RT_MANIFEST "python.manifest"
 
-// String Tables
-STRINGTABLE DISCARDABLE
-BEGIN
-    1000,   MS_DLL_ID
-END
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
@@ -40,7 +34,7 @@ BEGIN
             VALUE "FileVersion", PYTHON_VERSION
             VALUE "InternalName", "Python DLL\0"
             VALUE "LegalCopyright", PYTHON_COPYRIGHT "\0"
-            VALUE "OriginalFilename", PYTHON_DLL_NAME "\0"
+            VALUE "OriginalFilename", ORIGINAL_FILENAME "\0"
             VALUE "ProductName", "Python\0"
             VALUE "ProductVersion", PYTHON_VERSION
         END

@@ -15,8 +15,8 @@ extern "C" {
 
 enum decoding_state {
     STATE_INIT,
-    STATE_RAW,
-    STATE_NORMAL        /* have a codec associated with input */
+    STATE_SEEK_CODING,
+    STATE_NORMAL
 };
 
 /* Tokenizer state */
@@ -26,8 +26,11 @@ struct tok_state {
     char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
-    char *end;          /* End of input buffer if buf != NULL */
-    char *start;        /* Start of current token if not NULL */
+    int fp_interactive; /* If the file descriptor is interactive */
+    char *interactive_src_start; /* The start of the source parsed so far in interactive mode */
+    char *interactive_src_end; /* The end of the source parsed so far in interactive mode */
+    const char *end;    /* End of input buffer if buf != NULL */
+    const char *start;  /* Start of current token if not NULL */
     int done;           /* E_OK normally, E_EOF at EOF, otherwise error code */
     /* NB If done != E_OK, cur must be == inp!!! */
     FILE *fp;           /* Rest of input; NULL if tokenizing a string */
@@ -44,13 +47,13 @@ struct tok_state {
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
     int parenlinenostack[MAXLEVEL];
+    int parencolstack[MAXLEVEL];
     PyObject *filename;
     /* Stuff for checking on different tab sizes */
     int altindstack[MAXINDENT];         /* Stack of alternate indents */
     /* Stuff for PEP 0263 */
     enum decoding_state decoding_state;
     int decoding_erred;         /* whether erred in decoding  */
-    int read_coding_spec;       /* whether 'coding:...' has been read  */
     char *encoding;         /* Source encoding. */
     int cont_line;          /* whether we are in a continuation line. */
     const char* line_start;     /* pointer to start of current line */
@@ -60,8 +63,8 @@ struct tok_state {
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
     const char* enc;        /* Encoding for the current str. */
-    const char* str;
-    const char* input; /* Tokenizer's newline translated copy of the string. */
+    char* str;
+    char* input;       /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
 
@@ -78,7 +81,7 @@ extern struct tok_state *PyTokenizer_FromUTF8(const char *, int);
 extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void PyTokenizer_Free(struct tok_state *);
-extern int PyTokenizer_Get(struct tok_state *, char **, char **);
+extern int PyTokenizer_Get(struct tok_state *, const char **, const char **);
 
 #define tok_dump _Py_tok_dump
 

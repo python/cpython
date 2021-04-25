@@ -309,7 +309,7 @@ functions:
       Profile the cmd via :func:`exec` with the specified global and
       local environment.
 
-   .. method:: runcall(func, *args, **kwargs)
+   .. method:: runcall(func, /, *args, **kwargs)
 
       Profile ``func(*args, **kwargs)``
 
@@ -524,6 +524,17 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       direction of calls (re: called vs was called by), the arguments and
       ordering are identical to the :meth:`~pstats.Stats.print_callers` method.
 
+
+   .. method:: get_stats_profile()
+
+      This method returns an instance of StatsProfile, which contains a mapping
+      of function names to instances of FunctionProfile. Each FunctionProfile
+      instance holds information related to the function's profile such as how
+      long the function took to run, how many times it was called, etc...
+
+      .. versionadded:: 3.9
+         Added the following dataclasses: StatsProfile, FunctionProfile.
+         Added the following function: get_stats_profile.
 
 .. _deterministic-profiling:
 

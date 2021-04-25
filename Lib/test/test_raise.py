@@ -459,8 +459,11 @@ class TestContext(unittest.TestCase):
                 self.assertNotEqual(e.__context__, None)
                 self.assertIsInstance(e.__context__, AttributeError)
 
-        with support.captured_output("stderr"):
+        with support.catch_unraisable_exception() as cm:
             f()
+
+            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
+
 
 class TestRemovedFunctionality(unittest.TestCase):
     def test_tuples(self):

@@ -120,6 +120,18 @@ See :ref:`json-commandline` for detailed documentation.
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
 
+.. note::
+
+   This module's encoders and decoders preserve input and output order by
+   default.  Order is only lost if the underlying containers are unordered.
+
+   Prior to Python 3.7, :class:`dict` was not guaranteed to be ordered, so
+   inputs and outputs were typically scrambled unless
+   :class:`collections.OrderedDict` was specifically requested.  Starting
+   with Python 3.7, the regular :class:`dict` became order preserving, so
+   it is no longer necessary to specify :class:`collections.OrderedDict` for
+   JSON generation and parsing.
+
 
 Basic Usage
 -----------
@@ -271,18 +283,17 @@ Basic Usage
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
 
-   The other arguments have the same meaning as in :func:`load`, except
-   *encoding* which is ignored and deprecated since Python 3.1.
+   The other arguments have the same meaning as in :func:`load`.
 
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
 
-   .. deprecated-removed:: 3.1 3.9
-      *encoding* keyword argument.
-
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
       input encoding should be UTF-8, UTF-16 or UTF-32.
+
+   .. versionchanged:: 3.9
+      The keyword argument *encoding* has been removed.
 
 
 Encoders and Decoders
@@ -322,7 +333,7 @@ Encoders and Decoders
    *object_hook*, if specified, will be called with the result of every JSON
    object decoded and its return value will be used in place of the given
    :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support JSON-RPC class hinting).
+   support `JSON-RPC <http://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
@@ -411,10 +422,9 @@ Encoders and Decoders
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
-   If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
-   attempt encoding of keys that are not :class:`str`, :class:`int`,
-   :class:`float` or ``None``.  If *skipkeys* is true, such items are simply
-   skipped.
+   If *skipkeys* is false (the default), a :exc:`TypeError` will be raised when
+   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`
+   or ``None``.  If *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
@@ -468,8 +478,8 @@ Encoders and Decoders
       object for *o*, or calls the base implementation (to raise a
       :exc:`TypeError`).
 
-      For example, to support arbitrary iterators, you could implement default
-      like this::
+      For example, to support arbitrary iterators, you could implement
+      :meth:`default` like this::
 
          def default(self, o):
             try:
@@ -720,11 +730,23 @@ Command line options
 
    .. versionadded:: 3.5
 
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.9
+
 .. cmdoption:: --json-lines
 
    Parse every input line as separate JSON object.
 
    .. versionadded:: 3.8
+
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control.
+
+   .. versionadded:: 3.9
 
 .. cmdoption:: -h, --help
 

@@ -9,9 +9,17 @@
 
 # Core
 **/*context*                  @1st1
-**/*genobject*                @1st1
+**/*genobject*                @1st1 @markshannon
 **/*hamt*                     @1st1
-Objects/dict*                 @methane
+Objects/set*                  @rhettinger
+Objects/dict*                 @methane @markshannon
+Objects/type*                 @markshannon
+Objects/codeobject.c          @markshannon
+Objects/frameobject.c         @markshannon
+Objects/call.c                @markshannon
+Python/ceval.c                @markshannon
+Python/compile.c              @markshannon
+Python/ast_opt.c              @isidentical
 
 # Hashing
 **/*hashlib*                  @python/crypto-team @tiran
@@ -22,6 +30,14 @@ Objects/dict*                 @methane
 /Modules/_blake2/**           @python/crypto-team @tiran
 /Modules/_sha3/**             @python/crypto-team @tiran
 
+# logging
+**/*logging*                  @vsajip
+
+# venv
+**/*venv*                     @vsajip
+
+# Launcher
+/PC/launcher.c                @vsajip
 
 # HTML
 /Lib/html/                    @ezio-melotti
@@ -43,6 +59,15 @@ Objects/dict*                 @methane
 # CSPRNG
 Python/bootstrap_hash.c       @python/crypto-team @tiran
 
+# Dates and times
+**/*datetime*                 @pganssle @abalkin
+**/*str*time*                 @pganssle @abalkin
+Doc/library/time.rst          @pganssle @abalkin
+Lib/test/test_time.py         @pganssle @abalkin
+Modules/timemodule.c          @pganssle @abalkin
+Python/pytime.c               @pganssle @abalkin
+Include/pytime.h              @pganssle @abalkin
+
 # Email and related
 **/*mail*                     @python/email-team
 **/*smtp*                     @python/email-team
@@ -50,14 +75,33 @@ Python/bootstrap_hash.c       @python/crypto-team @tiran
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
-# Parser/Pgen
-/Parser/pgen/                 @pablogsal
+# Garbage collector
+/Modules/gcmodule.c           @pablogsal
+/Doc/library/gc.rst           @pablogsal
+
+# Parser
+/Parser/                      @pablogsal @lysnikolaou
+/Tools/peg_generator/         @pablogsal @lysnikolaou
+/Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
+/Grammar/python.gram          @pablogsal @lysnikolaou
+
+# AST
+Python/ast.c                  @isidentical
+Parser/asdl.py                @isidentical
+Parser/asdl_c.py              @isidentical
+Lib/ast.py                    @isidentical
+
+# Mock
+/Lib/unittest/mock.py         @cjw296
+/Lib/unittest/test/testmock/* @cjw296
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag
 
 # subprocess
-**/*subprocess*               @gpshead
+/Lib/subprocess.py            @gpshead
+/Lib/test/test_subprocess.py  @gpshead
+/Modules/*subprocess*         @gpshead
 
 # Windows
 /PC/                          @python/windows-team
@@ -70,6 +114,7 @@ Python/bootstrap_hash.c       @python/crypto-team @tiran
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
@@ -84,6 +129,15 @@ Python/bootstrap_hash.c       @python/crypto-team @tiran
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
+
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
 
 # macOS
 /Mac/                         @python/macos-team

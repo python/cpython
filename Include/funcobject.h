@@ -7,6 +7,21 @@
 extern "C" {
 #endif
 
+
+#define COMMON_FIELDS(PREFIX) \
+    PyObject *PREFIX ## globals; \
+    PyObject *PREFIX ## builtins; \
+    PyObject *PREFIX ## name; \
+    PyObject *PREFIX ## qualname; \
+    PyObject *PREFIX ## code;        /* A code object, the __code__ attribute */ \
+    PyObject *PREFIX ## defaults;    /* NULL or a tuple */ \
+    PyObject *PREFIX ## kwdefaults;  /* NULL or a dict */ \
+    PyObject *PREFIX ## closure;     /* NULL or a tuple of cell objects */
+
+typedef struct {
+    COMMON_FIELDS(fc_)
+} PyFrameConstructor;
+
 /* Function objects and code objects should not be confused with each other:
  *
  * Function objects are created by the execution of the 'def' statement.
@@ -20,18 +35,12 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *func_code;        /* A code object, the __code__ attribute */
-    PyObject *func_globals;     /* A dictionary (other mappings won't do) */
-    PyObject *func_defaults;    /* NULL or a tuple */
-    PyObject *func_kwdefaults;  /* NULL or a dict */
-    PyObject *func_closure;     /* NULL or a tuple of cell objects */
+    COMMON_FIELDS(func_)
     PyObject *func_doc;         /* The __doc__ attribute, can be anything */
-    PyObject *func_name;        /* The __name__ attribute, a string object */
     PyObject *func_dict;        /* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist; /* List of weak references */
     PyObject *func_module;      /* The __module__ attribute, can be anything */
     PyObject *func_annotations; /* Annotations, a dict or NULL */
-    PyObject *func_qualname;    /* The qualified name */
     vectorcallfunc vectorcall;
 
     /* Invariant:
@@ -43,7 +52,7 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
-#define PyFunction_Check(op) (Py_TYPE(op) == &PyFunction_Type)
+#define PyFunction_Check(op) Py_IS_TYPE(op, &PyFunction_Type)
 
 PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_NewWithQualName(PyObject *, PyObject *, PyObject *);
@@ -60,12 +69,6 @@ PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
-    PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
 PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,
@@ -89,6 +92,9 @@ PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
         (((PyFunctionObject *)func) -> func_closure)
 #define PyFunction_GET_ANNOTATIONS(func) \
         (((PyFunctionObject *)func) -> func_annotations)
+
+#define PyFunction_AS_FRAME_CONSTRUCTOR(func) \
+        ((PyFrameConstructor *)&((PyFunctionObject *)(func))->func_globals)
 
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;

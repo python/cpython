@@ -1,3 +1,0 @@
-:func:`_thread.start_new_thread` now logs uncaught exception raised by the
-function using :func:`sys.unraisablehook`, rather than :func:`sys.excepthook`,
-so the hook gets access to the function which raised the exception.

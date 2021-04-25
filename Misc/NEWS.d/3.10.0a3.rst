@@ -1,0 +1,1504 @@
+.. bpo: 40791
+.. date: 2020-05-28-06-06-47
+.. nonce: QGZClX
+.. release date: 2020-12-07
+.. section: Security
+
+Add ``volatile`` to the accumulator variable in ``hmac.compare_digest``,
+making constant-time-defeating optimizations less likely.
+
+..
+
+.. bpo: 42576
+.. date: 2020-12-05-22-34-47
+.. nonce: lEeEl7
+.. section: Core and Builtins
+
+``types.GenericAlias`` will now raise a ``TypeError`` when attempting to
+initialize with a keyword argument.  Previously, this would cause the
+interpreter to crash if the interpreter was compiled with debug symbols.
+This does not affect interpreters compiled for release.  Patch by Ken Jin.
+
+..
+
+.. bpo: 42536
+.. date: 2020-12-02-20-23-31
+.. nonce: Kx3ZOu
+.. section: Core and Builtins
+
+Several built-in and standard library types now ensure that their internal
+result tuples are always tracked by the :term:`garbage collector <garbage
+collection>`:
+
+- :meth:`collections.OrderedDict.items() <collections.OrderedDict>`
+
+- :meth:`dict.items`
+
+- :func:`enumerate`
+
+- :func:`functools.reduce`
+
+- :func:`itertools.combinations`
+
+- :func:`itertools.combinations_with_replacement`
+
+- :func:`itertools.permutations`
+
+- :func:`itertools.product`
+
+- :func:`itertools.zip_longest`
+
+- :func:`zip`
+
+Previously, they could have become untracked by a prior garbage collection.
+Patch by Brandt Bucher.
+
+..
+
+.. bpo: 42500
+.. date: 2020-11-30-14-27-29
+.. nonce: excVKU
+.. section: Core and Builtins
+
+Improve handling of exceptions near recursion limit. Converts a number of
+Fatal Errors in RecursionErrors.
+
+..
+
+.. bpo: 42246
+.. date: 2020-11-24-14-01-43
+.. nonce: c9k9hj
+.. section: Core and Builtins
+
+PEP 626: After a return, the f_lineno attribute of a frame is always the
+last line executed.
+
+..
+
+.. bpo: 42435
+.. date: 2020-11-22-14-34-55
+.. nonce: uwlB2W
+.. section: Core and Builtins
+
+Speed up comparison of bytes objects with non-bytes objects when option
+:option:`-b` is specified. Speed up comparison of bytarray objects with
+non-buffer object.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-23-46-31
+.. nonce: GVOQ-m
+.. section: Core and Builtins
+
+Port the ``_warnings`` extension module to the multi-phase initialization
+API (:pep:`489`). Patch by Victor Stinner.
+
+..
+
+.. bpo: 41686
+.. date: 2020-11-17-16-25-50
+.. nonce: hX77kL
+.. section: Core and Builtins
+
+On Windows, the ``SIGINT`` event, ``_PyOS_SigintEvent()``, is now created
+even if Python is configured to not install signal handlers (if
+:c:member:`PyConfig.install_signal_handlers` equals to 0, or
+``Py_InitializeEx(0)``).
+
+..
+
+.. bpo: 42381
+.. date: 2020-11-16-23-45-56
+.. nonce: G4AWxL
+.. section: Core and Builtins
+
+Allow assignment expressions in set literals and set comprehensions as per
+PEP 572. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 42202
+.. date: 2020-11-16-18-13-07
+.. nonce: ZxenYD
+.. section: Core and Builtins
+
+Change function parameters annotations internal representation to tuple of
+strings. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 42374
+.. date: 2020-11-16-17-57-09
+.. nonce: t7np1E
+.. section: Core and Builtins
+
+Fix a regression introduced by the new parser, where an unparenthesized
+walrus operator was not allowed within generator expressions.
+
+..
+
+.. bpo: 42316
+.. date: 2020-11-16-17-30-03
+.. nonce: _DdmpQ
+.. section: Core and Builtins
+
+Allow an unparenthesized walrus in subscript indexes.
+
+..
+
+.. bpo: 42349
+.. date: 2020-11-13-17-25-44
+.. nonce: JdWxez
+.. section: Core and Builtins
+
+Make sure that the compiler front-end produces a well-formed control flow
+graph. Be be more aggressive in the compiler back-end, as it is now safe to
+do so.
+
+..
+
+.. bpo: 42296
+.. date: 2020-11-13-13-53-11
+.. nonce: DuGrLJ
+.. section: Core and Builtins
+
+On Windows, fix a regression in signal handling which prevented to interrupt
+a program using CTRL+C. The signal handler can be run in a thread different
+than the Python thread, in which case the test deciding if the thread can
+handle signals is wrong.
+
+..
+
+.. bpo: 42332
+.. date: 2020-11-12-23-16-14
+.. nonce: fEQIdk
+.. section: Core and Builtins
+
+:class:`types.GenericAlias` objects can now be the targets of weakrefs.
+
+..
+
+.. bpo: 42282
+.. date: 2020-11-07-21-02-05
+.. nonce: M1W4Wj
+.. section: Core and Builtins
+
+Optimise constant subexpressions that appear as part of named expressions
+(previously the AST optimiser did not descend into named expressions). Patch
+by Nick Coghlan.
+
+..
+
+.. bpo: 42266
+.. date: 2020-11-04-23-03-25
+.. nonce: G4hGDe
+.. section: Core and Builtins
+
+Fixed a bug with the LOAD_ATTR opcode cache that was not respecting
+monkey-patching a class-level attribute to make it a descriptor. Patch by
+Pablo Galindo.
+
+..
+
+.. bpo: 40077
+.. date: 2020-11-03-21-58-27
+.. nonce: a9qM1j
+.. section: Core and Builtins
+
+Convert :mod:`queue` to use heap types.
+
+..
+
+.. bpo: 42246
+.. date: 2020-11-02-15-48-17
+.. nonce: 3CNQEX
+.. section: Core and Builtins
+
+Improved accuracy of line tracing events and f_lineno attribute of Frame
+objects. See PEP 626 for details.
+
+..
+
+.. bpo: 40077
+.. date: 2020-11-02-14-39-48
+.. nonce: grY9TG
+.. section: Core and Builtins
+
+Convert :mod:`mmap` to use heap types.
+
+..
+
+.. bpo: 42233
+.. date: 2020-11-01-23-34-56
+.. nonce: zOSzja
+.. section: Core and Builtins
+
+Allow ``GenericAlias`` objects to use :ref:`union type expressions
+<types-union>`. This allows expressions like ``list[int] | dict[float,
+str]`` where previously a ``TypeError`` would have been thrown.  This also
+fixes union type expressions not de-duplicating ``GenericAlias`` objects.
+(Contributed by Ken Jin in :issue:`42233`.)
+
+..
+
+.. bpo: 26131
+.. date: 2020-10-22-17-27-08
+.. nonce: B-Veg7
+.. section: Core and Builtins
+
+The import system triggers a `ImportWarning` when it falls back to using
+`load_module()`.
+
+..
+
+.. bpo: 5054
+.. date: 2020-12-04-03-51-12
+.. nonce: 53StYZ
+.. section: Library
+
+CGIHTTPRequestHandler.run_cgi() HTTP_ACCEPT improperly parsed. Replace the
+special purpose getallmatchingheaders with generic get_all method and add
+relevant tests.
+
+Original Patch by Martin Panter. Modified by Senthil Kumaran.
+
+..
+
+.. bpo: 42562
+.. date: 2020-12-03-22-42-03
+.. nonce: 2hPmhi
+.. section: Library
+
+Fix issue when dis failed to parse function that has no line numbers. Patch
+provided by Yurii Karabas.
+
+..
+
+.. bpo: 17735
+.. date: 2020-12-03-22-22-24
+.. nonce: Qsaaue
+.. section: Library
+
+:func:`inspect.findsource` now raises :exc:`OSError` instead of
+:exc:`IndexError` when :attr:`co_lineno` of a code object is greater than
+the file length. This can happen, for example, when a file is edited after
+it was imported.  PR by Irit Katriel.
+
+..
+
+.. bpo: 42116
+.. date: 2020-12-03-15-42-32
+.. nonce: yIwroP
+.. section: Library
+
+Fix handling of trailing comments by :func:`inspect.getsource`.
+
+..
+
+.. bpo: 42532
+.. date: 2020-12-02-07-37-59
+.. nonce: ObNep_
+.. section: Library
+
+Remove unexpected call of ``__bool__`` when passing a ``spec_arg`` argument
+to a Mock.
+
+..
+
+.. bpo: 38200
+.. date: 2020-11-28-22-52-57
+.. nonce: DuWGlW
+.. section: Library
+
+Added itertools.pairwise()
+
+..
+
+.. bpo: 41818
+.. date: 2020-11-28-06-34-53
+.. nonce: mFSMc2
+.. section: Library
+
+Fix test_master_read() so that it succeeds on all platforms that either
+raise OSError or return b"" upon reading from master.
+
+..
+
+.. bpo: 42487
+.. date: 2020-11-28-04-31-20
+.. nonce: iqtC4L
+.. section: Library
+
+ChainMap.__iter__ no longer calls __getitem__ on underlying maps
+
+..
+
+.. bpo: 42482
+.. date: 2020-11-27-16-46-58
+.. nonce: EJC3sd
+.. section: Library
+
+:class:`~traceback.TracebackException` no longer holds a reference to the
+exception's traceback object. Consequently, instances of TracebackException
+for equivalent but non-equal exceptions now compare as equal.
+
+..
+
+.. bpo: 41818
+.. date: 2020-11-27-09-19-43
+.. nonce: KWYUbL
+.. section: Library
+
+Make test_openpty() avoid unexpected success due to number of rows and/or
+number of columns being == 0.
+
+..
+
+.. bpo: 42392
+.. date: 2020-11-26-12-40-16
+.. nonce: GbmdHE
+.. section: Library
+
+Remove loop parameter from ``asyncio.subprocess`` and ``asyncio.tasks``
+functions. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 42392
+.. date: 2020-11-25-22-44-59
+.. nonce: T_DAEl
+.. section: Library
+
+Remove loop parameter from ``asyncio.open_connection`` and
+``asyncio.start_server`` functions. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 28468
+.. date: 2020-11-24-13-18-05
+.. nonce: 8Gh2d4
+.. section: Library
+
+Add :func:`platform.freedesktop_os_release` function to parse
+freedesktop.org ``os-release`` files.
+
+..
+
+.. bpo: 42299
+.. date: 2020-11-23-23-42-08
+.. nonce: Fdn4Wf
+.. section: Library
+
+Removed the ``formatter`` module, which was deprecated in Python 3.4. It is
+somewhat obsolete, little used, and not tested. It was originally scheduled
+to be removed in Python 3.6, but such removals were delayed until after
+Python 2.7 EOL. Existing users should copy whatever classes they use into
+their code. Patch by Dong-hee Na and and Terry J. Reedy.
+
+..
+
+.. bpo: 26131
+.. date: 2020-11-22-12-30-26
+.. nonce: -HsFPG
+.. section: Library
+
+Deprecate zipimport.zipimporter.load_module() in favour of exec_module().
+
+..
+
+.. bpo: 41818
+.. date: 2020-11-20-14-44-07
+.. nonce: 33soAw
+.. section: Library
+
+Updated tests for the pty library. test_basic() has been changed to
+test_openpty(); this additionally checks if slave termios and slave winsize
+are being set properly by pty.openpty(). In order to add support for
+FreeBSD, NetBSD, OpenBSD, and Darwin, this also adds test_master_read(),
+which demonstrates that pty.spawn() should not depend on an OSError to exit
+from its copy loop.
+
+..
+
+.. bpo: 42392
+.. date: 2020-11-20-14-01-29
+.. nonce: -OUzvl
+.. section: Library
+
+Remove loop parameter from ``__init__`` in all ``asyncio.locks`` and
+``asyncio.Queue`` classes. Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 15450
+.. date: 2020-11-20-10-38-34
+.. nonce: E-y9PA
+.. section: Library
+
+Make :class:`filecmp.dircmp` respect subclassing. Now the
+:attr:`filecmp.dircmp.subdirs` behaves as expected when subclassing dircmp.
+
+..
+
+.. bpo: 42413
+.. date: 2020-11-19-20-27-51
+.. nonce: fjHrHx
+.. section: Library
+
+The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-19-16-14-36
+.. nonce: 83kf9d
+.. section: Library
+
+Support signal module on VxWorks.
+
+..
+
+.. bpo: 42406
+.. date: 2020-11-19-10-44-41
+.. nonce: r9rNCj
+.. section: Library
+
+We fixed an issue in `pickle.whichmodule` in which importing
+`multiprocessing` could change the how pickle identifies which module an
+object belongs to, potentially breaking the unpickling of those objects.
+
+..
+
+.. bpo: 42403
+.. date: 2020-11-19-10-12-39
+.. nonce: t7q5AX
+.. section: Library
+
+Simplify the :mod:`importlib` external bootstrap code:
+``importlib._bootstrap_external`` now uses regular imports to import builtin
+modules. When it is imported, the builtin :func:`__import__()` function is
+already fully working and so can be used to import builtin modules like
+:mod:`sys`. Patch by Victor Stinner.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-19-09-59-07
+.. nonce: 7cMypH
+.. section: Library
+
+Convert _sre module types to heap types (PEP 384). Patch by Erlend E.
+Aasland.
+
+..
+
+.. bpo: 42375
+.. date: 2020-11-19-04-13-53
+.. nonce: U8bp4s
+.. section: Library
+
+subprocess module update for DragonFlyBSD support.
+
+..
+
+.. bpo: 41713
+.. date: 2020-11-17-23-00-27
+.. nonce: -Us0tf
+.. section: Library
+
+Port the ``_signal`` extension module to the multi-phase initialization API
+(:pep:`489`). Patch by Victor Stinner and Mohamed Koubaa.
+
+..
+
+.. bpo: 37205
+.. date: 2020-11-16-15-08-12
+.. nonce: Wh5svI
+.. section: Library
+
+:func:`time.time()`, :func:`time.perf_counter()` and
+:func:`time.monotonic()` functions can no longer fail with a Python fatal
+error, instead raise a regular Python exception on failure.
+
+..
+
+.. bpo: 42328
+.. date: 2020-11-15-17-02-00
+.. nonce: bqpPlR
+.. section: Library
+
+Fixed :meth:`tkinter.ttk.Style.map`. The function accepts now the
+representation of the default state as empty sequence (as returned by
+``Style.map()``). The structure of the result is now the same on all
+platform and does not depend on the value of ``wantobjects``.
+
+..
+
+.. bpo: 42345
+.. date: 2020-11-15-15-23-34
+.. nonce: hiIR7x
+.. section: Library
+
+Fix various issues with ``typing.Literal`` parameter handling (flatten,
+deduplicate, use type to cache key). Patch provided by Yurii Karabas.
+
+..
+
+.. bpo: 37205
+.. date: 2020-11-14-14-34-32
+.. nonce: iDbHrw
+.. section: Library
+
+:func:`time.perf_counter()` on Windows and :func:`time.monotonic()` on macOS
+are now system-wide. Previously, they used an offset computed at startup to
+reduce the precision loss caused by the float type. Use
+:func:`time.perf_counter_ns()` and :func:`time.monotonic_ns()` added in
+Python 3.7 to avoid this precision loss.
+
+..
+
+.. bpo: 42318
+.. date: 2020-11-14-13-46-27
+.. nonce: wYAcBD
+.. section: Library
+
+Fixed support of non-BMP characters in :mod:`tkinter` on macOS.
+
+..
+
+.. bpo: 42350
+.. date: 2020-11-13-18-53-50
+.. nonce: rsql7V
+.. section: Library
+
+Fix the :class:`threading.Thread` class at fork: do nothing if the thread is
+already stopped (ex: fork called at Python exit). Previously, an error was
+logged in the child process.
+
+..
+
+.. bpo: 42333
+.. date: 2020-11-12-18-21-15
+.. nonce: J9vFmV
+.. section: Library
+
+Port _ssl extension module to heap types.
+
+..
+
+.. bpo: 42014
+.. date: 2020-11-10-15-40-56
+.. nonce: ShM37l
+.. section: Library
+
+The ``onerror`` callback from ``shutil.rmtree`` now receives correct
+function when ``os.open`` fails.
+
+..
+
+.. bpo: 42237
+.. date: 2020-11-10-14-27-49
+.. nonce: F363jO
+.. section: Library
+
+Fix `os.sendfile()` on illumos.
+
+..
+
+.. bpo: 42308
+.. date: 2020-11-10-12-09-13
+.. nonce: yaJHH9
+.. section: Library
+
+Add :data:`threading.__excepthook__` to allow retrieving the original value
+of :func:`threading.excepthook` in case it is set to a broken or a different
+value. Patch by Mario Corchero.
+
+..
+
+.. bpo: 42131
+.. date: 2020-11-06-18-20-47
+.. nonce: l2rjjG
+.. section: Library
+
+Implement PEP 451/spec methods on zipimport.zipimporter: find_spec(),
+create_module(), and exec_module().
+
+This also allows for the documented deprecation of find_loader(),
+find_module(), and load_module().
+
+..
+
+.. bpo: 41877
+.. date: 2020-11-05-16-00-03
+.. nonce: FHbngM
+.. section: Library
+
+Mock objects which are not unsafe will now raise an AttributeError if an
+attribute with the prefix asert, aseert, or assrt is accessed, in addition
+to this already happening for the prefixes assert or assret.
+
+..
+
+.. bpo: 42264
+.. date: 2020-11-05-13-32-41
+.. nonce: r4KYUU
+.. section: Library
+
+``sqlite3.OptimizedUnicode`` has been undocumented and obsolete since Python
+3.3, when it was made an alias to :class:`str`.  It is now deprecated,
+scheduled for removal in Python 3.12.
+
+..
+
+.. bpo: 42251
+.. date: 2020-11-03-14-15-35
+.. nonce: 6TC32V
+.. section: Library
+
+Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+retrieve the functions set by :func:`threading.settrace` and
+:func:`threading.setprofile` respectively. Patch by Mario Corchero.
+
+..
+
+.. bpo: 42249
+.. date: 2020-11-03-09-22-56
+.. nonce: vfNO2u
+.. section: Library
+
+Fixed writing binary Plist files larger than 4 GiB.
+
+..
+
+.. bpo: 42236
+.. date: 2020-11-02-23-05-17
+.. nonce: aJ6ZBR
+.. section: Library
+
+On Unix, the :func:`os.device_encoding` function now returns ``'UTF-8'``
+rather than the device encoding if the :ref:`Python UTF-8 Mode <utf8-mode>`
+is enabled.
+
+..
+
+.. bpo: 41754
+.. date: 2020-11-01-15-07-20
+.. nonce: DraSZh
+.. section: Library
+
+webbrowser: Ignore *NotADirectoryError* when calling ``xdg-settings``.
+
+..
+
+.. bpo: 42183
+.. date: 2020-10-29-11-17-35
+.. nonce: 50ZcIi
+.. section: Library
+
+Fix a stack overflow error for asyncio Task or Future repr().
+
+The overflow occurs under some circumstances when a Task or Future
+recursively returns itself.
+
+..
+
+.. bpo: 42140
+.. date: 2020-10-24-04-02-36
+.. nonce: miLqvb
+.. section: Library
+
+Improve asyncio.wait function to create the futures set just one time.
+
+..
+
+.. bpo: 42133
+.. date: 2020-10-23-15-47-47
+.. nonce: BzizYV
+.. section: Library
+
+Update various modules in the stdlib to fall back on `__spec__.loader` when
+`__loader__` isn't defined on a module.
+
+..
+
+.. bpo: 26131
+.. date: 2020-10-22-17-26-35
+.. nonce: CAsI3O
+.. section: Library
+
+The `load_module()` methods found in importlib now trigger a
+DeprecationWarning.
+
+..
+
+.. bpo: 39825
+.. date: 2020-10-20-08-28-26
+.. nonce: n6KnG0
+.. section: Library
+
+Windows: Change ``sysconfig.get_config_var('EXT_SUFFIX')`` to the expected
+full ``platform_tag.extension`` format. Previously it was hard-coded to
+``.pyd``, now it is compatible with ``distutils.sysconfig`` and will result
+in something like ``.cp38-win_amd64.pyd``. This brings windows into
+conformance with the other platforms.
+
+..
+
+.. bpo: 26389
+.. date: 2020-10-08-23-51-55
+.. nonce: uga44e
+.. section: Library
+
+The :func:`traceback.format_exception`,
+:func:`traceback.format_exception_only`, and
+:func:`traceback.print_exception` functions can now take an exception object
+as a positional-only argument.
+
+..
+
+.. bpo: 41889
+.. date: 2020-10-01-16-17-11
+.. nonce: qLkNh8
+.. section: Library
+
+Enum: fix regression involving inheriting a multiply-inherited enum
+
+..
+
+.. bpo: 41861
+.. date: 2020-10-01-15-44-52
+.. nonce: YTqJ7z
+.. section: Library
+
+Convert :mod:`sqlite3` to use heap types (PEP 384). Patch by Erlend E.
+Aasland.
+
+..
+
+.. bpo: 40624
+.. date: 2020-09-08-03-19-04
+.. nonce: 0-gYfx
+.. section: Library
+
+Added support for the XPath ``!=`` operator in xml.etree
+
+..
+
+.. bpo: 28850
+.. date: 2020-09-06-21-55-44
+.. nonce: HJNggD
+.. section: Library
+
+Fix :meth:`pprint.PrettyPrinter.format` overrides being ignored for contents
+of small containers. The :func:`pprint._safe_repr` function was removed.
+
+..
+
+.. bpo: 41625
+.. date: 2020-08-24-16-59-04
+.. nonce: Cc967V
+.. section: Library
+
+Expose the :c:func:`splice` as :func:`os.splice` in the :mod:`os` module.
+Patch by Pablo Galindo
+
+..
+
+.. bpo: 34215
+.. date: 2020-08-19-20-17-51
+.. nonce: _Cv8c-
+.. section: Library
+
+Clarify the error message for :exc:`asyncio.IncompleteReadError` when
+``expected`` is ``None``.
+
+..
+
+.. bpo: 41543
+.. date: 2020-08-14-00-39-04
+.. nonce: RpcRjb
+.. section: Library
+
+Add async context manager support for contextlib.nullcontext.
+
+..
+
+.. bpo: 21041
+.. date: 2020-08-10-15-06-55
+.. nonce: cYz1eL
+.. section: Library
+
+:attr:`pathlib.PurePath.parents` now supports negative indexing. Patch
+contributed by Yaroslav Pankovych.
+
+..
+
+.. bpo: 41332
+.. date: 2020-07-18-17-39-28
+.. nonce: QRGmA5
+.. section: Library
+
+Added missing connect_accepted_socket() method to
+``asyncio.AbstractEventLoop``.
+
+..
+
+.. bpo: 12800
+.. date: 2020-07-09-11-32-28
+.. nonce: fNgWwx
+.. section: Library
+
+Extracting a symlink from a tarball should succeed and overwrite the symlink
+if it already exists. The fix is to remove the existing file or symlink
+before extraction. Based on patch by Chris AtLee, Jeffrey Kintscher, and
+Senthil Kumaran.
+
+..
+
+.. bpo: 40968
+.. date: 2020-06-18-11-35-16
+.. nonce: R8Edbv
+.. section: Library
+
+:mod:`urllib.request` and :mod:`http.client` now send ``http/1.1`` ALPN
+extension during TLS handshake when no custom context is supplied.
+
+..
+
+.. bpo: 41001
+.. date: 2020-06-17-12-24-26
+.. nonce: 5mi7b0
+.. section: Library
+
+Add func:`os.eventfd` to provide a low level interface for Linux's event
+notification file descriptor.
+
+..
+
+.. bpo: 40816
+.. date: 2020-05-29-15-25-41
+.. nonce: w61Pob
+.. section: Library
+
+Add AsyncContextDecorator to contextlib to support async context manager as
+a decorator.
+
+..
+
+.. bpo: 40550
+.. date: 2020-05-08-21-30-54
+.. nonce: i7GWkb
+.. section: Library
+
+Fix time-of-check/time-of-action issue in subprocess.Popen.send_signal.
+
+..
+
+.. bpo: 39411
+.. date: 2020-01-21-16-38-25
+.. nonce: 9uHFqT
+.. section: Library
+
+Add an ``is_async`` identifier to :mod:`pyclbr`'s ``Function`` objects.
+Patch by Batuhan Taskaya
+
+..
+
+.. bpo: 35498
+.. date: 2018-12-14-13-29-17
+.. nonce: LEJHl7
+.. section: Library
+
+Add slice support to :attr:`pathlib.PurePath.parents`.
+
+..
+
+.. bpo: 42238
+.. date: 2020-11-24-22-54-49
+.. nonce: 62EOTu
+.. section: Documentation
+
+Tentative to deprecate ``make suspicious`` by first removing it from the CI
+and documentation builds, but keeping it around for manual uses.
+
+..
+
+.. bpo: 42153
+.. date: 2020-11-15-13-46-31
+.. nonce: KjBhx3
+.. section: Documentation
+
+Fix the URL for the IMAP protocol documents.
+
+..
+
+.. bpo: 41028
+.. date: 2020-06-18-23-37-03
+.. nonce: vM8bC8
+.. section: Documentation
+
+Language and version switchers, previously maintained in every cpython
+branches, are now handled by docsbuild-script.
+
+..
+
+.. bpo: 41473
+.. date: 2020-12-04-11-47-09
+.. nonce: W_updK
+.. section: Tests
+
+Reenable test_gdb on gdb 9.2 and newer:
+https://bugzilla.redhat.com/show_bug.cgi?id=1866884 bug is fixed in gdb
+10.1.
+
+..
+
+.. bpo: 42553
+.. date: 2020-12-03-13-32-44
+.. nonce: 2TRE2N
+.. section: Tests
+
+Fix ``test_asyncio.test_call_later()`` race condition: don't measure asyncio
+performance in the ``call_later()`` unit test. The test failed randomly on
+the CI.
+
+..
+
+.. bpo: 31904
+.. date: 2020-12-01-15-51-19
+.. nonce: iwetj4
+.. section: Tests
+
+Fix test_netrc on VxWorks: create temporary directories using temp_cwd().
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-26-11-13-13
+.. nonce: ay4g89
+.. section: Tests
+
+skip test_getaddrinfo_ipv6_scopeid_symbolic and
+test_getnameinfo_ipv6_scopeid_symbolic on VxWorks
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-25-17-00-53
+.. nonce: ue4hd9
+.. section: Tests
+
+skip test_test of test_mailcap on VxWorks
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-24-17-26-41
+.. nonce: eug834
+.. section: Tests
+
+add shell requirement for test_pipes
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-23-11-11-29
+.. nonce: V3sUZk
+.. section: Tests
+
+skip some tests related to fifo on VxWorks
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-20-15-07-18
+.. nonce: EBJXjJ
+.. section: Tests
+
+Fix test_doctest.py failures for VxWorks.
+
+..
+
+.. bpo: 40754
+.. date: 2020-11-13-21-51-34
+.. nonce: Ekoxkg
+.. section: Tests
+
+Include ``_testinternalcapi`` module in Windows installer for test suite
+
+..
+
+.. bpo: 41561
+.. date: 2020-09-18-16-14-03
+.. nonce: uPnwrW
+.. section: Tests
+
+test_ssl: skip test_min_max_version_mismatch when TLS 1.0 is not available
+
+..
+
+.. bpo: 31904
+.. date: 2020-05-20-17-28-46
+.. nonce: yt83Ge
+.. section: Tests
+
+Fix os module failures for VxWorks RTOS.
+
+..
+
+.. bpo: 31904
+.. date: 2020-05-20-14-28-48
+.. nonce: yJik6k
+.. section: Tests
+
+Fix fifo test cases for VxWorks RTOS.
+
+..
+
+.. bpo: 31904
+.. date: 2020-11-19-17-01-50
+.. nonce: 894dk2
+.. section: Build
+
+remove libnet dependency from detect_socket() for VxWorks
+
+..
+
+.. bpo: 42398
+.. date: 2020-11-18-11-58-44
+.. nonce: Yt5wO8
+.. section: Build
+
+Fix a race condition in "make regen-all" when make -jN option is used to run
+jobs in parallel. The clinic.py script now only use atomic write to write
+files. Moveover, generated files are now left unchanged if the content does
+not change, to not change the file modification time.
+
+..
+
+.. bpo: 41617
+.. date: 2020-11-13-15-04-53
+.. nonce: 98_oaE
+.. section: Build
+
+Fix building ``pycore_bitutils.h`` internal header on old clang version
+without ``__builtin_bswap16()`` (ex: Xcode 4.6.3 on Mac OS X 10.7). Patch by
+Joshua Root and Victor Stinner.
+
+..
+
+.. bpo: 38823
+.. date: 2020-11-12-13-45-15
+.. nonce: C0z_Fe
+.. section: Build
+
+It is no longer possible to build the ``_ctypes`` extension module without
+:c:type:`wchar_t` type: remove ``CTYPES_UNICODE`` macro. Anyway, the
+:c:type:`wchar_t` type is required to build Python. Patch by Victor Stinner.
+
+..
+
+.. bpo: 42087
+.. date: 2020-10-19-15-41-05
+.. nonce: 2AhRFP
+.. section: Build
+
+Support was removed for AIX 5.3 and below. See :issue:`40680`.
+
+..
+
+.. bpo: 40998
+.. date: 2020-06-17-09-05-02
+.. nonce: sgqmg9
+.. section: Build
+
+Addressed three compiler warnings found by undefined behavior sanitizer
+(ubsan).
+
+..
+
+.. bpo: 42120
+.. date: 2020-11-16-22-41-02
+.. nonce: 9scgko
+.. section: Windows
+
+Remove macro definition of ``copysign`` (to ``_copysign``) in headers.
+
+..
+
+.. bpo: 38506
+.. date: 2020-11-15-23-01-14
+.. nonce: hhdnuP
+.. section: Windows
+
+The Windows launcher now properly handles Python 3.10 when listing installed
+Python versions.
+
+..
+
+.. bpo: 42504
+.. date: 2020-12-02-15-48-40
+.. nonce: RQmMOR
+.. section: macOS
+
+Fix build on macOS Big Sur when MACOSX_DEPLOYMENT_TARGET=11
+
+..
+
+.. bpo: 41116
+.. date: 2020-11-15-16-43-45
+.. nonce: oCkbrF
+.. section: macOS
+
+Ensure distutils.unixxcompiler.find_library_file can find system provided
+libraries on macOS 11.
+
+..
+
+.. bpo: 41100
+.. date: 2020-11-01-16-40-23
+.. nonce: BApztP
+.. section: macOS
+
+Add support for macOS 11 and Apple Silicon systems.
+
+It is now possible to build "Universal 2" binaries using
+"--enable-universalsdk --with-universal-archs=universal2".
+
+Binaries build on later macOS versions can be deployed back to older
+versions (tested up to macOS 10.9), when using the correct deployment
+target. This is tested using Xcode 11 and later.
+
+..
+
+.. bpo: 42232
+.. date: 2020-11-01-15-10-28
+.. nonce: 2zI1GN
+.. section: macOS
+
+Added Darwin specific madvise options to mmap module.
+
+..
+
+.. bpo: 38443
+.. date: 2020-10-23-10-26-53
+.. nonce: vu64tl
+.. section: macOS
+
+The ``--enable-universalsdk`` and ``--with-universal-archs`` options for the
+configure script now check that the specified architectures can be used.
+
+..
+
+.. bpo: 42508
+.. date: 2020-11-30-19-46-05
+.. nonce: fE7w4M
+.. section: IDLE
+
+Keep IDLE running on macOS.  Remove obsolete workaround that prevented
+running files with shortcuts when using new universal2 installers built on
+macOS 11.
+
+..
+
+.. bpo: 42426
+.. date: 2020-11-21-17-21-21
+.. nonce: kNnPoC
+.. section: IDLE
+
+Fix reporting offset of the RE error in searchengine.
+
+..
+
+.. bpo: 42415
+.. date: 2020-11-20-01-30-27
+.. nonce: CyD-va
+.. section: IDLE
+
+Get docstrings for IDLE calltips more often by using inspect.getdoc.
+
+..
+
+.. bpo: 42212
+.. date: 2020-11-20-15-11-05
+.. nonce: sjzgOf
+.. section: Tools/Demos
+
+The smelly.py script now also checks the Python dynamic library and
+extension modules, not only the Python static library. Make also the script
+more verbose: explain what it does.
+
+..
+
+.. bpo: 36310
+.. date: 2020-05-03-01-30-46
+.. nonce: xDxxwY
+.. section: Tools/Demos
+
+Allow :file:`Tools/i18n/pygettext.py` to detect calls to ``gettext`` in
+f-strings.
+
+..
+
+.. bpo: 42423
+.. date: 2020-11-21-12-27-19
+.. nonce: ByJHhY
+.. section: C API
+
+The :c:func:`PyType_FromSpecWithBases` and
+:c:func:`PyType_FromModuleAndSpec` functions now accept a single class as
+the *bases* argument.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-19-17-44-36
+.. nonce: qBZc3o
+.. section: C API
+
+Port :mod:`select` extension module to multiphase initialization
+(:pep:`489`).
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-19-16-54-16
+.. nonce: 9tVsZt
+.. section: C API
+
+Port _posixsubprocess extension module to multiphase initialization
+(:pep:`489`).
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-19-15-33-42
+.. nonce: 9tVsZt
+.. section: C API
+
+Port _posixshmem extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-19-12-06-43
+.. nonce: KEfZpn
+.. section: C API
+
+Port _struct extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-19-09-17-01
+.. nonce: 6F9o6L
+.. section: C API
+
+Port :mod:`spwd` extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-20-33-35
+.. nonce: B4ztSk
+.. section: C API
+
+Port :mod:`gc` extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-20-11-13
+.. nonce: fe3iRb
+.. section: C API
+
+Port _queue extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 39573
+.. date: 2020-11-18-15-21-59
+.. nonce: VB3G2y
+.. section: C API
+
+Convert :c:func:`Py_TYPE` and :c:func:`Py_SIZE` back to macros to allow
+using them as an l-value. Many third party C extension modules rely on the
+ability of using Py_TYPE() and Py_SIZE() to set an object type and size:
+``Py_TYPE(obj) = type;`` and ``Py_SIZE(obj) = size;``.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-10-52-38
+.. nonce: FrWAwJ
+.. section: C API
+
+Port :mod:`symtable` extension module to multiphase initialization
+(:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-09-46-35
+.. nonce: SH8OIT
+.. section: C API
+
+Port :mod:`grp` and :mod:`pwd` extension modules to multiphase
+initialization (:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-09-16-23
+.. nonce: gkoI7Y
+.. section: C API
+
+Port _random extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-18-08-45-36
+.. nonce: VLZfiY
+.. section: C API
+
+Port _hashlib extension module to multiphase initialization (:pep:`489`)
+
+..
+
+.. bpo: 41713
+.. date: 2020-11-17-15-39-10
+.. nonce: Rq99Vc
+.. section: C API
+
+Removed the undocumented ``PyOS_InitInterrupts()`` function. Initializing
+Python already implicitly installs signal handlers: see
+:c:member:`PyConfig.install_signal_handlers`. Patch by Victor Stinner.
+
+..
+
+.. bpo: 40170
+.. date: 2020-11-13-01-40-28
+.. nonce: uh8lEf
+.. section: C API
+
+The ``Py_TRASHCAN_BEGIN`` macro no longer accesses PyTypeObject attributes,
+but now can get the condition by calling the new private
+:c:func:`_PyTrash_cond()` function which hides implementation details.
+
+..
+
+.. bpo: 42260
+.. date: 2020-11-10-14-27-39
+.. nonce: -Br3Co
+.. section: C API
+
+:c:func:`Py_GetPath`, :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
+:c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome` and
+:c:func:`Py_GetProgramName` functions now return ``NULL`` if called before
+:c:func:`Py_Initialize` (before Python is initialized). Use the new
+:ref:`Python Initialization Configuration API <init-config>` to get the
+:ref:`Python Path Configuration.  <init-path-config>`. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 42260
+.. date: 2020-11-05-18-02-07
+.. nonce: pAeaNR
+.. section: C API
+
+The :c:func:`PyConfig_Read` function now only parses
+:c:member:`PyConfig.argv` arguments once: :c:member:`PyConfig.parse_argv` is
+set to ``2`` after arguments are parsed. Since Python arguments are
+strippped from :c:member:`PyConfig.argv`, parsing arguments twice would
+parse the application options as Python options.
+
+..
+
+.. bpo: 42262
+.. date: 2020-11-04-17-22-36
+.. nonce: fCWzBb
+.. section: C API
+
+Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment
+the reference count of an object and return the object. Patch by Victor
+Stinner.
+
+..
+
+.. bpo: 42260
+.. date: 2020-11-04-16-31-55
+.. nonce: CmgHtF
+.. section: C API
+
+When :c:func:`Py_Initialize` is called twice, the second call now updates
+more :mod:`sys` attributes for the configuration, rather than only
+:data:`sys.argv`. Patch by Victor Stinner.
+
+..
+
+.. bpo: 41832
+.. date: 2020-11-03-19-47-06
+.. nonce: dL1VJJ
+.. section: C API
+
+The :c:func:`PyType_FromModuleAndSpec` function now accepts NULL ``tp_doc``
+slot.
+
+..
+
+.. bpo: 1635741
+.. date: 2020-11-03-11-52-27
+.. nonce: aDYJKB
+.. section: C API
+
+Added :c:func:`PyModule_AddObjectRef` function: similar to
+:c:func:`PyModule_AddObject` but don't steal a reference to the value on
+success. Patch by Victor Stinner.
+
+..
+
+.. bpo: 42171
+.. date: 2020-10-27-21-10-14
+.. nonce: S3FWTP
+.. section: C API
+
+The :c:data:`METH_FASTCALL` calling convention is added to the limited API.
+The functions  :c:func:`PyModule_AddType`,
+:c:func:`PyType_FromModuleAndSpec`, :c:func:`PyType_GetModule` and
+:c:func:`PyType_GetModuleState` are added to the limited API on Windows.
+
+..
+
+.. bpo: 42085
+.. date: 2020-10-19-15-58-16
+.. nonce: NhEf3W
+.. section: C API
+
+Add dedicated entry to PyAsyncMethods for sending values
+
+..
+
+.. bpo: 41073
+.. date: 2020-07-08-21-01-49
+.. nonce: VqQZON
+.. section: C API
+
+:c:func:`PyType_GetSlot()` can now accept static types.
+
+..
+
+.. bpo: 30459
+.. date: 2020-05-06-23-54-57
+.. nonce: N9_Jai
+.. section: C API
+
+:c:func:`PyList_SET_ITEM`, :c:func:`PyTuple_SET_ITEM` and
+:c:func:`PyCell_SET` macros can no longer be used as l-value or r-value. For
+example, ``x = PyList_SET_ITEM(a, b, c)`` and ``PyList_SET_ITEM(a, b, c) =
+x`` now fail with a compiler error. It prevents bugs like ``if
+(PyList_SET_ITEM (a, b, c) < 0) ...`` test. Patch by Zackery Spytz and
+Victor Stinner.

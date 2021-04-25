@@ -3,13 +3,13 @@
 import sys
 import functools
 import difflib
-import logging
 import pprint
 import re
 import warnings
 import collections
 import contextlib
 import traceback
+import types
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -86,23 +86,10 @@ def _id(obj):
 
 
 _module_cleanups = []
-def addModuleCleanup(*args, **kwargs):
+def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
-    if args:
-        function, *args = args
-    elif 'function' in kwargs:
-        function = kwargs.pop('function')
-        import warnings
-        warnings.warn("Passing 'function' as keyword argument is deprecated",
-                      DeprecationWarning, stacklevel=2)
-    else:
-        raise TypeError('addModuleCleanup expected at least 1 positional '
-                        'argument, got %d' % (len(args)-1))
-    args = tuple(args)
-
     _module_cleanups.append((function, args, kwargs))
-addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
 
 
 def doModuleCleanups():
@@ -135,6 +122,10 @@ def skip(reason):
         test_item.__unittest_skip__ = True
         test_item.__unittest_skip_why__ = reason
         return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 def skipIf(condition, reason):
@@ -249,6 +240,8 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
                      expected_regex.pattern, str(exc_value)))
         return True
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 class _AssertWarnsContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertWarns* methods."""
@@ -259,7 +252,7 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
     def __enter__(self):
         # The __warningregistry__'s need to be in a pristine state for tests
         # to work properly.
-        for v in sys.modules.values():
+        for v in list(sys.modules.values()):
             if getattr(v, '__warningregistry__', None):
                 v.__warningregistry__ = {}
         self.warnings_manager = warnings.catch_warnings(record=True)
@@ -300,74 +293,6 @@ class _AssertWarnsContext(_AssertRaisesBaseContext):
                                                                self.obj_name))
         else:
             self._raiseFailure("{} not triggered".format(exc_name))
-
-
-
-_LoggingWatcher = collections.namedtuple("_LoggingWatcher",
-                                         ["records", "output"])
-
-
-class _CapturingHandler(logging.Handler):
-    """
-    A logging handler capturing all (raw and formatted) logging output.
-    """
-
-    def __init__(self):
-        logging.Handler.__init__(self)
-        self.watcher = _LoggingWatcher([], [])
-
-    def flush(self):
-        pass
-
-    def emit(self, record):
-        self.watcher.records.append(record)
-        msg = self.format(record)
-        self.watcher.output.append(msg)
-
-
-
-class _AssertLogsContext(_BaseTestCaseContext):
-    """A context manager used to implement TestCase.assertLogs()."""
-
-    LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
-
-    def __init__(self, test_case, logger_name, level):
-        _BaseTestCaseContext.__init__(self, test_case)
-        self.logger_name = logger_name
-        if level:
-            self.level = logging._nameToLevel.get(level, level)
-        else:
-            self.level = logging.INFO
-        self.msg = None
-
-    def __enter__(self):
-        if isinstance(self.logger_name, logging.Logger):
-            logger = self.logger = self.logger_name
-        else:
-            logger = self.logger = logging.getLogger(self.logger_name)
-        formatter = logging.Formatter(self.LOGGING_FORMAT)
-        handler = _CapturingHandler()
-        handler.setFormatter(formatter)
-        self.watcher = handler.watcher
-        self.old_handlers = logger.handlers[:]
-        self.old_level = logger.level
-        self.old_propagate = logger.propagate
-        logger.handlers = [handler]
-        logger.setLevel(self.level)
-        logger.propagate = False
-        return handler.watcher
-
-    def __exit__(self, exc_type, exc_value, tb):
-        self.logger.handlers = self.old_handlers
-        self.logger.propagate = self.old_propagate
-        self.logger.setLevel(self.old_level)
-        if exc_type is not None:
-            # let unexpected exceptions pass through
-            return False
-        if len(self.watcher.records) == 0:
-            self._raiseFailure(
-                "no logs of level {} or higher triggered on {}"
-                .format(logging.getLevelName(self.level), self.logger.name))
 
 
 class _OrderedChainMap(collections.ChainMap):
@@ -476,47 +401,19 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(*args, **kwargs):
+    def addCleanup(self, function, /, *args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
-        if len(args) >= 2:
-            self, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
-                            "needs an argument")
-        elif 'function' in kwargs:
-            function = kwargs.pop('function')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'function' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('addCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         self._cleanups.append((function, args, kwargs))
-    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
-    def addClassCleanup(*args, **kwargs):
+    @classmethod
+    def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
-        if len(args) >= 2:
-            cls, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addClassCleanup' of 'TestCase' object "
-                            "needs an argument")
-        else:
-            raise TypeError('addClassCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         cls._class_cleanups.append((function, args, kwargs))
-    addClassCleanup.__text_signature__ = '($cls, function, /, *args, **kwargs)'
-    addClassCleanup = classmethod(addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -548,7 +445,7 @@ class TestCase(object):
         the specified test method's docstring.
         """
         doc = self._testMethodDoc
-        return doc and doc.split("\n")[0].strip() or None
+        return doc.strip().split("\n")[0].strip() if doc else None
 
 
     def id(self):
@@ -748,7 +645,7 @@ class TestCase(object):
             function, args, kwargs = cls._class_cleanups.pop()
             try:
                 function(*args, **kwargs)
-            except Exception as exc:
+            except Exception:
                 cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
@@ -888,7 +785,18 @@ class TestCase(object):
             self.assertEqual(cm.output, ['INFO:foo:first message',
                                          'ERROR:foo.bar:second message'])
         """
-        return _AssertLogsContext(self, logger, level)
+        # Lazy import to avoid importing logging if it is not needed.
+        from ._log import _AssertLogsContext
+        return _AssertLogsContext(self, logger, level, no_logs=False)
+
+    def assertNoLogs(self, logger=None, level=None):
+        """ Fail unless no log messages of level *level* or higher are emitted
+        on *logger_name* or its children.
+
+        This method must be used as a context manager.
+        """
+        from ._log import _AssertLogsContext
+        return _AssertLogsContext(self, logger, level, no_logs=True)
 
     def _getAssertEqualityFunc(self, first, second):
         """Get a detailed comparison function for the types of the two args.

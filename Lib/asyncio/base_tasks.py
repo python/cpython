@@ -24,11 +24,18 @@ def _task_repr_info(task):
 
 def _task_get_stack(task, limit):
     frames = []
-    try:
-        # 'async def' coroutines
+    if hasattr(task._coro, 'cr_frame'):
+        # case 1: 'async def' coroutines
         f = task._coro.cr_frame
-    except AttributeError:
+    elif hasattr(task._coro, 'gi_frame'):
+        # case 2: legacy coroutines
         f = task._coro.gi_frame
+    elif hasattr(task._coro, 'ag_frame'):
+        # case 3: async generators
+        f = task._coro.ag_frame
+    else:
+        # case 4: unknown objects
+        f = None
     if f is not None:
         while f is not None:
             if limit is not None:

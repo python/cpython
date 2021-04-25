@@ -2170,6 +2170,20 @@ class PatternReprTests(unittest.TestCase):
         self.assertEqual(r[:30], "re.compile('Very long long lon")
         self.assertEqual(r[-16:], ", re.IGNORECASE)")
 
+    def test_flags_repr(self):
+        self.assertEqual(repr(re.I), "re.IGNORECASE")
+        self.assertEqual(repr(re.I|re.S|re.X),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE")
+        self.assertEqual(repr(re.I|re.S|re.X|(1<<20)),
+                         "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
+        self.assertEqual(
+                repr(~re.I),
+                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.TEMPLATE|re.DEBUG")
+        self.assertEqual(repr(~(re.I|re.S|re.X)),
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG")
+        self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG|0xffe00")
+
 
 class ImplementationTest(unittest.TestCase):
     """
@@ -2184,6 +2198,10 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(f("aaaa"), [0, 1, 2, 3])
         self.assertEqual(f("ababba"), [0, 0, 1, 2, 0, 1])
         self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
+
+    def test_signedness(self):
+        self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
+        self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
 
 
 class ExternalTests(unittest.TestCase):
@@ -2205,7 +2223,7 @@ class ExternalTests(unittest.TestCase):
 
     def test_re_tests(self):
         're_tests test suite'
-        from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
+        from test.re_tests import tests, FAIL, SYNTAX_ERROR
         for t in tests:
             pattern = s = outcome = repl = expected = None
             if len(t) == 5:

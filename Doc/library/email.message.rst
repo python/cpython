@@ -178,7 +178,7 @@ message objects.
 
    .. method:: __contains__(name)
 
-      Return true if the message object has a field named *name*. Matching is
+      Return ``True`` if the message object has a field named *name*. Matching is
       done without regard to case and *name* does not include the trailing
       colon.  Used for the ``in`` operator.  For example::
 

@@ -87,9 +87,10 @@ the :mod:`glob` module.)
 .. function:: commonpath(paths)
 
    Return the longest common sub-path of each pathname in the sequence
-   *paths*.  Raise :exc:`ValueError` if *paths* contains both absolute and relative
-   pathnames, or if *paths* is empty.  Unlike :func:`commonprefix`, this
-   returns a valid path.
+   *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
+   and relative pathnames, the *paths* are on the different drives or
+   if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
+   valid path.
 
    .. availability:: Unix, Windows.
 
@@ -174,8 +175,8 @@ the :mod:`glob` module.)
 
    On Windows, :envvar:`USERPROFILE` will be used if set, otherwise a combination
    of :envvar:`HOMEPATH` and :envvar:`HOMEDRIVE` will be used.  An initial
-   ``~user`` is handled by stripping the last directory component from the created
-   user path derived above.
+   ``~user`` is handled by checking that the last directory component of the current
+   user's home directory matches :envvar:`USERNAME`, and replacing it if so.
 
    If the expansion fails or if the path does not begin with a tilde, the path is
    returned unchanged.
@@ -305,11 +306,10 @@ the :mod:`glob` module.)
 
    Join one or more path components intelligently.  The return value is the
    concatenation of *path* and any members of *\*paths* with exactly one
-   directory separator (``os.sep``) following each non-empty part except the
-   last, meaning that the result will only end in a separator if the last
-   part is empty.  If a component is an absolute path, all previous
-   components are thrown away and joining continues from the absolute path
-   component.
+   directory separator following each non-empty part except the last, meaning
+   that the result will only end in a separator if the last part is empty.  If
+   a component is an absolute path, all previous components are thrown away
+   and joining continues from the absolute path component.
 
    On Windows, the drive letter is not reset when an absolute path component
    (e.g., ``r'\foo'``) is encountered.  If a component contains a drive
@@ -327,8 +327,6 @@ the :mod:`glob` module.)
    Normalize the case of a pathname.  On Windows, convert all characters in the
    pathname to lowercase, and also convert forward slashes to backward slashes.
    On other operating systems, return the path unchanged.
-   Raise a :exc:`TypeError` if the type of *path* is not ``str`` or ``bytes`` (directly
-   or indirectly through the :class:`os.PathLike` interface).
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -349,10 +347,18 @@ the :mod:`glob` module.)
 .. function:: realpath(path)
 
    Return the canonical path of the specified filename, eliminating any symbolic
-   links encountered in the path (if they are supported by the operating system).
+   links encountered in the path (if they are supported by the operating
+   system).
+
+   .. note::
+      When symbolic link cycles occur, the returned path will be one member of
+      the cycle, but no guarantee is made about which member that will be.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      Symbolic links and junctions are now resolved on Windows.
 
 
 .. function:: relpath(path, start=os.curdir)
@@ -360,7 +366,8 @@ the :mod:`glob` module.)
    Return a relative filepath to *path* either from the current directory or
    from an optional *start* directory.  This is a path computation:  the
    filesystem is not accessed to confirm the existence or nature of *path* or
-   *start*.
+   *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
+   are on different drives.
 
    *start* defaults to :attr:`os.curdir`.
 

@@ -25,8 +25,8 @@ except getopt.error:
 if not opts:
     exit_with_usage()
 
-pyver = sysconfig.get_config_var('VERSION')
 getvar = sysconfig.get_config_var
+pyver = getvar('VERSION')
 
 opt_flags = [flag for (flag, val) in opts]
 
@@ -35,10 +35,10 @@ if '--help' in opt_flags:
 
 for opt in opt_flags:
     if opt == '--prefix':
-        print(sysconfig.get_config_var('prefix'))
+        print(getvar('prefix'))
 
     elif opt == '--exec-prefix':
-        print(sysconfig.get_config_var('exec_prefix'))
+        print(getvar('exec_prefix'))
 
     elif opt in ('--includes', '--cflags'):
         flags = ['-I' + sysconfig.get_path('include'),
@@ -65,10 +65,10 @@ for opt in opt_flags:
         print(' '.join(libs))
 
     elif opt == '--extension-suffix':
-        print(sysconfig.get_config_var('EXT_SUFFIX'))
+        print(getvar('EXT_SUFFIX'))
 
     elif opt == '--abiflags':
         print(sys.abiflags)
 
     elif opt == '--configdir':
-        print(sysconfig.get_config_var('LIBPL'))
+        print(getvar('LIBPL'))

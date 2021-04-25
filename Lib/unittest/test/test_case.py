@@ -8,6 +8,7 @@ import logging
 import warnings
 import weakref
 import inspect
+import types
 
 from copy import deepcopy
 from test import support
@@ -609,6 +610,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                 self.shortDescription(),
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
+
+    def testShortDescriptionWhitespaceTrimming(self):
+        """
+            Tests shortDescription() whitespace is trimmed, so that the first
+            line of nonwhite-space text becomes the docstring.
+        """
+        self.assertEqual(
+            self.shortDescription(),
+            'Tests shortDescription() whitespace is trimmed, so that the first')
 
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
@@ -1341,6 +1351,20 @@ test case
             pass
         self.assertRaises(TypeError, self.assertWarnsRegex, MyWarn, lambda: True)
 
+    def testAssertWarnsModifySysModules(self):
+        # bpo-29620: handle modified sys.modules during iteration
+        class Foo(types.ModuleType):
+            @property
+            def __warningregistry__(self):
+                sys.modules['@bar@'] = 'bar'
+
+        sys.modules['@foo@'] = Foo('foo')
+        try:
+            self.assertWarns(UserWarning, warnings.warn, 'expected')
+        finally:
+            del sys.modules['@foo@']
+            del sys.modules['@bar@']
+
     def testAssertRaisesRegexMismatch(self):
         def Stub():
             raise Exception('Unexpected')
@@ -1649,6 +1673,18 @@ test case
                 with self.assertLogs(level='WARNING'):
                     log_foo.info("1")
 
+    def testAssertLogsFailureLevelTooHigh_FilterInRootLogger(self):
+        # Failure due to level too high - message propagated to root
+        with self.assertNoStderr():
+            oldLevel = log_foo.level
+            log_foo.setLevel(logging.INFO)
+            try:
+                with self.assertRaises(self.failureException):
+                    with self.assertLogs(level='WARNING'):
+                        log_foo.info("1")
+            finally:
+                log_foo.setLevel(oldLevel)
+
     def testAssertLogsFailureMismatchingLogger(self):
         # Failure due to mismatching logger (and the logged message is
         # passed through)
@@ -1656,6 +1692,81 @@ test case
             with self.assertRaises(self.failureException):
                 with self.assertLogs('foo'):
                     log_quux.error("1")
+
+    def testAssertLogsUnexpectedException(self):
+        # Check unexpected exception will go through.
+        with self.assertRaises(ZeroDivisionError):
+            with self.assertLogs():
+                raise ZeroDivisionError("Unexpected")
+
+    def testAssertNoLogsDefault(self):
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs():
+                log_foo.info("1")
+                log_foobar.debug("2")
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['INFO:foo:1']",
+        )
+
+    def testAssertNoLogsFailureFoundLogs(self):
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs():
+                log_quux.error("1")
+                log_foo.error("foo")
+
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['ERROR:quux:1', 'ERROR:foo:foo']",
+        )
+
+    def testAssertNoLogsPerLogger(self):
+        with self.assertNoStderr():
+            with self.assertLogs(log_quux):
+                with self.assertNoLogs(logger=log_foo):
+                    log_quux.error("1")
+
+    def testAssertNoLogsFailurePerLogger(self):
+        # Failure due to unexpected logs for the given logger or its
+        # children.
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertLogs(log_quux):
+                with self.assertNoLogs(logger=log_foo):
+                    log_quux.error("1")
+                    log_foobar.info("2")
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['INFO:foo.bar:2']",
+        )
+
+    def testAssertNoLogsPerLevel(self):
+        # Check per-level filtering
+        with self.assertNoStderr():
+            with self.assertNoLogs(level="ERROR"):
+                log_foo.info("foo")
+                log_quux.debug("1")
+
+    def testAssertNoLogsFailurePerLevel(self):
+        # Failure due to unexpected logs at the specified level.
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs(level="DEBUG"):
+                log_foo.debug("foo")
+                log_quux.debug("1")
+        self.assertEqual(
+            str(cm.exception),
+            "Unexpected logs found: ['DEBUG:foo:foo', 'DEBUG:quux:1']",
+        )
+
+    def testAssertNoLogsUnexpectedException(self):
+        # Check unexpected exception will go through.
+        with self.assertRaises(ZeroDivisionError):
+            with self.assertNoLogs():
+                raise ZeroDivisionError("Unexpected")
+
+    def testAssertNoLogsYieldsNone(self):
+        with self.assertNoLogs() as value:
+            pass
+        self.assertIsNone(value)
 
     def testDeprecatedMethodNames(self):
         """

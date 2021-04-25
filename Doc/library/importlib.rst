@@ -208,7 +208,7 @@ Functions
    .. versionadded:: 3.4
    .. versionchanged:: 3.7
        :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
-       a :class:`ModuleSpec`.
+       a :class:`~importlib.machinery.ModuleSpec`.
 
 
 :mod:`importlib.abc` -- Abstract base classes related to import
@@ -257,6 +257,10 @@ ABC hierarchy::
          Returns ``None`` when called instead of raising
          :exc:`NotImplementedError`.
 
+      .. deprecated:: 3.10
+         Implement :meth:`MetaPathFinder.find_spec` or
+         :meth:`PathEntryFinder.find_spec` instead.
+
 
 .. class:: MetaPathFinder
 
@@ -264,6 +268,9 @@ ABC hierarchy::
    compatibility, this is a subclass of :class:`Finder`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      No longer a subclass of :class:`Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -274,6 +281,8 @@ ABC hierarchy::
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
+      :func:`importlib.util.spec_from_loader` may be useful for implementing
+      concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
 
@@ -311,10 +320,12 @@ ABC hierarchy::
    An abstract base class representing a :term:`path entry finder`.  Though
    it bears some similarities to :class:`MetaPathFinder`, ``PathEntryFinder``
    is meant for use only within the path-based import subsystem provided
-   by :class:`PathFinder`. This ABC is a subclass of :class:`Finder` for
-   compatibility reasons only.
+   by :class:`importlib.machinery.PathFinder`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+      No longer a subclass of :class:`Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
@@ -323,7 +334,8 @@ ABC hierarchy::
       within the :term:`path entry` to which it is assigned.  If a spec
       cannot be found, ``None`` is returned.  When passed in, ``target``
       is a module object that the finder may use to make a more educated
-      guess about what spec to return.
+      guess about what spec to return. :func:`importlib.util.spec_from_loader`
+      may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
 
@@ -360,7 +372,8 @@ ABC hierarchy::
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
-      cache used by the finder. Used by :meth:`PathFinder.invalidate_caches`
+      cache used by the finder. Used by
+      :meth:`importlib.machinery.PathFinder.invalidate_caches`
       when invalidating the caches of all cached finders.
 
 
@@ -435,8 +448,9 @@ ABC hierarchy::
             package. This attribute is not set on modules.
 
         - :attr:`__package__`
-            The parent package for the module/package. If the module is
-            top-level then it has a value of the empty string. The
+            The fully-qualified name of the package under which the module was
+            loaded as a submodule (or the empty string for top-level modules).
+            For packages, it is the same as :attr:`__name__`.  The
             :func:`importlib.util.module_for_loader` decorator can handle the
             details for :attr:`__package__`.
 
@@ -477,6 +491,8 @@ ABC hierarchy::
 
 .. class:: ResourceReader
 
+    *Superseded by TraversableReader*
+
     An :term:`abstract base class` to provide the ability to read
     *resources*.
 
@@ -500,7 +516,7 @@ ABC hierarchy::
     packages or a module).
 
     Loaders that wish to support resource reading are expected to
-    provide a method called ``get_resource_loader(fullname)`` which
+    provide a method called ``get_resource_reader(fullname)`` which
     returns an object implementing this ABC's interface. If the module
     specified by fullname is not a package, this method should return
     :const:`None`. An object compatible with this ABC should only be
@@ -792,6 +808,28 @@ ABC hierarchy::
         itself does not end in ``__init__``.
 
 
+.. class:: Traversable
+
+    An object with a subset of pathlib.Path methods suitable for
+    traversing directories and opening files.
+
+    .. versionadded:: 3.9
+
+
+.. class:: TraversableReader
+
+    An abstract base class for resource readers capable of serving
+    the ``files`` interface. Subclasses ResourceReader and provides
+    concrete implementations of the ResourceReader's abstract
+    methods. Therefore, any loader supplying TraversableReader
+    also supplies ResourceReader.
+
+    Loaders that wish to support resource reading are expected to
+    implement this interface.
+
+    .. versionadded:: 3.9
+
+
 :mod:`importlib.resources` -- Resources
 ---------------------------------------
 
@@ -849,6 +887,35 @@ The following types are defined.
 
 
 The following functions are available.
+
+
+.. function:: files(package)
+
+    Returns an :class:`importlib.resources.abc.Traversable` object
+    representing the resource container for the package (think directory)
+    and its resources (think files). A Traversable may contain other
+    containers (think subdirectories).
+
+    *package* is either a name or a module object which conforms to the
+    ``Package`` requirements.
+
+    .. versionadded:: 3.9
+
+.. function:: as_file(traversable)
+
+    Given a :class:`importlib.resources.abc.Traversable` object representing
+    a file, typically from :func:`importlib.resources.files`, return
+    a context manager for use in a :keyword:`with` statement.
+    The context manager provides a :class:`pathlib.Path` object.
+
+    Exiting the context manager cleans up any temporary file created when the
+    resource was extracted from e.g. a zip file.
+
+    Use ``as_file`` when the Traversable methods
+    (``read_text``, etc) are insufficient and an actual file on
+    the file system is required.
+
+    .. versionadded:: 3.9
 
 .. function:: open_binary(package, resource)
 
@@ -1026,10 +1093,14 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
+    .. versionchanged:: 3.4
+       Gained :meth:`~Loader.create_module` and :meth:`~Loader.exec_module`
+       methods.
+
 
 .. class:: WindowsRegistryFinder
 
-   :term:`Finder` for modules declared in the Windows registry.  This class
+   :term:`Finder <finder>` for modules declared in the Windows registry.  This class
    implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1044,7 +1115,7 @@ find and load modules.
 
 .. class:: PathFinder
 
-   A :term:`Finder` for :data:`sys.path` and package ``__path__`` attributes.
+   A :term:`Finder <finder>` for :data:`sys.path` and package ``__path__`` attributes.
    This class implements the :class:`importlib.abc.MetaPathFinder` ABC.
 
    Only class methods are defined by this class to alleviate the need for
@@ -1093,7 +1164,7 @@ find and load modules.
       directory for ``''`` (i.e. the empty string).
 
 
-.. class:: FileFinder(path, \*loader_details)
+.. class:: FileFinder(path, *loader_details)
 
    A concrete implementation of :class:`importlib.abc.PathEntryFinder` which
    caches results from the file system.
@@ -1132,11 +1203,14 @@ find and load modules.
 
       Attempt to find the loader to handle *fullname* within :attr:`path`.
 
+      .. deprecated:: 3.10
+         Use :meth:`find_spec` instead.
+
    .. method:: invalidate_caches()
 
       Clear out the internal cache.
 
-   .. classmethod:: path_hook(\*loader_details)
+   .. classmethod:: path_hook(*loader_details)
 
       A class method which returns a closure for use on :attr:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the
@@ -1165,7 +1239,7 @@ find and load modules.
 
    .. method:: is_package(fullname)
 
-      Return true if :attr:`path` appears to be for a package.
+      Return ``True`` if :attr:`path` appears to be for a package.
 
    .. method:: path_stats(path)
 
@@ -1303,8 +1377,8 @@ find and load modules.
 
    (``__loader__``)
 
-   The loader to use for loading.  For namespace packages this should be
-   set to ``None``.
+   The :term:`Loader <loader>` that should be used when loading
+   the module.  :term:`Finders <finder>` should always set this.
 
    .. attribute:: origin
 
@@ -1337,8 +1411,9 @@ find and load modules.
 
    (``__package__``)
 
-   (Read-only) Fully-qualified name of the package to which the module
-   belongs as a submodule (or ``None``).
+   (Read-only) The fully-qualified name of the package under which the module
+   should be loaded as a submodule (or the empty string for top-level modules).
+   For packages, it is the same as :attr:`__name__`.
 
    .. attribute:: has_location
 
@@ -1379,8 +1454,8 @@ an :term:`importer`.
    bytecode file. An empty string represents no optimization, so
    ``/foo/bar/baz.py`` with an *optimization* of ``''`` will result in a
    bytecode path of ``/foo/bar/__pycache__/baz.cpython-32.pyc``. ``None`` causes
-   the interpter's optimization level to be used. Any other value's string
-   representation being used, so ``/foo/bar/baz.py`` with an *optimization* of
+   the interpreter's optimization level to be used. Any other value's string
+   representation is used, so ``/foo/bar/baz.py`` with an *optimization* of
    ``2`` will lead to the bytecode path of
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
@@ -1430,15 +1505,20 @@ an :term:`importer`.
 
    If  **name** has no leading dots, then **name** is simply returned. This
    allows for usage such as
-   ``importlib.util.resolve_name('sys', __package__)`` without doing a
+   ``importlib.util.resolve_name('sys', __spec__.parent)`` without doing a
    check to see if the **package** argument is needed.
 
-   :exc:`ValueError` is raised if **name** is a relative module name but
-   package is a false value (e.g. ``None`` or the empty string).
-   :exc:`ValueError` is also raised a relative name would escape its containing
+   :exc:`ImportError` is raised if **name** is a relative module name but
+   **package** is a false value (e.g. ``None`` or the empty string).
+   :exc:`ImportError` is also raised a relative name would escape its containing
    package (e.g. requesting ``..bacon`` from within the ``spam`` package).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      To improve consistency with import statements, raise
+      :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+      import attempts.
 
 .. function:: find_spec(name, package=None)
 
@@ -1540,9 +1620,9 @@ an :term:`importer`.
 
 .. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
 
-   A factory function for creating a :class:`ModuleSpec` instance based
-   on a loader.  The parameters have the same meaning as they do for
-   ModuleSpec.  The function uses available :term:`loader` APIs, such as
+   A factory function for creating a :class:`~importlib.machinery.ModuleSpec`
+   instance based on a loader.  The parameters have the same meaning as they do
+   for ModuleSpec.  The function uses available :term:`loader` APIs, such as
    :meth:`InspectLoader.is_package`, to fill in any missing
    information on the spec.
 
@@ -1550,9 +1630,9 @@ an :term:`importer`.
 
 .. function:: spec_from_file_location(name, location, *, loader=None, submodule_search_locations=None)
 
-   A factory function for creating a :class:`ModuleSpec` instance based
-   on the path to a file.  Missing information will be filled in on the
-   spec by making use of loader APIs and by the implication that the
+   A factory function for creating a :class:`~importlib.machinery.ModuleSpec`
+   instance based on the path to a file.  Missing information will be filled in
+   on the spec by making use of loader APIs and by the implication that the
    module will be file-based.
 
    .. versionadded:: 3.4
@@ -1638,15 +1718,16 @@ import, then you should use :func:`importlib.util.find_spec`.
   # For illustrative purposes.
   name = 'itertools'
 
-  spec = importlib.util.find_spec(name)
-  if spec is None:
-      print("can't find the itertools module")
-  else:
+  if name in sys.modules:
+      print(f"{name!r} already in sys.modules")
+  elif (spec := importlib.util.find_spec(name)) is not None:
       # If you chose to perform the actual import ...
       module = importlib.util.module_from_spec(spec)
-      spec.loader.exec_module(module)
-      # Adding the module to sys.modules is optional.
       sys.modules[name] = module
+      spec.loader.exec_module(module)
+      print(f"{name!r} has been imported")
+  else:
+      print(f"can't find the {name!r} module")
 
 
 Importing a source file directly
@@ -1665,10 +1746,32 @@ To import a Python source file directly, use the following recipe
 
   spec = importlib.util.spec_from_file_location(module_name, file_path)
   module = importlib.util.module_from_spec(spec)
-  spec.loader.exec_module(module)
-  # Optional; only necessary if you want to be able to import the module
-  # by name later.
   sys.modules[module_name] = module
+  spec.loader.exec_module(module)
+
+
+Implementing lazy imports
+'''''''''''''''''''''''''
+
+The example below shows how to implement lazy imports::
+
+    >>> import importlib.util
+    >>> import sys
+    >>> def lazy_import(name):
+    ...     spec = importlib.util.find_spec(name)
+    ...     loader = importlib.util.LazyLoader(spec.loader)
+    ...     spec.loader = loader
+    ...     module = importlib.util.module_from_spec(spec)
+    ...     sys.modules[name] = module
+    ...     loader.exec_module(module)
+    ...     return module
+    ...
+    >>> lazy_typing = lazy_import("typing")
+    >>> #lazy_typing is a real module object,
+    >>> #but it is not loaded in memory yet.
+    >>> lazy_typing.TYPE_CHECKING
+    False
+
 
 
 Setting up an importer
@@ -1740,8 +1843,8 @@ Python 3.6 and newer for other parts of the code).
           msg = f'No module named {absolute_name!r}'
           raise ModuleNotFoundError(msg, name=absolute_name)
       module = importlib.util.module_from_spec(spec)
-      spec.loader.exec_module(module)
       sys.modules[absolute_name] = module
+      spec.loader.exec_module(module)
       if path is not None:
           setattr(parent_module, child_name, module)
       return module

@@ -7,6 +7,8 @@ import types
 import unittest
 import warnings
 from test import support
+from test.support import import_helper
+from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -1203,39 +1205,41 @@ class CoroutineTest(unittest.TestCase):
             def __aenter__(self):
                 pass
 
+        body_executed = False
         async def foo():
             async with CM():
-                pass
+                body_executed = True
 
         with self.assertRaisesRegex(AttributeError, '__aexit__'):
             run_async(foo())
+        self.assertFalse(body_executed)
 
     def test_with_3(self):
         class CM:
             def __aexit__(self):
                 pass
 
+        body_executed = False
         async def foo():
             async with CM():
-                pass
+                body_executed = True
 
         with self.assertRaisesRegex(AttributeError, '__aenter__'):
             run_async(foo())
+        self.assertFalse(body_executed)
 
     def test_with_4(self):
         class CM:
-            def __enter__(self):
-                pass
+            pass
 
-            def __exit__(self):
-                pass
-
+        body_executed = False
         async def foo():
             async with CM():
-                pass
+                body_executed = True
 
-        with self.assertRaisesRegex(AttributeError, '__aexit__'):
+        with self.assertRaisesRegex(AttributeError, '__aenter__'):
             run_async(foo())
+        self.assertFalse(body_executed)
 
     def test_with_5(self):
         # While this test doesn't make a lot of sense,
@@ -2032,11 +2036,17 @@ class CoroutineTest(unittest.TestCase):
     def test_fatal_coro_warning(self):
         # Issue 27811
         async def func(): pass
-        with warnings.catch_warnings(), support.captured_stderr() as stderr:
+        with warnings.catch_warnings(), \
+             support.catch_unraisable_exception() as cm:
             warnings.filterwarnings("error")
-            func()
+            coro = func()
+            # only store repr() to avoid keeping the coroutine alive
+            coro_repr = repr(coro)
+            coro = None
             support.gc_collect()
-        self.assertIn("was never awaited", stderr.getvalue())
+
+            self.assertIn("was never awaited", str(cm.unraisable.exc_value))
+            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
@@ -2109,7 +2119,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
     def test_asyncio_1(self):
         # asyncio cannot be imported when Python is compiled without thread
         # support
-        asyncio = support.import_module('asyncio')
+        asyncio = import_helper.import_module('asyncio')
 
         class MyException(Exception):
             pass
@@ -2250,7 +2260,9 @@ class OriginTrackingTest(unittest.TestCase):
         try:
             warnings._warn_unawaited_coroutine = lambda coro: 1/0
             with support.catch_unraisable_exception() as cm, \
-                 support.captured_stderr() as stream:
+                 warnings_helper.check_warnings(
+                         (r'coroutine .* was never awaited',
+                          RuntimeWarning)):
                 # only store repr() to avoid keeping the coroutine alive
                 coro = corofn()
                 coro_repr = repr(coro)
@@ -2261,13 +2273,12 @@ class OriginTrackingTest(unittest.TestCase):
 
                 self.assertEqual(repr(cm.unraisable.object), coro_repr)
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
-                self.assertIn("was never awaited", stream.getvalue())
 
             del warnings._warn_unawaited_coroutine
-            with support.captured_stderr() as stream:
+            with warnings_helper.check_warnings(
+                    (r'coroutine .* was never awaited', RuntimeWarning)):
                 corofn()
                 support.gc_collect()
-            self.assertIn("was never awaited", stream.getvalue())
 
         finally:
             warnings._warn_unawaited_coroutine = orig_wuc

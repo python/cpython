@@ -47,13 +47,6 @@ The :mod:`wave` module defines the following function and exception:
    .. versionchanged:: 3.4
       Added support for unseekable files.
 
-.. function:: openfp(file, mode)
-
-   A synonym for :func:`.open`, maintained for backwards compatibility.
-
-   .. deprecated-removed:: 3.7 3.9
-
-
 .. exception:: Error
 
    An error raised when something is impossible because it violates the WAV
