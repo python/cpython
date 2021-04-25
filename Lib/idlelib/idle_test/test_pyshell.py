@@ -61,16 +61,16 @@ class PyShellFileListTest(unittest.TestCase):
 
 
 class PyShellRemoveLastNewlineAndSurroundingWhitespaceTest(unittest.TestCase):
-    func = pyshell.PyShell._remove_last_newline_and_surrounding_whitespace
+    regexp = pyshell.PyShell._last_newline_re
 
     def all_removed(self, text):
-        self.assertEqual('', self.func(text))
+        self.assertEqual('', self.regexp.sub('', text))
 
     def none_removed(self, text):
-        self.assertEqual(text, self.func(text))
+        self.assertEqual(text, self.regexp.sub('', text))
 
     def check_result(self, text, expected):
-        self.assertEqual(expected, self.func(text))
+        self.assertEqual(expected, self.regexp.sub('', text))
 
     def test_empty(self):
         self.all_removed('')

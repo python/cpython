@@ -1304,21 +1304,13 @@ class PyShell(OutputWindow):
             self.text.see("insert")
             self.text.undo_block_stop()
 
-    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?$")
-    @classmethod
-    def _remove_last_newline_and_surrounding_whitespace(cls, line):
-        "Strip off last newline and surrounding whitespace."
-        # Add an extra newline at the end due to the way the re module
-        # treats the '$' symbol: "Matches the end of the string or just
-        # before the newline at the end of the string, ..."
-        return cls._last_newline_re.sub("", line + '\n')
-
+    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\Z")
     def runit(self):
         index_before = self.text.index("end-2c")
         line = self.text.get("iomark", "end-1c")
         # Strip off last newline and surrounding whitespace.
         # (To allow you to hit return twice to end a statement.)
-        line = self._remove_last_newline_and_surrounding_whitespace(line)
+        line = self._last_newline_re.sub("", line)
         input_is_complete = self.interp.runsource(line)
         if not input_is_complete:
             if self.text.get(index_before) == '\n':
