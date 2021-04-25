@@ -1508,7 +1508,7 @@ class NameErrorTests(unittest.TestCase):
         self.assertNotIn("somethingverywronghehe", err.getvalue())
 
     def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
-        vvv = mom = w = id = python = None
+        vvv = mom = w = id = pytho = None
 
         with self.subTest(name="b"):
             try:
@@ -1521,7 +1521,7 @@ class NameErrorTests(unittest.TestCase):
             self.assertNotIn("mom", err.getvalue())
             self.assertNotIn("'id'", err.getvalue())
             self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'python'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
 
         with self.subTest(name="v"):
             try:
@@ -1534,7 +1534,7 @@ class NameErrorTests(unittest.TestCase):
             self.assertNotIn("mom", err.getvalue())
             self.assertNotIn("'id'", err.getvalue())
             self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'python'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
 
         with self.subTest(name="m"):
             try:
@@ -1547,7 +1547,7 @@ class NameErrorTests(unittest.TestCase):
             self.assertNotIn("mom", err.getvalue())
             self.assertNotIn("'id'", err.getvalue())
             self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'python'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
 
         with self.subTest(name="py"):
             try:
@@ -1560,7 +1560,7 @@ class NameErrorTests(unittest.TestCase):
             self.assertNotIn("mom", err.getvalue())
             self.assertNotIn("'id'", err.getvalue())
             self.assertNotIn("'w'", err.getvalue())
-            self.assertNotIn("'python'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
 
     def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
         def f():
@@ -1715,6 +1715,63 @@ class AttributeErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
 
         self.assertNotIn("blech", err.getvalue())
+
+    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        class MyClass:
+            vvv = mom = w = id = pytho = None
+
+        with self.subTest(name="b"):
+            try:
+                MyClass.b
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="v"):
+            try:
+                MyClass.v
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="m"):
+            try:
+                MyClass.m
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="py"):
+            try:
+                MyClass.py
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
 
     def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
         class A:
