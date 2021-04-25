@@ -1,4 +1,5 @@
 from test import support
+from test.support import os_helper
 from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
@@ -1265,8 +1266,8 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
     def test_open(self):
-        filename = support.TESTFN + '.py'
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN + '.py'
+        self.addCleanup(os_helper.unlink, filename)
 
         # test coding cookie
         for encoding in ('iso-8859-15', 'utf-8'):

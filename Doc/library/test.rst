@@ -453,7 +453,7 @@ The :mod:`test.support` module defines the following functions:
    Define match test with regular expression *patterns*.
 
 
-.. function:: run_unittest(\*classes)
+.. function:: run_unittest(*classes)
 
    Execute :class:`unittest.TestCase` subclasses passed to the function. The
    function scans the classes for methods starting with the prefix ``test_``
@@ -878,7 +878,7 @@ The :mod:`test.support` module defines the following functions:
    missing.
 
 
-.. function:: check__all__(test_case, module, name_of_module=None, extra=(), blacklist=())
+.. function:: check__all__(test_case, module, name_of_module=None, extra=(), not_exported=())
 
    Assert that the ``__all__`` variable of *module* contains all public names.
 
@@ -895,8 +895,8 @@ The :mod:`test.support` module defines the following functions:
    detected as "public", like objects without a proper ``__module__``
    attribute. If provided, it will be added to the automatically detected ones.
 
-   The *blacklist* argument can be a set of names that must not be treated as part of
-   the public API even though their names indicate otherwise.
+   The *not_exported* argument can be a set of names that must not be treated
+   as part of the public API even though their names indicate otherwise.
 
    Example use::
 
@@ -912,10 +912,10 @@ The :mod:`test.support` module defines the following functions:
       class OtherTestCase(unittest.TestCase):
           def test__all__(self):
               extra = {'BAR_CONST', 'FOO_CONST'}
-              blacklist = {'baz'}  # Undocumented name.
+              not_exported = {'baz'}  # Undocumented name.
               # bar imports part of its API from _bar.
               support.check__all__(self, bar, ('bar', '_bar'),
-                                   extra=extra, blacklist=blacklist)
+                                   extra=extra, not_exported=not_exported)
 
    .. versionadded:: 3.6
 
@@ -1167,6 +1167,8 @@ script execution tests.
 
 The :mod:`test.support.bytecode_helper` module provides support for testing
 and inspecting bytecode generation.
+
+.. versionadded:: 3.9
 
 The module defines the following class:
 
@@ -1597,7 +1599,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
    .. versionadded:: 3.8
 
 
-.. function:: check_warnings(\*filters, quiet=True)
+.. function:: check_warnings(*filters, quiet=True)
 
    A convenience wrapper for :func:`warnings.catch_warnings()` that makes it
    easier to test that a warning was correctly raised.  It is approximately

@@ -52,6 +52,18 @@ class BinHexTestCase(unittest.TestCase):
 
         self.assertRaises(binhex.Error, binhex.binhex, self.fname3, self.fname2)
 
+    def test_binhex_line_endings(self):
+        # bpo-29566: Ensure the line endings are those for macOS 9
+        with open(self.fname1, 'wb') as f:
+            f.write(self.DATA)
+
+        binhex.binhex(self.fname1, self.fname2)
+
+        with open(self.fname2, 'rb') as fp:
+            contents = fp.read()
+
+        self.assertNotIn(b'\n', contents)
+
 def test_main():
     support.run_unittest(BinHexTestCase)
 

@@ -251,11 +251,17 @@ We can remove elements using :meth:`Element.remove`.  Let's say we want to
 remove all countries with a rank higher than 50::
 
    >>> for country in root.findall('country'):
+   ...     # using root.findall() to avoid removal during traversal
    ...     rank = int(country.find('rank').text)
    ...     if rank > 50:
    ...         root.remove(country)
    ...
    >>> tree.write('output.xml')
+
+Note that concurrent modification while iterating can lead to problems,
+just like when iterating and modifying Python lists or dicts.
+Therefore, the example first collects all matching elements with
+``root.findall()``, and only then iterates over the list of matches.
 
 Our XML now looks like this:
 
@@ -449,6 +455,12 @@ Supported XPath syntax
 |                       | has the given value.  The value cannot contain       |
 |                       | quotes.                                              |
 +-----------------------+------------------------------------------------------+
+| ``[@attrib!='value']``| Selects all elements for which the given attribute   |
+|                       | does not have the given value. The value cannot      |
+|                       | contain quotes.                                      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
@@ -457,9 +469,21 @@ Supported XPath syntax
 |                       |                                                      |
 |                       | .. versionadded:: 3.7                                |
 +-----------------------+------------------------------------------------------+
+| ``[.!='text']``       | Selects all elements whose complete text content,    |
+|                       | including descendants, does not equal the given      |
+|                       | ``text``.                                            |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |
++-----------------------+------------------------------------------------------+
+| ``[tag!='text']``     | Selects all elements that have a child named         |
+|                       | ``tag`` whose complete text content, including       |
+|                       | descendants, does not equal the given ``text``.      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
 +-----------------------+------------------------------------------------------+
 | ``[position]``        | Selects all elements that are located at the given   |
 |                       | position.  The position can be either an integer     |

@@ -24,8 +24,10 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import run_unittest, TESTFN, DirsOnSysPath, cpython_only
+from test.support import run_unittest, cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support.import_helper import DirsOnSysPath
+from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
@@ -361,7 +363,7 @@ class GetSourceBase(unittest.TestCase):
     fodderModule = None
 
     def setUp(self):
-        with open(inspect.getsourcefile(self.fodderModule)) as fp:
+        with open(inspect.getsourcefile(self.fodderModule), encoding="utf-8") as fp:
             self.source = fp.read()
 
     def sourcerange(self, top, bottom):
@@ -388,6 +390,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                           ('ParrotDroppings', mod.ParrotDroppings),
                           ('StupidGit', mod.StupidGit),
                           ('Tit', mod.MalodorousPervert),
+                          ('WhichComments', mod.WhichComments),
                          ])
         tree = inspect.getclasstree([cls[1] for cls in classes])
         self.assertEqual(tree,
@@ -401,7 +404,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
         tree = inspect.getclasstree([cls[1] for cls in classes], True)
@@ -413,7 +417,8 @@ class TestRetrievingSourceCode(GetSourceBase):
                             [(mod.FesteringGob, (mod.MalodorousPervert,
                                                     mod.ParrotDroppings))
                              ]
-                            ]
+                            ],
+                            (mod.WhichComments, (object,),)
                            ]
                           ])
 
@@ -644,6 +649,18 @@ class TestOneliners(GetSourceBase):
         # as argument to another function.
         self.assertSourceEqual(mod2.anonymous, 55, 55)
 
+class TestBlockComments(GetSourceBase):
+    fodderModule = mod
+
+    def test_toplevel_class(self):
+        self.assertSourceEqual(mod.WhichComments, 96, 114)
+
+    def test_class_method(self):
+        self.assertSourceEqual(mod.WhichComments.f, 99, 104)
+
+    def test_class_async_method(self):
+        self.assertSourceEqual(mod.WhichComments.asyncf, 109, 112)
+
 class TestBuggyCases(GetSourceBase):
     fodderModule = mod2
 
@@ -695,6 +712,17 @@ class TestBuggyCases(GetSourceBase):
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
 
+    def test_findsource_with_out_of_bounds_lineno(self):
+        mod_len = len(inspect.getsource(mod))
+        src = '\n' * 2* mod_len + "def f(): pass"
+        co = compile(src, mod.__file__, "exec")
+        g, l = {}, {}
+        eval(co, g, l)
+        func = l['f']
+        self.assertEqual(func.__code__.co_firstlineno, 1+2*mod_len)
+        with self.assertRaisesRegex(IOError, "lineno is out of bounds"):
+            inspect.findsource(func)
+
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 
@@ -745,8 +773,8 @@ class TestNoEOL(GetSourceBase):
     def setUp(self):
         self.tempdir = TESTFN + '_dir'
         os.mkdir(self.tempdir)
-        with open(os.path.join(self.tempdir,
-                               'inspect_fodder3%spy' % os.extsep), 'w') as f:
+        with open(os.path.join(self.tempdir, 'inspect_fodder3%spy' % os.extsep),
+                  'w', encoding='utf-8') as f:
             f.write("class X:\n    pass # No EOL")
         with DirsOnSysPath(self.tempdir):
             import inspect_fodder3 as mod3
@@ -1777,7 +1805,7 @@ class TestGetattrStatic(unittest.TestCase):
 
     def test_no_dict_no_slots_instance_member(self):
         # returns descriptor
-        with open(__file__) as handle:
+        with open(__file__, encoding='utf-8') as handle:
             self.assertEqual(inspect.getattr_static(handle, 'name'), type(handle).name)
 
     def test_inherited_slots(self):
@@ -3226,6 +3254,26 @@ class TestSignatureObject(unittest.TestCase):
         p2 = inspect.signature(lambda y, x: None).parameters
         self.assertNotEqual(p1, p2)
 
+    def test_signature_annotations_with_local_namespaces(self):
+        class Foo: ...
+        def func(foo: Foo) -> int: pass
+        def func2(foo: Foo, bar: 'Bar') -> int: pass
+
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                sig1 = signature_func(func)
+                self.assertEqual(sig1.return_annotation, int)
+                self.assertEqual(sig1.parameters['foo'].annotation, Foo)
+
+                sig2 = signature_func(func, localns=locals())
+                self.assertEqual(sig2.return_annotation, int)
+                self.assertEqual(sig2.parameters['foo'].annotation, Foo)
+
+                sig3 = signature_func(func2, globalns={'Bar': int}, localns=locals())
+                self.assertEqual(sig3.return_annotation, int)
+                self.assertEqual(sig3.parameters['foo'].annotation, Foo)
+                self.assertEqual(sig3.parameters['bar'].annotation, 'Bar')
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -3816,6 +3864,9 @@ class TestSignatureDefinitions(unittest.TestCase):
         needs_groups = {"range", "slice", "dir", "getattr",
                         "next", "iter", "vars"}
         no_signature |= needs_groups
+        # These have unrepresentable parameter default values of NULL
+        needs_null = {"anext"}
+        no_signature |= needs_null
         # These need PEP 457 groups or a signature change to accept None
         needs_semantic_update = {"round"}
         no_signature |= needs_semantic_update
@@ -3998,7 +4049,7 @@ def foo():
 
     def assertInspectEqual(self, path, source):
         inspected_src = inspect.getsource(source)
-        with open(path) as src:
+        with open(path, encoding='utf-8') as src:
             self.assertEqual(
                 src.read().splitlines(True),
                 inspected_src.splitlines(True)
@@ -4009,15 +4060,15 @@ def foo():
         with _ready_to_import('reload_bug', self.src_before) as (name, path):
             module = importlib.import_module(name)
             self.assertInspectEqual(path, module)
-            with open(path, 'w') as src:
+            with open(path, 'w', encoding='utf-8') as src:
                 src.write(self.src_after)
             self.assertInspectEqual(path, module)
 
 
 def test_main():
     run_unittest(
-        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBuggyCases,
-        TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
+        TestDecorators, TestRetrievingSourceCode, TestOneliners, TestBlockComments,
+        TestBuggyCases, TestInterpreterStack, TestClassesAndFunctions, TestPredicates,
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,

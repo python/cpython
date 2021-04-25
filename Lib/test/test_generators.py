@@ -881,7 +881,7 @@ And more, added later.
 >>> i.gi_running = 42
 Traceback (most recent call last):
   ...
-AttributeError: readonly attribute
+AttributeError: attribute 'gi_running' of 'generator' objects is not writable
 >>> def g():
 ...     yield me.gi_running
 >>> me = g()
@@ -2013,7 +2013,7 @@ SyntaxError: 'yield' outside function
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: cannot assign to yield expression here. Maybe you meant '==' instead of '='?
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):

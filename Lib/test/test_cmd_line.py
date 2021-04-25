@@ -46,7 +46,11 @@ class CmdLineTest(unittest.TestCase):
 
     def test_usage(self):
         rc, out, err = assert_python_ok('-h')
-        self.assertIn(b'usage', out)
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
@@ -149,6 +153,14 @@ class CmdLineTest(unittest.TestCase):
                    % (os_helper.FS_NONASCII, ord(os_helper.FS_NONASCII)))
         assert_python_ok('-c', command)
 
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
+    def test_coding(self):
+        # bpo-32381: the -c command ignores the coding cookie
+        ch = os_helper.FS_NONASCII
+        cmd = f"# coding: latin1\nprint(ascii('{ch}'))"
+        res = assert_python_ok('-c', cmd)
+        self.assertEqual(res.out.rstrip(), ascii(ch).encode('ascii'))
+
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
     # command line, but how subprocess does decode bytes to unicode. Python
     # doesn't decode the command line because Windows provides directly the
@@ -188,38 +200,72 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows has a native unicode API')
+    def test_invalid_utf8_arg(self):
+        # bpo-35883: Py_DecodeLocale() must escape b'\xfd\xbf\xbf\xbb\xba\xba'
+        # byte sequence with surrogateescape rather than decoding it as the
+        # U+7fffbeba character which is outside the [U+0000; U+10ffff] range of
+        # Python Unicode characters.
+        #
+        # Test with default config, in the C locale, in the Python UTF-8 Mode.
+        code = 'import sys, os; s=os.fsencode(sys.argv[1]); print(ascii(s))'
+        base_cmd = [sys.executable, '-c', code]
+
+        def run_default(arg):
+            cmd = [sys.executable, '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
+        def run_c_locale(arg):
+            cmd = [sys.executable, '-c', code, arg]
+            env = dict(os.environ)
+            env['LC_ALL'] = 'C'
+            return subprocess.run(cmd, stdout=subprocess.PIPE,
+                                  text=True, env=env)
+
+        def run_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
+        valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
+        # invalid UTF-8 byte sequences with a valid UTF-8 sequence
+        # in the middle.
+        invalid_utf8 = (
+            b'\xff'                      # invalid byte
+            b'\xc3\xff'                  # invalid byte sequence
+            b'\xc3\xa9'                  # valid utf-8: U+00E9 character
+            b'\xed\xa0\x80'              # lone surrogate character (invalid)
+            b'\xfd\xbf\xbf\xbb\xba\xba'  # character outside [U+0000; U+10ffff]
+        )
+        test_args = [valid_utf8, invalid_utf8]
+
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+            with self.subTest(run_cmd=run_cmd):
+                for arg in test_args:
+                    proc = run_cmd(arg)
+                    self.assertEqual(proc.stdout.rstrip(), ascii(arg))
+
     @unittest.skipUnless((sys.platform == 'darwin' or
                 support.is_android), 'test specific to Mac OS X and Android')
     def test_osx_android_utf8(self):
-        def check_output(text):
-            decoded = text.decode('utf-8', 'surrogateescape')
-            expected = ascii(decoded).encode('ascii') + b'\n'
-
-            env = os.environ.copy()
-            # C locale gives ASCII locale encoding, but Python uses UTF-8
-            # to parse the command line arguments on Mac OS X and Android.
-            env['LC_ALL'] = 'C'
-
-            p = subprocess.Popen(
-                (sys.executable, "-c", "import sys; print(ascii(sys.argv[1]))", text),
-                stdout=subprocess.PIPE,
-                env=env)
-            stdout, stderr = p.communicate()
-            self.assertEqual(stdout, expected)
-            self.assertEqual(p.returncode, 0)
-
-        # test valid utf-8
         text = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
-        check_output(text)
+        code = "import sys; print(ascii(sys.argv[1]))"
 
-        # test invalid utf-8
-        text = (
-            b'\xff'         # invalid byte
-            b'\xc3\xa9'     # valid utf-8 character
-            b'\xc3\xff'     # invalid byte sequence
-            b'\xed\xa0\x80' # lone surrogate character (invalid)
-        )
-        check_output(text)
+        decoded = text.decode('utf-8', 'surrogateescape')
+        expected = ascii(decoded).encode('ascii') + b'\n'
+
+        env = os.environ.copy()
+        # C locale gives ASCII locale encoding, but Python uses UTF-8
+        # to parse the command line arguments on Mac OS X and Android.
+        env['LC_ALL'] = 'C'
+
+        p = subprocess.Popen(
+            (sys.executable, "-c", code, text),
+            stdout=subprocess.PIPE,
+            env=env)
+        stdout, stderr = p.communicate()
+        self.assertEqual(stdout, expected)
+        self.assertEqual(p.returncode, 0)
 
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""
@@ -466,7 +512,7 @@ class CmdLineTest(unittest.TestCase):
         # the dict whereas the module was destroyed
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
-        with open(filename, "w") as script:
+        with open(filename, "w", encoding="utf-8") as script:
             print("import sys", file=script)
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
@@ -503,9 +549,9 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
-            with open(fake, "w") as f:
+            with open(fake, "w", encoding="utf-8") as f:
                 f.write("raise RuntimeError('isolated mode test')\n")
-            with open(main, "w") as f:
+            with open(main, "w", encoding="utf-8") as f:
                 f.write("import uuid\n")
                 f.write("print('ok')\n")
             self.assertRaises(subprocess.CalledProcessError,
@@ -804,9 +850,22 @@ class IgnoreEnvironmentTest(unittest.TestCase):
             PYTHONVERBOSE="1",
         )
 
+class SyntaxErrorTests(unittest.TestCase):
+    def check_string(self, code):
+        proc = subprocess.run([sys.executable, "-"], input=code,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertNotEqual(proc.stderr, None)
+        self.assertIn(b"\nSyntaxError", proc.stderr)
+
+    def test_tokenizer_error_with_stdin(self):
+        self.check_string(b"(1+2+3")
+
+    def test_decoding_error_at_the_end_of_the_line(self):
+        self.check_string(br"'\u1f'")
 
 def test_main():
-    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest)
+    support.run_unittest(CmdLineTest, IgnoreEnvironmentTest, SyntaxErrorTests)
     support.reap_children()
 
 if __name__ == "__main__":

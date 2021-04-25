@@ -162,7 +162,6 @@
     <Compile Include="distutils\command\bdist_dumb.py" />
     <Compile Include="distutils\command\bdist_msi.py" />
     <Compile Include="distutils\command\bdist_rpm.py" />
-    <Compile Include="distutils\command\bdist_wininst.py" />
     <Compile Include="distutils\command\build.py" />
     <Compile Include="distutils\command\build_clib.py" />
     <Compile Include="distutils\command\build_ext.py" />
@@ -204,7 +203,6 @@
     <Compile Include="distutils\tests\test_bdist_dumb.py" />
     <Compile Include="distutils\tests\test_bdist_msi.py" />
     <Compile Include="distutils\tests\test_bdist_rpm.py" />
-    <Compile Include="distutils\tests\test_bdist_wininst.py" />
     <Compile Include="distutils\tests\test_build.py" />
     <Compile Include="distutils\tests\test_build_clib.py" />
     <Compile Include="distutils\tests\test_build_ext.py" />
@@ -1196,6 +1194,7 @@
     <Compile Include="test\test_nntplib.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
+    <Compile Include="test\test_opcache.py" />
     <Compile Include="test\test_opcodes.py" />
     <Compile Include="test\test_openpty.py" />
     <Compile Include="test\test_operator.py" />
@@ -1572,7 +1571,6 @@
     <Compile Include="zoneinfo\__init__.py" />
     <Compile Include="zoneinfo\_tzpath.py" />
     <Compile Include="zoneinfo\_zoneinfo.py" />
-    <Compile Include="_bootlocale.py" />
     <Compile Include="_collections_abc.py" />
     <Compile Include="_compat_pickle.py" />
     <Compile Include="_compression.py" />

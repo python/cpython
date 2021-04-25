@@ -4,6 +4,7 @@
 
 from dataclasses import *
 
+import abc
 import pickle
 import inspect
 import builtins
@@ -1934,6 +1935,30 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
+    def test_dataclasses_qualnames(self):
+        @dataclass(order=True, unsafe_hash=True, frozen=True)
+        class A:
+            x: int
+            y: int
+
+        self.assertEqual(A.__init__.__name__, "__init__")
+        for function in (
+            '__eq__',
+            '__lt__',
+            '__le__',
+            '__gt__',
+            '__ge__',
+            '__hash__',
+            '__init__',
+            '__repr__',
+            '__setattr__',
+            '__delattr__',
+        ):
+            self.assertEqual(getattr(A, function).__qualname__, f"TestCase.test_dataclasses_qualnames.<locals>.A.{function}")
+
+        with self.assertRaisesRegex(TypeError, r"A\.__init__\(\) missing"):
+            A()
+
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
@@ -2568,6 +2593,30 @@ class TestFrozen(unittest.TestCase):
         self.assertEqual(d.i, 0)
         self.assertEqual(d.j, 10)
 
+    def test_inherit_nonfrozen_from_empty_frozen(self):
+        @dataclass(frozen=True)
+        class C:
+            pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit non-frozen dataclass from a frozen one'):
+            @dataclass
+            class D(C):
+                j: int
+
+    def test_inherit_nonfrozen_from_empty(self):
+        @dataclass
+        class C:
+            pass
+
+        @dataclass
+        class D(C):
+            j: int
+
+        d = D(3)
+        self.assertEqual(d.j, 3)
+        self.assertIsInstance(d, C)
+
     # Test both ways: with an intermediate normal (non-dataclass)
     #  class and without an intermediate class.
     def test_inherit_nonfrozen_from_frozen(self):
@@ -2811,7 +2860,7 @@ class TestStringAnnotations(unittest.TestCase):
         # These tests assume that both "import typing" and "from
         # typing import *" have been run in this file.
         for typestr in ('ClassVar[int]',
-                        'ClassVar [int]'
+                        'ClassVar [int]',
                         ' ClassVar [int]',
                         'ClassVar',
                         ' ClassVar ',
@@ -3245,6 +3294,24 @@ class TestReplace(unittest.TestCase):
         c = replace(c, x=3, y=5)
         self.assertEqual(c.x, 15)
 
+    def test_initvar_with_default_value(self):
+        @dataclass
+        class C:
+            x: int
+            y: InitVar[int] = None
+            z: InitVar[int] = 42
+
+            def __post_init__(self, y, z):
+                if y is not None:
+                    self.x += y
+                if z is not None:
+                    self.x += z
+
+        c = C(x=1, y=10, z=1)
+        self.assertEqual(replace(c), C(x=12))
+        self.assertEqual(replace(c, y=4), C(x=12, y=4, z=42))
+        self.assertEqual(replace(c, y=4, z=1), C(x=12, y=4, z=1))
+
     def test_recursive_repr(self):
         @dataclass
         class C:
@@ -3331,6 +3398,107 @@ class TestReplace(unittest.TestCase):
     ##     self.assertEqual(c, replace(c, y=5))
 
     ##     replace(c, x=5)
+
+class TestAbstract(unittest.TestCase):
+    def test_abc_implementation(self):
+        class Ordered(abc.ABC):
+            @abc.abstractmethod
+            def __lt__(self, other):
+                pass
+
+            @abc.abstractmethod
+            def __le__(self, other):
+                pass
+
+        @dataclass(order=True)
+        class Date(Ordered):
+            year: int
+            month: 'Month'
+            day: 'int'
+
+        self.assertFalse(inspect.isabstract(Date))
+        self.assertGreater(Date(2020,12,25), Date(2020,8,31))
+
+    def test_maintain_abc(self):
+        class A(abc.ABC):
+            @abc.abstractmethod
+            def foo(self):
+                pass
+
+        @dataclass
+        class Date(A):
+            year: int
+            month: 'Month'
+            day: 'int'
+
+        self.assertTrue(inspect.isabstract(Date))
+        msg = 'class Date with abstract method foo'
+        self.assertRaisesRegex(TypeError, msg, Date)
+
+
+class TestMatchArgs(unittest.TestCase):
+    def test_match_args(self):
+        @dataclass
+        class C:
+            a: int
+        self.assertEqual(C(42).__match_args__, ('a',))
+
+    def test_explicit_match_args(self):
+        ma = ()
+        @dataclass
+        class C:
+            a: int
+            __match_args__ = ma
+        self.assertIs(C(42).__match_args__, ma)
+
+    def test_bpo_43764(self):
+        @dataclass(repr=False, eq=False, init=False)
+        class X:
+            a: int
+            b: int
+            c: int
+        self.assertEqual(X.__match_args__, ("a", "b", "c"))
+
+    def test_match_args_argument(self):
+        @dataclass(match_args=False)
+        class X:
+            a: int
+        self.assertNotIn('__match_args__', X.__dict__)
+
+        @dataclass(match_args=False)
+        class Y:
+            a: int
+            __match_args__ = ('b',)
+        self.assertEqual(Y.__match_args__, ('b',))
+
+        @dataclass(match_args=False)
+        class Z(Y):
+            z: int
+        self.assertEqual(Z.__match_args__, ('b',))
+
+        # Ensure parent dataclass __match_args__ is seen, if child class
+        # specifies match_args=False.
+        @dataclass
+        class A:
+            a: int
+            z: int
+        @dataclass(match_args=False)
+        class B(A):
+            b: int
+        self.assertEqual(B.__match_args__, ('a', 'z'))
+
+    def test_make_dataclasses(self):
+        C = make_dataclass('C', [('x', int), ('y', int)])
+        self.assertEqual(C.__match_args__, ('x', 'y'))
+
+        C = make_dataclass('C', [('x', int), ('y', int)], match_args=True)
+        self.assertEqual(C.__match_args__, ('x', 'y'))
+
+        C = make_dataclass('C', [('x', int), ('y', int)], match_args=False)
+        self.assertNotIn('__match__args__', C.__dict__)
+
+        C = make_dataclass('C', [('x', int), ('y', int)], namespace={'__match_args__': ('z',)})
+        self.assertEqual(C.__match_args__, ('z',))
 
 
 if __name__ == '__main__':

@@ -47,7 +47,7 @@ class TestSupport(unittest.TestCase):
         self.assertNotIn("sched", sys.modules)
 
     def test_unlink(self):
-        with open(TESTFN, "w") as f:
+        with open(TESTFN, "w", encoding="utf-8") as f:
             pass
         os_helper.unlink(TESTFN)
         self.assertFalse(os.path.exists(TESTFN))
@@ -79,7 +79,7 @@ class TestSupport(unittest.TestCase):
 
     def test_forget(self):
         mod_filename = TESTFN + '.py'
-        with open(mod_filename, 'w') as f:
+        with open(mod_filename, 'w', encoding="utf-8") as f:
             print('foo = 1', file=f)
         sys.path.insert(0, os.curdir)
         importlib.invalidate_caches()
@@ -391,14 +391,14 @@ class TestSupport(unittest.TestCase):
 
     def test_check__all__(self):
         extra = {'tempdir'}
-        blacklist = {'template'}
+        not_exported = {'template'}
         support.check__all__(self,
                              tempfile,
                              extra=extra,
-                             blacklist=blacklist)
+                             not_exported=not_exported)
 
         extra = {'TextTestResult', 'installHandler'}
-        blacklist = {'load_tests', "TestProgram", "BaseTestSuite"}
+        not_exported = {'load_tests', "TestProgram", "BaseTestSuite"}
 
         support.check__all__(self,
                              unittest,
@@ -407,7 +407,7 @@ class TestSupport(unittest.TestCase):
                               "unittest.main", "unittest.runner",
                               "unittest.signals", "unittest.async_case"),
                              extra=extra,
-                             blacklist=blacklist)
+                             not_exported=not_exported)
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 

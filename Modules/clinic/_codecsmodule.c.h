@@ -15,6 +15,17 @@ PyDoc_STRVAR(_codecs_register__doc__,
 #define _CODECS_REGISTER_METHODDEF    \
     {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
 
+PyDoc_STRVAR(_codecs_unregister__doc__,
+"unregister($module, search_function, /)\n"
+"--\n"
+"\n"
+"Unregister a codec search function and clear the registry\'s cache.\n"
+"\n"
+"If the search function is not registered, do nothing.");
+
+#define _CODECS_UNREGISTER_METHODDEF    \
+    {"unregister", (PyCFunction)_codecs_unregister, METH_O, _codecs_unregister__doc__},
+
 PyDoc_STRVAR(_codecs_lookup__doc__,
 "lookup($module, encoding, /)\n"
 "--\n"
@@ -201,43 +212,6 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     }
 skip_optional_pos:
     return_value = _codecs_decode_impl(module, obj, encoding, errors);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_codecs__forget_codec__doc__,
-"_forget_codec($module, encoding, /)\n"
-"--\n"
-"\n"
-"Purge the named codec from the internal codec lookup cache");
-
-#define _CODECS__FORGET_CODEC_METHODDEF    \
-    {"_forget_codec", (PyCFunction)_codecs__forget_codec, METH_O, _codecs__forget_codec__doc__},
-
-static PyObject *
-_codecs__forget_codec_impl(PyObject *module, const char *encoding);
-
-static PyObject *
-_codecs__forget_codec(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    const char *encoding;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("_forget_codec", "argument", "str", arg);
-        goto exit;
-    }
-    Py_ssize_t encoding_length;
-    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
-    if (encoding == NULL) {
-        goto exit;
-    }
-    if (strlen(encoding) != (size_t)encoding_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto exit;
-    }
-    return_value = _codecs__forget_codec_impl(module, encoding);
 
 exit:
     return return_value;
@@ -2827,4 +2801,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=eeead01414be6e42 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=557c3b37e4c492ac input=a9049054013a1b77]*/

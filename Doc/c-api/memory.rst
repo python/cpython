@@ -92,6 +92,38 @@ for the I/O buffer escapes completely the Python memory manager.
    statistics of the :ref:`pymalloc memory allocator <pymalloc>` every time a
    new pymalloc object arena is created, and on shutdown.
 
+Allocator Domains
+=================
+
+All allocating functions belong to one of three different "domains" (see also
+:c:type:`PyMemAllocatorDomain`). These domains represent different allocation
+strategies and are optimized for different purposes. The specific details on
+how every domain allocates memory or what internal functions each domain calls
+is considered an implementation detail, but for debugging purposes a simplified
+table can be found at :ref:`here <default-memory-allocators>`. There is no hard
+requirement to use the memory returned by the allocation functions belonging to
+a given domain for only the purposes hinted by that domain (although this is the
+recommended practice). For example, one could use the memory returned by
+:c:func:`PyMem_RawMalloc` for allocating Python objects or the memory returned
+by :c:func:`PyObject_Malloc` for allocating memory for buffers.
+
+The three allocation domains are:
+
+* Raw domain: intended for allocating memory for general-purpose memory
+  buffers where the allocation *must* go to the system allocator or where the
+  allocator can operate without the :term:`GIL`. The memory is requested directly
+  to the system.
+
+* "Mem" domain: intended for allocating memory for Python buffers and
+  general-purpose memory buffers where the allocation must be performed with
+  the :term:`GIL` held. The memory is taken from the Python private heap.
+
+* Object domain: intended for allocating memory belonging to Python objects. The
+  memory is taken from the Python private heap.
+
+When freeing memory previously allocated by the allocating functions belonging to a
+given domain,the matching specific deallocating functions must be used. For example,
+:c:func:`PyMem_Free` must be used to free memory allocated using :c:func:`PyMem_Malloc`.
 
 Raw Memory Interface
 ====================
@@ -109,7 +141,7 @@ zero bytes.
 
 .. c:function:: void* PyMem_RawMalloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
+   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -120,7 +152,7 @@ zero bytes.
 .. c:function:: void* PyMem_RawCalloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void\*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -180,7 +212,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyMem_Malloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
+   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -191,7 +223,7 @@ The :ref:`default memory allocator <default-memory-allocators>` uses the
 .. c:function:: void* PyMem_Calloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void\*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -233,14 +265,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:function:: TYPE* PyMem_New(TYPE, size_t n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:type:`TYPE\*`.  The memory will not have
+   memory.  Returns a pointer cast to :c:type:`TYPE*`.  The memory will not have
    been initialized in any way.
 
 
 .. c:function:: TYPE* PyMem_Resize(void *p, TYPE, size_t n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:type:`TYPE\*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:type:`TYPE*`. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
@@ -272,6 +304,12 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
+.. note::
+    There is no guarantee that the memory returned by these allocators can be
+    succesfully casted to a Python object when intercepting the allocating
+    functions in this domain by the methods described in
+    the :ref:`Customize Memory Allocators <customize-memory-allocators>` section.
+
 The :ref:`default object allocator <default-memory-allocators>` uses the
 :ref:`pymalloc memory allocator <pymalloc>`.
 
@@ -282,7 +320,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 
 .. c:function:: void* PyObject_Malloc(size_t n)
 
-   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
+   Allocates *n* bytes and returns a pointer of type :c:type:`void*` to the
    allocated memory, or ``NULL`` if the request fails.
 
    Requesting zero bytes returns a distinct non-``NULL`` pointer if possible, as
@@ -293,7 +331,7 @@ The :ref:`default object allocator <default-memory-allocators>` uses the
 .. c:function:: void* PyObject_Calloc(size_t nelem, size_t elsize)
 
    Allocates *nelem* elements each whose size in bytes is *elsize* and returns
-   a pointer of type :c:type:`void\*` to the allocated memory, or ``NULL`` if the
+   a pointer of type :c:type:`void*` to the allocated memory, or ``NULL`` if the
    request fails. The memory is initialized to zeros.
 
    Requesting zero elements or elements of size zero bytes returns a distinct
@@ -347,12 +385,14 @@ Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``mal
 
 Legend:
 
-* Name: value for :envvar:`PYTHONMALLOC` environment variable
+* Name: value for :envvar:`PYTHONMALLOC` environment variable.
 * ``malloc``: system allocators from the standard C library, C functions:
-  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`
-* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`
-* "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`
+  :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
+* ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* "+ debug": with debug hooks installed by :c:func:`PyMem_SetupDebugHooks`.
+* "Debug build": :ref:`Python build in debug mode <debug-build>`.
 
+.. _customize-memory-allocators:
 
 Customize Memory Allocators
 ===========================
@@ -388,7 +428,7 @@ Customize Memory Allocators
 
    Enum used to identify an allocator domain. Domains:
 
-   .. c:var:: PYMEM_DOMAIN_RAW
+   .. c:macro:: PYMEM_DOMAIN_RAW
 
       Functions:
 
@@ -397,7 +437,7 @@ Customize Memory Allocators
       * :c:func:`PyMem_RawCalloc`
       * :c:func:`PyMem_RawFree`
 
-   .. c:var:: PYMEM_DOMAIN_MEM
+   .. c:macro:: PYMEM_DOMAIN_MEM
 
       Functions:
 
@@ -406,7 +446,7 @@ Customize Memory Allocators
       * :c:func:`PyMem_Calloc`
       * :c:func:`PyMem_Free`
 
-   .. c:var:: PYMEM_DOMAIN_OBJ
+   .. c:macro:: PYMEM_DOMAIN_OBJ
 
       Functions:
 
@@ -461,8 +501,8 @@ Customize Memory Allocators
    memory block was traced.
 
    These hooks are :ref:`installed by default <default-memory-allocators>` if
-   Python is compiled in debug
-   mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install
+   :ref:`Python is built in debug mode <debug-build>`.
+   The :envvar:`PYTHONMALLOC` environment variable can be used to install
    debug hooks on a Python compiled in release mode.
 
    .. versionchanged:: 3.6
@@ -516,14 +556,14 @@ Customize pymalloc Arena Allocator
    +--------------------------------------------------+---------------------------------------+
    | ``void* alloc(void *ctx, size_t size)``          | allocate an arena of size bytes       |
    +--------------------------------------------------+---------------------------------------+
-   | ``void free(void *ctx, size_t size, void *ptr)`` | free an arena                         |
+   | ``void free(void *ctx, void *ptr, size_t size)`` | free an arena                         |
    +--------------------------------------------------+---------------------------------------+
 
-.. c:function:: PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
+.. c:function:: void PyObject_GetArenaAllocator(PyObjectArenaAllocator *allocator)
 
    Get the arena allocator.
 
-.. c:function:: PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
+.. c:function:: void PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator)
 
    Set the arena allocator.
 
@@ -601,4 +641,3 @@ heap, objects in Python are allocated and released with :c:func:`PyObject_New`,
 
 These will be explained in the next chapter on defining and implementing new
 object types in C.
-

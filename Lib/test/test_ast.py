@@ -1,7 +1,10 @@
 import ast
+import builtins
 import dis
+import enum
 import os
 import sys
+import types
 import unittest
 import warnings
 import weakref
@@ -271,6 +274,7 @@ class AST_Tests(unittest.TestCase):
                     self._assertTrueorder(child, first_pos)
             elif value is not None:
                 self._assertTrueorder(value, parent_pos)
+        self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
         x = ast.AST()
@@ -331,6 +335,26 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(mod.body[0], ast.ImportFrom)
         mod.body[0].module = " __future__ ".strip()
         compile(mod, "<test>", "exec")
+
+    def test_alias(self):
+        im = ast.parse("from bar import y").body[0]
+        self.assertEqual(len(im.names), 1)
+        alias = im.names[0]
+        self.assertEqual(alias.name, 'y')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
+
+        im = ast.parse("from bar import *").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, '*')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
 
     def test_base_classes(self):
         self.assertTrue(issubclass(ast.For, ast.stmt))
@@ -675,6 +699,35 @@ class AST_Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
                 compile(expr, "<test>", "eval")
 
+    def test_precedence_enum(self):
+        class _Precedence(enum.IntEnum):
+            """Precedence table that originated from python grammar."""
+            TUPLE = enum.auto()
+            YIELD = enum.auto()           # 'yield', 'yield from'
+            TEST = enum.auto()            # 'if'-'else', 'lambda'
+            OR = enum.auto()              # 'or'
+            AND = enum.auto()             # 'and'
+            NOT = enum.auto()             # 'not'
+            CMP = enum.auto()             # '<', '>', '==', '>=', '<=', '!=',
+                                          # 'in', 'not in', 'is', 'is not'
+            EXPR = enum.auto()
+            BOR = EXPR                    # '|'
+            BXOR = enum.auto()            # '^'
+            BAND = enum.auto()            # '&'
+            SHIFT = enum.auto()           # '<<', '>>'
+            ARITH = enum.auto()           # '+', '-'
+            TERM = enum.auto()            # '*', '@', '/', '%', '//'
+            FACTOR = enum.auto()          # unary '+', '-', '~'
+            POWER = enum.auto()           # '**'
+            AWAIT = enum.auto()           # 'await'
+            ATOM = enum.auto()
+            def next(self):
+                try:
+                    return self.__class__(self + 1)
+                except ValueError:
+                    return self
+        enum._test_simple_enum(_Precedence, ast._Precedence)
+
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -812,6 +865,12 @@ Module(
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        self.assertIsNone(new.end_lineno)
+        self.assertIsNone(new.end_col_offset)
+        self.assertEqual(new.lineno, 1)
+        self.assertEqual(new.col_offset, 1)
 
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
@@ -851,6 +910,11 @@ Module(
             'lineno=4, col_offset=4, end_lineno=4, end_col_offset=5), lineno=4, '
             'col_offset=0, end_lineno=4, end_col_offset=5))'
         )
+        src = ast.Call(
+            func=ast.Name("test", ast.Load()), args=[], keywords=[], lineno=1
+        )
+        self.assertEqual(ast.increment_lineno(src).lineno, 2)
+        self.assertIsNone(ast.increment_lineno(src).end_lineno)
 
     def test_iter_fields(self):
         node = ast.parse('foo()', mode='eval')
@@ -992,6 +1056,24 @@ Module(
         malformed = ast.Dict(keys=[ast.Constant(1)], values=[ast.Constant(2), ast.Constant(3)])
         self.assertRaises(ValueError, ast.literal_eval, malformed)
 
+    def test_literal_eval_trailing_ws(self):
+        self.assertEqual(ast.literal_eval("    -1"), -1)
+        self.assertEqual(ast.literal_eval("\t\t-1"), -1)
+        self.assertEqual(ast.literal_eval(" \t -1"), -1)
+        self.assertRaises(IndentationError, ast.literal_eval, "\n -1")
+
+    def test_literal_eval_malformed_lineno(self):
+        msg = r'malformed node or string on line 3:'
+        with self.assertRaisesRegex(ValueError, msg):
+            ast.literal_eval("{'a': 1,\n'b':2,\n'c':++3,\n'd':4}")
+
+        node = ast.UnaryOp(
+            ast.UAdd(), ast.UnaryOp(ast.UAdd(), ast.Constant(6)))
+        self.assertIsNone(getattr(node, 'lineno', None))
+        msg = r'malformed node or string:'
+        with self.assertRaisesRegex(ValueError, msg):
+            ast.literal_eval(node)
+
     def test_bad_integer(self):
         # issue13436: Bad error message with invalid numeric values
         body = [ast.ImportFrom(module='time',
@@ -1005,7 +1087,8 @@ Module(
 
     def test_level_as_none(self):
         body = [ast.ImportFrom(module='time',
-                               names=[ast.alias(name='sleep')],
+                               names=[ast.alias(name='sleep',
+                                                lineno=0, col_offset=0)],
                                level=None,
                                lineno=0, col_offset=0)]
         mod = ast.Module(body, [])
@@ -1703,6 +1786,7 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         imp = ast.parse(s).body[0]
         self._check_end_pos(imp, 3, 1)
+        self._check_end_pos(imp.names[2], 2, 16)
 
     def test_slices(self):
         s1 = 'f()[1, 2] [0]'
@@ -1934,6 +2018,88 @@ class NodeVisitorTests(unittest.TestCase):
         ])
 
 
+@support.cpython_only
+class ModuleStateTests(unittest.TestCase):
+    # bpo-41194, bpo-41261, bpo-41631: The _ast module uses a global state.
+
+    def check_ast_module(self):
+        # Check that the _ast module still works as expected
+        code = 'x + 1'
+        filename = '<string>'
+        mode = 'eval'
+
+        # Create _ast.AST subclasses instances
+        ast_tree = compile(code, filename, mode, flags=ast.PyCF_ONLY_AST)
+
+        # Call PyAST_Check()
+        code = compile(ast_tree, filename, mode)
+        self.assertIsInstance(code, types.CodeType)
+
+    def test_reload_module(self):
+        # bpo-41194: Importing the _ast module twice must not crash.
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+            import _ast as ast1
+
+            del sys.modules['_ast']
+            import _ast as ast2
+
+            self.check_ast_module()
+
+        # Unloading the two _ast module instances must not crash.
+        del ast1
+        del ast2
+        support.gc_collect()
+
+        self.check_ast_module()
+
+    def test_sys_modules(self):
+        # bpo-41631: Test reproducing a Mercurial crash when PyAST_Check()
+        # imported the _ast module internally.
+        lazy_mod = object()
+
+        def my_import(name, *args, **kw):
+            sys.modules[name] = lazy_mod
+            return lazy_mod
+
+        with support.swap_item(sys.modules, '_ast', None):
+            del sys.modules['_ast']
+
+            with support.swap_attr(builtins, '__import__', my_import):
+                # Test that compile() does not import the _ast module
+                self.check_ast_module()
+                self.assertNotIn('_ast', sys.modules)
+
+                # Sanity check of the test itself
+                import _ast
+                self.assertIs(_ast, lazy_mod)
+
+    def test_subinterpreter(self):
+        # bpo-41631: Importing and using the _ast module in a subinterpreter
+        # must not crash.
+        code = dedent('''
+            import _ast
+            import ast
+            import gc
+            import sys
+            import types
+
+            # Create _ast.AST subclasses instances and call PyAST_Check()
+            ast_tree = compile('x+1', '<string>', 'eval',
+                               flags=ast.PyCF_ONLY_AST)
+            code = compile(ast_tree, 'string', 'eval')
+            if not isinstance(code, types.CodeType):
+                raise AssertionError
+
+            # Unloading the _ast module must not crash.
+            del ast, _ast
+            del sys.modules['ast'], sys.modules['_ast']
+            gc.collect()
+        ''')
+        res = support.run_in_subinterp(code)
+        self.assertEqual(res, 0)
+
+
 def main():
     if __name__ != '__main__':
         return
@@ -1981,8 +2147,8 @@ exec_results = [
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
-('Module', [('Import', (1, 0, 1, 10), [('alias', 'sys', None)])], []),
-('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', 'v', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
+('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
 ('Module', [('Pass', (1, 0, 1, 4))], []),

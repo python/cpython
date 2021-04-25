@@ -15,10 +15,10 @@ import random
 import sys
 import unittest
 from test import support
+from test.support import import_helper
 
 from decimal import Decimal
 from fractions import Fraction
-from test import support
 
 
 # Module to be tested.
@@ -179,8 +179,10 @@ class _DoNothing:
 # We prefer this for testing numeric values that may not be exactly equal,
 # and avoid using TestCase.assertAlmostEqual, because it sucks :-)
 
-py_statistics = support.import_fresh_module('statistics', blocked=['_statistics'])
-c_statistics = support.import_fresh_module('statistics', fresh=['_statistics'])
+py_statistics = import_helper.import_fresh_module('statistics',
+                                                  blocked=['_statistics'])
+c_statistics = import_helper.import_fresh_module('statistics',
+                                                 fresh=['_statistics'])
 
 
 class TestModules(unittest.TestCase):
@@ -1596,6 +1598,27 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         expected = self.func(data)
         actual = self.func(data*2)
         self.assertApproxEqual(actual, expected)
+
+    def test_with_weights(self):
+        self.assertEqual(self.func([40, 60], [5, 30]), 56.0)  # common case
+        self.assertEqual(self.func([40, 60],
+                                   weights=[5, 30]), 56.0)    # keyword argument
+        self.assertEqual(self.func(iter([40, 60]),
+                                   iter([5, 30])), 56.0)      # iterator inputs
+        self.assertEqual(
+            self.func([Fraction(10, 3), Fraction(23, 5), Fraction(7, 2)], [5, 2, 10]),
+            self.func([Fraction(10, 3)] * 5 +
+                      [Fraction(23, 5)] * 2 +
+                      [Fraction(7, 2)] * 10))
+        self.assertEqual(self.func([10], [7]), 10)            # n=1 fast path
+        with self.assertRaises(TypeError):
+            self.func([1, 2, 3], [1, (), 3])                  # non-numeric weight
+        with self.assertRaises(statistics.StatisticsError):
+            self.func([1, 2, 3], [1, 2])                      # wrong number of weights
+        with self.assertRaises(statistics.StatisticsError):
+            self.func([10], [0])                              # no non-zero weights
+        with self.assertRaises(statistics.StatisticsError):
+            self.func([10, 20], [0, 0])                       # no non-zero weights
 
 
 class TestMedian(NumericTestCase, AverageMixin):

@@ -1235,10 +1235,12 @@ class ArgsTestCase(BaseTestCase):
                          re.compile('%s timed out' % testname, re.MULTILINE))
 
     def test_unraisable_exc(self):
-        # --fail-env-changed must catch unraisable exception
+        # --fail-env-changed must catch unraisable exception.
+        # The exception must be displayed even if sys.stderr is redirected.
         code = textwrap.dedent(r"""
             import unittest
             import weakref
+            from test.support import captured_stderr
 
             class MyObject:
                 pass
@@ -1250,9 +1252,11 @@ class ArgsTestCase(BaseTestCase):
                 def test_unraisable_exc(self):
                     obj = MyObject()
                     ref = weakref.ref(obj, weakref_callback)
-                    # call weakref_callback() which logs
-                    # an unraisable exception
-                    obj = None
+                    with captured_stderr() as stderr:
+                        # call weakref_callback() which logs
+                        # an unraisable exception
+                        obj = None
+                    self.assertEqual(stderr.getvalue(), '')
         """)
         testname = self.create_test(code=code)
 
@@ -1261,6 +1265,38 @@ class ArgsTestCase(BaseTestCase):
                                   env_changed=[testname],
                                   fail_env_changed=True)
         self.assertIn("Warning -- Unraisable exception", output)
+        self.assertIn("Exception: weakref callback bug", output)
+
+    def test_threading_excepthook(self):
+        # --fail-env-changed must catch uncaught thread exception.
+        # The exception must be displayed even if sys.stderr is redirected.
+        code = textwrap.dedent(r"""
+            import threading
+            import unittest
+            from test.support import captured_stderr
+
+            class MyObject:
+                pass
+
+            def func_bug():
+                raise Exception("bug in thread")
+
+            class Tests(unittest.TestCase):
+                def test_threading_excepthook(self):
+                    with captured_stderr() as stderr:
+                        thread = threading.Thread(target=func_bug)
+                        thread.start()
+                        thread.join()
+                    self.assertEqual(stderr.getvalue(), '')
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+        self.assertIn("Warning -- Uncaught thread exception", output)
+        self.assertIn("Exception: bug in thread", output)
 
     def test_cleanup(self):
         dirname = os.path.join(self.tmptestdir, "test_python_123")

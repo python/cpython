@@ -38,6 +38,7 @@ from test.support import (run_unittest, run_doctest, is_resource_enabled,
 from test.support import (TestFailed,
                           run_with_locale, cpython_only)
 from test.support.import_helper import import_fresh_module
+from test.support import warnings_helper
 import random
 import inspect
 import threading
@@ -288,7 +289,7 @@ class IBMTestCases(unittest.TestCase):
         global skip_expected
         if skip_expected:
             raise unittest.SkipTest
-        with open(file) as f:
+        with open(file, encoding="utf-8") as f:
             for line in f:
                 line = line.replace('\r\n', '').replace('\n', '')
                 #print line
@@ -584,6 +585,7 @@ class ExplicitConstructionTest(unittest.TestCase):
 
     @cpython_only
     @requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
         Decimal = self.decimal.Decimal
@@ -2820,6 +2822,7 @@ class ContextAPItests(unittest.TestCase):
 
     @cpython_only
     @requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
         c = self.decimal.Context()
@@ -5482,6 +5485,9 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal.from_float(cls(101.1)),
                              Decimal.from_float(101.1))
 
+    # Issue 41540:
+    @unittest.skipIf(sys.platform.startswith("aix"),
+                     "AIX: default ulimit: test is flaky because of extreme over-allocation")
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due

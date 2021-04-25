@@ -5,6 +5,9 @@ import subprocess
 import sys
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
     raise unittest.SkipTest("test only relevant when sys.audit is available")
@@ -52,7 +55,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_block_add_hook_baseexception")
 
     def test_pickle(self):
-        support.import_module("pickle")
+        import_helper.import_module("pickle")
 
         self.do_test("test_pickle")
 
@@ -60,7 +63,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_monkeypatch")
 
     def test_open(self):
-        self.do_test("test_open", support.TESTFN)
+        self.do_test("test_open", os_helper.TESTFN)
 
     def test_cantrace(self):
         self.do_test("test_cantrace")
@@ -89,7 +92,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_winreg(self):
-        support.import_module("winreg")
+        import_helper.import_module("winreg")
         returncode, events, stderr = self.run_python("test_winreg")
         if returncode:
             self.fail(stderr)
@@ -103,7 +106,7 @@ class AuditTest(unittest.TestCase):
         self.assertSequenceEqual(["winreg.PyHKEY.Detach", " ", expected], events[4])
 
     def test_socket(self):
-        support.import_module("socket")
+        import_helper.import_module("socket")
         returncode, events, stderr = self.run_python("test_socket")
         if returncode:
             self.fail(stderr)
@@ -114,6 +117,33 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(events[1][0], "socket.__new__")
         self.assertEqual(events[2][0], "socket.bind")
         self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
+
+    def test_gc(self):
+        returncode, events, stderr = self.run_python("test_gc")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(
+            [event[0] for event in events],
+            ["gc.get_objects", "gc.get_referrers", "gc.get_referents"]
+        )
+
+    def test_http(self):
+        import_helper.import_module("http.client")
+        returncode, events, stderr = self.run_python("test_http_client")
+        if returncode:
+            self.fail(stderr)
+
+        if support.verbose:
+            print(*events, sep='\n')
+        self.assertEqual(events[0][0], "http.client.connect")
+        self.assertEqual(events[0][2], "www.python.org 80")
+        self.assertEqual(events[1][0], "http.client.send")
+        if events[1][2] != '[cannot send]':
+            self.assertIn('HTTP', events[1][2])
+
 
 if __name__ == "__main__":
     unittest.main()

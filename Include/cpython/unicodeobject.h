@@ -26,7 +26,7 @@
 
  */
 #define Py_UNICODE_ISSPACE(ch) \
-    ((ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
+    ((Py_UCS4)(ch) < 128U ? _Py_ascii_whitespace[(ch)] : _PyUnicode_IsWhitespace(ch))
 
 #define Py_UNICODE_ISLOWER(ch) _PyUnicode_IsLowercase(ch)
 #define Py_UNICODE_ISUPPER(ch) _PyUnicode_IsUppercase(ch)
@@ -56,7 +56,7 @@
 
 Py_DEPRECATED(3.3) static inline void
 Py_UNICODE_COPY(Py_UNICODE *target, const Py_UNICODE *source, Py_ssize_t length) {
-    memcpy(target, source, length * sizeof(Py_UNICODE));
+    memcpy(target, source, (size_t)(length) * sizeof(Py_UNICODE));
 }
 
 Py_DEPRECATED(3.3) static inline void
@@ -739,26 +739,6 @@ PyAPI_FUNC(int) _PyUnicode_FormatAdvancedWriter(
 /* --- Manage the default encoding ---------------------------------------- */
 
 /* Returns a pointer to the default encoding (UTF-8) of the
-   Unicode object unicode and the size of the encoded representation
-   in bytes stored in *size.
-
-   In case of an error, no *size is set.
-
-   This function caches the UTF-8 encoded string in the unicodeobject
-   and subsequent calls will return the same string.  The memory is released
-   when the unicodeobject is deallocated.
-
-   _PyUnicode_AsStringAndSize is a #define for PyUnicode_AsUTF8AndSize to
-   support the previous internal function with the same behaviour.
-*/
-
-PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
-    PyObject *unicode,
-    Py_ssize_t *size);
-
-#define _PyUnicode_AsStringAndSize PyUnicode_AsUTF8AndSize
-
-/* Returns a pointer to the default encoding (UTF-8) of the
    Unicode object unicode.
 
    Like PyUnicode_AsUTF8AndSize(), this also caches the UTF-8 representation
@@ -769,13 +749,6 @@ PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
 
    Use of this API is DEPRECATED since no size information can be
    extracted from the returned data.
-
-   *** This API is for interpreter INTERNAL USE ONLY and will likely
-   *** be removed or changed for Python 3.1.
-
-   *** If you need to access the Unicode object as UTF-8 bytes string,
-   *** please use PyUnicode_AsUTF8String() instead.
-
 */
 
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);

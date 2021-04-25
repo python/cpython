@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
 
 static Py_ssize_t max_module_number;
@@ -11,15 +12,6 @@ static Py_ssize_t max_module_number;
 _Py_IDENTIFIER(__doc__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__spec__);
-
-typedef struct {
-    PyObject_HEAD
-    PyObject *md_dict;
-    struct PyModuleDef *md_def;
-    void *md_state;
-    PyObject *md_weaklist;
-    PyObject *md_name;  /* for logging purposes after md_dict is cleared */
-} PyModuleObject;
 
 static PyMemberDef module_members[] = {
     {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
@@ -33,6 +25,19 @@ PyTypeObject PyModuleDef_Type = {
     sizeof(struct PyModuleDef),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
 };
+
+
+int
+_PyModule_IsExtension(PyObject *obj)
+{
+    if (!PyModule_Check(obj)) {
+        return 0;
+    }
+    PyModuleObject *module = (PyModuleObject*)obj;
+
+    struct PyModuleDef *def = module->md_def;
+    return (def != NULL && def->m_methods != NULL);
+}
 
 
 PyObject*
@@ -211,7 +216,7 @@ _PyModule_CreateInitialized(struct PyModuleDef* module, int module_api_version)
         return NULL;
 
     if (module->m_size > 0) {
-        m->md_state = PyMem_MALLOC(module->m_size);
+        m->md_state = PyMem_Malloc(module->m_size);
         if (!m->md_state) {
             PyErr_NoMemory();
             Py_DECREF(m);
@@ -377,7 +382,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
         if (md->md_state == NULL) {
             /* Always set a state pointer; this serves as a marker to skip
              * multiple initialization (importlib.reload() is no-op) */
-            md->md_state = PyMem_MALLOC(def->m_size);
+            md->md_state = PyMem_Malloc(def->m_size);
             if (!md->md_state) {
                 PyErr_NoMemory();
                 return -1;
@@ -456,14 +461,11 @@ PyModule_SetDocString(PyObject *m, const char *doc)
 PyObject *
 PyModule_GetDict(PyObject *m)
 {
-    PyObject *d;
     if (!PyModule_Check(m)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    d = ((PyModuleObject *)m) -> md_dict;
-    assert(d != NULL);
-    return d;
+    return _PyModule_GetDict(m);
 }
 
 PyObject*
@@ -477,10 +479,12 @@ PyModule_GetNameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (name = _PyDict_GetItemId(d, &PyId___name__)) == NULL ||
+        (name = _PyDict_GetItemIdWithError(d, &PyId___name__)) == NULL ||
         !PyUnicode_Check(name))
     {
-        PyErr_SetString(PyExc_SystemError, "nameless module");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "nameless module");
+        }
         return NULL;
     }
     Py_INCREF(name);
@@ -509,10 +513,12 @@ PyModule_GetFilenameObject(PyObject *m)
     }
     d = ((PyModuleObject *)m)->md_dict;
     if (d == NULL ||
-        (fileobj = _PyDict_GetItemId(d, &PyId___file__)) == NULL ||
+        (fileobj = _PyDict_GetItemIdWithError(d, &PyId___file__)) == NULL ||
         !PyUnicode_Check(fileobj))
     {
-        PyErr_SetString(PyExc_SystemError, "module filename missing");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_SystemError, "module filename missing");
+        }
         return NULL;
     }
     Py_INCREF(fileobj);
@@ -539,7 +545,7 @@ PyModule_GetDef(PyObject* m)
         PyErr_BadArgument();
         return NULL;
     }
-    return ((PyModuleObject *)m)->md_def;
+    return _PyModule_GetDef(m);
 }
 
 void*
@@ -549,7 +555,7 @@ PyModule_GetState(PyObject* m)
         PyErr_BadArgument();
         return NULL;
     }
-    return ((PyModuleObject *)m)->md_state;
+    return _PyModule_GetState(m);
 }
 
 void
@@ -677,7 +683,7 @@ module_dealloc(PyModuleObject *m)
     Py_XDECREF(m->md_dict);
     Py_XDECREF(m->md_name);
     if (m->md_state != NULL)
-        PyMem_FREE(m->md_state);
+        PyMem_Free(m->md_state);
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
@@ -721,14 +727,21 @@ module_getattro(PyModuleObject *m, PyObject *name)
     PyErr_Clear();
     if (m->md_dict) {
         _Py_IDENTIFIER(__getattr__);
-        getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
+        getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
         if (getattr) {
             return PyObject_CallOneArg(getattr, name);
         }
-        mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        mod_name = _PyDict_GetItemIdWithError(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
             Py_INCREF(mod_name);
-            PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
+            PyObject *spec = _PyDict_GetItemIdWithError(m->md_dict, &PyId___spec__);
+            if (spec == NULL && PyErr_Occurred()) {
+                Py_DECREF(mod_name);
+                return NULL;
+            }
             Py_XINCREF(spec);
             if (_PyModuleSpec_IsInitializing(spec)) {
                 PyErr_Format(PyExc_AttributeError,
@@ -744,6 +757,9 @@ module_getattro(PyModuleObject *m, PyObject *name)
             }
             Py_XDECREF(spec);
             Py_DECREF(mod_name);
+            return NULL;
+        }
+        else if (PyErr_Occurred()) {
             return NULL;
         }
     }
