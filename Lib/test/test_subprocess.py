@@ -23,6 +23,7 @@ import threading
 import gc
 import textwrap
 import json
+import pathlib
 from test.support.os_helper import FakePath
 
 try:
@@ -1442,38 +1443,20 @@ class ProcessTestCase(BaseTestCase):
         p.communicate(b"x" * 2**20)
 
     def test_repr(self):
-        # Run a command that waits for user input, to check the repr() of
-        # a Proc object while and after the sub-process runs.
-        # args can be Seq[str] or a str, hence two test cases
-        expected_exit_code = 57
-        code = f'import sys; input(); sys.exit({expected_exit_code})'
-        seq_cmd = [sys.executable, '-c', code]
-        arg_cmd = f"\"{sys.executable}\" -c \"{code}\""
-
-        cmd_shell = [(seq_cmd, False), (arg_cmd, True)]
-
-        def to_result(exit_code, cmd):
-            sx = f"<Popen: returncode: {exit_code} args: {cmd!r}"
-            if len(sx) > 80:
-                sx = sx[:76] + "...>"
-            return sx
-
-        for cmd, shell in cmd_shell:
-            with subprocess.Popen(
-                    cmd, stdin=subprocess.PIPE,
-                    universal_newlines=True, shell=shell) as proc:
-                self.assertIsNone(proc.returncode)
-                self.assertEqual(
-                    repr(proc), to_result(proc.returncode, cmd)
-                )
-
-                proc.communicate(input='exit...\n')
-                proc.wait()
-
-                self.assertEqual(proc.returncode, expected_exit_code)
-                self.assertEqual(
-                    repr(proc), to_result(proc.returncode, cmd)
-                )
+        cases = [
+            ("ls", True, 123, "<Popen: returncode: 123 args: 'ls'>"),
+            ('a' * 100, True, 0,
+             "<Popen: returncode: 0 args: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa...>"),
+            (["ls"], False, None, "<Popen: returncode: None args: ['ls']>"),
+            (["ls", '--my-opts', 'a' * 100], False, None,
+             "<Popen: returncode: None args: ['ls', '--my-opts', 'aaaaaaaaaaaaaaaaaaaaaaaa...>"),
+            (pathlib.Path("my-tool.py"), False, 7, "<Popen: returncode: 7 args: PosixPath('my-tool.py')>")
+        ]
+        with unittest.mock.patch.object(subprocess.Popen, '_execute_child'):
+            for cmd, shell, code, sx in cases:
+                p = subprocess.Popen(cmd, shell=shell)
+                p.returncode = code
+                self.assertEqual(repr(p), sx)
 
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
