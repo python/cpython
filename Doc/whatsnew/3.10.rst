@@ -1051,6 +1051,14 @@ The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
+statistics
+----------
+
+Added :func:`~statistics.covariance`, Pearson's
+:func:`~statistics.correlation`, and simple
+:func:`~statistics.linear_regression` functions.
+(Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
+
 site
 ----
 
