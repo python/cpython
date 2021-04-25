@@ -1,0 +1,1 @@
+``NameError`` suggestions now require at least 50% similarity, eliminating false positives for short variable names.
