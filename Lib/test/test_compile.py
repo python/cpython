@@ -560,7 +560,9 @@ if 1:
         check_limit("a", ".b")
         check_limit("a", "[0]")
         check_limit("a", "*a")
-        #check_limit("if a: pass", "\nelif a: pass", mode="exec")
+        # XXX Crashes in the parser.
+        # check_limit("a", " if a else a")
+        # check_limit("if a: pass", "\nelif a: pass", mode="exec")
 
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like
