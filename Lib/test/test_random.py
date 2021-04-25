@@ -509,11 +509,24 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         raises(-721)
         raises(0, 100, -12)
         # Non-integer start/stop
-        raises(3.14159)
-        raises(0, 2.71828)
+        self.assertWarns(DeprecationWarning, raises, 3.14159)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 3.0)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, Fraction(3, 1))
+        self.assertWarns(DeprecationWarning, raises, '3')
+        self.assertWarns(DeprecationWarning, raises, 0, 2.71828)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 2.0)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, Fraction(2, 1))
+        self.assertWarns(DeprecationWarning, raises, 0, '2')
         # Zero and non-integer step
         raises(0, 42, 0)
-        raises(0, 42, 3.14159)
+        self.assertWarns(DeprecationWarning, raises, 0, 42, 0.0)
+        self.assertWarns(DeprecationWarning, raises, 0, 0, 0.0)
+        self.assertWarns(DeprecationWarning, raises, 0, 42, 3.14159)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 3.0)
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, Fraction(3, 1))
+        self.assertWarns(DeprecationWarning, raises, 0, 42, '3')
+        self.assertWarns(DeprecationWarning, self.gen.randrange, 0, 42, 1.0)
+        self.assertWarns(DeprecationWarning, raises, 0, 0, 1.0)
 
     def test_randrange_argument_handling(self):
         randrange = self.gen.randrange

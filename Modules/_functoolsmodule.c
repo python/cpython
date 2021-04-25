@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -11,6 +12,23 @@
    Copyright (c) 2004, 2005, 2006 Python Software Foundation.
    All rights reserved.
 */
+
+typedef struct _functools_state {
+    /* this object is used delimit args and keywords in the cache keys */
+    PyObject *kwd_mark;
+    PyTypeObject *partial_type;
+    PyTypeObject *keyobject_type;
+    PyTypeObject *lru_list_elem_type;
+} _functools_state;
+
+static inline _functools_state *
+get_functools_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (_functools_state *)state;
+}
+
 
 /* partial object **********************************************************/
 
@@ -24,22 +42,6 @@ typedef struct {
     vectorcallfunc vectorcall;
 } partialobject;
 
-typedef struct _functools_state {
-    /* this object is used delimit args and keywords in the cache keys */
-    PyObject *kwd_mark;
-    PyTypeObject *partial_type;
-    PyTypeObject *keyobject_type;
-    PyTypeObject *lru_list_elem_type;
-} _functools_state;
-
-static inline _functools_state *
-get_functools_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_functools_state *)state;
-}
-
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 static PyObject *
@@ -52,8 +54,7 @@ get_functools_state_by_type(PyTypeObject *type)
     if (module == NULL) {
         return NULL;
     }
-    _functools_state *state = get_functools_state(module);
-    return state;
+    return get_functools_state(module);
 }
 
 static PyObject *
@@ -781,13 +782,16 @@ typedef struct lru_cache_object {
     PyObject *func;
     Py_ssize_t maxsize;
     Py_ssize_t misses;
+    /* the kwd_mark is used delimit args and keywords in the cache keys */
+    PyObject *kwd_mark;
+    PyTypeObject *lru_list_elem_type;
     PyObject *cache_info_type;
     PyObject *dict;
     PyObject *weakreflist;
 } lru_cache_object;
 
 static PyObject *
-lru_cache_make_key(_functools_state *state, PyObject *args,
+lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
                    PyObject *kwds, int typed)
 {
     PyObject *key, *keyword, *value;
@@ -827,8 +831,8 @@ lru_cache_make_key(_functools_state *state, PyObject *args,
         PyTuple_SET_ITEM(key, key_pos++, item);
     }
     if (kwds_size) {
-        Py_INCREF(state->kwd_mark);
-        PyTuple_SET_ITEM(key, key_pos++, state->kwd_mark);
+        Py_INCREF(kwd_mark);
+        PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
         for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
             Py_INCREF(keyword);
             PyTuple_SET_ITEM(key, key_pos++, keyword);
@@ -872,12 +876,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 {
     PyObject *result;
     Py_hash_t hash;
-    _functools_state *state;
-    state = get_functools_state_by_type(Py_TYPE(self));
-    if (state == NULL) {
-        return NULL;
-    }
-    PyObject *key = lru_cache_make_key(state, args, kwds, self->typed);
+    PyObject *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -977,13 +976,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     lru_list_elem *link;
     PyObject *key, *result, *testresult;
     Py_hash_t hash;
-    _functools_state *state;
 
-    state = get_functools_state_by_type(Py_TYPE(self));
-    if (state == NULL) {
-        return NULL;
-    }
-    key = lru_cache_make_key(state, args, kwds, self->typed);
+    key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
     if (!key)
         return NULL;
     hash = PyObject_Hash(key);
@@ -1038,7 +1032,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     {
         /* Cache is not full, so put the result in a new link */
         link = (lru_list_elem *)PyObject_New(lru_list_elem,
-                                             state->lru_list_elem_type);
+                                             self->lru_list_elem_type);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -1149,6 +1143,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     lru_cache_object *obj;
     Py_ssize_t maxsize;
     PyObject *(*wrapper)(lru_cache_object *, PyObject *, PyObject *);
+    _functools_state *state;
     static char *keywords[] = {"user_function", "maxsize", "typed",
                                "cache_info_type", NULL};
 
@@ -1161,6 +1156,11 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "the first argument must be callable");
+        return NULL;
+    }
+
+    state = get_functools_state_by_type(type);
+    if (state == NULL) {
         return NULL;
     }
 
@@ -1203,6 +1203,10 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->func = func;
     obj->misses = obj->hits = 0;
     obj->maxsize = maxsize;
+    Py_INCREF(state->kwd_mark);
+    obj->kwd_mark = state->kwd_mark;
+    Py_INCREF(state->lru_list_elem_type);
+    obj->lru_list_elem_type = state->lru_list_elem_type;
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
     obj->dict = NULL;
@@ -1238,6 +1242,8 @@ lru_cache_tp_clear(lru_cache_object *self)
     lru_list_elem *list = lru_cache_unlink_list(self);
     Py_CLEAR(self->func);
     Py_CLEAR(self->cache);
+    Py_CLEAR(self->kwd_mark);
+    Py_CLEAR(self->lru_list_elem_type);
     Py_CLEAR(self->cache_info_type);
     Py_CLEAR(self->dict);
     lru_cache_clear_list(list);
@@ -1330,6 +1336,8 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     }
     Py_VISIT(self->func);
     Py_VISIT(self->cache);
+    Py_VISIT(self->kwd_mark);
+    Py_VISIT(self->lru_list_elem_type);
     Py_VISIT(self->cache_info_type);
     Py_VISIT(self->dict);
     return 0;

@@ -386,7 +386,7 @@ class ExpandingButtonTest(unittest.TestCase):
         text_widget.window_create("1.0", window=expandingbutton)
 
         # Patch the message box module to always return False.
-        with patch('idlelib.squeezer.tkMessageBox') as mock_msgbox:
+        with patch('idlelib.squeezer.messagebox') as mock_msgbox:
             mock_msgbox.askokcancel.return_value = False
             mock_msgbox.askyesno.return_value = False
             # Trigger the expand event.
@@ -397,7 +397,7 @@ class ExpandingButtonTest(unittest.TestCase):
         self.assertEqual(expandingbutton.text.get('1.0', 'end-1c'), '')
 
         # Patch the message box module to always return True.
-        with patch('idlelib.squeezer.tkMessageBox') as mock_msgbox:
+        with patch('idlelib.squeezer.messagebox') as mock_msgbox:
             mock_msgbox.askokcancel.return_value = True
             mock_msgbox.askyesno.return_value = True
             # Trigger the expand event.

@@ -1,6 +1,9 @@
-dnl ***********************************************
-dnl * Please run autoreconf to test your changes! *
-dnl ***********************************************
+dnl ***************************************************
+dnl * Please run autoreconf -if to test your changes! *
+dnl ***************************************************
+dnl
+dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.10)
@@ -9,14 +12,18 @@ AC_PREREQ([2.69])
 
 AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
 
-AC_CONFIG_MACRO_DIR(m4)
+m4_ifdef(
+    [AX_C_FLOAT_WORDS_BIGENDIAN],
+    [],
+    [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
+)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
-    #   Include/ -> Python-ast.h
+    #   Include/ -> Python.h
     #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -1325,7 +1332,7 @@ AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
 AC_MSG_CHECKING(PROFILE_TASK)
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo'
+	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
 fi
 AC_MSG_RESULT($PROFILE_TASK)
 
@@ -2347,10 +2354,11 @@ AC_CHECK_TYPE(ssize_t,
 AC_CHECK_TYPE(__uint128_t,
   AC_DEFINE(HAVE_GCC_UINT128_T, 1, [Define if your compiler provides __uint128_t]),,)
 
-# Sizes of various common basic types
+# Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_ALIGNOF(long)
 AC_CHECK_SIZEOF(long long, 8)
 AC_CHECK_SIZEOF(void *, 4)
 AC_CHECK_SIZEOF(short, 2)
@@ -2358,6 +2366,7 @@ AC_CHECK_SIZEOF(float, 4)
 AC_CHECK_SIZEOF(double, 8)
 AC_CHECK_SIZEOF(fpos_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
+AC_CHECK_ALIGNOF(size_t)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
 
@@ -3157,8 +3166,13 @@ then
   then
     AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
   fi
-  TCLTK_INCLUDES=""
-  TCLTK_LIBS=""
+  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
+    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
+    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
+  else
+    TCLTK_INCLUDES=""
+    TCLTK_LIBS=""
+  fi
 else
   TCLTK_INCLUDES="$with_tcltk_includes"
   TCLTK_LIBS="$with_tcltk_libs"
@@ -4891,92 +4905,124 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
+AC_ARG_WITH([readline],
+  [AS_HELP_STRING([--with(out)-readline@<:@=editline@:>@],
+    [use Editline for backend or disable readline module])],
+    [],
+    [with_readline=yes])
+
 # check where readline lives
+py_cv_lib_readline=no
 # save the value of LIBS so we don't actually link Python with readline
 LIBS_no_readline=$LIBS
 
-# On some systems we need to link readline to a termcap compatible
-# library.  NOTE: Keep the precedence of listed libraries synchronised
-# with setup.py.
-py_cv_lib_readline=no
-AC_MSG_CHECKING([how to link readline libs])
-for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
-  if test -z "$py_libtermcap"; then
-    READLINE_LIBS="-lreadline"
+if test "$with_readline" != no; then
+  case "$with_readline" in
+  editline|edit)
+    LIBREADLINE=edit
+    AC_DEFINE(WITH_EDITLINE, 1,
+      [Define to build the readline module against Editline.])
+    ;;
+  yes|readline)
+    LIBREADLINE=readline
+    ;;
+  *)
+    AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline@:>@])
+    ;;
+  esac
+
+  # On some systems we need to link readline to a termcap compatible
+  # library.  NOTE: Keep the precedence of listed libraries synchronised
+  # with setup.py.
+  AC_MSG_CHECKING([how to link readline libs])
+  for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
+    if test -z "$py_libtermcap"; then
+      READLINE_LIBS="-l$LIBREADLINE"
+    else
+      READLINE_LIBS="-l$LIBREADLINE -l$py_libtermcap"
+    fi
+    LIBS="$READLINE_LIBS $LIBS_no_readline"
+    AC_LINK_IFELSE(
+      [AC_LANG_CALL([],[readline])],
+      [py_cv_lib_readline=yes])
+    if test $py_cv_lib_readline = yes; then
+      break
+    fi
+  done
+
+  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
+  #AC_SUBST([READLINE_LIBS])
+  if test $py_cv_lib_readline = no; then
+    AC_MSG_RESULT([none])
   else
-    READLINE_LIBS="-lreadline -l$py_libtermcap"
+    AC_MSG_RESULT([$READLINE_LIBS])
+    AC_DEFINE(HAVE_LIBREADLINE, 1,
+      [Define to build the readline module.])
   fi
-  LIBS="$READLINE_LIBS $LIBS_no_readline"
-  AC_LINK_IFELSE(
-    [AC_LANG_CALL([],[readline])],
-    [py_cv_lib_readline=yes])
-  if test $py_cv_lib_readline = yes; then
-    break
-  fi
-done
-# Uncomment this line if you want to use READINE_LIBS in Makefile or scripts
-#AC_SUBST([READLINE_LIBS])
-if test $py_cv_lib_readline = no; then
-  AC_MSG_RESULT([none])
-else
-  AC_MSG_RESULT([$READLINE_LIBS])
-  AC_DEFINE(HAVE_LIBREADLINE, 1,
-    [Define if you have the readline library (-lreadline).])
 fi
 
-# check for readline 2.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_completion_append_character;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
-  [Define if you have readline 2.2]), )
-  AC_EGREP_HEADER([extern int rl_completion_suppress_append;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
-  [Define if you have rl_completion_suppress_append]), )
+if test "$py_cv_lib_readline" = yes; then
+  # check for readline 2.2
+  AC_CHECK_DECL(rl_completion_append_character,
+    AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
+      [Define if you have readline 2.2]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+  AC_CHECK_DECL(rl_completion_suppress_append,
+    AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
+      [Define if you have rl_completion_suppress_append]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  # check for readline 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_pre_input_hook,
+    AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_display_matches_hook,
+    AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0, but not in editline
+  AC_CHECK_LIB($LIBREADLINE, rl_resize_terminal,
+    AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # check for readline 4.2
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_matches,
+    AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
+      [Define if you have readline 4.2]),,$READLINE_LIBS)
+
+  # also in readline 4.2
+  AC_CHECK_DECL(rl_catch_signals,
+    AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
+      [Define if you can turn off readline's signal handling.]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  AC_CHECK_LIB($LIBREADLINE, append_history,
+    AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
+      [Define if readline supports append_history]),,$READLINE_LIBS)
 fi
-
-# check for readline 4.0
-AC_CHECK_LIB(readline, rl_pre_input_hook,
-	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0
-AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
-	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0, but not in editline
-AC_CHECK_LIB(readline, rl_resize_terminal,
-	AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# check for readline 4.2
-AC_CHECK_LIB(readline, rl_completion_matches,
-	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]), ,$READLINE_LIBS)
-
-# also in readline 4.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_catch_signals;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
-  [Define if you can turn off readline's signal handling.]), )
-fi
-
-AC_CHECK_LIB(readline, append_history,
-	AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
-        [Define if readline supports append_history]), ,$READLINE_LIBS)
 
 # End of readline checks: restore LIBS
 LIBS=$LIBS_no_readline
@@ -5735,41 +5781,29 @@ ac_includes_default="$save_includes_default"
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
-if test "$have_openssl" = yes; then
-    AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-        [#include <openssl/x509_vfy.h>]
-    ], [
-        [X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();]
-        [X509_VERIFY_PARAM_set1_host(p, "localhost", 0);]
-        [X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");]
-        [X509_VERIFY_PARAM_set_hostflags(p, 0);]
-    ])
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=yes
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=no
-    ])
-    AC_MSG_RESULT($ac_cv_has_x509_verify_param_set1_host)
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-        AC_DEFINE(HAVE_X509_VERIFY_PARAM_SET1_HOST, 1,
-        [Define if libssl has X509_VERIFY_PARAM_set1_host and related function])
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
+# rpath to libssl and libcrypto
+AC_MSG_CHECKING(for --with-openssl-rpath)
+AC_ARG_WITH(openssl-rpath,
+    AS_HELP_STRING([--with-openssl-rpath=@<:@DIR|auto|no@:>@],
+                   [Set runtime library directory (rpath) for OpenSSL libraries,
+                    no (default): don't set rpath,
+                    auto: auto-detect rpath from --with-openssl and pkg-config,
+                    DIR: set an explicit rpath
+                   ]),
+    [],
+    [with_openssl_rpath=no]
+)
+AS_CASE($with_openssl_rpath,
+    [auto|yes],[OPENSSL_RPATH=auto],
+    [no],[OPENSSL_RPATH=],
+    [AS_IF(
+        [test -d "$with_openssl_rpath"],
+        [OPENSSL_RPATH="$with_openssl_rpath"],
+        AC_MSG_ERROR([--with-openssl-rpath "$with_openssl_rpath" is not a directory]))
+    ]
+)
+AC_MSG_RESULT($OPENSSL_RPATH)
+AC_SUBST([OPENSSL_RPATH])
 
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
@@ -5849,6 +5883,33 @@ else
   AC_MSG_RESULT(no);
 fi],
 [AC_MSG_RESULT(no)])
+
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+AC_MSG_CHECKING(for --with-static-libpython)
+AC_ARG_WITH(static-libpython,
+  AS_HELP_STRING([--without-static-libpython],
+                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+  STATIC_LIBPYTHON=0
+else
+  AC_MSG_RESULT(yes);
+fi],
+[AC_MSG_RESULT(yes)])
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+else
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+fi
+AC_SUBST(STATIC_LIBPYTHON)
+AC_SUBST(LIBRARY_DEPS)
 
 # Check whether to disable test modules. Once set, setup.py will not build
 # test extension modules and "make install" will not install test suites.

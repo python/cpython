@@ -2,9 +2,6 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
 #include "pycore_context.h"       // _PyContext_Init()
 #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
@@ -17,8 +14,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
-
-#include "module_names.h"         // _Py_module_names
 
 #include <locale.h>               // setlocale()
 
@@ -432,7 +427,7 @@ interpreter_update_config(PyThreadState *tstate, int only_update_path_config)
         }
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(tstate->interp)) {
         PyStatus status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             _PyErr_SetFromPyStatus(status);
@@ -576,10 +571,10 @@ init_interp_create_gil(PyThreadState *tstate)
 
     /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
        only called here. */
-    _PyEval_FiniGIL(tstate);
+    _PyEval_FiniGIL(tstate->interp);
 
     /* Auto-thread-state API */
-    status = _PyGILState_Init(tstate);
+    status = _PyGILState_SetTstate(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -599,12 +594,19 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *config,
                           PyThreadState **tstate_p)
 {
+    /* Auto-thread-state API */
+    PyStatus status = _PyGILState_Init(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyInterpreterState *interp = PyInterpreterState_New();
     if (interp == NULL) {
         return _PyStatus_ERR("can't make main interpreter");
     }
+    assert(_Py_IsMainInterpreter(interp));
 
-    PyStatus status = _PyConfig_Copy(&interp->config, config);
+    status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -626,61 +628,75 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(PyThreadState *tstate)
+pycore_init_singletons(PyInterpreterState *interp)
 {
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
 
-    status = _PyGC_Init(tstate);
+    if (_PyLong_Init(interp) < 0) {
+        return _PyStatus_ERR("can't init longs");
+    }
+
+    if (_Py_IsMainInterpreter(interp)) {
+        _PyFloat_Init();
+    }
+
+    status = _PyBytes_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    // Create the empty tuple singleton. It must be created before the first
-    // PyType_Ready() call since PyType_Ready() creates tuples, for tp_bases
-    // for example.
-    status = _PyTuple_Init(tstate);
+    status = _PyUnicode_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    status = _PyTuple_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+pycore_init_types(PyInterpreterState *interp)
+{
+    PyStatus status;
+    int is_main_interp = _Py_IsMainInterpreter(interp);
 
     if (is_main_interp) {
+        if (_PyStructSequence_Init() < 0) {
+            return _PyStatus_ERR("can't initialize structseq");
+        }
+
         status = _PyTypes_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
+        if (_PyLong_InitTypes() < 0) {
+            return _PyStatus_ERR("can't init int type");
+        }
+
+        status = _PyUnicode_InitTypes();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
 
-    if (!_PyLong_Init(tstate)) {
-        return _PyStatus_ERR("can't init longs");
-    }
-
-    status = _PyUnicode_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyBytes_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyExc_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     if (is_main_interp) {
-        if (!_PyFloat_Init()) {
+        if (_PyFloat_InitTypes() < 0) {
             return _PyStatus_ERR("can't init float");
         }
-
-        if (_PyStructSequence_Init() < 0) {
-            return _PyStatus_ERR("can't initialize structseq");
-        }
     }
 
-    status = _PyErr_Init();
+    status = _PyExc_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyErr_InitTypes();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -691,15 +707,6 @@ pycore_init_types(PyThreadState *tstate)
         }
     }
 
-    if (_PyWarnings_InitState(tstate) < 0) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-
-    status = _PyAtExit_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
     return _PyStatus_OK();
 }
 
@@ -707,14 +714,13 @@ pycore_init_types(PyThreadState *tstate)
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
-    assert(!_PyErr_Occurred(tstate));
+    PyInterpreterState *interp = tstate->interp;
 
-    PyObject *bimod = _PyBuiltin_Init(tstate);
+    PyObject *bimod = _PyBuiltin_Init(interp);
     if (bimod == NULL) {
         goto error;
     }
 
-    PyInterpreterState *interp = tstate->interp;
     if (_PyImport_FixupBuiltin(bimod, "builtins", interp->modules) < 0) {
         goto error;
     }
@@ -746,7 +752,6 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->import_func = Py_NewRef(import_func);
 
     assert(!_PyErr_Occurred(tstate));
-
     return _PyStatus_OK();
 
 error:
@@ -758,12 +763,36 @@ error:
 static PyStatus
 pycore_interp_init(PyThreadState *tstate)
 {
+    PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
 
-    status = pycore_init_types(tstate);
+    // Create singletons before the first PyType_Ready() call, since
+    // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
+    // and the empty tuple singletons (tp_bases).
+    status = pycore_init_singletons(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    // The GC must be initialized before the first GC collection.
+    status = _PyGC_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = pycore_init_types(interp);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
+    }
+
+    if (_PyWarnings_InitState(interp) < 0) {
+        return _PyStatus_ERR("can't initialize warnings");
+    }
+
+    status = _PyAtExit_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = _PySys_Create(tstate, &sysmod);
@@ -776,7 +805,7 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     if (config->_install_importlib) {
         /* This call sets up builtin and frozen import support */
         if (init_importlib(tstate, sysmod) < 0) {
@@ -1005,7 +1034,7 @@ init_interp_main(PyThreadState *tstate)
     assert(!_PyErr_Occurred(tstate));
 
     PyStatus status;
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
     PyInterpreterState *interp = tstate->interp;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
@@ -1466,7 +1495,7 @@ finalize_modules(PyThreadState *tstate)
 
     // Dump GC stats before it's too late, since it uses the warnings
     // machinery.
-    _PyGC_DumpShutdownStats(tstate);
+    _PyGC_DumpShutdownStats(interp);
 
     if (weaklist != NULL) {
         // Now, if there are any modules left alive, clear their globals to
@@ -1572,34 +1601,34 @@ flush_std_files(void)
 
 
 static void
-finalize_interp_types(PyThreadState *tstate)
+finalize_interp_types(PyInterpreterState *interp)
 {
-    _PyExc_Fini(tstate);
-    _PyFrame_Fini(tstate);
-    _PyAsyncGen_Fini(tstate);
-    _PyContext_Fini(tstate);
-    _PyType_Fini(tstate);
+    _PyExc_Fini(interp);
+    _PyFrame_Fini(interp);
+    _PyAsyncGen_Fini(interp);
+    _PyContext_Fini(interp);
+    _PyType_Fini(interp);
     // Call _PyUnicode_ClearInterned() before _PyDict_Fini() since it uses
     // a dict internally.
-    _PyUnicode_ClearInterned(tstate);
+    _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(tstate);
-    _PyList_Fini(tstate);
-    _PyTuple_Fini(tstate);
+    _PyDict_Fini(interp);
+    _PyList_Fini(interp);
+    _PyTuple_Fini(interp);
 
-    _PySlice_Fini(tstate);
+    _PySlice_Fini(interp);
 
-    _PyBytes_Fini(tstate);
-    _PyUnicode_Fini(tstate);
-    _PyFloat_Fini(tstate);
-    _PyLong_Fini(tstate);
+    _PyBytes_Fini(interp);
+    _PyUnicode_Fini(interp);
+    _PyFloat_Fini(interp);
+    _PyLong_Fini(interp);
 }
 
 
 static void
 finalize_interp_clear(PyThreadState *tstate)
 {
-    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    int is_main_interp = _Py_IsMainInterpreter(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1617,16 +1646,16 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_ClearFileSystemEncoding();
     }
 
-    finalize_interp_types(tstate);
+    finalize_interp_types(tstate->interp);
 }
 
 
 static void
-finalize_interp_delete(PyThreadState *tstate)
+finalize_interp_delete(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(interp)) {
         /* Cleanup auto-thread-state */
-        _PyGILState_Fini(tstate);
+        _PyGILState_Fini(interp);
     }
 
     /* We can't call _PyEval_FiniGIL() here because destroying the GIL lock can
@@ -1635,7 +1664,7 @@ finalize_interp_delete(PyThreadState *tstate)
        created GIL, which ensures that Py_Initialize / Py_FinalizeEx can be
        called multiple times. */
 
-    PyInterpreterState_Delete(tstate->interp);
+    PyInterpreterState_Delete(interp);
 }
 
 
@@ -1668,7 +1697,7 @@ Py_FinalizeEx(void)
      * the threads created via Threading.
      */
 
-    _PyAtExit_Call(tstate);
+    _PyAtExit_Call(tstate->interp);
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -1781,7 +1810,7 @@ Py_FinalizeEx(void)
 #endif /* Py_TRACE_REFS */
 
     finalize_interp_clear(tstate);
-    finalize_interp_delete(tstate);
+    finalize_interp_delete(tstate->interp);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -1956,7 +1985,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    _PyAtExit_Call(tstate);
+    _PyAtExit_Call(tstate->interp);
 
     if (tstate != interp->tstate_head || tstate->next != NULL) {
         Py_FatalError("not the last thread");
@@ -1965,7 +1994,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     finalize_modules(tstate);
 
     finalize_interp_clear(tstate);
-    finalize_interp_delete(tstate);
+    finalize_interp_delete(tstate->interp);
 }
 
 /* Add the __main__ module */
@@ -2212,7 +2241,7 @@ error:
     return NULL;
 }
 
-/* Set builtins.open to io.OpenWrapper */
+/* Set builtins.open to io.open */
 static PyStatus
 init_set_builtins_open(void)
 {
@@ -2228,7 +2257,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+    if (!(wrapper = PyObject_GetAttrString(iomod, "open"))) {
         goto error;
     }
 
@@ -2250,7 +2279,7 @@ done:
 }
 
 
-/* Initialize sys.stdin, stdout, stderr and builtins.open */
+/* Create sys.stdin, sys.stdout and sys.stderr */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
@@ -2499,7 +2528,7 @@ fatal_error_exit(int status)
 
 
 // Dump the list of extension modules of sys.modules, excluding stdlib modules
-// (_Py_module_names), into fd file descriptor.
+// (sys.stdlib_module_names), into fd file descriptor.
 //
 // This function is called by a signal handler in faulthandler: avoid memory
 // allocations and keep the implementation simple. For example, the list is not
@@ -2515,10 +2544,33 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         return;
     }
 
+    Py_ssize_t pos;
+    PyObject *key, *value;
+
+    // Avoid PyDict_GetItemString() which calls PyUnicode_FromString(),
+    // memory cannot be allocated on the heap in a signal handler.
+    // Iterate on the dict instead.
+    PyObject *stdlib_module_names = NULL;
+    if (interp->sysdict != NULL) {
+        pos = 0;
+        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+            if (PyUnicode_Check(key)
+               && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+                stdlib_module_names = value;
+                break;
+            }
+        }
+    }
+    // If we failed to get sys.stdlib_module_names or it's not a frozenset,
+    // don't exclude stdlib modules.
+    if (stdlib_module_names != NULL && !PyFrozenSet_Check(stdlib_module_names)) {
+        stdlib_module_names = NULL;
+    }
+
+    // List extensions
     int header = 1;
     Py_ssize_t count = 0;
-    Py_ssize_t pos = 0;
-    PyObject *key, *value;
+    pos = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
         if (!PyUnicode_Check(key)) {
             continue;
@@ -2526,22 +2578,26 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
         if (!_PyModule_IsExtension(value)) {
             continue;
         }
-
-        // Check if it is a stdlib extension module.
         // Use the module name from the sys.modules key,
         // don't attempt to get the module object name.
-        const Py_ssize_t names_len = Py_ARRAY_LENGTH(_Py_module_names);
-        int is_stdlib_mod = 0;
-        for (Py_ssize_t i=0; i < names_len; i++) {
-            const char *name = _Py_module_names[i];
-            if (PyUnicode_CompareWithASCIIString(key, name) == 0) {
-                is_stdlib_mod = 1;
-                break;
+        if (stdlib_module_names != NULL) {
+            int is_stdlib_ext = 0;
+
+            Py_ssize_t i = 0;
+            PyObject *item;
+            Py_hash_t hash;
+            while (_PySet_NextEntry(stdlib_module_names, &i, &item, &hash)) {
+                if (PyUnicode_Check(item)
+                    && PyUnicode_Compare(key, item) == 0)
+                {
+                    is_stdlib_ext = 1;
+                    break;
+                }
             }
-        }
-        if (is_stdlib_mod) {
-            // Ignore stdlib extension module.
-            continue;
+            if (is_stdlib_ext) {
+                // Ignore stdlib extension
+                continue;
+            }
         }
 
         if (header) {
@@ -2862,7 +2918,10 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     struct sigaction context, ocontext;
     context.sa_handler = handler;
     sigemptyset(&context.sa_mask);
-    context.sa_flags = 0;
+    /* Using SA_ONSTACK is friendlier to other C/C++/Golang-VM code that
+     * extension module or embedding code may use where tiny thread stacks
+     * are used.  https://bugs.python.org/issue43390 */
+    context.sa_flags = SA_ONSTACK;
     if (sigaction(sig, &context, &ocontext) == -1)
         return SIG_ERR;
     return ocontext.sa_handler;

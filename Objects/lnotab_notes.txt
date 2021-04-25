@@ -3,16 +3,16 @@ Description of the internal format of the line number table
 Conceptually, the line number table consists of a sequence of triples:
     start-offset (inclusive), end-offset (exclusive), line-number.
 
-Note that note all byte codes have a line number so we need handle `None` for the line-number.
+Note that not all byte codes have a line number so we need handle `None` for the line-number.
 
 However, storing the above sequence directly would be very inefficient as we would need 12 bytes per entry.
 
-First of all, we can note that the end of one entry is the same as the start of the next, so we can overlap entries.
-Secondly we also note that we don't really need arbitrary access to the sequence, so we can store deltas.
+First, note that the end of one entry is the same as the start of the next, so we can overlap entries.
+Second, we don't really need arbitrary access to the sequence, so we can store deltas.
 
 We just need to store (end - start, line delta) pairs. The start offset of the first entry is always zero.
 
-Thirdly, most deltas are small, so we can use a single byte for each value, as long we allow several entries for the same line.
+Third, most deltas are small, so we can use a single byte for each value, as long we allow several entries for the same line.
 
 Consider the following table
      Start    End     Line
@@ -36,12 +36,12 @@ Stripping the redundant ends gives:
 
 Note that the end - start value is always positive.
 
-Finally in order, to fit into a single byte we need to convert start deltas to the range 0 <= delta <= 254,
+Finally, in order to fit into a single byte we need to convert start deltas to the range 0 <= delta <= 254,
 and line deltas to the range -127  <= delta <= 127.
 A line delta of -128 is used to indicate no line number.
 A start delta of 255 is used as a sentinel to mark the end of the table.
 Also note that a delta of zero indicates that there are no bytecodes in the given range,
-which means can use an invalidate line number for that range.
+which means we can use an invalid line number for that range.
 
 Final form:
 

@@ -1828,6 +1828,21 @@ class _BasePathTest(object):
         p.chmod(new_mode)
         self.assertEqual(p.stat().st_mode, new_mode)
 
+    # On Windows, os.chmod does not follow symlinks (issue #15411)
+    @only_posix
+    def test_chmod_follow_symlinks_true(self):
+        p = self.cls(BASE) / 'linkA'
+        q = p.resolve()
+        mode = q.stat().st_mode
+        # Clear writable bit.
+        new_mode = mode & ~0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+        # Set writable bit
+        new_mode = mode | 0o222
+        p.chmod(new_mode, follow_symlinks=True)
+        self.assertEqual(q.stat().st_mode, new_mode)
+
     # XXX also need a test for lchmod.
 
     def test_stat(self):
@@ -1838,6 +1853,17 @@ class _BasePathTest(object):
         p.chmod(st.st_mode ^ 0o222)
         self.addCleanup(p.chmod, st.st_mode)
         self.assertNotEqual(p.stat(), st)
+
+    @os_helper.skip_unless_symlink
+    def test_stat_no_follow_symlinks(self):
+        p = self.cls(BASE) / 'linkA'
+        st = p.stat()
+        self.assertNotEqual(st, p.stat(follow_symlinks=False))
+
+    def test_stat_no_follow_symlinks_nosymlink(self):
+        p = self.cls(BASE) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.stat(follow_symlinks=False))
 
     @os_helper.skip_unless_symlink
     def test_lstat(self):
@@ -1899,7 +1925,8 @@ class _BasePathTest(object):
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
         try:
-            p.link_to(q)
+            with self.assertWarns(DeprecationWarning):
+                p.link_to(q)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
         self.assertEqual(q.stat().st_size, size)
@@ -1910,6 +1937,24 @@ class _BasePathTest(object):
         q.link_to(r)
         self.assertEqual(os.stat(r).st_size, size)
         self.assertTrue(q.stat)
+
+    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
+    def test_hardlink_to(self):
+        P = self.cls(BASE)
+        target = P / 'fileA'
+        size = target.stat().st_size
+        # linking to another path.
+        link = P / 'dirA' / 'fileAA'
+        link.hardlink_to(target)
+        self.assertEqual(link.stat().st_size, size)
+        self.assertTrue(os.path.samefile(target, link))
+        self.assertTrue(target.exists())
+        # Linking to a str of a relative path.
+        link2 = P / 'dirA' / 'fileAAA'
+        target2 = rel_join('fileA')
+        link2.hardlink_to(target2)
+        self.assertEqual(os.stat(target2).st_size, size)
+        self.assertTrue(link2.exists())
 
     @unittest.skipIf(hasattr(os, "link"), "os.link() is present")
     def test_link_to_not_implemented(self):
@@ -2583,7 +2628,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 env.pop('USERNAME', None)
                 self.assertEqual(p1.expanduser(),
                                  P('C:/Users/alice/My Documents'))
-                self.assertRaises(KeyError, p2.expanduser)
+                self.assertRaises(RuntimeError, p2.expanduser)
                 env['USERNAME'] = 'alice'
                 self.assertEqual(p2.expanduser(),
                                  P('C:/Users/alice/My Documents'))
