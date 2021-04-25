@@ -469,6 +469,9 @@ def urlsplit(url, scheme='', allow_fragments=True):
         else:
             scheme, url = url[:i].lower(), url[i+1:]
 
+    _unsafe_chars_to_remove = ['\t', '\r', '\n']
+    url = url.translate({ord(c): None for c in _unsafe_chars_to_remove})
+
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
         if (('[' in netloc and ']' not in netloc) or

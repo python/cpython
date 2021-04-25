@@ -566,6 +566,21 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
 
+        # Remove ASCII tabs and newlines from input
+
+        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "www.python.org")
+        self.assertEqual(p.path, "/javascript:alert('msg')/")
+        self.assertEqual(p.query, "")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/#frag")
+
         # And check them all again, only with bytes this time
         url = b"HTTP://WWW.PYTHON.ORG/doc/#frag"
         p = urllib.parse.urlsplit(url)
@@ -605,6 +620,19 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.hostname, b"www.python.org")
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
+
+        url = b"http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, b"http")
+        self.assertEqual(p.netloc, b"www.python.org")
+        self.assertEqual(p.path, b"/javascript:alert('msg')/")
+        self.assertEqual(p.query, b"")
+        self.assertEqual(p.fragment, b"frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, b"www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/#frag")
 
         # Verify an illegal port raises ValueError
         url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"

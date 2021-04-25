@@ -312,6 +312,10 @@ or on combining URL components into a URL string.
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
 
+   Following the specification in WHATWG which updates RFC 3986, ASCII newline
+   ``\n``, ``\r`` or ``\r\n`` and tab ``\t`` characters are stripped from
+   the url.
+
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
@@ -320,6 +324,8 @@ or on combining URL components into a URL string.
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
 
+   .. versionchanged:: 3.10
+      ASCII newline and tab characters are stripped from the url.
 
 .. function:: urlunsplit(parts)
 

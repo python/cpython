@@ -1,0 +1,6 @@
+Presence newline or tab characters in URL allowed attackers to write scripts
+in URL, hijack the the the web-server.
+
+Following the controlling specification for URLs defined by WHATWG
+urllib.parse strips ASCII newline and tabs from the url, preventing such
+attacks.
