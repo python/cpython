@@ -338,8 +338,11 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                 argval, argrepr = _get_const_info(arg, constants)
             elif op in hasname:
                 argval, argrepr = _get_name_info(arg, names)
+            elif op in hasjabs:
+                argval = arg*2
+                argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                argval = offset + 2 + arg
+                argval = offset + 2 + arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal:
                 argval, argrepr = _get_name_info(arg, varnames)
@@ -437,9 +440,9 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
-                label = offset + 2 + arg
+                label = offset + 2 + arg*2
             elif op in hasjabs:
-                label = arg
+                label = arg*2
             else:
                 continue
             if label not in labels:

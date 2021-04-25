@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module-level decorators, classes, and functions
 -----------------------------------------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,7 +79,7 @@ Module-level decorators, classes, and functions
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
      class C:
         ...
 
@@ -161,10 +161,17 @@ Module-level decorators, classes, and functions
      :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
 
-   - ``kw_only``: If true (the default value is ``False``), then this
-     field will be defined in the generated :meth:`__init__` method as
-     keyword-only.  See the :term:`parameter` glossary entry for
-     details.  Also see the ``dataclasses.KW_ONLY`` section.
+   - ``match_args``: If true (the default is ``True``), the
+     ``__match_args__`` tuple will be created from the list of
+     parameters to the generated :meth:`__init__` method (even if
+     :meth:`__init__` is not generated, see above).  If false, or if
+     ``__match_args__`` is already defined in the class, then
+     ``__match_args__`` will not be generated.
+
+   - ``kw_only``: If true (the default value is ``False``), then all
+     fields will be marked as keyword-only.  See the :term:`parameter`
+     glossary entry for details.  Also see the ``dataclasses.KW_ONLY``
+     section.
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -330,7 +337,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -338,8 +345,9 @@ Module-level decorators, classes, and functions
    iterable whose elements are each either ``name``, ``(name, type)``,
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
-   ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``, and
-   ``kw_only`` have the same meaning as they do in :func:`dataclass`.
+   ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
+   ``match_args``, and ``kw_only`` have the same meaning as they do
+   in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can

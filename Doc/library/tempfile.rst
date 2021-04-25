@@ -305,7 +305,7 @@ not surprise other unsuspecting code by changing global API behavior.
       explicit ``prefix``, ``suffix``, or ``dir`` arguments of type
       str are supplied. Please do not write code expecting or
       depending on this. This awkward behavior is maintained for
-      compatibility with the historcal implementation.
+      compatibility with the historical implementation.
 
 .. _tempfile-examples:
 

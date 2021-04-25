@@ -354,7 +354,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
         return 0;
     }
     /* Ignore non null-terminated strings since _csv can't handle
-       embeded nulls */
+       embedded nulls */
     if (memchr(data, '\0', size) == NULL) {
         return 0;
     }
@@ -383,7 +383,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     }
 
     /* Ignore csv.Error because we're probably going to generate
-       some bad files (embeded new-lines, unterminated quotes etc) */
+       some bad files (embedded new-lines, unterminated quotes etc) */
     if (PyErr_ExceptionMatches(csv_error)) {
         PyErr_Clear();
     }

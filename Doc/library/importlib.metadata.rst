@@ -4,6 +4,13 @@
  Using :mod:`!importlib.metadata`
 =================================
 
+.. module:: importlib.metadata
+   :synopsis: The implementation of the importlib metadata.
+
+.. versionadded:: 3.8
+
+**Source code:** :source:`Lib/importlib/metadata.py`
+
 .. note::
    This functionality is provisional and may deviate from the usual
    version semantics of the standard library.

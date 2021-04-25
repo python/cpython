@@ -893,6 +893,8 @@ class UrlParseTestCase(unittest.TestCase):
             with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
                 result = urllib.parse.parse_qs(orig, separator=';')
                 self.assertEqual(result, expect, "Error parsing %r" % orig)
+                result_bytes = urllib.parse.parse_qs(orig, separator=b';')
+                self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
 
 
     def test_parse_qsl_separator(self):
@@ -912,6 +914,8 @@ class UrlParseTestCase(unittest.TestCase):
             with self.subTest(f"Original: {orig!r}, Expected: {expect!r}"):
                 result = urllib.parse.parse_qsl(orig, separator=';')
                 self.assertEqual(result, expect, "Error parsing %r" % orig)
+                result_bytes = urllib.parse.parse_qsl(orig, separator=b';')
+                self.assertEqual(result_bytes, expect, "Error parsing %r" % orig)
 
 
     def test_urlencode_sequences(self):

@@ -128,7 +128,7 @@ static void *opcode_targets[256] = {
     &&TARGET_DELETE_FAST,
     &&_unknown_opcode,
     &&_unknown_opcode,
-    &&_unknown_opcode,
+    &&TARGET_GEN_START,
     &&TARGET_RAISE_VARARGS,
     &&TARGET_CALL_FUNCTION,
     &&TARGET_MAKE_FUNCTION,

@@ -5,14 +5,20 @@ the test_suite() function there returns a test suite that's ready to
 be run.
 """
 
-import distutils.tests
-import test.support
+import warnings
+from test import support
+from test.support import warnings_helper
+
+with warnings_helper.check_warnings(
+    ("The distutils package is deprecated", DeprecationWarning)):
+
+    import distutils.tests
 
 
 def test_main():
     # used by regrtest
-    test.support.run_unittest(distutils.tests.test_suite())
-    test.support.reap_children()
+    support.run_unittest(distutils.tests.test_suite())
+    support.reap_children()
 
 
 def load_tests(*_):

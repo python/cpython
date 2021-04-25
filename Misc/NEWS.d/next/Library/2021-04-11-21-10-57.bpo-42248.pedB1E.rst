@@ -1,0 +1,1 @@
+[Enum] ensure exceptions raised in ``_missing__`` are released

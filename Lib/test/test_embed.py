@@ -389,6 +389,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         'site_import': 1,
         'bytes_warning': 0,
+        'warn_default_encoding': 0,
         'inspect': 0,
         'interactive': 0,
         'optimization_level': 0,

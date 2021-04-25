@@ -1,7 +1,7 @@
 /*
  * This file compiles an abstract syntax tree (AST) into Python bytecode.
  *
- * The primary entry point is PyAST_Compile(), which returns a
+ * The primary entry point is _PyAST_Compile(), which returns a
  * PyCodeObject.  The compiler makes several passes to build the code
  * object:
  *   1. Checks for future statements.  See future.c
@@ -22,16 +22,16 @@
  */
 
 #include "Python.h"
+#include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_compile.h"       // _PyFuture_FromAST()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_symtable.h"      // PySTEntryObject
 
-#include "Python-ast.h"
-#include "ast.h"
-#include "code.h"
-#include "symtable.h"
 #define NEED_OPCODE_JUMP_TABLES
-#include "opcode.h"
-#include "wordcode_helpers.h"
+#include "opcode.h"               // EXTENDED_ARG
+#include "wordcode_helpers.h"     // instrsize()
+
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
@@ -42,6 +42,30 @@
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
+
+/* A soft limit for stack use, to avoid excessive
+ * memory use for large constants, etc.
+ *
+ * The value 30 is plucked out of thin air.
+ * Code that could use more stack than this is
+ * rare, so the exact value is unimportant.
+ */
+#define STACK_USE_GUIDELINE 30
+
+/* If we exceed this limit, it should
+ * be considered a compiler bug.
+ * Currently it should be impossible
+ * to exceed STACK_USE_GUIDELINE * 100,
+ * as 100 is the maximum parse depth.
+ * For performance reasons we will
+ * want to reduce this to a
+ * few hundred in the future.
+ *
+ * NOTE: Whatever MAX_ALLOWED_STACK_USE is
+ * set to, it should never restrict what Python
+ * we can write, just how we compile it.
+ */
+#define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
@@ -116,7 +140,8 @@ compiler IR.
 */
 
 enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
-                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER };
+                  WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
+                  ASYNC_COMPREHENSION_GENERATOR };
 
 struct fblockinfo {
     enum fblocktype fb_type;
@@ -172,6 +197,8 @@ struct compiler_unit {
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
     int u_col_offset;      /* the offset of the current stmt */
+    int u_end_lineno;      /* the end line of the current stmt */
+    int u_end_col_offset;  /* the end offset of the current stmt */
 };
 
 /* This struct captures the global state of a compilation.
@@ -351,8 +378,8 @@ compiler_init(struct compiler *c)
 }
 
 PyCodeObject *
-PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
-                   int optimize, PyArena *arena)
+_PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
+               int optimize, PyArena *arena)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
@@ -374,7 +401,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     Py_INCREF(filename);
     c.c_filename = filename;
     c.c_arena = arena;
-    c.c_future = PyFuture_FromASTObject(mod, filename);
+    c.c_future = _PyFuture_FromAST(mod, filename);
     if (c.c_future == NULL)
         goto finally;
     if (!flags) {
@@ -395,7 +422,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
         goto finally;
     }
 
-    c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
+    c.c_st = _PySymtable_Build(mod, filename, c.c_future);
     if (c.c_st == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError, "no symtable");
@@ -410,26 +437,11 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     return co;
 }
 
-PyCodeObject *
-PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
-                int optimize, PyArena *arena)
-{
-    PyObject *filename;
-    PyCodeObject *co;
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
-    Py_DECREF(filename);
-    return co;
-
-}
-
 static void
 compiler_free(struct compiler *c)
 {
     if (c->c_st)
-        PySymtable_Free(c->c_st);
+        _PySymtable_Free(c->c_st);
     if (c->c_future)
         PyObject_Free(c->c_future);
     Py_XDECREF(c->c_filename);
@@ -631,6 +643,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
     u->u_col_offset = 0;
+    u->u_end_lineno = 0;
+    u->u_end_col_offset = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -730,7 +744,7 @@ compiler_set_qualname(struct compiler *c)
             mangled = _Py_Mangle(parent->u_private, u->u_name);
             if (!mangled)
                 return 0;
-            scope = PyST_GetScope(parent->u_ste, mangled);
+            scope = _PyST_GetScope(parent->u_ste, mangled);
             Py_DECREF(mangled);
             assert(scope != GLOBAL_IMPLICIT);
             if (scope == GLOBAL_EXPLICIT)
@@ -901,7 +915,9 @@ compiler_next_instr(basicblock *b)
 
 #define SET_LOC(c, x)                           \
     (c)->u->u_lineno = (x)->lineno;             \
-    (c)->u->u_col_offset = (x)->col_offset;
+    (c)->u->u_col_offset = (x)->col_offset;     \
+    (c)->u->u_end_lineno = (x)->end_lineno;     \
+    (c)->u->u_end_col_offset = (x)->end_col_offset;
 
 /* Return the stack effect of opcode with argument oparg.
 
@@ -1155,6 +1171,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LIST_TO_TUPLE:
             return 0;
+        case GEN_START:
+            return -1;
         case LIST_EXTEND:
         case SET_UPDATE:
         case DICT_MERGE:
@@ -1415,7 +1433,7 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 */
 
 static int
-compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
+compiler_addop_i_line(struct compiler *c, int opcode, Py_ssize_t oparg, int lineno)
 {
     struct instr *i;
     int off;
@@ -1436,8 +1454,20 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    i->i_lineno = c->u->u_lineno;
+    i->i_lineno = lineno;
     return 1;
+}
+
+static int
+compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
+{
+    return compiler_addop_i_line(c, opcode, oparg, c->u->u_lineno);
+}
+
+static int
+compiler_addop_i_noline(struct compiler *c, int opcode, Py_ssize_t oparg)
+{
+    return compiler_addop_i_line(c, opcode, oparg, -1);
 }
 
 static int add_jump_to_block(basicblock *b, int opcode, int lineno, basicblock *target)
@@ -1536,6 +1566,11 @@ compiler_addop_j_noline(struct compiler *c, int opcode, basicblock *b)
 
 #define ADDOP_I(C, OP, O) { \
     if (!compiler_addop_i((C), (OP), (O))) \
+        return 0; \
+}
+
+#define ADDOP_I_NOLINE(C, OP, O) { \
+    if (!compiler_addop_i_noline((C), (OP), (O))) \
         return 0; \
 }
 
@@ -1713,6 +1748,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
     switch (info->fb_type) {
         case WHILE_LOOP:
         case EXCEPTION_HANDLER:
+        case ASYNC_COMPREHENSION_GENERATOR:
             return 1;
 
         case FOR_LOOP:
@@ -1921,10 +1957,10 @@ get_ref_type(struct compiler *c, PyObject *name)
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
         _PyUnicode_EqualToASCIIString(name, "__class__"))
         return CELL;
-    scope = PyST_GetScope(c->u->u_ste, name);
+    scope = _PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
         PyErr_Format(PyExc_SystemError,
-                     "PyST_GetScope(name=%R) failed: "
+                     "_PyST_GetScope(name=%R) failed: "
                      "unknown scope in unit %S (%R); "
                      "symbols: %R; locals: %R; globals: %R",
                      name,
@@ -2081,16 +2117,24 @@ static int
 compiler_visit_argannotation(struct compiler *c, identifier id,
     expr_ty annotation, Py_ssize_t *annotations_len)
 {
-    if (annotation) {
-        PyObject *mangled = _Py_Mangle(c->u->u_private, id);
-        if (!mangled)
-            return 0;
-
-        ADDOP_LOAD_CONST(c, mangled);
-        Py_DECREF(mangled);
-        VISIT(c, annexpr, annotation);
-        *annotations_len += 2;
+    if (!annotation) {
+        return 1;
     }
+
+    PyObject *mangled = _Py_Mangle(c->u->u_private, id);
+    if (!mangled) {
+        return 0;
+    }
+    ADDOP_LOAD_CONST(c, mangled);
+    Py_DECREF(mangled);
+
+    if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+        VISIT(c, annexpr, annotation)
+    }
+    else {
+        VISIT(c, expr, annotation);
+    }
+    *annotations_len += 2;
     return 1;
 }
 
@@ -3609,7 +3653,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 
     op = 0;
     optype = OP_NAME;
-    scope = PyST_GetScope(c->u->u_ste, mangled);
+    scope = _PyST_GetScope(c->u->u_ste, mangled);
     switch (scope) {
     case FREE:
         dict = c->u->u_freevars;
@@ -3718,14 +3762,13 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
                   int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    Py_ssize_t i, seen_star = 0;
     if (n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
             return 0;
         }
         PyObject *val;
-        for (i = 0; i < n; i++) {
+        for (Py_ssize_t i = 0; i < n; i++) {
             val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
             Py_INCREF(val);
             PyTuple_SET_ITEM(folded, i, val);
@@ -3746,38 +3789,16 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
         return 1;
     }
 
-    for (i = 0; i < n; i++) {
+    int big = n+pushed > STACK_USE_GUIDELINE;
+    int seen_star = 0;
+    for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
             seen_star = 1;
         }
     }
-    if (seen_star) {
-        seen_star = 0;
-        for (i = 0; i < n; i++) {
-            expr_ty elt = asdl_seq_GET(elts, i);
-            if (elt->kind == Starred_kind) {
-                if (seen_star == 0) {
-                    ADDOP_I(c, build, i+pushed);
-                    seen_star = 1;
-                }
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, extend, 1);
-            }
-            else {
-                VISIT(c, expr, elt);
-                if (seen_star) {
-                    ADDOP_I(c, add, 1);
-                }
-            }
-        }
-        assert(seen_star);
-        if (tuple) {
-            ADDOP(c, LIST_TO_TUPLE);
-        }
-    }
-    else {
-        for (i = 0; i < n; i++) {
+    if (!seen_star && !big) {
+        for (Py_ssize_t i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
             VISIT(c, expr, elt);
         }
@@ -3786,6 +3807,33 @@ starunpack_helper(struct compiler *c, asdl_expr_seq *elts, int pushed,
         } else {
             ADDOP_I(c, build, n+pushed);
         }
+        return 1;
+    }
+    int sequence_built = 0;
+    if (big) {
+        ADDOP_I(c, build, pushed);
+        sequence_built = 1;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        if (elt->kind == Starred_kind) {
+            if (sequence_built == 0) {
+                ADDOP_I(c, build, i+pushed);
+                sequence_built = 1;
+            }
+            VISIT(c, expr, elt->v.Starred.value);
+            ADDOP_I(c, extend, 1);
+        }
+        else {
+            VISIT(c, expr, elt);
+            if (sequence_built) {
+                ADDOP_I(c, add, 1);
+            }
+        }
+    }
+    assert(sequence_built);
+    if (tuple) {
+        ADDOP(c, LIST_TO_TUPLE);
     }
     return 1;
 }
@@ -3885,7 +3933,8 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
 {
     Py_ssize_t i, n = end - begin;
     PyObject *keys, *key;
-    if (n > 1 && are_all_items_const(e->v.Dict.keys, begin, end)) {
+    int big = n*2 > STACK_USE_GUIDELINE;
+    if (n > 1 && !big && are_all_items_const(e->v.Dict.keys, begin, end)) {
         for (i = begin; i < end; i++) {
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
         }
@@ -3900,12 +3949,19 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
         }
         ADDOP_LOAD_CONST_NEW(c, keys);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
+        return 1;
     }
-    else {
-        for (i = begin; i < end; i++) {
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+    if (big) {
+        ADDOP_I(c, BUILD_MAP, 0);
+    }
+    for (i = begin; i < end; i++) {
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        if (big) {
+            ADDOP_I(c, MAP_ADD, 1);
         }
+    }
+    if (!big) {
         ADDOP_I(c, BUILD_MAP, n);
     }
     return 1;
@@ -3941,7 +3997,7 @@ compiler_dict(struct compiler *c, expr_ty e)
             ADDOP_I(c, DICT_UPDATE, 1);
         }
         else {
-            if (elements == 0xFFFF) {
+            if (elements*2 > STACK_USE_GUIDELINE) {
                 if (!compiler_subdict(c, e, i - elements, i + 1)) {
                     return 0;
                 }
@@ -4137,11 +4193,15 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Check that the call node is an attribute access, and that
        the call doesn't have keyword parameters. */
     if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load ||
-            asdl_seq_LEN(e->v.Call.keywords))
+            asdl_seq_LEN(e->v.Call.keywords)) {
         return -1;
-
-    /* Check that there are no *varargs types of arguments. */
+    }
+    /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
+    if (argsl >= STACK_USE_GUIDELINE) {
+        return -1;
+    }
+    /* Check that there are no *varargs types of arguments. */
     for (i = 0; i < argsl; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
@@ -4203,9 +4263,29 @@ compiler_call(struct compiler *c, expr_ty e)
 static int
 compiler_joined_str(struct compiler *c, expr_ty e)
 {
-    VISIT_SEQ(c, expr, e->v.JoinedStr.values);
-    if (asdl_seq_LEN(e->v.JoinedStr.values) != 1)
-        ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+
+    Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
+    if (value_count > STACK_USE_GUIDELINE) {
+        ADDOP_LOAD_CONST_NEW(c, _PyUnicode_FromASCII("", 0));
+        PyObject *join = _PyUnicode_FromASCII("join", 4);
+        if (join == NULL) {
+            return 0;
+        }
+        ADDOP_NAME(c, LOAD_METHOD, join, names);
+        Py_DECREF(join);
+        ADDOP_I(c, BUILD_LIST, 0);
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.JoinedStr.values); i++) {
+            VISIT(c, expr, asdl_seq_GET(e->v.JoinedStr.values, i));
+            ADDOP_I(c, LIST_APPEND, 1);
+        }
+        ADDOP_I(c, CALL_METHOD, 1);
+    }
+    else {
+        VISIT_SEQ(c, expr, e->v.JoinedStr.values);
+        if (asdl_seq_LEN(e->v.JoinedStr.values) != 1) {
+            ADDOP_I(c, BUILD_STRING, asdl_seq_LEN(e->v.JoinedStr.values));
+        }
+    }
     return 1;
 }
 
@@ -4262,7 +4342,8 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
     keyword_ty kw;
     PyObject *keys, *key;
     assert(n > 0);
-    if (n > 1) {
+    int big = n*2 > STACK_USE_GUIDELINE;
+    if (n > 1 && !big) {
         for (i = begin; i < end; i++) {
             kw = asdl_seq_GET(keywords, i);
             VISIT(c, expr, kw->value);
@@ -4278,14 +4359,20 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
         }
         ADDOP_LOAD_CONST_NEW(c, keys);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
+        return 1;
     }
-    else {
-        /* a for loop only executes once */
-        for (i = begin; i < end; i++) {
-            kw = asdl_seq_GET(keywords, i);
-            ADDOP_LOAD_CONST(c, kw->arg);
-            VISIT(c, expr, kw->value);
+    if (big) {
+        ADDOP_I_NOLINE(c, BUILD_MAP, 0);
+    }
+    for (i = begin; i < end; i++) {
+        kw = asdl_seq_GET(keywords, i);
+        ADDOP_LOAD_CONST(c, kw->arg);
+        VISIT(c, expr, kw->value);
+        if (big) {
+            ADDOP_I_NOLINE(c, MAP_ADD, 1);
         }
+    }
+    if (!big) {
         ADDOP_I(c, BUILD_MAP, n);
     }
     return 1;
@@ -4307,6 +4394,9 @@ compiler_call_helper(struct compiler *c,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
+    if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
+         goto ex_call;
+    }
     for (i = 0; i < nelts; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
@@ -4586,6 +4676,11 @@ compiler_async_comprehension_generator(struct compiler *c,
     }
 
     compiler_use_next_block(c, start);
+    /* Runtime will push a block here, so we need to account for that */
+    if (!compiler_push_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start,
+                              NULL, NULL)) {
+        return 0;
+    }
 
     ADDOP_JUMP(c, SETUP_FINALLY, except);
     ADDOP(c, GET_ANEXT);
@@ -4639,6 +4734,8 @@ compiler_async_comprehension_generator(struct compiler *c,
     }
     compiler_use_next_block(c, if_cleanup);
     ADDOP_JUMP(c, JUMP_ABSOLUTE, start);
+
+    compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
     compiler_use_next_block(c, except);
     ADDOP(c, END_ASYNC_FOR);
@@ -5259,6 +5356,12 @@ check_ann_expr(struct compiler *c, expr_ty e)
 static int
 check_annotation(struct compiler *c, stmt_ty s)
 {
+    /* Annotations of complex targets does not produce anything
+       under annotations future */
+    if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+        return 1;
+    }
+
     /* Annotations are only evaluated in a module or class. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
         c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
@@ -5320,7 +5423,12 @@ compiler_annassign(struct compiler *c, stmt_ty s)
         if (s->v.AnnAssign.simple &&
             (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
              c->u->u_scope_type == COMPILER_SCOPE_CLASS)) {
-            VISIT(c, annexpr, s->v.AnnAssign.annotation);
+            if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+                VISIT(c, annexpr, s->v.AnnAssign.annotation)
+            }
+            else {
+                VISIT(c, expr, s->v.AnnAssign.annotation);
+            }
             ADDOP_NAME(c, LOAD_NAME, __annotations__, names);
             mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, mangled);
@@ -5378,8 +5486,9 @@ compiler_error(struct compiler *c, const char *format, ...)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    PyObject *args = Py_BuildValue("O(OiiO)", msg, c->c_filename,
-                                   c->u->u_lineno, c->u->u_col_offset + 1, loc);
+    PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
+                                   c->u->u_lineno, c->u->u_col_offset + 1, loc,
+                                   c->u->u_end_lineno, c->u->u_end_col_offset + 1);
     Py_DECREF(msg);
     if (args == NULL) {
         goto exit;
@@ -6175,8 +6284,7 @@ stackdepth(struct compiler *c)
         entryblock = b;
         nblocks++;
     }
-    if (!entryblock)
-        return 0;
+    assert(entryblock!= NULL);
     stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
     if (!stack) {
         PyErr_NoMemory();
@@ -6184,7 +6292,11 @@ stackdepth(struct compiler *c)
     }
 
     sp = stack;
-    stackdepth_push(&sp, entryblock, 0);
+    if (c->u->u_ste->ste_generator || c->u->u_ste->ste_coroutine) {
+        stackdepth_push(&sp, entryblock, 1);
+    } else {
+        stackdepth_push(&sp, entryblock, 0);
+    }
     while (sp != stack) {
         b = *--sp;
         int depth = b->b_startdepth;
@@ -6413,7 +6525,6 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
                     if (is_relative_jump(instr)) {
                         instr->i_oparg -= bsize;
                     }
-                    instr->i_oparg *= sizeof(_Py_CODEUNIT);
                     if (instrsize(instr->i_oparg) != isize) {
                         extended_arg_recompile = 1;
                     }
@@ -6605,6 +6716,13 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts)
         Py_DECREF(consts);
         goto error;
     }
+    if (maxdepth > MAX_ALLOWED_STACK_USE) {
+        PyErr_Format(PyExc_SystemError,
+                     "excessive stack use: stack is %d deep",
+                     maxdepth);
+        Py_DECREF(consts);
+        goto error;
+    }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
                                    posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, a->a_bytecode, consts, names,
@@ -6659,10 +6777,45 @@ static int
 normalize_basic_block(basicblock *bb);
 
 static int
-optimize_cfg(struct assembler *a, PyObject *consts);
+optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 
 static int
 ensure_exits_have_lineno(struct compiler *c);
+
+static int
+insert_generator_prefix(struct compiler *c, basicblock *entryblock) {
+
+    int flags = compute_code_flags(c);
+    if (flags < 0) {
+        return -1;
+    }
+    int kind;
+    if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        if (flags & CO_COROUTINE) {
+            kind = 1;
+        }
+        else if (flags & CO_ASYNC_GENERATOR) {
+            kind = 2;
+        }
+        else {
+            kind = 0;
+        }
+    }
+    else {
+        return 0;
+    }
+    if (compiler_next_instr(entryblock) < 0) {
+        return -1;
+    }
+    for (int i = entryblock->b_iused-1; i > 0; i--) {
+        entryblock->b_instr[i] = entryblock->b_instr[i-1];
+    }
+    entryblock->b_instr[0].i_opcode = GEN_START;
+    entryblock->b_instr[0].i_oparg = kind;
+    entryblock->b_instr[0].i_lineno = -1;
+    entryblock->b_instr[0].i_target = NULL;
+    return 0;
+}
 
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
@@ -6700,10 +6853,15 @@ assemble(struct compiler *c, int addNone)
         nblocks++;
         entryblock = b;
     }
+    assert(entryblock != NULL);
+
+    if (insert_generator_prefix(c, entryblock)) {
+        goto error;
+    }
 
     /* Set firstlineno if it wasn't explicitly set. */
     if (!c->u->u_firstlineno) {
-        if (entryblock && entryblock->b_instr && entryblock->b_instr->i_lineno)
+        if (entryblock->b_instr && entryblock->b_instr->i_lineno)
             c->u->u_firstlineno = entryblock->b_instr->i_lineno;
        else
             c->u->u_firstlineno = 1;
@@ -6718,7 +6876,7 @@ assemble(struct compiler *c, int addNone)
     if (consts == NULL) {
         goto error;
     }
-    if (optimize_cfg(&a, consts)) {
+    if (optimize_cfg(c, &a, consts)) {
         goto error;
     }
 
@@ -6759,15 +6917,6 @@ assemble(struct compiler *c, int addNone)
     return co;
 }
 
-#undef PyAST_Compile
-PyCodeObject *
-PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
-              PyArena *arena)
-{
-    return PyAST_CompileEx(mod, filename, flags, -1, arena);
-}
-
-
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -6775,7 +6924,8 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
    Called with codestr pointing to the first LOAD_CONST.
 */
 static int
-fold_tuple_on_constants(struct instr *inst,
+fold_tuple_on_constants(struct compiler *c,
+                        struct instr *inst,
                         int n, PyObject *consts)
 {
     /* Pre-conditions */
@@ -6800,15 +6950,27 @@ fold_tuple_on_constants(struct instr *inst,
         Py_INCREF(constant);
         PyTuple_SET_ITEM(newconst, i, constant);
     }
-    Py_ssize_t index = PyList_GET_SIZE(consts);
-    if ((size_t)index >= (size_t)INT_MAX - 1) {
+    if (merge_const_one(c, &newconst) == 0) {
         Py_DECREF(newconst);
-        PyErr_SetString(PyExc_OverflowError, "too many constants");
         return -1;
     }
-    if (PyList_Append(consts, newconst)) {
-        Py_DECREF(newconst);
-        return -1;
+
+    Py_ssize_t index;
+    for (index = 0; index < PyList_GET_SIZE(consts); index++) {
+        if (PyList_GET_ITEM(consts, index) == newconst) {
+            break;
+        }
+    }
+    if (index == PyList_GET_SIZE(consts)) {
+        if ((size_t)index >= (size_t)INT_MAX - 1) {
+            Py_DECREF(newconst);
+            PyErr_SetString(PyExc_OverflowError, "too many constants");
+            return -1;
+        }
+        if (PyList_Append(consts, newconst)) {
+            Py_DECREF(newconst);
+            return -1;
+        }
     }
     Py_DECREF(newconst);
     for (int i = 0; i < n; i++) {
@@ -6845,7 +7007,7 @@ eliminate_jump_to_jump(basicblock *bb, int opcode) {
 
 /* Optimization */
 static int
-optimize_basic_block(basicblock *bb, PyObject *consts)
+optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
 {
     assert(PyList_CheckExact(consts));
     struct instr nop;
@@ -6933,7 +7095,7 @@ optimize_basic_block(basicblock *bb, PyObject *consts)
                     break;
                 }
                 if (i >= oparg) {
-                    if (fold_tuple_on_constants(inst-oparg, oparg, consts)) {
+                    if (fold_tuple_on_constants(c, inst-oparg, oparg, consts)) {
                         goto error;
                     }
                 }
@@ -7267,10 +7429,10 @@ propogate_line_numbers(struct assembler *a) {
 */
 
 static int
-optimize_cfg(struct assembler *a, PyObject *consts)
+optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
 {
     for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        if (optimize_basic_block(b, consts)) {
+        if (optimize_basic_block(c, b, consts)) {
             return -1;
         }
         clean_basic_block(b, -1);
