@@ -347,7 +347,8 @@ they are eagerly evaluated at runtime in the corresponding scope and then stored
 :attr:`__annotations__`.
 
 For expressions as assignment targets, the annotations are evaluated if
-in class or module scope, but not stored.
+in class or module scope (regardless of whether :pep:`563` is enabled), but not
+stored.
 
 If a name is annotated in a function scope, then this name is local for
 that scope. Annotations are never evaluated and stored in function scopes.
