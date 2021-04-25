@@ -1886,7 +1886,7 @@ features:
       Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` for *src* and *dst*.
+      Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       On Windows, now opens reparse points that represent another path
