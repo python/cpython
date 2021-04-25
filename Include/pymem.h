@@ -50,6 +50,7 @@ extern "C" {
 */
 
 PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 

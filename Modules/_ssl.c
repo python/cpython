@@ -5035,7 +5035,7 @@ _ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
 /*[clinic input]
 _ssl.RAND_status
 
-Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.
+Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.
 
 It is necessary to seed the PRNG with RAND_add() on some platforms before
 using the ssl() function.
@@ -5043,9 +5043,9 @@ using the ssl() function.
 
 static PyObject *
 _ssl_RAND_status_impl(PyObject *module)
-/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=8a774b02d1dc81f3]*/
+/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=d5ae5aea52f36e01]*/
 {
-    return PyLong_FromLong(RAND_status());
+    return PyBool_FromLong(RAND_status());
 }
 
 /*[clinic input]
