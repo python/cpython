@@ -1051,6 +1051,14 @@ The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
+statistics
+----------
+
+Added :func:`~statistics.covariance`, Pearson's
+:func:`~statistics.correlation`, and simple
+:func:`~statistics.linear_regression` functions.
+(Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
+
 site
 ----
 
@@ -1348,6 +1356,19 @@ Deprecated
   3.3, when it was made an alias to :class:`str`.  It is now deprecated,
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
+
+* :func:`asyncio.get_event_loop` emits now a deprecation warning if there is
+  no running event loop. In future it will be an alias of
+  :func:`~asyncio.get_running_loop`.
+  :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
+  or :class:`~asyncio.Task` objects emit now
+  a deprecation warning if there is no running event loop and no explicit
+  *loop* argument is passed: :func:`~asyncio.ensure_future`,
+  :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
+  :func:`~asyncio.shield`, :func:`~asyncio.as_completed` and constructors of
+  :class:`~asyncio.Future`, :class:`~asyncio.Task`,
+  :class:`~asyncio.StreamReader`, :class:`~asyncio.StreamReaderProtocol`.
+  (Contributed by Serhiy Storchaka in :issue:`39529`.)
 
 * The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly
