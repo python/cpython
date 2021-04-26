@@ -266,7 +266,7 @@ class EditorWindow:
         io.set_filename_change_hook(self.filename_change_hook)
         self.good_load = False
         self.set_indentation_params(False)
-        self.color = None # initialized below in self.update_colors()
+        self.color = None # initialized below in self.ResetColorizer
         self.code_context = None # optionally initialized later below
         self.line_numbers = None # optionally initialized later below
         if filename:
@@ -279,7 +279,7 @@ class EditorWindow:
                 io.set_filename(filename)
                 self.good_load = True
 
-        self.update_colors()
+        self.ResetColorizer()
         self.saved_change_hook()
         self.update_recent_files_list()
         self.load_extensions()
@@ -794,22 +794,11 @@ class EditorWindow:
         self.color = None
 
     def ResetColorizer(self):
-        """Reset the syntax colorizer.
-
-        For example, this is called after filename changes, since the file
-        type can affect the highlighting.
-        """
+        "Update the color theme"
+        # Called from self.filename_change_hook and from configdialog.py
         self._rmcolorizer()
         self._addcolorizer()
-
-    def update_colors(self):
-        """Update the color theme.
-
-        For example, this is called after highlighting config changes.
-        """
         EditorWindow.color_config(self.text)
-
-        self.ResetColorizer()
 
         if self.code_context is not None:
             self.code_context.update_highlight_colors()

@@ -949,12 +949,12 @@ class PyShell(OutputWindow):
 
     def ResetFont(self):
         super().ResetFont()
-        # Update the sidebar widget, since its width affects
-        # the width of the text widget.
-        self.shell_sidebar.update_font()
 
-    def update_colors(self):
-        super().update_colors()
+        if self.shell_sidebar is not None:
+            self.shell_sidebar.update_font()
+
+    def ResetColorizer(self):
+        super().ResetColorizer()
 
         theme = idleConf.CurrentTheme()
         tag_colors = {
@@ -966,7 +966,6 @@ class PyShell(OutputWindow):
         for tag, tag_colors_config in tag_colors.items():
             self.text.tag_configure(tag, **tag_colors_config)
 
-        # During __init__, update_colors() is called before the sidebar is created.
         if self.shell_sidebar is not None:
             self.shell_sidebar.update_colors()
 
