@@ -471,7 +471,7 @@ Connection Objects
 
       Loadable extensions are disabled by default. See [#f1]_.
 
-      .. audit-event:: sqlite3.enable_load_extension enabled sqlite3.enable_load_extension
+      .. audit-event:: sqlite3.enable_load_extension connection,enabled sqlite3.enable_load_extension
 
       .. versionadded:: 3.2
 
