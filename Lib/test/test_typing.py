@@ -3016,10 +3016,10 @@ class GetTypeHintTests(BaseTestCase):
             {'other': MySet[T], 'return': MySet[T]}
         )
 
-    def test_get_type_hints_classes(self):
+    def test_get_type_hints_classes_str_annotations(self):
         class Foo:
             y = str
-            x: y
+            x: 'y'
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
 
