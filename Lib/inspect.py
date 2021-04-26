@@ -127,6 +127,8 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
         obj_dict = getattr(obj, '__dict__', None)
         if obj_dict and hasattr(obj_dict, 'get'):
             ann = obj_dict.get('__annotations__', None)
+            if isinstance(ann, types.GetSetDescriptorType):
+                ann = None
         else:
             ann = None
 
@@ -136,11 +138,13 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
             module = sys.modules.get(module_name, None)
             if module:
                 obj_globals = getattr(module, '__dict__', None)
+        obj_locals = dict(vars(obj))
         unwrap = obj
     elif isinstance(obj, types.ModuleType):
         # module
         ann = getattr(obj, '__annotations__', None)
         obj_globals = getattr(obj, '__dict__')
+        obj_locals = None
         unwrap = None
     elif callable(obj):
         # this includes types.Function, types.BuiltinFunctionType,
@@ -148,6 +152,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
         # "class funclike" from Lib/test/test_inspect... on and on it goes.
         ann = getattr(obj, '__annotations__', None)
         obj_globals = getattr(obj, '__globals__', None)
+        obj_locals = None
         unwrap = obj
     else:
         raise TypeError(f"{obj!r} is not a module, class, or callable.")
@@ -180,6 +185,8 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
 
     if globals is None:
         globals = obj_globals
+    if locals is None:
+        locals = obj_locals
 
     return_value = {key:
         value if not isinstance(value, str) else eval(value, globals, locals)

@@ -1377,6 +1377,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
         self.assertEqual(inspect.get_annotations(wrapped, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
 
+        # test that local namespace lookups work
+        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': int})
+
 
 class TestIsDataDescriptor(unittest.TestCase):
 
