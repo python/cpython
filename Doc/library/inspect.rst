@@ -584,16 +584,20 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
-   Raises :exc:`ValueError` if no signature can be provided, and
-   :exc:`TypeError` if that type of object is not supported.
-
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
    :func:`inspect.get_annotations()`.  The
    ``global``, ``locals``, and ``eval_str`` parameters are passed
    into :func:`inspect.get_annotations()` when resolving the
-   annotations.
+   annotations; see the documentation for :func:`inspect.get_annotations()`
+   for instructions on how to use these parameters.
+
+   Raises :exc:`ValueError` if no signature can be provided, and
+   :exc:`TypeError` if that type of object is not supported.  Also,
+   if the annotations are stringized, and ``eval_str`` is not false,
+   the ``eval()`` call(s) to un-stringize the annotations could
+   potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
