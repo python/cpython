@@ -1,0 +1,1 @@
+Allow using custom sys.displayhook's with doctest.

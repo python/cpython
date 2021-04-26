@@ -1448,7 +1448,6 @@ DocTestRunner objects
    runner compares expected output to actual output, and how it displays failures.
    For more information, see section :ref:`doctest-options`.
 
-
    :class:`DocTestParser` defines the following methods:
 
 
@@ -1515,6 +1514,10 @@ DocTestRunner objects
       output checker, and the results are formatted by the
       :meth:`DocTestRunner.report_\*` methods.
 
+      .. versionchanged:: 3.12
+          Added support for testing examples with a customized
+          :func:`sys.displayhook` value.  Previously, this wasn't allowed and
+          the method was always using the :func:`sys.__displayhook__` anyway.
 
    .. method:: summarize(verbose=None)
 
