@@ -631,4 +631,4 @@ Exceptions
 
    Raised when an implicitly defined :meth:`__setattr__` or
    :meth:`__delattr__` is called on a dataclass which was defined with
-   ``frozen=True``.
+   ``frozen=True``. It is a subclass of :exc:`AttributeError`.
