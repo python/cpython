@@ -653,10 +653,10 @@ zlib_Compress_compress_impl(compobject *self, Py_buffer *data)
     Py_ssize_t ibuflen, obuflen = DEF_BUF_SIZE;
     int err;
 
+    ENTER_ZLIB(self);
+
     self->zst.next_in = data->buf;
     ibuflen = data->len;
-
-    ENTER_ZLIB(self);
 
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
@@ -771,14 +771,14 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
     else
         hard_limit = max_length;
 
+    ENTER_ZLIB(self);
+
     self->zst.next_in = data->buf;
     ibuflen = data->len;
 
     /* limit amount of data allocated to max_length */
     if (max_length && obuflen > max_length)
         obuflen = max_length;
-
-    ENTER_ZLIB(self);
 
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
