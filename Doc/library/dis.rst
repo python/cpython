@@ -1071,8 +1071,12 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LOAD_DEREF (i)
 
-   Loads the cell contained in slot *i* of the cell and free variable storage.
+   Loads the cell contained in slot ``i - len(co_varnames)`` of the cell
+   and free variable storage.
    Pushes a reference to the object the cell contains on the stack.
+
+   .. versionchanged:: 3.10
+      ``i`` is offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_CLASSDEREF (i)
@@ -1083,19 +1087,29 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.10
+      ``i`` is offset by the length of ``co_varnames``.
+
 
 .. opcode:: STORE_DEREF (i)
 
-   Stores TOS into the cell contained in slot *i* of the cell and free variable
-   storage.
+   Stores TOS into the cell contained in slot ``i - len(co_varnames)``
+   of the cell and free variable storage.
+
+   .. versionchanged:: 3.10
+      ``i`` is offset by the length of ``co_varnames``.
 
 
 .. opcode:: DELETE_DEREF (i)
 
-   Empties the cell contained in slot *i* of the cell and free variable storage.
+   Empties the cell contained in slot ``i - len(co_varnames)``
+   of the cell and free variable storage.
    Used by the :keyword:`del` statement.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.10
+      ``i`` is offset by the length of ``co_varnames``.
 
 
 .. opcode:: RAISE_VARARGS (argc)
