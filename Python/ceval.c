@@ -1711,7 +1711,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     assert(!_PyErr_Occurred(tstate));
 #endif
 
-main_loop:
     for (;;) {
         assert(stack_pointer >= f->f_valuestack); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
@@ -2398,7 +2397,6 @@ main_loop:
 
         case TARGET(RETURN_VALUE): {
             retval = POP();
-            assert(f->f_iblock == 0);
             assert(EMPTY());
             f->f_state = FRAME_RETURNED;
             f->f_stackdepth = 0;
@@ -2660,10 +2658,8 @@ main_loop:
                 _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
                 goto error;
             }
-            PyTryBlock *b = &f->f_blockstack[f->f_iblock];
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
-            assert(STACK_LEVEL() == (b)->b_level + 4);
             type = POP();
             value = POP();
             traceback = POP();
@@ -2683,7 +2679,7 @@ main_loop:
         }
 
         case TARGET(POP_BLOCK): {
-            PyFrame_BlockPop(f);
+            /* PyFrame_BlockPop(f); */
             DISPATCH();
         }
 
@@ -4082,23 +4078,15 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
-            PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL());
             DISPATCH();
         }
 
         case TARGET(SETUP_CLEANUP): {
-            PyFrame_BlockSetup(f, SETUP_CLEANUP, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL());
             DISPATCH();
         }
 
         case TARGET(SETUP_ASYNC_WITH): {
             PREDICTED(SETUP_ASYNC_WITH);
-            /* Setup the finally block before pushing the result
-               of __aenter__ on the stack. */
-            PyFrame_BlockSetup(f, SETUP_CLEANUP, INSTR_OFFSET() + oparg,
-                               STACK_LEVEL()-1);
             DISPATCH();
         }
 
@@ -4541,27 +4529,23 @@ error:
         }
 exception_unwind:
         f->f_state = FRAME_UNWINDING;
-        if (f->f_iblock == 0) {
-            // No handlers, so exit.
-            break;
-        }
-        /* Pop the current block. */
-        PyTryBlock *b = &f->f_blockstack[--f->f_iblock];
         /* We can't use f->f_lasti here, as RERAISE may have set it */
         int lasti = INSTR_OFFSET()-1;
         PyTryBlock from_table = get_exception_handler(co, lasti);
-        assert(from_table.b_handler == b->b_handler);
-        assert(from_table.b_type == b->b_type);
-        assert(from_table.b_level == b->b_level);
-        assert(b->b_type == SETUP_FINALLY || b->b_type == SETUP_CLEANUP);
-        assert(STACK_LEVEL() >= b->b_level);
-        while (STACK_LEVEL() > (b)->b_level) {
+        if (from_table.b_handler < 0) {
+            // No handlers, so exit.
+            break;
+        }
+
+        assert(from_table.b_type == SETUP_FINALLY || from_table.b_type == SETUP_CLEANUP);
+        assert(STACK_LEVEL() >= from_table.b_level);
+        while (STACK_LEVEL() > from_table.b_level) {
             PyObject *v = POP();
             Py_XDECREF(v);
         }
         PyObject *exc, *val, *tb;
-        int handler = b->b_handler;
-        if (b->b_type == SETUP_CLEANUP) {
+        int handler = from_table.b_handler;
+        if (from_table.b_type == SETUP_CLEANUP) {
             PyObject *lasti = PyLong_FromLong(f->f_lasti);
             if (lasti == NULL) {
                 goto exception_unwind;

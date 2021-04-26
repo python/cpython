@@ -6589,6 +6589,19 @@ label_exception_targets(basicblock *entry) {
     return 0;
 }
 
+
+static void
+convert_exception_handlers_to_nops(basicblock *entry) {
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *instr = &b->b_instr[i];
+            if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+                instr->i_opcode = NOP;
+            }
+        }
+    }
+}
+
 static inline void
 write_except_byte(struct assembler *a, int byte) {
     unsigned char *p = (unsigned char *) PyBytes_AS_STRING(a->a_except_table);
@@ -7141,13 +7154,6 @@ assemble(struct compiler *c, int addNone)
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
-    /* Emit code. */
-    for(b = entryblock; b != NULL; b = b->b_next) {
-        for (j = 0; j < b->b_iused; j++)
-            if (!assemble_emit(&a, &b->b_instr[j]))
-                goto error;
-    }
-    /* We need to compute stack depths before the exception table */
     int maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;
@@ -7158,6 +7164,15 @@ assemble(struct compiler *c, int addNone)
                      maxdepth);
         goto error;
     }
+    convert_exception_handlers_to_nops(entryblock);
+
+    /* Emit code. */
+    for(b = entryblock; b != NULL; b = b->b_next) {
+        for (j = 0; j < b->b_iused; j++)
+            if (!assemble_emit(&a, &b->b_instr[j]))
+                goto error;
+    }
+
     if (!assemble_exception_table(&a)) {
         return 0;
     }

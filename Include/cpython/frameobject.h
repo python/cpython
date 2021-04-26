@@ -43,9 +43,7 @@ struct _frame {
 
     int f_lasti;                /* Last instruction if called */
     int f_lineno;               /* Current line number. Only valid if non-zero */
-    int f_iblock;               /* index in f_blockstack */
     PyFrameState f_state;       /* What state the frame is in */
-    PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
 };
 
@@ -76,11 +74,6 @@ _PyFrame_New_NoTrack(PyThreadState *, PyFrameConstructor *, PyObject *);
 
 
 /* The rest of the interface is specific for frame objects */
-
-/* Block management functions */
-
-PyAPI_FUNC(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
-PyAPI_FUNC(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
 
 /* Conversions between "fast locals" and locals in dictionary */
 

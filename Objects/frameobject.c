@@ -301,15 +301,7 @@ frame_stack_pop(PyFrameObject *f)
 static void
 frame_block_unwind(PyFrameObject *f)
 {
-    assert(f->f_stackdepth >= 0);
-    assert(f->f_iblock > 0);
-    f->f_iblock--;
-    PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    intptr_t delta = f->f_stackdepth - b->b_level;
-    while (delta > 0) {
-        frame_stack_pop(f);
-        delta--;
-    }
+    (void)f;
 }
 
 
@@ -845,7 +837,6 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     f->f_gen = NULL;
     f->f_lasti = -1;
     f->f_lineno = 0;
-    f->f_iblock = 0;
     f->f_state = FRAME_CREATED;
     // f_blockstack and f_localsplus initialized by frame_alloc()
     return f;
@@ -875,33 +866,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         _PyObject_GC_TRACK(f);
     }
     return f;
-}
-
-
-/* Block management */
-
-void
-PyFrame_BlockSetup(PyFrameObject *f, int type, int handler, int level)
-{
-    PyTryBlock *b;
-    if (f->f_iblock >= CO_MAXBLOCKS) {
-        Py_FatalError("block stack overflow");
-    }
-    b = &f->f_blockstack[f->f_iblock++];
-    b->b_type = type;
-    b->b_level = level;
-    b->b_handler = handler;
-}
-
-PyTryBlock *
-PyFrame_BlockPop(PyFrameObject *f)
-{
-    PyTryBlock *b;
-    if (f->f_iblock <= 0) {
-        Py_FatalError("block stack underflow");
-    }
-    b = &f->f_blockstack[--f->f_iblock];
-    return b;
 }
 
 /* Convert between "fast" version of locals and dictionary version.
