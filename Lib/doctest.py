@@ -1533,9 +1533,8 @@ class DocTestRunner:
         self.save_linecache_getlines = linecache.getlines
         linecache.getlines = self.__patched_linecache_getlines
 
-        # Make sure sys.displayhook just prints the value to stdout
+        # Make sure sys.displayhook restored at the end
         save_displayhook = sys.displayhook
-        sys.displayhook = sys.__displayhook__
 
         try:
             return self.__run(test, compileflags, out)
