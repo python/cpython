@@ -1,0 +1,4 @@
+For backwards compatbility with previous minor versions of Python,
+:func:`typing.get_type_hints` searches through globals first then locals when
+evaluating stringized type annotations (string forward references) inside a
+class.
