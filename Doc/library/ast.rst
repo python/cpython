@@ -1282,10 +1282,9 @@ Pattern matching
                     subject=Name(id='x', ctx=Load()),
                     cases=[
                         match_case(
-                            pattern=List(
-                                elts=[
-                                    Name(id='x', ctx=Store())],
-                                ctx=Load()),
+                            pattern=MatchSequence(
+                                patterns=[
+                                    MatchAs(name='x')]),
                             guard=Compare(
                                 left=Name(id='x', ctx=Load()),
                                 ops=[
@@ -1296,10 +1295,11 @@ Pattern matching
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
                         match_case(
-                            pattern=Call(
-                                func=Name(id='tuple', ctx=Load()),
-                                args=[],
-                                keywords=[]),
+                            pattern=MatchClass(
+                                cls=Name(id='tuple', ctx=Load()),
+                                patterns=[],
+                                kwd_attrs=[],
+                                kwd_patterns=[]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
