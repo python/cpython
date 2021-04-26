@@ -2941,7 +2941,7 @@ removed. They were deprecated since Python 3.7.
 .. nonce: o1xFC0
 .. section: Library
 
-Deprecated accepting floats with integer value (like ``5.0``) in
+Deprecated accepting floats with integral value (like ``5.0``) in
 :func:`math.factorial`.
 
 ..

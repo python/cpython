@@ -1438,7 +1438,7 @@ class BuiltinTest(unittest.TestCase):
                      "test will fail;  failure is probably due to a "
                      "buggy system round function")
     def test_round_large(self):
-        # Issue #1869: integer floats should remain unchanged
+        # Issue #1869: integral floats should remain unchanged
         self.assertEqual(round(5e15-1), 5e15-1)
         self.assertEqual(round(5e15), 5e15)
         self.assertEqual(round(5e15+1), 5e15+1)

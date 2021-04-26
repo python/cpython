@@ -585,7 +585,7 @@ class`. float also has the following additional methods.
 
 .. method:: float.is_integer()
 
-   Return ``True`` if the float instance is finite with integer
+   Return ``True`` if the float instance is finite with integral
    value, and ``False`` otherwise::
 
       >>> (-2.0).is_integer()

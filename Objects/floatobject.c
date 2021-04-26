@@ -640,7 +640,7 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
     /* fmod is typically exact, so vx-mod is *mathematically* an
        exact multiple of wx.  But this is fp arithmetic, and fp
        vx - mod is an approximation; the result is that div may
-       not be an exact integer value after the division, although
+       not be an exact integral value after the division, although
        it will always be very close to one.
     */
     div = (vx - *mod) / wx;
@@ -657,7 +657,7 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
            it has the same sign as the denominator. */
         *mod = copysign(0.0, wx);
     }
-    /* snap quotient to nearest integer value */
+    /* snap quotient to nearest integral value */
     if (div) {
         *floordiv = floor(div);
         if (div - *floordiv > 0.5) {
@@ -1563,7 +1563,7 @@ float_as_integer_ratio_impl(PyObject *self)
         float_part *= 2.0;
         exponent--;
     }
-    /* self == float_part * 2**exponent exactly and float_part is integer.
+    /* self == float_part * 2**exponent exactly and float_part is integral.
        If FLT_RADIX != 2, the 300 steps may leave a tiny fractional part
        to be truncated by PyLong_FromDouble(). */
 

@@ -90,7 +90,7 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_char, b"a")
 
     # disabled: would now (correctly) raise a RuntimeWarning about
-    # a memory leak.  A callback function cannot return a non-integer
+    # a memory leak.  A callback function cannot return a non-integral
     # C type without causing a memory leak.
     @unittest.skip('test disabled')
     def test_char_p(self):

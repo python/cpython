@@ -2338,7 +2338,7 @@ Emulating numeric types
 
 The following methods can be defined to emulate numeric objects. Methods
 corresponding to operations that are not supported by the particular kind of
-number implemented (e.g., bitwise operations for non-integer numbers) should be
+number implemented (e.g., bitwise operations for non-integral numbers) should be
 left undefined.
 
 

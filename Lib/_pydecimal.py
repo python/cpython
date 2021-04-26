@@ -1877,7 +1877,7 @@ class Decimal(object):
         if n is not None:
             # two-argument form: use the equivalent quantize call
             if not isinstance(n, int):
-                raise TypeError('Second argument to round should be integer')
+                raise TypeError('Second argument to round should be integral')
             exp = _dec_from_triple(0, '1', -n)
             return self.quantize(exp)
 
@@ -2122,7 +2122,7 @@ class Decimal(object):
         # required to be an integer
         if xc == 1:
             xe *= yc
-            # result is now 10**(xe * 10**ye);  xe * 10**ye must be integer
+            # result is now 10**(xe * 10**ye);  xe * 10**ye must be integral
             while xe % 10 == 0:
                 xe //= 10
                 ye += 1
@@ -2294,7 +2294,7 @@ class Decimal(object):
         three argument form, the following restrictions on the
         arguments hold:
 
-         - all three arguments must be integer
+         - all three arguments must be integral
          - other must be nonnegative
          - either self or other (or both) must be nonzero
          - modulo must be nonzero and must have at most p digits,
@@ -5142,15 +5142,15 @@ class Context(object):
         """Raises a to the power of b, to modulo if given.
 
         With two arguments, compute a**b.  If a is negative then b
-        must be integer.  The result will be inexact unless b is
-        integer and the result is finite and can be expressed exactly
+        must be integral.  The result will be inexact unless b is
+        integral and the result is finite and can be expressed exactly
         in 'precision' digits.
 
         With three arguments, compute (a**b) % modulo.  For the
         three argument form, the following restrictions on the
         arguments hold:
 
-         - all three arguments must be integer
+         - all three arguments must be integral
          - b must be nonnegative
          - at least one of a or b must be nonzero
          - modulo must be nonzero and have at most 'precision' digits

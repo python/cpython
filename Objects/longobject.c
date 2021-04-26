@@ -294,7 +294,7 @@ PyLong_FromDouble(double dval)
 {
     /* Try to get out cheap if this fits in a long. When a finite value of real
      * floating type is converted to an integer type, the value is truncated
-     * toward zero. If the value of the integer part cannot be represented by
+     * toward zero. If the value of the integral part cannot be represented by
      * the integer type, the behavior is undefined. Thus, we must check that
      * value is in range (LONG_MIN - 1, LONG_MAX + 1). If a long has more bits
      * of precision than a double, casting LONG_MIN - 1 to double may yield an

@@ -45,7 +45,7 @@ PyAPI_FUNC(int) _PyThread_at_fork_reinit(PyThread_type_lock *lock);
 #endif  /* HAVE_FORK */
 #endif  /* !Py_LIMITED_API */
 
-/* PY_TIMEOUT_T is the integer type used to specify timeouts when waiting
+/* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
    on a lock (see PyThread_acquire_lock_timed() below).
    PY_TIMEOUT_MAX is the highest usable value (in microseconds) of that
    type, and depends on the system threading API.

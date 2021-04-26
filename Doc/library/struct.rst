@@ -291,7 +291,7 @@ Notes:
    format <half precision format_>`_ for more information.
 
 
-A format character may be preceded by an integer repeat count.  For example,
+A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
 Whitespace characters between formats are ignored; a count and its format must

@@ -68,11 +68,11 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integer or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
 
    .. deprecated:: 3.9
-      Accepting floats with integer values (like ``5.0``) is deprecated.
+      Accepting floats with integral values (like ``5.0``) is deprecated.
 
 
 .. function:: floor(x)

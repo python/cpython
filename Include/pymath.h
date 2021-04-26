@@ -215,15 +215,15 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
                                          (X) == -Py_HUGE_VAL))
 #endif
 
-/* Return whether integer type *type* is signed or not. */
+/* Return whether integral type *type* is signed or not. */
 #define _Py_IntegralTypeSigned(type) ((type)(-1) < 0)
-/* Return the maximum value of integer type *type*. */
+/* Return the maximum value of integral type *type*. */
 #define _Py_IntegralTypeMax(type) ((_Py_IntegralTypeSigned(type)) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
-/* Return the minimum value of integer type *type*. */
+/* Return the minimum value of integral type *type*. */
 #define _Py_IntegralTypeMin(type) ((_Py_IntegralTypeSigned(type)) ? -_Py_IntegralTypeMax(type) - 1 : 0)
-/* Check whether *v* is in the range of integer type *type*. This is most
+/* Check whether *v* is in the range of integral type *type*. This is most
  * useful if *v* is floating-point, since demoting a floating-point *v* to an
- * integer type that cannot represent *v*'s integer part is undefined
+ * integral type that cannot represent *v*'s integral part is undefined
  * behavior. */
 #define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 

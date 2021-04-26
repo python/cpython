@@ -592,7 +592,7 @@ the argument list is also provided by the Python program, through the same
 interface that specified the callback function.  It can then be saved and used
 in the same manner as the function object.  In other cases, you may have to
 construct a new tuple to pass as the argument list.  The simplest way to do this
-is to call :c:func:`Py_BuildValue`.  For example, if you want to pass an integer
+is to call :c:func:`Py_BuildValue`.  For example, if you want to pass an integral
 event code, you might use the following code::
 
    PyObject *arglist;

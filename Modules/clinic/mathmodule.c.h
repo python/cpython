@@ -50,7 +50,7 @@ PyDoc_STRVAR(math_factorial__doc__,
 "\n"
 "Find x!.\n"
 "\n"
-"Raise a ValueError if x is negative or non-integer.");
+"Raise a ValueError if x is negative or non-integral.");
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
@@ -865,4 +865,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c7c8591f68b93ffb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d88ee9340bf8ef89 input=a9049054013a1b77]*/

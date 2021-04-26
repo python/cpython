@@ -1117,7 +1117,7 @@ class Thread:
     if _HAVE_THREAD_NATIVE_ID:
         @property
         def native_id(self):
-            """Native integer thread ID of this thread, or None if it has not been started.
+            """Native integral thread ID of this thread, or None if it has not been started.
 
             This is a non-negative integer. See the get_native_id() function.
             This represents the Thread ID as reported by the kernel.

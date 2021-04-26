@@ -1261,7 +1261,7 @@ uncaught :meth:`threading.Thread.run` exceptions are handled.
 Add a new :func:`threading.get_native_id` function and
 a :data:`~threading.Thread.native_id`
 attribute to the :class:`threading.Thread` class. These return the native
-integer Thread ID of the current thread assigned by the kernel.
+integral Thread ID of the current thread assigned by the kernel.
 This feature is only available on certain platforms, see
 :func:`get_native_id <threading.get_native_id>` for more information.
 (Contributed by Jake Tesler in :issue:`36084`.)

@@ -68,7 +68,7 @@ module math
 
 /*
    sin(pi*x), giving accurate results for all finite x (especially x
-   integer or close to an integer).  This is here for use in the
+   integral or close to an integer).  This is here for use in the
    reflection formula for the gamma function.  It conforms to IEEE
    754-2008 for finite arguments, but not for infinities or nans.
 */
@@ -2045,12 +2045,12 @@ math.factorial
 
 Find x!.
 
-Raise a ValueError if x is negative or non-integer.
+Raise a ValueError if x is negative or non-integral.
 [clinic start generated code]*/
 
 static PyObject *
 math_factorial(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6686f26fae00e9ca input=c42347eb2d25c780]*/
+/*[clinic end generated code: output=6686f26fae00e9ca input=6d1c8105c0d91fb4]*/
 {
     long x, two_valuation;
     int overflow;

@@ -454,7 +454,7 @@ class GeneralFloatCases(unittest.TestCase):
             self.assertEqualAndEqualSign(pow_op(NAN, -0.0), 1.0)
 
             # x**y defers to complex pow for finite negative x and
-            # non-integer y.
+            # non-integral y.
             self.assertEqual(type(pow_op(-2.0, -0.5)), complex)
             self.assertEqual(type(pow_op(-2.0, 0.5)), complex)
             self.assertEqual(type(pow_op(-1.0, -0.5)), complex)
