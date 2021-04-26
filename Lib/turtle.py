@@ -464,20 +464,18 @@ class TurtleScreenBase(object):
        a corresponding TurtleScreenBase class has to be implemented.
     """
 
-    @staticmethod
-    def _blankimage():
+    def _blankimage(self):
         """return a blank image object
         """
-        img = TK.PhotoImage(width=1, height=1)
+        img = TK.PhotoImage(width=1, height=1, master=self.cv)
         img.blank()
         return img
 
-    @staticmethod
-    def _image(filename):
+    def _image(self, filename):
         """return an image object containing the
         imagedata from a gif-file named filename.
         """
-        return TK.PhotoImage(file=filename)
+        return TK.PhotoImage(file=filename, master=self.cv)
 
     def __init__(self, cv):
         self.cv = cv
@@ -811,7 +809,7 @@ class TurtleScreenBase(object):
         >>> screen.mainloop()
 
         """
-        TK.mainloop()
+        self.cv.tk.mainloop()
 
     def textinput(self, title, prompt):
         """Pop up a dialog window for input of a string.
@@ -966,6 +964,8 @@ class TurtleScreen(TurtleScreenBase):
 
     def __init__(self, cv, mode=_CFG["mode"],
                  colormode=_CFG["colormode"], delay=_CFG["delay"]):
+        TurtleScreenBase.__init__(self, cv)
+
         self._shapes = {
                    "arrow" : Shape("polygon", ((-10,0), (10,0), (0,10))),
                   "turtle" : Shape("polygon", ((0,16), (-2,14), (-1,10), (-4,7),
@@ -989,7 +989,6 @@ class TurtleScreen(TurtleScreenBase):
 
         self._bgpics = {"nopic" : ""}
 
-        TurtleScreenBase.__init__(self, cv)
         self._mode = mode
         self._delayvalue = delay
         self._colormode = _CFG["colormode"]
