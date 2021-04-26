@@ -225,12 +225,16 @@ Module functions and constants
    be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
+   .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
 
    .. versionchanged:: 3.7
       *database* can now also be a :term:`path-like object`, not only a string.
+
+   .. versionchanged:: 3.10
+      Added the ``sqlite3.connect/handle`` auditing event.
 
 
 .. function:: register_converter(typename, callable)
@@ -472,7 +476,7 @@ Connection Objects
       .. versionadded:: 3.2
 
       .. versionchanged:: 3.10
-         Added auditing event.
+         Added the ``sqlite3.enable_load_extension`` auditing event.
 
       .. literalinclude:: ../includes/sqlite3/load_extension.py
 
@@ -489,7 +493,7 @@ Connection Objects
       .. versionadded:: 3.2
 
       .. versionchanged:: 3.10
-         Added auditing event.
+         Added the ``sqlite3.load_extension`` auditing event.
 
    .. attribute:: row_factory
 
