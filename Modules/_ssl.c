@@ -3791,7 +3791,7 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
 {
     BIO *biobuf = NULL;
     X509_STORE *store;
-    int retval = 0, err, loaded = 0;
+    int retval = -1, err, loaded = 0;
 
     assert(filetype == SSL_FILETYPE_ASN1 || filetype == SSL_FILETYPE_PEM);
 
@@ -3845,23 +3845,32 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
     }
 
     err = ERR_peek_last_error();
-    if ((filetype == SSL_FILETYPE_ASN1) &&
-            (loaded > 0) &&
-            (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
-            (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
+    if (loaded == 0) {
+        const char *msg = NULL;
+        if (filetype == SSL_FILETYPE_PEM) {
+            msg = "no start line: cadata does not contain a certificate";
+        } else {
+            msg = "not enough data: cadata does not contain a certificate";
+        }
+        _setSSLError(get_state_ctx(self), msg, 0, __FILE__, __LINE__);
+        retval = -1;
+    } else if ((filetype == SSL_FILETYPE_ASN1) &&
+                    (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
+                    (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
         /* EOF ASN1 file, not an error */
         ERR_clear_error();
         retval = 0;
     } else if ((filetype == SSL_FILETYPE_PEM) &&
-                   (loaded > 0) &&
                    (ERR_GET_LIB(err) == ERR_LIB_PEM) &&
                    (ERR_GET_REASON(err) == PEM_R_NO_START_LINE)) {
         /* EOF PEM file, not an error */
         ERR_clear_error();
         retval = 0;
-    } else {
+    } else if (err != 0) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         retval = -1;
+    } else {
+        retval = 0;
     }
 
     BIO_free(biobuf);
@@ -5026,7 +5035,7 @@ _ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
 /*[clinic input]
 _ssl.RAND_status
 
-Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.
+Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.
 
 It is necessary to seed the PRNG with RAND_add() on some platforms before
 using the ssl() function.
@@ -5034,9 +5043,9 @@ using the ssl() function.
 
 static PyObject *
 _ssl_RAND_status_impl(PyObject *module)
-/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=8a774b02d1dc81f3]*/
+/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=d5ae5aea52f36e01]*/
 {
-    return PyLong_FromLong(RAND_status());
+    return PyBool_FromLong(RAND_status());
 }
 
 /*[clinic input]

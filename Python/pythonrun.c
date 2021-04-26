@@ -510,7 +510,9 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 
 static int
 parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
-                   Py_ssize_t *lineno, Py_ssize_t *offset, PyObject **text)
+                   Py_ssize_t *lineno, Py_ssize_t *offset,
+                   Py_ssize_t* end_lineno, Py_ssize_t* end_offset,
+                   PyObject **text)
 {
     Py_ssize_t hold;
     PyObject *v;
@@ -518,6 +520,8 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     _Py_IDENTIFIER(filename);
     _Py_IDENTIFIER(lineno);
     _Py_IDENTIFIER(offset);
+    _Py_IDENTIFIER(end_lineno);
+    _Py_IDENTIFIER(end_offset);
     _Py_IDENTIFIER(text);
 
     *message = NULL;
@@ -565,6 +569,44 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         *offset = hold;
     }
 
+    if (Py_TYPE(err) == (PyTypeObject*)PyExc_SyntaxError) {
+        v = _PyObject_GetAttrId(err, &PyId_end_lineno);
+        if (!v) {
+            PyErr_Clear();
+            *end_lineno = *lineno;
+        }
+        else if (v == Py_None) {
+            *end_lineno = *lineno;
+            Py_DECREF(v);
+        } else {
+            hold = PyLong_AsSsize_t(v);
+            Py_DECREF(v);
+            if (hold < 0 && PyErr_Occurred())
+                goto finally;
+            *end_lineno = hold;
+        }
+
+        v = _PyObject_GetAttrId(err, &PyId_end_offset);
+        if (!v) {
+            PyErr_Clear();
+            *end_offset = -1;
+        }
+        else if (v == Py_None) {
+            *end_offset = -1;
+            Py_DECREF(v);
+        } else {
+            hold = PyLong_AsSsize_t(v);
+            Py_DECREF(v);
+            if (hold < 0 && PyErr_Occurred())
+                goto finally;
+            *end_offset = hold;
+        }
+    } else {
+        // SyntaxError subclasses
+        *end_lineno = *lineno;
+        *end_offset = -1;
+    }
+
     v = _PyObject_GetAttrId(err, &PyId_text);
     if (!v)
         goto finally;
@@ -584,8 +626,9 @@ finally:
 }
 
 static void
-print_error_text(PyObject *f, Py_ssize_t offset, PyObject *text_obj)
+print_error_text(PyObject *f, Py_ssize_t offset, Py_ssize_t end_offset, PyObject *text_obj)
 {
+    size_t caret_repetitions = (end_offset > 0 && end_offset > offset) ? end_offset - offset : 1;
     /* Convert text to a char pointer; return if error */
     const char *text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)
@@ -645,7 +688,10 @@ print_error_text(PyObject *f, Py_ssize_t offset, PyObject *text_obj)
     while (--offset >= 0) {
         PyFile_WriteString(" ", f);
     }
-    PyFile_WriteString("^\n", f);
+    for (size_t caret_iter=0; caret_iter < caret_repetitions ; caret_iter++) {
+        PyFile_WriteString("^", f);
+    }
+    PyFile_WriteString("\n", f);
 }
 
 
@@ -865,11 +911,12 @@ print_exception(PyObject *f, PyObject *value)
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
         PyObject *message, *filename, *text;
-        Py_ssize_t lineno, offset;
+        Py_ssize_t lineno, offset, end_lineno, end_offset;
         err = 0;
         Py_DECREF(tmp);
         if (!parse_syntax_error(value, &message, &filename,
-                                &lineno, &offset, &text))
+                                &lineno, &offset,
+                                &end_lineno, &end_offset, &text))
             PyErr_Clear();
         else {
             PyObject *line;
@@ -886,7 +933,21 @@ print_exception(PyObject *f, PyObject *value)
             }
 
             if (text != NULL) {
-                print_error_text(f, offset, text);
+                Py_ssize_t line_size;
+                const char* error_line = PyUnicode_AsUTF8AndSize(text, &line_size);
+                // If the location of the error spawn multiple lines, we want
+                // to just print the first one and highlight everything until
+                // the end of that one since we don't support multi-line error
+                // messages.
+                if (end_lineno > lineno) {
+                    end_offset = (error_line != NULL) ? line_size : -1;
+                }
+                // Limit the ammount of '^' that we can display to
+                // the size of the text in the source line.
+                if (error_line != NULL && end_offset > line_size + 1) {
+                    end_offset = line_size + 1;
+                }
+                print_error_text(f, offset, end_offset, text);
                 Py_DECREF(text);
             }
 

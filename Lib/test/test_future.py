@@ -134,8 +134,12 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             ...
         async def g2(arg: {ann}) -> None:
             ...
+        class H:
+            var: {ann}
+            object.attr: {ann}
         var: {ann}
         var2: {ann} = None
+        object.attr: {ann}
         """
     )
 
@@ -342,6 +346,13 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("'inf'")
         self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
         self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
+
+    def test_annotation_with_complex_target(self):
+        with self.assertRaises(SyntaxError):
+            exec(
+                "from __future__ import annotations\n"
+                "object.__debug__: int"
+            )
 
 
 if __name__ == "__main__":

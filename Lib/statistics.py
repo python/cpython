@@ -73,6 +73,30 @@ second argument to the four "spread" functions to avoid recalculating it:
 2.5
 
 
+Statistics for relations between two inputs
+-------------------------------------------
+
+==================  ====================================================
+Function            Description
+==================  ====================================================
+covariance          Sample covariance for two variables.
+correlation         Pearson's correlation coefficient for two variables.
+linear_regression   Intercept and slope for simple linear regression.
+==================  ====================================================
+
+Calculate covariance, Pearson's correlation, and simple linear regression
+for two inputs:
+
+>>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+>>> covariance(x, y)
+0.75
+>>> correlation(x, y)  #doctest: +ELLIPSIS
+0.31622776601...
+>>> linear_regression(x, y)  #doctest:
+LinearRegression(intercept=1.5, slope=0.1)
+
+
 Exceptions
 ----------
 
@@ -98,6 +122,9 @@ __all__ = [
     'quantiles',
     'stdev',
     'variance',
+    'correlation',
+    'covariance',
+    'linear_regression',
 ]
 
 import math
@@ -110,7 +137,7 @@ from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
 from operator import itemgetter
-from collections import Counter
+from collections import Counter, namedtuple
 
 # === Exceptions ===
 
@@ -824,6 +851,113 @@ def pstdev(data, mu=None):
         return var.sqrt()
     except AttributeError:
         return math.sqrt(var)
+
+
+# === Statistics for relations between two inputs ===
+
+# See https://en.wikipedia.org/wiki/Covariance
+#     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+#     https://en.wikipedia.org/wiki/Simple_linear_regression
+
+
+def covariance(x, y, /):
+    """Covariance
+
+    Return the sample covariance of two inputs *x* and *y*. Covariance
+    is a measure of the joint variability of two inputs.
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+    >>> covariance(x, y)
+    0.75
+    >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> covariance(x, z)
+    -7.5
+    >>> covariance(z, x)
+    -7.5
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('covariance requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('covariance requires at least two data points')
+    xbar = mean(x)
+    ybar = mean(y)
+    total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return total / (n - 1)
+
+
+def correlation(x, y, /):
+    """Pearson's correlation coefficient
+
+    Return the Pearson's correlation coefficient for two inputs. Pearson's
+    correlation coefficient *r* takes values between -1 and +1. It measures the
+    strength and direction of the linear relationship, where +1 means very
+    strong, positive linear relationship, -1 very strong, negative linear
+    relationship, and 0 no linear relationship.
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> correlation(x, x)
+    1.0
+    >>> correlation(x, y)
+    -1.0
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('correlation requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('correlation requires at least two data points')
+    cov = covariance(x, y)
+    stdx = stdev(x)
+    stdy = stdev(y)
+    try:
+        return cov / (stdx * stdy)
+    except ZeroDivisionError:
+        raise StatisticsError('at least one of the inputs is constant')
+
+
+LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+
+
+def linear_regression(regressor, dependent_variable, /):
+    """Intercept and slope for simple linear regression
+
+    Return the intercept and slope of simple linear regression
+    parameters estimated using ordinary least squares. Simple linear
+    regression describes relationship between *regressor* and
+    *dependent variable* in terms of linear function::
+
+        dependent_variable = intercept + slope * regressor + noise
+
+    where ``intercept`` and ``slope`` are the regression parameters that are
+    estimated, and noise term is an unobserved random variable, for the
+    variability of the data that was not explained by the linear regression
+    (it is equal to the difference between prediction and the actual values
+    of dependent variable).
+
+    The parameters are returned as a named tuple.
+
+    >>> regressor = [1, 2, 3, 4, 5]
+    >>> noise = NormalDist().samples(5, seed=42)
+    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
+    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
+    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
+
+    """
+    n = len(regressor)
+    if len(dependent_variable) != n:
+        raise StatisticsError('linear regression requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('linear regression requires at least two data points')
+    try:
+        slope = covariance(regressor, dependent_variable) / variance(regressor)
+    except ZeroDivisionError:
+        raise StatisticsError('regressor is constant')
+    intercept = mean(dependent_variable) - slope * mean(regressor)
+    return LinearRegression(intercept=intercept, slope=slope)
 
 
 ## Normal Distribution #####################################################

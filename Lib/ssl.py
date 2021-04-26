@@ -258,7 +258,7 @@ if sys.platform == "win32":
     from _ssl import enum_certificates, enum_crls
 
 from socket import socket, SOCK_STREAM, create_connection
-from socket import SOL_SOCKET, SO_TYPE
+from socket import SOL_SOCKET, SO_TYPE, _GLOBAL_DEFAULT_TIMEOUT
 import socket as _socket
 import base64        # for DER-to-PEM translation
 import errno
@@ -1500,11 +1500,14 @@ def PEM_cert_to_DER_cert(pem_cert_string):
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
     return base64.decodebytes(d.encode('ASCII', 'strict'))
 
-def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None):
+def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
+                           ca_certs=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
     If 'ca_certs' is specified, validate the server cert against it.
-    If 'ssl_version' is specified, use it in the connection attempt."""
+    If 'ssl_version' is specified, use it in the connection attempt.
+    If 'timeout' is specified, use it in the connection attempt.
+    """
 
     host, port = addr
     if ca_certs is not None:
@@ -1514,7 +1517,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None)
     context = _create_stdlib_context(ssl_version,
                                      cert_reqs=cert_reqs,
                                      cafile=ca_certs)
-    with  create_connection(addr) as sock:
+    with create_connection(addr, timeout=timeout) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)

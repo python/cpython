@@ -1114,6 +1114,12 @@ Changes in the Python API
   compatible classes that don't inherit from those mentioned types.
   (Contributed by Roger Aiudi in :issue:`34775`).
 
+* :func:`codecs.lookup` now normalizes the encoding name the same way as
+  :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
+  converts the name to lower case. For example, ``"latex+latin1"`` encoding
+  name is now normalized to ``"latex_latin1"``.
+  (Contributed by Jordon Xu in :issue:`37751`.)
+
 
 Changes in the C API
 --------------------

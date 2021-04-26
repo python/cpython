@@ -197,6 +197,8 @@ struct compiler_unit {
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
     int u_col_offset;      /* the offset of the current stmt */
+    int u_end_lineno;      /* the end line of the current stmt */
+    int u_end_col_offset;  /* the end offset of the current stmt */
 };
 
 /* This struct captures the global state of a compilation.
@@ -641,6 +643,8 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
     u->u_col_offset = 0;
+    u->u_end_lineno = 0;
+    u->u_end_col_offset = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -911,7 +915,9 @@ compiler_next_instr(basicblock *b)
 
 #define SET_LOC(c, x)                           \
     (c)->u->u_lineno = (x)->lineno;             \
-    (c)->u->u_col_offset = (x)->col_offset;
+    (c)->u->u_col_offset = (x)->col_offset;     \
+    (c)->u->u_end_lineno = (x)->end_lineno;     \
+    (c)->u->u_end_col_offset = (x)->end_col_offset;
 
 /* Return the stack effect of opcode with argument oparg.
 
@@ -5350,6 +5356,12 @@ check_ann_expr(struct compiler *c, expr_ty e)
 static int
 check_annotation(struct compiler *c, stmt_ty s)
 {
+    /* Annotations of complex targets does not produce anything
+       under annotations future */
+    if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+        return 1;
+    }
+
     /* Annotations are only evaluated in a module or class. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
         c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
@@ -5474,8 +5486,9 @@ compiler_error(struct compiler *c, const char *format, ...)
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    PyObject *args = Py_BuildValue("O(OiiO)", msg, c->c_filename,
-                                   c->u->u_lineno, c->u->u_col_offset + 1, loc);
+    PyObject *args = Py_BuildValue("O(OiiOii)", msg, c->c_filename,
+                                   c->u->u_lineno, c->u->u_col_offset + 1, loc,
+                                   c->u->u_end_lineno, c->u->u_end_col_offset + 1);
     Py_DECREF(msg);
     if (args == NULL) {
         goto exit;

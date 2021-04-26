@@ -351,16 +351,11 @@ PyMapping_Length
 PyMapping_SetItemString
 PyMapping_Size
 PyMapping_Values
-PyMarshal_ReadObjectFromString
-PyMarshal_WriteLongToFile
-PyMarshal_WriteObjectToFile
-PyMarshal_WriteObjectToString
+PyMem_Calloc
 PyMem_Free
 PyMem_Malloc
 PyMem_Realloc
 PyMemberDescr_Type
-PyMember_GetOne
-PyMember_SetOne
 PyMemoryView_FromMemory
 PyMemoryView_FromObject
 PyMemoryView_GetContiguous

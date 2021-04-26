@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import unittest
+import warnings
 from test import support
 from test.support import import_helper
 from contextlib import contextmanager
@@ -84,7 +85,9 @@ class WindowsRegistryFinderTests:
         self.assertIs(spec, None)
 
     def test_find_module_missing(self):
-        loader = self.machinery.WindowsRegistryFinder.find_module('spam')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            loader = self.machinery.WindowsRegistryFinder.find_module('spam')
         self.assertIs(loader, None)
 
     def test_module_found(self):
