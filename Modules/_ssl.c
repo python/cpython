@@ -1706,6 +1706,9 @@ _certificate_to_der(_sslmodulestate *state, X509 *certificate)
     return retval;
 }
 
+#include "_ssl/misc.c"
+#include "_ssl/cert.c"
+
 /*[clinic input]
 _ssl._test_decode_cert
     path: object(converter="PyUnicode_FSConverter")
@@ -1796,6 +1799,70 @@ _ssl__SSLSocket_getpeercert_impl(PySSLSocket *self, int binary_mode)
     }
     X509_free(peer_cert);
     return result;
+}
+
+/*[clinic input]
+_ssl._SSLSocket.get_verified_chain
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self)
+/*[clinic end generated code: output=802421163cdc3110 input=5fb0714f77e2bd51]*/
+{
+    /* borrowed reference */
+    STACK_OF(X509) *chain = SSL_get0_verified_chain(self->ssl);
+    if (chain == NULL) {
+        Py_RETURN_NONE;
+    }
+    return _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+}
+
+/*[clinic input]
+_ssl._SSLSocket.get_unverified_chain
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self)
+/*[clinic end generated code: output=5acdae414e13f913 input=78c33c360c635cb5]*/
+{
+    PyObject *retval;
+    /* borrowed reference */
+    /* TODO: include SSL_get_peer_certificate() for server-side sockets */
+    STACK_OF(X509) *chain = SSL_get_peer_cert_chain(self->ssl);
+    if (chain == NULL) {
+        Py_RETURN_NONE;
+    }
+    retval = _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+    if (retval == NULL) {
+        return NULL;
+    }
+    /* OpenSSL does not include peer cert for server side connections */
+    if (self->socket_type == PY_SSL_SERVER) {
+        PyObject *peerobj = NULL;
+        X509 *peer = SSL_get_peer_certificate(self->ssl);
+
+        if (peer == NULL) {
+            peerobj = Py_None;
+            Py_INCREF(peerobj);
+        } else {
+            /* consume X509 reference on success */
+            peerobj = _PySSL_CertificateFromX509(self->ctx->state, peer, 0);
+            if (peerobj == NULL) {
+                X509_free(peer);
+                Py_DECREF(retval);
+                return NULL;
+            }
+        }
+        int res = PyList_Insert(retval, 0, peerobj);
+        Py_DECREF(peerobj);
+        if (res < 0) {
+            Py_DECREF(retval);
+            return NULL;
+        }
+    }
+    return retval;
 }
 
 static PyObject *
@@ -2809,6 +2876,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_COMPRESSION_METHODDEF
     _SSL__SSLSOCKET_SHUTDOWN_METHODDEF
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
+    _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
+    _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
     {NULL, NULL}
 };
 
@@ -5784,6 +5853,10 @@ sslmodule_init_constants(PyObject *m)
                             X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
 #endif
 
+    /* file types */
+    PyModule_AddIntConstant(m, "ENCODING_PEM", PY_SSL_ENCODING_PEM);
+    PyModule_AddIntConstant(m, "ENCODING_DER", PY_SSL_ENCODING_DER);
+
     /* protocol versions */
     PyModule_AddIntConstant(m, "PROTO_MINIMUM_SUPPORTED",
                             PY_PROTO_MINIMUM_SUPPORTED);
@@ -5986,6 +6059,12 @@ sslmodule_init_types(PyObject *module)
     if (state->PySSLSession_Type == NULL)
         return -1;
 
+    state->PySSLCertificate_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &PySSLCertificate_spec, NULL
+    );
+    if (state->PySSLCertificate_Type == NULL)
+        return -1;
+
     if (PyModule_AddType(module, state->PySSLContext_Type))
         return -1;
     if (PyModule_AddType(module, state->PySSLSocket_Type))
@@ -5994,7 +6073,8 @@ sslmodule_init_types(PyObject *module)
         return -1;
     if (PyModule_AddType(module, state->PySSLSession_Type))
         return -1;
-
+    if (PyModule_AddType(module, state->PySSLCertificate_Type))
+        return -1;
     return 0;
 }
 
@@ -6017,6 +6097,7 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLSocket_Type);
     Py_VISIT(state->PySSLMemoryBIO_Type);
     Py_VISIT(state->PySSLSession_Type);
+    Py_VISIT(state->PySSLCertificate_Type);
     Py_VISIT(state->PySSLErrorObject);
     Py_VISIT(state->PySSLCertVerificationErrorObject);
     Py_VISIT(state->PySSLZeroReturnErrorObject);
@@ -6041,6 +6122,7 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLSocket_Type);
     Py_CLEAR(state->PySSLMemoryBIO_Type);
     Py_CLEAR(state->PySSLSession_Type);
+    Py_CLEAR(state->PySSLCertificate_Type);
     Py_CLEAR(state->PySSLErrorObject);
     Py_CLEAR(state->PySSLCertVerificationErrorObject);
     Py_CLEAR(state->PySSLZeroReturnErrorObject);
