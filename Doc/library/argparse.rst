@@ -659,7 +659,7 @@ exit_on_error
 Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.parse_args`
 method of an :class:`ArgumentParser`, it will exit with error info.
 
-If the user would like catch errors manually, the feature can be enable by setting
+If the user would like to catch errors manually, the feature can be enabled by setting
 ``exit_on_error`` to ``False``::
 
    >>> parser = argparse.ArgumentParser(exit_on_error=False)
