@@ -158,7 +158,8 @@ class AuditTest(unittest.TestCase):
         if support.verbose:
             print(*events, sep='\n')
         actual = [ev[0] for ev in events]
-        expected = ["sqlite3.connect"]
+        expected = ["sqlite3.connect", "sqlite3.connect/handle"]
+
         if hasattr(sqlite3.Connection, "enable_load_extension"):
             expected += [
                 "sqlite3.enable_load_extension",

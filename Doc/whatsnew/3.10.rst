@@ -1071,7 +1071,8 @@ Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
 sqlite3
 -------
 
-Add audit events for :meth:`~sqlite3.Connection.enable_load_extension` and
+Add audit events for :func:`~sqlite3.connect/handle`,
+:meth:`~sqlite3.Connection.enable_load_extension`, and
 :meth:`~sqlite3.Connection.load_extension`.
 (Contributed by Erlend E. Aasland in :issue:`43762`.)
 
