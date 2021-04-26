@@ -1309,7 +1309,8 @@ class EditorWindow:
         text.undo_block_start()
         text.delete("insert-%dc" % ncharsdeleted, "insert")
         if have < want:
-            text.insert("insert", ' ' * (want - have), self.user_input_insert_tags)
+            text.insert("insert", ' ' * (want - have),
+                        self.user_input_insert_tags)
         text.undo_block_stop()
         return "break"
 
@@ -1373,7 +1374,8 @@ class EditorWindow:
             if i == n:
                 # The cursor is in or at leading indentation in a continuation
                 # line; just inject an empty line at the start.
-                text.insert("insert linestart", '\n', self.user_input_insert_tags)
+                text.insert("insert linestart", '\n',
+                            self.user_input_insert_tags)
                 return "break"
             indent = line[:i]
 
@@ -1440,7 +1442,8 @@ class EditorWindow:
                     # beyond leftmost =; else to beyond first chunk of
                     # non-whitespace on initial line.
                     if y.get_num_lines_in_stmt() > 1:
-                        text.insert("insert", indent, self.user_input_insert_tags)
+                        text.insert("insert", indent,
+                                    self.user_input_insert_tags)
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
@@ -1498,7 +1501,8 @@ class EditorWindow:
         if text.compare("insert linestart", "!=", "insert"):
             text.delete("insert linestart", "insert")
         if column:
-            text.insert("insert", self._make_blanks(column), self.user_input_insert_tags)
+            text.insert("insert", self._make_blanks(column),
+                        self.user_input_insert_tags)
         text.undo_block_stop()
 
     # Guess indentwidth from text content.
