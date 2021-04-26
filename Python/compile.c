@@ -1037,7 +1037,7 @@ stack_effect(int opcode, int oparg, int jump)
         case POP_EXCEPT:
             return -3;
         case POP_EXCEPT_AND_RERAISE:
-            return -6;
+            return -7;
 
         case STORE_NAME:
             return -1;
@@ -3085,7 +3085,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     /* `finally` block */
     compiler_use_next_block(c, end);
 
-    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
+    ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
         return 0;
@@ -3152,7 +3152,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
 
-    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
+    ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
     if (!compiler_push_fblock(c, EXCEPTION_HANDLER, NULL, NULL, NULL))
@@ -5063,7 +5063,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     compiler_use_next_block(c, final);
     c->u->u_lineno = -1;
 
-    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
+    ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);
@@ -5160,7 +5160,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     compiler_use_next_block(c, final);
     c->u->u_lineno = -1;
 
-    ADDOP_JUMP(c, SETUP_FINALLY, cleanup);
+    ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
 
     ADDOP(c, WITH_EXCEPT_START);

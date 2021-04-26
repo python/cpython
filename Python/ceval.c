@@ -2651,13 +2651,23 @@ main_loop:
         }
 
         case TARGET(POP_EXCEPT_AND_RERAISE): {
+            PyObject *lasti = PEEK(4);
+            if (PyLong_Check(lasti)) {
+                f->f_lasti = PyLong_AsLong(lasti);
+                assert(!_PyErr_Occurred(tstate));
+            }
+            else {
+                _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
+                goto error;
+            }
             PyTryBlock *b = &f->f_blockstack[f->f_iblock];
             PyObject *type, *value, *traceback;
             _PyErr_StackItem *exc_info;
-            assert(STACK_LEVEL() == (b)->b_level + 3);
+            assert(STACK_LEVEL() == (b)->b_level + 4);
             type = POP();
             value = POP();
             traceback = POP();
+            Py_DECREF(POP()); /* lasti */
             _PyErr_Restore(tstate, type, value, traceback);
             exc_info = tstate->exc_info;
             type = exc_info->exc_type;
@@ -2678,11 +2688,8 @@ main_loop:
         }
 
         case TARGET(RERAISE): {
-            PyObject *exc = POP();
-            PyObject *val = POP();
-            PyObject *tb = POP();
             if (oparg) {
-                PyObject *lasti = PEEK(oparg);
+                PyObject *lasti = PEEK(oparg+3);
                 if (PyLong_Check(lasti)) {
                     f->f_lasti = PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
@@ -2693,6 +2700,9 @@ main_loop:
                     goto error;
                 }
             }
+            PyObject *exc = POP();
+            PyObject *val = POP();
+            PyObject *tb = POP();
             assert(PyExceptionClass_Check(exc));
             _PyErr_Restore(tstate, exc, val, tb);
             goto exception_unwind;
