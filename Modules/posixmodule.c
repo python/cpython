@@ -15730,12 +15730,14 @@ posixmodule_exec(PyObject *m)
     if (ScandirIteratorType == NULL) {
         return -1;
     }
+    ((PyTypeObject *)ScandirIteratorType)->tp_new = 0;  // See bpo-43916
     state->ScandirIteratorType = ScandirIteratorType;
 
     PyObject *DirEntryType = PyType_FromModuleAndSpec(m, &DirEntryType_spec, NULL);
     if (DirEntryType == NULL) {
         return -1;
     }
+    ((PyTypeObject *)DirEntryType)->tp_new = 0;  // See bpo-43916
     Py_INCREF(DirEntryType);
     PyModule_AddObject(m, "DirEntry", DirEntryType);
     state->DirEntryType = DirEntryType;

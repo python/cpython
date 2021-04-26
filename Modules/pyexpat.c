@@ -1862,6 +1862,7 @@ pyexpat_exec(PyObject *mod)
     if (state->xml_parse_type == NULL) {
         return -1;
     }
+    state->xml_parse_type->tp_new = 0;  // See bpo-43916
 
     if (init_handler_descrs(state) < 0) {
         return -1;

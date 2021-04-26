@@ -309,6 +309,10 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
                 self.assertEqual(len(lines), 1,
                                  r"\u%.4x should not be a linebreak" % i)
 
+    def test_no_uninit_new(self):
+        # See bpo-43916
+        self.assertRaises(TypeError, unicodedata.UCD)
+
 class NormalizationTest(unittest.TestCase):
     @staticmethod
     def check_version(testfile):

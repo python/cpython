@@ -499,6 +499,7 @@ _dbm_exec(PyObject *module)
     if (state->dbm_type == NULL) {
         return -1;
     }
+    state->dbm_type->tp_new = 0;  // See bpo-43916
     state->dbm_error = PyErr_NewException("_dbm.error", PyExc_OSError, NULL);
     if (state->dbm_error == NULL) {
         return -1;

@@ -1931,6 +1931,7 @@ static int winapi_exec(PyObject *m)
     if (st->overlapped_type == NULL) {
         return -1;
     }
+    st->overlapped_type->tp_new = 0;  // See bpo-43916
 
     if (PyModule_AddType(m, st->overlapped_type) < 0) {
         return -1;

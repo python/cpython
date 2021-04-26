@@ -1451,6 +1451,7 @@ _functools_exec(PyObject *module)
     if (state->keyobject_type == NULL) {
         return -1;
     }
+    state->keyobject_type->tp_new = 0;  // See bpo-43916
     if (PyModule_AddType(module, state->keyobject_type) < 0) {
         return -1;
     }
@@ -1460,6 +1461,7 @@ _functools_exec(PyObject *module)
     if (state->lru_list_elem_type == NULL) {
         return -1;
     }
+    state->lru_list_elem_type->tp_new = 0;  // See bpo-43916
     if (PyModule_AddType(module, state->lru_list_elem_type) < 0) {
         return -1;
     }

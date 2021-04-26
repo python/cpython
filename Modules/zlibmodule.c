@@ -1459,12 +1459,14 @@ zlib_exec(PyObject *mod)
     if (state->Comptype == NULL) {
         return -1;
     }
+    state->Comptype->tp_new = 0;  // See bpo-43916
 
     state->Decomptype = (PyTypeObject *)PyType_FromModuleAndSpec(
         mod, &Decomptype_spec, NULL);
     if (state->Decomptype == NULL) {
         return -1;
     }
+    state->Decomptype->tp_new = 0;  // See bpo-43916
 
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (state->ZlibError == NULL) {

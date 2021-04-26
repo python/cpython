@@ -2856,6 +2856,11 @@ sre_exec(PyObject *m)
     CREATE_TYPE(m, state->Match_Type, &match_spec);
     CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
 
+    // See bpo-43916
+    state->Pattern_Type->tp_new = 0;
+    state->Match_Type->tp_new = 0;
+    state->Scanner_Type->tp_new = 0;
+
     if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
         goto error;
     }

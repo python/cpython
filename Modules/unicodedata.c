@@ -1478,6 +1478,7 @@ unicodedata_exec(PyObject *module)
     if (ucd_type == NULL) {
         return -1;
     }
+    ucd_type->tp_new = 0;  // See bpo-43916
 
     if (PyModule_AddType(module, ucd_type) < 0) {
         Py_DECREF(ucd_type);

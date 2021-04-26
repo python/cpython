@@ -1580,6 +1580,7 @@ thread_module_exec(PyObject *module)
     if (state->lock_type == NULL) {
         return -1;
     }
+    state->lock_type->tp_new = 0;  // See bpo-43916
     if (PyDict_SetItemString(d, "LockType", (PyObject *)state->lock_type) < 0) {
         return -1;
     }
@@ -1600,6 +1601,7 @@ thread_module_exec(PyObject *module)
     if (state->local_dummy_type == NULL) {
         return -1;
     }
+    state->local_dummy_type->tp_new = 0;  // See bpo-43916
 
     // Local
     state->local_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &local_type_spec, NULL);
