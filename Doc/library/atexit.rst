@@ -39,7 +39,7 @@ internal error is detected, or when :func:`os._exit` is called.
 
    If an exception is raised during execution of the exit handlers, a traceback is
    printed (unless :exc:`SystemExit` is raised) and the exception information is
-   saved.  After all exit handlers have had a chance to run the last exception to
+   saved.  After all exit handlers have had a chance to run, the last exception to
    be raised is re-raised.
 
    This function returns *func*, which makes it possible to use it as a
@@ -73,7 +73,7 @@ automatically when the program terminates without relying on the application
 making an explicit call into this module at termination. ::
 
    try:
-       with open("counterfile") as infile:
+       with open('counterfile') as infile:
            _count = int(infile.read())
    except FileNotFoundError:
        _count = 0
@@ -83,21 +83,22 @@ making an explicit call into this module at termination. ::
        _count = _count + n
 
    def savecounter():
-       with open("counterfile", "w") as outfile:
-           outfile.write("%d" % _count)
+       with open('counterfile', 'w') as outfile:
+           outfile.write('%d' % _count)
 
    import atexit
+
    atexit.register(savecounter)
 
 Positional and keyword arguments may also be passed to :func:`register` to be
 passed along to the registered function when it is called::
 
    def goodbye(name, adjective):
-       print('Goodbye, %s, it was %s to meet you.' % (name, adjective))
+       print('Goodbye %s, it was %s to meet you.' % (name, adjective))
 
    import atexit
-   atexit.register(goodbye, 'Donny', 'nice')
 
+   atexit.register(goodbye, 'Donny', 'nice')
    # or:
    atexit.register(goodbye, adjective='nice', name='Donny')
 
@@ -107,6 +108,6 @@ Usage as a :term:`decorator`::
 
    @atexit.register
    def goodbye():
-       print("You are now leaving the Python sector.")
+       print('You are now leaving the Python sector.')
 
 This only works with functions that can be called without arguments.
