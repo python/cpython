@@ -68,6 +68,11 @@ CLASSES
      |  __dict__%s
      |\x20\x20
      |  __weakref__%s
+     |\x20\x20
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |\x20\x20
+     |  __annotations__ = {}
 \x20\x20\x20\x20
     class B(builtins.object)
      |  Data descriptors defined here:
@@ -102,6 +107,11 @@ CLASSES
      |\x20\x20
      |  __weakref__
      |      list of weak references to the object (if defined)
+     |\x20\x20
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |\x20\x20
+     |  __annotations__ = {}
 
 FUNCTIONS
     doc_func()
@@ -176,6 +186,10 @@ Data descriptors defined here:<br>
 <dl><dt><strong>__weakref__</strong></dt>
 <dd><tt>%s</tt></dd>
 </dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__annotations__</strong> = {}</dl>
+
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ffc8d8">
@@ -218,6 +232,10 @@ Data descriptors defined here:<br>
 <dl><dt><strong>__weakref__</strong></dt>
 <dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
 </dl>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__annotations__</strong> = {}</dl>
+
 </td></tr></table></td></tr></table><p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
@@ -277,6 +295,11 @@ class DA(builtins.object)
  |  __weakref__%s
  |\x20\x20
  |  ham
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |\x20\x20
+ |  __annotations__ = {}
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta:
@@ -814,6 +837,11 @@ class B(A)
  |      Configure resources of an item TAGORID.
  |\x20\x20
  |  ----------------------------------------------------------------------
+ |  Data and other attributes defined here:
+ |\x20\x20
+ |  __annotations__ = {}
+ |\x20\x20
+ |  ----------------------------------------------------------------------
  |  Methods inherited from A:
  |\x20\x20
  |  a_size(self)
@@ -857,6 +885,10 @@ Methods defined here:<br>
 <dl><dt><a name="B-itemconfig"><strong>itemconfig</strong></a> = <a href="#B-itemconfigure">itemconfigure</a>(self, tagOrId, cnf=None, **kw)</dt></dl>
 
 <dl><dt><a name="B-itemconfigure"><strong>itemconfigure</strong></a>(self, tagOrId, cnf=None, **kw)</dt><dd><tt>Configure&nbsp;resources&nbsp;of&nbsp;an&nbsp;item&nbsp;TAGORID.</tt></dd></dl>
+
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__annotations__</strong> = {}</dl>
 
 <hr>
 Methods inherited from A:<br>

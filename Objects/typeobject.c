@@ -52,6 +52,7 @@ typedef struct PySlot_Offset {
 
 /* alphabetical order */
 _Py_IDENTIFIER(__abstractmethods__);
+_Py_IDENTIFIER(__annotations__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__class_getitem__);
 _Py_IDENTIFIER(__classcell__);
@@ -930,6 +931,53 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
     return _PyDict_SetItemId(type->tp_dict, &PyId___doc__, value);
 }
 
+static PyObject *
+type_get_annotations(PyTypeObject *type, void *context)
+{
+    PyObject *annotations;
+    /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
+    if (_PyDict_ContainsId(type->tp_dict, &PyId___annotations__)) {
+        annotations = _PyDict_GetItemIdWithError(type->tp_dict, &PyId___annotations__);
+        /*
+        ** _PyDict_GetItemIdWithError could still fail,
+        ** for instance with a well-timed Ctrl-C or a MemoryError.
+        ** so let's be totally safe.
+        */
+        if (annotations) {
+            if (Py_TYPE(annotations)->tp_descr_get) {
+                annotations = Py_TYPE(annotations)->tp_descr_get(annotations, NULL,
+                                                       (PyObject *)type);
+            } else {
+                Py_INCREF(annotations);
+            }
+        }
+    } else {
+        annotations = PyDict_New();
+        if (annotations) {
+            int result = _PyDict_SetItemId(type->tp_dict, &PyId___annotations__, annotations);
+            if (result) {
+                Py_CLEAR(annotations);
+            } else {
+                PyType_Modified(type);
+            }
+        }
+    }
+    return annotations;
+}
+
+static int
+type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (!check_set_special_type_attr(type, value, "__annotations__"))
+        return -1;
+    int result = _PyDict_SetItemId(type->tp_dict, &PyId___annotations__, value);
+    if (result == 0) {
+        PyType_Modified(type);
+    }
+    return result;
+}
+
+
 /*[clinic input]
 type.__instancecheck__ -> bool
 
@@ -973,6 +1021,7 @@ static PyGetSetDef type_getsets[] = {
     {"__dict__",  (getter)type_dict,  NULL, NULL},
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
+    {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
     {0}
 };
 
