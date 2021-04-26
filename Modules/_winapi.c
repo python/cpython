@@ -35,7 +35,7 @@
 /* See http://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "moduleobject.h"         // PyModuleDef_Slot
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 
 
@@ -87,7 +87,7 @@ typedef struct {
 static inline WinApiState*
 winapi_get_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (WinApiState *)state;
 }

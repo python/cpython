@@ -86,6 +86,10 @@ class DistInfoPkg(OnSysPath, SiteDir):
                 Version: 1.0.0
                 Requires-Dist: wheel >= 1.0
                 Requires-Dist: pytest; extra == 'test'
+                Keywords: sample package
+
+                Once upon a time
+                There was a distinfo pkg
                 """,
             "RECORD": "mod.py,sha256=abc,20\n",
             "entry_points.txt": """
@@ -157,6 +161,9 @@ class EggInfoPkg(OnSysPath, SiteDir):
                 Version: 1.0.0
                 Classifier: Intended Audience :: Developers
                 Classifier: Topic :: Software Development :: Libraries
+                Keywords: sample package
+                Description: Once upon a time
+                        There was an egginfo package
                 """,
             "SOURCES.txt": """
                 mod.py

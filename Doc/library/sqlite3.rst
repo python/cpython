@@ -55,33 +55,6 @@ The data you've saved is persistent and is available in subsequent sessions::
    con = sqlite3.connect('example.db')
    cur = con.cursor()
 
-Usually your SQL operations will need to use values from Python variables.  You
-shouldn't assemble your query using Python's string operations because doing so
-is insecure; it makes your program vulnerable to an SQL injection attack
-(see https://xkcd.com/327/ for humorous example of what can go wrong).
-
-Instead, use the DB-API's parameter substitution.  Put ``?`` as a placeholder
-wherever you want to use a value, and then provide a tuple of values as the
-second argument to the cursor's :meth:`~Cursor.execute` method.  (Other database
-modules may use a different placeholder, such as ``%s`` or ``:1``.) For
-example::
-
-   # Never do this -- insecure!
-   symbol = 'RHAT'
-   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
-
-   # Do this instead
-   t = ('RHAT',)
-   cur.execute('SELECT * FROM stocks WHERE symbol=?', t)
-   print(cur.fetchone())
-
-   # Larger example that inserts many records at a time
-   purchases = [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-                ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
-                ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
-               ]
-   cur.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
-
 To retrieve data after executing a SELECT statement, you can either treat the
 cursor as an :term:`iterator`, call the cursor's :meth:`~Cursor.fetchone` method to
 retrieve a single matching row, or call :meth:`~Cursor.fetchall` to get a list of the
@@ -96,6 +69,33 @@ This example uses the iterator form::
    ('2006-03-28', 'BUY', 'IBM', 1000, 45.0)
    ('2006-04-06', 'SELL', 'IBM', 500, 53.0)
    ('2006-04-05', 'BUY', 'MSFT', 1000, 72.0)
+
+
+.. _sqlite3-placeholders:
+
+Usually your SQL operations will need to use values from Python variables.  You
+shouldn't assemble your query using Python's string operations because doing so
+is insecure; it makes your program vulnerable to an SQL injection attack
+(see the `xkcd webcomic <https://xkcd.com/327/>`_ for a humorous example of
+what can go wrong)::
+
+   # Never do this -- insecure!
+   symbol = 'RHAT'
+   cur.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
+
+Instead, use the DB-API's parameter substitution. Put a placeholder wherever
+you want to use a value, and then provide a tuple of values as the second
+argument to the cursor's :meth:`~Cursor.execute` method. An SQL statement may
+use one of two kinds of placeholders: question marks (qmark style) or named
+placeholders (named style). For the qmark style, ``parameters`` must be a
+:term:`sequence <sequence>`. For the named style, it can be either a
+:term:`sequence <sequence>` or :class:`dict` instance. The length of the
+:term:`sequence <sequence>` must match the number of placeholders, or a
+:exc:`ProgrammingError` is raised. If a :class:`dict` is given, it must contain
+keys for all named parameters. Any extra items are ignored. Here's an example
+of both styles:
+
+.. literalinclude:: ../includes/sqlite3/execute_1.py
 
 
 .. seealso::
@@ -607,14 +607,8 @@ Cursor Objects
 
    .. method:: execute(sql[, parameters])
 
-      Executes an SQL statement. The SQL statement may be parameterized (i. e.
-      placeholders instead of SQL literals). The :mod:`sqlite3` module supports two
-      kinds of placeholders: question marks (qmark style) and named placeholders
-      (named style).
-
-      Here's an example of both styles:
-
-      .. literalinclude:: ../includes/sqlite3/execute_1.py
+      Executes an SQL statement. Values may be bound to the statement using
+      :ref:`placeholders <sqlite3-placeholders>`.
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
       more than one statement with it, it will raise a :exc:`.Warning`. Use
@@ -624,9 +618,10 @@ Cursor Objects
 
    .. method:: executemany(sql, seq_of_parameters)
 
-      Executes an SQL command against all parameter sequences or mappings found in
-      the sequence *seq_of_parameters*.  The :mod:`sqlite3` module also allows
-      using an :term:`iterator` yielding parameters instead of a sequence.
+      Executes a :ref:`parameterized <sqlite3-placeholders>` SQL command
+      against all parameter sequences or mappings found in the sequence
+      *seq_of_parameters*. The :mod:`sqlite3` module also allows using an
+      :term:`iterator` yielding parameters instead of a sequence.
 
       .. literalinclude:: ../includes/sqlite3/executemany_1.py
 

@@ -193,15 +193,16 @@ static PyObject *
 py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
 /*[clinic end generated code: output=90409addc5d5e8b0 input=bcfcdf2e4368347a]*/
 {
+    HashReturn res;
+    Py_buffer buf = {NULL, NULL};
+    SHA3State *state = PyType_GetModuleState(type);
     SHA3object *self = newSHA3object(type);
     if (self == NULL) {
         goto error;
     }
 
-    SHA3State *state = PyType_GetModuleState(type);
     assert(state != NULL);
 
-    HashReturn res;
     if (type == state->sha3_224_type) {
         res = Keccak_HashInitialize_SHA3_224(&self->hash_state);
     } else if (type == state->sha3_256_type) {
@@ -229,7 +230,12 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
         goto error;
     }
 
-    Py_buffer buf = {NULL, NULL};
+    if (res != SUCCESS) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "internal error in SHA3 initialize()");
+        goto error;
+    }
+
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
         if (buf.len >= HASHLIB_GIL_MINSIZE) {

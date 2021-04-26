@@ -658,7 +658,7 @@ The socket module now supports the :data:`~socket.CAN_J1939` protocol on
 platforms that support it.  (Contributed by Karl Ding in :issue:`40291`.)
 
 The socket module now has the :func:`socket.send_fds` and
-:func:`socket.recv.fds` methods. (Contributed by Joannah Nanjekye, Shinya
+:func:`socket.recv_fds` functions. (Contributed by Joannah Nanjekye, Shinya
 Okano and Victor Stinner in :issue:`28724`.)
 
 
@@ -1113,6 +1113,12 @@ Changes in the Python API
   instance of ``str`` or :class:`~pathlib.PurePath`.  This allows creating
   compatible classes that don't inherit from those mentioned types.
   (Contributed by Roger Aiudi in :issue:`34775`).
+
+* :func:`codecs.lookup` now normalizes the encoding name the same way as
+  :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
+  converts the name to lower case. For example, ``"latex+latin1"`` encoding
+  name is now normalized to ``"latex_latin1"``.
+  (Contributed by Jordon Xu in :issue:`37751`.)
 
 
 Changes in the C API

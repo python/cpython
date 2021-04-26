@@ -5781,42 +5781,6 @@ ac_includes_default="$save_includes_default"
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
-if test "$have_openssl" = yes; then
-    AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-        [#include <openssl/x509_vfy.h>]
-    ], [
-        [X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();]
-        [X509_VERIFY_PARAM_set1_host(p, "localhost", 0);]
-        [X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");]
-        [X509_VERIFY_PARAM_set_hostflags(p, 0);]
-    ])
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=yes
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=no
-    ])
-    AC_MSG_RESULT($ac_cv_has_x509_verify_param_set1_host)
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-        AC_DEFINE(HAVE_X509_VERIFY_PARAM_SET1_HOST, 1,
-        [Define if libssl has X509_VERIFY_PARAM_set1_host and related function])
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
-
 # rpath to libssl and libcrypto
 AC_MSG_CHECKING(for --with-openssl-rpath)
 AC_ARG_WITH(openssl-rpath,

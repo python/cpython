@@ -1925,7 +1925,8 @@ class _BasePathTest(object):
         # linking to another path.
         q = P / 'dirA' / 'fileAA'
         try:
-            p.link_to(q)
+            with self.assertWarns(DeprecationWarning):
+                p.link_to(q)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
         self.assertEqual(q.stat().st_size, size)
@@ -1936,6 +1937,24 @@ class _BasePathTest(object):
         q.link_to(r)
         self.assertEqual(os.stat(r).st_size, size)
         self.assertTrue(q.stat)
+
+    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
+    def test_hardlink_to(self):
+        P = self.cls(BASE)
+        target = P / 'fileA'
+        size = target.stat().st_size
+        # linking to another path.
+        link = P / 'dirA' / 'fileAA'
+        link.hardlink_to(target)
+        self.assertEqual(link.stat().st_size, size)
+        self.assertTrue(os.path.samefile(target, link))
+        self.assertTrue(target.exists())
+        # Linking to a str of a relative path.
+        link2 = P / 'dirA' / 'fileAAA'
+        target2 = rel_join('fileA')
+        link2.hardlink_to(target2)
+        self.assertEqual(os.stat(target2).st_size, size)
+        self.assertTrue(link2.exists())
 
     @unittest.skipIf(hasattr(os, "link"), "os.link() is present")
     def test_link_to_not_implemented(self):

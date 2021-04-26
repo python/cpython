@@ -32,6 +32,11 @@ from test import support
 platforms_to_skip = ('netbsd5', 'hp-ux11')
 
 
+def restore_default_excepthook(testcase):
+    testcase.addCleanup(setattr, threading, 'excepthook', threading.excepthook)
+    threading.excepthook = threading.__excepthook__
+
+
 # A trivial mutable counter.
 class Counter(object):
     def __init__(self):
@@ -426,6 +431,8 @@ class ThreadTests(BaseTestCase):
             def _run(self, other_ref, yet_another):
                 if self.should_raise:
                     raise SystemExit
+
+        restore_default_excepthook(self)
 
         cyclic_object = RunSelfFunction(should_raise=False)
         weak_cyclic_object = weakref.ref(cyclic_object)
@@ -1331,6 +1338,10 @@ class ThreadRunFail(threading.Thread):
 
 
 class ExceptHookTests(BaseTestCase):
+    def setUp(self):
+        restore_default_excepthook(self)
+        super().setUp()
+
     def test_excepthook(self):
         with support.captured_output("stderr") as stderr:
             thread = ThreadRunFail(name="excepthook thread")
@@ -1501,6 +1512,8 @@ class BarrierTests(lock_tests.BarrierTests):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
+        restore_default_excepthook(self)
+
         extra = {"ThreadError"}
         not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),

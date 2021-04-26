@@ -46,6 +46,7 @@ _PyPegen_parse(Parser *p)
     // Initialize keywords
     p->keywords = reserved_keywords;
     p->n_keyword_lists = n_keyword_lists;
+    p->soft_keywords = soft_keywords;
 
     return start_rule(p);
 }
@@ -66,6 +67,7 @@ BASE_NODETYPES = {
     "NAME": NodeTypes.NAME_TOKEN,
     "NUMBER": NodeTypes.NUMBER_TOKEN,
     "STRING": NodeTypes.STRING_TOKEN,
+    "SOFT_KEYWORD": NodeTypes.SOFT_KEYWORD,
 }
 
 
@@ -411,6 +413,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         if subheader:
             self.print(subheader)
         self._setup_keywords()
+        self._setup_soft_keywords()
         for i, (rulename, rule) in enumerate(self.todo.items(), 1000):
             comment = "  // Left-recursive" if rule.left_recursive else ""
             self.print(f"#define {rulename}_type {i}{comment}")
@@ -472,6 +475,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                             self.print(f'{{"{keyword_str}", {keyword_type}}},')
                         self.print("{NULL, -1},")
                     self.print("},")
+        self.print("};")
+
+    def _setup_soft_keywords(self) -> None:
+        soft_keywords = sorted(self.callmakervisitor.soft_keywords)
+        self.print("static char *soft_keywords[] = {")
+        with self.indent():
+            for keyword in soft_keywords:
+                self.print(f'"{keyword}",')
+            self.print("NULL,")
         self.print("};")
 
     def _set_up_token_start_metadata_extraction(self) -> None:

@@ -65,6 +65,7 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`644`, require OpenSSL 1.1.1 or newer
 
 
 New Features
@@ -125,8 +126,11 @@ Check :pep:`617` for more details.
 in :issue:`12782` and :issue:`40334`.)
 
 
-Better error messages in the parser
------------------------------------
+Better error messages
+---------------------
+
+SyntaxErrors
+~~~~~~~~~~~~
 
 When parsing code that contains unclosed parentheses or brackets the interpreter
 now includes the location of the unclosed bracket of parentheses instead of displaying
@@ -142,7 +146,7 @@ For instance, consider the following code (notice the unclosed '{'):
 previous versions of the interpreter reported confusing places as the location of
 the syntax error:
 
-.. code-block:: text
+.. code-block:: python
 
    File "example.py", line 3
        some_other_code = foo()
@@ -151,7 +155,7 @@ the syntax error:
 
 but in Python3.10 a more informative error is emitted:
 
-.. code-block:: text
+.. code-block:: python
 
     File "example.py", line 1
         expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
@@ -166,6 +170,183 @@ These improvements are inspired by previous work in the PyPy interpreter.
 
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
+
+:exc:`SyntaxError` exceptions raised by the intepreter will now highlight the
+full error range of the expression that consistutes the syntax error itself,
+instead of just where the problem is detected. In this way, instead of displaying
+(before Python 3.10):
+
+.. code-block:: python
+
+    >>> foo(x, z for z in range(10), t, w)
+      File "<stdin>", line 1
+        foo(x, z for z in range(10), t, w)
+               ^
+    SyntaxError: Generator expression must be parenthesized
+
+now Python 3.10 will display the exception as:
+
+.. code-block:: python
+
+    >>> foo(x, z for z in range(10), t, w)
+      File "<stdin>", line 1
+        foo(x, z for z in range(10), t, w)
+               ^^^^^^^^^^^^^^^^^^^^
+    SyntaxError: Generator expression must be parenthesized
+
+This improvement has been contributed by Pablo Galindo in :issue:`43914`.
+
+A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
+have been incorporated. Some of the most notable ones:
+
+* Missing ``:`` before blocks:
+
+    .. code-block:: python
+
+        >>> if rocket.position > event_horizon
+          File "<stdin>", line 1
+            if rocket.position > event_horizon
+                                              ^
+        SyntaxError: expected ':'
+
+    (Contributed by Pablo Galindo in :issue:`42997`)
+
+* Unparenthesised tuples in comprehensions targets:
+
+    .. code-block:: python
+
+        >>> {x,y for x,y in range(100)}
+          File "<stdin>", line 1
+            {x,y for x,y in range(100)}
+             ^
+        SyntaxError: did you forget parentheses around the comprehension target?
+
+    (Contributed by Pablo Galindo in :issue:`43017`)
+
+* Missing commas in collection literals and between expressions:
+
+    .. code-block:: python
+
+        >>> items = {
+        ... x: 1,
+        ... y: 2
+        ... z: 3,
+          File "<stdin>", line 3
+            y: 2
+               ^
+        SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+    (Contributed by Pablo Galindo in :issue:`43822`)
+
+* Exception groups without parentheses:
+
+    .. code-block:: python
+
+        >>> try:
+        ...     build_dyson_sphere()
+        ... except NotEnoughScienceError, NotEnoughResourcesError:
+          File "<stdin>", line 3
+            except NotEnoughScienceError, NotEnoughResourcesError:
+                   ^
+        SyntaxError: exception group must be parenthesized
+
+    (Contributed by Pablo Galindo in :issue:`43149`)
+
+* Missing ``:`` and values in dictionary literals:
+
+    .. code-block:: python
+
+        >>> values = {
+        ... x: 1,
+        ... y: 2,
+        ... z:
+        ... }
+          File "<stdin>", line 4
+            z:
+             ^
+        SyntaxError: expression expected after dictionary key and ':'
+
+        >>> values = {x:1, y:2, z w:3}
+          File "<stdin>", line 1
+            values = {x:1, y:2, z w:3}
+                                ^
+        SyntaxError: ':' expected after dictionary key
+
+    (Contributed by Pablo Galindo in :issue:`43823`)
+
+* Usage of ``=`` instead of ``==`` in comparisons:
+
+    .. code-block:: python
+
+        >>> if rocket.position = event_horizon:
+          File "<stdin>", line 1
+            if rocket.position = event_horizon:
+                               ^
+        SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+    (Contributed by Pablo Galindo in :issue:`43797`)
+
+* Usage of ``*`` in f-strings:
+
+    .. code-block:: python
+
+        >>> f"Black holes {*all_black_holes} and revelations"
+          File "<stdin>", line 1
+            (*all_black_holes)
+             ^
+        SyntaxError: f-string: cannot use starred expression here
+
+    (Contributed by Pablo Galindo in :issue:`41064`)
+
+IndentationErrors
+~~~~~~~~~~~~~~~~~
+
+Many :exc:`IndentationError` exceptions now have more context regarding what kind of block
+was expecting an indentation, including the location of the statement:
+
+.. code-block:: python
+
+    >>> def foo():
+    ...    if lel:
+    ...    x = 2
+      File "<stdin>", line 3
+        x = 2
+        ^
+    IndentationError: expected an indented block after 'if' statement in line 2
+
+
+AttributeErrors
+~~~~~~~~~~~~~~~
+
+When printing :exc:`AttributeError`, :c:func:`PyErr_Display` will offer
+suggestions of similar attribute names in the object that the exception was
+raised from:
+
+.. code-block:: python
+
+    >>> collections.namedtoplo
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    AttributeError: module 'collections' has no attribute 'namedtoplo'. Did you mean: namedtuple?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
+
+NameErrors
+~~~~~~~~~~
+
+When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
+will offer suggestions of similar variable names in the function that the exception
+was raised from:
+
+.. code-block:: python
+
+    >>> schwarzschild_black_hole = None
+    >>> schwarschild_black_hole
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
 
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
@@ -383,7 +564,7 @@ For example::
        case ('warning', code, 40):
            print("A warning has been received.")
        case ('error', code, _):
-           print(f"An error {code} occured.")
+           print(f"An error {code} occurred.")
 
 In the above case, ``test_variable`` will match for ('error', code, 100) and
 ('error', code, 800).
@@ -483,22 +664,6 @@ New Features Related to Type Annotations
 
 This section covers major changes affecting :pep:`484` type annotations and
 the :mod:`typing` module.
-
-
-PEP 563: Postponed Evaluation of Annotations Becomes Default
-------------------------------------------------------------
-
-In Python 3.7, postponed evaluation of annotations was added,
-to be enabled with a ``from __future__ import annotations``
-directive.  In 3.10 this became the default behavior, even
-without that future directive.  With this being default, all
-annotations stored in :attr:`__annotations__` will be strings.
-If needed, annotations can be resolved at runtime using
-:func:`typing.get_type_hints`.  See :pep:`563` for a full
-description.  Also, the :func:`inspect.signature` will try to
-resolve types from now on, and when it fails it will fall back to
-showing the string annotations.  (Contributed by Batuhan Taskaya
-in :issue:`38605`.)
 
 
 PEP 604: New Type Union Operator
@@ -626,6 +791,10 @@ Other Language Changes
   Moreover, static methods are now callable as regular functions.
   (Contributed by Victor Stinner in :issue:`43682`.)
 
+* Annotations for complex targets (everything beside ``simple name`` targets
+  defined by :pep:`526`) no longer cause any runtime effects with ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42737`.)
+
 
 New Modules
 ===========
@@ -635,6 +804,13 @@ New Modules
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+method.
+(Contributed by Alex Grönholm in :issue:`41332`.)
 
 argparse
 --------
@@ -654,6 +830,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+bdb
+---
+
+Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+(Contributed by Irit Katriel in :issue:`24160`.)
 
 codecs
 ------
@@ -685,6 +867,9 @@ and objects representing asynchronously released resources.
 
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
+
+Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
+as decorators.
 
 curses
 ------
@@ -739,6 +924,20 @@ enum
 :func:`__str__` now returns ``member_name``.  Stdlib enums available as
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
+
+Add :class:`enum.StrEnum` for enums where all members are strings.
+(Contributed by Ethan Furman in :issue:`41816`.)
+
+fileinput
+---------
+
+Added *encoding* and *errors* parameters in :func:`fileinput.input` and
+:class:`fileinput.FileInput`.
+(Contributed by Inada Naoki in :issue:`43712`.)
+
+:func:`fileinput.hook_compressed` now returns :class:`TextIOWrapper` object
+when *mode* is "r" and file is compressed, like uncompressed files.
+(Contributed by Inada Naoki in :issue:`5758`.)
 
 gc
 --
@@ -812,6 +1011,11 @@ Added negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
 
+Added :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
+supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+order as :meth:`~pathlib.Path.symlink_to`.
+(Contributed by Barney Gale in :issue:`39950`.)
+
 platform
 --------
 
@@ -819,6 +1023,12 @@ Added :func:`platform.freedesktop_os_release()` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
 (Contributed by Christian Heimes in :issue:`28468`)
+
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
+(Contributed by Lewis Gaul in :issue:`43080`.)
 
 py_compile
 ----------
@@ -841,6 +1051,14 @@ The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
+statistics
+----------
+
+Added :func:`~statistics.covariance`, Pearson's
+:func:`~statistics.correlation`, and simple
+:func:`~statistics.linear_regression` functions.
+(Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
+
 site
 ----
 
@@ -855,6 +1073,12 @@ The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 
 Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
+
+ssl
+---
+
+Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
+(Contributed by Zackery Spytz in :issue:`31870`.)
 
 sys
 ---
@@ -932,6 +1156,10 @@ and to match the behavior of static type checkers specified in the PEP.
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
 
+Add new function :func:`typing.is_typeddict` to introspect if an annotation
+is a :class:`typing.TypedDict`.
+(Contributed by Patrick Reader in :issue:`41792`)
+
 unittest
 --------
 
@@ -964,7 +1192,10 @@ zipimport
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 :meth:`zipimport.zipimporter.create_module`, and
 :meth:`zipimport.zipimporter.exec_module`.
-(Contributed by Brett Cannon in :issue:`42131`.
+(Contributed by Brett Cannon in :issue:`42131`.)
+
+Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
+(Contributed by Desmond Cheong in :issue:`14678`.)
 
 
 Optimizations
@@ -1012,6 +1243,11 @@ Optimizations
 * Following built-in functions now support the faster :pep:`590` vectorcall calling convention:
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
   (Contributed by Dong-hee Na and Jeroen Demeyerin in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+
+* :class:`BZ2File` performance is improved by removing internal ``RLock``.
+  This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
+  readers or writers, just like its equivalent classes in :mod:`gzip` and
+  :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
 
 Deprecated
 ==========
@@ -1121,6 +1357,19 @@ Deprecated
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
 
+* :func:`asyncio.get_event_loop` emits now a deprecation warning if there is
+  no running event loop. In future it will be an alias of
+  :func:`~asyncio.get_running_loop`.
+  :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
+  or :class:`~asyncio.Task` objects emit now
+  a deprecation warning if there is no running event loop and no explicit
+  *loop* argument is passed: :func:`~asyncio.ensure_future`,
+  :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
+  :func:`~asyncio.shield`, :func:`~asyncio.as_completed` and constructors of
+  :class:`~asyncio.Future`, :class:`~asyncio.Task`,
+  :class:`~asyncio.StreamReader`, :class:`~asyncio.StreamReaderProtocol`.
+  (Contributed by Serhiy Storchaka in :issue:`39529`.)
+
 * The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly
   discouraged by the SQLite3 documentation.  See `the SQLite3 docs
@@ -1149,6 +1398,10 @@ Deprecated
   * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
 
   (Contributed by Jelle Zijlstra in :issue:`21574`.)
+
+* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+  Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
+  (Contributed by Barney Gale in :issue:`39950`.)
 
 
 Removed
@@ -1290,6 +1543,10 @@ CPython bytecode changes
 Build Changes
 =============
 
+* :pep:`644`: Python now requires OpenSSL 1.1.1 or newer. OpenSSL 1.0.2 is no
+  longer supported.
+  (Contributed by Christian Heimes in :issue:`43669`.)
+
 * The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
   to build Python.
   (Contributed by Victor Stinner in :issue:`36020`.)
@@ -1333,7 +1590,6 @@ Build Changes
   simplifies building Python with a custom OpenSSL installation, e.g.
   ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
   (Contributed by Christian Heimes in :issue:`43466`.)
-
 
 
 C API Changes
@@ -1548,6 +1804,12 @@ Removed
 
   Use Python :mod:`symtable` module instead.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove :c:func:`PyOS_ReadlineFunctionPointer` from the limited C API headers
+  and from ``python3.dll``, the library that provides the stable ABI on
+  Windows. Since the function takes a ``FILE*`` argument, its ABI stability
+  cannot be guaranteed.
+  (Contributed by Petr Viktorin in :issue:`43868`.)
 
 * Remove ``ast.h``, ``asdl.h``, and ``Python-ast.h`` header files.
   These functions were undocumented and excluded from the limited C API.
