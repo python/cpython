@@ -1366,7 +1366,7 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
         return NULL;
 
     mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
-    if (mod == NULL) {
+    if (mod == NULL || !_PyAST_Validate(mod)) {
         _PyArena_Free(arena);
         return NULL;
     }
