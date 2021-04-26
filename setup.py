@@ -2466,7 +2466,8 @@ class PyBuildExt(build_ext):
                 extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
             openssl_extension_kwargs["extra_link_args"] = extra_linker_args
             # don't link OpenSSL shared libraries.
-            openssl_extension_kwargs["libraries"] = []
+            # include libz for OpenSSL build flavors with compression support
+            openssl_extension_kwargs["libraries"] = ["z"]
 
         self.add(
             Extension(
