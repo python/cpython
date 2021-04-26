@@ -1604,7 +1604,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     - If no dict arguments are passed, an attempt is made to use the
       globals from obj (or the respective module's globals for classes),
       and these are also used as the locals.  If the object does not appear
-      to have globals, an empty dictionary is used.
+      to have globals, an empty dictionary is used.  For classes, the search
+      order is globals first then locals.
 
     - If one dict argument is passed, it is used for both globals and
       locals.
