@@ -28,9 +28,9 @@ The IDLE interactive development environment, which is part of the standard
 Python distribution (normally available as Tools/scripts/idle), includes a
 graphical debugger.
 
-Pythonwin is a Python IDE that includes a GUI debugger based on pdb.  The
-Pythonwin debugger colors breakpoints and has quite a few cool features such as
-debugging non-Pythonwin programs.  Pythonwin is available as part of
+PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
+PythonWin debugger colors breakpoints and has quite a few cool features such as
+debugging non-PythonWin programs.  PythonWin is available as part of
 `pywin32 <https://github.com/mhammond/pywin32>`_ project and
 as a part of the
 `ActivePython <https://www.activestate.com/products/python/>`_ distribution.
