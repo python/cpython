@@ -1043,11 +1043,20 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LOAD_FAST (var_num)
 
-   Pushes a reference to the local ``co_varnames[var_num]`` onto the stack.
-   Closures are also handled by this operation.
+   Pushes a reference to a local variable or closure cell onto the stack.
+   The corresponding variable name is
+   ``(co_varnames + co_cellvars + co_freevars)[var_num]``.
+
+   For closures, note that ``LOAD_FAST`` loads the cell object contained
+   in the corresponding slot of the cell and free variable storage,
+   at index ``var_num - len(co_varnames)``.
+   In contrast, ``LOAD_DEREF`` gets the object the cell references.
+
+   Use of ``LOAD_FAST`` for closures is primarily to share cells objects
+   from an outer closure when creating an inner one with ``MAKE_FUNCTION``.
 
    .. versionchanged:: 3.10
-      Closures are handled here now instead of ``LOAD_CLOSURE`` (removed).
+      Closure cells are handled here now instead of ``LOAD_CLOSURE`` (removed).
 
 
 .. opcode:: STORE_FAST (var_num)
