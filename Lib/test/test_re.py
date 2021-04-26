@@ -2215,6 +2215,15 @@ class ImplementationTest(unittest.TestCase):
         self.assertGreaterEqual(sre_compile.MAXREPEAT, 0)
         self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
 
+    @cpython_only
+    def test_uninitialised_new(self):
+        # Prevent heap types from being created uninitialised (bpo-43916)
+        self.assertRaises(TypeError, re.Match)
+        self.assertRaises(TypeError, re.Pattern)
+        pat = re.compile("")
+        tp = type(pat.scanner(""))
+        self.assertRaises(TypeError, tp)
+
 
 class ExternalTests(unittest.TestCase):
 
