@@ -824,7 +824,7 @@ validate_exprs(struct validator *state, asdl_expr_seq *exprs, expr_context_ty ct
 int
 _PyAST_Validate(mod_ty mod)
 {
-    int res = 0;
+    int res = -1;
     struct validator state;
     PyThreadState *tstate;
     int recursion_limit = Py_GetRecursionLimit();
@@ -852,10 +852,16 @@ _PyAST_Validate(mod_ty mod)
     case Expression_kind:
         res = validate_expr(&state, mod->v.Expression.body, Load);
         break;
-    default:
-        PyErr_SetString(PyExc_SystemError, "impossible module node");
-        res = 0;
+    case FunctionType_kind:
+        res = validate_exprs(&state, mod->v.FunctionType.argtypes, Load, /*null_ok=*/0) &&
+              validate_expr(&state, mod->v.FunctionType.returns, Load);
         break;
+    // No default case so compiler emits warning for unhandled cases
+    }
+
+    if (res < 0) {
+        PyErr_SetString(PyExc_SystemError, "impossible module node");
+        return 0;
     }
 
     /* Check that the recursion depth counting balanced correctly */
