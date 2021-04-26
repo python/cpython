@@ -1916,7 +1916,7 @@ client to access it remotely::
     >>> class Worker(Process):
     ...     def __init__(self, q):
     ...         self.q = q
-    ...         super(Worker, self).__init__()
+    ...         super().__init__()
     ...     def run(self):
     ...         self.q.put('local hello')
     ...
