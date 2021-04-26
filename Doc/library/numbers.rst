@@ -60,7 +60,7 @@ The numeric tower
 
    Subtypes :class:`Real` and adds
    :attr:`~Rational.numerator` and :attr:`~Rational.denominator` properties, which
-   should be in lowest terms. With these, it provides a default for
+   should be in lowest terms, instances of :class:`Integral`. With these, it provides a default for
    :func:`float`.
 
    .. attribute:: numerator
