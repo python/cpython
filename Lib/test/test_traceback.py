@@ -679,6 +679,30 @@ class BaseExceptionReportingTests:
         err = self.get_report(Exception(''))
         self.assertIn('Exception\n', err)
 
+    def test_syntax_error_no_lineno(self):
+            # See #34463.
+
+            # Without filename
+            e = SyntaxError('bad syntax')
+            msg = self.get_report(e).splitlines()
+            self.assertEqual(msg,
+                ['SyntaxError: bad syntax'])
+            e.lineno = 100
+            msg = self.get_report(e).splitlines()
+            self.assertEqual(msg,
+                ['  File "<string>", line 100', 'SyntaxError: bad syntax'])
+
+            # With filename
+            e = SyntaxError('bad syntax')
+            e.filename = 'myfile.py'
+
+            msg = self.get_report(e).splitlines()
+            self.assertEqual(msg,
+                ['SyntaxError: bad syntax (myfile.py)'])
+            e.lineno = 100
+            msg = self.get_report(e).splitlines()
+            self.assertEqual(msg,
+                ['  File "myfile.py", line 100', 'SyntaxError: bad syntax'])
 
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
