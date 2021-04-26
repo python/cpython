@@ -1819,6 +1819,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
+        case TARGET(LOAD_CLOSURE):
         case TARGET(LOAD_FAST): {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
