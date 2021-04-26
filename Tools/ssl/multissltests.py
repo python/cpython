@@ -33,6 +33,7 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import urlopen, HTTPError
+import re
 import shutil
 import string
 import subprocess
@@ -434,11 +435,11 @@ class BuildOpenSSL(AbstractBuilder):
                 self.openssl_cli, "fipsinstall",
                 "-out", fipsinstall_cnf,
                 "-module", fips_mod,
-                "-provider_name", "fips",
-                "-mac_name", "HMAC",
-                "-macopt", "digest:SHA256",
-                "-macopt", "hexkey:00",
-                "-section_name", "fips_sect"
+                # "-provider_name", "fips",
+                # "-mac_name", "HMAC",
+                # "-macopt", "digest:SHA256",
+                # "-macopt", "hexkey:00",
+                # "-section_name", "fips_sect"
             ]
         )
         with open(openssl_fips_cnf, "w") as f:
@@ -446,11 +447,14 @@ class BuildOpenSSL(AbstractBuilder):
     @property
     def short_version(self):
         """Short version for OpenSSL download URL"""
-        short_version = self.version.rstrip(string.ascii_letters)
-        if short_version.startswith("0.9"):
-            short_version = "0.9.x"
-        return short_version
-
+        mo = re.search(r"^(\d+)\.(\d+)\.(\d+)", self.version)
+        parsed = tuple(int(m) for m in mo.groups())
+        if parsed < (1, 0, 0):
+            return "0.9.x"
+        if parsed >= (3, 0, 0):
+            # OpenSSL 3.0.0 -> /old/3.0/
+            parsed = parsed[:2]
+        return ".".join(str(i) for i in parsed)
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"
