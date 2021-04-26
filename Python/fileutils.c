@@ -18,6 +18,10 @@ extern int winerror_to_errno(int);
 #include <sys/ioctl.h>
 #endif
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#include <iconv.h>
+#endif
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
@@ -926,89 +930,62 @@ _Py_GetLocaleEncodingObject(void)
 
 /* Check whether current locale uses Unicode as internal wchar_t form. */
 int
-_Py_IsLocaleUnicodeWchar(void)
+_Py_LocaleUsesNonUnicodeWchar(void)
 {
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion to UTF first. */
     char* codeset = nl_langinfo(CODESET);
+    if (!codeset) {
+        return 0;
+    }
     return (strcmp(codeset, "UTF-8") == 0 || strcmp(codeset, "646") == 0);
 }
 
-/* Convert a wide character string to the UTF32 encoded char32_t string. This
+/* Convert a wide character string to the UCS-4 encoded string. This
    is necessary on systems where internal form of wchar_t are not Unicode
    code points (e.g. Oracle Solaris).
 
-   Return a pointer to a newly allocated char32_t string, use PyMem_Free() to
-   free the memory. Return NULL and raise exception on conversion or memory
+   Return a pointer to a newly allocated string, use PyMem_Free() to free
+   the memory. Return NULL and raise exception on conversion or memory
    allocation error. */
-char32_t*
-_Py_convert_wchar_t_to_UCS4(const wchar_t* u, Py_ssize_t size)
+wchar_t *
+_Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
 {
     /* Ensure we won't overflow the size. */
-    if (size > ((PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t)) - 1)) {
+    if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    /* Given 'u' might not be NULL terminated (size smaller than its
-       length); copy and terminate part we are interested in. */
-    wchar_t* substr = PyMem_Malloc((size + 1) * sizeof(wchar_t));
-    if (substr == NULL) {
+    /* iconv doesn't need the string to be NULL terminated */
+    wchar_t* target = PyMem_Malloc(size * sizeof(wchar_t));
+    if (target == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    memcpy(substr, u, size * sizeof(wchar_t));
-    substr[size] = 0;
-
-    /* Convert given wide-character string to a character string */
-    size_t buffsize = wcstombs(NULL, substr, 0) + 1;
-    if (buffsize == (size_t)-1) {
-        PyMem_Free(substr);
-        PyErr_Format(PyExc_ValueError, "wcstombs() conversion failed");
+    iconv_t cd = iconv_open("UCS-4-INTERNAL", "wchar_t");
+    if (cd == (iconv_t)-1) {
+        PyErr_Format(PyExc_ValueError, "iconv_open() failed");
+        PyMem_Free(target);
         return NULL;
     }
 
-    /* Ensure we won't overflow the size. */
-    if (buffsize > (PY_SSIZE_T_MAX - 1)) {
-        PyMem_Free(substr);
-        PyErr_NoMemory();
+    char *inbuf = (char *) source;
+    char *outbuf = (char *) target;
+    size_t inbytesleft = sizeof(wchar_t) * size;
+    size_t outbytesleft = inbytesleft;
+
+    size_t ret = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+    if (ret == DECODE_ERROR) {
+        PyErr_Format(PyExc_ValueError, "iconv() failed");
+        PyMem_Free(target);
+        iconv_close(cd);
         return NULL;
     }
-    char* buffer = PyMem_Malloc(buffsize * sizeof(char));
-    if (buffer == NULL) {
-        PyMem_Free(substr);
-        PyErr_NoMemory();
-        return NULL;
-    }
 
-    size_t res = wcstombs(buffer, substr, buffsize);
-
-    /* Convert character string to UTF32 encoded char32_t string.
-       Since wchar_t and char32_t have the same size on Solaris and one
-       wchar_t symbol corresponds to one UTF32 value, we can safely
-       reuse this buffer and skip additional allocation. */
-    char32_t* c32 = (char32_t*) substr;
-    mbstate_t state = {0};
-
-    Py_ssize_t i = 0;
-    char* ptr = buffer;
-    char* end = ptr + res + 1;
-
-    while (res = mbrtoc32(&(c32[i]), ptr, end - ptr, &state)) {
-        if (res == (size_t)-1 || res == (size_t)-2 || res == (size_t)-3) {
-            PyMem_Free(c32);
-            PyMem_Free(buffer);
-            PyErr_Format(PyExc_ValueError,
-                         "mbrtoc32() conversion failed with error code: %zd",
-                         (Py_ssize_t)res);
-            return NULL;
-        }
-        ptr += res;
-        i ++;
-    }
-    PyMem_Free(buffer);
-    return c32;
+    iconv_close(cd);
+    return target;
 }
 #endif /* HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION */
 

@@ -2219,13 +2219,13 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
-       non-Unicode locales and hence needs conversion to UTF first. */
-    if (!_Py_IsLocaleUnicodeWchar()) {
-        char32_t* c32 = _Py_convert_wchar_t_to_UCS4(u, size);
-        if (!c32)
+       non-Unicode locales and hence needs conversion to UCS-4 first. */
+    if (!_Py_LocaleUsesNonUnicodeWchar()) {
+        wchar_t* converted = _Py_ConvertWCharFormToUCS4(u, size);
+        if (!converted)
             return NULL;
-        PyObject *unicode = _PyUnicode_FromUCS4(c32, size);
-        PyMem_Free(c32);
+        PyObject *unicode = _Py_ConvertWCharFormToUCS4(converted, size);
+        PyMem_Free(converted);
         return unicode;
     }
 #endif

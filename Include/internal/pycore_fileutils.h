@@ -53,6 +53,14 @@ PyAPI_FUNC(void) _Py_closerange(int first, int last);
 PyAPI_FUNC(wchar_t*) _Py_GetLocaleEncoding(void);
 PyAPI_FUNC(PyObject*) _Py_GetLocaleEncodingObject(void);
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+extern int _Py_LocaleUsesNonUnicodeWchar(void);
+
+extern wchar_t* _Py_ConvertWCharFormToUCS4(
+    const wchar_t* u,
+    Py_ssize_t size);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
