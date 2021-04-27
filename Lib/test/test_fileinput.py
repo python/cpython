@@ -2,6 +2,7 @@
 Tests for fileinput module.
 Nick Mathewson
 '''
+import io
 import os
 import sys
 import re
@@ -238,7 +239,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         # try opening in universal newline mode
         t1 = self.writeTmp(b"A\nB\r\nC\rD", mode="wb")
         with warnings_helper.check_warnings(('', DeprecationWarning)):
-            fi = FileInput(files=t1, mode="U")
+            fi = FileInput(files=t1, mode="U", encoding="utf-8")
         with warnings_helper.check_warnings(('', DeprecationWarning)):
             lines = list(fi)
         self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
@@ -278,7 +279,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         class CustomOpenHook:
             def __init__(self):
                 self.invoked = False
-            def __call__(self, *args):
+            def __call__(self, *args, **kargs):
                 self.invoked = True
                 return open(*args)
 
@@ -333,6 +334,14 @@ class FileInputTests(BaseTests, unittest.TestCase):
             sys.stdout.write(b'New line.')
         with open(temp_file, 'rb') as f:
             self.assertEqual(f.read(), b'New line.')
+
+    def test_file_hook_backward_compatibility(self):
+        def old_hook(filename, mode):
+            return io.StringIO("I used to receive only filename and mode")
+        t = self.writeTmp("\n")
+        with FileInput([t], openhook=old_hook) as fi:
+            result = fi.readline()
+        self.assertEqual(result, "I used to receive only filename and mode")
 
     def test_context_manager(self):
         t1 = self.writeTmp("A\nB\nC")
@@ -529,12 +538,14 @@ class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""
 
     def __init__(self, files=None, inplace=False, backup="", *,
-                 mode="r", openhook=None):
+                 mode="r", openhook=None, encoding=None, errors=None):
         self.files = files
         self.inplace = inplace
         self.backup = backup
         self.mode = mode
         self.openhook = openhook
+        self.encoding = encoding
+        self.errors = errors
         self._file = None
         self.invocation_counts = collections.defaultdict(lambda: 0)
         self.return_values = {}
@@ -637,10 +648,11 @@ class Test_fileinput_input(BaseFileInputGlobalMethodsTest):
         backup = object()
         mode = object()
         openhook = object()
+        encoding = object()
 
         # call fileinput.input() with different values for each argument
         result = fileinput.input(files=files, inplace=inplace, backup=backup,
-            mode=mode, openhook=openhook)
+            mode=mode, openhook=openhook, encoding=encoding)
 
         # ensure fileinput._state was set to the returned object
         self.assertIs(result, fileinput._state, "fileinput._state")
@@ -863,11 +875,15 @@ class Test_fileinput_isstdin(BaseFileInputGlobalMethodsTest):
         self.assertIs(fileinput._state, instance)
 
 class InvocationRecorder:
+
     def __init__(self):
         self.invocation_count = 0
+
     def __call__(self, *args, **kwargs):
         self.invocation_count += 1
         self.last_invocation = (args, kwargs)
+        return io.BytesIO(b'some bytes')
+
 
 class Test_hook_compressed(unittest.TestCase):
     """Unit tests for fileinput.hook_compressed()"""
@@ -886,33 +902,43 @@ class Test_hook_compressed(unittest.TestCase):
         original_open = gzip.open
         gzip.open = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.gz", 3)
+            result = fileinput.hook_compressed("test.gz", "3")
         finally:
             gzip.open = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.gz", 3), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.gz", "3"), {}))
+
+    @unittest.skipUnless(gzip, "Requires gzip and zlib")
+    def test_gz_with_encoding_fake(self):
+        original_open = gzip.open
+        gzip.open = lambda filename, mode: io.BytesIO(b'Ex-binary string')
+        try:
+            result = fileinput.hook_compressed("test.gz", "3", encoding="utf-8")
+        finally:
+            gzip.open = original_open
+        self.assertEqual(list(result), ['Ex-binary string'])
 
     @unittest.skipUnless(bz2, "Requires bz2")
     def test_bz2_ext_fake(self):
         original_open = bz2.BZ2File
         bz2.BZ2File = self.fake_open
         try:
-            result = fileinput.hook_compressed("test.bz2", 4)
+            result = fileinput.hook_compressed("test.bz2", "4")
         finally:
             bz2.BZ2File = original_open
 
         self.assertEqual(self.fake_open.invocation_count, 1)
-        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", 4), {}))
+        self.assertEqual(self.fake_open.last_invocation, (("test.bz2", "4"), {}))
 
     def test_blah_ext(self):
-        self.do_test_use_builtin_open("abcd.blah", 5)
+        self.do_test_use_builtin_open("abcd.blah", "5")
 
     def test_gz_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Gz", 6)
+        self.do_test_use_builtin_open("abcd.Gz", "6")
 
     def test_bz2_ext_builtin(self):
-        self.do_test_use_builtin_open("abcd.Bz2", 7)
+        self.do_test_use_builtin_open("abcd.Bz2", "7")
 
     def do_test_use_builtin_open(self, filename, mode):
         original_open = self.replace_builtin_open(self.fake_open)
@@ -923,7 +949,7 @@ class Test_hook_compressed(unittest.TestCase):
 
         self.assertEqual(self.fake_open.invocation_count, 1)
         self.assertEqual(self.fake_open.last_invocation,
-                         ((filename, mode), {}))
+                         ((filename, mode), {'encoding': 'locale', 'errors': None}))
 
     @staticmethod
     def replace_builtin_open(new_open_func):

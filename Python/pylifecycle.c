@@ -2241,7 +2241,7 @@ error:
     return NULL;
 }
 
-/* Set builtins.open to io.OpenWrapper */
+/* Set builtins.open to io.open */
 static PyStatus
 init_set_builtins_open(void)
 {
@@ -2257,7 +2257,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+    if (!(wrapper = PyObject_GetAttrString(iomod, "open"))) {
         goto error;
     }
 
@@ -2279,7 +2279,7 @@ done:
 }
 
 
-/* Initialize sys.stdin, stdout, stderr and builtins.open */
+/* Create sys.stdin, sys.stdout and sys.stderr */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
@@ -2551,12 +2551,14 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
     // memory cannot be allocated on the heap in a signal handler.
     // Iterate on the dict instead.
     PyObject *stdlib_module_names = NULL;
-    pos = 0;
-    while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
-        if (PyUnicode_Check(key)
-           && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
-            stdlib_module_names = value;
-            break;
+    if (interp->sysdict != NULL) {
+        pos = 0;
+        while (PyDict_Next(interp->sysdict, &pos, &key, &value)) {
+            if (PyUnicode_Check(key)
+               && PyUnicode_CompareWithASCIIString(key, "stdlib_module_names") == 0) {
+                stdlib_module_names = value;
+                break;
+            }
         }
     }
     // If we failed to get sys.stdlib_module_names or it's not a frozenset,

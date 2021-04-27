@@ -2,7 +2,6 @@
 
 #include "Python.h"
 
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"

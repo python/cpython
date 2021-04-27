@@ -1,0 +1,2 @@
+Update dataclasses documentation to express that FrozenInstanceError is
+derived from AttributeError.

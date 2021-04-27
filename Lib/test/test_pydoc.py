@@ -81,7 +81,7 @@ CLASSES
      |\x20\x20
      |  NO_MEANING = 'eggs'
      |\x20\x20
-     |  __annotations__ = {'NO_MEANING': 'str'}
+     |  __annotations__ = {'NO_MEANING': <class 'str'>}
 \x20\x20\x20\x20
     class C(builtins.object)
      |  Methods defined here:
@@ -194,7 +194,7 @@ Data descriptors defined here:<br>
 Data and other attributes defined here:<br>
 <dl><dt><strong>NO_MEANING</strong> = 'eggs'</dl>
 
-<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': 'str'}</dl>
+<dl><dt><strong>__annotations__</strong> = {'NO_MEANING': &lt;class 'str'&gt;}</dl>
 
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -1142,7 +1142,8 @@ class TestDescriptions(unittest.TestCase):
                 '''A static method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['sm']),
-                         "<staticmethod object>")
+                         'sm(x, y)\n'
+                         '    A static method\n')
         self.assertEqual(self._get_summary_lines(X.sm), """\
 sm(x, y)
     A static method
@@ -1162,7 +1163,8 @@ sm(x, y)
                 '''A class method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['cm']),
-                         "<classmethod object>")
+                         'cm(...)\n'
+                         '    A class method\n')
         self.assertEqual(self._get_summary_lines(X.cm), """\
 cm(x) method of builtins.type instance
     A class method

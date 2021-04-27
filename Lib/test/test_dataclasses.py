@@ -9,7 +9,6 @@ import pickle
 import inspect
 import builtins
 import unittest
-from textwrap import dedent
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
 from typing import get_type_hints
@@ -62,6 +61,7 @@ class TestCase(unittest.TestCase):
                            f"default=1,default_factory={MISSING!r}," \
                            "init=True,repr=False,hash=None," \
                            "compare=True,metadata=mappingproxy({})," \
+                           f"kw_only={MISSING!r}," \
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
@@ -563,17 +563,17 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(the_fields), 3)
 
         self.assertEqual(the_fields[0].name, 'x')
-        self.assertEqual(the_fields[0].type, 'int')
+        self.assertEqual(the_fields[0].type, int)
         self.assertFalse(hasattr(C, 'x'))
         self.assertTrue (the_fields[0].init)
         self.assertTrue (the_fields[0].repr)
         self.assertEqual(the_fields[1].name, 'y')
-        self.assertEqual(the_fields[1].type, 'str')
+        self.assertEqual(the_fields[1].type, str)
         self.assertIsNone(getattr(C, 'y'))
         self.assertFalse(the_fields[1].init)
         self.assertTrue (the_fields[1].repr)
         self.assertEqual(the_fields[2].name, 'z')
-        self.assertEqual(the_fields[2].type, 'str')
+        self.assertEqual(the_fields[2].type, str)
         self.assertFalse(hasattr(C, 'z'))
         self.assertTrue (the_fields[2].init)
         self.assertFalse(the_fields[2].repr)
@@ -759,11 +759,11 @@ class TestCase(unittest.TestCase):
         def validate_class(cls):
             # First, check __annotations__, even though they're not
             #  function annotations.
-            self.assertEqual(cls.__annotations__['i'], 'int')
-            self.assertEqual(cls.__annotations__['j'], 'str')
-            self.assertEqual(cls.__annotations__['k'], 'F')
-            self.assertEqual(cls.__annotations__['l'], 'float')
-            self.assertEqual(cls.__annotations__['z'], 'complex')
+            self.assertEqual(cls.__annotations__['i'], int)
+            self.assertEqual(cls.__annotations__['j'], str)
+            self.assertEqual(cls.__annotations__['k'], F)
+            self.assertEqual(cls.__annotations__['l'], float)
+            self.assertEqual(cls.__annotations__['z'], complex)
 
             # Verify __init__.
 
@@ -778,22 +778,22 @@ class TestCase(unittest.TestCase):
             self.assertEqual(param.name, 'self')
             param = next(params)
             self.assertEqual(param.name, 'i')
-            self.assertIs   (param.annotation, 'int')
+            self.assertIs   (param.annotation, int)
             self.assertEqual(param.default, inspect.Parameter.empty)
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'j')
-            self.assertIs   (param.annotation, 'str')
+            self.assertIs   (param.annotation, str)
             self.assertEqual(param.default, inspect.Parameter.empty)
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'k')
-            self.assertIs   (param.annotation, 'F')
+            self.assertIs   (param.annotation, F)
             # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             param = next(params)
             self.assertEqual(param.name, 'l')
-            self.assertIs   (param.annotation, 'float')
+            self.assertIs   (param.annotation, float)
             # Don't test for the default, since it's set to MISSING.
             self.assertEqual(param.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
             self.assertRaises(StopIteration, next, params)
@@ -2855,6 +2855,9 @@ class TestDescriptors(unittest.TestCase):
 
 class TestStringAnnotations(unittest.TestCase):
     def test_classvar(self):
+        # Some expressions recognized as ClassVar really aren't.  But
+        #  if you're using string annotations, it's not an exact
+        #  science.
         # These tests assume that both "import typing" and "from
         # typing import *" have been run in this file.
         for typestr in ('ClassVar[int]',
@@ -2869,15 +2872,17 @@ class TestStringAnnotations(unittest.TestCase):
                         'typing. ClassVar[str]',
                         'typing.ClassVar [str]',
                         'typing.ClassVar [ str]',
-                        # Double stringified
-                        '"typing.ClassVar[int]"',
+
                         # Not syntactically valid, but these will
-                        # be treated as ClassVars.
+                        #  be treated as ClassVars.
                         'typing.ClassVar.[int]',
                         'typing.ClassVar+',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
+                @dataclass
+                class C:
+                    x: typestr
+
                 # x is a ClassVar, so C() takes no args.
                 C()
 
@@ -2898,7 +2903,9 @@ class TestStringAnnotations(unittest.TestCase):
                         'typingxClassVar[str]',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
+                @dataclass
+                class C:
+                    x: typestr
 
                 # x is not a ClassVar, so C() takes one arg.
                 self.assertEqual(C(10).x, 10)
@@ -2918,16 +2925,16 @@ class TestStringAnnotations(unittest.TestCase):
                         'dataclasses. InitVar[str]',
                         'dataclasses.InitVar [str]',
                         'dataclasses.InitVar [ str]',
-                        # Double stringified
-                        '"dataclasses.InitVar[int]"',
+
                         # Not syntactically valid, but these will
                         #  be treated as InitVars.
                         'dataclasses.InitVar.[int]',
                         'dataclasses.InitVar+',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
-
+                @dataclass
+                class C:
+                    x: typestr
 
                 # x is an InitVar, so doesn't create a member.
                 with self.assertRaisesRegex(AttributeError,
@@ -2941,22 +2948,30 @@ class TestStringAnnotations(unittest.TestCase):
                         'typing.xInitVar[int]',
                         ):
             with self.subTest(typestr=typestr):
-                C = dataclass(type("C", (), {"__annotations__": {"x": typestr}}))
+                @dataclass
+                class C:
+                    x: typestr
 
                 # x is not an InitVar, so there will be a member x.
                 self.assertEqual(C(10).x, 10)
 
     def test_classvar_module_level_import(self):
         from test import dataclass_module_1
+        from test import dataclass_module_1_str
         from test import dataclass_module_2
+        from test import dataclass_module_2_str
 
-        for m in (dataclass_module_1,
-                  dataclass_module_2):
+        for m in (dataclass_module_1, dataclass_module_1_str,
+                  dataclass_module_2, dataclass_module_2_str,
+                  ):
             with self.subTest(m=m):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
                 # not. See the imported modules for details.
-                c = m.CV(10)
+                if m.USING_STRINGS:
+                    c = m.CV(10)
+                else:
+                    c = m.CV()
                 self.assertEqual(c.cv0, 20)
 
 
@@ -2972,9 +2987,14 @@ class TestStringAnnotations(unittest.TestCase):
                             # not an instance field.
                             getattr(c, field_name)
 
-                # iv4 is interpreted as a normal field.
-                self.assertIn('not_iv4', c.__dict__)
-                self.assertEqual(c.not_iv4, 4)
+                if m.USING_STRINGS:
+                    # iv4 is interpreted as a normal field.
+                    self.assertIn('not_iv4', c.__dict__)
+                    self.assertEqual(c.not_iv4, 4)
+                else:
+                    # iv4 is interpreted as an InitVar, so it
+                    # won't exist on the instance.
+                    self.assertNotIn('not_iv4', c.__dict__)
 
     def test_text_annotations(self):
         from test import dataclass_textanno
@@ -3432,6 +3452,241 @@ class TestMatchArgs(unittest.TestCase):
             __match_args__ = ma
         self.assertIs(C(42).__match_args__, ma)
 
+    def test_bpo_43764(self):
+        @dataclass(repr=False, eq=False, init=False)
+        class X:
+            a: int
+            b: int
+            c: int
+        self.assertEqual(X.__match_args__, ("a", "b", "c"))
+
+    def test_match_args_argument(self):
+        @dataclass(match_args=False)
+        class X:
+            a: int
+        self.assertNotIn('__match_args__', X.__dict__)
+
+        @dataclass(match_args=False)
+        class Y:
+            a: int
+            __match_args__ = ('b',)
+        self.assertEqual(Y.__match_args__, ('b',))
+
+        @dataclass(match_args=False)
+        class Z(Y):
+            z: int
+        self.assertEqual(Z.__match_args__, ('b',))
+
+        # Ensure parent dataclass __match_args__ is seen, if child class
+        # specifies match_args=False.
+        @dataclass
+        class A:
+            a: int
+            z: int
+        @dataclass(match_args=False)
+        class B(A):
+            b: int
+        self.assertEqual(B.__match_args__, ('a', 'z'))
+
+    def test_make_dataclasses(self):
+        C = make_dataclass('C', [('x', int), ('y', int)])
+        self.assertEqual(C.__match_args__, ('x', 'y'))
+
+        C = make_dataclass('C', [('x', int), ('y', int)], match_args=True)
+        self.assertEqual(C.__match_args__, ('x', 'y'))
+
+        C = make_dataclass('C', [('x', int), ('y', int)], match_args=False)
+        self.assertNotIn('__match__args__', C.__dict__)
+
+        C = make_dataclass('C', [('x', int), ('y', int)], namespace={'__match_args__': ('z',)})
+        self.assertEqual(C.__match_args__, ('z',))
+
+
+class TestKeywordArgs(unittest.TestCase):
+    def test_no_classvar_kwarg(self):
+        msg = 'field a is a ClassVar but specifies kw_only'
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass
+            class A:
+                a: ClassVar[int] = field(kw_only=True)
+
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass
+            class A:
+                a: ClassVar[int] = field(kw_only=False)
+
+        with self.assertRaisesRegex(TypeError, msg):
+            @dataclass(kw_only=True)
+            class A:
+                a: ClassVar[int] = field(kw_only=False)
+
+    def test_field_marked_as_kwonly(self):
+        #######################
+        # Using dataclass(kw_only=True)
+        @dataclass(kw_only=True)
+        class A:
+            a: int
+        self.assertTrue(fields(A)[0].kw_only)
+
+        @dataclass(kw_only=True)
+        class A:
+            a: int = field(kw_only=True)
+        self.assertTrue(fields(A)[0].kw_only)
+
+        @dataclass(kw_only=True)
+        class A:
+            a: int = field(kw_only=False)
+        self.assertFalse(fields(A)[0].kw_only)
+
+        #######################
+        # Using dataclass(kw_only=False)
+        @dataclass(kw_only=False)
+        class A:
+            a: int
+        self.assertFalse(fields(A)[0].kw_only)
+
+        @dataclass(kw_only=False)
+        class A:
+            a: int = field(kw_only=True)
+        self.assertTrue(fields(A)[0].kw_only)
+
+        @dataclass(kw_only=False)
+        class A:
+            a: int = field(kw_only=False)
+        self.assertFalse(fields(A)[0].kw_only)
+
+        #######################
+        # Not specifying dataclass(kw_only)
+        @dataclass
+        class A:
+            a: int
+        self.assertFalse(fields(A)[0].kw_only)
+
+        @dataclass
+        class A:
+            a: int = field(kw_only=True)
+        self.assertTrue(fields(A)[0].kw_only)
+
+        @dataclass
+        class A:
+            a: int = field(kw_only=False)
+        self.assertFalse(fields(A)[0].kw_only)
+
+    def test_match_args(self):
+        # kw fields don't show up in __match_args__.
+        @dataclass(kw_only=True)
+        class C:
+            a: int
+        self.assertEqual(C(a=42).__match_args__, ())
+
+        @dataclass
+        class C:
+            a: int
+            b: int = field(kw_only=True)
+        self.assertEqual(C(42, b=10).__match_args__, ('a',))
+
+    def test_KW_ONLY(self):
+        @dataclass
+        class A:
+            a: int
+            _: KW_ONLY
+            b: int
+            c: int
+        A(3, c=5, b=4)
+        msg = "takes 2 positional arguments but 4 were given"
+        with self.assertRaisesRegex(TypeError, msg):
+            A(3, 4, 5)
+
+
+        @dataclass(kw_only=True)
+        class B:
+            a: int
+            _: KW_ONLY
+            b: int
+            c: int
+        B(a=3, b=4, c=5)
+        msg = "takes 1 positional argument but 4 were given"
+        with self.assertRaisesRegex(TypeError, msg):
+            B(3, 4, 5)
+
+        # Explicitely make a field that follows KW_ONLY be non-keyword-only.
+        @dataclass
+        class C:
+            a: int
+            _: KW_ONLY
+            b: int
+            c: int = field(kw_only=False)
+        c = C(1, 2, b=3)
+        self.assertEqual(c.a, 1)
+        self.assertEqual(c.b, 3)
+        self.assertEqual(c.c, 2)
+        c = C(1, b=3, c=2)
+        self.assertEqual(c.a, 1)
+        self.assertEqual(c.b, 3)
+        self.assertEqual(c.c, 2)
+        c = C(1, b=3, c=2)
+        self.assertEqual(c.a, 1)
+        self.assertEqual(c.b, 3)
+        self.assertEqual(c.c, 2)
+        c = C(c=2, b=3, a=1)
+        self.assertEqual(c.a, 1)
+        self.assertEqual(c.b, 3)
+        self.assertEqual(c.c, 2)
+
+    def test_post_init(self):
+        @dataclass
+        class A:
+            a: int
+            _: KW_ONLY
+            b: InitVar[int]
+            c: int
+            d: InitVar[int]
+            def __post_init__(self, b, d):
+                raise CustomError(f'{b=} {d=}')
+        with self.assertRaisesRegex(CustomError, 'b=3 d=4'):
+            A(1, c=2, b=3, d=4)
+
+        @dataclass
+        class B:
+            a: int
+            _: KW_ONLY
+            b: InitVar[int]
+            c: int
+            d: InitVar[int]
+            def __post_init__(self, b, d):
+                self.a = b
+                self.c = d
+        b = B(1, c=2, b=3, d=4)
+        self.assertEqual(asdict(b), {'a': 3, 'c': 4})
+
+    def test_defaults(self):
+        # For kwargs, make sure we can have defaults after non-defaults.
+        @dataclass
+        class A:
+            a: int = 0
+            _: KW_ONLY
+            b: int
+            c: int = 1
+            d: int
+
+        a = A(d=4, b=3)
+        self.assertEqual(a.a, 0)
+        self.assertEqual(a.b, 3)
+        self.assertEqual(a.c, 1)
+        self.assertEqual(a.d, 4)
+
+        # Make sure we still check for non-kwarg non-defaults not following
+        # defaults.
+        err_regex = "non-default argument 'z' follows default argument"
+        with self.assertRaisesRegex(TypeError, err_regex):
+            @dataclass
+            class A:
+                a: int = 0
+                z: int
+                _: KW_ONLY
+                b: int
+                c: int = 1
+                d: int
 
 if __name__ == '__main__':
     unittest.main()

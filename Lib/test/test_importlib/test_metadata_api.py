@@ -2,6 +2,7 @@ import re
 import textwrap
 import unittest
 import warnings
+import importlib
 
 from . import fixtures
 from importlib.metadata import (
@@ -260,3 +261,9 @@ class OffSysPathTests(fixtures.DistInfoPkgOffPath, unittest.TestCase):
         dist_info_path = self.site_dir / 'distinfo_pkg-1.0.0.dist-info'
         dist = Distribution.at(str(dist_info_path))
         assert dist.version == '1.0.0'
+
+
+class InvalidateCache(unittest.TestCase):
+    def test_invalidate_cache(self):
+        # No externally observable behavior, but ensures test coverage...
+        importlib.invalidate_caches()
