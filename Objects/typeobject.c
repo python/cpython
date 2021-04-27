@@ -934,6 +934,11 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_get_annotations(PyTypeObject *type, void *context)
 {
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotations__'", type->tp_name);
+        return NULL;
+    }
+
     PyObject *annotations;
     /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
     if (_PyDict_ContainsId(type->tp_dict, &PyId___annotations__)) {
@@ -968,9 +973,24 @@ type_get_annotations(PyTypeObject *type, void *context)
 static int
 type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 {
-    if (!check_set_special_type_attr(type, value, "__annotations__"))
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_TypeError, "can't set attributes of built-in/extension type '%s'", type->tp_name);
         return -1;
-    int result = _PyDict_SetItemId(type->tp_dict, &PyId___annotations__, value);
+    }
+
+    int result;
+    if (value != NULL) {
+        /* set */
+        result = _PyDict_SetItemId(type->tp_dict, &PyId___annotations__, value);
+    } else {
+        /* delete */
+        if (!_PyDict_ContainsId(type->tp_dict, &PyId___annotations__)) {
+            PyErr_Format(PyExc_AttributeError, "__annotations__");
+            return -1;
+        }
+        result = _PyDict_DelItemId(type->tp_dict, &PyId___annotations__);
+    }
+
     if (result == 0) {
         PyType_Modified(type);
     }
