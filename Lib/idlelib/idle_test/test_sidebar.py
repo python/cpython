@@ -427,7 +427,6 @@ class ShellSidebarTest(unittest.TestCase):
         cls.flist = flist = PyShellFileList(root)
         macosx.setupApp(root, flist)
         root.update_idletasks()
-        cls.savetext = []
 
     @classmethod
     def tearDownClass(cls):
@@ -439,11 +438,6 @@ class ShellSidebarTest(unittest.TestCase):
         cls.root.update_idletasks()
         cls.root.destroy()
         cls.root = None
-        for item in cls.savetext:
-            print('***')
-            for line in item.splitlines():
-                print(line)
-        print('***')
 
     @classmethod
     def init_shell(cls):
@@ -554,9 +548,7 @@ class ShellSidebarTest(unittest.TestCase):
 
     @test_coroutine
     def test_single_line_command(self):
-        sys.stdout = self.shell.stdout
         self.do_input('1\n')
-        self.savetext.append(self.shell.text.get(1.0, 'end-1c'))
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
@@ -569,7 +561,6 @@ class ShellSidebarTest(unittest.TestCase):
 
             '''))
         yield
-        self.savetext.append(self.shell.text.get(1.0, 'end-1c'))
         self.assert_sidebar_lines_end_with([
             '>>>',
             '...',
