@@ -1004,6 +1004,14 @@ type_repr(PyTypeObject *type)
     return rtn;
 }
 
+PyObject *
+_PyType_DisabledNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyErr_Format(PyExc_TypeError, "cannot create '%.100s' instances",
+                 type->tp_name);
+    return NULL;
+}
+
 static PyObject *
 type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1041,10 +1049,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     if (type->tp_new == NULL) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "cannot create '%.100s' instances",
-                      type->tp_name);
-        return NULL;
+        return _PyType_DisabledNew(type, args, kwds);
     }
 
     obj = type->tp_new(type, args, kwds);

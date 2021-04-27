@@ -4,6 +4,9 @@
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 
+PyAPI_FUNC(PyObject *) _PyType_DisabledNew(PyTypeObject *, PyObject *,
+                                           PyObject *);
+
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
