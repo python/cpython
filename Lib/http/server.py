@@ -1213,6 +1213,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                     rfile.seek(0)
                     data = None
 
+                # throw away additional data [see bug #427345]
                 while select.select([self.rfile._sock], [], [], 0)[0]:
                     if not self.rfile._sock.recv(1):
                         break
