@@ -454,6 +454,7 @@ class ShellSidebarTest(unittest.TestCase):
 
     @classmethod
     def reset_shell(cls):
+        sys.stdout = cls.shell.stdout
         cls.shell.per.bottom.delete(f'{cls.n_preface_lines+1}.0', 'end-1c')
         cls.shell.shell_sidebar.update_sidebar()
         cls.root.update()
@@ -553,6 +554,7 @@ class ShellSidebarTest(unittest.TestCase):
 
     @test_coroutine
     def test_single_line_command(self):
+        sys.stdout = self.shell.stdout
         self.do_input('1\n')
         self.savetext.append(self.shell.text.get(1.0, 'end-1c'))
         yield
