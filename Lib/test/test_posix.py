@@ -58,6 +58,11 @@ class PosixTester(unittest.TestCase):
             os_helper.unlink(teardown_file)
         self._warnings_manager.__exit__(None, None, None)
 
+    def test_uninitialised_new(self):
+        # Prevent heap types from being created uninitialised (bpo-43916)
+        self.assertRaises(TypeError, posix.DirEntry)
+        self.assertRaises(TypeError, type(posix.scandir()))
+
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
         # no side-effects which we need to cleanup (e.g., fork, wait, abort)

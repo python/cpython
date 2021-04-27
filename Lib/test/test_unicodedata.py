@@ -225,6 +225,10 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
 
+    def test_uninitialised_new(self):
+        # Prevent heap types from being created uninitialised (bpo-43916)
+        self.assertRaises(TypeError, unicodedata.UCD)
+
     def test_failed_import_during_compiling(self):
         # Issue 4367
         # Decoding \N escapes requires the unicodedata module. If it can't be
@@ -308,10 +312,6 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
             else:
                 self.assertEqual(len(lines), 1,
                                  r"\u%.4x should not be a linebreak" % i)
-
-    def test_no_uninit_new(self):
-        # Prevent heap types from being created uninitialised (bpo-43916)
-        self.assertRaises(TypeError, unicodedata.UCD)
 
 class NormalizationTest(unittest.TestCase):
     @staticmethod

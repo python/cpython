@@ -948,6 +948,10 @@ class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
     if c_functools:
         cmp_to_key = c_functools.cmp_to_key
 
+    def test_uninitialised_new(self):
+        # Prevent heap types from being created uninitialised (bpo-43916)
+        self.assertRaises(TypeError, type(c_functools.cmp_to_key(None)))
+
 
 class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):
     cmp_to_key = staticmethod(py_functools.cmp_to_key)
