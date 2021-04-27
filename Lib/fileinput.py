@@ -210,7 +210,7 @@ class FileInput:
 
         # We can not use io.text_encoding() here because old openhook doesn't
         # take encoding parameter.
-        if (sys.flags.warn_default_encoding and 
+        if (sys.flags.warn_default_encoding and
                 "b" not in mode and encoding is None and openhook is None):
             import warnings
             warnings.warn("'encoding' argument not specified.",
