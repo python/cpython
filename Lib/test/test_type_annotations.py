@@ -101,5 +101,3 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
-
-
