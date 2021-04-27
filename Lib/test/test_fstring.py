@@ -990,7 +990,7 @@ x = (
                              ])
 
     def test_assignment(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, r'invalid syntax',
                             ["f'' = 3",
                              "f'{0}' = x",
                              "f'{x}' = x",
@@ -1276,11 +1276,11 @@ x = (
             f'{1:_,}'
 
     def test_syntax_error_for_starred_expressions(self):
-        error_msg = re.escape("can't use starred expression here")
+        error_msg = re.escape("cannot use starred expression here")
         with self.assertRaisesRegex(SyntaxError, error_msg):
             compile("f'{*a}'", "?", "exec")
 
-        error_msg = re.escape("can't use double starred expression here")
+        error_msg = re.escape("cannot use double starred expression here")
         with self.assertRaisesRegex(SyntaxError, error_msg):
             compile("f'{**a}'", "?", "exec")
 

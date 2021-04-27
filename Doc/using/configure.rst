@@ -19,7 +19,10 @@ General Options
 .. cmdoption:: --enable-loadable-sqlite-extensions
 
    Support loadable extensions in the :mod:`_sqlite` extension module (default
-   is no), see the :mod:`sqlite3` module.
+   is no).
+
+   See the :meth:`sqlite3.Connection.enable_load_extension` method of the
+   :mod:`sqlite3` module.
 
    .. versionadded:: 3.6
 
@@ -54,8 +57,9 @@ General Options
 
 .. cmdoption:: --with-tzpath=<list of absolute paths separated by pathsep>
 
-   Select the default time zone search path for :data:`zoneinfo.TZPATH`,
-   see the :mod:`zoneinfo` module.
+   Select the default time zone search path for :data:`zoneinfo.TZPATH`.
+   See the :ref:`Compile-time configuration
+   <zoneinfo_data_compile_time_config>` of the :mod:`zoneinfo` module.
 
    Default: ``/usr/share/zoneinfo:/usr/lib/zoneinfo:/usr/share/lib/zoneinfo:/etc/zoneinfo``.
 
@@ -286,6 +290,9 @@ Debug options
 .. cmdoption:: --with-dtrace
 
    Enable DTrace support (default is no).
+
+   See :ref:`Instrumenting CPython with DTrace and SystemTap
+   <instrumentation>`.
 
    .. versionadded:: 3.6
 

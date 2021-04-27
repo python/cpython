@@ -4,6 +4,7 @@
 #include "pycore_call.h"
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -1987,14 +1988,20 @@ mro_invoke(PyTypeObject *type)
 
     new_mro = PySequence_Tuple(mro_result);
     Py_DECREF(mro_result);
-    if (new_mro == NULL)
+    if (new_mro == NULL) {
         return NULL;
+    }
+
+    if (PyTuple_GET_SIZE(new_mro) == 0) {
+        Py_DECREF(new_mro);
+        PyErr_Format(PyExc_TypeError, "type MRO must not be empty");
+        return NULL;
+    }
 
     if (custom && mro_check(type, new_mro) < 0) {
         Py_DECREF(new_mro);
         return NULL;
     }
-
     return new_mro;
 }
 
@@ -2034,8 +2041,9 @@ mro_internal(PyTypeObject *type, PyObject **p_old_mro)
     new_mro = mro_invoke(type);  /* might cause reentrance */
     reent = (type->tp_mro != old_mro);
     Py_XDECREF(old_mro);
-    if (new_mro == NULL)
+    if (new_mro == NULL) {
         return -1;
+    }
 
     if (reent) {
         Py_DECREF(new_mro);
@@ -3575,7 +3583,7 @@ PyType_GetModuleState(PyTypeObject *type)
     if (m == NULL) {
         return NULL;
     }
-    return PyModule_GetState(m);
+    return _PyModule_GetState(m);
 }
 
 
@@ -3590,24 +3598,32 @@ PyObject *
 _PyType_GetModuleByDef(PyTypeObject *type, struct PyModuleDef *def)
 {
     assert(PyType_Check(type));
-    assert(type->tp_mro);
-    int i;
-    for (i = 0; i < PyTuple_GET_SIZE(type->tp_mro); i++) {
-        PyObject *super = PyTuple_GET_ITEM(type->tp_mro, i);
-        if (!PyType_HasFeature((PyTypeObject *)super, Py_TPFLAGS_HEAPTYPE)) {
-            /* Currently, there's no way for static types to inherit
-             * from heap types, but to allow that possibility,
-             * we `continue` rather than `break`.
-             * We'll just potentially loop a few more times before throwing
-             * the error.
-             */
-            continue;
-        }
+
+    PyObject *mro = type->tp_mro;
+    // The type must be ready
+    assert(mro != NULL);
+    assert(PyTuple_Check(mro));
+    // mro_invoke() ensures that the type MRO cannot be empty, so we don't have
+    // to check i < PyTuple_GET_SIZE(mro) at the first loop iteration.
+    assert(PyTuple_GET_SIZE(mro) >= 1);
+
+    Py_ssize_t i = 0;
+    do {
+        PyObject *super = PyTuple_GET_ITEM(mro, i);
+        // _PyType_GetModuleByDef() must only be called on a heap type created
+        // by PyType_FromModuleAndSpec() or on its subclasses.
+        // type_ready_mro() ensures that a static type cannot inherit from a
+        // heap type.
+        assert(_PyType_HasFeature((PyTypeObject *)type, Py_TPFLAGS_HEAPTYPE));
+
         PyHeapTypeObject *ht = (PyHeapTypeObject*)super;
-        if (ht->ht_module && PyModule_GetDef(ht->ht_module) == def) {
-            return ht->ht_module;
+        PyObject *module = ht->ht_module;
+        if (module && _PyModule_GetDef(module) == def) {
+            return module;
         }
-    }
+        i++;
+    } while (i < PyTuple_GET_SIZE(mro));
+
     PyErr_Format(
         PyExc_TypeError,
         "_PyType_GetModuleByDef: No superclass of '%s' has the given module",
@@ -5437,72 +5453,92 @@ PyTypeObject PyBaseObject_Type = {
 };
 
 
-/* Add the methods from tp_methods to the __dict__ in a type object */
-
 static int
-add_methods(PyTypeObject *type, PyMethodDef *meth)
+type_add_method(PyTypeObject *type, PyMethodDef *meth)
 {
-    PyObject *dict = type->tp_dict;
+    PyObject *descr;
+    int isdescr = 1;
+    if (meth->ml_flags & METH_CLASS) {
+        if (meth->ml_flags & METH_STATIC) {
+            PyErr_SetString(PyExc_ValueError,
+                    "method cannot be both class and static");
+            return -1;
+        }
+        descr = PyDescr_NewClassMethod(type, meth);
+    }
+    else if (meth->ml_flags & METH_STATIC) {
+        PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, NULL);
+        if (cfunc == NULL) {
+            return -1;
+        }
+        descr = PyStaticMethod_New(cfunc);
+        isdescr = 0;  // PyStaticMethod is not PyDescrObject
+        Py_DECREF(cfunc);
+    }
+    else {
+        descr = PyDescr_NewMethod(type, meth);
+    }
+    if (descr == NULL) {
+        return -1;
+    }
+
     PyObject *name;
-
-    for (; meth->ml_name != NULL; meth++) {
-        PyObject *descr;
-        int err;
-        int isdescr = 1;
-        if (meth->ml_flags & METH_CLASS) {
-            if (meth->ml_flags & METH_STATIC) {
-                PyErr_SetString(PyExc_ValueError,
-                     "method cannot be both class and static");
-                return -1;
-            }
-            descr = PyDescr_NewClassMethod(type, meth);
-        }
-        else if (meth->ml_flags & METH_STATIC) {
-            PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, NULL);
-            if (cfunc == NULL)
-                return -1;
-            descr = PyStaticMethod_New(cfunc);
-            isdescr = 0;  // PyStaticMethod is not PyDescrObject
-            Py_DECREF(cfunc);
-        }
-        else {
-            descr = PyDescr_NewMethod(type, meth);
-        }
-        if (descr == NULL)
+    if (isdescr) {
+        name = PyDescr_NAME(descr);
+    }
+    else {
+        name = PyUnicode_FromString(meth->ml_name);
+        if (name == NULL) {
+            Py_DECREF(descr);
             return -1;
+        }
+    }
 
-        if (isdescr) {
-            name = PyDescr_NAME(descr);
-        }
-        else {
-            name = PyUnicode_FromString(meth->ml_name);
-            if (name == NULL) {
-                Py_DECREF(descr);
-                return -1;
-            }
-        }
-
-        if (!(meth->ml_flags & METH_COEXIST)) {
-            err = PyDict_SetDefault(dict, name, descr) == NULL;
-        }
-        else {
-            err = PyDict_SetItem(dict, name, descr) < 0;
-        }
-        if (!isdescr) {
-            Py_DECREF(name);
-        }
-        Py_DECREF(descr);
-        if (err)
-            return -1;
+    int err;
+    if (!(meth->ml_flags & METH_COEXIST)) {
+        err = PyDict_SetDefault(type->tp_dict, name, descr) == NULL;
+    }
+    else {
+        err = PyDict_SetItem(type->tp_dict, name, descr) < 0;
+    }
+    if (!isdescr) {
+        Py_DECREF(name);
+    }
+    Py_DECREF(descr);
+    if (err) {
+        return -1;
     }
     return 0;
 }
 
-static int
-add_members(PyTypeObject *type, PyMemberDef *memb)
-{
-    PyObject *dict = type->tp_dict;
 
+/* Add the methods from tp_methods to the __dict__ in a type object */
+static int
+type_add_methods(PyTypeObject *type)
+{
+    PyMethodDef *meth = type->tp_methods;
+    if (meth == NULL) {
+        return 0;
+    }
+
+    for (; meth->ml_name != NULL; meth++) {
+        if (type_add_method(type, meth) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+static int
+type_add_members(PyTypeObject *type)
+{
+    PyMemberDef *memb = type->tp_members;
+    if (memb == NULL) {
+        return 0;
+    }
+
+    PyObject *dict = type->tp_dict;
     for (; memb->name != NULL; memb++) {
         PyObject *descr = PyDescr_NewMember(type, memb);
         if (descr == NULL)
@@ -5517,15 +5553,21 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
     return 0;
 }
 
-static int
-add_getset(PyTypeObject *type, PyGetSetDef *gsp)
-{
-    PyObject *dict = type->tp_dict;
 
+static int
+type_add_getset(PyTypeObject *type)
+{
+    PyGetSetDef *gsp = type->tp_getset;
+    if (gsp == NULL) {
+        return 0;
+    }
+
+    PyObject *dict = type->tp_dict;
     for (; gsp->name != NULL; gsp++) {
         PyObject *descr = PyDescr_NewGetSet(type, gsp);
-        if (descr == NULL)
+        if (descr == NULL) {
             return -1;
+        }
 
         if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
             Py_DECREF(descr);
@@ -5535,6 +5577,7 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
     }
     return 0;
 }
+
 
 static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
@@ -5572,31 +5615,39 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 
     /* Copy other non-function slots */
 
-#undef COPYVAL
 #define COPYVAL(SLOT) \
-    if (type->SLOT == 0) type->SLOT = base->SLOT
+    if (type->SLOT == 0) { type->SLOT = base->SLOT; }
 
     COPYVAL(tp_itemsize);
     COPYVAL(tp_weaklistoffset);
     COPYVAL(tp_dictoffset);
+#undef COPYVAL
 
     /* Setup fast subclass flags */
-    if (PyType_IsSubtype(base, (PyTypeObject*)PyExc_BaseException))
+    if (PyType_IsSubtype(base, (PyTypeObject*)PyExc_BaseException)) {
         type->tp_flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyType_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyType_Type)) {
         type->tp_flags |= Py_TPFLAGS_TYPE_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyLong_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyLong_Type)) {
         type->tp_flags |= Py_TPFLAGS_LONG_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyBytes_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyBytes_Type)) {
         type->tp_flags |= Py_TPFLAGS_BYTES_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyUnicode_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyUnicode_Type)) {
         type->tp_flags |= Py_TPFLAGS_UNICODE_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyTuple_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyTuple_Type)) {
         type->tp_flags |= Py_TPFLAGS_TUPLE_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyList_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyList_Type)) {
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
-    else if (PyType_IsSubtype(base, &PyDict_Type))
+    }
+    else if (PyType_IsSubtype(base, &PyDict_Type)) {
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
+    }
 
     if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
         type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
@@ -5853,7 +5904,7 @@ type_ready_checks(PyTypeObject *type)
 
 
 static int
-type_ready_set_base(PyTypeObject *type)
+type_ready_set_bases(PyTypeObject *type)
 {
     /* Initialize tp_base (defaults to BaseObject unless that's us) */
     PyTypeObject *base = type->tp_base;
@@ -5887,13 +5938,7 @@ type_ready_set_base(PyTypeObject *type)
     if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
-    return 0;
-}
 
-
-static int
-type_ready_add_attrs(PyTypeObject *type)
-{
     /* Initialize tp_bases */
     PyObject *bases = type->tp_bases;
     if (bases == NULL) {
@@ -5909,35 +5954,80 @@ type_ready_add_attrs(PyTypeObject *type)
         }
         type->tp_bases = bases;
     }
+    return 0;
+}
 
-    /* Initialize tp_dict */
-    PyObject *dict = type->tp_dict;
-    if (dict == NULL) {
-        dict = PyDict_New();
-        if (dict == NULL) {
-            return -1;
-        }
-        type->tp_dict = dict;
+
+static int
+type_ready_set_dict(PyTypeObject *type)
+{
+    if (type->tp_dict != NULL) {
+        return 0;
     }
 
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return -1;
+    }
+    type->tp_dict = dict;
+    return 0;
+}
+
+
+/* If the type dictionary doesn't contain a __doc__, set it from
+   the tp_doc slot. */
+static int
+type_dict_set_doc(PyTypeObject *type)
+{
+    int r = _PyDict_ContainsId(type->tp_dict, &PyId___doc__);
+    if (r < 0) {
+        return -1;
+    }
+    if (r > 0) {
+        return 0;
+    }
+
+    if (type->tp_doc != NULL) {
+        const char *doc_str;
+        doc_str = _PyType_DocWithoutSignature(type->tp_name, type->tp_doc);
+        PyObject *doc = PyUnicode_FromString(doc_str);
+        if (doc == NULL) {
+            return -1;
+        }
+
+        if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc) < 0) {
+            Py_DECREF(doc);
+            return -1;
+        }
+        Py_DECREF(doc);
+    }
+    else {
+        if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, Py_None) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+static int
+type_ready_fill_dict(PyTypeObject *type)
+{
     /* Add type-specific descriptors to tp_dict */
     if (add_operators(type) < 0) {
         return -1;
     }
-    if (type->tp_methods != NULL) {
-        if (add_methods(type, type->tp_methods) < 0) {
-            return -1;
-        }
+    if (type_add_methods(type) < 0) {
+        return -1;
     }
-    if (type->tp_members != NULL) {
-        if (add_members(type, type->tp_members) < 0) {
-            return -1;
-        }
+    if (type_add_members(type) < 0) {
+        return -1;
     }
-    if (type->tp_getset != NULL) {
-        if (add_getset(type, type->tp_getset) < 0) {
-            return -1;
-        }
+    if (type_add_getset(type) < 0) {
+        return -1;
+    }
+    if (type_dict_set_doc(type) < 0) {
+        return -1;
     }
     return 0;
 }
@@ -5972,15 +6062,42 @@ type_ready_mro(PyTypeObject *type)
 }
 
 
+// For static types, inherit tp_as_xxx structures from the base class
+// if it's NULL.
+//
+// For heap types, tp_as_xxx structures are not NULL: they are set to the
+// PyHeapTypeObject.as_xxx fields by type_new_alloc().
+static void
+type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
+{
+    if (type->tp_as_async == NULL) {
+        type->tp_as_async = base->tp_as_async;
+    }
+    if (type->tp_as_number == NULL) {
+        type->tp_as_number = base->tp_as_number;
+    }
+    if (type->tp_as_sequence == NULL) {
+        type->tp_as_sequence = base->tp_as_sequence;
+    }
+    if (type->tp_as_mapping == NULL) {
+        type->tp_as_mapping = base->tp_as_mapping;
+    }
+    if (type->tp_as_buffer == NULL) {
+        type->tp_as_buffer = base->tp_as_buffer;
+    }
+}
+
+
 static int
 type_ready_inherit(PyTypeObject *type)
 {
     /* Inherit special flags from dominant base */
-    if (type->tp_base != NULL) {
-        inherit_special(type, type->tp_base);
+    PyTypeObject *base = type->tp_base;
+    if (base != NULL) {
+        inherit_special(type, base);
     }
 
-    /* Initialize tp_dict properly */
+    // Inherit slots
     PyObject *mro = type->tp_mro;
     Py_ssize_t n = PyTuple_GET_SIZE(type->tp_mro);
     for (Py_ssize_t i = 1; i < n; i++) {
@@ -5990,6 +6107,10 @@ type_ready_inherit(PyTypeObject *type)
                 return -1;
             }
         }
+    }
+
+    if (base != NULL) {
+        type_ready_inherit_as_structs(type, base);
     }
 
     /* Sanity check for tp_free. */
@@ -6005,42 +6126,7 @@ type_ready_inherit(PyTypeObject *type)
                      type->tp_name);
         return -1;
     }
-    return 0;
-}
 
-
-/* If the type dictionary doesn't contain a __doc__, set it from
-   the tp_doc slot. */
-static int
-type_ready_set_doc(PyTypeObject *type)
-{
-    int r = _PyDict_ContainsId(type->tp_dict, &PyId___doc__);
-    if (r < 0) {
-        return -1;
-    }
-    if (r > 0) {
-        return 0;
-    }
-
-    if (type->tp_doc != NULL) {
-        const char *doc_str;
-        doc_str = _PyType_DocWithoutSignature(type->tp_name, type->tp_doc);
-        PyObject *doc = PyUnicode_FromString(doc_str);
-        if (doc == NULL) {
-            return -1;
-        }
-
-        if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc) < 0) {
-            Py_DECREF(doc);
-            return -1;
-        }
-        Py_DECREF(doc);
-    }
-    else {
-        if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, Py_None) < 0) {
-            return -1;
-        }
-    }
     return 0;
 }
 
@@ -6070,33 +6156,6 @@ type_ready_set_hash(PyTypeObject *type)
     }
     type->tp_hash = PyObject_HashNotImplemented;
     return 0;
-}
-
-
-/* Some more special stuff */
-static void
-type_ready_inherit_special(PyTypeObject *type)
-{
-    PyTypeObject *base = type->tp_base;
-    if (base == NULL) {
-        return;
-    }
-
-    if (type->tp_as_async == NULL) {
-        type->tp_as_async = base->tp_as_async;
-    }
-    if (type->tp_as_number == NULL) {
-        type->tp_as_number = base->tp_as_number;
-    }
-    if (type->tp_as_sequence == NULL) {
-        type->tp_as_sequence = base->tp_as_sequence;
-    }
-    if (type->tp_as_mapping == NULL) {
-        type->tp_as_mapping = base->tp_as_mapping;
-    }
-    if (type->tp_as_buffer == NULL) {
-        type->tp_as_buffer = base->tp_as_buffer;
-    }
 }
 
 
@@ -6132,27 +6191,25 @@ type_ready(PyTypeObject *type)
     _Py_AddToAllObjects((PyObject *)type, 0);
 #endif
 
-    if (type_ready_set_base(type) < 0) {
+    /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
+    if (type_ready_set_dict(type) < 0) {
         return -1;
     }
-    if (type_ready_add_attrs(type) < 0) {
+    if (type_ready_set_bases(type) < 0) {
         return -1;
     }
     if (type_ready_mro(type) < 0) {
         return -1;
     }
-    if (type_ready_inherit(type) < 0) {
+    if (type_ready_fill_dict(type) < 0) {
         return -1;
     }
-    if (type_ready_set_doc(type) < 0) {
+    if (type_ready_inherit(type) < 0) {
         return -1;
     }
     if (type_ready_set_hash(type) < 0) {
         return -1;
     }
-
-    type_ready_inherit_special(type);
-
     if (type_ready_add_subclasses(type) < 0) {
         return -1;
     }
@@ -8423,8 +8480,9 @@ add_operators(PyTypeObject *type)
         }
     }
     if (type->tp_new != NULL) {
-        if (add_tp_new_wrapper(type) < 0)
+        if (add_tp_new_wrapper(type) < 0) {
             return -1;
+        }
     }
     return 0;
 }

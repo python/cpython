@@ -20,7 +20,6 @@ At large scale, the structure of the module is following:
 """
 
 from abc import abstractmethod, ABCMeta
-import ast
 import collections
 import collections.abc
 import contextlib
@@ -578,13 +577,6 @@ class ForwardRef(_Final, _root=True):
     def __init__(self, arg, is_argument=True):
         if not isinstance(arg, str):
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
-
-        # Double-stringified forward references is a result of activating
-        # the 'annotations' future by default. This way, we eliminate them in
-        # the runtime.
-        if arg.startswith(("'", '\"')) and arg.endswith(("'", '"')):
-            arg = arg[1:-1]
-
         try:
             code = compile(arg, '<string>', 'eval')
         except SyntaxError:
@@ -1612,7 +1604,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     - If no dict arguments are passed, an attempt is made to use the
       globals from obj (or the respective module's globals for classes),
       and these are also used as the locals.  If the object does not appear
-      to have globals, an empty dictionary is used.
+      to have globals, an empty dictionary is used.  For classes, the search
+      order is globals first then locals.
 
     - If one dict argument is passed, it is used for both globals and
       locals.
@@ -1628,16 +1621,28 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         for base in reversed(obj.__mro__):
             if globalns is None:
-                base_globals = sys.modules[base.__module__].__dict__
+                try:
+                    base_globals = sys.modules[base.__module__].__dict__
+                except KeyError:
+                    continue
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
+            base_locals = dict(vars(base)) if localns is None else localns
+            if localns is None and globalns is None:
+                # This is surprising, but required.  Before Python 3.10,
+                # get_type_hints only evaluated the globalns of
+                # a class.  To maintain backwards compatibility, we reverse
+                # the globalns and localns order so that eval() looks into
+                # *base_globals* first rather than *base_locals*.
+                # This only affects ForwardRefs.
+                base_globals, base_locals = base_locals, base_globals
             for name, value in ann.items():
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False)
-                value = _eval_type(value, base_globals, localns)
+                value = _eval_type(value, base_globals, base_locals)
                 hints[name] = value
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
