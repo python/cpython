@@ -847,13 +847,8 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 {
     PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
 
-    if (dict == NULL) {
-        const char *name = PyModule_GetName((PyObject *)m);
-        if (name) {
-            PyErr_Format(PyExc_TypeError,
-                     "%.200s.__dict__ is not a dictionary",
-                     name);
-        }
+    if ((dict == NULL) || !PyDict_Check(dict)) {
+        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
         return NULL;
     }
 
@@ -887,13 +882,8 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
 {
     PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
 
-    if (dict == NULL) {
-        const char *name = PyModule_GetName((PyObject *)m);
-        if (name) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.200s.__dict__ is not a dictionary",
-                         name);
-        }
+    if ((dict == NULL) || !PyDict_Check(dict)) {
+        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
         return -1;
     }
 
