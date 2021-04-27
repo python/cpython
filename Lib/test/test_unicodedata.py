@@ -310,7 +310,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
                                  r"\u%.4x should not be a linebreak" % i)
 
     def test_no_uninit_new(self):
-        # See bpo-43916
+        # Prevent heap types from being created uninitialised (bpo-43916)
         self.assertRaises(TypeError, unicodedata.UCD)
 
 class NormalizationTest(unittest.TestCase):
