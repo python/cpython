@@ -428,6 +428,8 @@ class ShellSidebarTest(unittest.TestCase):
         macosx.setupApp(root, flist)
         root.update_idletasks()
 
+        cls.init_shell()
+
     @classmethod
     def tearDownClass(cls):
         if cls.shell is not None:
@@ -453,10 +455,20 @@ class ShellSidebarTest(unittest.TestCase):
         cls.root.update()
 
     def setUp(self):
-        if self.shell is None:
-            self.init_shell()
-        else:
-            self.reset_shell()
+        # In some test environments, e.g. Azure Pipelines (as of
+        # Apr. 2021), sys.stdout is changed between tests. However,
+        # PyShell relies on overriding sys.stdout when run without a
+        # sub-process (as done here; see setUpClass).
+        self._saved_stdout = None
+        if sys.stdout != self.shell.stdout:
+            self._saved_stdout = sys.stdout
+            sys.stdout = self.shell.stdout
+
+        self.reset_shell()
+
+    def tearDown(self):
+        if self._saved_stdout is not None:
+            sys.stdout = self._saved_stdout
 
     def get_sidebar_lines(self):
         canvas = self.shell.shell_sidebar.canvas
