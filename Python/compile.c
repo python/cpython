@@ -5685,7 +5685,7 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
     }
     for (Py_ssize_t i = 0; i < size; i++) {
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        assert(i != star || pattern->kind == MatchStar_kind);
+        assert((i == star) == (pattern->kind == MatchStar_kind));
         if (!compiler_pattern_subpattern(c, pattern, pc) ||
             !compiler_addop_j(c, POP_JUMP_IF_FALSE, fails[i]) ||
             compiler_next_block(c) == NULL)
