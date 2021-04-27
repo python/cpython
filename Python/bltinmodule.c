@@ -1644,7 +1644,7 @@ iterator is exhausted, it is returned instead of raising StopAsyncIteration.
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=27c03b6bb55945f3]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=8f63f4f78590bb4c]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
