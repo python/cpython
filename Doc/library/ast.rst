@@ -1255,17 +1255,18 @@ Pattern matching
    that is being matched against the cases) and ``cases`` contains an iterable of
    :class:`match_case` nodes with the different cases.
 
-
 .. class:: match_case(pattern, guard, body)
 
    A single case pattern in a ``match`` statement. ``pattern`` contains the
-   match pattern that will be used to match the subject against. Notice that
-   the meaning of the :class:`AST` nodes in this attribute have a different
-   meaning than in other places, as they represent patterns to match against.
+   match pattern that the subject will be matched against. Note that the
+   :class:`AST` nodes produced for patterns differ from those produced for
+   expressions, even when they share the same syntax.
+
    The ``guard`` attribute contains an expression that will be evaluated if
-   the pattern matches the subject. If the pattern matches and the ``guard`` condition
-   is truthy, the body of the case shall be executed. ``body`` contains a list
-   of nodes to execute if the guard is truthy.
+   the pattern matches the subject.
+
+   ``body`` contains a list of nodes to execute if the pattern matches and
+   the result of evaluating the guard expression is truthy.
 
    .. doctest::
 
@@ -1300,30 +1301,6 @@ Pattern matching
                                 patterns=[],
                                 kwd_attrs=[],
                                 kwd_patterns=[]),
-                            body=[
-                                Expr(
-                                    value=Constant(value=Ellipsis))])])],
-            type_ignores=[])
-
-.. class:: MatchAlways()
-
-   A match wildcard pattern. This pattern always succeeds with no runtime
-   effect.
-
-   .. doctest::
-
-        >>> print(ast.dump(ast.parse("""
-        ... match x:
-        ...     case _:
-        ...         ...
-        ... """), indent=4))
-        Module(
-            body=[
-                Match(
-                    subject=Name(id='x', ctx=Load()),
-                    cases=[
-                        match_case(
-                            pattern=MatchAlways(),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))])])],
@@ -1486,8 +1463,8 @@ Pattern matching
                                     Constant(value=1),
                                     Constant(value=2)],
                                 patterns=[
-                                    MatchAlways(),
-                                    MatchAlways()]),
+                                    MatchAs(),
+                                    MatchAs()]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))]),
@@ -1500,16 +1477,20 @@ Pattern matching
 
 .. class:: MatchClass(cls, patterns, kwd_attrs, kwd_patterns)
 
-   A match class pattern. ``cls`` is the nominal class to be matched.
-   ``patterns`` is a sequence of pattern nodes to be matched against the class
-   defined sequence of pattern matching attributes. ``kwd_attrs`` is a sequence
-   of additional attributes to be matched (specified as keyword arguments in the
-   class pattern), ``kwd_patterns`` are the corresponding patterns (specified as
-   keyword values in the class pattern).
+   A match class pattern. ``cls`` is an expression giving the nominal class to
+   be matched. ``patterns`` is a sequence of pattern nodes to be matched against
+   the class defined sequence of pattern matching attributes. ``kwd_attrs`` is a
+   sequence of additional attributes to be matched (specified as keyword arguments
+   in the class pattern), ``kwd_patterns`` are the corresponding patterns
+   (specified as keyword values in the class pattern).
 
    This pattern succeeds if the subject is an instance of the nominated class,
    all positional patterns match the corresponding class-defined attributes, and
    any specified keyword attributes match their corresponding pattern.
+
+   Note: classes may define a property that returns self in order to match a
+   pattern node against the instance being matched. Several builtin types are
+   also matched that way, as described in the match statement documentation.
 
    .. doctest::
 
@@ -1560,17 +1541,22 @@ Pattern matching
 
 .. class:: MatchAs(pattern, name)
 
-   A match "as-pattern" or capture pattern. ``pattern`` contains the match
-   pattern that will be used to match the subject against. If the pattern is
-   ``None``, the node represents a capture pattern (i.e a bare name) and will
-   always succeed. The ``name`` attribute contains the name that will be bound
-   if the pattern is successful.
+   A match "as-pattern", capture pattern or wildcard pattern. ``pattern``
+   contains the match pattern that the subject will be matched against.
+   If the pattern is ``None``, the node represents a capture pattern (i.e a
+   bare name) and will always succeed.
+   
+   The ``name`` attribute contains the name that will be bound if the pattern
+   is successful. If ``name`` is ``None``, ``pattern`` must also be ``None``
+   and the node represents the wildcard pattern.
 
    .. doctest::
 
         >>> print(ast.dump(ast.parse("""
         ... match x:
         ...     case [x] as y:
+        ...         ...
+        ...     case _:
         ...         ...
         ... """), indent=4))
         Module(
@@ -1586,6 +1572,11 @@ Pattern matching
                                 name='y'),
                             body=[
                                 Expr(
+                                    value=Constant(value=Ellipsis))]),
+                        match_case(
+                            pattern=MatchAs(),
+                            body=[
+                                Expr(
                                     value=Constant(value=Ellipsis))])])],
             type_ignores=[])
 
@@ -1594,7 +1585,7 @@ Pattern matching
    A match "or-pattern". An or-pattern matches each of its subpatterns in turn
    to the subject, until one succeeds. The or-pattern is then deemed to
    succeed. If none of the subpatterns succeed the or-pattern fails. The
-   ``patterns`` attribute contains a list of match patterns nodes that will be
+   ``patterns`` attribute contains a list of match pattern nodes that will be
    matched against the subject.
 
    .. doctest::

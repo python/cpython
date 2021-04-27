@@ -490,10 +490,6 @@ validate_pattern(struct validator *state, pattern_ty p)
     // Coming soon: https://bugs.python.org/issue43897 (thanks Batuhan)!
     // TODO: Ensure no subnodes use "_" as an ordinary identifier
     switch (p->kind) {
-        case MatchAlways_kind:
-            // Nothing to check
-            ret = 1;
-            break;
         case MatchValue_kind:
             ret = validate_pattern_match_value(state, p->v.MatchValue.value);
             break;
@@ -544,7 +540,14 @@ validate_pattern(struct validator *state, pattern_ty p)
         case MatchAs_kind:
             // TODO: check target name is valid
             if (p->v.MatchAs.pattern) {
-                ret = validate_pattern(state, p->v.MatchAs.pattern);
+                // If a pattern is given, the name must also be given
+                if (!p->v.MatchAs.name) {
+                    PyErr_SetString(PyExc_ValueError,
+                                    "MatchAs must specify a target name if a pattern is given");
+                    return 0;
+                } else {
+                    ret = validate_pattern(state, p->v.MatchAs.pattern);
+                }
             } else {
                 ret = 1;
             }

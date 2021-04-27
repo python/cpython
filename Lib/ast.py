@@ -1590,9 +1590,6 @@ class _Unparser(NodeVisitor):
         with self.block():
             self.traverse(node.body)
 
-    def visit_MatchAlways(self, node):
-        self.write("_")
-
     def visit_MatchValue(self, node):
         self.traverse(node.value)
 
@@ -1649,14 +1646,17 @@ class _Unparser(NodeVisitor):
                 )
 
     def visit_MatchAs(self, node):
+        name = node.name
         pattern = node.pattern
-        if pattern is not None:
+        if name is None:
+            self.write("_")
+        elif pattern is None:
+            self.write(node.name)
+        else:
             with self.require_parens(_Precedence.TEST, node):
                 self.set_precedence(_Precedence.BOR, node.pattern)
                 self.traverse(node.pattern)
                 self.write(f" as {node.name}")
-        else:
-            self.write(node.name)
 
     def visit_MatchOr(self, node):
         with self.require_parens(_Precedence.BOR, node):

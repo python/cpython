@@ -5597,7 +5597,7 @@ compiler_slice(struct compiler *c, expr_ty s)
 // jumping in the peephole optimizer than to detect or predict it here.
 
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == MatchAlways_kind)
+    ((N)->kind == MatchAs_kind && !(N)->v.MatchAs.name)
 
 #define WILDCARD_STAR_CHECK(N) \
     ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
@@ -5791,9 +5791,26 @@ compiler_pattern_capture(struct compiler *c, identifier n, pattern_context *pc)
 }
 
 static int
+compiler_pattern_wildcard(struct compiler *c, pattern_ty p, pattern_context *pc)
+{
+    assert(p->kind == MatchAs_kind);
+    if (!pc->allow_irrefutable) {
+        // Whoops, can't have a wildcard here!
+        const char *e = "wildcard makes remaining patterns unreachable";
+        return compiler_error(c, e);
+    }
+    ADDOP(c, POP_TOP);
+    ADDOP_LOAD_CONST(c, Py_True);
+    return 1;
+}
+
+static int
 compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
+    if (p->v.MatchAs.name == NULL) {
+        return compiler_pattern_wildcard(c, p, pc);
+    }
     if (p->v.MatchAs.pattern == NULL) {
         if (!pc->allow_irrefutable) {
             // Whoops, can't have a name capture here!
@@ -6175,20 +6192,6 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-compiler_pattern_wildcard(struct compiler *c, pattern_ty p, pattern_context *pc)
-{
-    assert(p->kind == MatchAlways_kind);
-    if (!pc->allow_irrefutable) {
-        // Whoops, can't have a wildcard here!
-        const char *e = "wildcard makes remaining patterns unreachable";
-        return compiler_error(c, e);
-    }
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    return 1;
-}
-
-static int
 compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
@@ -6216,8 +6219,6 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     SET_LOC(c, p);
     switch (p->kind) {
-        case MatchAlways_kind:
-            return compiler_pattern_wildcard(c, p, pc);
         case MatchValue_kind:
             return compiler_pattern_value(c, p, pc);
         case MatchSingleton_kind:

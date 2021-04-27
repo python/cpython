@@ -105,7 +105,6 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->Lt_type);
     Py_CLEAR(state->MatMult_singleton);
     Py_CLEAR(state->MatMult_type);
-    Py_CLEAR(state->MatchAlways_type);
     Py_CLEAR(state->MatchAs_type);
     Py_CLEAR(state->MatchClass_type);
     Py_CLEAR(state->MatchMapping_type);
@@ -1775,22 +1774,17 @@ init_types(struct ast_state *state)
     if (PyObject_SetAttr(state->match_case_type, state->guard, Py_None) == -1)
         return 0;
     state->pattern_type = make_type(state, "pattern", state->AST_type, NULL, 0,
-        "pattern = MatchAlways\n"
-        "        | MatchValue(expr value)\n"
+        "pattern = MatchValue(expr value)\n"
         "        | MatchSingleton(constant value)\n"
         "        | MatchSequence(pattern* patterns)\n"
         "        | MatchMapping(expr* keys, pattern* patterns, identifier? rest)\n"
         "        | MatchClass(expr cls, pattern* patterns, identifier* kwd_attrs, pattern* kwd_patterns)\n"
         "        | MatchStar(identifier? name)\n"
-        "        | MatchAs(pattern? pattern, identifier name)\n"
+        "        | MatchAs(pattern? pattern, identifier? name)\n"
         "        | MatchOr(pattern* patterns)");
     if (!state->pattern_type) return 0;
     if (!add_attributes(state, state->pattern_type, pattern_attributes, 4))
         return 0;
-    state->MatchAlways_type = make_type(state, "MatchAlways",
-                                        state->pattern_type, NULL, 0,
-        "MatchAlways");
-    if (!state->MatchAlways_type) return 0;
     state->MatchValue_type = make_type(state, "MatchValue",
                                        state->pattern_type, MatchValue_fields,
                                        1,
@@ -1826,9 +1820,11 @@ init_types(struct ast_state *state)
         return 0;
     state->MatchAs_type = make_type(state, "MatchAs", state->pattern_type,
                                     MatchAs_fields, 2,
-        "MatchAs(pattern? pattern, identifier name)");
+        "MatchAs(pattern? pattern, identifier? name)");
     if (!state->MatchAs_type) return 0;
     if (PyObject_SetAttr(state->MatchAs_type, state->pattern, Py_None) == -1)
+        return 0;
+    if (PyObject_SetAttr(state->MatchAs_type, state->name, Py_None) == -1)
         return 0;
     state->MatchOr_type = make_type(state, "MatchOr", state->pattern_type,
                                     MatchOr_fields, 1,
@@ -3395,22 +3391,6 @@ _PyAST_match_case(pattern_ty pattern, expr_ty guard, asdl_stmt_seq * body,
 }
 
 pattern_ty
-_PyAST_MatchAlways(int lineno, int col_offset, int end_lineno, int
-                   end_col_offset, PyArena *arena)
-{
-    pattern_ty p;
-    p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = MatchAlways_kind;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    p->end_lineno = end_lineno;
-    p->end_col_offset = end_col_offset;
-    return p;
-}
-
-pattern_ty
 _PyAST_MatchValue(expr_ty value, int lineno, int col_offset, int end_lineno,
                   int end_col_offset, PyArena *arena)
 {
@@ -3540,11 +3520,6 @@ _PyAST_MatchAs(pattern_ty pattern, identifier name, int lineno, int col_offset,
                int end_lineno, int end_col_offset, PyArena *arena)
 {
     pattern_ty p;
-    if (!name) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field 'name' is required for MatchAs");
-        return NULL;
-    }
     p = (pattern_ty)_PyArena_Malloc(arena, sizeof(*p));
     if (!p)
         return NULL;
@@ -5176,11 +5151,6 @@ ast2obj_pattern(struct ast_state *state, void* _o)
         Py_RETURN_NONE;
     }
     switch (o->kind) {
-    case MatchAlways_kind:
-        tp = (PyTypeObject *)state->MatchAlways_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        break;
     case MatchValue_kind:
         tp = (PyTypeObject *)state->MatchValue_type;
         result = PyType_GenericNew(tp, NULL, NULL);
@@ -10319,18 +10289,6 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    tp = state->MatchAlways_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-
-        *out = _PyAST_MatchAlways(lineno, col_offset, end_lineno,
-                                  end_col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
     tp = state->MatchValue_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -10703,9 +10661,9 @@ obj2ast_pattern(struct ast_state *state, PyObject* obj, pattern_ty* out,
         if (_PyObject_LookupAttr(obj, state->name, &tmp) < 0) {
             return 1;
         }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from MatchAs");
-            return 1;
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            name = NULL;
         }
         else {
             int res;
@@ -11177,9 +11135,6 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "pattern", state->pattern_type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "MatchAlways", state->MatchAlways_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "MatchValue", state->MatchValue_type) < 0) {

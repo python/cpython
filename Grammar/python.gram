@@ -291,7 +291,7 @@ pattern_capture_target[expr_ty]:
         _PyPegen_set_expr_context(p, name, Store) }
 
 wildcard_pattern[pattern_ty]:
-    | "_" { _PyAST_MatchAlways(EXTRA) }
+    | "_" { _PyAST_MatchAs(NULL, NULL, EXTRA) }
 
 value_pattern[pattern_ty]:
     | attr=attr !('.' | '(' | '=') { _PyAST_MatchValue(attr, EXTRA) }

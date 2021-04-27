@@ -1708,9 +1708,6 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_QUIT(st, 0);
     }
     switch (p->kind) {
-    case MatchAlways_kind:
-        /* Nothing to do here. */
-        break;
     case MatchValue_kind:
         VISIT(st, expr, p->v.MatchValue.value);
         break;
@@ -1741,7 +1738,9 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         if (p->v.MatchAs.pattern) {
             VISIT(st, pattern, p->v.MatchAs.pattern);
         }
-        symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL);
+        if (p->v.MatchAs.name) {
+            symtable_add_def(st, p->v.MatchAs.name, DEF_LOCAL);
+        }
         break;
     case MatchOr_kind:
         VISIT_SEQ(st, pattern, p->v.MatchOr.patterns);

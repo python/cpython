@@ -804,8 +804,6 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         return 0;
     }
     switch (node_->kind) {
-        case MatchAlways_kind:
-            break;
         case MatchValue_kind:
             CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
             break;

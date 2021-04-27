@@ -559,10 +559,10 @@ struct _match_case {
     asdl_stmt_seq *body;
 };
 
-enum _pattern_kind {MatchAlways_kind=1, MatchValue_kind=2,
-                     MatchSingleton_kind=3, MatchSequence_kind=4,
-                     MatchMapping_kind=5, MatchClass_kind=6, MatchStar_kind=7,
-                     MatchAs_kind=8, MatchOr_kind=9};
+enum _pattern_kind {MatchValue_kind=1, MatchSingleton_kind=2,
+                     MatchSequence_kind=3, MatchMapping_kind=4,
+                     MatchClass_kind=5, MatchStar_kind=6, MatchAs_kind=7,
+                     MatchOr_kind=8};
 struct _pattern {
     enum _pattern_kind kind;
     union {
@@ -808,8 +808,6 @@ withitem_ty _PyAST_withitem(expr_ty context_expr, expr_ty optional_vars,
                             PyArena *arena);
 match_case_ty _PyAST_match_case(pattern_ty pattern, expr_ty guard,
                                 asdl_stmt_seq * body, PyArena *arena);
-pattern_ty _PyAST_MatchAlways(int lineno, int col_offset, int end_lineno, int
-                              end_col_offset, PyArena *arena);
 pattern_ty _PyAST_MatchValue(expr_ty value, int lineno, int col_offset, int
                              end_lineno, int end_col_offset, PyArena *arena);
 pattern_ty _PyAST_MatchSingleton(constant value, int lineno, int col_offset,
