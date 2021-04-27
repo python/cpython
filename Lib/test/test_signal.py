@@ -1323,7 +1323,7 @@ class StressTest(unittest.TestCase):
                     # race condition, check it.
                     self.assertIsInstance(cm.unraisable.exc_value, OSError)
                     self.assertIn(
-                        f"Signal {signum} ignored due to race condition",
+                        f"Signal {signum:d} ignored due to race condition",
                         str(cm.unraisable.exc_value))
                     ignored = True
 

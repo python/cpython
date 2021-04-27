@@ -140,6 +140,12 @@ Data Types
         >>> some_var in Color
         True
 
+      .. note::
+
+         In Python 3.12 it will be possible to check for member values and not
+         just members; until then, a ``TypeError`` will be raised if a
+         non-Enum-member is used in a containment check.
+
    .. method:: EnumType.__dir__(cls)
 
       Returns ``['__class__', '__doc__', '__members__', '__module__']`` and the
