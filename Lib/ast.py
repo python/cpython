@@ -1619,7 +1619,7 @@ class _Unparser(NodeVisitor):
         with self.delimit("{", "}"):
             keys = node.keys
             self.interleave(
-                lambda: self.write(", "), write_key_pattern_pair, zip(keys, node.patterns)
+                lambda: self.write(", "), write_key_pattern_pair, zip(keys, node.patterns, strict=True)
             )
             rest = node.rest
             if rest is not None:
@@ -1645,7 +1645,7 @@ class _Unparser(NodeVisitor):
                 if patterns:
                     self.write(", ")
                 self.interleave(
-                    lambda: self.write(", "), write_attr_pattern, zip(attrs, node.kwd_patterns)
+                    lambda: self.write(", "), write_attr_pattern, zip(attrs, node.kwd_patterns, strict=True)
                 )
 
     def visit_MatchAs(self, node):

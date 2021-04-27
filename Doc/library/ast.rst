@@ -1415,7 +1415,7 @@ Pattern matching
 .. class:: MatchStar(name)
 
    Matches the rest of the sequence in a variable length match sequence pattern.
-   If ``name`` is not ``None``, a tuple containing the remaining sequence
+   If ``name`` is not ``None``, a list containing the remaining sequence
    elements is bound to that name if the overall sequence pattern is successful.
 
    .. doctest::
@@ -1470,7 +1470,7 @@ Pattern matching
 
         >>> print(ast.dump(ast.parse("""
         ... match x:
-        ...     case {1:_, 2:_}:
+        ...     case {1: _, 2: _}:
         ...         ...
         ...     case {**rest}:
         ...         ...

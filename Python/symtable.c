@@ -1726,22 +1726,16 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         }
         break;
     case MatchMapping_kind:
-        if (p->v.MatchMapping.keys) {
-            VISIT_SEQ_WITH_NULL(st, expr, p->v.MatchMapping.keys);
-            VISIT_SEQ(st, pattern, p->v.MatchMapping.patterns);
-        }
+        VISIT_SEQ(st, expr, p->v.MatchMapping.keys);
+        VISIT_SEQ(st, pattern, p->v.MatchMapping.patterns);
         if (p->v.MatchMapping.rest) {
             symtable_add_def(st, p->v.MatchMapping.rest, DEF_LOCAL);
         }
         break;
     case MatchClass_kind:
         VISIT(st, expr, p->v.MatchClass.cls);
-        if (p->v.MatchClass.patterns) {
-            VISIT_SEQ(st, pattern, p->v.MatchClass.patterns);
-        }
-        if (p->v.MatchClass.kwd_patterns) {
-            VISIT_SEQ(st, pattern, p->v.MatchClass.kwd_patterns);
-        }
+        VISIT_SEQ(st, pattern, p->v.MatchClass.patterns);
+        VISIT_SEQ(st, pattern, p->v.MatchClass.kwd_patterns);
         break;
     case MatchAs_kind:
         if (p->v.MatchAs.pattern) {
