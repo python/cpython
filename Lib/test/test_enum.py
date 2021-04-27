@@ -528,6 +528,14 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(str(TestFloat.one), 'one')
         self.assertEqual('{}'.format(TestFloat.one), 'TestFloat success!')
 
+    @unittest.skipUnless(
+            sys.version_info[:2] < (3, 12),
+            'mixin-format now uses member instead of member.value',
+            )
+    def test_mixin_format_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(f'{self.Grades.B}', '4')
+
     def assertFormatIsValue(self, spec, member):
         self.assertEqual(spec.format(member), spec.format(member.value))
 
