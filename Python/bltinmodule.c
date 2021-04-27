@@ -1635,7 +1635,7 @@ anext as builtin_anext
     default: object = NULL
     /
 
-anext(aiterator[, default])
+async anext(aiterator[, default])
 
 Return the next item from the async iterator.  If default is given and the async
 iterator is exhausted, it is returned instead of raising StopAsyncIteration.
