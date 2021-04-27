@@ -1598,7 +1598,9 @@ class _Unparser(NodeVisitor):
 
     def visit_MatchSequence(self, node):
         with self.delimit("[", "]"):
-            self.interleave(lambda: self.write(", "), self.traverse, node.patterns)
+            self.interleave(
+                lambda: self.write(", "), self.traverse, node.patterns
+            )
 
     def visit_MatchStar(self, node):
         name = node.name
@@ -1616,7 +1618,9 @@ class _Unparser(NodeVisitor):
         with self.delimit("{", "}"):
             keys = node.keys
             self.interleave(
-                lambda: self.write(", "), write_key_pattern_pair, zip(keys, node.patterns, strict=True)
+                lambda: self.write(", "),
+                write_key_pattern_pair,
+                zip(keys, node.patterns, strict=True),
             )
             rest = node.rest
             if rest is not None:
@@ -1642,7 +1646,9 @@ class _Unparser(NodeVisitor):
                 if patterns:
                     self.write(", ")
                 self.interleave(
-                    lambda: self.write(", "), write_attr_pattern, zip(attrs, node.kwd_patterns, strict=True)
+                    lambda: self.write(", "),
+                    write_attr_pattern,
+                    zip(attrs, node.kwd_patterns, strict=True),
                 )
 
     def visit_MatchAs(self, node):

@@ -539,17 +539,16 @@ validate_pattern(struct validator *state, pattern_ty p)
             break;
         case MatchAs_kind:
             // TODO: check target name is valid
-            if (p->v.MatchAs.pattern) {
-                // If a pattern is given, the name must also be given
-                if (!p->v.MatchAs.name) {
-                    PyErr_SetString(PyExc_ValueError,
-                                    "MatchAs must specify a target name if a pattern is given");
-                    return 0;
-                } else {
-                    ret = validate_pattern(state, p->v.MatchAs.pattern);
-                }
-            } else {
+            if (p->v.MatchAs.pattern == NULL) {
                 ret = 1;
+            }
+            else if (p->v.MatchAs.name == NULL) {
+                PyErr_SetString(PyExc_ValueError,
+                                "MatchAs must specify a target name if a pattern is given");
+                return 0;
+            }
+            else {
+                ret = validate_pattern(state, p->v.MatchAs.pattern);
             }
             break;
         case MatchOr_kind:
