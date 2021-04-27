@@ -1142,7 +1142,6 @@ advance(PyCodeAddressRange *bounds)
 {
     bounds->ar_start = bounds->ar_end;
     int delta = ((unsigned char *)bounds->lo_next)[0];
-    assert (delta < 255);
     bounds->ar_end += delta;
     int ldelta = ((signed char *)bounds->lo_next)[1];
     bounds->lo_next += 2;
@@ -1157,7 +1156,7 @@ advance(PyCodeAddressRange *bounds)
 
 static inline int
 at_end(PyCodeAddressRange *bounds) {
-    return ((unsigned char *)bounds->lo_next)[0] == 255;
+    return bounds->lo_next >= bounds->limit;
 }
 
 int
@@ -1256,9 +1255,10 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 }
 
 void
-PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range)
+PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range)
 {
     range->lo_next = linetable;
+    range->limit = range->lo_next + length;
     range->ar_start = -1;
     range->ar_end = 0;
     range->ar_computed_line = firstlineno;
@@ -1269,7 +1269,8 @@ int
 _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds)
 {
     char *linetable = PyBytes_AS_STRING(co->co_linetable);
-    PyLineTable_InitAddressRange(linetable, co->co_firstlineno, bounds);
+    Py_ssize_t length = PyBytes_GET_SIZE(co->co_linetable);
+    PyLineTable_InitAddressRange(linetable, length, co->co_firstlineno, bounds);
     return bounds->ar_line;
 }
 

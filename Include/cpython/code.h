@@ -141,6 +141,7 @@ typedef struct _line_offsets {
     int ar_line;
     int ar_computed_line;
     char *lo_next;
+    char *limit;
 } PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
@@ -170,7 +171,7 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the line number table. */
-void PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range);
+void PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
