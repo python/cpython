@@ -5881,9 +5881,9 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     asdl_pattern_seq *patterns = p->v.MatchClass.patterns;
     asdl_identifier_seq *kwd_attrs = p->v.MatchClass.kwd_attrs;
     asdl_pattern_seq *kwd_patterns = p->v.MatchClass.kwd_patterns;
-    Py_ssize_t nargs = patterns ? asdl_seq_LEN(patterns) : 0;
-    Py_ssize_t nattrs = kwd_attrs ? asdl_seq_LEN(kwd_attrs) : 0;
-    Py_ssize_t nkwd_patterns = kwd_patterns ? asdl_seq_LEN(kwd_patterns) : 0;
+    Py_ssize_t nargs = asdl_seq_LEN(patterns);
+    Py_ssize_t nattrs = asdl_seq_LEN(kwd_attrs);
+    Py_ssize_t nkwd_patterns = asdl_seq_LEN(kwd_patterns);
     if (nattrs != nkwd_patterns) {
         // AST validator shouldn't let this happen, but if it does,
         // just fail, don't crash out of the interpreter
