@@ -2683,6 +2683,7 @@ static PyType_Slot pattern_slots[] = {
     {Py_tp_methods, pattern_methods},
     {Py_tp_members, pattern_members},
     {Py_tp_getset, pattern_getset},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, NULL},
 };
 
@@ -2740,6 +2741,7 @@ static PyType_Slot match_slots[] = {
     {Py_tp_methods, match_methods},
     {Py_tp_members, match_members},
     {Py_tp_getset, match_getset},
+    {Py_tp_new, _PyType_DisabledNew},
 
     /* As mapping.
      *
@@ -2775,6 +2777,7 @@ static PyType_Slot scanner_slots[] = {
     {Py_tp_dealloc, scanner_dealloc},
     {Py_tp_methods, scanner_methods},
     {Py_tp_members, scanner_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, NULL},
 };
 
@@ -2855,11 +2858,6 @@ sre_exec(PyObject *m)
     CREATE_TYPE(m, state->Pattern_Type, &pattern_spec);
     CREATE_TYPE(m, state->Match_Type, &match_spec);
     CREATE_TYPE(m, state->Scanner_Type, &scanner_spec);
-
-    // See bpo-43916
-    state->Pattern_Type->tp_new = 0;
-    state->Match_Type->tp_new = 0;
-    state->Scanner_Type->tp_new = 0;
 
     if (PyModule_AddIntConstant(m, "MAGIC", SRE_MAGIC) < 0) {
         goto error;

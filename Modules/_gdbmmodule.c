@@ -560,6 +560,7 @@ static PyType_Slot gdbmtype_spec_slots[] = {
     {Py_mp_subscript, gdbm_subscript},
     {Py_mp_ass_subscript, gdbm_ass_sub},
     {Py_tp_doc, (char*)gdbm_object__doc__},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -702,7 +703,6 @@ _gdbm_exec(PyObject *module)
     if (state->gdbm_type == NULL) {
         return -1;
     }
-    state->gdbm_type->tp_new = 0;  // See bpo-43916
     state->gdbm_error = PyErr_NewException("_gdbm.error", PyExc_OSError, NULL);
     if (state->gdbm_error == NULL) {
         return -1;

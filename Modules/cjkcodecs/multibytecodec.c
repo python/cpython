@@ -742,6 +742,7 @@ static PyType_Slot multibytecodec_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, multibytecodec_methods},
     {Py_tp_traverse, multibytecodec_traverse},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, NULL},
 };
 
@@ -2012,7 +2013,6 @@ _multibytecodec_exec(PyObject *mod)
 {
     _multibytecodec_state *state = _multibytecodec_get_state(mod);
     CREATE_TYPE(mod, state->multibytecodec_type, &multibytecodec_spec);
-    state->multibytecodec_type->tp_new = 0;  // See bpo-43916
     CREATE_TYPE(mod, state->encoder_type, &encoder_spec);
     CREATE_TYPE(mod, state->decoder_type, &decoder_spec);
     CREATE_TYPE(mod, state->reader_type, &reader_spec);

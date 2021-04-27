@@ -306,6 +306,7 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_methods, lock_methods},
     {Py_tp_traverse, lock_traverse},
     {Py_tp_members, lock_type_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -677,6 +678,7 @@ static PyType_Slot local_dummy_type_slots[] = {
     {Py_tp_dealloc, (destructor)localdummy_dealloc},
     {Py_tp_doc, "Thread-local dummy"},
     {Py_tp_members, local_dummy_type_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -1580,7 +1582,6 @@ thread_module_exec(PyObject *module)
     if (state->lock_type == NULL) {
         return -1;
     }
-    state->lock_type->tp_new = 0;  // See bpo-43916
     if (PyDict_SetItemString(d, "LockType", (PyObject *)state->lock_type) < 0) {
         return -1;
     }
@@ -1601,7 +1602,6 @@ thread_module_exec(PyObject *module)
     if (state->local_dummy_type == NULL) {
         return -1;
     }
-    state->local_dummy_type->tp_new = 0;  // See bpo-43916
 
     // Local
     state->local_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &local_type_spec, NULL);

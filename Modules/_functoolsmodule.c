@@ -540,6 +540,7 @@ static PyType_Slot keyobject_type_slots[] = {
     {Py_tp_clear, keyobject_clear},
     {Py_tp_richcompare, keyobject_richcompare},
     {Py_tp_members, keyobject_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -760,6 +761,7 @@ lru_list_elem_dealloc(lru_list_elem *link)
 
 static PyType_Slot lru_list_elem_type_slots[] = {
     {Py_tp_dealloc, lru_list_elem_dealloc},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -1451,7 +1453,6 @@ _functools_exec(PyObject *module)
     if (state->keyobject_type == NULL) {
         return -1;
     }
-    state->keyobject_type->tp_new = 0;  // See bpo-43916
     if (PyModule_AddType(module, state->keyobject_type) < 0) {
         return -1;
     }
@@ -1461,7 +1462,6 @@ _functools_exec(PyObject *module)
     if (state->lru_list_elem_type == NULL) {
         return -1;
     }
-    state->lru_list_elem_type->tp_new = 0;  // See bpo-43916
     if (PyModule_AddType(module, state->lru_list_elem_type) < 0) {
         return -1;
     }

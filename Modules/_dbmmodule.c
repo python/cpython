@@ -397,6 +397,7 @@ static PyMethodDef dbm_methods[] = {
 };
 
 static PyType_Slot dbmtype_spec_slots[] = {
+    {Py_tp_new, _PyType_DisabledNew},
     {Py_tp_dealloc, dbm_dealloc},
     {Py_tp_methods, dbm_methods},
     {Py_sq_contains, dbm_contains},
@@ -499,7 +500,6 @@ _dbm_exec(PyObject *module)
     if (state->dbm_type == NULL) {
         return -1;
     }
-    state->dbm_type->tp_new = 0;  // See bpo-43916
     state->dbm_error = PyErr_NewException("_dbm.error", PyExc_OSError, NULL);
     if (state->dbm_error == NULL) {
         return -1;

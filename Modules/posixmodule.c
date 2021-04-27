@@ -13786,6 +13786,7 @@ static PyType_Slot DirEntryType_slots[] = {
     {Py_tp_repr, DirEntry_repr},
     {Py_tp_methods, DirEntry_methods},
     {Py_tp_members, DirEntry_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0},
 };
 
@@ -14219,6 +14220,7 @@ static PyType_Slot ScandirIteratorType_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, ScandirIterator_iternext},
     {Py_tp_methods, ScandirIterator_methods},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0},
 };
 
@@ -15730,14 +15732,12 @@ posixmodule_exec(PyObject *m)
     if (ScandirIteratorType == NULL) {
         return -1;
     }
-    ((PyTypeObject *)ScandirIteratorType)->tp_new = 0;  // See bpo-43916
     state->ScandirIteratorType = ScandirIteratorType;
 
     PyObject *DirEntryType = PyType_FromModuleAndSpec(m, &DirEntryType_spec, NULL);
     if (DirEntryType == NULL) {
         return -1;
     }
-    ((PyTypeObject *)DirEntryType)->tp_new = 0;  // See bpo-43916
     Py_INCREF(DirEntryType);
     PyModule_AddObject(m, "DirEntry", DirEntryType);
     state->DirEntryType = DirEntryType;

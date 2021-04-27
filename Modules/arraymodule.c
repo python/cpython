@@ -2980,6 +2980,7 @@ static PyType_Slot arrayiter_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, arrayiter_next},
     {Py_tp_methods, arrayiter_methods},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, NULL},
 };
 
@@ -3041,7 +3042,6 @@ array_modexec(PyObject *m)
 
     CREATE_TYPE(m, state->ArrayType, &array_spec);
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
-    state->ArrayIterType->tp_new = 0;  // See bpo-43916
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
     Py_INCREF((PyObject *)state->ArrayType);

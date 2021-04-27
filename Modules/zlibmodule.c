@@ -1382,6 +1382,7 @@ static PyMethodDef zlib_methods[] =
 static PyType_Slot Comptype_slots[] = {
     {Py_tp_dealloc, Comp_dealloc},
     {Py_tp_methods, comp_methods},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0},
 };
 
@@ -1397,6 +1398,7 @@ static PyType_Slot Decomptype_slots[] = {
     {Py_tp_dealloc, Decomp_dealloc},
     {Py_tp_methods, Decomp_methods},
     {Py_tp_members, Decomp_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0},
 };
 
@@ -1459,14 +1461,12 @@ zlib_exec(PyObject *mod)
     if (state->Comptype == NULL) {
         return -1;
     }
-    state->Comptype->tp_new = 0;  // See bpo-43916
 
     state->Decomptype = (PyTypeObject *)PyType_FromModuleAndSpec(
         mod, &Decomptype_spec, NULL);
     if (state->Decomptype == NULL) {
         return -1;
     }
-    state->Decomptype->tp_new = 0;  // See bpo-43916
 
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (state->ZlibError == NULL) {

@@ -325,6 +325,7 @@ static PyType_Slot winapi_overlapped_type_slots[] = {
     {Py_tp_doc, "OVERLAPPED structure wrapper"},
     {Py_tp_methods, overlapped_methods},
     {Py_tp_members, overlapped_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0,0}
 };
 
@@ -1931,7 +1932,6 @@ static int winapi_exec(PyObject *m)
     if (st->overlapped_type == NULL) {
         return -1;
     }
-    st->overlapped_type->tp_new = 0;  // See bpo-43916
 
     if (PyModule_AddType(m, st->overlapped_type) < 0) {
         return -1;

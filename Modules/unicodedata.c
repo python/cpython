@@ -1448,6 +1448,7 @@ static PyType_Slot ucd_type_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, unicodedata_functions},
     {Py_tp_members, DB_members},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -1478,7 +1479,6 @@ unicodedata_exec(PyObject *module)
     if (ucd_type == NULL) {
         return -1;
     }
-    ucd_type->tp_new = 0;  // See bpo-43916
 
     if (PyModule_AddType(module, ucd_type) < 0) {
         Py_DECREF(ucd_type);

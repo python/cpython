@@ -1500,6 +1500,7 @@ static PyType_Slot _xml_parse_type_spec_slots[] = {
     {Py_tp_methods, xmlparse_methods},
     {Py_tp_members, xmlparse_members},
     {Py_tp_getset, xmlparse_getsetlist},
+    {Py_tp_new, _PyType_DisabledNew},
     {0, 0}
 };
 
@@ -1862,7 +1863,6 @@ pyexpat_exec(PyObject *mod)
     if (state->xml_parse_type == NULL) {
         return -1;
     }
-    state->xml_parse_type->tp_new = 0;  // See bpo-43916
 
     if (init_handler_descrs(state) < 0) {
         return -1;
