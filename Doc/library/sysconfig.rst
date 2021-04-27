@@ -107,6 +107,43 @@ identifier.  Python currently uses eight paths:
    :mod:`sysconfig`.
 
 
+.. function:: get_default_scheme()
+
+   Return the default scheme name for the current platform.
+
+   .. versionchanged:: 3.10
+      This function was previously named ``_get_default_scheme()`` and
+      considered an implementation detail.
+
+
+.. function:: get_preferred_scheme(key)
+
+   Return a preferred scheme name for an installation layout specified by *key*.
+
+   *key* must be either ``"prefix"``, ``"home"``, or ``"user"``.
+
+   The return value is a scheme name listed in :func:`get_scheme_names`. It
+   can be passed to :mod:`sysconfig` functions that take a *scheme* argument,
+   such as :func:`get_paths`.
+
+   .. versionadded:: 3.10
+
+
+.. function:: _get_preferred_schemes()
+
+   Return a dict containing preferred scheme names on the current platform.
+   Python implementers and redistributors may add their preferred schemes to
+   the ``_INSTALL_SCHEMES`` module-level global value, and modify this function
+   to return those scheme names, to e.g. provide different schemes for system
+   and language package managers to use, so packages installed by either do not
+   mix with those by the other.
+
+   End users should not use this function, but :func:`get_default_scheme` and
+   :func:`get_preferred_scheme()` instead.
+
+   .. versionadded:: 3.10
+
+
 .. function:: get_path_names()
 
    Return a tuple containing all path names currently supported in
