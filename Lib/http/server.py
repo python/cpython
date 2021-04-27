@@ -1192,20 +1192,41 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 nbytes = int(length)
             except (TypeError, ValueError):
                 nbytes = 0
+
+            data = None
+            rfile = None
+
+            if self.command.lower() == "post" and nbytes > 0:
+                data = self.rfile.read(nbytes)
+                if len(data) < nbytes:
+                    import tempfile
+                    rfile = tempfile.TemporaryFile("wb+")
+                    rfile.write(data)
+                    bufsize = 2 << 16
+                    while True:
+                        buf = self.rfile.read(bufsize)
+                        if not buf:
+                            break
+                        rfile.write(buf)
+                        if rfile.tell() == nbytes:
+                            break
+                    rfile.seek(0)
+                    data = None
+
+                while select.select([self.rfile._sock], [], [], 0)[0]:
+                    if not self.rfile._sock.recv(1):
+                        break
+
+            stdin = subprocess.PIPE
+            if rfile is not None:
+                stdin = rfile
             p = subprocess.Popen(cmdline,
-                                 stdin=subprocess.PIPE,
+                                 stdin=stdin,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  env = env
                                  )
-            if self.command.lower() == "post" and nbytes > 0:
-                data = self.rfile.read(nbytes)
-            else:
-                data = None
-            # throw away additional data [see bug #427345]
-            while select.select([self.rfile._sock], [], [], 0)[0]:
-                if not self.rfile._sock.recv(1):
-                    break
+
             stdout, stderr = p.communicate(data)
             self.wfile.write(stdout)
             if stderr:
