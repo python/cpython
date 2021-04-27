@@ -1005,6 +1005,14 @@ class Enum(metaclass=EnumType):
             val = str(self)
         # mix-in branch
         else:
+            import warnings
+            warnings.warn(
+                    "in 3.12 format() will use the enum member, not the enum member's value;\n"
+                    "use a format specifier, such as :d for an IntEnum member, to maintain"
+                    "the current display",
+                    DeprecationWarning,
+                    stacklevel=2,
+                    )
             cls = self._member_type_
             val = self._value_
         return cls.__format__(val, format_spec)
