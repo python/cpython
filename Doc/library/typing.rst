@@ -974,10 +974,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
          def func1(val: List[object]):
              if is_str_list(val):
-                 # Type of ``val`` is narrowed to List[str]
+                 # Type of ``val`` is narrowed to ``List[str]``.
                  print(" ".join(val))
              else:
-                 # Type of ``val`` remains as List[object]
+                 # Type of ``val`` remains as ``List[object]``.
                  print("Not a list of strings!")
 
    If ``is_str_list`` is a class or instance method, then the type in
