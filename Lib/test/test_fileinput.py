@@ -44,7 +44,8 @@ class BaseTests:
     def writeTmp(self, content, *, mode='w'):  # opening in text mode is the default
         fd, name = tempfile.mkstemp()
         self.addCleanup(os_helper.unlink, name)
-        with open(fd, mode) as f:
+        encoding = None if "b" in mode else "utf-8"
+        with open(fd, mode, encoding=encoding) as f:
             f.write(content)
         return name
 
@@ -96,7 +97,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
 
         if verbose:
             print('1. Simple iteration')
-        fi = FileInput(files=(t1, t2, t3, t4))
+        fi = FileInput(files=(t1, t2, t3, t4), encoding="utf-8")
         lines = list(fi)
         fi.close()
         self.assertEqual(len(lines), 31)
@@ -107,7 +108,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
 
         if verbose:
             print('2. Status variables')
-        fi = FileInput(files=(t1, t2, t3, t4))
+        fi = FileInput(files=(t1, t2, t3, t4), encoding="utf-8")
         s = "x"
         while s and s != 'Line 6 of file 2\n':
             s = fi.readline()
@@ -126,7 +127,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
 
         if verbose:
             print('4. Stdin')
-        fi = FileInput(files=(t1, t2, t3, t4, '-'))
+        fi = FileInput(files=(t1, t2, t3, t4, '-'), encoding="utf-8")
         savestdin = sys.stdin
         try:
             sys.stdin = StringIO("Line 1 of stdin\nLine 2 of stdin\n")
@@ -140,7 +141,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
 
         if verbose:
             print('5. Boundary conditions')
-        fi = FileInput(files=(t1, t2, t3, t4))
+        fi = FileInput(files=(t1, t2, t3, t4), encoding="utf-8")
         self.assertEqual(fi.lineno(), 0)
         self.assertEqual(fi.filename(), None)
         fi.nextfile()
@@ -151,7 +152,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             print('6. Inplace')
         savestdout = sys.stdout
         try:
-            fi = FileInput(files=(t1, t2, t3, t4), inplace=1)
+            fi = FileInput(files=(t1, t2, t3, t4), inplace=1, encoding="utf-8")
             for line in fi:
                 line = line[:-1].upper()
                 print(line)
@@ -159,7 +160,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
         finally:
             sys.stdout = savestdout
 
-        fi = FileInput(files=(t1, t2, t3, t4))
+        fi = FileInput(files=(t1, t2, t3, t4), encoding="utf-8")
         for line in fi:
             self.assertEqual(line[-1], '\n')
             m = pat.match(line[:-1])
@@ -182,7 +183,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         t2 = self.writeTmp("")
         t3 = self.writeTmp("The only line there is.\n")
         t4 = self.writeTmp("")
-        fi = FileInput(files=(t1, t2, t3, t4))
+        fi = FileInput(files=(t1, t2, t3, t4), encoding="utf-8")
 
         line = fi.readline()
         self.assertEqual(line, 'The only line there is.\n')
@@ -200,7 +201,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_files_that_dont_end_with_newline(self):
         t1 = self.writeTmp("A\nB\nC")
         t2 = self.writeTmp("D\nE\nF")
-        fi = FileInput(files=(t1, t2))
+        fi = FileInput(files=(t1, t2), encoding="utf-8")
         lines = list(fi)
         self.assertEqual(lines, ["A\n", "B\n", "C", "D\n", "E\n", "F"])
         self.assertEqual(fi.filelineno(), 3)
@@ -213,14 +214,14 @@ class FileInputTests(BaseTests, unittest.TestCase):
 ##         encoding = sys.getfilesystemencoding()
 ##         if encoding is None:
 ##             encoding = 'ascii'
-##         fi = FileInput(files=str(t1, encoding))
+##         fi = FileInput(files=str(t1, encoding), encoding="utf-8")
 ##         lines = list(fi)
 ##         self.assertEqual(lines, ["A\n", "B"])
 
     def test_fileno(self):
         t1 = self.writeTmp("A\nB")
         t2 = self.writeTmp("C\nD")
-        fi = FileInput(files=(t1, t2))
+        fi = FileInput(files=(t1, t2), encoding="utf-8")
         self.assertEqual(fi.fileno(), -1)
         line = next(fi)
         self.assertNotEqual(fi.fileno(), -1)
@@ -232,7 +233,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_opening_mode(self):
         try:
             # invalid mode, should raise ValueError
-            fi = FileInput(mode="w")
+            fi = FileInput(mode="w", encoding="utf-8")
             self.fail("FileInput should reject invalid mode argument")
         except ValueError:
             pass
@@ -281,7 +282,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
                 self.invoked = False
             def __call__(self, *args, **kargs):
                 self.invoked = True
-                return open(*args)
+                return open(*args, encoding="utf-8")
 
         t = self.writeTmp("\n")
         custom_open_hook = CustomOpenHook()
@@ -346,7 +347,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_context_manager(self):
         t1 = self.writeTmp("A\nB\nC")
         t2 = self.writeTmp("D\nE\nF")
-        with FileInput(files=(t1, t2)) as fi:
+        with FileInput(files=(t1, t2), encoding="utf-8") as fi:
             lines = list(fi)
         self.assertEqual(lines, ["A\n", "B\n", "C", "D\n", "E\n", "F"])
         self.assertEqual(fi.filelineno(), 3)
@@ -356,13 +357,13 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_close_on_exception(self):
         t1 = self.writeTmp("")
         try:
-            with FileInput(files=t1) as fi:
+            with FileInput(files=t1, encoding="utf-8") as fi:
                 raise OSError
         except OSError:
             self.assertEqual(fi._files, ())
 
     def test_empty_files_list_specified_to_constructor(self):
-        with FileInput(files=[]) as fi:
+        with FileInput(files=[], encoding="utf-8") as fi:
             self.assertEqual(fi._files, ('-',))
 
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -370,7 +371,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         """Tests invoking FileInput.__getitem__() with the current
            line number"""
         t = self.writeTmp("line1\nline2\n")
-        with FileInput(files=[t]) as fi:
+        with FileInput(files=[t], encoding="utf-8") as fi:
             retval1 = fi[0]
             self.assertEqual(retval1, "line1\n")
             retval2 = fi[1]
@@ -388,7 +389,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         """Tests invoking FileInput.__getitem__() with an index unequal to
            the line number"""
         t = self.writeTmp("line1\nline2\n")
-        with FileInput(files=[t]) as fi:
+        with FileInput(files=[t], encoding="utf-8") as fi:
             with self.assertRaises(RuntimeError) as cm:
                 fi[1]
         self.assertEqual(cm.exception.args, ("accessing lines out of order",))
@@ -398,7 +399,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         """Tests invoking FileInput.__getitem__() with the line number but at
            end-of-input"""
         t = self.writeTmp('')
-        with FileInput(files=[t]) as fi:
+        with FileInput(files=[t], encoding="utf-8") as fi:
             with self.assertRaises(IndexError) as cm:
                 fi[0]
         self.assertEqual(cm.exception.args, ("end of input reached",))
@@ -413,7 +414,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         try:
             t = self.writeTmp("\n")
             self.addCleanup(safe_unlink, t + '.bak')
-            with FileInput(files=[t], inplace=True) as fi:
+            with FileInput(files=[t], inplace=True, encoding="utf-8") as fi:
                 next(fi) # make sure the file is opened
                 os.unlink = os_unlink_replacement
                 fi.nextfile()
@@ -432,7 +433,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         os_fstat_replacement = UnconditionallyRaise(OSError)
         try:
             t = self.writeTmp("\n")
-            with FileInput(files=[t], inplace=True) as fi:
+            with FileInput(files=[t], inplace=True, encoding="utf-8") as fi:
                 os.fstat = os_fstat_replacement
                 fi.readline()
         finally:
@@ -450,7 +451,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
         os_chmod_replacement = UnconditionallyRaise(OSError)
         try:
             t = self.writeTmp("\n")
-            with FileInput(files=[t], inplace=True) as fi:
+            with FileInput(files=[t], inplace=True, encoding="utf-8") as fi:
                 os.chmod = os_chmod_replacement
                 fi.readline()
         finally:
@@ -469,7 +470,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
 
         unconditionally_raise_ValueError = FilenoRaisesValueError()
         t = self.writeTmp("\n")
-        with FileInput(files=[t]) as fi:
+        with FileInput(files=[t], encoding="utf-8") as fi:
             file_backup = fi._file
             try:
                 fi._file = unconditionally_raise_ValueError
@@ -517,7 +518,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
 
     def test_pathlib_file(self):
         t1 = Path(self.writeTmp("Pathlib file."))
-        with FileInput(t1) as fi:
+        with FileInput(t1, encoding="utf-8") as fi:
             line = fi.readline()
             self.assertEqual(line, 'Pathlib file.')
             self.assertEqual(fi.lineno(), 1)
@@ -526,11 +527,11 @@ class FileInputTests(BaseTests, unittest.TestCase):
 
     def test_pathlib_file_inplace(self):
         t1 = Path(self.writeTmp('Pathlib file.'))
-        with FileInput(t1, inplace=True) as fi:
+        with FileInput(t1, inplace=True, encoding="utf-8") as fi:
             line = fi.readline()
             self.assertEqual(line, 'Pathlib file.')
             print('Modified %s' % line)
-        with open(t1) as f:
+        with open(t1, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'Modified Pathlib file.\n')
 
 
