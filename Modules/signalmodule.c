@@ -1544,6 +1544,46 @@ signal_add_constants(PyObject *module)
 
 
 static int
+signal_get_set_handlers(PyObject *mod_dict)
+{
+    // Get signal handlers
+    for (int signum = 1; signum < NSIG; signum++) {
+        void (*c_handler)(int) = PyOS_getsig(signum);
+        PyObject *func;
+        if (c_handler == SIG_DFL) {
+            func = DefaultHandler;
+        }
+        else if (c_handler == SIG_IGN) {
+            func = IgnoreHandler;
+        }
+        else {
+            func = Py_None; // None of our business
+        }
+        // If signal_module_exec() is called more than one, we must
+        // clear the strong reference to the previous function.
+        PyObject* old_func = get_handler(signum);
+        SetHandler(signum, Py_NewRef(func));
+        Py_XDECREF(old_func);
+    }
+
+    // Instal Python SIGINT handler which raises KeyboardInterrupt
+    PyObject* sigint_func = get_handler(SIGINT);
+    if (sigint_func == DefaultHandler) {
+        PyObject *int_handler = PyMapping_GetItemString(mod_dict,
+                                                        "default_int_handler");
+        if (!int_handler) {
+            return -1;
+        }
+
+        SetHandler(SIGINT, int_handler);
+        Py_DECREF(sigint_func);
+        PyOS_setsig(SIGINT, signal_handler);
+    }
+    return 0;
+}
+
+
+static int
 signal_module_exec(PyObject *m)
 {
     assert(!PyErr_Occurred());
@@ -1571,37 +1611,11 @@ signal_module_exec(PyObject *m)
     }
 #endif
 
-    // Get signal handlers
-    for (int signum = 1; signum < NSIG; signum++) {
-        void (*c_handler)(int) = PyOS_getsig(signum);
-        PyObject *func;
-        if (c_handler == SIG_DFL) {
-            func = DefaultHandler;
-        }
-        else if (c_handler == SIG_IGN) {
-            func = IgnoreHandler;
-        }
-        else {
-            func = Py_None; // None of our business
-        }
-        // If signal_module_exec() is called more than one, we must
-        // clear the strong reference to the previous function.
-        PyObject* old_func = get_handler(signum);
-        SetHandler(signum, Py_NewRef(func));
-        Py_XDECREF(old_func);
-    }
-
-    // Instal Python SIGINT handler which raises KeyboardInterrupt
-    PyObject* sigint_func = get_handler(SIGINT);
-    if (sigint_func == DefaultHandler) {
-        PyObject *int_handler = PyMapping_GetItemString(d, "default_int_handler");
-        if (!int_handler) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_Py_IsMainInterpreter(tstate->interp)) {
+        if (signal_get_set_handlers(d) < 0) {
             return -1;
         }
-
-        SetHandler(SIGINT, int_handler);
-        Py_DECREF(sigint_func);
-        PyOS_setsig(SIGINT, signal_handler);
     }
 
     assert(!PyErr_Occurred());
