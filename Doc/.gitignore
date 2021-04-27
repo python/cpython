@@ -1,3 +1,1 @@
-# Ignore doctest artifacts
-example.ini
-myfile.bz2
+*.bak

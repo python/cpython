@@ -1545,7 +1545,7 @@ Pattern matching
    contains the match pattern that the subject will be matched against.
    If the pattern is ``None``, the node represents a capture pattern (i.e a
    bare name) and will always succeed.
-   
+
    The ``name`` attribute contains the name that will be bound if the pattern
    is successful. If ``name`` is ``None``, ``pattern`` must also be ``None``
    and the node represents the wildcard pattern.
