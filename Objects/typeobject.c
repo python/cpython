@@ -1007,7 +1007,7 @@ type_repr(PyTypeObject *type)
 PyObject *
 _PyType_DisabledNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyErr_Format(PyExc_TypeError, "cannot create '%.100s' instances",
+    PyErr_Format(PyExc_TypeError, "cannot create '%s' instances",
                  type->tp_name);
     return NULL;
 }
