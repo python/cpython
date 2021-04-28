@@ -550,13 +550,13 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_synced()
 
     @run_in_tk_mainloop
-    def test_squeeze_single_line_statement(self):
+    def test_squeeze_multi_line_output(self):
         shell = self.shell
         text = shell.text
 
-        self.do_input('1\n')
+        self.do_input('print("a\\nb\\nc")\n')
         yield
-        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
 
         text.mark_set('insert', f'insert -1line linestart')
         text.event_generate('<<squeeze-current-text>>')
@@ -566,7 +566,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         shell.squeezer.expandingbuttons[0].expand()
         yield
-        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
+        self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
         self.assert_sidebar_lines_synced()
 
     @run_in_tk_mainloop
