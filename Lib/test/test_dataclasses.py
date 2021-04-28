@@ -2823,6 +2823,16 @@ class TestSlots(unittest.TestCase):
 
         self.assertTrue('__slots__' not in AnotherDelivered.__dict__)
 
+    def test_returns_new_class(self):
+        class A:
+            x: int
+
+        B = dataclass(A, slots=True)
+        self.assertIsNot(A, B)
+
+        self.assertFalse(hasattr(A, "__slots__"))
+        self.assertTrue(hasattr(B, "__slots__"))
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):

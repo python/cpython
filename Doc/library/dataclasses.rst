@@ -174,8 +174,9 @@ Module-level decorators, classes, and functions
      section.
 
    - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
-     will be generated. If :attr:`__slots__` is defined in the class, then
-     :exc:`TypeError` is raised.
+     will be generated and new class will be returned instead of original one.
+     If :attr:`__slots__` is defined in the class, then :exc:`TypeError`
+     is raised.
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
