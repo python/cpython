@@ -5602,9 +5602,69 @@ compiler_slice(struct compiler *c, expr_ty s)
 #define WILDCARD_STAR_CHECK(N) \
     ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
 
-// Limit permitted subexpressions, even if the parser & AST validator let them through
-#define MATCH_VALUE_EXPR(N) \
-    ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
+#define CHECK_VALUE_COMPLEX(E) \
+    ((E)->kind == BinOp_kind && \
+     ((E)->v.BinOp.op == Add || (E)->v.BinOp.op == Sub) && \
+     (CHECK_VALUE_REAL_POS((E)->v.BinOp.left) || \
+      CHECK_VALUE_REAL_NEG((E)->v.BinOp.left)) && \
+     CHECK_VALUE_IMAG_POS((E)->v.BinOp.right))
+
+#define CHECK_VALUE_IMAG_NEG(E) \
+    ((E)->kind == UnaryOp_kind && \
+     (E)->v.UnaryOp.op == USub && \
+     CHECK_VALUE_IMAG_POS((E)->v.UnaryOp.operand))
+
+#define CHECK_VALUE_IMAG_POS(E) \
+    ((E)->kind == Constant_kind && \
+     PyComplex_CheckExact((E)->v.Constant.value) && \
+     ((PyComplexObject*)(E)->v.Constant.value)->cval.real == 0 && \
+     ((PyComplexObject*)(E)->v.Constant.value)->cval.imag >= 0)
+
+#define CHECK_VALUE_REAL_NEG(E) \
+    ((E)->kind == UnaryOp_kind && \
+     (E)->v.UnaryOp.op == USub && \
+     CHECK_VALUE_REAL_POS((E)->v.UnaryOp.operand))
+
+#define CHECK_VALUE_REAL_POS(E) \
+    ((E)->kind == Constant_kind && \
+     ((PyLong_CheckExact((E)->v.Constant.value) && \
+       _PyLong_Sign((E)->v.Constant.value) >= 0) || \
+      (PyFloat_CheckExact((E)->v.Constant.value) && \
+       PyFloat_AS_DOUBLE((E)->v.Constant.value) >= 0)))
+
+
+static int
+check_value(expr_ty e, int allow_singleton)
+{
+    switch (e->kind) {
+        case Attribute_kind:
+            return 1;
+        case BinOp_kind:
+            return CHECK_VALUE_COMPLEX(e);
+        case Constant_kind: {
+            PyObject *v = e->v.Constant.value;
+            if (PyBytes_CheckExact(v) || PyUnicode_CheckExact(v)) {
+                return 1;
+            }
+            if (PyBool_Check(v) || v == Py_None) {
+                return allow_singleton;
+            }
+            return CHECK_VALUE_REAL_POS(e);
+        }
+        case UnaryOp_kind:
+            return CHECK_VALUE_REAL_NEG(e) || CHECK_VALUE_IMAG_NEG(e);
+        default:
+            return 0;
+    }
+    Py_UNREACHABLE();
+}
+
+
+#undef CHECK_VALUE_COMPLEX
+#undef CHECK_VALUE_IMAG_POS
+#undef CHECK_VALUE_REAL_NEG
+#undef CHECK_VALUE_REAL_POS
+
 
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
@@ -6002,7 +6062,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
             c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
             return compiler_error(c, e);
         }
-        if (!MATCH_VALUE_EXPR(key)) {
+        if (!check_value(key, 1)) {
             const char *e = "mapping pattern keys may only match literals and attribute lookups";
             return compiler_error(c, e);
         }
@@ -6196,7 +6256,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
-    if (!MATCH_VALUE_EXPR(value)) {
+    if (!check_value(value, 0)) {
         const char *e = "patterns may only match literals and attribute lookups";
         return compiler_error(c, e);
     }
@@ -6304,6 +6364,7 @@ compiler_match(struct compiler *c, stmt_ty s)
 }
 
 #undef WILDCARD_CHECK
+#undef WILDCARD_STAR_CHECK
 
 /* End of the compiler section, beginning of the assembler section */
 
