@@ -805,8 +805,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     }
     switch (node_->kind) {
         case MatchValue_kind:
-            // Don't fold the value as an expression, since we need values like
-            // 0+0 to raise SyntaxErrors in the compiler!
+            CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
             break;
         case MatchSingleton_kind:
             break;
@@ -814,12 +813,11 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchSequence.patterns);
             break;
         case MatchMapping_kind:
-            // Don't fold the keys as expressions, since we need keys like 0+0
-            // to raise SyntaxErrors in the compiler!
+            CALL_SEQ(astfold_expr, expr, node_->v.MatchMapping.keys);
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchMapping.patterns);
             break;
         case MatchClass_kind:
-            // No need to fold the class (it's just a dotted name).
+            CALL(astfold_expr, expr_ty, node_->v.MatchClass.cls);
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.patterns);
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.kwd_patterns);
             break;
@@ -827,7 +825,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             break;
         case MatchAs_kind:
             if (node_->v.MatchAs.pattern) {
-                CALL(astfold_pattern, pattern, node_->v.MatchAs.pattern);
+                CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
             }
             break;
         case MatchOr_kind:
