@@ -133,7 +133,6 @@ class ColorDelegator(Delegator):
             # non-modal alternative.
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
-
         if DEBUG: print('tagdefs', self.tagdefs)
 
     def insert(self, index, chars, tags=None):
