@@ -226,7 +226,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
 
-    @support.cpython_only
+    @cpython_only
     def test_uninitialised_new(self):
         # Prevent heap types from being created uninitialised (bpo-43916)
         self.assertRaises(TypeError, unicodedata.UCD)
