@@ -118,6 +118,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     if (!isolation_level) {
         isolation_level = PyUnicode_FromString("");
         if (!isolation_level) {
+            PyErr_SetString(pysqlite_ProgrammingError, "Isolation level could not be set.");
             return -1;
         }
     } else {
@@ -255,14 +256,15 @@ int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObjec
 {
     if (!connection || !connection->cursors) {
         PyErr_Format(pysqlite_ProgrammingError,
-                        "Tried to get a cursor of an uninitialized connection.");
+                     "Base Connection.__init__ not called.");
         goto error;
     }
     PyObject* weakref;
 
     if (!connection->cursors) {
-        PyErr_SetString(pysqlite_ProgrammingError, "Could not get the cursors list.");
-        return 0;
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Base Connection.__init__ not called.");
+        goto error;
     }
 
     weakref = PyWeakref_NewRef((PyObject*)cursor, NULL);
@@ -294,12 +296,11 @@ static PyObject *
 pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
 /*[clinic end generated code: output=562432a9e6af2aa1 input=4127345aa091b650]*/
 {
-        if (self == NULL) {
-                return NULL;
-        }
+    if (self == NULL) {
+        return NULL;
+    }
         
     static char *kwlist[] = {"factory", NULL};
-    PyObject* factory = NULL;
     PyObject* cursor;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
@@ -344,7 +345,8 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
     int rc;
     
     if (!self->statements) {
-        PyErr_SetString(pysqlite_ProgrammingError, "Trying to close connection which was not initialized properly.");
+        PyErr_SetString(pysqlite_ProgrammingError,
+                        "Base Connection.__init__ not called.");
         return NULL;
     }
 
@@ -1250,7 +1252,9 @@ int pysqlite_check_thread(pysqlite_Connection* self)
 static PyObject* pysqlite_connection_get_isolation_level(pysqlite_Connection* self, void* unused)
 {
     if (!self || !self->isolation_level) {
-        Py_RETURN_NONE;
+        PyErr_Format(pysqlite_ProgrammingError,
+                    "Object is null or isolation_level is uninitialized.");
+        return 0;
     }
     return Py_NewRef(self->isolation_level);
 }
