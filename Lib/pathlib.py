@@ -1055,9 +1055,7 @@ class Path(PurePath):
         # XXX untested yet!
         if self.is_absolute():
             return self
-        # FIXME this must defer to the specific flavour (and, under Windows,
-        # use nt._getfullpathname())
-        return self._from_parts([self._accessor.getcwd()] + self._parts)
+        return self._from_parts([self.cwd()] + self._parts)
 
     def resolve(self, strict=False):
         """
