@@ -163,7 +163,9 @@ test_gc_control(PyObject *self, PyObject *Py_UNUSED(ignored))
     msg = "disable(2)";
     if (!old_state) goto failed;
     msg = "IsEnabled(2)";
-    if (PyGC_IsEnabled()) goto failed;
+    if (PyGC_IsEnabled()) {
+        goto failed;
+    }
 
     old_state = PyGC_Enable();
     msg = "enable(3)";
