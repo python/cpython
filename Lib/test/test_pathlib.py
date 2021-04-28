@@ -1,3 +1,4 @@
+import contextlib
 import collections.abc
 import io
 import os
@@ -1716,21 +1717,18 @@ class _BasePathTest(object):
         # Patching is needed to avoid relying on the filesystem
         # to return the order of the files as the error will not
         # happen if the symlink is the last item.
+        real_scandir = os.scandir
+        def my_scandir(path):
+            with real_scandir(path) as scandir_it:
+                entries = list(scandir_it)
+            entries.sort(key=lambda entry: entry.name)
+            return contextlib.nullcontext(entries)
 
-        with mock.patch("os.scandir") as scandir:
-            scandir.return_value = sorted(os.scandir(base))
+        with mock.patch("os.scandir", my_scandir):
             self.assertEqual(len(set(base.glob("*"))), 3)
-
-        subdir.mkdir()
-
-        with mock.patch("os.scandir") as scandir:
-            scandir.return_value = sorted(os.scandir(base))
+            subdir.mkdir()
             self.assertEqual(len(set(base.glob("*"))), 4)
-
-        subdir.chmod(000)
-
-        with mock.patch("os.scandir") as scandir:
-            scandir.return_value = sorted(os.scandir(base))
+            subdir.chmod(000)
             self.assertEqual(len(set(base.glob("*"))), 4)
 
     def _check_resolve(self, p, expected, strict=True):
