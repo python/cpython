@@ -264,12 +264,12 @@ class TestSuite(BaseTestSuite):
                                                         previousModule)
             finally:
                 _call_if_exists(result, '_restoreStdout')
-                try:
-                    case.doModuleCleanups()
-                except Exception as e:
-                    self._createClassOrModuleLevelException(result, e,
-                                                            'tearDownModule',
-                                                            previousModule)
+        try:
+            case.doModuleCleanups()
+        except Exception as e:
+            self._createClassOrModuleLevelException(result, e,
+                                                    'tearDownModule',
+                                                    previousModule)
 
     def _tearDownPreviousClass(self, test, result):
         previousClass = getattr(result, '_previousTestClass', None)

@@ -418,6 +418,28 @@ class TestModuleCleanUp(unittest.TestCase):
         self.assertEqual(cleanups,
                          [((1, 2), {'function': 'hello'})])
 
+    def test_run_module_cleanUp_without_teardown(self):
+        ordering = []
+
+        class Module(object):
+            unittest.addModuleCleanup(print, 'module cleanup')
+
+        class TestableTest(unittest.TestCase):
+            @classmethod
+            def setUpClass(cls):
+                ordering.append('setUpClass')
+            def testNothing(self):
+                ordering.append('test')
+            @classmethod
+            def tearDownClass(cls):
+                ordering.append('tearDownClass')
+
+        TestableTest.__module__ = 'Module'
+        sys.modules['Module'] = Module
+        runTests(TestableTest)
+        self.assertEqual(ordering, ['setUpClass', 'test', 'tearDownClass'])
+        self.assertEqual(unittest.case._module_cleanups, [])
+
     def test_run_module_cleanUp(self):
         blowUp = True
         ordering = []
