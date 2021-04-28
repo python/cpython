@@ -78,6 +78,9 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
                 '0123456789'
                 '+-.')
 
+# Unsafe bytes to be removed per WHATWG spec
+_UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
+
 # XXX: Consider replacing with functools.lru_cache
 MAX_CACHE_SIZE = 20
 _parse_cache = {}
@@ -469,8 +472,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
         else:
             scheme, url = url[:i].lower(), url[i+1:]
 
-    _unsafe_chars_to_remove = ['\t', '\r', '\n']
-    url = url.translate({ord(c): None for c in _unsafe_chars_to_remove})
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, "")
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
