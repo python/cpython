@@ -513,7 +513,7 @@ def _is_typevarlike(arg):
     obj = type(arg)
     # looks like a TypeVar/ParamSpec
     return (obj.__module__ == 'typing'
-            and any(obj.__name__ == name for name in ('ParamSpec', 'TypeVar')))
+            and obj.__name__ in {'ParamSpec', 'TypeVar'})
 
 def _has_special_args(args):
     """Checks if args[0] matches either ``...``, ``ParamSpec`` or
