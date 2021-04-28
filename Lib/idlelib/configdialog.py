@@ -235,7 +235,7 @@ class ConfigDialog(Toplevel):
         """
         win_instances = self.parent.instance_dict.keys()
         for instance in win_instances:
-            instance.update_colors()
+            instance.ResetColorizer()
             instance.ResetFont()
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
