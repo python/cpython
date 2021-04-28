@@ -6229,6 +6229,7 @@ PyType_Ready(PyTypeObject *type)
 
     type->tp_flags |= Py_TPFLAGS_READYING;
 
+    /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
     }
