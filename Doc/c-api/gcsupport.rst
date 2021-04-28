@@ -183,11 +183,12 @@ garbage collection runs.
 
 .. c:function:: Py_ssize_t PyGC_Collect(void)
 
-   Performs a garbage collection, if the garbage collector is enabled.
-   Returns the number of collected + uncollectable objects.
-   If the garbage collector is disabled or already running,
+   Perform a full garbage collection, if the garbage collector is enabled.
+   Returns the number of collected + unreachable objects which cannot
+   be collected.
+   If the garbage collector is disabled or already collecting,
    returns ``0`` immediately.
-   Errors during garbage collection are ignored and printed.
+   Errors during garbage collection are passed to :data:`sys.unraisablehook`.
    This function does not raise exceptions.
 
 
@@ -209,7 +210,7 @@ garbage collection runs.
 
 .. c:function:: int PyGC_IsEnabled(void)
 
-   Queries the state of the garbage collector.
+   Query the state of the garbage collector.
    Returns the current state, 0 for disabled and 1 for enabled.
 
 .. versionchanged:: 3.10
