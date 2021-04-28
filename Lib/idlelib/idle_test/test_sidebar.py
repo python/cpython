@@ -519,13 +519,13 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
     @run_in_tk_mainloop
-    def test_single_line_command(self):
+    def test_single_line_statement(self):
         self.do_input('1\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
     @run_in_tk_mainloop
-    def test_multi_line_command(self):
+    def test_multi_line_statement(self):
         # Block statements are not indented because IDLE auto-indents.
         self.do_input(dedent('''\
             if True:
@@ -550,7 +550,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_synced()
 
     @run_in_tk_mainloop
-    def test_squeeze_single_line_command(self):
+    def test_squeeze_single_line_statement(self):
         shell = self.shell
         text = shell.text
 
