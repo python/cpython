@@ -1,0 +1,1 @@
+IDLE's shell now shows prompts in a separate side-bar.
