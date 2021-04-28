@@ -841,6 +841,9 @@ int PyAST_Check(PyObject* obj);
 
 extern int _PyAST_Validate(mod_ty);
 
+/* Helper to let the parser reject 0+0 (et al) when it wants a complex literal */
+extern expr_ty _PyAST_EnsureImaginary(expr_ty);
+
 /* _PyAST_ExprAsUnicode is defined in ast_unparse.c */
 extern PyObject* _PyAST_ExprAsUnicode(expr_ty);
 

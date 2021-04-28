@@ -276,12 +276,15 @@ literal_expr[expr_ty]:
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
 
 complex_number[expr_ty]:
-    | real=signed_number '+' imag=NUMBER { _PyAST_BinOp(real, Add, imag, EXTRA) }
-    | real=signed_number '-' imag=NUMBER  { _PyAST_BinOp(real, Sub, imag, EXTRA) }
+    | real=signed_number '+' imag=imaginary_number { _PyAST_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_number '-' imag=imaginary_number  { _PyAST_BinOp(real, Sub, imag, EXTRA) }
 
 signed_number[expr_ty]:
     | NUMBER
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
+
+imaginary_number[expr_ty]:
+    | imag=NUMBER { _PyAST_EnsureImaginary(imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }

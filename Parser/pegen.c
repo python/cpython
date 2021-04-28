@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_ast.h"           // _PyAST_Validate(), _PyAST_EnsureImaginary
 #include <errcode.h>
 #include "tokenizer.h"
 

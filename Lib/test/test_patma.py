@@ -2430,6 +2430,15 @@ class TestPatma(unittest.TestCase):
         """)
 
     @no_perf
+    def test_patma_240b(self):
+        # Ensure mapping keys are also restricted
+        self.assert_syntax_error("""
+        match ...:
+            case {0+0:_}:
+                pass
+        """)
+
+    @no_perf
     def test_patma_241(self):
         self.assert_syntax_error("""
         match ...:

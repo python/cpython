@@ -408,7 +408,7 @@ ensure_literal_complex(expr_ty exp)
     if (exp->v.BinOp.op != Add && exp->v.BinOp.op != Sub) {
         return 0;
     }
-    // Check LHS is a real number
+    // Check LHS is a real number (potentially signed)
     switch (left->kind)
     {
         case Constant_kind:
@@ -424,16 +424,11 @@ ensure_literal_complex(expr_ty exp)
         default:
             return 0;
     }
-    // Check RHS is an imaginary number
+    // Check RHS is an imaginary number (no separate sign allowed)
     switch (right->kind)
     {
         case Constant_kind:
             if (!ensure_literal_number(right, /*real=*/false, /*imaginary=*/true)) {
-                return 0;
-            }
-            break;
-        case UnaryOp_kind:
-            if (!ensure_literal_negative(right, /*real=*/false, /*imaginary=*/true)) {
                 return 0;
             }
             break;
@@ -874,6 +869,16 @@ _PyAST_Validate(mod_ty mod)
         return 0;
     }
     return res;
+}
+
+expr_ty
+_PyAST_EnsureImaginary(expr_ty exp)
+{
+    if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
+        PyErr_SetString(PyExc_SyntaxError, "Imaginary number required in complex literal");
+        return NULL;
+    }
+    return exp;
 }
 
 PyObject *
