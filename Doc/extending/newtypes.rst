@@ -287,15 +287,23 @@ combined using bitwise-OR.
 +===========================+==============================================+
 | :const:`READONLY`         | Never writable.                              |
 +---------------------------+----------------------------------------------+
-| :const:`AUDIT_READ`       | Emit a :pep:`578` ``object.__getattr__``     |
-|                           | audit event before read.                     |
+| :const:`AUDIT_READ`       | Emit an ``object.__getattr__``               |
+|                           | :ref:`audit events <audit-events>` before    |
+|                           | reading.                                     |
 +---------------------------+----------------------------------------------+
+
+.. version-changed:: 3.10
+   :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
+   are deprecated. However, :const:`READ_RESTRICTED` is an alias for
+   :const:`AUDIT_READ`, so fields that specify either :const:`RESTRICTED` or
+   :const:`READ_RESTRICTED` will also raise an audit event.
 
 .. index::
    single: READONLY
    single: READ_RESTRICTED
    single: WRITE_RESTRICTED
    single: RESTRICTED
+   single: AUDIT_READ
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can
@@ -305,6 +313,8 @@ class object, and get the doc string using its :attr:`__doc__` attribute.
 
 As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :attr:`name` value
 of ``NULL`` is required.
+
+.. version
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
 
