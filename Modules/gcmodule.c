@@ -2050,6 +2050,32 @@ PyInit_gc(void)
     return PyModuleDef_Init(&gcmodule);
 }
 
+/* C API for controlling the state of the garbage collector */
+int
+PyGC_Enable(void)
+{
+    GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
+    gcstate->enabled = 1;
+    return old_state;
+}
+
+int
+PyGC_Disable(void)
+{
+    GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
+    gcstate->enabled = 0;
+    return old_state;
+}
+
+int
+PyGC_IsEnabled(void)
+{
+    GCState *gcstate = get_gc_state();
+    return gcstate->enabled;
+}
+
 /* Public API to invoke gc.collect() from C */
 Py_ssize_t
 PyGC_Collect(void)
@@ -2076,32 +2102,6 @@ PyGC_Collect(void)
     }
 
     return n;
-}
-
-/* C API for controlling the state of the garbage collector */
-int
-PyGC_Enable(void)
-{
-    GCState *gcstate = get_gc_state();
-    int old_state = gcstate->enabled;
-    gcstate->enabled = 1;
-    return old_state;
-}
-
-int
-PyGC_Disable(void)
-{
-    GCState *gcstate = get_gc_state();
-    int old_state = gcstate->enabled;
-    gcstate->enabled = 0;
-    return old_state;
-}
-
-int
-PyGC_IsEnabled(void)
-{
-    GCState *gcstate = get_gc_state();
-    return gcstate->enabled;
 }
 
 Py_ssize_t
