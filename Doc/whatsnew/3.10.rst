@@ -898,7 +898,7 @@ they are provided by the underlying curses library.
 dataclasses
 -----------
 
-Added ``slots`` parameter in :func:``dataclasses.dataclass`` decorator.
+Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
 .. _distutils-deprecated:
