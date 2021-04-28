@@ -42,6 +42,7 @@ class MiscTest(unittest.TestCase):
 
     @support.cpython_only
     def test_immutable(self):
+        # bpo-43908: check that array.array is immutable
         with self.assertRaises(TypeError):
             array.array.foo = 1
 
