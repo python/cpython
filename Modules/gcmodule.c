@@ -2079,18 +2079,22 @@ PyGC_Collect(void)
 }
 
 /* C API for controlling the state of the garbage collector */
-void
+int
 PyGC_Enable(void)
 {
     GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
     gcstate->enabled = 1;
+    return old_state;
 }
 
-void
+int
 PyGC_Disable(void)
 {
     GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
     gcstate->enabled = 0;
+    return old_state;
 }
 
 int

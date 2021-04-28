@@ -149,20 +149,31 @@ test_gc_control(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int orig_enabled = PyGC_IsEnabled();
     const char* msg = "ok";
+    int old_state;
 
-    PyGC_Enable();
-    msg = "enable(1)";
+    old_state = PyGC_Enable();
+    msg = "Enable(1)";
+    if (old_state != orig_enabled) goto failed;
+    msg = "IsEnabled(1)";
     if (!PyGC_IsEnabled()) goto failed;
-    PyGC_Disable();
-    msg = "disable(1)";
+
+    old_state = PyGC_Disable();
+    msg = "disable(2)";
+    if (!old_state) goto failed;
+    msg = "IsEnabled(2)";
     if (PyGC_IsEnabled()) goto failed;
-    PyGC_Enable();
-    msg = "enable(2)";
+
+    old_state = PyGC_Enable();
+    msg = "enable(3)";
+    if (old_state) goto failed;
+    msg = "IsEnabled(3)";
     if (!PyGC_IsEnabled()) goto failed;
 
     if (!orig_enabled) {
-        PyGC_Disable();
-        msg = "disable(2)";
+        old_state = PyGC_Disable();
+        msg = "disable(4)";
+        if (old_state) goto failed;
+        msg = "IsEnabled(4)";
         if (PyGC_IsEnabled()) goto failed;
     }
 
