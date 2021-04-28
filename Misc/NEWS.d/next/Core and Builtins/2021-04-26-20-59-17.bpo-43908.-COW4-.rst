@@ -1,2 +1,2 @@
-Apply :const:`Py_TPFLAGS_IMMUTABLETYPE` flag to :class:`array.array`. Patch by
+Make the :class:`array.array` type immutable. Patch by
 Erlend E. Aasland.
