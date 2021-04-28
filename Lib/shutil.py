@@ -283,6 +283,8 @@ def copyfile(src, dst, *, follow_symlinks=True):
                 return dst
 
             copyfileobj(fsrc, fdst)
+        fsrc.close()
+        fdst.close()
 
     return dst
 
