@@ -1697,6 +1697,13 @@ New Features
   singleton or the ``False`` singleton.
   (Contributed by Victor Stinner in :issue:`43753`.)
 
+* Add new functions to quickly control the garbage collector from C code:
+  :c:func:`PyGC_Enable()`,
+  :c:func:`PyGC_Disable()`,
+  :c:func:`PyGC_IsEnabled()`.
+  These functions allow to activate, deactivate and query the state of the garbage collector from C code without
+  having to import the :mod:`gc` module.
+
 Porting to Python 3.10
 ----------------------
 
