@@ -159,9 +159,13 @@ function:
 .. function:: register(search_function)
 
    Register a codec search function. Search functions are expected to take one
-   argument, being the encoding name in all lower case letters, and return a
-   :class:`CodecInfo` object. In case a search function cannot find
-   a given encoding, it should return ``None``.
+   argument, being the encoding name in all lower case letters with hyphens
+   and spaces converted to underscores, and return a :class:`CodecInfo` object.
+   In case a search function cannot find a given encoding, it should return
+   ``None``.
+
+   .. versionchanged:: 3.9
+      Hyphens and spaces are converted to underscore.
 
 
 .. function:: unregister(search_function)
