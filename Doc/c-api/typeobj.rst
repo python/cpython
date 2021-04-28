@@ -1185,7 +1185,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This flag is never inherited.
+      This flag is not inherited.
 
       .. versionadded:: 3.10
 
