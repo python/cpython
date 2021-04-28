@@ -16,7 +16,6 @@
       Set .list to NULL for _BlocksOutputBuffer_OnError()
 
    2, Initialize the buffer use one of these functions:
-        _BlocksOutputBuffer_Init()
         _BlocksOutputBuffer_InitAndGrow()
         _BlocksOutputBuffer_InitWithSize()
 
@@ -91,32 +90,6 @@ const Py_ssize_t BUFFER_BLOCK_SIZE[] =
     22  2093.34 MB  +256 MB
     ...
 */
-
-/* Initialize the buffer.
-
-   max_length: Max length of the buffer, -1 for unlimited length.
-
-   On success, return allocated size (>=0)
-   On failure, return -1
-*/
-static inline Py_ssize_t
-_BlocksOutputBuffer_Init(_BlocksOutputBuffer *buffer,
-                         const Py_ssize_t max_length,
-                         void **next_out)
-{
-    // ensure .list was set to NULL
-    assert(buffer->list == NULL);
-
-    buffer->list = PyList_New(0);
-    if (buffer->list == NULL) {
-        return -1;
-    }
-    buffer->allocated = 0;
-    buffer->max_length = max_length;
-
-    *next_out = (void*) 1; // some libs don't accept NULL
-    return 0;
-}
 
 /* Initialize the buffer, and grow the buffer.
 

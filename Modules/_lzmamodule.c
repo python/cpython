@@ -18,6 +18,10 @@
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
 
+#if OUTPUT_BUFFER_MAX_BLOCK_SIZE > SIZE_MAX
+    #error "The maximum block size accepted by liblzma is SIZE_MAX."
+#endif
+
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
@@ -25,9 +29,6 @@ Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
                    uint8_t **next_out, size_t *avail_out)
 {
     Py_ssize_t allocated;
-
-    // The maximum block size accepted by the lib is SIZE_MAX
-    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= SIZE_MAX);
 
     allocated = _BlocksOutputBuffer_InitAndGrow(
                     buffer, max_length, (void**) next_out);

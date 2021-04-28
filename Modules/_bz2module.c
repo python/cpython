@@ -11,6 +11,10 @@
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
 
+#if OUTPUT_BUFFER_MAX_BLOCK_SIZE > UINT32_MAX
+    #error "The maximum block size accepted by libbzip2 is UINT32_MAX."
+#endif
+
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
@@ -18,9 +22,6 @@ Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
                    char **next_out, uint32_t *avail_out)
 {
     Py_ssize_t allocated;
-
-    // The maximum block size accepted by the lib is UINT32_MAX
-    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= UINT32_MAX);
 
     allocated = _BlocksOutputBuffer_InitAndGrow(
                     buffer, max_length, (void**) next_out);

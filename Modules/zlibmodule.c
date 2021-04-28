@@ -12,6 +12,10 @@
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
 
+#if OUTPUT_BUFFER_MAX_BLOCK_SIZE > UINT32_MAX
+    #error "The maximum block size accepted by zlib is UINT32_MAX."
+#endif
+
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
@@ -19,9 +23,6 @@ Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
                    Bytef **next_out, uint32_t *avail_out)
 {
     Py_ssize_t allocated;
-
-    // The maximum block size accepted by the lib is UINT32_MAX
-    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= UINT32_MAX);
 
     allocated = _BlocksOutputBuffer_InitAndGrow(
                     buffer, max_length, (void**) next_out);
@@ -37,10 +38,7 @@ Buffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_size,
 {
     Py_ssize_t allocated;
 
-    // The maximum block size accepted by the lib is UINT32_MAX
-    assert(OUTPUT_BUFFER_MAX_BLOCK_SIZE <= UINT32_MAX);
-
-    if (init_size < 0 || init_size > UINT32_MAX) {
+    if (init_size < 0 || (size_t)init_size > UINT32_MAX) {
         PyErr_SetString(PyExc_ValueError,
                         "Initial buffer size should (0 <= size <= UINT32_MAX)");
         return -1;
