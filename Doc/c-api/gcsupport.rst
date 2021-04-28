@@ -194,7 +194,7 @@ garbage collection runs.
 
 .. c:function:: int PyGC_Enable(void)
 
-   Enable the garbage collector.
+   Enable the garbage collector: similar to :func:`gc.enable`.
    Returns the previous state, 0 for disabled and 1 for enabled.
 
 .. versionchanged:: 3.10
@@ -202,7 +202,7 @@ garbage collection runs.
 
 .. c:function:: int PyGC_Disable(void)
 
-   Disable the garbage collector.
+   Disable the garbage collector: similar to :func:`gc.disable`.
    Returns the previous state, 0 for disabled and 1 for enabled.
 
 .. versionchanged:: 3.10
@@ -210,7 +210,7 @@ garbage collection runs.
 
 .. c:function:: int PyGC_IsEnabled(void)
 
-   Query the state of the garbage collector.
+   Query the state of the garbage collector: similar to :func:`gc.isenabled`.
    Returns the current state, 0 for disabled and 1 for enabled.
 
 .. versionchanged:: 3.10
