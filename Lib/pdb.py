@@ -1686,8 +1686,9 @@ def main():
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
-    # Replace pdb's dir with script's dir in front of module search path.
     if not run_as_module:
+        mainpyfile = os.path.realpath(mainpyfile)
+        # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
@@ -1707,7 +1708,7 @@ def main():
             print("The program finished and will be restarted")
         except Restart:
             print("Restarting", mainpyfile, "with arguments:")
-            print("\t" + " ".join(args))
+            print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')

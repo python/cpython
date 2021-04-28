@@ -141,8 +141,9 @@ Functions for integers
       ``randrange(10)``.  In the future, this will raise a :exc:`TypeError`.
 
    .. deprecated:: 3.10
-      The exception raised for non-integral values such as ``range(10.5)``
-      will be changed from :exc:`ValueError` to :exc:`TypeError`.
+      The exception raised for non-integral values such as ``randrange(10.5)``
+      or ``randrange('10')`` will be changed from :exc:`ValueError` to
+      :exc:`TypeError`.
 
 .. function:: randint(a, b)
 
@@ -325,9 +326,9 @@ be found in any statistics text.
 
 .. function:: gauss(mu, sigma)
 
-   Gaussian distribution.  *mu* is the mean, and *sigma* is the standard
-   deviation.  This is slightly faster than the :func:`normalvariate` function
-   defined below.
+   Normal distribution, also called the Gaussian distribution.  *mu* is the mean,
+   and *sigma* is the standard deviation.  This is slightly faster than
+   the :func:`normalvariate` function defined below.
 
    Multithreading note:  When two threads call this function
    simultaneously, it is possible that they will receive the

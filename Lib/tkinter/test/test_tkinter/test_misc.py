@@ -1,5 +1,6 @@
 import unittest
 import tkinter
+import enum
 from test import support
 from tkinter.test.support import AbstractTkTest, AbstractDefaultRootTest
 
@@ -192,6 +193,26 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             root.clipboard_get()
 
+    def test_winfo_rgb(self):
+        root = self.root
+        rgb = root.winfo_rgb
+
+        # Color name.
+        self.assertEqual(rgb('red'), (65535, 0, 0))
+        self.assertEqual(rgb('dark slate blue'), (18504, 15677, 35723))
+        # #RGB - extends each 4-bit hex value to be 16-bit.
+        self.assertEqual(rgb('#F0F'), (0xFFFF, 0x0000, 0xFFFF))
+        # #RRGGBB - extends each 8-bit hex value to be 16-bit.
+        self.assertEqual(rgb('#4a3c8c'), (0x4a4a, 0x3c3c, 0x8c8c))
+        # #RRRRGGGGBBBB
+        self.assertEqual(rgb('#dede14143939'), (0xdede, 0x1414, 0x3939))
+        # Invalid string.
+        with self.assertRaises(tkinter.TclError):
+            rgb('#123456789a')
+        # RGB triplet is invalid input.
+        with self.assertRaises(tkinter.TclError):
+            rgb((111, 78, 55))
+
     def test_event_repr_defaults(self):
         e = tkinter.Event()
         e.serial = 12345
@@ -240,6 +261,49 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
                          " keysym=Key-A keycode=65 char='A'"
                          " num=3 delta=-1 focus=True"
                          " x=10 y=20 width=300 height=200>")
+
+    def test_eventtype_enum(self):
+        class CheckedEventType(enum.StrEnum):
+            KeyPress = '2'
+            Key = KeyPress
+            KeyRelease = '3'
+            ButtonPress = '4'
+            Button = ButtonPress
+            ButtonRelease = '5'
+            Motion = '6'
+            Enter = '7'
+            Leave = '8'
+            FocusIn = '9'
+            FocusOut = '10'
+            Keymap = '11'           # undocumented
+            Expose = '12'
+            GraphicsExpose = '13'   # undocumented
+            NoExpose = '14'         # undocumented
+            Visibility = '15'
+            Create = '16'
+            Destroy = '17'
+            Unmap = '18'
+            Map = '19'
+            MapRequest = '20'
+            Reparent = '21'
+            Configure = '22'
+            ConfigureRequest = '23'
+            Gravity = '24'
+            ResizeRequest = '25'
+            Circulate = '26'
+            CirculateRequest = '27'
+            Property = '28'
+            SelectionClear = '29'   # undocumented
+            SelectionRequest = '30' # undocumented
+            Selection = '31'        # undocumented
+            Colormap = '32'
+            ClientMessage = '33'    # undocumented
+            Mapping = '34'          # undocumented
+            VirtualEvent = '35'     # undocumented
+            Activate = '36'
+            Deactivate = '37'
+            MouseWheel = '38'
+        enum._test_simple_enum(CheckedEventType, tkinter.EventType)
 
     def test_getboolean(self):
         for v in 'true', 'yes', 'on', '1', 't', 'y', 1, True:

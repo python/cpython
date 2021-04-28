@@ -669,6 +669,45 @@ _asyncio_get_event_loop(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _asyncio_get_event_loop_impl(module);
 }
 
+PyDoc_STRVAR(_asyncio__get_event_loop__doc__,
+"_get_event_loop($module, /, stacklevel=3)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO__GET_EVENT_LOOP_METHODDEF    \
+    {"_get_event_loop", (PyCFunction)(void(*)(void))_asyncio__get_event_loop, METH_FASTCALL|METH_KEYWORDS, _asyncio__get_event_loop__doc__},
+
+static PyObject *
+_asyncio__get_event_loop_impl(PyObject *module, int stacklevel);
+
+static PyObject *
+_asyncio__get_event_loop(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"stacklevel", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_get_event_loop", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int stacklevel = 3;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    stacklevel = _PyLong_AsInt(args[0]);
+    if (stacklevel == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _asyncio__get_event_loop_impl(module, stacklevel);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
 "get_running_loop($module, /)\n"
 "--\n"
@@ -832,4 +871,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d0fc522bcbff9d61 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0d127162ac92e0c0 input=a9049054013a1b77]*/

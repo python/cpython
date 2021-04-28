@@ -7,7 +7,3 @@ updates:
     labels:
       - "skip issue"
       - "skip news"
-    target_branch:
-      - "master"
-      - "3.9"
-      - "3.8"

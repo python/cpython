@@ -54,6 +54,9 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     void *open_code_hook = runtime->open_code_hook;
     void *open_code_userdata = runtime->open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head = runtime->audit_hook_head;
+    // bpo-42882: Preserve next_index value if Py_Initialize()/Py_Finalize()
+    // is called multiple times.
+    Py_ssize_t unicode_next_index = runtime->unicode_ids.next_index;
 
     memset(runtime, 0, sizeof(*runtime));
 
@@ -90,7 +93,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     if (runtime->unicode_ids.lock == NULL) {
         return _PyStatus_NO_MEMORY();
     }
-    runtime->unicode_ids.next_index = 0;
+    runtime->unicode_ids.next_index = unicode_next_index;
 
     return _PyStatus_OK();
 }
@@ -305,6 +308,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->importlib);
     Py_CLEAR(interp->import_func);
     Py_CLEAR(interp->dict);
+    Py_CLEAR(interp->map_abc);
+    Py_CLEAR(interp->seq_abc);
 #ifdef HAVE_FORK
     Py_CLEAR(interp->before_forkers);
     Py_CLEAR(interp->after_forkers_parent);
@@ -321,7 +326,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-    _PyGC_Fini(tstate);
+    _PyGC_Fini(interp);
 
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
@@ -619,7 +624,8 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;
     tstate->tracing = 0;
-    tstate->use_tracing = 0;
+    tstate->root_cframe.use_tracing = 0;
+    tstate->cframe = &tstate->root_cframe;
     tstate->gilstate_counter = 0;
     tstate->async_exc = NULL;
     tstate->thread_id = PyThread_get_thread_ident();
@@ -1143,7 +1149,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
         HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
-        _PyEval_SignalAsyncExc(tstate);
+        _PyEval_SignalAsyncExc(tstate->interp);
         return 1;
     }
     HEAD_UNLOCK(runtime);
@@ -1322,9 +1328,23 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
    Py_Initialize/Py_FinalizeEx
 */
 PyStatus
-_PyGILState_Init(PyThreadState *tstate)
+_PyGILState_Init(_PyRuntimeState *runtime)
 {
-    if (!_Py_IsMainInterpreter(tstate)) {
+    struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
+    if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    // PyThreadState_New() calls _PyGILState_NoteThreadState() which does
+    // nothing before autoInterpreterState is set.
+    assert(gilstate->autoInterpreterState == NULL);
+    return _PyStatus_OK();
+}
+
+
+PyStatus
+_PyGILState_SetTstate(PyThreadState *tstate)
+{
+    if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
         return _PyStatus_OK();
@@ -1336,9 +1356,6 @@ _PyGILState_Init(PyThreadState *tstate)
 
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
 
-    if (PyThread_tss_create(&gilstate->autoTSSkey) != 0) {
-        return _PyStatus_NO_MEMORY();
-    }
     gilstate->autoInterpreterState = tstate->interp;
     assert(PyThread_tss_get(&gilstate->autoTSSkey) == NULL);
     assert(tstate->gilstate_counter == 0);
@@ -1354,9 +1371,9 @@ _PyGILState_GetInterpreterStateUnsafe(void)
 }
 
 void
-_PyGILState_Fini(PyThreadState *tstate)
+_PyGILState_Fini(PyInterpreterState *interp)
 {
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+    struct _gilstate_runtime_state *gilstate = &interp->runtime->gilstate;
     PyThread_tss_delete(&gilstate->autoTSSkey);
     gilstate->autoInterpreterState = NULL;
 }

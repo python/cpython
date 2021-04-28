@@ -916,6 +916,64 @@ class TraceTestCase(unittest.TestCase):
              (7, 'line'),
              (7, 'return')])
 
+    def test_if_false_in_with(self):
+
+        class C:
+            def __enter__(self):
+                return self
+            def __exit__(*args):
+                pass
+
+        def func():
+            with C():
+                if False:
+                    pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (-5, 'call'),
+             (-4, 'line'),
+             (-4, 'return'),
+             (2, 'line'),
+             (-3, 'call'),
+             (-2, 'line'),
+             (-2, 'return'),
+             (2, 'return')])
+
+    def test_if_false_in_try_except(self):
+
+        def func():
+            try:
+                if False:
+                    pass
+            except Exception:
+                X
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (2, 'return')])
+
+    def test_implicit_return_in_class(self):
+
+        def func():
+            class A:
+                if 3 < 9:
+                    a = 1
+                else:
+                    a = 2
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (1, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'return'),
+             (1, 'return')])
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""

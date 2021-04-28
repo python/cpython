@@ -10,12 +10,12 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
-#undef Yield   /* undefine macro conflicting with <winbase.h> */
-
+#include "pycore_ast.h"           // PyAST_mod2obj
+#include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
-#include "pycore_pyerrors.h"      // _PyErr_Fetch
+#include "pycore_parser.h"        // _PyParser_ASTFromString()
+#include "pycore_pyerrors.h"      // _PyErr_Fetch, _Py_Offer_Suggestions
 #include "pycore_pylifecycle.h"   // _Py_UnhandledKeyboardInterrupt
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
@@ -23,10 +23,7 @@
 #include "token.h"                // INDENT
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
-#include "symtable.h"             // PySymtable_BuildObject()
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
-
-#include "parser_interface.h"      // PyParser_ASTFrom*
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -248,7 +245,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
             }
         }
     }
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL) {
         Py_XDECREF(v);
         Py_XDECREF(w);
@@ -256,14 +253,14 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return -1;
     }
 
-    mod = PyParser_ASTFromFileObject(fp, filename, enc, Py_single_input,
-                                     ps1, ps2, flags, &errcode, arena);
+    mod = _PyParser_ASTFromFile(fp, filename, enc, Py_single_input,
+                                ps1, ps2, flags, &errcode, arena);
 
     Py_XDECREF(v);
     Py_XDECREF(w);
     Py_XDECREF(oenc);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         if (errcode == E_EOF) {
             PyErr_Clear();
             return E_EOF;
@@ -272,12 +269,12 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     }
     m = PyImport_AddModuleObject(mod_name);
     if (m == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return -1;
     }
     d = PyModule_GetDict(m);
     v = run_mod(mod, filename, d, d, flags, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     if (v == NULL) {
         return -1;
     }
@@ -513,7 +510,9 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 
 static int
 parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
-                   Py_ssize_t *lineno, Py_ssize_t *offset, PyObject **text)
+                   Py_ssize_t *lineno, Py_ssize_t *offset,
+                   Py_ssize_t* end_lineno, Py_ssize_t* end_offset,
+                   PyObject **text)
 {
     Py_ssize_t hold;
     PyObject *v;
@@ -521,6 +520,8 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     _Py_IDENTIFIER(filename);
     _Py_IDENTIFIER(lineno);
     _Py_IDENTIFIER(offset);
+    _Py_IDENTIFIER(end_lineno);
+    _Py_IDENTIFIER(end_offset);
     _Py_IDENTIFIER(text);
 
     *message = NULL;
@@ -568,6 +569,44 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         *offset = hold;
     }
 
+    if (Py_TYPE(err) == (PyTypeObject*)PyExc_SyntaxError) {
+        v = _PyObject_GetAttrId(err, &PyId_end_lineno);
+        if (!v) {
+            PyErr_Clear();
+            *end_lineno = *lineno;
+        }
+        else if (v == Py_None) {
+            *end_lineno = *lineno;
+            Py_DECREF(v);
+        } else {
+            hold = PyLong_AsSsize_t(v);
+            Py_DECREF(v);
+            if (hold < 0 && PyErr_Occurred())
+                goto finally;
+            *end_lineno = hold;
+        }
+
+        v = _PyObject_GetAttrId(err, &PyId_end_offset);
+        if (!v) {
+            PyErr_Clear();
+            *end_offset = -1;
+        }
+        else if (v == Py_None) {
+            *end_offset = -1;
+            Py_DECREF(v);
+        } else {
+            hold = PyLong_AsSsize_t(v);
+            Py_DECREF(v);
+            if (hold < 0 && PyErr_Occurred())
+                goto finally;
+            *end_offset = hold;
+        }
+    } else {
+        // SyntaxError subclasses
+        *end_lineno = *lineno;
+        *end_offset = -1;
+    }
+
     v = _PyObject_GetAttrId(err, &PyId_text);
     if (!v)
         goto finally;
@@ -587,8 +626,9 @@ finally:
 }
 
 static void
-print_error_text(PyObject *f, Py_ssize_t offset, PyObject *text_obj)
+print_error_text(PyObject *f, Py_ssize_t offset, Py_ssize_t end_offset, PyObject *text_obj)
 {
+    size_t caret_repetitions = (end_offset > 0 && end_offset > offset) ? end_offset - offset : 1;
     /* Convert text to a char pointer; return if error */
     const char *text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)
@@ -648,7 +688,10 @@ print_error_text(PyObject *f, Py_ssize_t offset, PyObject *text_obj)
     while (--offset >= 0) {
         PyFile_WriteString(" ", f);
     }
-    PyFile_WriteString("^\n", f);
+    for (size_t caret_iter=0; caret_iter < caret_repetitions ; caret_iter++) {
+        PyFile_WriteString("^", f);
+    }
+    PyFile_WriteString("\n", f);
 }
 
 
@@ -868,11 +911,12 @@ print_exception(PyObject *f, PyObject *value)
         (err = _PyObject_LookupAttrId(value, &PyId_print_file_and_line, &tmp)) > 0)
     {
         PyObject *message, *filename, *text;
-        Py_ssize_t lineno, offset;
+        Py_ssize_t lineno, offset, end_lineno, end_offset;
         err = 0;
         Py_DECREF(tmp);
         if (!parse_syntax_error(value, &message, &filename,
-                                &lineno, &offset, &text))
+                                &lineno, &offset,
+                                &end_lineno, &end_offset, &text))
             PyErr_Clear();
         else {
             PyObject *line;
@@ -889,7 +933,21 @@ print_exception(PyObject *f, PyObject *value)
             }
 
             if (text != NULL) {
-                print_error_text(f, offset, text);
+                Py_ssize_t line_size;
+                const char* error_line = PyUnicode_AsUTF8AndSize(text, &line_size);
+                // If the location of the error spawn multiple lines, we want
+                // to just print the first one and highlight everything until
+                // the end of that one since we don't support multi-line error
+                // messages.
+                if (end_lineno > lineno) {
+                    end_offset = (error_line != NULL) ? line_size : -1;
+                }
+                // Limit the ammount of '^' that we can display to
+                // the size of the text in the source line.
+                if (error_line != NULL && end_offset > line_size + 1) {
+                    end_offset = line_size + 1;
+                }
+                print_error_text(f, offset, end_offset, text);
                 Py_DECREF(text);
             }
 
@@ -954,6 +1012,18 @@ print_exception(PyObject *f, PyObject *value)
     }
     /* try to write a newline in any case */
     if (err < 0) {
+        PyErr_Clear();
+    }
+    PyObject* suggestions = _Py_Offer_Suggestions(value);
+    if (suggestions) {
+        // Add a trailer ". Did you mean: (...)?"
+        err = PyFile_WriteString(". Did you mean: '", f);
+        if (err == 0) {
+            err = PyFile_WriteObject(suggestions, f, Py_PRINT_RAW);
+            err += PyFile_WriteString("'?", f);
+        }
+        Py_DECREF(suggestions);
+    } else if (PyErr_Occurred()) {
         PyErr_Clear();
     }
     err += PyFile_WriteString("\n", f);
@@ -1083,8 +1153,9 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
     if (file == Py_None) {
         return;
     }
-
+    Py_INCREF(file);
     _PyErr_Display(file, exception, value, tb);
+    Py_DECREF(file);
 }
 
 PyObject *
@@ -1100,15 +1171,15 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     if (filename == NULL)
         return NULL;
 
-    arena = PyArena_New();
+    arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
 
     if (mod != NULL)
         ret = run_mod(mod, filename, globals, locals, flags, arena);
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
     return ret;
 }
 
@@ -1117,14 +1188,14 @@ static PyObject *
 pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
            PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL) {
         return NULL;
     }
 
     mod_ty mod;
-    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, NULL, NULL,
-                                     flags, NULL, arena);
+    mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
+                                flags, NULL, arena);
 
     if (closeit) {
         fclose(fp);
@@ -1137,7 +1208,7 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
     else {
         ret = NULL;
     }
-    PyArena_Free(arena);
+    _PyArena_Free(arena);
 
     return ret;
 }
@@ -1227,7 +1298,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyCodeObject *co = PyAST_CompileObject(mod, filename, flags, -1, arena);
+    PyCodeObject *co = _PyAST_Compile(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
 
@@ -1290,22 +1361,22 @@ Py_CompileStringObject(const char *str, PyObject *filename, int start,
 {
     PyCodeObject *co;
     mod_ty mod;
-    PyArena *arena = PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return NULL;
     }
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
         PyObject *result = PyAST_mod2obj(mod);
-        PyArena_Free(arena);
+        _PyArena_Free(arena);
         return result;
     }
-    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
-    PyArena_Free(arena);
+    co = _PyAST_Compile(mod, filename, flags, optimize, arena);
+    _PyArena_Free(arena);
     return (PyObject *)co;
 }
 
@@ -1369,48 +1440,6 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
         return NULL;
     }
     return str;
-}
-
-struct symtable *
-Py_SymtableStringObject(const char *str, PyObject *filename, int start)
-{
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-    return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
-}
-
-struct symtable *
-_Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, PyCompilerFlags *flags)
-{
-    struct symtable *st;
-    mod_ty mod;
-    PyArena *arena;
-
-    arena = PyArena_New();
-    if (arena == NULL)
-        return NULL;
-
-    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
-    if (mod == NULL) {
-        PyArena_Free(arena);
-        return NULL;
-    }
-    st = PySymtable_BuildObject(mod, filename, 0);
-    PyArena_Free(arena);
-    return st;
-}
-
-struct symtable *
-Py_SymtableString(const char *str, const char *filename_str, int start)
-{
-    PyObject *filename;
-    struct symtable *st;
-
-    filename = PyUnicode_DecodeFSDefault(filename_str);
-    if (filename == NULL)
-        return NULL;
-    st = Py_SymtableStringObject(str, filename, start);
-    Py_DECREF(filename);
-    return st;
 }
 
 #if defined(USE_STACKCHECK)

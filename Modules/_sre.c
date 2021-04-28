@@ -42,6 +42,7 @@ static const char copyright[] =
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 
 #include "sre.h"
@@ -258,7 +259,7 @@ typedef struct {
 static _sremodulestate *
 get_sre_module_state(PyObject *m)
 {
-    _sremodulestate *state = (_sremodulestate *)PyModule_GetState(m);
+    _sremodulestate *state = (_sremodulestate *)_PyModule_GetState(m);
     assert(state);
     return state;
 }

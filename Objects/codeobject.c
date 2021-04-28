@@ -408,8 +408,8 @@ emit_pair(PyObject **bytes, int *offset, int a, int b)
         if (_PyBytes_Resize(bytes, len * 2) < 0)
             return 0;
     }
-    unsigned char *lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(*bytes) + *offset;
+    unsigned char *lnotab = (unsigned char *) PyBytes_AS_STRING(*bytes);
+    lnotab += *offset;
     *lnotab++ = a;
     *lnotab++ = b;
     *offset += 2;
@@ -1246,7 +1246,7 @@ PyTypeObject PyCode_Type = {
 int
 PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
-    if (addrq == -1) {
+    if (addrq < 0) {
         return co->co_firstlineno;
     }
     assert(addrq >= 0 && addrq < PyBytes_GET_SIZE(co->co_code));

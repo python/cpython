@@ -96,7 +96,7 @@ def enable_shared_cache(enable):
         "the cache=shared query parameter."
     )
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return _old_enable_shared_cache
+    return _old_enable_shared_cache(enable)
 
 # Clean up namespace
 

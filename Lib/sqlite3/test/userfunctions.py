@@ -276,6 +276,10 @@ class FunctionTests(unittest.TestCase):
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
 
+    def test_empty_blob(self):
+        cur = self.con.execute("select isblob(x'')")
+        self.assertTrue(cur.fetchone()[0])
+
     # Regarding deterministic functions:
     #
     # Between 3.8.3 and 3.15.0, deterministic functions were only used to
@@ -428,6 +432,11 @@ class AggregateTests(unittest.TestCase):
         cur.execute("select mysum(i) from test")
         val = cur.fetchone()[0]
         self.assertEqual(val, 60)
+
+    def test_aggr_no_match(self):
+        cur = self.con.execute("select mysum(i) from (select 1 as i) where i == 0")
+        val = cur.fetchone()[0]
+        self.assertIsNone(val)
 
 class AuthorizerTests(unittest.TestCase):
     @staticmethod

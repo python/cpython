@@ -32,6 +32,9 @@ PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     int current_locale,
     _Py_error_handler errors);
 
+PyAPI_FUNC(char*) _Py_EncodeLocaleRaw(
+    const wchar_t *text,
+    size_t *error_pos);
 
 PyAPI_FUNC(PyObject *) _Py_device_encoding(int);
 
@@ -158,4 +161,12 @@ PyAPI_FUNC(int) _Py_dup(int fd);
 PyAPI_FUNC(int) _Py_get_blocking(int fd);
 
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
-#endif   /* !MS_WINDOWS */
+#else   /* MS_WINDOWS */
+PyAPI_FUNC(void*) _Py_get_osfhandle_noraise(int fd);
+
+PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
+
+PyAPI_FUNC(int) _Py_open_osfhandle_noraise(void *handle, int flags);
+
+PyAPI_FUNC(int) _Py_open_osfhandle(void *handle, int flags);
+#endif  /* MS_WINDOWS */

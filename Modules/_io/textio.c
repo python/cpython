@@ -1085,6 +1085,19 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->ok = 0;
     self->detached = 0;
 
+    if (encoding == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            if (PyErr_WarnEx(PyExc_EncodingWarning,
+                             "'encoding' argument not specified", 1)) {
+                return -1;
+            }
+        }
+    }
+    else if (strcmp(encoding, "locale") == 0) {
+        encoding = NULL;
+    }
+
     if (errors == Py_None) {
         errors = _PyUnicode_FromId(&PyId_strict); /* borrowed */
         if (errors == NULL) {
@@ -1585,6 +1598,8 @@ _textiowrapper_writeflush(textio *self)
         ret = PyObject_CallMethodOneArg(self->buffer, _PyIO_str_write, b);
     } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
+    // NOTE: We cleared buffer but we don't know how many bytes are actually written
+    // when an error occurred.
     if (ret == NULL)
         return -1;
     Py_DECREF(ret);
@@ -1642,7 +1657,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 
     /* XXX What if we were just reading? */
     if (self->encodefunc != NULL) {
-        if (PyUnicode_IS_ASCII(text) && is_asciicompat_encoding(self->encodefunc)) {
+        if (PyUnicode_IS_ASCII(text) &&
+                // See bpo-43260
+                PyUnicode_GET_LENGTH(text) <= self->chunk_size &&
+                is_asciicompat_encoding(self->encodefunc)) {
             b = text;
             Py_INCREF(b);
         }
@@ -1651,8 +1669,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         }
         self->encoding_start_of_stream = 0;
     }
-    else
+    else {
         b = PyObject_CallMethodOneArg(self->encoder, _PyIO_str_encode, text);
+    }
 
     Py_DECREF(text);
     if (b == NULL)
@@ -1677,6 +1696,14 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->pending_bytes_count = 0;
         self->pending_bytes = b;
     }
+    else if (self->pending_bytes_count + bytes_len > self->chunk_size) {
+        // Prevent to concatenate more than chunk_size data.
+        if (_textiowrapper_writeflush(self) < 0) {
+            Py_DECREF(b);
+            return NULL;
+        }
+        self->pending_bytes = b;
+    }
     else if (!PyList_CheckExact(self->pending_bytes)) {
         PyObject *list = PyList_New(2);
         if (list == NULL) {
@@ -1696,7 +1723,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
 
     self->pending_bytes_count += bytes_len;
-    if (self->pending_bytes_count > self->chunk_size || needflush ||
+    if (self->pending_bytes_count >= self->chunk_size || needflush ||
         text_needflush) {
         if (_textiowrapper_writeflush(self) < 0)
             return NULL;
