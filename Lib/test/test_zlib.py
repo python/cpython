@@ -132,10 +132,10 @@ class ExceptionTestCase(unittest.TestCase):
     @support.cpython_only
     def test_uninitialised_new(self):
         # Prevent heap types from being created uninitialised (bpo-43916)
-        comp = zlib.compressobj()
-        decomp = zlib.decompressobj()
-        self.assertRaises(TypeError, type(comp))
-        self.assertRaises(TypeError, type(decomp))
+        comp_type = type(zlib.compressobj())
+        decomp_type = type(zlib.decompressobj())
+        self.assertRaises(TypeError, comp_type)
+        self.assertRaises(TypeError, decomp_type)
 
 
 class BaseCompressTestCase(object):

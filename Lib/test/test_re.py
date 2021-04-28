@@ -2221,8 +2221,8 @@ class ImplementationTest(unittest.TestCase):
         self.assertRaises(TypeError, re.Match)
         self.assertRaises(TypeError, re.Pattern)
         pat = re.compile("")
-        scn = pat.scanner("")
-        self.assertRaises(TypeError, type(scn))
+        tp = type(pat.scanner(""))
+        self.assertRaises(TypeError, tp)
 
 
 class ExternalTests(unittest.TestCase):

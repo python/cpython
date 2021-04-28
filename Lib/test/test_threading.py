@@ -123,7 +123,8 @@ class ThreadTests(BaseTestCase):
     def test_uninitialised_new(self):
         # Prevent heap types from being created uninitialised (bpo-43916)
         lock = threading.Lock()
-        self.assertRaises(TypeError, type(lock))
+        tp = type(lock)
+        self.assertRaises(TypeError, tp)
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.

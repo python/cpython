@@ -62,7 +62,8 @@ class PosixTester(unittest.TestCase):
     def test_uninitialised_new(self):
         # Prevent heap types from being created uninitialised (bpo-43916)
         self.assertRaises(TypeError, posix.DirEntry)
-        self.assertRaises(TypeError, type(posix.scandir()))
+        tp = type(posix.scandir())
+        self.assertRaises(TypeError, tp)
 
     def testNoArgFunctions(self):
         # test posix functions which take no arguments and have
