@@ -184,6 +184,8 @@ garbage collection runs.
 .. c:function:: Py_ssize_t PyGC_Collect(void)
 
    Perform a full garbage collection, if the garbage collector is enabled.
+   (Note that :func:`gc.collect` runs it unconditionally.)
+
    Returns the number of collected + unreachable objects which cannot
    be collected.
    If the garbage collector is disabled or already collecting,
