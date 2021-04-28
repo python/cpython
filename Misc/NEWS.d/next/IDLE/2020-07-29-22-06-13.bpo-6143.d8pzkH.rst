@@ -1,0 +1,2 @@
+Add a "Clear and Restart" item to IDLE's "Shell" menu.  This can be used to
+clear the contents of the shell window.

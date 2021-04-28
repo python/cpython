@@ -477,7 +477,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.poll_subprocess()
         return self.rpcclt
 
-    def restart_subprocess(self, with_cwd=False, filename=''):
+    def restart_subprocess(self, with_cwd=False, filename='', clear=False):
         if self.restarting:
             return self.rpcclt
         self.restarting = True
@@ -503,12 +503,19 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return None
         self.transfer_path(with_cwd=with_cwd)
         console.stop_readline()
-        # annotate restart in shell window and mark it
-        console.text.delete("iomark", "end-1c")
-        console.write('\n')
-        console.write(restart_line(console.width, filename))
-        console.text.mark_set("restart", "end-1c")
-        console.text.mark_gravity("restart", "left")
+        if clear:
+            # Temporarily remove the iomark to allow deleting all text.
+            console.text.mark_unset("iomark")
+            console.text.delete("0.0", "end")
+            console.resetoutput()
+            console.write_header()
+        else:
+            # Annotate restart in shell window and mark it.
+            console.text.delete("iomark", "end-1c")
+            console.write('\n')
+            console.write(restart_line(console.width, filename))
+            console.text.mark_set("restart", "end-1c")
+            console.text.mark_gravity("restart", "left")
         if not filename:
             console.showprompt()
         # restart subprocess debugger
@@ -893,6 +900,7 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
+            text.bind("<<clear-restart-shell>>", self.clear_and_restart_shell)
         squeezer = self.Squeezer(self)
         text.bind("<<squeeze-current-text>>",
                   squeezer.squeeze_current_text_event)
@@ -1045,24 +1053,27 @@ class PyShell(OutputWindow):
     COPYRIGHT = \
           'Type "help", "copyright", "credits" or "license()" for more information.'
 
+    def write_header(self):
+        self.write(f"Python {sys.version} on {sys.platform}\n"
+                   f"{self.COPYRIGHT}\n")
+        if not use_subprocess:
+            self.write("==== No Subprocess ====\n\n"
+                       "WARNING: Running IDLE without a Subprocess is\n"
+                       "deprecated and will be removed in a later version.\n"
+                       "See Help/IDLE Help for details.\n\n")
+
     def begin(self):
         self.text.mark_set("iomark", "insert")
         self.resetoutput()
         if use_subprocess:
-            nosub = ''
             client = self.interp.start_subprocess()
             if not client:
                 self.close()
                 return False
         else:
-            nosub = ("==== No Subprocess ====\n\n" +
-                    "WARNING: Running IDLE without a Subprocess is deprecated\n" +
-                    "and will be removed in a later version. See Help/IDLE Help\n" +
-                    "for details.\n\n")
             sys.displayhook = rpc.displayhook
 
-        self.write("Python %s on %s\n%s\n%s" %
-                   (sys.version, sys.platform, self.COPYRIGHT, nosub))
+        self.write_header()
         self.text.focus_force()
         self.showprompt()
         # User code should use separate default Tk root window
@@ -1273,6 +1284,9 @@ class PyShell(OutputWindow):
     def restart_shell(self, event=None):
         "Callback for Run/Restart Shell Cntl-F6"
         self.interp.restart_subprocess(with_cwd=True)
+
+    def clear_and_restart_shell(self, event=None):
+        self.interp.restart_subprocess(with_cwd=True, clear=True)
 
     def showprompt(self):
         self.resetoutput()

@@ -252,6 +252,9 @@ View Last Restart
 Restart Shell
   Restart the shell to clean the environment and reset display and exception handling.
 
+Clear and Restart
+  Restart the shell and clear the contents of the shell window.
+
 Previous History
   Cycle through earlier commands in history which match the current entry.
 
