@@ -312,7 +312,7 @@ or on combining URL components into a URL string.
    ``#``, ``@``, or ``:`` will raise a :exc:`ValueError`. If the URL is
    decomposed before parsing, no error will be raised.
 
-   Following the specification in `WHATWG`_ which updates RFC 3986, ASCII newline
+   Following the `WHATWG spec`_ that updates RFC 3986, ASCII newline
    ``\n``, ``\r`` and tab ``\t`` characters are stripped from the url.
 
    .. versionchanged:: 3.6
@@ -325,6 +325,8 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.10
       ASCII newline and tab characters are stripped from the url.
+
+.. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
 
 .. function:: urlunsplit(parts)
 
@@ -707,4 +709,4 @@ task isn't already covered by the URL parsing functions above.
    :rfc:`1738` - Uniform Resource Locators (URL)
       This specifies the formal syntax and semantics of absolute URLs.
 
-.. _WHATWG: https://url.spec.whatwg.org/#concept-basic-url-parser
+.. _WHATWG: https://url.spec.whatwg.org/
