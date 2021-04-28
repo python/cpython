@@ -57,6 +57,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#include "pycore_fileutils.h"     // _Py_LocaleUsesNonUnicodeWchar()
+#endif
+
 /* Uncomment to display statistics on interned strings at exit
    in _PyUnicode_ClearInterned(). */
 /* #define INTERNED_STATS 1 */
