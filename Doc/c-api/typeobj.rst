@@ -1180,7 +1180,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. data:: Py_TPFLAGS_IMMUTABLETYPE
 
       This bit is set for type objects that are immutable: type attributes cannot be set nor deleted.
-      
+
       :c:func:`PyType_Ready` automatically applies this flag to static types.
 
       **Inheritance:**
