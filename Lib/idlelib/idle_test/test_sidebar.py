@@ -1,13 +1,23 @@
-"""Test sidebar, coverage 93%"""
-import idlelib.sidebar
+"""Test sidebar, coverage 85%"""
+from textwrap import dedent
+import sys
+
 from itertools import chain
 import unittest
 import unittest.mock
-from test.support import requires
+from test.support import requires, swap_attr
 import tkinter as tk
+from .tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
+from idlelib.editor import fixwordbreaks
+from idlelib import macosx
 from idlelib.percolator import Percolator
+import idlelib.pyshell
+from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
+from idlelib.run import fix_scaling
+import idlelib.sidebar
+from idlelib.sidebar import get_end_linenumber, get_lineno
 
 
 class Dummy_editwin:
@@ -31,6 +41,7 @@ class LineNumbersTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
+        cls.root.withdraw()
 
         cls.text_frame = tk.Frame(cls.root)
         cls.text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -154,7 +165,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(3)
         self.assert_state_disabled()
 
-        # Note: deleting up to "2.end" doesn't delete the final newline.
+        # Deleting up to "2.end" doesn't delete the final newline.
         self.text.delete('2.0', '2.end')
         self.assert_text_equals('fbarfoo\n\n\n')
         self.assert_sidebar_n_lines(3)
@@ -165,7 +176,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(1)
         self.assert_state_disabled()
 
-        # Note: Text widgets always keep a single '\n' character at the end.
+        # Text widgets always keep a single '\n' character at the end.
         self.text.delete('1.0', 'end')
         self.assert_text_equals('\n')
         self.assert_sidebar_n_lines(1)
@@ -234,11 +245,19 @@ class LineNumbersTest(unittest.TestCase):
         self.assert_sidebar_n_lines(4)
         self.assertEqual(get_width(), 1)
 
-        # Note: Text widgets always keep a single '\n' character at the end.
+        # Text widgets always keep a single '\n' character at the end.
         self.text.delete('1.0', 'end -1c')
         self.assert_sidebar_n_lines(1)
         self.assertEqual(get_width(), 1)
 
+    # The following tests are temporarily disabled due to relying on
+    # simulated user input and inspecting which text is selected, which
+    # are fragile and can fail when several GUI tests are run in parallel
+    # or when the windows created by the test lose focus.
+    #
+    # TODO: Re-work these tests or remove them from the test suite.
+
+    @unittest.skip('test disabled')
     def test_click_selection(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\n')
@@ -252,6 +271,7 @@ class LineNumbersTest(unittest.TestCase):
 
         self.assertEqual(self.get_selection(), ('2.0', '3.0'))
 
+    @unittest.skip('test disabled')
     def simulate_drag(self, start_line, end_line):
         start_x, start_y = self.get_line_screen_position(start_line)
         end_x, end_y = self.get_line_screen_position(end_line)
@@ -277,6 +297,7 @@ class LineNumbersTest(unittest.TestCase):
                                                     x=end_x, y=end_y)
         self.root.update()
 
+    @unittest.skip('test disabled')
     def test_drag_selection_down(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
@@ -286,6 +307,7 @@ class LineNumbersTest(unittest.TestCase):
         self.simulate_drag(2, 4)
         self.assertEqual(self.get_selection(), ('2.0', '5.0'))
 
+    @unittest.skip('test disabled')
     def test_drag_selection_up(self):
         self.linenumber.show_sidebar()
         self.text.insert('1.0', 'one\ntwo\nthree\nfour\nfive\n')
@@ -353,7 +375,7 @@ class LineNumbersTest(unittest.TestCase):
         ln.hide_sidebar()
 
         self.highlight_cfg = test_colors
-        # Nothing breaks with inactive code context.
+        # Nothing breaks with inactive line numbers.
         ln.update_colors()
 
         # Show line numbers, previous colors change is immediately effective.
@@ -368,6 +390,320 @@ class LineNumbersTest(unittest.TestCase):
         self.highlight_cfg = orig_colors
         ln.update_colors()
         assert_colors_are_equal(orig_colors)
+
+
+class ShellSidebarTest(unittest.TestCase):
+    root: tk.Tk = None
+    shell: PyShell = None
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+        cls.root = root = tk.Tk()
+        root.withdraw()
+
+        fix_scaling(root)
+        fixwordbreaks(root)
+        fix_x11_paste(root)
+
+        cls.flist = flist = PyShellFileList(root)
+        macosx.setupApp(root, flist)
+        root.update_idletasks()
+
+        cls.init_shell()
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.shell is not None:
+            cls.shell.executing = False
+            cls.shell.close()
+            cls.shell = None
+        cls.flist = None
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        cls.root = None
+
+    @classmethod
+    def init_shell(cls):
+        cls.shell = cls.flist.open_shell()
+        cls.shell.pollinterval = 10
+        cls.root.update()
+        cls.n_preface_lines = get_lineno(cls.shell.text, 'end-1c') - 1
+
+    @classmethod
+    def reset_shell(cls):
+        cls.shell.per.bottom.delete(f'{cls.n_preface_lines+1}.0', 'end-1c')
+        cls.shell.shell_sidebar.update_sidebar()
+        cls.root.update()
+
+    def setUp(self):
+        # In some test environments, e.g. Azure Pipelines (as of
+        # Apr. 2021), sys.stdout is changed between tests. However,
+        # PyShell relies on overriding sys.stdout when run without a
+        # sub-process (as done here; see setUpClass).
+        self._saved_stdout = None
+        if sys.stdout != self.shell.stdout:
+            self._saved_stdout = sys.stdout
+            sys.stdout = self.shell.stdout
+
+        self.reset_shell()
+
+    def tearDown(self):
+        if self._saved_stdout is not None:
+            sys.stdout = self._saved_stdout
+
+    def get_sidebar_lines(self):
+        canvas = self.shell.shell_sidebar.canvas
+        texts = list(canvas.find(tk.ALL))
+        texts_by_y_coords = {
+            canvas.bbox(text)[1]: canvas.itemcget(text, 'text')
+            for text in texts
+        }
+        line_y_coords = self.get_shell_line_y_coords()
+        return [texts_by_y_coords.get(y, None) for y in line_y_coords]
+
+    def assert_sidebar_lines_end_with(self, expected_lines):
+        self.shell.shell_sidebar.update_sidebar()
+        self.assertEqual(
+            self.get_sidebar_lines()[-len(expected_lines):],
+            expected_lines,
+        )
+
+    def get_shell_line_y_coords(self):
+        text = self.shell.text
+        y_coords = []
+        index = text.index("@0,0")
+        if index.split('.', 1)[1] != '0':
+            index = text.index(f"{index} +1line linestart")
+        while True:
+            lineinfo = text.dlineinfo(index)
+            if lineinfo is None:
+                break
+            y_coords.append(lineinfo[1])
+            index = text.index(f"{index} +1line")
+        return y_coords
+
+    def get_sidebar_line_y_coords(self):
+        canvas = self.shell.shell_sidebar.canvas
+        texts = list(canvas.find(tk.ALL))
+        texts.sort(key=lambda text: canvas.bbox(text)[1])
+        return [canvas.bbox(text)[1] for text in texts]
+
+    def assert_sidebar_lines_synced(self):
+        self.assertLessEqual(
+            set(self.get_sidebar_line_y_coords()),
+            set(self.get_shell_line_y_coords()),
+        )
+
+    def do_input(self, input):
+        shell = self.shell
+        text = shell.text
+        for line_index, line in enumerate(input.split('\n')):
+            if line_index > 0:
+                text.event_generate('<<newline-and-indent>>')
+            text.insert('insert', line, 'stdin')
+
+    def test_initial_state(self):
+        sidebar_lines = self.get_sidebar_lines()
+        self.assertEqual(
+            sidebar_lines,
+            [None] * (len(sidebar_lines) - 1) + ['>>>'],
+        )
+        self.assert_sidebar_lines_synced()
+
+    @run_in_tk_mainloop
+    def test_single_empty_input(self):
+        self.do_input('\n')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', '>>>'])
+
+    @run_in_tk_mainloop
+    def test_single_line_statement(self):
+        self.do_input('1\n')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
+
+    @run_in_tk_mainloop
+    def test_multi_line_statement(self):
+        # Block statements are not indented because IDLE auto-indents.
+        self.do_input(dedent('''\
+            if True:
+            print(1)
+
+            '''))
+        yield
+        self.assert_sidebar_lines_end_with([
+            '>>>',
+            '...',
+            '...',
+            '...',
+            None,
+            '>>>',
+        ])
+
+    @run_in_tk_mainloop
+    def test_single_long_line_wraps(self):
+        self.do_input('1' * 200 + '\n')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
+        self.assert_sidebar_lines_synced()
+
+    @run_in_tk_mainloop
+    def test_squeeze_multi_line_output(self):
+        shell = self.shell
+        text = shell.text
+
+        self.do_input('print("a\\nb\\nc")\n')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
+
+        text.mark_set('insert', f'insert -1line linestart')
+        text.event_generate('<<squeeze-current-text>>')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
+        self.assert_sidebar_lines_synced()
+
+        shell.squeezer.expandingbuttons[0].expand()
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', None, None, None, '>>>'])
+        self.assert_sidebar_lines_synced()
+
+    @run_in_tk_mainloop
+    def test_interrupt_recall_undo_redo(self):
+        text = self.shell.text
+        # Block statements are not indented because IDLE auto-indents.
+        initial_sidebar_lines = self.get_sidebar_lines()
+
+        self.do_input(dedent('''\
+            if True:
+            print(1)
+            '''))
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', '...', '...'])
+        with_block_sidebar_lines = self.get_sidebar_lines()
+        self.assertNotEqual(with_block_sidebar_lines, initial_sidebar_lines)
+
+        # Control-C
+        text.event_generate('<<interrupt-execution>>')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', '...', '...', None, '>>>'])
+
+        # Recall previous via history
+        text.event_generate('<<history-previous>>')
+        text.event_generate('<<interrupt-execution>>')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', '...', None, '>>>'])
+
+        # Recall previous via recall
+        text.mark_set('insert', text.index('insert -2l'))
+        text.event_generate('<<newline-and-indent>>')
+        yield
+
+        text.event_generate('<<undo>>')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>'])
+
+        text.event_generate('<<redo>>')
+        yield
+        self.assert_sidebar_lines_end_with(['>>>', '...'])
+
+        text.event_generate('<<newline-and-indent>>')
+        text.event_generate('<<newline-and-indent>>')
+        yield
+        self.assert_sidebar_lines_end_with(
+            ['>>>', '...', '...', '...', None, '>>>']
+        )
+
+    @run_in_tk_mainloop
+    def test_very_long_wrapped_line(self):
+        with swap_attr(self.shell, 'squeezer', None):
+            self.do_input('x = ' + '1'*10_000 + '\n')
+            yield
+            self.assertEqual(self.get_sidebar_lines(), ['>>>'])
+
+    def test_font(self):
+        sidebar = self.shell.shell_sidebar
+
+        test_font = 'TkTextFont'
+
+        def mock_idleconf_GetFont(root, configType, section):
+            return test_font
+        GetFont_patcher = unittest.mock.patch.object(
+            idlelib.sidebar.idleConf, 'GetFont', mock_idleconf_GetFont)
+        GetFont_patcher.start()
+        def cleanup():
+            GetFont_patcher.stop()
+            sidebar.update_font()
+        self.addCleanup(cleanup)
+
+        def get_sidebar_font():
+            canvas = sidebar.canvas
+            texts = list(canvas.find(tk.ALL))
+            fonts = {canvas.itemcget(text, 'font') for text in texts}
+            self.assertEqual(len(fonts), 1)
+            return next(iter(fonts))
+
+        self.assertNotEqual(get_sidebar_font(), test_font)
+        sidebar.update_font()
+        self.assertEqual(get_sidebar_font(), test_font)
+
+    def test_highlight_colors(self):
+        sidebar = self.shell.shell_sidebar
+
+        test_colors = {"background": '#abcdef', "foreground": '#123456'}
+
+        orig_idleConf_GetHighlight = idlelib.sidebar.idleConf.GetHighlight
+        def mock_idleconf_GetHighlight(theme, element):
+            if element in ['linenumber', 'console']:
+                return test_colors
+            return orig_idleConf_GetHighlight(theme, element)
+        GetHighlight_patcher = unittest.mock.patch.object(
+            idlelib.sidebar.idleConf, 'GetHighlight',
+            mock_idleconf_GetHighlight)
+        GetHighlight_patcher.start()
+        def cleanup():
+            GetHighlight_patcher.stop()
+            sidebar.update_colors()
+        self.addCleanup(cleanup)
+
+        def get_sidebar_colors():
+            canvas = sidebar.canvas
+            texts = list(canvas.find(tk.ALL))
+            fgs = {canvas.itemcget(text, 'fill') for text in texts}
+            self.assertEqual(len(fgs), 1)
+            fg = next(iter(fgs))
+            bg = canvas.cget('background')
+            return {"background": bg, "foreground": fg}
+
+        self.assertNotEqual(get_sidebar_colors(), test_colors)
+        sidebar.update_colors()
+        self.assertEqual(get_sidebar_colors(), test_colors)
+
+    @run_in_tk_mainloop
+    def test_mousewheel(self):
+        sidebar = self.shell.shell_sidebar
+        text = self.shell.text
+
+        # Enter a 100-line string to scroll the shell screen down.
+        self.do_input('x = """' + '\n'*100 + '"""\n')
+        yield
+        self.assertGreater(get_lineno(text, '@0,0'), 1)
+
+        last_lineno = get_end_linenumber(text)
+        self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+
+        # Scroll up using the <MouseWheel> event.
+        # The meaning delta is platform-dependant.
+        delta = -1 if sys.platform == 'darwin' else 120
+        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
+        yield
+        self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
+
+        # Scroll back down using the <Button-5> event.
+        sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        yield
+        self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
 
 if __name__ == '__main__':
