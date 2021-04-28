@@ -191,7 +191,7 @@ Distribution files
 You can also get the full set of files contained within a distribution.  The
 ``files()`` function takes a distribution package name and returns all of the
 files installed by this distribution.  Each file object returned is a
-``PackagePath``, a :class:`pathlib.Path` derived object with additional ``dist``,
+``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
 ``size``, and ``hash`` properties as indicated by the metadata.  For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
@@ -214,6 +214,12 @@ Once you have the file, you can also read its contents::
         if isinstance(s, text_type):
             return s.encode('utf-8')
         return s
+
+You can also use the ``locate`` method to get a the absolute path to the
+file::
+
+    >>> util.locate()  # doctest: +SKIP
+    PosixPath('/home/gustav/example/lib/site-packages/wheel/util.py')
 
 In the case where the metadata file listing files
 (RECORD or SOURCES.txt) is missing, ``files()`` will
