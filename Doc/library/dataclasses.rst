@@ -350,7 +350,7 @@ Module-level decorators, classes, and functions
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
-   ``match_args``, ``kw_only``, and `slots` have the same meaning as
+   ``match_args``, ``kw_only``, and  ``slots`` have the same meaning as
    they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
