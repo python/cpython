@@ -1,0 +1,7 @@
+Fix regressions for extension modules that have been converted to :ref:`heap
+types <heap-types>`. Inheritance differs for *static types* and *heap
+types*: A *static type* with its :c:member:`~PyTypeObject.tp_new` set to
+``NULL`` does not have a public contructor, but *heap types* inherit
+contructors from their base classes, resulting in it being possible to
+create instances without proper initialisation, possibly resulting in a
+crash.
