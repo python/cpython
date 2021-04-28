@@ -2224,7 +2224,7 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
         wchar_t* converted = _Py_ConvertWCharFormToUCS4(u, size);
         if (!converted)
             return NULL;
-        PyObject *unicode = _Py_ConvertWCharFormToUCS4(converted, size);
+        PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
         PyMem_Free(converted);
         return unicode;
     }
