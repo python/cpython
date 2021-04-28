@@ -1302,7 +1302,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False, match_args=True):
+                   frozen=False, match_args=True, slots=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1369,7 +1369,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      unsafe_hash=unsafe_hash, frozen=frozen,
-                     match_args=match_args)
+                     match_args=match_args, slots=slots)
 
 
 def replace(obj, /, **changes):
