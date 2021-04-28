@@ -135,13 +135,17 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
+struct _opaque {
+    int computed_line;
+    char *lo_next;
+    char *limit;
+};
+
 typedef struct _line_offsets {
     int ar_start;
     int ar_end;
     int ar_line;
-    int ar_computed_line;
-    char *lo_next;
-    char *limit;
+    struct _opaque opaque;
 } PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
