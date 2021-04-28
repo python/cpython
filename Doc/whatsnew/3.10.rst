@@ -1243,6 +1243,12 @@ Optimizations
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
 
+* Use a new output buffer management code for :mod:`bz2` / :mod:`lzma` /
+  :mod:`zlib` modules, and add ``.readall()`` function to
+  ``_compression.DecompressReader`` class. bz2 decompression 1.09x ~ 1.17x
+  faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
+  ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
+
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
   bytecode level. It is now around 2 times faster to create a function with
