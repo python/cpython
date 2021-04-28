@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "pycore_ast.h"           // _PyAST_Validate(), _PyAST_EnsureImaginary
+#include "pycore_ast.h"           // _PyAST_Validate(),
 #include <errcode.h>
 #include "tokenizer.h"
 
@@ -2346,6 +2346,16 @@ error:
         raise_decode_error(p);
     }
     return NULL;
+}
+
+expr_ty
+_PyPegen_ensure_imaginary(Parser *p, expr_ty exp)
+{
+    if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "Imaginary number required in complex literal");
+        return NULL;
+    }
+    return exp;
 }
 
 mod_ty

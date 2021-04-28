@@ -871,16 +871,6 @@ _PyAST_Validate(mod_ty mod)
     return res;
 }
 
-expr_ty
-_PyAST_EnsureImaginary(expr_ty exp)
-{
-    if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
-        PyErr_SetString(PyExc_SyntaxError, "Imaginary number required in complex literal");
-        return NULL;
-    }
-    return exp;
-}
-
 PyObject *
 _PyAST_GetDocString(asdl_stmt_seq *body)
 {

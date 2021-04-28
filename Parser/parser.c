@@ -6526,7 +6526,7 @@ imaginary_number_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ imaginary_number[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "NUMBER"));
-            _res = _PyAST_EnsureImaginary ( imag );
+            _res = _PyPegen_ensure_imaginary ( p , imag );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

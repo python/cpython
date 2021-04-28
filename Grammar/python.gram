@@ -284,7 +284,7 @@ signed_number[expr_ty]:
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
 imaginary_number[expr_ty]:
-    | imag=NUMBER { _PyAST_EnsureImaginary(imag) }
+    | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
 
 capture_pattern[pattern_ty]:
     | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }
