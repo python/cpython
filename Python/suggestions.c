@@ -4,11 +4,11 @@
 #include "pycore_pyerrors.h"
 
 #define MAX_DISTANCE 3
-#define MAX_CANDIDATE_ITEMS 100
+#define MAX_CANDIDATE_ITEMS 160
 #define MAX_STRING_SIZE 25
 
 /* Calculate the Levenshtein distance between string1 and string2 */
-static size_t
+static Py_ssize_t
 levenshtein_distance(const char *a, size_t a_size,
                      const char *b, size_t b_size) {
 
@@ -33,7 +33,7 @@ levenshtein_distance(const char *a, size_t a_size,
 
     size_t *buffer = PyMem_Calloc(a_size, sizeof(size_t));
     if (buffer == NULL) {
-        return 0;
+        return -1;
     }
 
     // Initialize the buffer row
@@ -99,7 +99,13 @@ calculate_suggestions(PyObject *dir,
         }
         Py_ssize_t current_distance = levenshtein_distance(
                 name_str, name_size, item_str, item_size);
-        if (current_distance == 0 || current_distance > MAX_DISTANCE) {
+        if (current_distance == -1) {
+            return NULL;
+        }
+        if (current_distance == 0 ||
+            current_distance > MAX_DISTANCE ||
+            current_distance * 2 > name_size)
+        {
             continue;
         }
         if (!suggestion || current_distance < suggestion_distance) {
@@ -171,6 +177,16 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
     }
     suggestions = calculate_suggestions(dir, name);
     Py_DECREF(dir);
+    if (suggestions != NULL) {
+        return suggestions;
+    }
+
+    dir = PySequence_List(frame->f_builtins);
+    if (dir == NULL) {
+        return NULL;
+    }
+    suggestions = calculate_suggestions(dir, name);
+    Py_DECREF(dir);
 
     return suggestions;
 }
@@ -181,9 +197,9 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc) {
 PyObject *_Py_Offer_Suggestions(PyObject *exception) {
     PyObject *result = NULL;
     assert(!PyErr_Occurred());
-    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError)) {
+    if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_AttributeError)) {
         result = offer_suggestions_for_attribute_error((PyAttributeErrorObject *) exception);
-    } else if (PyErr_GivenExceptionMatches(exception, PyExc_NameError)) {
+    } else if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_NameError)) {
         result = offer_suggestions_for_name_error((PyNameErrorObject *) exception);
     }
     return result;

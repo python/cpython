@@ -592,8 +592,7 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
             goto error;
         }
 
-        PyTuple_SetItem(args, i, cur_py_value);
-
+        PyTuple_SET_ITEM(args, i, cur_py_value);
     }
 
     return args;
@@ -1155,6 +1154,11 @@ pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
 {
     int rc;
 
+    if (PySys_Audit("sqlite3.enable_load_extension",
+                    "OO", self, onoff ? Py_True : Py_False) < 0) {
+        return NULL;
+    }
+
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
@@ -1185,6 +1189,10 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
 {
     int rc;
     char* errmsg;
+
+    if (PySys_Audit("sqlite3.load_extension", "Os", self, extension_name) < 0) {
+        return NULL;
+    }
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;

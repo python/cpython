@@ -14,8 +14,8 @@ from test.support.warnings_helper import check_warnings
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
-                       _get_default_scheme, _expand_vars,
-                       get_scheme_names, get_config_var, _main)
+                       get_default_scheme, get_scheme_names, get_config_var,
+                       _expand_vars, _get_preferred_schemes, _main)
 import _osx_support
 
 
@@ -94,17 +94,46 @@ class TestSysConfig(unittest.TestCase):
 
     def test_get_paths(self):
         scheme = get_paths()
-        default_scheme = _get_default_scheme()
+        default_scheme = get_default_scheme()
         wanted = _expand_vars(default_scheme, None)
         wanted = sorted(wanted.items())
         scheme = sorted(scheme.items())
         self.assertEqual(scheme, wanted)
 
     def test_get_path(self):
-        # XXX make real tests here
+        config_vars = get_config_vars()
         for scheme in _INSTALL_SCHEMES:
             for name in _INSTALL_SCHEMES[scheme]:
-                res = get_path(name, scheme)
+                expected = _INSTALL_SCHEMES[scheme][name].format(**config_vars)
+                self.assertEqual(
+                    os.path.normpath(get_path(name, scheme)),
+                    os.path.normpath(expected),
+                )
+
+    def test_get_default_scheme(self):
+        self.assertIn(get_default_scheme(), _INSTALL_SCHEMES)
+
+    def test_get_preferred_schemes(self):
+        expected_schemes = {'prefix', 'home', 'user'}
+
+        # Windows.
+        os.name = 'nt'
+        schemes = _get_preferred_schemes()
+        self.assertIsInstance(schemes, dict)
+        self.assertEqual(set(schemes), expected_schemes)
+
+        # Mac and Linux, shared library build.
+        os.name = 'posix'
+        schemes = _get_preferred_schemes()
+        self.assertIsInstance(schemes, dict)
+        self.assertEqual(set(schemes), expected_schemes)
+
+        # Mac, framework build.
+        os.name = 'posix'
+        sys.platform = 'darwin'
+        sys._framework = True
+        self.assertIsInstance(schemes, dict)
+        self.assertEqual(set(schemes), expected_schemes)
 
     def test_get_config_vars(self):
         cvars = get_config_vars()

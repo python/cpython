@@ -548,7 +548,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
     def test_ignores_newline_at_end(self):
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             zipfp.write(TESTFN, TESTFN)
-        with open(TESTFN2, 'a') as f:
+        with open(TESTFN2, 'a', encoding='utf-8') as f:
             f.write("\r\n\00\00\00")
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             self.assertIsInstance(zipfp, zipfile.ZipFile)
@@ -557,7 +557,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
             zipfp.comment = b"this is a comment"
             zipfp.write(TESTFN, TESTFN)
-        with open(TESTFN2, 'a') as f:
+        with open(TESTFN2, 'a', encoding='utf-8') as f:
             f.write("abcdef\r\n")
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             self.assertIsInstance(zipfp, zipfile.ZipFile)
@@ -1245,13 +1245,13 @@ class PyZipFileTests(unittest.TestCase):
     def test_write_python_directory(self):
         os.mkdir(TESTFN2)
         try:
-            with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod1.py"), "w", encoding='utf-8') as fp:
                 fp.write("print(42)\n")
 
-            with open(os.path.join(TESTFN2, "mod2.py"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod2.py"), "w", encoding='utf-8') as fp:
                 fp.write("print(42 * 42)\n")
 
-            with open(os.path.join(TESTFN2, "mod2.txt"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod2.txt"), "w", encoding='utf-8') as fp:
                 fp.write("bla bla bla\n")
 
             with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
@@ -1268,10 +1268,10 @@ class PyZipFileTests(unittest.TestCase):
     def test_write_python_directory_filtered(self):
         os.mkdir(TESTFN2)
         try:
-            with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod1.py"), "w", encoding='utf-8') as fp:
                 fp.write("print(42)\n")
 
-            with open(os.path.join(TESTFN2, "mod2.py"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod2.py"), "w", encoding='utf-8') as fp:
                 fp.write("print(42 * 42)\n")
 
             with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
@@ -1287,7 +1287,7 @@ class PyZipFileTests(unittest.TestCase):
 
     def test_write_non_pyfile(self):
         with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
-            with open(TESTFN, 'w') as f:
+            with open(TESTFN, 'w', encoding='utf-8') as f:
                 f.write('most definitely not a python file')
             self.assertRaises(RuntimeError, zipfp.writepy, TESTFN)
             unlink(TESTFN)
@@ -1295,7 +1295,7 @@ class PyZipFileTests(unittest.TestCase):
     def test_write_pyfile_bad_syntax(self):
         os.mkdir(TESTFN2)
         try:
-            with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod1.py"), "w", encoding='utf-8') as fp:
                 fp.write("Bad syntax in python file\n")
 
             with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
@@ -1317,7 +1317,7 @@ class PyZipFileTests(unittest.TestCase):
     def test_write_pathlike(self):
         os.mkdir(TESTFN2)
         try:
-            with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
+            with open(os.path.join(TESTFN2, "mod1.py"), "w", encoding='utf-8') as fp:
                 fp.write("print(42)\n")
 
             with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
@@ -1646,7 +1646,7 @@ class OtherTests(unittest.TestCase):
         # On Windows, this causes the os.unlink() call to fail because the
         # underlying file is still open.  This is SF bug #412214.
         #
-        with open(TESTFN, "w") as fp:
+        with open(TESTFN, "w", encoding="utf-8") as fp:
             fp.write("this is not a legal zip file\n")
         try:
             zf = zipfile.ZipFile(TESTFN)
@@ -1656,7 +1656,7 @@ class OtherTests(unittest.TestCase):
     def test_is_zip_erroneous_file(self):
         """Check that is_zipfile() correctly identifies non-zip files."""
         # - passing a filename
-        with open(TESTFN, "w") as fp:
+        with open(TESTFN, "w", encoding='utf-8') as fp:
             fp.write("this is not a legal zip file\n")
         self.assertFalse(zipfile.is_zipfile(TESTFN))
         # - passing a path-like object
@@ -1719,11 +1719,11 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(OSError, zipfile.ZipFile, TESTFN)
 
     def test_empty_file_raises_BadZipFile(self):
-        f = open(TESTFN, 'w')
+        f = open(TESTFN, 'w', encoding='utf-8')
         f.close()
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
-        with open(TESTFN, 'w') as fp:
+        with open(TESTFN, 'w', encoding='utf-8') as fp:
             fp.write("short file")
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN)
 
@@ -1741,7 +1741,7 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError, zipf.open, "foo.txt")
         self.assertRaises(ValueError, zipf.testzip)
         self.assertRaises(ValueError, zipf.writestr, "bogus.txt", "bogus")
-        with open(TESTFN, 'w') as f:
+        with open(TESTFN, 'w', encoding='utf-8') as f:
             f.write('zipfile test data')
         self.assertRaises(ValueError, zipf.write, TESTFN)
 
@@ -1911,7 +1911,7 @@ class OtherTests(unittest.TestCase):
         # Issue 1710703: Check that opening a file with less than 22 bytes
         # raises a BadZipFile exception (rather than the previously unhelpful
         # OSError)
-        f = open(TESTFN, 'w')
+        f = open(TESTFN, 'w', encoding='utf-8')
         f.close()
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN, 'r')
 
@@ -2532,7 +2532,7 @@ class TestsWithMultipleOpens(unittest.TestCase):
                 zipf.read('ones')
                 with zipf.open('ones') as zopen1:
                     pass
-        with open(os.devnull) as f:
+        with open(os.devnull, "rb") as f:
             self.assertLess(f.fileno(), 100)
 
     def test_write_while_reading(self):
@@ -2695,11 +2695,11 @@ class CommandLineTest(unittest.TestCase):
     @requires_zlib()
     def test_create_command(self):
         self.addCleanup(unlink, TESTFN)
-        with open(TESTFN, 'w') as f:
+        with open(TESTFN, 'w', encoding='utf-8') as f:
             f.write('test 1')
         os.mkdir(TESTFNDIR)
         self.addCleanup(rmtree, TESTFNDIR)
-        with open(os.path.join(TESTFNDIR, 'file.txt'), 'w') as f:
+        with open(os.path.join(TESTFNDIR, 'file.txt'), 'w', encoding='utf-8') as f:
             f.write('test 2')
         files = [TESTFN, TESTFNDIR]
         namelist = [TESTFN, TESTFNDIR + '/', TESTFNDIR + '/file.txt']
@@ -2911,7 +2911,7 @@ class TestPath(unittest.TestCase):
     def test_open(self, alpharep):
         root = zipfile.Path(alpharep)
         a, b, g = root.iterdir()
-        with a.open() as strm:
+        with a.open(encoding="utf-8") as strm:
             data = strm.read()
         assert data == "content of a"
 
@@ -2923,7 +2923,7 @@ class TestPath(unittest.TestCase):
         zf = zipfile.Path(zipfile.ZipFile(io.BytesIO(), mode='w'))
         with zf.joinpath('file.bin').open('wb') as strm:
             strm.write(b'binary contents')
-        with zf.joinpath('file.txt').open('w') as strm:
+        with zf.joinpath('file.txt').open('w', encoding="utf-8") as strm:
             strm.write('text file')
 
     def test_open_extant_directory(self):
@@ -2954,7 +2954,7 @@ class TestPath(unittest.TestCase):
     def test_read(self, alpharep):
         root = zipfile.Path(alpharep)
         a, b, g = root.iterdir()
-        assert a.read_text() == "content of a"
+        assert a.read_text(encoding="utf-8") == "content of a"
         assert a.read_bytes() == b"content of a"
 
     @pass_alpharep
@@ -2963,13 +2963,13 @@ class TestPath(unittest.TestCase):
         a = root.joinpath("a.txt")
         assert a.is_file()
         e = root.joinpath("b").joinpath("d").joinpath("e.txt")
-        assert e.read_text() == "content of e"
+        assert e.read_text(encoding="utf-8") == "content of e"
 
     @pass_alpharep
     def test_joinpath_multiple(self, alpharep):
         root = zipfile.Path(alpharep)
         e = root.joinpath("b", "d", "e.txt")
-        assert e.read_text() == "content of e"
+        assert e.read_text(encoding="utf-8") == "content of e"
 
     @pass_alpharep
     def test_traverse_truediv(self, alpharep):
@@ -2977,7 +2977,7 @@ class TestPath(unittest.TestCase):
         a = root / "a.txt"
         assert a.is_file()
         e = root / "b" / "d" / "e.txt"
-        assert e.read_text() == "content of e"
+        assert e.read_text(encoding="utf-8") == "content of e"
 
     @pass_alpharep
     def test_traverse_simplediv(self, alpharep):
@@ -3034,9 +3034,9 @@ class TestPath(unittest.TestCase):
         alpharep.writestr('foo.txt', 'foo')
         alpharep.writestr('bar/baz.txt', 'baz')
         assert any(child.name == 'foo.txt' for child in root.iterdir())
-        assert (root / 'foo.txt').read_text() == 'foo'
+        assert (root / 'foo.txt').read_text(encoding="utf-8") == 'foo'
         (baz,) = (root / 'bar').iterdir()
-        assert baz.read_text() == 'baz'
+        assert baz.read_text(encoding="utf-8") == 'baz'
 
     HUGE_ZIPFILE_NUM_ENTRIES = 2 ** 13
 
@@ -3070,7 +3070,7 @@ class TestPath(unittest.TestCase):
         alpharep = self.zipfile_ondisk(alpharep)
         with zipfile.ZipFile(alpharep) as file:
             for rep in range(2):
-                zipfile.Path(file, 'a.txt').read_text()
+                zipfile.Path(file, 'a.txt').read_text(encoding="utf-8")
 
     @pass_alpharep
     def test_subclass(self, alpharep):

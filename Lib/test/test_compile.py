@@ -543,21 +543,26 @@ if 1:
         # XXX (ncoghlan): duplicating the scaling factor here is a little
         # ugly. Perhaps it should be exposed somewhere...
         fail_depth = sys.getrecursionlimit() * 3
+        crash_depth = sys.getrecursionlimit() * 300
         success_depth = int(fail_depth * 0.75)
 
-        def check_limit(prefix, repeated):
+        def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
-            self.compile_single(expect_ok)
-            broken = prefix + repeated * fail_depth
-            details = "Compiling ({!r} + {!r} * {})".format(
-                         prefix, repeated, fail_depth)
-            with self.assertRaises(RecursionError, msg=details):
-                self.compile_single(broken)
+            compile(expect_ok, '<test>', mode)
+            for depth in (fail_depth, crash_depth):
+                broken = prefix + repeated * depth
+                details = "Compiling ({!r} + {!r} * {})".format(
+                            prefix, repeated, depth)
+                with self.assertRaises(RecursionError, msg=details):
+                    compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")
         check_limit("a", "[0]")
         check_limit("a", "*a")
+        # XXX Crashes in the parser.
+        # check_limit("a", " if a else a")
+        # check_limit("if a: pass", "\nelif a: pass", mode="exec")
 
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like

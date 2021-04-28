@@ -1772,7 +1772,7 @@ Super Binding
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
-For instance bindings, the precedence of descriptor invocation depends on the
+For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`__get__`, :meth:`__set__` and :meth:`__delete__`.  If it does not
 define :meth:`__get__`, then accessing the attribute will return the descriptor
