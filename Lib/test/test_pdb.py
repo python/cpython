@@ -1127,6 +1127,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
