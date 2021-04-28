@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState.num_threads
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyType_DisabledNew()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_Init()
 #include <stddef.h>               // offsetof()

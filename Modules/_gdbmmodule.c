@@ -5,6 +5,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_object.h"        // _PyType_DisabledNew()
 
 #include <sys/types.h>
 #include <sys/stat.h>

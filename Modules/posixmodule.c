@@ -29,6 +29,7 @@
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_object.h"        // _PyType_DisabledNew()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "structmember.h"         // PyMemberDef
 #ifndef MS_WINDOWS

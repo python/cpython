@@ -13,6 +13,7 @@ static const char PyCursesVersion[] = "2.1";
 #include "Python.h"
 
 #include "py_curses.h"
+#include "pycore_object.h"        // _PyType_DisabledNew()
 
 #include <panel.h>
 

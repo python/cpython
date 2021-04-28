@@ -16,6 +16,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyType_DisabledNew()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "structmember.h"         // PyMemberDef
 

@@ -166,7 +166,7 @@ _symtable symtablemodule.c
 
 # Modules that should always be present (non UNIX dependent):
 
-#array -DPy_BUILD_CORE_MODULE arraymodule.c	# array objects
+#array -DPy_BUILD_CORE_BUILTIN arraymodule.c	# array objects
 #cmath cmathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # complex math library functions
 #math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
@@ -279,7 +279,7 @@ _symtable symtablemodule.c
 # every system.
 
 # *** Always uncomment this (leave the leading underscore in!):
-# _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+# _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT -DPy_BUILD_CORE_BUILTIN \
 # *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
 #	-L/usr/local/lib \
 # *** Uncomment and edit to reflect where your Tcl/Tk headers are:
@@ -320,7 +320,7 @@ _symtable symtablemodule.c
 
 #_curses _cursesmodule.c -lcurses -ltermcap -DPy_BUILD_CORE_MODULE
 # Wrapper for the panel library that's part of ncurses and SYSV curses.
-#_curses_panel _curses_panel.c -lpanel -lncurses
+#_curses_panel _curses_panel.c -lpanel -lncurses -DPy_BUILD_CORE_BUILTIN
 
 
 # Modules that provide persistent dictionary-like semantics.  You will
@@ -330,11 +330,11 @@ _symtable symtablemodule.c
 # implementation independent wrapper for these; dbm/dumb.py provides
 # similar functionality (but slower of course) implemented in Python.
 
-#_dbm _dbmmodule.c 	# dbm(3) may require -lndbm or similar
+#_dbm _dbmmodule.c -DPy_BUILD_CORE_BUILTIN	# dbm(3) may require -lndbm or similar
 
 # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
 
-#_gdbm _gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
+#_gdbm _gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm -DPy_BUILD_CORE_BUILTIN
 
 
 # Helper module for various ascii-encoders
@@ -343,17 +343,17 @@ _symtable symtablemodule.c
 # Andrew Kuchling's zlib module.
 # This require zlib 1.1.3 (or later).
 # See http://www.gzip.org/zlib/
-#zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
+#zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz -DPy_BUILD_CORE_BUILTIN
 
 # Interface to the Expat XML parser
 # More information on Expat can be found at www.libexpat.org.
 #
-#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY -DUSE_PYEXPAT_CAPI
+#pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DXML_POOR_ENTROPY -DUSE_PYEXPAT_CAPI -DPy_BUILD_CORE_BUILTIN
 
 # Hye-Shik Chang's CJKCodecs
 
 # multibytecodec is required for all the other CJK codec modules
-#_multibytecodec cjkcodecs/multibytecodec.c
+#_multibytecodec cjkcodecs/multibytecodec.c -DPy_BUILD_CORE_BUILTIN
 
 #_codecs_cn cjkcodecs/_codecs_cn.c
 #_codecs_hk cjkcodecs/_codecs_hk.c

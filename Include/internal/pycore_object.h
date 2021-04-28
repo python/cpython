@@ -29,6 +29,9 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+PyAPI_FUNC(PyObject *) _PyType_DisabledNew(PyTypeObject *type, PyObject *args,
+                                           PyObject *kwds);
+
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and

@@ -43,6 +43,7 @@ static const char copyright[] =
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyType_DisabledNew()
 #include "structmember.h"         // PyMemberDef
 
 #include "sre.h"

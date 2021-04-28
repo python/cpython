@@ -1190,6 +1190,7 @@ class PyBuildExt(build_ext):
             self.add(Extension('_curses_panel', ['_curses_panel.c'],
                            include_dirs=curses_includes,
                            define_macros=curses_defines,
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            libraries=[panel_library, *curses_libs]))
         elif not skip_curses_panel:
             self.missing.append('_curses_panel')
@@ -1440,6 +1441,7 @@ class PyBuildExt(build_ext):
             else:
                 dbm_order = "ndbm:gdbm:bdb".split(":")
             dbmext = None
+            dbm_compile_args = ['-DPy_BUILD_CORE_MODULE']
             for cand in dbm_order:
                 if cand == "ndbm":
                     if find_file("ndbm.h", self.inc_dirs, []) is not None:
@@ -1458,6 +1460,7 @@ class PyBuildExt(build_ext):
                                            define_macros=[
                                                ('HAVE_NDBM_H',None),
                                                ],
+                                           extra_compile_args=dbm_compile_args,
                                            libraries=ndbm_libs)
                         break
 
@@ -1474,6 +1477,7 @@ class PyBuildExt(build_ext):
                                 define_macros=[
                                     ('HAVE_GDBM_NDBM_H', None),
                                     ],
+                                extra_compile_args=dbm_compile_args,
                                 libraries = gdbm_libs)
                             break
                         if find_file("gdbm-ndbm.h", self.inc_dirs, []) is not None:
@@ -1483,6 +1487,7 @@ class PyBuildExt(build_ext):
                                 define_macros=[
                                     ('HAVE_GDBM_DASH_NDBM_H', None),
                                     ],
+                                extra_compile_args=dbm_compile_args,
                                 libraries = gdbm_libs)
                             break
                 elif cand == "bdb":
@@ -1496,6 +1501,7 @@ class PyBuildExt(build_ext):
                                                ('HAVE_BERKDB_H', None),
                                                ('DB_DBM_HSEARCH', None),
                                                ],
+                                           extra_compile_args=dbm_compile_args,
                                            libraries=dblibs)
                         break
             if dbmext is not None:
@@ -1507,6 +1513,7 @@ class PyBuildExt(build_ext):
         if ('gdbm' in dbm_order and
             self.compiler.find_library_file(self.lib_dirs, 'gdbm')):
             self.add(Extension('_gdbm', ['_gdbmmodule.c'],
+                               extra_compile_args=dbm_compile_args,
                                libraries=['gdbm']))
         else:
             self.missing.append('_gdbm')
@@ -1682,6 +1689,7 @@ class PyBuildExt(build_ext):
                         zlib_extra_link_args = ()
                     self.add(Extension('zlib', ['zlibmodule.c'],
                                        libraries=['z'],
+                                       extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                        extra_link_args=zlib_extra_link_args))
                     have_zlib = True
                 else:
@@ -1752,7 +1760,7 @@ class PyBuildExt(build_ext):
                 # call XML_SetHashSalt(), expat entropy sources are not needed
                 ('XML_POOR_ENTROPY', '1'),
             ]
-            extra_compile_args = []
+            extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
             expat_lib = []
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
@@ -1802,7 +1810,8 @@ class PyBuildExt(build_ext):
     def detect_multibytecodecs(self):
         # Hye-Shik Chang's CJKCodecs modules.
         self.add(Extension('_multibytecodec',
-                           ['cjkcodecs/multibytecodec.c']))
+                           ['cjkcodecs/multibytecodec.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
             self.add(Extension('_codecs_%s' % loc,
                                ['cjkcodecs/_codecs_%s.c' % loc]))
@@ -1925,6 +1934,7 @@ class PyBuildExt(build_ext):
             return False
 
         extra_compile_args = tcltk_includes.split()
+        extra_compile_args.append('-DPy_BUILD_CORE_MODULE')
         extra_link_args = tcltk_libs.split()
         self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                            define_macros=[('WITH_APPINIT', 1)],
@@ -2056,6 +2066,7 @@ class PyBuildExt(build_ext):
         if '-Wstrict-prototypes' in cflags.split():
             compile_args.append('-Wno-strict-prototypes')
 
+        compile_args.append('-DPy_BUILD_CORE_MODULE')
         self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                            define_macros=[('WITH_APPINIT', 1)],
                            include_dirs=include_dirs,

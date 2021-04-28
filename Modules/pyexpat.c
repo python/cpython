@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <ctype.h>
 
+#include "pycore_object.h"        // _PyType_DisabledNew()
 #include "structmember.h"         // PyMemberDef
 #include "frameobject.h"
 #include "expat.h"
