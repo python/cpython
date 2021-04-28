@@ -1296,9 +1296,6 @@ def test_pdb_issue_20766():
 
 
 class PdbTestCase(unittest.TestCase):
-    def setUp(self):
-        linecache.clearcache()  # Pdb.checkline() uses linecache.getline()
-
     def tearDown(self):
         os_helper.unlink(os_helper.TESTFN)
 
