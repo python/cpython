@@ -2177,6 +2177,7 @@ class _BasePathTest(object):
             p = self.cls(BASE, 'dirCPC%d' % pattern_num)
             self.assertFalse(p.exists())
 
+            real_mkdir = os.mkdir
             def my_mkdir(path, mode=0o777):
                 path = str(path)
                 # Emulate another process that would create the directory
@@ -2185,15 +2186,15 @@ class _BasePathTest(object):
                 # function is called at most 5 times (dirCPC/dir1/dir2,
                 # dirCPC/dir1, dirCPC, dirCPC/dir1, dirCPC/dir1/dir2).
                 if pattern.pop():
-                    os.mkdir(path, mode)  # From another process.
+                    real_mkdir(path, mode)  # From another process.
                     concurrently_created.add(path)
-                os.mkdir(path, mode)  # Our real call.
+                real_mkdir(path, mode)  # Our real call.
 
             pattern = [bool(pattern_num & (1 << n)) for n in range(5)]
             concurrently_created = set()
             p12 = p / 'dir1' / 'dir2'
             try:
-                with mock.patch("pathlib._normal_accessor.mkdir", my_mkdir):
+                with mock.patch("os.mkdir", my_mkdir):
                     p12.mkdir(parents=True, exist_ok=False)
             except FileExistsError:
                 self.assertIn(str(p12), concurrently_created)

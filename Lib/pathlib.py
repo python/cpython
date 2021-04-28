@@ -274,93 +274,6 @@ _windows_flavour = _WindowsFlavour()
 _posix_flavour = _PosixFlavour()
 
 
-class _Accessor:
-    """An accessor implements a particular (system-specific or not) way of
-    accessing paths on the filesystem."""
-
-
-class _NormalAccessor(_Accessor):
-
-    stat = os.stat
-
-    open = io.open
-
-    listdir = os.listdir
-
-    scandir = os.scandir
-
-    chmod = os.chmod
-
-    mkdir = os.mkdir
-
-    unlink = os.unlink
-
-    if hasattr(os, "link"):
-        link = os.link
-    else:
-        def link(self, src, dst):
-            raise NotImplementedError("os.link() not available on this system")
-
-    rmdir = os.rmdir
-
-    rename = os.rename
-
-    replace = os.replace
-
-    if hasattr(os, "symlink"):
-        symlink = os.symlink
-    else:
-        def symlink(self, src, dst, target_is_directory=False):
-            raise NotImplementedError("os.symlink() not available on this system")
-
-    def touch(self, path, mode=0o666, exist_ok=True):
-        if exist_ok:
-            # First try to bump modification time
-            # Implementation note: GNU touch uses the UTIME_NOW option of
-            # the utimensat() / futimens() functions.
-            try:
-                os.utime(path, None)
-            except OSError:
-                # Avoid exception chaining
-                pass
-            else:
-                return
-        flags = os.O_CREAT | os.O_WRONLY
-        if not exist_ok:
-            flags |= os.O_EXCL
-        fd = os.open(path, flags, mode)
-        os.close(fd)
-
-    if hasattr(os, "readlink"):
-        readlink = os.readlink
-    else:
-        def readlink(self, path):
-            raise NotImplementedError("os.readlink() not available on this system")
-
-    def owner(self, path):
-        try:
-            import pwd
-            return pwd.getpwuid(self.stat(path).st_uid).pw_name
-        except ImportError:
-            raise NotImplementedError("Path.owner() is unsupported on this system")
-
-    def group(self, path):
-        try:
-            import grp
-            return grp.getgrgid(self.stat(path).st_gid).gr_name
-        except ImportError:
-            raise NotImplementedError("Path.group() is unsupported on this system")
-
-    getcwd = os.getcwd
-
-    expanduser = staticmethod(os.path.expanduser)
-
-    realpath = staticmethod(os.path.realpath)
-
-
-_normal_accessor = _NormalAccessor()
-
-
 #
 # Globbing helpers
 #
@@ -948,7 +861,6 @@ class Path(PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
-    _accessor = _normal_accessor
     __slots__ = ()
 
     def __new__(cls, *args, **kwargs):
@@ -987,7 +899,7 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(cls._accessor.getcwd())
+        return cls(os.getcwd())
 
     @classmethod
     def home(cls):
@@ -1011,14 +923,14 @@ class Path(PurePath):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
         """
-        for name in self._accessor.listdir(self):
+        for name in os.listdir(self):
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue
             yield self._make_child_relpath(name)
 
     def scandir(self):
-        return self._accessor.scandir(self)
+        return os.scandir(self)
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
@@ -1072,7 +984,7 @@ class Path(PurePath):
                 raise RuntimeError("Symlink loop from %r" % e.filename)
 
         try:
-            s = self._accessor.realpath(self, strict=strict)
+            s = os.path.realpath(self, strict=strict)
         except OSError as e:
             check_eloop(e)
             raise
@@ -1092,19 +1004,28 @@ class Path(PurePath):
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return self._accessor.stat(self, follow_symlinks=follow_symlinks)
+        return os.stat(self, follow_symlinks=follow_symlinks)
 
     def owner(self):
         """
         Return the login name of the file owner.
         """
-        return self._accessor.owner(self)
+        try:
+            import pwd
+            return pwd.getpwuid(self.stat().st_uid).pw_name
+        except ImportError:
+            raise NotImplementedError("Path.owner() is unsupported on this system")
 
     def group(self):
         """
         Return the group name of the file gid.
         """
-        return self._accessor.group(self)
+
+        try:
+            import grp
+            return grp.getgrgid(self.stat().st_gid).gr_name
+        except ImportError:
+            raise NotImplementedError("Path.group() is unsupported on this system")
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1114,8 +1035,7 @@ class Path(PurePath):
         """
         if "b" not in mode:
             encoding = io.text_encoding(encoding)
-        return self._accessor.open(self, mode, buffering, encoding, errors,
-                                   newline)
+        return io.open(self, mode, buffering, encoding, errors, newline)
 
     def read_bytes(self):
         """
@@ -1156,21 +1076,40 @@ class Path(PurePath):
         """
         Return the path to which the symbolic link points.
         """
-        path = self._accessor.readlink(self)
+        if hasattr(os, "readlink"):
+            path = os.readlink(self)
+        else:
+            raise NotImplementedError("os.readlink() not available on this system")
         return self._from_parts((path,))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
         Create this file with the given access mode, if it doesn't exist.
         """
-        self._accessor.touch(self, mode, exist_ok)
+
+        if exist_ok:
+            # First try to bump modification time
+            # Implementation note: GNU touch uses the UTIME_NOW option of
+            # the utimensat() / futimens() functions.
+            try:
+                os.utime(self, None)
+            except OSError:
+                # Avoid exception chaining
+                pass
+            else:
+                return
+        flags = os.O_CREAT | os.O_WRONLY
+        if not exist_ok:
+            flags |= os.O_EXCL
+        fd = os.open(self, flags, mode)
+        os.close(fd)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
         """
         Create a new directory at this given path.
         """
         try:
-            self._accessor.mkdir(self, mode)
+            os.mkdir(self, mode)
         except FileNotFoundError:
             if not parents or self.parent == self:
                 raise
@@ -1186,7 +1125,7 @@ class Path(PurePath):
         """
         Change the permissions of the path, like os.chmod().
         """
-        self._accessor.chmod(self, mode, follow_symlinks=follow_symlinks)
+        os.chmod(self, mode, follow_symlinks=follow_symlinks)
 
     def lchmod(self, mode):
         """
@@ -1201,7 +1140,7 @@ class Path(PurePath):
         If the path is a directory, use rmdir() instead.
         """
         try:
-            self._accessor.unlink(self)
+            os.unlink(self)
         except FileNotFoundError:
             if not missing_ok:
                 raise
@@ -1210,7 +1149,7 @@ class Path(PurePath):
         """
         Remove this directory.  The directory must be empty.
         """
-        self._accessor.rmdir(self)
+        os.rmdir(self)
 
     def lstat(self):
         """
@@ -1229,7 +1168,7 @@ class Path(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
-        self._accessor.rename(self, target)
+        os.rename(self, target)
         return self.__class__(target)
 
     def replace(self, target):
@@ -1242,7 +1181,7 @@ class Path(PurePath):
 
         Returns the new Path instance pointing to the target path.
         """
-        self._accessor.replace(self, target)
+        os.replace(self, target)
         return self.__class__(target)
 
     def symlink_to(self, target, target_is_directory=False):
@@ -1250,7 +1189,10 @@ class Path(PurePath):
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
-        self._accessor.symlink(target, self, target_is_directory)
+        if hasattr(os, "symlink"):
+            os.symlink(target, self, target_is_directory)
+        else:
+            raise NotImplementedError("os.symlink() not available on this system")
 
     def hardlink_to(self, target):
         """
@@ -1258,7 +1200,10 @@ class Path(PurePath):
 
         Note the order of arguments (self, target) is the reverse of os.link's.
         """
-        self._accessor.link(target, self)
+        if hasattr(os, "link"):
+            os.link(target, self)
+        else:
+            raise NotImplementedError("os.link() not available on this system")
 
     def link_to(self, target):
         """
@@ -1433,7 +1378,7 @@ class Path(PurePath):
         """
         if (not (self._drv or self._root) and
             self._parts and self._parts[0][:1] == '~'):
-            homedir = self._accessor.expanduser(self._parts[0])
+            homedir = os.path.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
             return self._from_parts([homedir] + self._parts[1:])
