@@ -14,15 +14,6 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 supports_symlinks = True
-if os.name == 'nt':
-    import nt
-    if sys.getwindowsversion()[:2] >= (6, 0):
-        from nt import _getfinalpathname
-    else:
-        supports_symlinks = False
-        _getfinalpathname = None
-else:
-    nt = None
 
 
 __all__ = [
@@ -34,14 +25,17 @@ __all__ = [
 # Internals
 #
 
+_WINERROR_NOT_READY = 21  # drive exists but is not accessible
+_WINERROR_INVALID_NAME = 123  # fix for bpo-35306
+_WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
+
 # EBADF - guard against macOS `stat` throwing EBADF
 _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
-    21,  # ERROR_NOT_READY - drive exists but is not accessible
-    123, # ERROR_INVALID_NAME - fix for bpo-35306
-    1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
-)
+    _WINERROR_NOT_READY,
+    _WINERROR_INVALID_NAME,
+    _WINERROR_CANT_RESOLVE_FILENAME)
 
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
@@ -200,30 +194,6 @@ class _WindowsFlavour(_Flavour):
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
 
-    def resolve(self, path, strict=False):
-        s = str(path)
-        if not s:
-            return os.getcwd()
-        previous_s = None
-        if _getfinalpathname is not None:
-            if strict:
-                return self._ext_to_normal(_getfinalpathname(s))
-            else:
-                tail_parts = []  # End of the path after the first one not found
-                while True:
-                    try:
-                        s = self._ext_to_normal(_getfinalpathname(s))
-                    except FileNotFoundError:
-                        previous_s = s
-                        s, tail = os.path.split(s)
-                        tail_parts.append(tail)
-                        if previous_s == s:
-                            return path
-                    else:
-                        return os.path.join(s, *reversed(tail_parts))
-        # Means fallback on absolute
-        return None
-
     def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
         prefix = ''
         if s.startswith(ext_prefix):
@@ -233,10 +203,6 @@ class _WindowsFlavour(_Flavour):
                 prefix += s[:3]
                 s = '\\' + s[3:]
         return prefix, s
-
-    def _ext_to_normal(self, s):
-        # Turn back an extended path into a normal DOS-like path
-        return self._split_extended_path(s)[1]
 
     def is_reserved(self, parts):
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -324,54 +290,6 @@ class _PosixFlavour(_Flavour):
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern)).fullmatch
 
-    def resolve(self, path, strict=False):
-        sep = self.sep
-        accessor = path._accessor
-        seen = {}
-        def _resolve(path, rest):
-            if rest.startswith(sep):
-                path = ''
-
-            for name in rest.split(sep):
-                if not name or name == '.':
-                    # current dir
-                    continue
-                if name == '..':
-                    # parent dir
-                    path, _, _ = path.rpartition(sep)
-                    continue
-                if path.endswith(sep):
-                    newpath = path + name
-                else:
-                    newpath = path + sep + name
-                if newpath in seen:
-                    # Already seen this path
-                    path = seen[newpath]
-                    if path is not None:
-                        # use cached value
-                        continue
-                    # The symlink is not resolved, so we must have a symlink loop.
-                    raise RuntimeError("Symlink loop from %r" % newpath)
-                # Resolve the symbolic link
-                try:
-                    target = accessor.readlink(newpath)
-                except OSError as e:
-                    if e.errno != EINVAL and strict:
-                        raise
-                    # Not a symlink, or non-strict mode. We just leave the path
-                    # untouched.
-                    path = newpath
-                else:
-                    seen[newpath] = None # not resolved symlink
-                    path = _resolve(path, target)
-                    seen[newpath] = path # resolved symlink
-
-            return path
-        # NOTE: according to POSIX, getcwd() cannot contain path components
-        # which are symlinks.
-        base = '' if path.is_absolute() else os.getcwd()
-        return _resolve(base, str(path)) or sep
-
     def is_reserved(self, parts):
         return False
 
@@ -443,17 +361,11 @@ class _NormalAccessor(_Accessor):
 
     replace = os.replace
 
-    if nt:
-        if supports_symlinks:
-            symlink = os.symlink
-        else:
-            def symlink(a, b, target_is_directory):
-                raise NotImplementedError("symlink() not available on this system")
+    if hasattr(os, "symlink"):
+        symlink = os.symlink
     else:
-        # Under POSIX, os.symlink() takes two args
-        @staticmethod
-        def symlink(a, b, target_is_directory):
-            return os.symlink(a, b)
+        def symlink(self, src, dst, target_is_directory=False):
+            raise NotImplementedError("os.symlink() not available on this system")
 
     utime = os.utime
 
@@ -474,6 +386,12 @@ class _NormalAccessor(_Accessor):
             return grp.getgrgid(self.stat(path).st_gid).gr_name
         except ImportError:
             raise NotImplementedError("Path.group() is unsupported on this system")
+
+    getcwd = os.getcwd
+
+    expanduser = staticmethod(os.path.expanduser)
+
+    realpath = staticmethod(os.path.realpath)
 
 
 _normal_accessor = _NormalAccessor()
@@ -1212,17 +1130,27 @@ class Path(PurePath):
         normalizing it (for example turning slashes into backslashes under
         Windows).
         """
-        s = self._flavour.resolve(self, strict=strict)
-        if s is None:
-            # No symlink resolution => for consistency, raise an error if
-            # the path doesn't exist or is forbidden
-            self.stat()
-            s = str(self.absolute())
-        # Now we have no symlinks in the path, it's safe to normalize it.
-        normed = self._flavour.pathmod.normpath(s)
-        obj = self._from_parts((normed,), init=False)
-        obj._init(template=self)
-        return obj
+
+        def check_eloop(e):
+            winerror = getattr(e, 'winerror', 0)
+            if e.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
+                raise RuntimeError("Symlink loop from %r" % e.filename)
+
+        try:
+            s = self._accessor.realpath(self, strict=strict)
+        except OSError as e:
+            check_eloop(e)
+            raise
+        p = self._from_parts((s,))
+
+        # In non-strict mode, realpath() doesn't raise on symlink loops.
+        # Ensure we get an exception by calling stat()
+        if not strict:
+            try:
+                p.stat()
+            except OSError as e:
+                check_eloop(e)
+        return p
 
     def stat(self):
         """
