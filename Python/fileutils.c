@@ -97,6 +97,12 @@ _Py_device_encoding(int fd)
 static size_t
 is_valid_wide_char(wchar_t ch)
 {
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris doesn't use Unicode code points as wchar_t encoding
+       for non-Unicode locales, which makes values higher than MAX_UNICODE
+       possibly valid. */
+    return 1;
+#endif
     if (Py_UNICODE_IS_SURROGATE(ch)) {
         // Reject lone surrogate characters
         return 0;
