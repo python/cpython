@@ -17,6 +17,13 @@ from test import support
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
 
+from bdb import Breakpoint
+
+def reset_Breakpoint():
+    Breakpoint.next = 1
+    Breakpoint.bplist = {}
+    Breakpoint.bpbynumber = [None]
+
 
 class PdbTestInput(object):
     """Context manager that makes testing Pdb in doctests easier."""
@@ -227,10 +234,7 @@ def test_pdb_breakpoint_commands():
     First, need to clear bdb state that might be left over from previous tests.
     Otherwise, the new breakpoints might get assigned different numbers.
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
-    >>> Breakpoint.bplist = {}
-    >>> Breakpoint.bpbynumber = [None]
+    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -699,8 +703,7 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -1127,6 +1130,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
@@ -1137,7 +1141,7 @@ def test_pdb_next_command_in_generator_for_loop():
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[1]>(3)test_function()
     -> for i in test_gen():
     (Pdb) break test_gen
-    Breakpoint 6 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>(2)test_gen()
     -> yield 0
