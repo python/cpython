@@ -2192,6 +2192,7 @@ class ImplementationTest(unittest.TestCase):
 
     @cpython_only
     def test_immutable(self):
+        # bpo-43908: check that re types are immutable
         with self.assertRaises(TypeError):
             re.Match.foo = 1
         with self.assertRaises(TypeError):
