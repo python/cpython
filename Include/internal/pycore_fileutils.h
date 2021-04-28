@@ -57,7 +57,11 @@ PyAPI_FUNC(PyObject*) _Py_GetLocaleEncodingObject(void);
 extern int _Py_LocaleUsesNonUnicodeWchar(void);
 
 extern wchar_t* _Py_ConvertWCharFormToUCS4(
-    const wchar_t* u,
+    const wchar_t* native,
+    Py_ssize_t size);
+
+extern wchar_t* _Py_ConvertWCharFormToNative_InPlace(
+    wchar_t* unicode,
     Py_ssize_t size);
 #endif
 

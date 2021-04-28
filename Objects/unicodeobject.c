@@ -2222,8 +2222,9 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
        non-Unicode locales and hence needs conversion to UCS-4 first. */
     if (!_Py_LocaleUsesNonUnicodeWchar()) {
         wchar_t* converted = _Py_ConvertWCharFormToUCS4(u, size);
-        if (!converted)
+        if (!converted) {
             return NULL;
+        }
         PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
         PyMem_Free(converted);
         return unicode;
@@ -3308,6 +3309,17 @@ PyUnicode_AsWideChar(PyObject *unicode,
         res = size;
     }
     unicode_copy_as_widechar(unicode, w, size);
+
+#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion first. */
+    if (!_Py_LocaleUsesNonUnicodeWchar()) {
+        if (!_Py_ConvertWCharFormToNative_InPlace(w, size)) {
+            return -1;
+        }
+    }
+#endif
+
     return res;
 }
 
@@ -3334,6 +3346,17 @@ PyUnicode_AsWideCharString(PyObject *unicode,
         return NULL;
     }
     unicode_copy_as_widechar(unicode, buffer, buflen + 1);
+
+#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion first. */
+    if (!_Py_LocaleUsesNonUnicodeWchar()) {
+        if (!_Py_ConvertWCharFormToNative_InPlace(buffer, (buflen + 1))) {
+            return NULL;
+        }
+    }
+#endif
+
     if (size != NULL) {
         *size = buflen;
     }

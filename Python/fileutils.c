@@ -941,15 +941,9 @@ _Py_LocaleUsesNonUnicodeWchar(void)
     return (strcmp(codeset, "UTF-8") == 0 || strcmp(codeset, "646") == 0);
 }
 
-/* Convert a wide character string to the UCS-4 encoded string. This
-   is necessary on systems where internal form of wchar_t are not Unicode
-   code points (e.g. Oracle Solaris).
-
-   Return a pointer to a newly allocated string, use PyMem_Free() to free
-   the memory. Return NULL and raise exception on conversion or memory
-   allocation error. */
 wchar_t *
-_Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
+_Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
+                     const char *tocode, const char *fromcode)
 {
     /* Ensure we won't overflow the size. */
     if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
@@ -957,14 +951,14 @@ _Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
         return NULL;
     }
 
-    /* iconv doesn't need the string to be NULL terminated */
+    /* the string doesn't have to be NULL terminated */
     wchar_t* target = PyMem_Malloc(size * sizeof(wchar_t));
     if (target == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
 
-    iconv_t cd = iconv_open("UCS-4-INTERNAL", "wchar_t");
+    iconv_t cd = iconv_open(tocode, fromcode);
     if (cd == (iconv_t)-1) {
         PyErr_Format(PyExc_ValueError, "iconv_open() failed");
         PyMem_Free(target);
@@ -986,6 +980,38 @@ _Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
 
     iconv_close(cd);
     return target;
+}
+
+/* Convert a wide character string to the UCS-4 encoded string. This
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
+
+   Return a pointer to a newly allocated string, use PyMem_Free() to free
+   the memory. Return NULL and raise exception on conversion or memory
+   allocation error. */
+wchar_t *
+_Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
+{
+    return _Py_ConvertWCharForm(native, size, "UCS-4-INTERNAL", "wchar_t");
+}
+
+/* Convert a UCS-4 encoded string to native wide character string. This
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
+
+   The conversion is done in-place. Return a pointer to the wchar_t buffer
+   given as the first argument. Return NULL and raise exception on conversion
+   or memory allocation error. */
+wchar_t *
+_Py_ConvertWCharFormToNative_InPlace(wchar_t *unicode, Py_ssize_t size)
+{
+    wchar_t* result = _Py_ConvertWCharForm(unicode, size, "wchar_t", "UCS-4-INTERNAL");
+    if (!result) {
+        return NULL;
+    }
+    memcpy(unicode, result, size * sizeof(wchar_t));
+    PyMem_Free(result);
+    return unicode;
 }
 #endif /* HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION */
 
