@@ -58,6 +58,7 @@ class PosixTester(unittest.TestCase):
             os_helper.unlink(teardown_file)
         self._warnings_manager.__exit__(None, None, None)
 
+    @support.cpython_only
     def test_uninitialised_new(self):
         # Prevent heap types from being created uninitialised (bpo-43916)
         self.assertRaises(TypeError, posix.DirEntry)

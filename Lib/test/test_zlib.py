@@ -129,6 +129,7 @@ class ExceptionTestCase(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, 'int too large'):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
+    @support.cpython_only
     def test_uninitialised_new(self):
         # Prevent heap types from being created uninitialised (bpo-43916)
         comp = zlib.compressobj()
