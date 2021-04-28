@@ -1276,7 +1276,7 @@ class Path(PurePath):
                       "for removal in Python 3.12. "
                       "Use pathlib.Path.hardlink_to() instead.",
                       DeprecationWarning, stacklevel=2)
-        self._accessor.link(self, target)
+        self.__class__(target).hardlink_to(self)
 
     # Convenience functions for querying the stat results
 
