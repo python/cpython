@@ -1,0 +1,6 @@
+:pep:`612` is now implemented purely in Python; builtin ``types.GenericAlias``
+objects no longer include ``typing.ParamSpec`` in ``__parameters__``
+(with the exception of ``collections.abc.Callable``\ 's ``GenericAlias``).
+This means previously invalid uses of ``ParamSpec`` (such as
+``list[P]``) which worked in earlier versions of Python 3.10 alpha,
+will now raise ``TypeError`` during substitution.

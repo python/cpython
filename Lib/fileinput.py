@@ -210,7 +210,8 @@ class FileInput:
 
         # We can not use io.text_encoding() here because old openhook doesn't
         # take encoding parameter.
-        if "b" not in mode and encoding is None and sys.flags.warn_default_encoding:
+        if (sys.flags.warn_default_encoding and
+                "b" not in mode and encoding is None and openhook is None):
             import warnings
             warnings.warn("'encoding' argument not specified.",
                           EncodingWarning, 2)
@@ -330,6 +331,13 @@ class FileInput:
         self._file = None
         self._isstdin = False
         self._backupfilename = 0
+
+        # EncodingWarning is emitted in __init__() already
+        if "b" not in self._mode:
+            encoding = self._encoding or "locale"
+        else:
+            encoding = None
+
         if self._filename == '-':
             self._filename = '<stdin>'
             if 'b' in self._mode:
@@ -347,18 +355,18 @@ class FileInput:
                     pass
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
-                self._file = open(self._backupfilename, self._mode)
+                self._file = open(self._backupfilename, self._mode, encoding=encoding)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
-                    self._output = open(self._filename, self._write_mode)
+                    self._output = open(self._filename, self._write_mode, encoding=encoding)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
                         mode |= os.O_BINARY
 
                     fd = os.open(self._filename, mode, perm)
-                    self._output = os.fdopen(fd, self._write_mode)
+                    self._output = os.fdopen(fd, self._write_mode, encoding=encoding)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:
@@ -376,11 +384,6 @@ class FileInput:
                         self._file = self._openhook(
                             self._filename, self._mode, encoding=self._encoding, errors=self._errors)
                 else:
-                    # EncodingWarning is emitted in __init__() already
-                    if "b" not in self._mode:
-                        encoding = self._encoding or "locale"
-                    else:
-                        encoding = None
                     self._file = open(self._filename, self._mode, encoding=encoding, errors=self._errors)
         self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()

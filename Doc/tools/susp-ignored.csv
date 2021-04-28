@@ -370,3 +370,7 @@ library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:mai
 library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
 library/re,,`,"`"
 using/configure,84,:db2,=db1:db2:...
+library/typing,1004,`,# Type of ``val`` is narrowed to ``str``
+library/typing,1004,`,"# Else, type of ``val`` is narrowed to ``float``."
+library/typing,1004,`,# Type of ``val`` is narrowed to ``List[str]``.
+library/typing,1004,`,# Type of ``val`` remains as ``List[object]``.

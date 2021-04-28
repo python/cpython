@@ -933,6 +933,75 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
    .. versionadded:: 3.9
 
+
+.. data:: TypeGuard
+
+   Special typing form used to annotate the return type of a user-defined
+   type guard function.  ``TypeGuard`` only accepts a single type argument.
+   At runtime, functions marked this way should return a boolean.
+
+   ``TypeGuard`` aims to benefit *type narrowing* -- a technique used by static
+   type checkers to determine a more precise type of an expression within a
+   program's code flow.  Usually type narrowing is done by analyzing
+   conditional code flow and applying the narrowing to a block of code.  The
+   conditional expression here is sometimes referred to as a "type guard"::
+
+      def is_str(val: Union[str, float]):
+          # "isinstance" type guard
+          if isinstance(val, str):
+              # Type of ``val`` is narrowed to ``str``
+              ...
+          else:
+              # Else, type of ``val`` is narrowed to ``float``.
+              ...
+
+   Sometimes it would be convenient to use a user-defined boolean function
+   as a type guard.  Such a function should use ``TypeGuard[...]`` as its
+   return type to alert static type checkers to this intention.
+
+   Using  ``-> TypeGuard`` tells the static type checker that for a given
+   function:
+
+   1. The return value is a boolean.
+   2. If the return value is ``True``, the type of its argument
+      is the type inside ``TypeGuard``.
+
+      For example::
+
+         def is_str_list(val: List[object]) -> TypeGuard[List[str]]:
+             '''Determines whether all objects in the list are strings'''
+             return all(isinstance(x, str) for x in val)
+
+         def func1(val: List[object]):
+             if is_str_list(val):
+                 # Type of ``val`` is narrowed to ``List[str]``.
+                 print(" ".join(val))
+             else:
+                 # Type of ``val`` remains as ``List[object]``.
+                 print("Not a list of strings!")
+
+   If ``is_str_list`` is a class or instance method, then the type in
+   ``TypeGuard`` maps to the type of the second parameter after ``cls`` or
+   ``self``.
+
+   In short, the form ``def foo(arg: TypeA) -> TypeGuard[TypeB]: ...``,
+   means that if ``foo(arg)`` returns ``True``, then ``arg`` narrows from
+   ``TypeA`` to ``TypeB``.
+
+   .. note::
+
+      ``TypeB`` need not be a narrower form of ``TypeA`` -- it can even be a
+      wider form. The main reason is to allow for things like
+      narrowing ``List[object]`` to ``List[str]`` even though the latter
+      is not a subtype of the former, since ``List`` is invariant.
+      The responsibility of writing type-safe type guards is left to the user.
+
+   ``TypeGuard`` also works with type variables.  For more information, see
+   :pep:`647` (User-Defined Type Guards).
+
+   .. versionadded:: 3.10
+
+
 Building generic types
 """"""""""""""""""""""
 

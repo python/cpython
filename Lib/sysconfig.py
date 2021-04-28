@@ -79,7 +79,7 @@ def _getuserbase():
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
-                        "%d.%d" % sys.version_info[:2])
+                        f"{sys.version_info[0]}.{sys.version_info[1]}")
 
     return joinuser("~", ".local")
 
@@ -121,8 +121,8 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
 _PY_VERSION = sys.version.split()[0]
-_PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
-_PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
+_PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
+_PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
 _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
@@ -189,7 +189,7 @@ def _subst_vars(s, local_vars):
         try:
             return s.format(**os.environ)
         except KeyError:
-            raise AttributeError('{%s}' % var) from None
+            raise AttributeError(f'{var}') from None
 
 def _extend_dict(target_dict, other_dict):
     target_keys = target_dict.keys()
@@ -212,13 +212,38 @@ def _expand_vars(scheme, vars):
     return res
 
 
-def _get_default_scheme():
-    if os.name == 'posix':
-        # the default scheme for posix is posix_prefix
-        return 'posix_prefix'
-    return os.name
+def _get_preferred_schemes():
+    if os.name == 'nt':
+        return {
+            'prefix': 'nt',
+            'home': 'posix_home',
+            'user': 'nt_user',
+        }
+    if sys.platform == 'darwin' and sys._framework:
+        return {
+            'prefix': 'posix_prefix',
+            'home': 'posix_home',
+            'user': 'osx_framework_user',
+        }
+    return {
+        'prefix': 'posix_prefix',
+        'home': 'posix_home',
+        'user': 'posix_user',
+    }
 
 
+def get_preferred_scheme(key):
+    scheme = _get_preferred_schemes()[key]
+    if scheme not in _INSTALL_SCHEMES:
+        raise ValueError(
+            f"{key!r} returned {scheme!r}, which is not a valid scheme "
+            f"on this platform"
+        )
+    return scheme
+
+
+def get_default_scheme():
+    return get_preferred_scheme('prefix')
 
 
 def _parse_makefile(filename, vars=None, keep_unresolved=True):
@@ -354,21 +379,20 @@ def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
     if hasattr(sys, 'abiflags'):
-        config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
+        config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
     if hasattr(sys.implementation, '_multiarch'):
-        config_dir_name += '-%s' % sys.implementation._multiarch
+        config_dir_name += f'-{sys.implementation._multiarch}'
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
 def _get_sysconfigdata_name():
-    return os.environ.get('_PYTHON_SYSCONFIGDATA_NAME',
-        '_sysconfigdata_{abi}_{platform}_{multiarch}'.format(
-        abi=sys.abiflags,
-        platform=sys.platform,
-        multiarch=getattr(sys.implementation, '_multiarch', ''),
-    ))
+    multiarch = getattr(sys.implementation, '_multiarch', '')
+    return os.environ.get(
+        '_PYTHON_SYSCONFIGDATA_NAME',
+        f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
+    )
 
 
 def _generate_posix_vars():
@@ -380,9 +404,9 @@ def _generate_posix_vars():
     try:
         _parse_makefile(makefile, vars)
     except OSError as e:
-        msg = "invalid Python installation: unable to open %s" % makefile
+        msg = f"invalid Python installation: unable to open {makefile}"
         if hasattr(e, "strerror"):
-            msg = msg + " (%s)" % e.strerror
+            msg = f"{msg} ({e.strerror})"
         raise OSError(msg)
     # load the installed pyconfig.h:
     config_h = get_config_h_filename()
@@ -390,9 +414,9 @@ def _generate_posix_vars():
         with open(config_h, encoding="utf-8") as f:
             parse_config_h(f, vars)
     except OSError as e:
-        msg = "invalid Python installation: unable to open %s" % config_h
+        msg = f"invalid Python installation: unable to open {config_h}"
         if hasattr(e, "strerror"):
-            msg = msg + " (%s)" % e.strerror
+            msg = f"{msg} ({e.strerror})"
         raise OSError(msg)
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
@@ -418,7 +442,7 @@ def _generate_posix_vars():
         module.build_time_vars = vars
         sys.modules[name] = module
 
-    pybuilddir = 'build/lib.%s-%s' % (get_platform(), _PY_VERSION_SHORT)
+    pybuilddir = f'build/lib.{get_platform()}-{_PY_VERSION_SHORT}'
     if hasattr(sys, "gettotalrefcount"):
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
@@ -516,7 +540,7 @@ def get_path_names():
     return _SCHEME_KEYS
 
 
-def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
+def get_paths(scheme=get_default_scheme(), vars=None, expand=True):
     """Return a mapping containing an install scheme.
 
     ``scheme`` is the install scheme name. If not provided, it will
@@ -528,7 +552,7 @@ def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
         return _INSTALL_SCHEMES[scheme]
 
 
-def get_path(name, scheme=_get_default_scheme(), vars=None, expand=True):
+def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
     """Return a path corresponding to the scheme.
 
     ``scheme`` is the install scheme name.
@@ -682,16 +706,16 @@ def get_platform():
         # At least on Linux/Intel, 'machine' is the processor --
         # i386, etc.
         # XXX what about Alpha, SPARC, etc?
-        return  "%s-%s" % (osname, machine)
+        return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
-            release = "%d.%s" % (int(release[0]) - 3, release[2:])
+            release = f"{int(release[0]) - 3}.{release[2:]}"
             # We can't use "platform.architecture()[0]" because a
             # bootstrap problem. We use a dict to get an error
             # if some suspicious happens.
             bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
-            machine += ".%s" % bitness[sys.maxsize]
+            machine += f".{bitness[sys.maxsize]}"
         # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
         from _aix_support import aix_platform
@@ -709,7 +733,7 @@ def get_platform():
                                             get_config_vars(),
                                             osname, release, machine)
 
-    return "%s-%s-%s" % (osname, release, machine)
+    return f"{osname}-{release}-{machine}"
 
 
 def get_python_version():
@@ -745,8 +769,8 @@ def expand_makefile_vars(s, vars):
 def _print_dict(title, data):
     for index, (key, value) in enumerate(sorted(data.items())):
         if index == 0:
-            print('%s: ' % (title))
-        print('\t%s = "%s"' % (key, value))
+            print(f'{title}: ')
+        print(f'\t{key} = "{value}"')
 
 
 def _main():
@@ -754,9 +778,9 @@ def _main():
     if '--generate-posix-vars' in sys.argv:
         _generate_posix_vars()
         return
-    print('Platform: "%s"' % get_platform())
-    print('Python version: "%s"' % get_python_version())
-    print('Current installation scheme: "%s"' % _get_default_scheme())
+    print(f'Platform: "{get_platform()}"')
+    print(f'Python version: "{get_python_version()}"')
+    print(f'Current installation scheme: "{get_default_scheme()}"')
     print()
     _print_dict('Paths', get_paths())
     print()
