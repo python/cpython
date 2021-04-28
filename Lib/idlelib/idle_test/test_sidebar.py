@@ -7,6 +7,7 @@ import unittest
 import unittest.mock
 from test.support import requires, swap_attr
 import tkinter as tk
+from .tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
 from idlelib.editor import fixwordbreaks
@@ -391,12 +392,6 @@ class LineNumbersTest(unittest.TestCase):
         assert_colors_are_equal(orig_colors)
 
 
-def test_coroutine(test_method):
-    def new_method(self):
-        return self.run_test_coroutine(test_method(self))
-    return new_method
-
-
 class ShellSidebarTest(unittest.TestCase):
     root: tk.Tk = None
     shell: PyShell = None
@@ -521,28 +516,6 @@ class ShellSidebarTest(unittest.TestCase):
                 text.event_generate('<<newline-and-indent>>')
             text.insert('insert', line, 'stdin')
 
-    def run_test_coroutine(self, coroutine):
-        root = self.root
-        # Exceptions raised by self.assert...() need to be raised outside of
-        # the after callback in order for the test harness to capture them.
-        exception = None
-        def after_callback():
-            nonlocal exception
-            try:
-                next(coroutine)
-            except StopIteration:
-                root.quit()
-            except Exception as exc:
-                exception = exc
-                root.quit()
-            else:
-                root.after(1, root.after_idle, after_callback)
-        root.after(0, root.after_idle, after_callback)
-        root.mainloop()
-
-        if exception:
-            raise exception
-
     def test_initial_state(self):
         sidebar_lines = self.get_sidebar_lines()
         self.assertEqual(
@@ -551,19 +524,19 @@ class ShellSidebarTest(unittest.TestCase):
         )
         self.assert_sidebar_lines_synced()
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_single_empty_input(self):
         self.do_input('\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', '>>>'])
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_single_line_command(self):
         self.do_input('1\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_multi_line_command(self):
         # Block statements are not indented because IDLE auto-indents.
         self.do_input(dedent('''\
@@ -581,14 +554,14 @@ class ShellSidebarTest(unittest.TestCase):
             '>>>',
         ])
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_single_long_line_wraps(self):
         self.do_input('1' * 200 + '\n')
         yield
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_squeeze_single_line_command(self):
         shell = self.shell
         text = shell.text
@@ -608,7 +581,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assert_sidebar_lines_end_with(['>>>', None, '>>>'])
         self.assert_sidebar_lines_synced()
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_interrupt_recall_undo_redo(self):
         text = self.shell.text
         # Block statements are not indented because IDLE auto-indents.
@@ -654,7 +627,7 @@ class ShellSidebarTest(unittest.TestCase):
             ['>>>', '...', '...', '...', None, '>>>']
         )
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_very_long_wrapped_line(self):
         with swap_attr(self.shell, 'squeezer', None):
             self.do_input('x = ' + '1'*10_000 + '\n')
@@ -719,7 +692,7 @@ class ShellSidebarTest(unittest.TestCase):
         sidebar.update_colors()
         self.assertEqual(get_sidebar_colors(), test_colors)
 
-    @test_coroutine
+    @run_in_tk_mainloop
     def test_mousewheel(self):
         sidebar = self.shell.shell_sidebar
         text = self.shell.text
