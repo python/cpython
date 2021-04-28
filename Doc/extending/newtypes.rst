@@ -314,8 +314,6 @@ class object, and get the doc string using its :attr:`__doc__` attribute.
 As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :attr:`name` value
 of ``NULL`` is required.
 
-.. version
-
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
 
    Descriptor objects have two handler functions which correspond to the
