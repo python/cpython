@@ -173,3 +173,43 @@ if the object is immutable.
    this method (don't just call :c:func:`Py_DECREF` on a reference).  The
    collector will call this method if it detects that this object is involved
    in a reference cycle.
+
+
+Controlling the Garbage Collector State
+---------------------------------------
+
+The C-API provides the following functions for controlling
+garbage collection runs.
+
+.. c:function:: Py_ssize_t PyGC_Collect(void)
+
+   Performs a garbage collection, if the garbage collector is enabled.
+   Returns the number of collected + uncollectable objects.
+   If the garbage collector is disabled or already running,
+   returns ``0`` immediately.
+   Errors during garbage collection are ignored and printed.
+   This function does not raise exceptions.
+
+
+.. c:function:: int PyGC_Enable(void)
+
+   Enable the garbage collector.
+   Returns the previous state, 0 for disabled and 1 for enabled.
+
+.. versionchanged:: 3.10
+
+
+.. c:function:: int PyGC_Disable(void)
+
+   Disable the garbage collector.
+   Returns the previous state, 0 for disabled and 1 for enabled.
+
+.. versionchanged:: 3.10
+
+
+.. c:function:: int PyGC_IsEnabled(void)
+
+   Queries the state of the garbage collector.
+   Returns the current state, 0 for disabled and 1 for enabled.
+
+.. versionchanged:: 3.10
