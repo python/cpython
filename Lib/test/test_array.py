@@ -40,6 +40,11 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(TypeError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
 
+    @support.cpython_only
+    def test_immutable(self):
+        with self.assertRaises(TypeError):
+            array.array.foo = 1
+
     def test_empty(self):
         # Exercise code for handling zero-length arrays
         a = array.array('B')
