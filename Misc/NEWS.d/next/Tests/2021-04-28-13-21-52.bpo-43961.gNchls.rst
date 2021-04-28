@@ -1,0 +1,2 @@
+Fix test_logging.test_namer_rotator_inheritance() on Windows: use
+:func:`os.replace` rather than :func:`os.rename`. Patch by Victor Stinner.
