@@ -59,6 +59,9 @@ from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
 
+# Default for testing; defaults to True in main() for running.
+use_subprocess = False
+
 HOST = '127.0.0.1' # python execution server on localhost loopback
 PORT = 0  # someday pass in host, port for remote debug capability
 

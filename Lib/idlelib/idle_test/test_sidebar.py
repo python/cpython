@@ -400,18 +400,6 @@ class ShellSidebarTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
 
-        try:
-            orig_use_subprocess = idlelib.pyshell.use_subprocess
-        except AttributeError:
-            orig_use_subprocess = None
-        idlelib.pyshell.use_subprocess = False
-        def cleanup_use_subprocess():
-            if orig_use_subprocess is not None:
-                idlelib.pyshell.use_subprocess = orig_use_subprocess
-            else:
-                del idlelib.pyshell.use_subprocess
-        cls.addClassCleanup(cleanup_use_subprocess)
-
         cls.root = root = tk.Tk()
         root.withdraw()
 
