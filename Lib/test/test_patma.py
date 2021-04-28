@@ -2430,30 +2430,10 @@ class TestPatma(unittest.TestCase):
         """)
 
     @no_perf
-    def _disabled_test_patma_240b(self):
-        # Test disabled until bpo-43897 fleshes out the AST validator
-        # (the initial skeleton doesn't recurse into mapping patterns)
-        # Ensure mapping keys are also restricted
-        self.assert_syntax_error("""
-        match ...:
-            case {0+0:_}:
-                pass
-        """)
-
-    @no_perf
     def test_patma_241(self):
         self.assert_syntax_error("""
         match ...:
             case f"":
-                pass
-        """)
-
-    @no_perf
-    def test_patma_241b(self):
-        # Ensure mapping keys are also restricted
-        self.assert_syntax_error("""
-        match ...:
-            case {f"":_}:
                 pass
         """)
 
@@ -2876,6 +2856,22 @@ class TestPatma(unittest.TestCase):
         self.assertIs(w, None)
         self.assertIs(y, None)
         self.assertIs(z, None)
+
+    @no_perf
+    def test_patma_283(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0+0: _}:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_284(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {f"": _}:
+                pass
+        """)
 
 
 class PerfPatma(TestPatma):
