@@ -293,6 +293,10 @@ Sleeping
    ``sleep()`` always suspends the current task, allowing other tasks
    to run.
 
+   Setting the delay to 0 provides an optimized path to allow other
+   tasks to run. This can be used by long-running functions to avoid
+   blocking the event loop for the full duration of the function call.
+
    .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second
@@ -393,6 +397,11 @@ Running Tasks Concurrently
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if no positional arguments are provided
+      or not all positional arguments are Future-like objects
+      and there is no running event loop.
+
 
 Shielding From Cancellation
 ===========================
@@ -429,6 +438,10 @@ Shielding From Cancellation
            res = await shield(something())
        except CancelledError:
            res = None
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *aw* is not Future-like object
+      and there is no running event loop.
 
 
 Timeouts
@@ -588,6 +601,10 @@ Waiting Primitives
        for coro in as_completed(aws):
            earliest_result = await coro
            # ...
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if not all awaitable objects in the *aws*
+      iterable are Future-like objects and there is no running event loop.
 
 
 Running in Threads
@@ -770,6 +787,10 @@ Task Object
 
    .. deprecated-removed:: 3.8 3.10
       The *loop* parameter.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *loop* is not specified
+      and there is no running event loop.
 
    .. method:: cancel(msg=None)
 

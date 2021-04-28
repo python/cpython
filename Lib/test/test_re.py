@@ -2176,11 +2176,13 @@ class PatternReprTests(unittest.TestCase):
                          "re.IGNORECASE|re.DOTALL|re.VERBOSE")
         self.assertEqual(repr(re.I|re.S|re.X|(1<<20)),
                          "re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000")
-        self.assertEqual(repr(~re.I), "~re.IGNORECASE")
+        self.assertEqual(
+                repr(~re.I),
+                "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.DOTALL|re.VERBOSE|re.TEMPLATE|re.DEBUG")
         self.assertEqual(repr(~(re.I|re.S|re.X)),
-                         "~(re.IGNORECASE|re.DOTALL|re.VERBOSE)")
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG")
         self.assertEqual(repr(~(re.I|re.S|re.X|(1<<20))),
-                         "~(re.IGNORECASE|re.DOTALL|re.VERBOSE|0x100000)")
+                         "re.ASCII|re.LOCALE|re.UNICODE|re.MULTILINE|re.TEMPLATE|re.DEBUG|0xffe00")
 
 
 class ImplementationTest(unittest.TestCase):

@@ -680,7 +680,7 @@ _Py_COMP_DIAG_POP
                     assert(size > 0);
                     len = PyUnicode_AsWideChar(t, P, size);
                     assert(len >= 0);
-                    assert(len < size);
+                    assert((unsigned)len < size);
                     size -= (DWORD)len + 1;
                     P += len + 1;
                 }
@@ -1813,6 +1813,7 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
     if (PySys_Audit("winreg.SetValue", "nunO",
                     (Py_ssize_t)key, value_name, (Py_ssize_t)type,
                     value) < 0) {
+        PyMem_Free(data);
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS

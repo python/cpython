@@ -219,7 +219,7 @@ parse_internal_render_format_spec(PyObject *format_spec,
     /* The special case for 0-padding (backwards compat) */
     if (!fill_char_specified && end-pos >= 1 && READ_spec(pos) == '0') {
         format->fill_char = '0';
-        if (!align_specified) {
+        if (!align_specified && default_align == '>') {
             format->align = '=';
         }
         ++pos;

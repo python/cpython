@@ -1,2 +1,0 @@
-randrange() now raises a TypeError when step is specified without a stop
-argument.  Formerly, it silently ignored the step argument.

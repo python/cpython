@@ -95,6 +95,8 @@ attributes:
 |           | __globals__       | global namespace in which |
 |           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
+|           | __builtins__      | builtins namespace        |
++-----------+-------------------+---------------------------+
 |           | __annotations__   | mapping of parameters     |
 |           |                   | names to annotations;     |
 |           |                   | ``"return"`` key is       |
@@ -250,6 +252,10 @@ attributes:
 .. versionchanged:: 3.7
 
    Add ``cr_origin`` attribute to coroutines.
+
+.. versionchanged:: 3.10
+
+   Add ``__builtins__`` attribute to functions.
 
 .. function:: getmembers(object[, predicate])
 

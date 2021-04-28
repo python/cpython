@@ -10,10 +10,12 @@
 #include "zlib.h"
 
 
-#define ENTER_ZLIB(obj) \
-    Py_BEGIN_ALLOW_THREADS; \
-    PyThread_acquire_lock((obj)->lock, 1); \
-    Py_END_ALLOW_THREADS;
+#define ENTER_ZLIB(obj) do {                      \
+    if (!PyThread_acquire_lock((obj)->lock, 0)) { \
+        Py_BEGIN_ALLOW_THREADS                    \
+        PyThread_acquire_lock((obj)->lock, 1);    \
+        Py_END_ALLOW_THREADS                      \
+    } } while (0)
 #define LEAVE_ZLIB(obj) PyThread_release_lock((obj)->lock);
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM >= 0x1221
@@ -634,13 +636,12 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
     PyObject *RetVal = NULL;
     Py_ssize_t obuflen = DEF_BUF_SIZE;
     int err;
-
     zlibstate *state = PyType_GetModuleState(cls);
+
+    ENTER_ZLIB(self);
 
     self->zst.next_in = data->buf;
     Py_ssize_t ibuflen = data->len;
-
-    ENTER_ZLIB(self);
 
     do {
         arrange_input_buffer(&self->zst, &ibuflen);
@@ -761,14 +762,14 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     else
         hard_limit = max_length;
 
+    ENTER_ZLIB(self);
+
     self->zst.next_in = data->buf;
     ibuflen = data->len;
 
     /* limit amount of data allocated to max_length */
     if (max_length && obuflen > max_length)
         obuflen = max_length;
-
-    ENTER_ZLIB(self);
 
     do {
         arrange_input_buffer(&self->zst, &ibuflen);

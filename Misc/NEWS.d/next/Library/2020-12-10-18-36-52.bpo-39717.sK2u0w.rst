@@ -1,1 +1,0 @@
-[tarfile] update nested exception raising to use ``from None`` or ``from e``

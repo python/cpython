@@ -1,1 +1,0 @@
-:mod:`tkinter` supports now widgets with boolean value False.

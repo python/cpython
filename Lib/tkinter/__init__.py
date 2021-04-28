@@ -144,7 +144,8 @@ def _splitdict(tk, v, cut_minus=True, conv=None):
     return dict
 
 
-class EventType(enum.StrEnum):
+@enum._simple_enum(enum.StrEnum)
+class EventType:
     KeyPress = '2'
     Key = KeyPress
     KeyRelease = '3'
@@ -184,8 +185,6 @@ class EventType(enum.StrEnum):
     Activate = '36'
     Deactivate = '37'
     MouseWheel = '38'
-
-    __str__ = str.__str__
 
 
 class Event:
@@ -1185,8 +1184,7 @@ class Misc:
             self.tk.call('winfo', 'reqwidth', self._w))
 
     def winfo_rgb(self, color):
-        """Return tuple of decimal values for red, green, blue for
-        COLOR in this widget."""
+        """Return a tuple of integer RGB values in range(65536) for color in this widget."""
         return self._getints(
             self.tk.call('winfo', 'rgb', self._w, color))
 

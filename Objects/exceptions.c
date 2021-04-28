@@ -364,8 +364,6 @@ PyException_SetContext(PyObject *self, PyObject *context)
     Py_XSETREF(_PyBaseExceptionObject_cast(self)->context, context);
 }
 
-#undef PyExceptionClass_Name
-
 const char *
 PyExceptionClass_Name(PyObject *ob)
 {
@@ -1328,21 +1326,150 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
 /*
  *    NameError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, NameError,
-                       "Name not found globally.");
+
+static int
+NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"name", NULL};
+    PyObject *name = NULL;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
+        return -1;
+    }
+
+    PyObject *empty_tuple = PyTuple_New(0);
+    if (!empty_tuple) {
+        return -1;
+    }
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$O:NameError", kwlist,
+                                     &name)) {
+        Py_DECREF(empty_tuple);
+        return -1;
+    }
+    Py_DECREF(empty_tuple);
+
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    return 0;
+}
+
+static int
+NameError_clear(PyNameErrorObject *self)
+{
+    Py_CLEAR(self->name);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+NameError_dealloc(PyNameErrorObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    NameError_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+NameError_traverse(PyNameErrorObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->name);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyMemberDef NameError_members[] = {
+        {"name", T_OBJECT, offsetof(PyNameErrorObject, name), 0, PyDoc_STR("name")},
+        {NULL}  /* Sentinel */
+};
+
+static PyMethodDef NameError_methods[] = {
+        {NULL}  /* Sentinel */
+};
+
+ComplexExtendsException(PyExc_Exception, NameError,
+                        NameError, 0,
+                        NameError_methods, NameError_members,
+                        0, BaseException_str, "Name not found globally.");
 
 /*
  *    UnboundLocalError extends NameError
  */
-SimpleExtendsException(PyExc_NameError, UnboundLocalError,
+
+MiddlingExtendsException(PyExc_NameError, UnboundLocalError, NameError,
                        "Local name referenced but not bound to a value.");
 
 /*
  *    AttributeError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, AttributeError,
-                       "Attribute not found.");
 
+static int
+AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"name", "obj", NULL};
+    PyObject *name = NULL;
+    PyObject *obj = NULL;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
+        return -1;
+    }
+
+    PyObject *empty_tuple = PyTuple_New(0);
+    if (!empty_tuple) {
+        return -1;
+    }
+    if (!PyArg_ParseTupleAndKeywords(empty_tuple, kwds, "|$OO:AttributeError", kwlist,
+                                     &name, &obj)) {
+        Py_DECREF(empty_tuple);
+        return -1;
+    }
+    Py_DECREF(empty_tuple);
+
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    Py_XINCREF(obj);
+    Py_XSETREF(self->obj, obj);
+
+    return 0;
+}
+
+static int
+AttributeError_clear(PyAttributeErrorObject *self)
+{
+    Py_CLEAR(self->obj);
+    Py_CLEAR(self->name);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+AttributeError_dealloc(PyAttributeErrorObject *self)
+{
+    _PyObject_GC_UNTRACK(self);
+    AttributeError_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+AttributeError_traverse(PyAttributeErrorObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->obj);
+    Py_VISIT(self->name);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+static PyMemberDef AttributeError_members[] = {
+    {"name", T_OBJECT, offsetof(PyAttributeErrorObject, name), 0, PyDoc_STR("attribute name")},
+    {"obj", T_OBJECT, offsetof(PyAttributeErrorObject, obj), 0, PyDoc_STR("object")},
+    {NULL}  /* Sentinel */
+};
+
+static PyMethodDef AttributeError_methods[] = {
+    {NULL}  /* Sentinel */
+};
+
+ComplexExtendsException(PyExc_Exception, AttributeError,
+                        AttributeError, 0,
+                        AttributeError_methods, AttributeError_members,
+                        0, BaseException_str, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
@@ -1367,29 +1494,32 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
         info = PySequence_Tuple(info);
-        if (!info)
-            return -1;
-
-        if (PyTuple_GET_SIZE(info) != 4) {
-            /* not a very good error message, but it's what Python 2.4 gives */
-            PyErr_SetString(PyExc_IndexError, "tuple index out of range");
-            Py_DECREF(info);
+        if (!info) {
             return -1;
         }
 
-        Py_INCREF(PyTuple_GET_ITEM(info, 0));
-        Py_XSETREF(self->filename, PyTuple_GET_ITEM(info, 0));
+        self->end_lineno = NULL;
+        self->end_offset = NULL;
+        if (!PyArg_ParseTuple(info, "OOOO|OO",
+                              &self->filename, &self->lineno,
+                              &self->offset, &self->text,
+                              &self->end_lineno, &self->end_offset)) {
+            Py_DECREF(info);
+            return -1;
+        } 
 
-        Py_INCREF(PyTuple_GET_ITEM(info, 1));
-        Py_XSETREF(self->lineno, PyTuple_GET_ITEM(info, 1));
-
-        Py_INCREF(PyTuple_GET_ITEM(info, 2));
-        Py_XSETREF(self->offset, PyTuple_GET_ITEM(info, 2));
-
-        Py_INCREF(PyTuple_GET_ITEM(info, 3));
-        Py_XSETREF(self->text, PyTuple_GET_ITEM(info, 3));
-
+        Py_INCREF(self->filename);
+        Py_INCREF(self->lineno);
+        Py_INCREF(self->offset);
+        Py_INCREF(self->text);
+        Py_XINCREF(self->end_lineno);
+        Py_XINCREF(self->end_offset);
         Py_DECREF(info);
+
+        if (self->end_lineno != NULL && self->end_offset == NULL) {
+            PyErr_SetString(PyExc_TypeError, "end_offset must be provided when end_lineno is provided");
+            return -1;
+        }
 
         /*
          * Issue #21669: Custom error for 'print' & 'exec' as statements
@@ -1413,6 +1543,8 @@ SyntaxError_clear(PySyntaxErrorObject *self)
     Py_CLEAR(self->filename);
     Py_CLEAR(self->lineno);
     Py_CLEAR(self->offset);
+    Py_CLEAR(self->end_lineno);
+    Py_CLEAR(self->end_offset);
     Py_CLEAR(self->text);
     Py_CLEAR(self->print_file_and_line);
     return BaseException_clear((PyBaseExceptionObject *)self);
@@ -1433,6 +1565,8 @@ SyntaxError_traverse(PySyntaxErrorObject *self, visitproc visit, void *arg)
     Py_VISIT(self->filename);
     Py_VISIT(self->lineno);
     Py_VISIT(self->offset);
+    Py_VISIT(self->end_lineno);
+    Py_VISIT(self->end_offset);
     Py_VISIT(self->text);
     Py_VISIT(self->print_file_and_line);
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
@@ -1523,6 +1657,10 @@ static PyMemberDef SyntaxError_members[] = {
         PyDoc_STR("exception offset")},
     {"text", T_OBJECT, offsetof(PySyntaxErrorObject, text), 0,
         PyDoc_STR("exception text")},
+    {"end_lineno", T_OBJECT, offsetof(PySyntaxErrorObject, end_lineno), 0,
+                   PyDoc_STR("exception end lineno")},
+    {"end_offset", T_OBJECT, offsetof(PySyntaxErrorObject, end_offset), 0,
+                   PyDoc_STR("exception end offset")},
     {"print_file_and_line", T_OBJECT,
         offsetof(PySyntaxErrorObject, print_file_and_line), 0,
         PyDoc_STR("exception print_file_and_line")},
@@ -2467,6 +2605,13 @@ SimpleExtendsException(PyExc_Warning, BytesWarning,
 
 
 /*
+ *    EncodingWarning extends Warning
+ */
+SimpleExtendsException(PyExc_Warning, EncodingWarning,
+    "Base class for warnings about encodings.");
+
+
+/*
  *    ResourceWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, ResourceWarning,
@@ -2531,9 +2676,9 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif /* MS_WINDOWS */
 
 PyStatus
-_PyExc_Init(PyThreadState *tstate)
+_PyExc_Init(PyInterpreterState *interp)
 {
-    struct _Py_exc_state *state = &tstate->interp->exc_state;
+    struct _Py_exc_state *state = &interp->exc_state;
 
 #define PRE_INIT(TYPE) \
     if (!(_PyExc_ ## TYPE.tp_flags & Py_TPFLAGS_READY)) { \
@@ -2594,6 +2739,7 @@ _PyExc_Init(PyThreadState *tstate)
     PRE_INIT(BufferError);
     PRE_INIT(Warning);
     PRE_INIT(UserWarning);
+    PRE_INIT(EncodingWarning);
     PRE_INIT(DeprecationWarning);
     PRE_INIT(PendingDeprecationWarning);
     PRE_INIT(SyntaxWarning);
@@ -2733,6 +2879,7 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(BufferError);
     POST_INIT(Warning);
     POST_INIT(UserWarning);
+    POST_INIT(EncodingWarning);
     POST_INIT(DeprecationWarning);
     POST_INIT(PendingDeprecationWarning);
     POST_INIT(SyntaxWarning);
@@ -2768,9 +2915,9 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
 }
 
 void
-_PyExc_Fini(PyThreadState *tstate)
+_PyExc_Fini(PyInterpreterState *interp)
 {
-    struct _Py_exc_state *state = &tstate->interp->exc_state;
+    struct _Py_exc_state *state = &interp->exc_state;
     free_preallocated_memerrors(state);
     Py_CLEAR(state->errnomap);
 }

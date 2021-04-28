@@ -1,3 +1,0 @@
-Fixed equality comparison of :class:`tkinter.Variable` and
-:class:`tkinter.font.Font`. Objects which belong to different Tcl
-interpreters are now always different, even if they have the same name.

@@ -1,1 +1,0 @@
-Add documentation for the :class:`multiprocessing.pool.ThreadPool` class.

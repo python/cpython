@@ -1,2 +1,0 @@
-Implemented :pep:`612`: added ``ParamSpec`` and ``Concatenate`` to
-:mod:`typing`.  Patch by Ken Jin.

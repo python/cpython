@@ -1,1 +1,0 @@
-fix ``format()`` behavior for ``IntFlag``

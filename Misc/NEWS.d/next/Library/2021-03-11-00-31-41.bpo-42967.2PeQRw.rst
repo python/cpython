@@ -1,0 +1,3 @@
+Allow :class:`bytes` ``separator`` argument in ``urllib.parse.parse_qs`` and
+``urllib.parse.parse_qsl`` when parsing :class:`str` query strings.  Previously,
+this raised a ``TypeError``.

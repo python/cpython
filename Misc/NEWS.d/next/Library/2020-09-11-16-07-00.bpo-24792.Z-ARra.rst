@@ -1,1 +1,0 @@
-Fixed bug where :mod:`zipimporter` sometimes reports an incorrect cause of import errors.

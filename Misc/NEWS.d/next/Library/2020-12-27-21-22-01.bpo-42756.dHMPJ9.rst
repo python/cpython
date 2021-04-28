@@ -1,2 +1,0 @@
-Configure LMTP Unix-domain socket to use socket global default timeout when
-a timeout is not explicitly provided.

@@ -498,7 +498,8 @@ class ImportlibMigrationTests(unittest.TestCase):
 
     def check_deprecated(self):
         return check_warnings(
-            ("This emulation is deprecated, use 'importlib' instead",
+            ("This emulation is deprecated and slated for removal in "
+             "Python 3.12; use 'importlib' instead",
              DeprecationWarning))
 
     def test_importer_deprecated(self):

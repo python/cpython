@@ -1,1 +1,0 @@
-Add more attribute checking in test_posix.py

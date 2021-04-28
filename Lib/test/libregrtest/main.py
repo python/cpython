@@ -1,4 +1,3 @@
-import datetime
 import faulthandler
 import locale
 import os
@@ -150,9 +149,12 @@ class Regrtest:
 
         # add the timestamp prefix:  "0:01:05 "
         test_time = time.monotonic() - self.start_time
-        test_time = datetime.timedelta(seconds=int(test_time))
-        line = f"{test_time} {line}"
 
+        mins, secs = divmod(int(test_time), 60)
+        hours, mins = divmod(mins, 60)
+        test_time = "%d:%02d:%02d" % (hours, mins, secs)
+
+        line = f"{test_time} {line}"
         if empty:
             line = line[:-1]
 

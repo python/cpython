@@ -51,6 +51,8 @@ typedef struct _Py_AuditHookEntry {
 
 struct _Py_unicode_runtime_ids {
     PyThread_type_lock lock;
+    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
+    // is called multiple times: see _PyUnicode_FromId() implementation.
     Py_ssize_t next_index;
 };
 
@@ -107,6 +109,8 @@ typedef struct pyruntimestate {
 
     PyPreConfig preconfig;
 
+    // Audit values must be preserved when Py_Initialize()/Py_Finalize()
+    // is called multiple times.
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     _Py_AuditHookEntry *audit_hook_head;

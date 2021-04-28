@@ -11,6 +11,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef MS_WINDOWS
    /* include <windows.h> early to avoid conflict with pycore_condvar.h:
 
@@ -19,6 +20,7 @@
 
       FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
+#  include <pathcch.h>
 #endif
 
 #ifdef __VXWORKS__
@@ -61,7 +63,13 @@
  */
 #if defined(__APPLE__)
 
-#if defined(__has_builtin) && __has_builtin(__builtin_available)
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_available)
+#define HAVE_BUILTIN_AVAILABLE 1
+#endif
+#endif
+
+#ifdef HAVE_BUILTIN_AVAILABLE
 #  define HAVE_FSTATAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FACCESSAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
 #  define HAVE_FCHMODAT_RUNTIME __builtin_available(macOS 10.10, iOS 8.0, *)
@@ -987,7 +995,7 @@ typedef struct {
 static inline _posixstate*
 get_posix_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_posixstate *)state;
 }
@@ -1843,9 +1851,28 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
 {
     HANDLE hFindFile;
     WIN32_FIND_DATAW FileData;
-    hFindFile = FindFirstFileW(pszFile, &FileData);
-    if (hFindFile == INVALID_HANDLE_VALUE)
+    LPCWSTR filename = pszFile;
+    size_t n = wcslen(pszFile);
+    if (n && (pszFile[n - 1] == L'\\' || pszFile[n - 1] == L'/')) {
+        // cannot use PyMem_Malloc here because we do not hold the GIL
+        filename = (LPCWSTR)malloc((n + 1) * sizeof(filename[0]));
+        wcsncpy_s((LPWSTR)filename, n + 1, pszFile, n);
+        while (--n > 0 && (filename[n] == L'\\' || filename[n] == L'/')) {
+            ((LPWSTR)filename)[n] = L'\0';
+        }
+        if (!n || (n == 1 && filename[1] == L':')) {
+            // Nothing left to query
+            free((void *)filename);
+            return FALSE;
+        }
+    }
+    hFindFile = FindFirstFileW(filename, &FileData);
+    if (pszFile != filename) {
+        free((void *)filename);
+    }
+    if (hFindFile == INVALID_HANDLE_VALUE) {
         return FALSE;
+    }
     FindClose(hFindFile);
     find_data_to_file_info(&FileData, info, reparse_tag);
     return TRUE;
@@ -4382,6 +4409,53 @@ exit:
     PyMem_Free(mountpath);
     return result;
 }
+
+
+/*[clinic input]
+os._path_splitroot
+
+    path: path_t
+
+Removes everything after the root on Win32.
+[clinic start generated code]*/
+
+static PyObject *
+os__path_splitroot_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=ab7f1a88b654581c input=dc93b1d3984cffb6]*/
+{
+    wchar_t *buffer;
+    wchar_t *end;
+    PyObject *result = NULL;
+    HRESULT ret;
+
+    buffer = (wchar_t*)PyMem_Malloc(sizeof(wchar_t) * (wcslen(path->wide) + 1));
+    if (!buffer) {
+        return NULL;
+    }
+    wcscpy(buffer, path->wide);
+    for (wchar_t *p = wcschr(buffer, L'/'); p; p = wcschr(p, L'/')) {
+        *p = L'\\';
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = PathCchSkipRoot(buffer, &end);
+    Py_END_ALLOW_THREADS
+    if (FAILED(ret)) {
+        result = Py_BuildValue("sO", "", path->object);
+    } else if (end != buffer) {
+        size_t rootLen = (size_t)(end - buffer);
+        result = Py_BuildValue("NN",
+            PyUnicode_FromWideChar(path->wide, rootLen),
+            PyUnicode_FromWideChar(path->wide + rootLen, -1)
+        );
+    } else {
+        result = Py_BuildValue("Os", path->object, "");
+    }
+    PyMem_Free(buffer);
+
+    return result;
+}
+
 
 #endif /* MS_WINDOWS */
 
@@ -10024,18 +10098,16 @@ os_pipe_impl(PyObject *module)
     attr.bInheritHandle = FALSE;
 
     Py_BEGIN_ALLOW_THREADS
-    _Py_BEGIN_SUPPRESS_IPH
     ok = CreatePipe(&read, &write, &attr, 0);
     if (ok) {
-        fds[0] = _open_osfhandle((intptr_t)read, _O_RDONLY);
-        fds[1] = _open_osfhandle((intptr_t)write, _O_WRONLY);
+        fds[0] = _Py_open_osfhandle_noraise(read, _O_RDONLY);
+        fds[1] = _Py_open_osfhandle_noraise(write, _O_WRONLY);
         if (fds[0] == -1 || fds[1] == -1) {
             CloseHandle(read);
             CloseHandle(write);
             ok = 0;
         }
     }
-    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (!ok)
@@ -12411,6 +12483,9 @@ check_ShellExecute()
 os.startfile
     filepath: path_t
     operation: Py_UNICODE = NULL
+    arguments: Py_UNICODE = NULL
+    cwd: path_t(nullable=True) = None
+    show_cmd: int = 1
 
 Start a file with its associated application.
 
@@ -12420,6 +12495,16 @@ argument to the DOS "start" command: the file is opened with whatever
 application (if any) its extension is associated.
 When another "operation" is given, it specifies what should be done with
 the file.  A typical operation is "print".
+
+"arguments" is passed to the application, but should be omitted if the
+file is a document.
+
+"cwd" is the working directory for the operation. If "filepath" is
+relative, it will be resolved against this directory. This argument
+should usually be an absolute path.
+
+"show_cmd" can be used to override the recommended visibility option.
+See the Windows ShellExecute documentation for values.
 
 startfile returns as soon as the associated application is launched.
 There is no option to wait for the application to close, and no way
@@ -12432,8 +12517,9 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation)
-/*[clinic end generated code: output=66dc311c94d50797 input=c940888a5390f039]*/
+                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  path_t *cwd, int show_cmd)
+/*[clinic end generated code: output=3baa4f9795841880 input=8248997b80669622]*/
 {
     HINSTANCE rc;
 
@@ -12447,10 +12533,15 @@ os_startfile_impl(PyObject *module, path_t *filepath,
     if (PySys_Audit("os.startfile", "Ou", filepath->object, operation) < 0) {
         return NULL;
     }
+    if (PySys_Audit("os.startfile/2", "OuuOi", filepath->object, operation,
+                    arguments, cwd->object ? cwd->object : Py_None,
+                    show_cmd) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     rc = Py_ShellExecuteW((HWND)0, operation, filepath->wide,
-                          NULL, NULL, SW_SHOWNORMAL);
+                          arguments, cwd->wide, show_cmd);
     Py_END_ALLOW_THREADS
 
     if (rc <= (HINSTANCE)32) {
@@ -14743,6 +14834,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
+    OS__PATH_SPLITROOT_METHODDEF
     OS_GETLOADAVG_METHODDEF
     OS_URANDOM_METHODDEF
     OS_SETRESUID_METHODDEF
@@ -14895,7 +14987,15 @@ all_ins(PyObject *m)
 #ifdef O_ACCMODE
     if (PyModule_AddIntMacro(m, O_ACCMODE)) return -1;
 #endif
-
+#ifdef O_EVTONLY
+    if (PyModule_AddIntMacro(m, O_EVTONLY)) return -1;
+#endif
+#ifdef O_FSYNC
+    if (PyModule_AddIntMacro(m, O_FSYNC)) return -1;
+#endif
+#ifdef O_SYMLINK
+    if (PyModule_AddIntMacro(m, O_SYMLINK)) return -1;
+#endif
 
 #ifdef SEEK_HOLE
     if (PyModule_AddIntMacro(m, SEEK_HOLE)) return -1;
@@ -14944,6 +15044,9 @@ all_ins(PyObject *m)
 #ifdef O_NOFOLLOW
     /* Do not follow links.      */
     if (PyModule_AddIntMacro(m, O_NOFOLLOW)) return -1;
+#endif
+#ifdef O_NOFOLLOW_ANY
+    if (PyModule_AddIntMacro(m, O_NOFOLLOW_ANY)) return -1;
 #endif
 #ifdef O_NOLINKS
     /* Fails if link count of the named file is greater than 1 */

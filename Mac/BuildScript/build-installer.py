@@ -242,15 +242,12 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1g",
-              url="https://www.openssl.org/source/openssl-1.1.1g.tar.gz",
-              checksum='76766e98997660138cdaf13a187bd234',
+              name="OpenSSL 1.1.1k",
+              url="https://www.openssl.org/source/openssl-1.1.1k.tar.gz",
+              checksum='c4e7d95f782b08116afa27b30393dd27',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
-              patches=[
-                  "openssl-mac-arm64.patch",
-                   ],
           ),
     ])
 
@@ -263,10 +260,10 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.10'
-            tcl_checksum='97c55573f8520bcab74e21bfd8d0aadc'
+            tcl_tk_ver='8.6.11'
+            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
 
-            tk_checksum='602a47ad9ecac7bf655ada729d140a94'
+            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
             tk_patches = [ ]
 
 
@@ -357,9 +354,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.33.0",
-              url="https://sqlite.org/2020/sqlite-autoconf-3330000.tar.gz",
-              checksum='842a8a100d7b01b09e543deb2b7951dd',
+              name="SQLite 3.35.5",
+              url="https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz",
+              checksum='d1d1aba394c8e0443077dc9f1a681bb8',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1138,7 +1135,6 @@ def buildPythonDocs():
     if not os.path.exists(htmlDir):
         # Create virtual environment for docs builds with blurb and sphinx
         runCommand('make venv')
-        runCommand('venv/bin/python3 -m pip install -U Sphinx==2.3.1')
         runCommand('make html PYTHON=venv/bin/python')
     os.rename(htmlDir, docdir)
     os.chdir(curDir)
@@ -1615,17 +1611,39 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
-    # We used to use the deployment target as the last characters of the 
+    # We used to use the deployment target as the last characters of the
     # installer file name. With the introduction of weaklinked installer
     # variants, we may have two variants with the same file name, i.e.
     # both ending in '10.9'.  To avoid this, we now use the major/minor
-    # version numbers of the macOS version we are building on, i.e.
-    # '10.9' as before for 10.9+ variant, '11.0' for universal2 11.0-.
-    # it's not ideal but should cause the least disruption to packaging
-    # workflows.
-    build_system_version = '.'.join(platform.mac_ver()[0].split('.')[0:2])
+    # version numbers of the macOS version we are building on.
+    # Also, as of macOS 11, operating system version numbering has
+    # changed from three components to two, i.e.
+    #   10.14.1, 10.14.2, ...
+    #   10.15.1, 10.15.2, ...
+    #   11.1, 11.2, ...
+    #   12.1, 12.2, ...
+    # (A further twist is that, when running on macOS 11, binaries built
+    # on older systems may be shown an operating system version of 10.16
+    # instead of 11.  We should not run into that situation here.)
+    # Also we should use "macos" instead of "macosx" going forward.
+    #
+    # To maintain compability for legacy variants, the file name for
+    # builds on macOS 10.15 and earlier remains:
+    #   python-3.x.y-macosx10.z.{dmg->pkg}
+    #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}
+    # and for builds on macOS 11+:
+    #   python-3.x.y-macosz.{dmg->pkg}
+    #   e.g. python-3.9.4-macos11.{dmg->pkg}
+
+    build_tuple = getBuildTuple()
+    if build_tuple[0] < 11:
+        os_name = 'macosx'
+        build_system_version = '%s.%s' % build_tuple
+    else:
+        os_name = 'macos'
+        build_system_version = str(build_tuple[0])
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx%s'%(getFullVersion(),build_system_version))
+                    'python-%s-%s%s'%(getFullVersion(),os_name,build_system_version))
     if INCLUDE_TIMESTAMP:
         imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'

@@ -1,2 +1,0 @@
-Fix the column offsets for f-strings :mod:`ast` nodes surrounded by
-parentheses and for nodes that spawn multiple lines. Patch by Pablo Galindo.

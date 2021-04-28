@@ -5,6 +5,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -63,7 +64,7 @@ typedef struct {
 static array_state *
 get_array_state(PyObject *module)
 {
-    return (array_state *)PyModule_GetState(module);
+    return (array_state *)_PyModule_GetState(module);
 }
 
 #define find_array_state_by_type(tp) \
@@ -1136,18 +1137,32 @@ array_array_count(arrayobject *self, PyObject *v)
 array.array.index
 
     v: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
     /
 
 Return index of first occurrence of v in the array.
+
+Raise ValueError if the value is not present.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_index(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=d48498d325602167 input=cf619898c6649d08]*/
+array_array_index_impl(arrayobject *self, PyObject *v, Py_ssize_t start,
+                       Py_ssize_t stop)
+/*[clinic end generated code: output=c45e777880c99f52 input=089dff7baa7e5a7e]*/
 {
-    Py_ssize_t i;
-
-    for (i = 0; i < Py_SIZE(self); i++) {
+    if (start < 0) {
+        start += Py_SIZE(self);
+        if (start < 0) {
+            start = 0;
+        }
+    }
+    if (stop < 0) {
+        stop += Py_SIZE(self);
+    }
+    // Use Py_SIZE() for every iteration in case the array is mutated
+    // during PyObject_RichCompareBool()
+    for (Py_ssize_t i = start; i < stop && i < Py_SIZE(self); i++) {
         PyObject *selfi;
         int cmp;
 
@@ -2977,18 +2992,42 @@ static PyType_Spec arrayiter_spec = {
 
 /*********************** Install Module **************************/
 
+static int
+array_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    array_state *state = get_array_state(module);
+    Py_VISIT(state->ArrayType);
+    Py_VISIT(state->ArrayIterType);
+    return 0;
+}
+
+static int
+array_clear(PyObject *module)
+{
+    array_state *state = get_array_state(module);
+    Py_CLEAR(state->ArrayType);
+    Py_CLEAR(state->ArrayIterType);
+    return 0;
+}
+
+static void
+array_free(void *module)
+{
+    array_clear((PyObject *)module);
+}
+
 /* No functions in array module. */
 static PyMethodDef a_methods[] = {
     ARRAY__ARRAY_RECONSTRUCTOR_METHODDEF
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
-#define CREATE_TYPE(module, type, spec)                             \
-do {                                                                \
-    type = (PyTypeObject *)PyType_FromModuleAndSpec(m, spec, NULL); \
-    if (type == NULL) {                                             \
-        return -1;                                                  \
-    }                                                               \
+#define CREATE_TYPE(module, type, spec)                                  \
+do {                                                                     \
+    type = (PyTypeObject *)PyType_FromModuleAndSpec(module, spec, NULL); \
+    if (type == NULL) {                                                  \
+        return -1;                                                       \
+    }                                                                    \
 } while (0)
 
 static int
@@ -3059,6 +3098,9 @@ static struct PyModuleDef arraymodule = {
     .m_doc = module_doc,
     .m_methods = a_methods,
     .m_slots = arrayslots,
+    .m_traverse = array_traverse,
+    .m_clear = array_clear,
+    .m_free = array_free,
 };
 
 

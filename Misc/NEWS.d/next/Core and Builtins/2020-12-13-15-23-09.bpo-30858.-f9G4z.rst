@@ -1,2 +1,0 @@
-Improve error location in expressions that contain assignments. Patch by
-Pablo Galindo and Lysandros Nikolaou.

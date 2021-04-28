@@ -29,8 +29,8 @@
 #include "microprotocols.h"
 #include "row.h"
 
-#if SQLITE_VERSION_NUMBER < 3007003
-#error "SQLite 3.7.3 or higher required"
+#if SQLITE_VERSION_NUMBER < 3007015
+#error "SQLite 3.7.15 or higher required"
 #endif
 
 #include "clinic/module.c.h"
@@ -96,6 +96,14 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     }
 
     result = PyObject_Call(factory, args, kwargs);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
 
     return result;
 }
@@ -343,8 +351,7 @@ static struct PyModuleDef _sqlite3module = {
 #define ADD_TYPE(module, type)                 \
 do {                                           \
     if (PyModule_AddType(module, &type) < 0) { \
-        Py_DECREF(module);                     \
-        return NULL;                           \
+        goto error;                            \
     }                                          \
 } while (0)
 
@@ -365,8 +372,14 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 {
     PyObject *module;
 
-    if (sqlite3_libversion_number() < 3007003) {
-        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.3 or higher required");
+    if (sqlite3_libversion_number() < 3007015) {
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": SQLite 3.7.15 or higher required");
+        return NULL;
+    }
+
+    int rc = sqlite3_initialize();
+    if (rc != SQLITE_OK) {
+        PyErr_SetString(PyExc_ImportError, sqlite3_errstr(rc));
         return NULL;
     }
 
@@ -380,8 +393,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_statement_setup_types(module) < 0) ||
         (pysqlite_prepare_protocol_setup_types(module) < 0)
        ) {
-        Py_XDECREF(module);
-        return NULL;
+        goto error;
     }
 
     ADD_TYPE(module, *pysqlite_ConnectionType);
@@ -428,12 +440,11 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         goto error;
     }
 
-error:
-    if (PyErr_Occurred())
-    {
-        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
-        Py_DECREF(module);
-        module = NULL;
-    }
     return module;
+
+error:
+    sqlite3_shutdown();
+    PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
+    Py_XDECREF(module);
+    return NULL;
 }
