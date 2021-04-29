@@ -164,7 +164,7 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
     if (descr_check((PyDescrObject *)descr, obj, &res))
         return res;
 
-    if (descr->d_member->flags & READ_RESTRICTED) {
+    if (descr->d_member->flags & AUDIT_READ) {
         if (PySys_Audit("object.__getattr__", "Os",
             obj ? obj : Py_None, descr->d_member->name) < 0) {
             return NULL;
