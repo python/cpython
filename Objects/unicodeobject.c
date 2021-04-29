@@ -2224,7 +2224,7 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion to UCS-4 first. */
-    if (!_Py_LocaleUsesNonUnicodeWchar()) {
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
         wchar_t* converted = _Py_ConvertWCharFormToUCS4(u, size);
         if (!converted) {
             return NULL;
@@ -3317,7 +3317,7 @@ PyUnicode_AsWideChar(PyObject *unicode,
 #if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion first. */
-    if (!_Py_LocaleUsesNonUnicodeWchar()) {
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
         if (!_Py_ConvertWCharFormToNative_InPlace(w, size)) {
             return -1;
         }
@@ -3354,7 +3354,7 @@ PyUnicode_AsWideCharString(PyObject *unicode,
 #if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
     /* Oracle Solaris uses non-Unicode internal wchar_t form for
        non-Unicode locales and hence needs conversion first. */
-    if (!_Py_LocaleUsesNonUnicodeWchar()) {
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
         if (!_Py_ConvertWCharFormToNative_InPlace(buffer, (buflen + 1))) {
             return NULL;
         }

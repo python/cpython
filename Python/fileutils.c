@@ -944,7 +944,7 @@ _Py_LocaleUsesNonUnicodeWchar(void)
     if (!codeset) {
         return 0;
     }
-    return (strcmp(codeset, "UTF-8") == 0 || strcmp(codeset, "646") == 0);
+    return (strcmp(codeset, "UTF-8") != 0 && strcmp(codeset, "646") != 0);
 }
 
 wchar_t *
