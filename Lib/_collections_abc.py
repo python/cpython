@@ -793,7 +793,7 @@ MutableSet.register(set)
 
 ### MAPPINGS ###
 
-TPFLAGS_MAPPING = 1 << 7
+TPFLAGS_MAPPING = 1 << 6
 
 class Mapping(Collection):
     """A Mapping is a generic container for associating key/value
@@ -1013,7 +1013,7 @@ MutableMapping.register(dict)
 
 ### SEQUENCES ###
 
-TPFLAGS_SEQUENCE = 1 << 6
+TPFLAGS_SEQUENCE = 1 << 5
 
 class Sequence(Reversible, Collection):
     """All the operations on a read-only sequence.

@@ -418,6 +418,8 @@ error:
     return ret;
 }
 
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
+
 /*[clinic input]
 _abc._abc_init
 
@@ -426,8 +428,6 @@ _abc._abc_init
 
 Internal ABC helper for class set-up. Should be never used outside abc module.
 [clinic start generated code]*/
-
-#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 static PyObject *
 _abc__abc_init(PyObject *module, PyObject *self)
