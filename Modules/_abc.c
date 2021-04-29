@@ -449,6 +449,10 @@ _abc__abc_init(PyObject *module, PyObject *self)
         return NULL;
     }
     Py_DECREF(data);
+    /* If __flags__ & COLLECTION_FLAGS is set, then set the corresponding bit(s)
+     * in the new class.
+     * Used by collections.abc.Sequence and collections.abc.Mapping to indicate
+     * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
         PyObject *flags = _PyDict_GetItemIdWithError(cls->tp_dict, &PyId___flags__);

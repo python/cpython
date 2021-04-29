@@ -805,6 +805,7 @@ class Mapping(Collection):
 
     __slots__ = ()
 
+    # Tell ABCMeta.__new__ that this class should have TPFLAGS_MAPPING set.
     __flags__ = TPFLAGS_MAPPING
 
     @abstractmethod
@@ -1024,6 +1025,7 @@ class Sequence(Reversible, Collection):
 
     __slots__ = ()
 
+    # Tell ABCMeta.__new__ that this class should have TPFLAGS_SEQUENCE set.
     __flags__ = TPFLAGS_SEQUENCE
 
     @abstractmethod
