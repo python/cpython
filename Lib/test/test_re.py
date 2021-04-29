@@ -2190,6 +2190,18 @@ class ImplementationTest(unittest.TestCase):
     Test implementation details of the re module.
     """
 
+    @cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that re types are immutable
+        with self.assertRaises(TypeError):
+            re.Match.foo = 1
+        with self.assertRaises(TypeError):
+            re.Pattern.foo = 1
+        with self.assertRaises(TypeError):
+            pat = re.compile("")
+            tp = type(pat.scanner(""))
+            tp.foo = 1
+
     def test_overlap_table(self):
         f = sre_compile._generate_overlap_table
         self.assertEqual(f(""), [])
