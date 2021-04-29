@@ -1,0 +1,1 @@
+Fix the :func:`unittest.addModuleCleanup` behavior. It is now called even if :meth:`tearDownModule` is not defined.
