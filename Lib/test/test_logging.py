@@ -1582,8 +1582,7 @@ class ConfigFileTest(BaseTest):
             h1.close()
             os.remove(fn)
 
-        #with self.check_no_resource_warning():
-        if 1:
+        with self.check_no_resource_warning():
             fd, fn = tempfile.mkstemp(".log", "test_logging-X-")
             os.close(fd)
 
