@@ -1289,12 +1289,10 @@ class EditorWindow:
             else:
                 text.bell()     # at start of buffer
             return "break"
-        if chars.startswith(self.prompt_last_line):
-            isindent = _line_indent_re.fullmatch(chars[len(self.prompt_last_line):])
-        else:
-            isindent = _line_indent_re.fullmatch(chars)
+        isindent = _line_indent_re.fullmatch(chars)
         istrailing = _line_indent_re.fullmatch(echars)
         if chars[-1] not in " \t" or not (isindent or istrailing):
+            # non-indent char or found between non-indent chars
             # easy: delete preceding real char
             text.delete("insert-1c")
             return "break"
@@ -1304,8 +1302,10 @@ class EditorWindow:
         have = len(chars.expandtabs(tabwidth))
         assert have > 0
         if istrailing and not isindent:
+            # Delete all trailing whitespace
             want = 0
         else:
+            # Delete consistent with indentation
             want = ((have - 1) // self.indentwidth) * self.indentwidth
         # Debug prompt is multilined....
         ncharsdeleted = 0
