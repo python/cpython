@@ -2139,6 +2139,15 @@ const Py_am_send
     added 3.10
 
 
+# New GC control functions in Py3.10 (https://bugs.python.org/issue28254)
+
+function PyGC_Disable
+    added 3.10
+function PyGC_Enable
+    added 3.10
+function PyGC_IsEnabled
+    added 3.10
+
+
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
-

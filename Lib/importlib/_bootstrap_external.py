@@ -350,6 +350,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a7 3435 Use instruction offsets (as opposed to byte offsets).
 #     Python 3.10b1 3436 (Add GEN_START bytecode #43683)
 #     Python 3.10b1 3437 (Undo making 'annotations' future by default - We like to dance among core devs!)
+#     Python 3.10b1 3438 Safer line number table handling.
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -359,7 +360,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3437).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3438).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
