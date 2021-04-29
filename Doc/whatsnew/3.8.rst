@@ -215,8 +215,8 @@ Release builds and :ref:`debug builds <debug-build>` are now ABI compatible: def
 ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
 introduces the only ABI incompatibility. The ``Py_TRACE_REFS`` macro, which
 adds the :func:`sys.getobjects` function and the :envvar:`PYTHONDUMPREFS`
-environment variable, can be set using the new ``./configure --with-trace-refs``
-build option.
+environment variable, can be set using the new :option:`./configure
+--with-trace-refs <--with-trace-refs>` build option.
 (Contributed by Victor Stinner in :issue:`36465`.)
 
 On Unix, C extensions are no longer linked to libpython except on Android
