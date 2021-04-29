@@ -482,27 +482,6 @@ metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that it
 type objects) *must* have the :attr:`ob_size` field.
 
 
-.. c:member:: PyObject* PyObject._ob_next
-             PyObject* PyObject._ob_prev
-
-   These fields are only present when the macro ``Py_TRACE_REFS`` is defined.
-
-   Their initialization to ``NULL`` is taken care of by the
-   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
-   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
-   allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly-linked list of *all* live objects on the heap.
-
-   This could be used for various debugging purposes; currently the only uses
-   are the :func:`sys.getobjects` function and to print the objects that are
-   still alive at the end of a run when the environment variable
-   :envvar:`PYTHONDUMPREFS` is set.
-
-   **Inheritance:**
-
-   These fields are not inherited by subtypes.
-
-
 .. c:member:: Py_ssize_t PyObject.ob_refcnt
 
    This is the type object's reference count, initialized to ``1`` by the
@@ -538,6 +517,28 @@ type objects) *must* have the :attr:`ob_size` field.
    **Inheritance:**
 
    This field is inherited by subtypes.
+
+
+.. c:member:: PyObject* PyObject._ob_next
+             PyObject* PyObject._ob_prev
+
+   These fields are only present when the macro ``Py_TRACE_REFS`` is defined
+   (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
+
+   Their initialization to ``NULL`` is taken care of by the
+   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
+   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
+   allocated objects <heap-types>`, these two fields are used to link the
+   object into a doubly-linked list of *all* live objects on the heap.
+
+   This could be used for various debugging purposes; currently the only uses
+   are the :func:`sys.getobjects` function and to print the objects that are
+   still alive at the end of a run when the environment variable
+   :envvar:`PYTHONDUMPREFS` is set.
+
+   **Inheritance:**
+
+   These fields are not inherited by subtypes.
 
 
 PyVarObject Slots
