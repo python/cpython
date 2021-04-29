@@ -612,6 +612,35 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "out of range"):
             p.port
 
+    def test_urlsplit_remove_unsafe_bytes(self):
+        # Remove ASCII tabs and newlines from input
+        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "www.python.org")
+        self.assertEqual(p.path, "/javascript:alert('msg')/")
+        self.assertEqual(p.query, "")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/#frag")
+
+        # Remove ASCII tabs and newlines from input as bytes.
+        url = b"http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.scheme, b"http")
+        self.assertEqual(p.netloc, b"www.python.org")
+        self.assertEqual(p.path, b"/javascript:alert('msg')/")
+        self.assertEqual(p.query, b"")
+        self.assertEqual(p.fragment, b"frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, b"www.python.org")
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/#frag")
+
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
         for bytes in (False, True):
