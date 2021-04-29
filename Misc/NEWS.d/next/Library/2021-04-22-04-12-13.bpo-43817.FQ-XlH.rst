@@ -1,5 +1,5 @@
 Add ``inspect.get_annotations(o)``, which safely retrieves and returns the
-annotations for ``o``.  Also un-stringizes the annotations if they are
+annotations for ``o``.  Can also un-stringize the annotations if they are
 stringized.
 
 Modified ``inspect.signature()`` to use ``get_annotations()`` to retrieve
