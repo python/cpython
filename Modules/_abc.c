@@ -15,7 +15,7 @@ PyDoc_STRVAR(_abc__doc__,
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
-_Py_IDENTIFIER(__flags__);
+_Py_IDENTIFIER(__abc_tpflags__);
 _Py_IDENTIFIER(__bases__);
 _Py_IDENTIFIER(_abc_impl);
 _Py_IDENTIFIER(__subclasscheck__);
@@ -449,13 +449,13 @@ _abc__abc_init(PyObject *module, PyObject *self)
         return NULL;
     }
     Py_DECREF(data);
-    /* If __flags__ & COLLECTION_FLAGS is set, then set the corresponding bit(s)
+    /* If __abc_tpflags__ & COLLECTION_FLAGS is set, then set the corresponding bit(s)
      * in the new class.
      * Used by collections.abc.Sequence and collections.abc.Mapping to indicate
      * their special status w.r.t. pattern matching. */
     if (PyType_Check(self)) {
         PyTypeObject *cls = (PyTypeObject *)self;
-        PyObject *flags = _PyDict_GetItemIdWithError(cls->tp_dict, &PyId___flags__);
+        PyObject *flags = _PyDict_GetItemIdWithError(cls->tp_dict, &PyId___abc_tpflags__);
         if (flags == NULL) {
             if (PyErr_Occurred()) {
                 return NULL;
@@ -469,7 +469,7 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
-            if (_PyDict_DelItemId(cls->tp_dict, &PyId___flags__) < 0) {
+            if (_PyDict_DelItemId(cls->tp_dict, &PyId___abc_tpflags__) < 0) {
                 return NULL;
             }
         }
