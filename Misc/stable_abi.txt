@@ -2142,3 +2142,9 @@ const Py_am_send
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
 
+function PyGC_Disable
+    added 3.10
+function PyGC_Enable
+    added 3.10
+function PyGC_IsEnabled
+    added 3.10
