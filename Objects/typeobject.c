@@ -73,6 +73,7 @@ _Py_IDENTIFIER(__weakref__);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(mro);
 
+// Forward declarations
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
@@ -3287,6 +3288,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     char *res_start;
     short slot_offset, subslot_offset;
 
+    int disallow_instantiation = 0;
     nmembers = weaklistoffset = dictoffset = vectorcalloffset = 0;
     for (slot = spec->slots; slot->slot; slot++) {
         if (slot->slot == Py_tp_members) {
@@ -3312,6 +3314,9 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
                     vectorcalloffset = memb->offset;
                 }
             }
+        }
+        if (slot->slot == Py_tp_new && slot->pfunc == NULL) {
+            disallow_instantiation = 1;
         }
     }
 
@@ -3464,7 +3469,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         type->tp_vectorcall_offset = vectorcalloffset;
     }
 
-    if (PyType_Ready(type) < 0)
+    if (_PyType_Ready(type, disallow_instantiation) < 0)
         goto fail;
 
     if (type->tp_dictoffset) {
@@ -5582,39 +5587,24 @@ type_add_getset(PyTypeObject *type)
 static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
-
     /* Copying tp_traverse and tp_clear is connected to the GC flags */
     if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
         (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
-        (!type->tp_traverse && !type->tp_clear)) {
-        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
-        if (type->tp_traverse == NULL)
-            type->tp_traverse = base->tp_traverse;
-        if (type->tp_clear == NULL)
-            type->tp_clear = base->tp_clear;
-    }
+        (!type->tp_traverse && !type->tp_clear))
     {
-        /* The condition below could use some explanation.
-           It appears that tp_new is not inherited for static types
-           whose base class is 'object'; this seems to be a precaution
-           so that old extension types don't suddenly become
-           callable (object.__new__ wouldn't insure the invariants
-           that the extension type's own factory function ensures).
-           Heap types, of course, are under our control, so they do
-           inherit tp_new; static extension types that specify some
-           other built-in type as the default also
-           inherit object.__new__. */
-        if (base != &PyBaseObject_Type ||
-            (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-            if (type->tp_new == NULL)
-                type->tp_new = base->tp_new;
+        type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+        if (type->tp_traverse == NULL) {
+            type->tp_traverse = base->tp_traverse;
+        }
+        if (type->tp_clear == NULL) {
+            type->tp_clear = base->tp_clear;
         }
     }
-    if (type->tp_basicsize == 0)
+    if (type->tp_basicsize == 0) {
         type->tp_basicsize = base->tp_basicsize;
+    }
 
     /* Copy other non-function slots */
-
 #define COPYVAL(SLOT) \
     if (type->SLOT == 0) { type->SLOT = base->SLOT; }
 
@@ -6089,11 +6079,14 @@ type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
 
 
 static int
-type_ready_inherit(PyTypeObject *type)
+type_ready_inherit(PyTypeObject *type, int disallow_instantiation)
 {
     /* Inherit special flags from dominant base */
     PyTypeObject *base = type->tp_base;
     if (base != NULL) {
+        if (type->tp_new == NULL && !disallow_instantiation) {
+            type->tp_new = base->tp_new;
+        }
         inherit_special(type, base);
     }
 
@@ -6176,7 +6169,7 @@ type_ready_add_subclasses(PyTypeObject *type)
 
 
 static int
-type_ready(PyTypeObject *type)
+type_ready(PyTypeObject *type, int disallow_instantiation)
 {
     if (type_ready_checks(type) < 0) {
         return -1;
@@ -6201,10 +6194,31 @@ type_ready(PyTypeObject *type)
     if (type_ready_mro(type) < 0) {
         return -1;
     }
+
+    /* The condition below could use some explanation.
+
+       It appears that tp_new is not inherited for static types whose base
+       class is 'object'; this seems to be a precaution so that old extension
+       types don't suddenly become callable (object.__new__ wouldn't insure the
+       invariants that the extension type's own factory function ensures).
+
+       Heap types, of course, are under our control, so they do inherit tp_new;
+       static extension types that specify some other built-in type as the
+       default also inherit object.__new__. */
+    if (type->tp_new == NULL
+        && type->tp_base == &PyBaseObject_Type
+        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+    {
+        disallow_instantiation = 1;
+    }
+    if (disallow_instantiation) {
+        type->tp_new = NULL;
+    }
+
     if (type_ready_fill_dict(type) < 0) {
         return -1;
     }
-    if (type_ready_inherit(type) < 0) {
+    if (type_ready_inherit(type, disallow_instantiation) < 0) {
         return -1;
     }
     if (type_ready_set_hash(type) < 0) {
@@ -6213,12 +6227,16 @@ type_ready(PyTypeObject *type)
     if (type_ready_add_subclasses(type) < 0) {
         return -1;
     }
+    if (disallow_instantiation) {
+        assert(type->tp_new == NULL);
+        assert(_PyDict_ContainsId(type->tp_dict, &PyId___new__) == 0);
+    }
     return 0;
 }
 
 
 int
-PyType_Ready(PyTypeObject *type)
+_PyType_Ready(PyTypeObject *type, int disallow_instantiation)
 {
     if (type->tp_flags & Py_TPFLAGS_READY) {
         assert(_PyType_CheckConsistency(type));
@@ -6234,7 +6252,7 @@ PyType_Ready(PyTypeObject *type)
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
     }
 
-    if (type_ready(type) < 0) {
+    if (type_ready(type, disallow_instantiation) < 0) {
         type->tp_flags &= ~Py_TPFLAGS_READYING;
         return -1;
     }
@@ -6243,6 +6261,12 @@ PyType_Ready(PyTypeObject *type)
     type->tp_flags = (type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
     assert(_PyType_CheckConsistency(type));
     return 0;
+}
+
+int
+PyType_Ready(PyTypeObject *type)
+{
+    return _PyType_Ready(type, 0);
 }
 
 

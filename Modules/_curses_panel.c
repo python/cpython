@@ -514,6 +514,7 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 static PyType_Slot PyCursesPanel_Type_slots[] = {
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
     {Py_tp_methods, PyCursesPanel_Methods},
+    {Py_tp_new, NULL},
     {0, 0},
 };
 
@@ -656,7 +657,6 @@ _curses_panel_exec(PyObject *mod)
     if (state->PyCursesPanel_Type == NULL) {
         return -1;
     }
-    ((PyTypeObject *)state->PyCursesPanel_Type)->tp_new = NULL;
 
     if (PyModule_AddType(mod, state->PyCursesPanel_Type) < 0) {
         return -1;

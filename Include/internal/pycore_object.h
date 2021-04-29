@@ -178,6 +178,8 @@ extern int _Py_CheckSlotResult(
 // See also the Py_TPFLAGS_READY flag.
 #define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
+extern int _PyType_Ready(PyTypeObject *type, int disallow_instantiation);
+
 #ifdef __cplusplus
 }
 #endif
