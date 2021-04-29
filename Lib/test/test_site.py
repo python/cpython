@@ -36,6 +36,7 @@ if sys.flags.no_site:
 import site
 
 
+HAS_USER_SITE = (site.USER_SITE is not None)
 OLD_SYS_PATH = None
 
 
@@ -161,11 +162,18 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertRegex(err_out.getvalue(), 'Traceback')
         self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
 
+    def test_addpackage_empty_lines(self):
+        # Issue 33689
+        pth_dir, pth_fn = self.make_pth("\n\n  \n\n")
+        known_paths = site.addpackage(pth_dir, pth_fn, set())
+        self.assertEqual(known_paths, set())
+
     def test_addpackage_import_bad_pth_file(self):
         # Issue 5258
         pth_dir, pth_fn = self.make_pth("abc\x00def\n")
         with captured_stderr() as err_out:
             self.assertFalse(site.addpackage(pth_dir, pth_fn, set()))
+        self.maxDiff = None
         self.assertEqual(err_out.getvalue(), "")
         for path in sys.path:
             if isinstance(path, str):
@@ -189,6 +197,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def test__getuserbase(self):
         self.assertEqual(site._getuserbase(), sysconfig._getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_get_path(self):
         if sys.platform == 'darwin' and sys._framework:
             scheme = 'osx_framework_user'
@@ -238,6 +247,7 @@ class HelperFunctionsTests(unittest.TestCase):
         self.assertEqual(rc, 1,
                         "User base not set by PYTHONUSERBASE")
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getuserbase(self):
         site.USER_BASE = None
         user_base = site.getuserbase()
@@ -255,6 +265,7 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertTrue(site.getuserbase().startswith('xoxo'),
                             site.getuserbase())
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_getusersitepackages(self):
         site.USER_SITE = None
         site.USER_BASE = None
@@ -289,6 +300,7 @@ class HelperFunctionsTests(unittest.TestCase):
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
             self.assertEqual(dirs[1], wanted)
 
+    @unittest.skipUnless(HAS_USER_SITE, 'need user site')
     def test_no_home_directory(self):
         # bpo-10496: getuserbase() and getusersitepackages() must not fail if
         # the current user has no home directory (if expanduser() returns the
@@ -397,55 +409,6 @@ class ImportSideEffectTests(unittest.TestCase):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
 
-    def test_abs_paths(self):
-        # Make sure all imported modules have their __file__ and __cached__
-        # attributes as absolute paths.  Arranging to put the Lib directory on
-        # PYTHONPATH would cause the os module to have a relative path for
-        # __file__ if abs_paths() does not get run.  sys and builtins (the
-        # only other modules imported before site.py runs) do not have
-        # __file__ or __cached__ because they are built-in.
-        try:
-            parent = os.path.relpath(os.path.dirname(os.__file__))
-            cwd = os.getcwd()
-        except ValueError:
-            # Failure to get relpath probably means we need to chdir
-            # to the same drive.
-            cwd, parent = os.path.split(os.path.dirname(os.__file__))
-        with change_cwd(cwd):
-            env = os.environ.copy()
-            env['PYTHONPATH'] = parent
-            code = ('import os, sys',
-                # use ASCII to avoid locale issues with non-ASCII directories
-                'os_file = os.__file__.encode("ascii", "backslashreplace")',
-                r'sys.stdout.buffer.write(os_file + b"\n")',
-                'os_cached = os.__cached__.encode("ascii", "backslashreplace")',
-                r'sys.stdout.buffer.write(os_cached + b"\n")')
-            command = '\n'.join(code)
-            # First, prove that with -S (no 'import site'), the paths are
-            # relative.
-            proc = subprocess.Popen([sys.executable, '-S', '-c', command],
-                                    env=env,
-                                    stdout=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-
-            self.assertEqual(proc.returncode, 0)
-            os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertFalse(os.path.isabs(os__file__))
-            self.assertFalse(os.path.isabs(os__cached__))
-            # Now, with 'import site', it works.
-            proc = subprocess.Popen([sys.executable, '-c', command],
-                                    env=env,
-                                    stdout=subprocess.PIPE)
-            stdout, stderr = proc.communicate()
-            self.assertEqual(proc.returncode, 0)
-            os__file__, os__cached__ = stdout.splitlines()[:2]
-            self.assertTrue(os.path.isabs(os__file__),
-                            "expected absolute path, got {}"
-                            .format(os__file__.decode('ascii')))
-            self.assertTrue(os.path.isabs(os__cached__),
-                            "expected absolute path, got {}"
-                            .format(os__cached__.decode('ascii')))
-
     def test_abs_paths_cached_None(self):
         """Test for __cached__ is None.
 
@@ -510,8 +473,6 @@ class ImportSideEffectTests(unittest.TestCase):
 
     @test.support.requires_resource('network')
     @test.support.system_must_validate_cert
-    @unittest.skipUnless(sys.version_info[3] == 'final',
-                         'only for released versions')
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
     def test_license_exists_at_url(self):
@@ -519,6 +480,8 @@ class ImportSideEffectTests(unittest.TestCase):
         # string displayed by license in the absence of a LICENSE file.
         url = license._Printer__data.split()[1]
         req = urllib.request.Request(url, method='HEAD')
+        # Reset global urllib.request._opener
+        self.addCleanup(urllib.request.urlcleanup)
         try:
             with socket_helper.transient_internet(url):
                 with urllib.request.urlopen(req) as data:
@@ -594,7 +557,6 @@ class StartupImportTests(unittest.TestCase):
         r = subprocess.Popen([sys.executable, '-I', '-c',
             'import site, sys; site.enablerlcompleter(); sys.exit(hasattr(sys, "__interactivehook__"))']).wait()
         self.assertTrue(r, "'__interactivehook__' not added by enablerlcompleter()")
-
 
 @unittest.skipUnless(sys.platform == 'win32', "only supported on Windows")
 class _pthFileTests(unittest.TestCase):

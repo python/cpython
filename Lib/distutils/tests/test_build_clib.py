@@ -2,6 +2,7 @@
 import unittest
 import os
 import sys
+import sysconfig
 
 from test.support import run_unittest, missing_compiler_executable
 
@@ -12,6 +13,15 @@ from distutils.tests import support
 class BuildCLibTestCase(support.TempdirManager,
                         support.LoggingSilencer,
                         unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self._backup_CONFIG_VARS = dict(sysconfig._CONFIG_VARS)
+
+    def tearDown(self):
+        super().tearDown()
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(self._backup_CONFIG_VARS)
 
     def test_check_library_dist(self):
         pkg_dir, dist = self.create_dist()

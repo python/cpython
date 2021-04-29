@@ -3160,6 +3160,112 @@ static PyMethodDef memory_methods[] = {
     {NULL,          NULL}
 };
 
+/**************************************************************************/
+/*                          Memoryview Iterator                           */
+/**************************************************************************/
+
+static PyTypeObject PyMemoryIter_Type;
+
+typedef struct {
+    PyObject_HEAD
+    Py_ssize_t it_index;
+    PyMemoryViewObject *it_seq; // Set to NULL when iterator is exhausted
+    Py_ssize_t it_length;
+    const char *it_fmt;
+} memoryiterobject;
+
+static void
+memoryiter_dealloc(memoryiterobject *it)
+{
+    _PyObject_GC_UNTRACK(it);
+    Py_XDECREF(it->it_seq);
+    PyObject_GC_Del(it);
+}
+
+static int
+memoryiter_traverse(memoryiterobject *it, visitproc visit, void *arg)
+{
+    Py_VISIT(it->it_seq);
+    return 0;
+}
+
+static PyObject *
+memoryiter_next(memoryiterobject *it)
+{
+    PyMemoryViewObject *seq;
+    seq = it->it_seq;
+    if (seq == NULL) {
+        return NULL;
+    }
+
+    if (it->it_index < it->it_length) {
+        CHECK_RELEASED(seq);
+        Py_buffer *view = &(seq->view);
+        char *ptr = (char *)seq->view.buf;
+
+        ptr += view->strides[0] * it->it_index++;
+        ptr = ADJUST_PTR(ptr, view->suboffsets, 0);
+        if (ptr == NULL) {
+            return NULL;
+        }
+        return unpack_single(ptr, it->it_fmt);
+    }
+
+    it->it_seq = NULL;
+    Py_DECREF(seq);
+    return NULL;
+}
+
+static PyObject *
+memory_iter(PyObject *seq)
+{
+    if (!PyMemoryView_Check(seq)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
+    int ndims = obj->view.ndim;
+    if (ndims == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid indexing of 0-dim memory");
+        return NULL;
+    }
+    if (ndims != 1) {
+        PyErr_SetString(PyExc_NotImplementedError,
+            "multi-dimensional sub-views are not implemented");
+        return NULL;
+    }
+
+    const char *fmt = adjust_fmt(&obj->view);
+    if (fmt == NULL) {
+        return NULL;
+    }
+
+    memoryiterobject *it;
+    it = PyObject_GC_New(memoryiterobject, &PyMemoryIter_Type);
+    if (it == NULL) {
+        return NULL;
+    }
+    it->it_fmt = fmt;
+    it->it_length = memory_length(obj);
+    it->it_index = 0;
+    Py_INCREF(seq);
+    it->it_seq = obj;
+    _PyObject_GC_TRACK(it);
+    return (PyObject *)it;
+}
+
+static PyTypeObject PyMemoryIter_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "memory_iterator",
+    .tp_basicsize = sizeof(memoryiterobject),
+    // methods
+    .tp_dealloc = (destructor)memoryiter_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)memoryiter_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)memoryiter_next,
+};
 
 PyTypeObject PyMemoryView_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -3187,7 +3293,7 @@ PyTypeObject PyMemoryView_Type = {
     (inquiry)memory_clear,                    /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
-    0,                                        /* tp_iter */
+    memory_iter,                              /* tp_iter */
     0,                                        /* tp_iternext */
     memory_methods,                           /* tp_methods */
     0,                                        /* tp_members */

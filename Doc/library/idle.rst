@@ -250,7 +250,7 @@ View Last Restart
   Scroll the shell window to the last Shell restart.
 
 Restart Shell
-  Restart the shell to clean the environment.
+  Restart the shell to clean the environment and reset display and exception handling.
 
 Previous History
   Cycle through earlier commands in history which match the current entry.
@@ -491,7 +491,7 @@ in the settings dialog.  (To prevent auto popups, set the delay to a
 large number of milliseconds, such as 100000000.) For imported module
 names or class or function attributes, type '.'.
 For filenames in the root directory, type :data:`os.sep` or
-data:`os.altsep` immediately after an opening quote.  (On Windows,
+:data:`os.altsep` immediately after an opening quote.  (On Windows,
 one can specify a drive first.)  Move into subdirectories by typing a
 directory name and a separator.
 
@@ -527,30 +527,33 @@ by typing '_' after '.', either before or after the box is opened.
 Calltips
 ^^^^^^^^
 
-A calltip is shown when one types :kbd:`(` after the name of an *accessible*
-function.  A name expression may include dots and subscripts.  A calltip
-remains until it is clicked, the cursor is moved out of the argument area,
-or :kbd:`)` is typed.  When the cursor is in the argument part of a definition,
-the menu or shortcut display a calltip.
+A calltip is shown automatically when one types :kbd:`(` after the name
+of an *accessible* function.  A function name expression may include
+dots and subscripts.  A calltip remains until it is clicked, the cursor
+is moved out of the argument area, or :kbd:`)` is typed.  Whenever the
+cursor is in the argument part of a definition, select Edit and "Show
+Call Tip" on the menu or enter its shortcut to display a calltip.
 
-A calltip consists of the function signature and the first line of the
-docstring.  For builtins without an accessible signature, the calltip
-consists of all lines up the fifth line or the first blank line.  These
-details may change.
+The calltip consists of the function's signature and docstring up to
+the latter's first blank line or the fifth non-blank line.  (Some builtin
+functions lack an accessible signature.)  A '/' or '*' in the signature
+indicates that the preceding or following arguments are passed by
+position or name (keyword) only.  Details are subject to change.
 
-The set of *accessible* functions depends on what modules have been imported
-into the user process, including those imported by Idle itself,
-and what definitions have been run, all since the last restart.
+In Shell, the accessible functions depends on what modules have been
+imported into the user process, including those imported by Idle itself,
+and which definitions have been run, all since the last restart.
 
 For example, restart the Shell and enter ``itertools.count(``.  A calltip
-appears because Idle imports itertools into the user process for its own use.
-(This could change.)  Enter ``turtle.write(`` and nothing appears.  Idle does
-not import turtle.  The menu or shortcut do nothing either.  Enter
-``import turtle`` and then ``turtle.write(`` will work.
+appears because Idle imports itertools into the user process for its own
+use.  (This could change.)  Enter ``turtle.write(`` and nothing appears.
+Idle does not itself import turtle.  The menu entry and shortcut also do
+nothing.  Enter ``import turtle``.  Thereafter, ``turtle.write(``
+will display a calltip.
 
-In an editor, import statements have no effect until one runs the file.  One
-might want to run a file after writing the import statements at the top,
-or immediately run an existing file before editing.
+In an editor, import statements have no effect until one runs the file.
+One might want to run a file after writing import statements, after
+adding function definitions, or after opening an existing file.
 
 .. _code-context:
 
@@ -667,8 +670,16 @@ IDLE uses a socket to communicate between the IDLE GUI process and the user
 code execution process.  A connection must be established whenever the Shell
 starts or restarts.  (The latter is indicated by a divider line that says
 'RESTART'). If the user process fails to connect to the GUI process, it
-displays a ``Tk`` error box with a 'cannot connect' message that directs the
-user here.  It then exits.
+usually displays a ``Tk`` error box with a 'cannot connect' message
+that directs the user here.  It then exits.
+
+One specific connection failure on Unix systems results from
+misconfigured masquerading rules somewhere in a system's network setup.
+When IDLE is started from a terminal, one will see a message starting
+with ``** Invalid host:``.
+The valid value is ``127.0.0.1 (idlelib.rpc.LOCALHOST)``.
+One can diagnose with ``tcpconnect -irv 127.0.0.1 6543`` in one
+terminal window and ``tcplisten <same args>`` in another.
 
 A common cause of failure is a user-written file with the same name as a
 standard library module, such as *random.py* and *tkinter.py*. When such a
@@ -706,6 +717,13 @@ If IDLE quits with no message, and it was not started from a console, try
 starting it from a console or terminal (``python -m idlelib``) and see if
 this results in an error message.
 
+On Unix-based systems with tcl/tk older than ``8.6.11`` (see
+``About IDLE``) certain characters of certain fonts can cause
+a tk failure with a message to the terminal.  This can happen either
+if one starts IDLE to edit a file with such a character or later
+when entering such a character.  If one cannot upgrade tcl/tk,
+then re-configure IDLE to use a font that works better.
+
 Running user code
 ^^^^^^^^^^^^^^^^^
 
@@ -714,7 +732,7 @@ intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, ``sys.modules`` starts with more entries,
-and ``threading.activeCount()`` returns 2 instead of 1.
+and ``threading.active_count()`` returns 2 instead of 1.
 
 By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution
@@ -723,28 +741,38 @@ with objects that get input from and send output to the Shell window.
 The original values stored in ``sys.__stdin__``, ``sys.__stdout__``, and
 ``sys.__stderr__`` are not touched, but may be ``None``.
 
-When Shell has the focus, it controls the keyboard and screen.  This is
-normally transparent, but functions that directly access the keyboard
-and screen will not work.  These include system-specific functions that
-determine whether a key has been pressed and if so, which.
+Sending print output from one process to a text widget in another is
+slower than printing to a system terminal in the same process.
+This has the most effect when printing multiple arguments, as the string
+for each argument, each separator, the newline are sent separately.
+For development, this is usually not a problem, but if one wants to
+print faster in IDLE, format and join together everything one wants
+displayed together and then print a single string.  Both format strings
+and :meth:`str.join` can help combine fields and lines.
 
 IDLE's standard stream replacements are not inherited by subprocesses
-created in the execution process, whether directly by user code or by modules
-such as multiprocessing.  If such subprocess use ``input`` from sys.stdin
-or ``print`` or ``write`` to sys.stdout or sys.stderr,
+created in the execution process, whether directly by user code or by
+modules such as multiprocessing.  If such subprocess use ``input`` from
+sys.stdin or ``print`` or ``write`` to sys.stdout or sys.stderr,
 IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
-
-The IDLE code running in the execution process adds frames to the call stack
-that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
-``sys.setrecursionlimit`` to reduce the effect of the additional stack frames.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen
 will not work correctly.
 
-When user code raises SystemExit either directly or by calling sys.exit, IDLE
-returns to a Shell prompt instead of exiting.
+When Shell has the focus, it controls the keyboard and screen.  This is
+normally transparent, but functions that directly access the keyboard
+and screen will not work.  These include system-specific functions that
+determine whether a key has been pressed and if so, which.
+
+The IDLE code running in the execution process adds frames to the call stack
+that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
+``sys.setrecursionlimit`` to reduce the effect of the additional stack
+frames.
+
+When user code raises SystemExit either directly or by calling sys.exit,
+IDLE returns to a Shell prompt instead of exiting.
 
 User output in Shell
 ^^^^^^^^^^^^^^^^^^^^

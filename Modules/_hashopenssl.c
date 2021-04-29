@@ -11,12 +11,18 @@
  *
  */
 
+/* Don't warn about deprecated functions, */
+#ifndef OPENSSL_API_COMPAT
+  // 0x10101000L == 1.1.1, 30000 == 3.0.0
+  #define OPENSSL_API_COMPAT 0x10101000L
+#endif
+#define OPENSSL_NO_DEPRECATED 1
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #include "hashlib.h"
 #include "pystrhex.h"
-
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
@@ -24,7 +30,7 @@
 #include <openssl/crypto.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
-#include "openssl/err.h"
+#include <openssl/err.h>
 
 #include <openssl/crypto.h>       // FIPS_mode()
 
@@ -32,51 +38,12 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
-/* OpenSSL < 1.1.0 */
-#define EVP_MD_CTX_new EVP_MD_CTX_create
-#define EVP_MD_CTX_free EVP_MD_CTX_destroy
-
-HMAC_CTX *
-HMAC_CTX_new(void)
-{
-    HMAC_CTX *ctx = OPENSSL_malloc(sizeof(HMAC_CTX));
-    if (ctx != NULL) {
-        memset(ctx, 0, sizeof(HMAC_CTX));
-        HMAC_CTX_init(ctx);
-    }
-    return ctx;
-}
-
-void
-HMAC_CTX_free(HMAC_CTX *ctx)
-{
-    if (ctx != NULL) {
-        HMAC_CTX_cleanup(ctx);
-        OPENSSL_free(ctx);
-    }
-}
-
-const EVP_MD *
-HMAC_CTX_get_md(const HMAC_CTX *ctx)
-{
-    return ctx->md;
-}
-#endif
-
 #define MUNCH_SIZE INT_MAX
 
-#ifdef NID_sha3_224
+#define PY_OPENSSL_HAS_SCRYPT 1
 #define PY_OPENSSL_HAS_SHA3 1
-#endif
-
-#if defined(EVP_MD_FLAG_XOF) && defined(NID_shake128)
 #define PY_OPENSSL_HAS_SHAKE 1
-#endif
-
-#if defined(NID_blake2b512) && !defined(OPENSSL_NO_BLAKE2)
 #define PY_OPENSSL_HAS_BLAKE2 1
-#endif
 
 static PyModuleDef _hashlibmodule;
 
@@ -86,6 +53,8 @@ typedef struct {
 #ifdef PY_OPENSSL_HAS_SHAKE
     PyTypeObject *EVPXOFtype;
 #endif
+    PyObject *constructs;
+    PyObject *unsupported_digestmod_error;
 } _hashlibstate;
 
 static inline _hashlibstate*
@@ -289,7 +258,54 @@ py_digest_by_name(const char *name)
 #endif
     }
 
+    if (digest == NULL) {
+        PyErr_Format(PyExc_ValueError, "unsupported hash type %s", name);
+        return NULL;
+    }
+
     return digest;
+}
+
+/* Get digest EVP from object
+ *
+ * * string
+ * * _hashopenssl builtin function
+ *
+ * on error returns NULL with exception set.
+ */
+static const EVP_MD*
+py_digest_by_digestmod(PyObject *module, PyObject *digestmod) {
+    const EVP_MD* evp;
+    PyObject *name_obj = NULL;
+    const char *name;
+
+    if (PyUnicode_Check(digestmod)) {
+        name_obj = digestmod;
+    } else {
+        _hashlibstate *state = get_hashlib_state(module);
+        // borrowed ref
+        name_obj = PyDict_GetItem(state->constructs, digestmod);
+    }
+    if (name_obj == NULL) {
+        _hashlibstate *state = get_hashlib_state(module);
+        PyErr_Clear();
+        PyErr_Format(
+            state->unsupported_digestmod_error,
+            "Unsupported digestmod %R", digestmod);
+        return NULL;
+    }
+
+    name = PyUnicode_AsUTF8(name_obj);
+    if (name == NULL) {
+        return NULL;
+    }
+
+    evp = py_digest_by_name(name);
+    if (evp == NULL) {
+        return NULL;
+    }
+
+    return evp;
 }
 
 static EVPobject *
@@ -341,7 +357,7 @@ EVP_dealloc(EVPobject *self)
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
     EVP_MD_CTX_free(self->ctx);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -816,7 +832,7 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
 /*[clinic end generated code: output=ddd5053f92dffe90 input=c24554d0337be1b0]*/
 {
     Py_buffer view = { 0 };
-    PyObject *ret_obj;
+    PyObject *ret_obj = NULL;
     char *name;
     const EVP_MD *digest = NULL;
 
@@ -829,11 +845,15 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
     digest = py_digest_by_name(name);
+    if (digest == NULL) {
+        goto exit;
+    }
 
     ret_obj = EVPnew(module, digest,
                      (unsigned char*)view.buf, view.len,
                      usedforsecurity);
 
+exit:
     if (data_obj)
         PyBuffer_Release(&view);
     return ret_obj;
@@ -1124,7 +1144,6 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     digest = py_digest_by_name(hash_name);
     if (digest == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
         goto end;
     }
 
@@ -1194,8 +1213,7 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
     return key_obj;
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER)
-#define PY_SCRYPT 1
+#ifdef PY_OPENSSL_HAS_SCRYPT
 
 /* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
    They are optional in the Argument Clinic declaration only due to a
@@ -1318,7 +1336,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
     }
     return key_obj;
 }
-#endif
+#endif  /* PY_OPENSSL_HAS_SCRYPT */
 
 /* Fast HMAC for hmac.digest()
  */
@@ -1328,26 +1346,26 @@ _hashlib.hmac_digest as _hashlib_hmac_singleshot
 
     key: Py_buffer
     msg: Py_buffer
-    digest: str
+    digest: object
 
 Single-shot HMAC.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
-                              Py_buffer *msg, const char *digest)
-/*[clinic end generated code: output=15658ede5ab98185 input=019dffc571909a46]*/
+                              Py_buffer *msg, PyObject *digest)
+/*[clinic end generated code: output=82f19965d12706ac input=0a0790cc3db45c2e]*/
 {
     unsigned char md[EVP_MAX_MD_SIZE] = {0};
     unsigned int md_len = 0;
     unsigned char *result;
     const EVP_MD *evp;
 
-    evp = py_digest_by_name(digest);
+    evp = py_digest_by_digestmod(module, digest);
     if (evp == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
         return NULL;
     }
+
     if (key->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "key is too long.");
@@ -1385,15 +1403,15 @@ _hashlib.hmac_new
 
     key: Py_buffer
     msg as msg_obj: object(c_default="NULL") = b''
-    digestmod: str(c_default="NULL") = None
+    digestmod: object(c_default="NULL") = None
 
 Return a new hmac object.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
-                       const char *digestmod)
-/*[clinic end generated code: output=9a35673be0cbea1b input=a0878868eb190134]*/
+                       PyObject *digestmod)
+/*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
     PyTypeObject *type = get_hashlib_state(module)->HMACtype;
     const EVP_MD *digest;
@@ -1407,15 +1425,14 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
 
-    if ((digestmod == NULL) || !strlen(digestmod)) {
+    if (digestmod == NULL) {
         PyErr_SetString(
             PyExc_TypeError, "Missing required parameter 'digestmod'.");
         return NULL;
     }
 
-    digest = py_digest_by_name(digestmod);
-    if (!digest) {
-        PyErr_SetString(PyExc_ValueError, "unknown hash function");
+    digest = py_digest_by_digestmod(module, digestmod);
+    if (digest == NULL) {
         return NULL;
     }
 
@@ -1453,7 +1470,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 
 error:
     if (ctx) HMAC_CTX_free(ctx);
-    if (self) PyObject_Del(self);
+    if (self) PyObject_Free(self);
     return NULL;
 }
 
@@ -1546,7 +1563,7 @@ _hmac_dealloc(HMACobject *self)
         PyThread_free_lock(self->lock);
     }
     HMAC_CTX_free(self->ctx);
-    PyObject_Del(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
 }
 
@@ -1787,12 +1804,6 @@ hashlib_md_meth_names(PyObject *module)
     return 0;
 }
 
-/* LibreSSL doesn't support FIPS:
-   https://marc.info/?l=openbsd-misc&m=139819485423701&w=2
-
-   Ted Unangst wrote: "I figured I should mention our current libressl policy
-   wrt FIPS mode.  It's gone and it's not coming back." */
-#ifndef LIBRESSL_VERSION_NUMBER
 /*[clinic input]
 _hashlib.get_fips_mode -> int
 
@@ -1811,12 +1822,11 @@ _hashlib_get_fips_mode_impl(PyObject *module)
 /*[clinic end generated code: output=87eece1bab4d3fa9 input=2db61538c41c6fef]*/
 
 {
-    int result;
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    result = EVP_default_properties_is_fips_enabled(NULL);
+    return EVP_default_properties_is_fips_enabled(NULL);
 #else
     ERR_clear_error();
-    result = FIPS_mode();
+    int result = FIPS_mode();
     if (result == 0) {
         // "If the library was built without support of the FIPS Object Module,
         // then the function will return 0 with an error code of
@@ -1831,7 +1841,6 @@ _hashlib_get_fips_mode_impl(PyObject *module)
     return result;
 #endif
 }
-#endif  // !LIBRESSL_VERSION_NUMBER
 
 
 static int
@@ -1985,6 +1994,8 @@ hashlib_traverse(PyObject *m, visitproc visit, void *arg)
 #ifdef PY_OPENSSL_HAS_SHAKE
     Py_VISIT(state->EVPXOFtype);
 #endif
+    Py_VISIT(state->constructs);
+    Py_VISIT(state->unsupported_digestmod_error);
     return 0;
 }
 
@@ -1997,6 +2008,8 @@ hashlib_clear(PyObject *m)
 #ifdef PY_OPENSSL_HAS_SHAKE
     Py_CLEAR(state->EVPXOFtype);
 #endif
+    Py_CLEAR(state->constructs);
+    Py_CLEAR(state->unsupported_digestmod_error);
     return 0;
 }
 
@@ -2007,17 +2020,6 @@ hashlib_free(void *m)
 }
 
 /* Py_mod_exec functions */
-static int
-hashlib_openssl_legacy_init(PyObject *module)
-{
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
-    /* Load all digest algorithms and initialize cpuid */
-    OPENSSL_add_all_algorithms_noconf();
-    ERR_load_crypto_strings();
-#endif
-    return 0;
-}
-
 static int
 hashlib_init_evptype(PyObject *module)
 {
@@ -2038,21 +2040,14 @@ hashlib_init_evpxoftype(PyObject *module)
 {
 #ifdef PY_OPENSSL_HAS_SHAKE
     _hashlibstate *state = get_hashlib_state(module);
-    PyObject *bases;
 
     if (state->EVPtype == NULL) {
         return -1;
     }
 
-    bases = PyTuple_Pack(1, state->EVPtype);
-    if (bases == NULL) {
-        return -1;
-    }
-
     state->EVPXOFtype = (PyTypeObject *)PyType_FromSpecWithBases(
-        &EVPXOFtype_spec, bases
+        &EVPXOFtype_spec, (PyObject *)state->EVPtype
     );
-    Py_DECREF(bases);
     if (state->EVPXOFtype == NULL) {
         return -1;
     }
@@ -2078,17 +2073,83 @@ hashlib_init_hmactype(PyObject *module)
     return 0;
 }
 
-#if 0
+static int
+hashlib_init_constructors(PyObject *module)
+{
+    /* Create dict from builtin openssl_hash functions to name
+     * {_hashlib.openssl_sha256: "sha256", ...}
+     */
+    PyModuleDef *mdef;
+    PyMethodDef *fdef;
+    PyObject *proxy;
+    PyObject *func, *name_obj;
+    _hashlibstate *state = get_hashlib_state(module);
+
+    mdef = PyModule_GetDef(module);
+    if (mdef == NULL) {
+        return -1;
+    }
+
+    state->constructs = PyDict_New();
+    if (state->constructs == NULL) {
+        return -1;
+    }
+
+    for (fdef = mdef->m_methods; fdef->ml_name != NULL; fdef++) {
+        if (strncmp(fdef->ml_name, "openssl_", 8)) {
+            continue;
+        }
+        name_obj = PyUnicode_FromString(fdef->ml_name + 8);
+        if (name_obj == NULL) {
+            return -1;
+        }
+        func  = PyObject_GetAttrString(module, fdef->ml_name);
+        if (func == NULL) {
+            return -1;
+        }
+        if (PyDict_SetItem(state->constructs, func, name_obj) < 0) {
+            return -1;
+        }
+        Py_DECREF(func);
+        Py_DECREF(name_obj);
+    }
+
+    proxy = PyDictProxy_New(state->constructs);
+    if (proxy == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_constructors", proxy) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+hashlib_exception(PyObject *module)
+{
+    _hashlibstate *state = get_hashlib_state(module);
+    state->unsupported_digestmod_error = PyErr_NewException(
+        "_hashlib.UnsupportedDigestmodError", PyExc_ValueError, NULL);
+    if (state->unsupported_digestmod_error == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "UnsupportedDigestmodError",
+                              state->unsupported_digestmod_error) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
 static PyModuleDef_Slot hashlib_slots[] = {
-    /* OpenSSL 1.0.2 and LibreSSL */
-    {Py_mod_exec, hashlib_openssl_legacy_init},
     {Py_mod_exec, hashlib_init_evptype},
     {Py_mod_exec, hashlib_init_evpxoftype},
     {Py_mod_exec, hashlib_init_hmactype},
     {Py_mod_exec, hashlib_md_meth_names},
+    {Py_mod_exec, hashlib_init_constructors},
+    {Py_mod_exec, hashlib_exception},
     {0, NULL}
 };
-#endif
 
 static struct PyModuleDef _hashlibmodule = {
     PyModuleDef_HEAD_INIT,
@@ -2096,7 +2157,7 @@ static struct PyModuleDef _hashlibmodule = {
     .m_doc = "OpenSSL interface for hashlib module",
     .m_size = sizeof(_hashlibstate),
     .m_methods = EVP_functions,
-    .m_slots = NULL,
+    .m_slots = hashlib_slots,
     .m_traverse = hashlib_traverse,
     .m_clear = hashlib_clear,
     .m_free = hashlib_free
@@ -2105,37 +2166,5 @@ static struct PyModuleDef _hashlibmodule = {
 PyMODINIT_FUNC
 PyInit__hashlib(void)
 {
-    PyObject *m = PyState_FindModule(&_hashlibmodule);
-    if (m != NULL) {
-        Py_INCREF(m);
-        return m;
-    }
-
-    m = PyModule_Create(&_hashlibmodule);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    if (hashlib_openssl_legacy_init(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    if (hashlib_init_evptype(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    if (hashlib_init_evpxoftype(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    if (hashlib_init_hmactype(m) < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-    if (hashlib_md_meth_names(m) == -1) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    return m;
+    return PyModuleDef_Init(&_hashlibmodule);
 }

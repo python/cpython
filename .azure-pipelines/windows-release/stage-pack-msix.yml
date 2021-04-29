@@ -120,10 +120,11 @@ jobs:
       artifactName: unsigned_msix
       downloadPath: $(Build.BinariesDirectory)
 
+  # MSIX must be signed and timestamped simultaneously
   - powershell: |
       $failed = $true
       foreach ($retry in 1..3) {
-          signtool sign /a /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "$(SigningDescription)" (gi *.msix)
+          signtool sign /a /n "$(SigningCertificate)" /fd sha256 /tr http://timestamp.digicert.com/ /td sha256 /d "$(SigningDescription)" (gi *.msix)
           if ($?) {
               $failed = $false
               break

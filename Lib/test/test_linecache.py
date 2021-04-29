@@ -116,7 +116,7 @@ class LineCacheTests(unittest.TestCase):
         # Check module loading
         for entry in MODULES:
             filename = os.path.join(MODULE_PATH, entry) + '.py'
-            with open(filename) as file:
+            with open(filename, encoding='utf-8') as file:
                 for index, line in enumerate(file):
                     self.assertEqual(line, getline(filename, index + 1))
 
@@ -126,7 +126,7 @@ class LineCacheTests(unittest.TestCase):
 
     def test_no_ending_newline(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
+        with open(os_helper.TESTFN, "w", encoding='utf-8') as fp:
             fp.write(SOURCE_3)
         lines = linecache.getlines(os_helper.TESTFN)
         self.assertEqual(lines, ["\n", "def f():\n", "    return 3\n"])
@@ -153,18 +153,18 @@ class LineCacheTests(unittest.TestCase):
         # Create a source file and cache its contents
         source_name = os_helper.TESTFN + '.py'
         self.addCleanup(os_helper.unlink, source_name)
-        with open(source_name, 'w') as source:
+        with open(source_name, 'w', encoding='utf-8') as source:
             source.write(SOURCE_1)
         getline(source_name, 1)
 
         # Keep a copy of the old contents
         source_list = []
-        with open(source_name) as source:
+        with open(source_name, encoding='utf-8') as source:
             for index, line in enumerate(source):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)
 
-        with open(source_name, 'w') as source:
+        with open(source_name, 'w', encoding='utf-8') as source:
             source.write(SOURCE_2)
 
         # Try to update a bogus cache entry
@@ -176,7 +176,7 @@ class LineCacheTests(unittest.TestCase):
 
         # Update the cache and check whether it matches the new source file
         linecache.checkcache(source_name)
-        with open(source_name) as source:
+        with open(source_name, encoding='utf-8') as source:
             for index, line in enumerate(source):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)

@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_unionobject.h"   // _Py_union_as_number
 #include "structmember.h"         // PyMemberDef
 
 typedef struct {
@@ -9,6 +10,7 @@ typedef struct {
     PyObject *origin;
     PyObject *args;
     PyObject *parameters;
+    PyObject* weakreflist;
 } gaobject;
 
 static void
@@ -17,6 +19,9 @@ ga_dealloc(PyObject *self)
     gaobject *alias = (gaobject *)self;
 
     _PyObject_GC_UNTRACK(self);
+    if (alias->weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)alias);
+    }
     Py_XDECREF(alias->origin);
     Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
@@ -424,8 +429,8 @@ ga_getattro(PyObject *self, PyObject *name)
 static PyObject *
 ga_richcompare(PyObject *a, PyObject *b, int op)
 {
-    if (!Py_IS_TYPE(a, &Py_GenericAliasType) ||
-        !Py_IS_TYPE(b, &Py_GenericAliasType) ||
+    if (!PyObject_TypeCheck(a, &Py_GenericAliasType) ||
+        !PyObject_TypeCheck(b, &Py_GenericAliasType) ||
         (op != Py_EQ && op != Py_NE))
     {
         Py_RETURN_NOTIMPLEMENTED;
@@ -487,11 +492,50 @@ ga_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
                          alias->origin, alias->args);
 }
 
+static PyObject *
+ga_dir(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    gaobject *alias = (gaobject *)self;
+    PyObject *dir = PyObject_Dir(alias->origin);
+    if (dir == NULL) {
+        return NULL;
+    }
+
+    PyObject *dir_entry = NULL;
+    for (const char * const *p = attr_exceptions; ; p++) {
+        if (*p == NULL) {
+            break;
+        }
+        else {
+            dir_entry = PyUnicode_FromString(*p);
+            if (dir_entry == NULL) {
+                goto error;
+            }
+            int contains = PySequence_Contains(dir, dir_entry);
+            if (contains < 0) {
+                goto error;
+            }
+            if (contains == 0 && PyList_Append(dir, dir_entry) < 0) {
+                goto error;
+            }
+
+            Py_CLEAR(dir_entry);
+        }
+    }
+    return dir;
+
+error:
+    Py_DECREF(dir);
+    Py_XDECREF(dir_entry);
+    return NULL;
+}
+
 static PyMethodDef ga_methods[] = {
     {"__mro_entries__", ga_mro_entries, METH_O},
     {"__instancecheck__", ga_instancecheck, METH_O},
     {"__subclasscheck__", ga_subclasscheck, METH_O},
     {"__reduce__", ga_reduce, METH_NOARGS},
+    {"__dir__", ga_dir, METH_NOARGS},
     {0}
 };
 
@@ -520,10 +564,33 @@ static PyGetSetDef ga_properties[] = {
     {0}
 };
 
+/* A helper function to create GenericAlias' args tuple and set its attributes.
+ * Returns 1 on success, 0 on failure. 
+ */
+static inline int
+setup_ga(gaobject *alias, PyObject *origin, PyObject *args) {
+    if (!PyTuple_Check(args)) {
+        args = PyTuple_Pack(1, args);
+        if (args == NULL) {
+            return 0;
+        }
+    }
+    else {
+        Py_INCREF(args);
+    }
+
+    Py_INCREF(origin);
+    alias->origin = origin;
+    alias->args = args;
+    alias->parameters = NULL;
+    alias->weakreflist = NULL;
+    return 1;
+}
+
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (!_PyArg_NoKwnames("GenericAlias", kwds)) {
+    if (!_PyArg_NoKeywords("GenericAlias", kwds)) {
         return NULL;
     }
     if (!_PyArg_CheckPositional("GenericAlias", PyTuple_GET_SIZE(args), 2, 2)) {
@@ -531,8 +598,20 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *arguments = PyTuple_GET_ITEM(args, 1);
-    return Py_GenericAlias(origin, arguments);
+    gaobject *self = (gaobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (!setup_ga(self, origin, arguments)) {
+        type->tp_free((PyObject *)self);
+        return NULL;
+    }
+    return (PyObject *)self;
 }
+
+static PyNumberMethods ga_as_number = {
+        .nb_or = (binaryfunc)_Py_union_type_or, // Add __or__ function
+};
 
 // TODO:
 // - argument clinic?
@@ -543,17 +622,19 @@ PyTypeObject Py_GenericAliasType = {
     .tp_name = "types.GenericAlias",
     .tp_doc = "Represent a PEP 585 generic type\n"
               "\n"
-              "E.g. for t = list[int], t.origin is list and t.args is (int,).",
+              "E.g. for t = list[int], t.__origin__ is list and t.__args__ is (int,).",
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
+    .tp_as_number = &ga_as_number,  // allow X | Y of GenericAlias objs
     .tp_as_mapping = &ga_as_mapping,
     .tp_hash = ga_hash,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .tp_traverse = ga_traverse,
     .tp_richcompare = ga_richcompare,
+    .tp_weaklistoffset = offsetof(gaobject, weakreflist),
     .tp_methods = ga_methods,
     .tp_members = ga_members,
     .tp_alloc = PyType_GenericAlloc,
@@ -565,26 +646,14 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    if (!PyTuple_Check(args)) {
-        args = PyTuple_Pack(1, args);
-        if (args == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        Py_INCREF(args);
-    }
-
     gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
     if (alias == NULL) {
-        Py_DECREF(args);
         return NULL;
     }
-
-    Py_INCREF(origin);
-    alias->origin = origin;
-    alias->args = args;
-    alias->parameters = NULL;
+    if (!setup_ga(alias, origin, args)) {
+        PyObject_GC_Del((PyObject *)alias);
+        return NULL;
+    }
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }

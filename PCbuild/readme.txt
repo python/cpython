@@ -125,6 +125,9 @@ python3dll
 xxlimited
     builds an example module that makes use of the PEP 384 Stable ABI,
     see Modules\xxlimited.c
+xxlimited_35
+    ditto for testing the Python 3.5 stable ABI, see
+    Modules\xxlimited_35.c
 
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
@@ -166,7 +169,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.1.1c of the OpenSSL secure sockets
+    Python wrapper for version 1.1.1k of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
 
@@ -185,7 +188,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.32.3.0, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.35.5, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter

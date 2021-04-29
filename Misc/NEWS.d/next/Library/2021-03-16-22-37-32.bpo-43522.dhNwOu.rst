@@ -1,0 +1,1 @@
+Fix problem with :attr:`~ssl.SSLContext.hostname_checks_common_name`. OpenSSL does not copy hostflags from *struct SSL_CTX* to *struct SSL*.

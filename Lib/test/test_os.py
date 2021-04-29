@@ -15,10 +15,12 @@ import locale
 import mmap
 import os
 import pickle
+import select
 import shutil
 import signal
 import socket
 import stat
+import struct
 import subprocess
 import sys
 import sysconfig
@@ -59,6 +61,7 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
+
 from test.support.script_helper import assert_python_ok
 from test.support import unix_shell
 from test.support.os_helper import FakePath
@@ -90,6 +93,11 @@ def create_file(filename, content=b'content'):
         fp.write(content)
 
 
+# bpo-41625: On AIX, splice() only works with a socket, not with a pipe.
+requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
+                                       'on AIX, splice() only accepts sockets')
+
+
 class MiscTests(unittest.TestCase):
     def test_getcwd(self):
         cwd = os.getcwd()
@@ -108,6 +116,10 @@ class MiscTests(unittest.TestCase):
         # than MAX_PATH if long paths support is disabled:
         # see RtlAreLongPathsEnabled().
         min_len = 2000   # characters
+        # On VxWorks, PATH_MAX is defined as 1024 bytes. Creating a path
+        # longer than PATH_MAX will fail.
+        if sys.platform == 'vxworks':
+            min_len = 1000
         dirlen = 200     # characters
         dirname = 'python_test_dir_'
         dirname = dirname + ('a' * (dirlen - len(dirname)))
@@ -257,7 +269,7 @@ class FileTests(unittest.TestCase):
 
     def fdopen_helper(self, *args):
         fd = os.open(os_helper.TESTFN, os.O_RDONLY)
-        f = os.fdopen(fd, *args)
+        f = os.fdopen(fd, *args, encoding="utf-8")
         f.close()
 
     def test_fdopen(self):
@@ -278,7 +290,7 @@ class FileTests(unittest.TestCase):
 
         os.replace(os_helper.TESTFN, TESTFN2)
         self.assertRaises(FileNotFoundError, os.stat, os_helper.TESTFN)
-        with open(TESTFN2, 'r') as f:
+        with open(TESTFN2, 'r', encoding='utf-8') as f:
             self.assertEqual(f.read(), "1")
 
     def test_open_keywords(self):
@@ -377,6 +389,126 @@ class FileTests(unittest.TestCase):
             # 345678 are copied in the file (in_skip + bytes_to_copy)
             self.assertEqual(read[out_seek:],
                              data[in_skip:in_skip+i])
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    def test_splice_invalid_values(self):
+        with self.assertRaises(ValueError):
+            os.splice(0, 1, -10)
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    @requires_splice_pipe
+    def test_splice(self):
+        TESTFN2 = os_helper.TESTFN + ".3"
+        data = b'0123456789'
+
+        create_file(os_helper.TESTFN, data)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        in_file = open(os_helper.TESTFN, 'rb')
+        self.addCleanup(in_file.close)
+        in_fd = in_file.fileno()
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+
+        try:
+            i = os.splice(in_fd, write_fd, 5)
+        except OSError as e:
+            # Handle the case in which Python was compiled
+            # in a system with the syscall but without support
+            # in the kernel.
+            if e.errno != errno.ENOSYS:
+                raise
+            self.skipTest(e)
+        else:
+            # The number of copied bytes can be less than
+            # the number of bytes originally requested.
+            self.assertIn(i, range(0, 6));
+
+            self.assertEqual(os.read(read_fd, 100), data[:i])
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    @requires_splice_pipe
+    def test_splice_offset_in(self):
+        TESTFN4 = os_helper.TESTFN + ".4"
+        data = b'0123456789'
+        bytes_to_copy = 6
+        in_skip = 3
+
+        create_file(os_helper.TESTFN, data)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        in_file = open(os_helper.TESTFN, 'rb')
+        self.addCleanup(in_file.close)
+        in_fd = in_file.fileno()
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+
+        try:
+            i = os.splice(in_fd, write_fd, bytes_to_copy, offset_src=in_skip)
+        except OSError as e:
+            # Handle the case in which Python was compiled
+            # in a system with the syscall but without support
+            # in the kernel.
+            if e.errno != errno.ENOSYS:
+                raise
+            self.skipTest(e)
+        else:
+            # The number of copied bytes can be less than
+            # the number of bytes originally requested.
+            self.assertIn(i, range(0, bytes_to_copy+1));
+
+            read = os.read(read_fd, 100)
+            # 012 are skipped (in_skip)
+            # 345678 are copied in the file (in_skip + bytes_to_copy)
+            self.assertEqual(read, data[in_skip:in_skip+i])
+
+    @unittest.skipUnless(hasattr(os, 'splice'), 'test needs os.splice()')
+    @requires_splice_pipe
+    def test_splice_offset_out(self):
+        TESTFN4 = os_helper.TESTFN + ".4"
+        data = b'0123456789'
+        bytes_to_copy = 6
+        out_seek = 3
+
+        create_file(os_helper.TESTFN, data)
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+        os.write(write_fd, data)
+
+        out_file = open(TESTFN4, 'w+b')
+        self.addCleanup(os_helper.unlink, TESTFN4)
+        self.addCleanup(out_file.close)
+        out_fd = out_file.fileno()
+
+        try:
+            i = os.splice(read_fd, out_fd, bytes_to_copy, offset_dst=out_seek)
+        except OSError as e:
+            # Handle the case in which Python was compiled
+            # in a system with the syscall but without support
+            # in the kernel.
+            if e.errno != errno.ENOSYS:
+                raise
+            self.skipTest(e)
+        else:
+            # The number of copied bytes can be less than
+            # the number of bytes originally requested.
+            self.assertIn(i, range(0, bytes_to_copy+1));
+
+            with open(TESTFN4, 'rb') as in_file:
+                read = in_file.read()
+            # seeked bytes (5) are zero'ed
+            self.assertEqual(read[:out_seek], b'\x00'*out_seek)
+            # 012 are skipped (in_skip)
+            # 345678 are copied in the file (in_skip + bytes_to_copy)
+            self.assertEqual(read[out_seek:], data[:i])
+
 
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
@@ -859,6 +991,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     # Bug 1110478
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
     def test_update2(self):
         os.environ.clear()
         os.environ.update(HELLO="World")
@@ -868,6 +1001,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     @unittest.skipUnless(unix_shell and os.path.exists(unix_shell),
                          'requires a shell')
+    @unittest.skipUnless(hasattr(os, 'popen'), "needs os.popen()")
     def test_os_popen_iter(self):
         with os.popen("%s -c 'echo \"line1\nline2\nline3\"'"
                       % unix_shell) as popen:
@@ -1493,7 +1627,7 @@ class MakedirTests(unittest.TestCase):
     def test_exist_ok_existing_regular_file(self):
         base = os_helper.TESTFN
         path = os.path.join(os_helper.TESTFN, 'dir1')
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write('abc')
         self.assertRaises(OSError, os.makedirs, path)
         self.assertRaises(OSError, os.makedirs, path, exist_ok=False)
@@ -1960,7 +2094,7 @@ class Win32ErrorTests(unittest.TestCase):
 
 
 class TestInvalidFD(unittest.TestCase):
-    singles = ["fchdir", "dup", "fdopen", "fdatasync", "fstat",
+    singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
@@ -1972,14 +2106,17 @@ class TestInvalidFD(unittest.TestCase):
     for f in singles:
         locals()["test_"+f] = get_single(f)
 
-    def check(self, f, *args):
+    def check(self, f, *args, **kwargs):
         try:
-            f(os_helper.make_bad_fd(), *args)
+            f(os_helper.make_bad_fd(), *args, **kwargs)
         except OSError as e:
             self.assertEqual(e.errno, errno.EBADF)
         else:
             self.fail("%r didn't raise an OSError with a bad file descriptor"
                       % f)
+
+    def test_fdopen(self):
+        self.check(os.fdopen, encoding="utf-8")
 
     @unittest.skipUnless(hasattr(os, 'isatty'), 'test needs os.isatty()')
     def test_isatty(self):
@@ -2076,7 +2213,7 @@ class LinkTests(unittest.TestCase):
             os.link(file1, file2)
         except PermissionError as e:
             self.skipTest('os.link(): %s' % e)
-        with open(file1, "r") as f1, open(file2, "r") as f2:
+        with open(file1, "rb") as f1, open(file2, "rb") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
 
     def test_link(self):
@@ -2875,7 +3012,7 @@ class SpawnTests(unittest.TestCase):
             code = ('import sys, os; magic = os.environ[%r]; sys.exit(%s)'
                     % (self.key, self.exitcode))
 
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding="utf-8") as fp:
             fp.write(code)
 
         args = [sys.executable, filename]
@@ -3015,7 +3152,7 @@ class SpawnTests(unittest.TestCase):
         # equal character in the environment variable value
         filename = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, filename)
-        with open(filename, "w") as fp:
+        with open(filename, "w", encoding="utf-8") as fp:
             fp.write('import sys, os\n'
                      'if os.getenv("FRUIT") != "orange=lemon":\n'
                      '    raise AssertionError')
@@ -3528,6 +3665,89 @@ class MemfdCreateTests(unittest.TestCase):
         self.assertFalse(os.get_inheritable(fd2))
 
 
+@unittest.skipUnless(hasattr(os, 'eventfd'), 'requires os.eventfd')
+@support.requires_linux_version(2, 6, 30)
+class EventfdTests(unittest.TestCase):
+    def test_eventfd_initval(self):
+        def pack(value):
+            """Pack as native uint64_t
+            """
+            return struct.pack("@Q", value)
+        size = 8  # read/write 8 bytes
+        initval = 42
+        fd = os.eventfd(initval)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+        self.assertFalse(os.get_inheritable(fd))
+
+        # test with raw read/write
+        res = os.read(fd, size)
+        self.assertEqual(res, pack(initval))
+
+        os.write(fd, pack(23))
+        res = os.read(fd, size)
+        self.assertEqual(res, pack(23))
+
+        os.write(fd, pack(40))
+        os.write(fd, pack(2))
+        res = os.read(fd, size)
+        self.assertEqual(res, pack(42))
+
+        # test with eventfd_read/eventfd_write
+        os.eventfd_write(fd, 20)
+        os.eventfd_write(fd, 3)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 23)
+
+    def test_eventfd_semaphore(self):
+        initval = 2
+        flags = os.EFD_CLOEXEC | os.EFD_SEMAPHORE | os.EFD_NONBLOCK
+        fd = os.eventfd(initval, flags)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        # semaphore starts has initval 2, two reads return '1'
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 1)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 1)
+        # third read would block
+        with self.assertRaises(BlockingIOError):
+            os.eventfd_read(fd)
+        with self.assertRaises(BlockingIOError):
+            os.read(fd, 8)
+
+        # increase semaphore counter, read one
+        os.eventfd_write(fd, 1)
+        res = os.eventfd_read(fd)
+        self.assertEqual(res, 1)
+        # next read would block, too
+        with self.assertRaises(BlockingIOError):
+            os.eventfd_read(fd)
+
+    def test_eventfd_select(self):
+        flags = os.EFD_CLOEXEC | os.EFD_NONBLOCK
+        fd = os.eventfd(0, flags)
+        self.assertNotEqual(fd, -1)
+        self.addCleanup(os.close, fd)
+
+        # counter is zero, only writeable
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([], [fd], []))
+
+        # counter is non-zero, read and writeable
+        os.eventfd_write(fd, 23)
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([fd], [fd], []))
+        self.assertEqual(os.eventfd_read(fd), 23)
+
+        # counter at max, only readable
+        os.eventfd_write(fd, (2**64) - 2)
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
+        os.eventfd_read(fd)
+
+
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
         class Str(str):
@@ -3663,6 +3883,33 @@ class FDInheritanceTests(unittest.TestCase):
         os.set_inheritable(fd, True)
         self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
                          0)
+
+    @unittest.skipUnless(hasattr(os, 'O_PATH'), "need os.O_PATH")
+    def test_get_set_inheritable_o_path(self):
+        fd = os.open(__file__, os.O_PATH)
+        self.addCleanup(os.close, fd)
+        self.assertEqual(os.get_inheritable(fd), False)
+
+        os.set_inheritable(fd, True)
+        self.assertEqual(os.get_inheritable(fd), True)
+
+        os.set_inheritable(fd, False)
+        self.assertEqual(os.get_inheritable(fd), False)
+
+    def test_get_set_inheritable_badf(self):
+        fd = os_helper.make_bad_fd()
+
+        with self.assertRaises(OSError) as ctx:
+            os.get_inheritable(fd)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as ctx:
+            os.set_inheritable(fd, True)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
+
+        with self.assertRaises(OSError) as ctx:
+            os.set_inheritable(fd, False)
+        self.assertEqual(ctx.exception.errno, errno.EBADF)
 
     def test_open(self):
         fd = os.open(__file__, os.O_RDONLY)

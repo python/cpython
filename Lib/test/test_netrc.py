@@ -109,62 +109,56 @@ class NetrcTestCase(unittest.TestCase):
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
-        d = os_helper.TESTFN
-        os.mkdir(d)
-        self.addCleanup(os_helper.rmtree, d)
-        fn = os.path.join(d, '.netrc')
-        with open(fn, 'wt') as f:
-            f.write("""\
-                machine foo.domain.com login bar password pass
-                default login foo password pass
-                """)
-        with os_helper.EnvironmentVarGuard() as environ:
-            environ.set('HOME', d)
-            os.chmod(fn, 0o600)
-            nrc = netrc.netrc()
-            self.assertEqual(nrc.hosts['foo.domain.com'],
-                             ('bar', None, 'pass'))
-            os.chmod(fn, 0o622)
-            self.assertRaises(netrc.NetrcParseError, netrc.netrc)
+        with os_helper.temp_cwd(None) as d:
+            fn = os.path.join(d, '.netrc')
+            with open(fn, 'wt') as f:
+                f.write("""\
+                    machine foo.domain.com login bar password pass
+                    default login foo password pass
+                    """)
+            with os_helper.EnvironmentVarGuard() as environ:
+                environ.set('HOME', d)
+                os.chmod(fn, 0o600)
+                nrc = netrc.netrc()
+                self.assertEqual(nrc.hosts['foo.domain.com'],
+                                 ('bar', None, 'pass'))
+                os.chmod(fn, 0o622)
+                self.assertRaises(netrc.NetrcParseError, netrc.netrc)
 
     def test_file_not_found_in_home(self):
-        d = os_helper.TESTFN
-        os.mkdir(d)
-        self.addCleanup(os_helper.rmtree, d)
-        with os_helper.EnvironmentVarGuard() as environ:
-            environ.set('HOME', d)
-            self.assertRaises(FileNotFoundError, netrc.netrc)
+        with os_helper.temp_cwd(None) as d:
+            with os_helper.EnvironmentVarGuard() as environ:
+                environ.set('HOME', d)
+                self.assertRaises(FileNotFoundError, netrc.netrc)
 
     def test_file_not_found_explicit(self):
         self.assertRaises(FileNotFoundError, netrc.netrc,
                           file='unlikely_netrc')
 
     def test_home_not_set(self):
-        fake_home = os_helper.TESTFN
-        os.mkdir(fake_home)
-        self.addCleanup(os_helper.rmtree, fake_home)
-        fake_netrc_path = os.path.join(fake_home, '.netrc')
-        with open(fake_netrc_path, 'w') as f:
-            f.write('machine foo.domain.com login bar password pass')
-        os.chmod(fake_netrc_path, 0o600)
+        with os_helper.temp_cwd(None) as fake_home:
+            fake_netrc_path = os.path.join(fake_home, '.netrc')
+            with open(fake_netrc_path, 'w') as f:
+                f.write('machine foo.domain.com login bar password pass')
+            os.chmod(fake_netrc_path, 0o600)
 
-        orig_expanduser = os.path.expanduser
-        called = []
+            orig_expanduser = os.path.expanduser
+            called = []
 
-        def fake_expanduser(s):
-            called.append(s)
-            with os_helper.EnvironmentVarGuard() as environ:
-                environ.set('HOME', fake_home)
-                environ.set('USERPROFILE', fake_home)
-                result = orig_expanduser(s)
-                return result
+            def fake_expanduser(s):
+                called.append(s)
+                with os_helper.EnvironmentVarGuard() as environ:
+                    environ.set('HOME', fake_home)
+                    environ.set('USERPROFILE', fake_home)
+                    result = orig_expanduser(s)
+                    return result
 
-        with support.swap_attr(os.path, 'expanduser', fake_expanduser):
-            nrc = netrc.netrc()
-            login, account, password = nrc.authenticators('foo.domain.com')
-            self.assertEqual(login, 'bar')
+            with support.swap_attr(os.path, 'expanduser', fake_expanduser):
+                nrc = netrc.netrc()
+                login, account, password = nrc.authenticators('foo.domain.com')
+                self.assertEqual(login, 'bar')
 
-        self.assertTrue(called)
+            self.assertTrue(called)
 
 
 if __name__ == "__main__":

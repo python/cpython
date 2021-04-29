@@ -1,0 +1,2 @@
+Add the ability to specify keyword-only fields to dataclasses.  These fields
+will become keyword-only arguments to the generated __init__.

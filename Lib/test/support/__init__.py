@@ -421,7 +421,7 @@ is_jython = sys.platform.startswith('java')
 
 is_android = hasattr(sys, 'getandroidapilevel')
 
-if sys.platform != 'win32':
+if sys.platform not in ('win32', 'vxworks'):
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
@@ -1667,6 +1667,7 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
+    # TODO (PEP 632): alternate check without using distutils
     from distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)

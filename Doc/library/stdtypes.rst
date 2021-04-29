@@ -499,7 +499,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.10
 
-.. method:: int.to_bytes(length, byteorder, \*, signed=False)
+.. method:: int.to_bytes(length, byteorder, *, signed=False)
 
     Return an array of bytes representing an integer.
 
@@ -531,7 +531,7 @@ class`. In addition, it provides a few more methods:
 
     .. versionadded:: 3.2
 
-.. classmethod:: int.from_bytes(bytes, byteorder, \*, signed=False)
+.. classmethod:: int.from_bytes(bytes, byteorder, *, signed=False)
 
     Return the integer represented by the given array of bytes.
 
@@ -692,10 +692,9 @@ Here are the rules in detail:
   as ``-hash(-x)``.  If the resulting hash is ``-1``, replace it with
   ``-2``.
 
-- The particular values ``sys.hash_info.inf``, ``-sys.hash_info.inf``
-  and ``sys.hash_info.nan`` are used as hash values for positive
-  infinity, negative infinity, or nans (respectively).  (All hashable
-  nans have the same hash value.)
+- The particular values ``sys.hash_info.inf`` and ``-sys.hash_info.inf``
+  are used as hash values for positive
+  infinity or negative infinity (respectively).
 
 - For a :class:`complex` number ``z``, the hash values of the real
   and imaginary parts are combined by computing ``hash(z.real) +
@@ -740,7 +739,7 @@ number, :class:`float`, or :class:`complex`::
        """Compute the hash of a float x."""
 
        if math.isnan(x):
-           return sys.hash_info.nan
+           return super().__hash__()
        elif math.isinf(x):
            return sys.hash_info.inf if x > 0 else -sys.hash_info.inf
        else:
@@ -1568,33 +1567,6 @@ expression support in the :mod:`re` module).
    interpreted as in slice notation.
 
 
-.. method:: str.removeprefix(prefix, /)
-
-   If the string starts with the *prefix* string, return
-   ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string::
-
-      >>> 'TestHook'.removeprefix('Test')
-      'Hook'
-      >>> 'BaseTestCase'.removeprefix('Test')
-      'BaseTestCase'
-
-   .. versionadded:: 3.9
-
-.. method:: str.removesuffix(suffix, /)
-
-   If the string ends with the *suffix* string and that *suffix* is not empty,
-   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string::
-
-      >>> 'MiscTests'.removesuffix('Tests')
-      'Misc'
-      >>> 'TmpDirMixin'.removesuffix('Tests')
-      'TmpDirMixin'
-
-   .. versionadded:: 3.9
-
-
 .. method:: str.encode(encoding="utf-8", errors="strict")
 
    Return an encoded version of the string as a bytes object. Default encoding
@@ -1608,13 +1580,15 @@ expression support in the :mod:`re` module).
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
+   *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -1907,6 +1881,34 @@ expression support in the :mod:`re` module).
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
    the string itself, followed by two empty strings.
+
+
+.. method:: str.removeprefix(prefix, /)
+
+   If the string starts with the *prefix* string, return
+   ``string[len(prefix):]``. Otherwise, return a copy of the original
+   string::
+
+      >>> 'TestHook'.removeprefix('Test')
+      'Hook'
+      >>> 'BaseTestCase'.removeprefix('Test')
+      'BaseTestCase'
+
+   .. versionadded:: 3.9
+
+
+.. method:: str.removesuffix(suffix, /)
+
+   If the string ends with the *suffix* string and that *suffix* is not empty,
+   return ``string[:-len(suffix)]``. Otherwise, return a copy of the
+   original string::
+
+      >>> 'MiscTests'.removesuffix('Tests')
+      'Misc'
+      >>> 'TmpDirMixin'.removesuffix('Tests')
+      'TmpDirMixin'
+
+   .. versionadded:: 3.9
 
 
 .. method:: str.replace(old, new[, count])
@@ -2709,7 +2711,7 @@ arbitrary binary data.
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
 
    .. note::
 
@@ -2721,7 +2723,8 @@ arbitrary binary data.
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -4139,6 +4142,12 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
+   Sets can be created by several means:
+
+   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+
    Instances of :class:`set` and :class:`frozenset` provide the following
    operations:
 
@@ -4330,6 +4339,14 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.
+
+   Dictionaries can be created by several means:
+
+   * Use a comma-separated list of ``key: value`` pairs within braces:
+     ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098: 'jack', 4127: 'sjoerd'}``
+   * Use a dict comprehension: ``{}``, ``{x: x ** 2 for x in range(10)}``
+   * Use the type constructor: ``dict()``,
+     ``dict([('foo', 100), ('bar', 200)])``, ``dict(foo=100, bar=200)``
 
    If no positional argument is given, an empty dictionary is created.
    If a positional argument is given and it is a mapping object, a dictionary
@@ -4749,6 +4766,316 @@ Compared to the overhead of setting up the runtime context, the overhead of a
 single class dictionary lookup is negligible.
 
 
+Type Annotation Types --- :ref:`Generic Alias <types-genericalias>`, :ref:`Union <types-union>`
+===============================================================================================
+
+.. index::
+   single: annotation; type annotation; type hint
+
+The core built-in types for :term:`type annotations <annotation>` are
+:ref:`Generic Alias <types-genericalias>` and :ref:`Union <types-union>`.
+
+
+.. _types-genericalias:
+
+Generic Alias Type
+------------------
+
+.. index::
+   object: GenericAlias
+   pair: Generic; Alias
+
+``GenericAlias`` objects are created by subscripting a class (usually a
+container), such as ``list[int]``.  They are intended primarily for
+:term:`type annotations <annotation>`.
+
+Usually, the :ref:`subscription <subscriptions>` of container objects calls the
+method :meth:`__getitem__` of the object.  However, the subscription of some
+containers' classes may call the classmethod :meth:`__class_getitem__` of the
+class instead. The classmethod :meth:`__class_getitem__` should return a
+``GenericAlias`` object.
+
+.. note::
+   If the :meth:`__getitem__` of the class' metaclass is present, it will take
+   precedence over the :meth:`__class_getitem__` defined in the class (see
+   :pep:`560` for more details).
+
+The ``GenericAlias`` object acts as a proxy for :term:`generic types
+<generic type>`, implementing *parameterized generics* - a specific instance
+of a generic which provides the types for container elements.
+
+The user-exposed type for the ``GenericAlias`` object can be accessed from
+:class:`types.GenericAlias` and used for :func:`isinstance` checks.  It can
+also be used to create ``GenericAlias`` objects directly.
+
+.. describe:: T[X, Y, ...]
+
+   Creates a ``GenericAlias`` representing a type ``T`` containing elements
+   of types *X*, *Y*, and more depending on the ``T`` used.
+   For example, a function expecting a :class:`list` containing
+   :class:`float` elements::
+
+      def average(values: list[float]) -> float:
+          return sum(values) / len(values)
+
+   Another example for :term:`mapping` objects, using a :class:`dict`, which
+   is a generic type expecting two type parameters representing the key type
+   and the value type.  In this example, the function expects a ``dict`` with
+   keys of type :class:`str` and values of type :class:`int`::
+
+      def send_post_request(url: str, body: dict[str, int]) -> None:
+          ...
+
+The builtin functions :func:`isinstance` and :func:`issubclass` do not accept
+``GenericAlias`` types for their second argument::
+
+   >>> isinstance([1, 2], list[str])
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: isinstance() argument 2 cannot be a parameterized generic
+
+The Python runtime does not enforce :term:`type annotations <annotation>`.
+This extends to generic types and their type parameters. When creating
+an object from a ``GenericAlias``, container elements are not checked
+against their type. For example, the following code is discouraged, but will
+run without errors::
+
+   >>> t = list[str]
+   >>> t([1, 2, 3])
+   [1, 2, 3]
+
+Furthermore, parameterized generics erase type parameters during object
+creation::
+
+   >>> t = list[str]
+   >>> type(t)
+   <class 'types.GenericAlias'>
+
+   >>> l = t()
+   >>> type(l)
+   <class 'list'>
+
+Calling :func:`repr` or :func:`str` on a generic shows the parameterized type::
+
+   >>> repr(list[int])
+   'list[int]'
+
+   >>> str(list[int])
+   'list[int]'
+
+The :meth:`__getitem__` method of generics will raise an exception to disallow
+mistakes like ``dict[str][str]``::
+
+   >>> dict[str][str]
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: There are no type variables left in dict[str]
+
+However, such expressions are valid when :ref:`type variables <generics>` are
+used.  The index must have as many elements as there are type variable items
+in the ``GenericAlias`` object's :attr:`__args__ <genericalias.__args__>`. ::
+
+   >>> from typing import TypeVar
+   >>> Y = TypeVar('Y')
+   >>> dict[str, Y][int]
+   dict[str, int]
+
+
+Standard Generic Collections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These standard library collections support parameterized generics.
+
+* :class:`tuple`
+* :class:`list`
+* :class:`dict`
+* :class:`set`
+* :class:`frozenset`
+* :class:`type`
+* :class:`collections.deque`
+* :class:`collections.defaultdict`
+* :class:`collections.OrderedDict`
+* :class:`collections.Counter`
+* :class:`collections.ChainMap`
+* :class:`collections.abc.Awaitable`
+* :class:`collections.abc.Coroutine`
+* :class:`collections.abc.AsyncIterable`
+* :class:`collections.abc.AsyncIterator`
+* :class:`collections.abc.AsyncGenerator`
+* :class:`collections.abc.Iterable`
+* :class:`collections.abc.Iterator`
+* :class:`collections.abc.Generator`
+* :class:`collections.abc.Reversible`
+* :class:`collections.abc.Container`
+* :class:`collections.abc.Collection`
+* :class:`collections.abc.Callable`
+* :class:`collections.abc.Set`
+* :class:`collections.abc.MutableSet`
+* :class:`collections.abc.Mapping`
+* :class:`collections.abc.MutableMapping`
+* :class:`collections.abc.Sequence`
+* :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
+* :class:`collections.abc.MappingView`
+* :class:`collections.abc.KeysView`
+* :class:`collections.abc.ItemsView`
+* :class:`collections.abc.ValuesView`
+* :class:`contextlib.AbstractContextManager`
+* :class:`contextlib.AbstractAsyncContextManager`
+* :ref:`re.Pattern <re-objects>`
+* :ref:`re.Match <match-objects>`
+
+
+Special Attributes of Generic Alias
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All parameterized generics implement special read-only attributes.
+
+.. attribute:: genericalias.__origin__
+
+   This attribute points at the non-parameterized generic class::
+
+      >>> list[int].__origin__
+      <class 'list'>
+
+
+.. attribute:: genericalias.__args__
+
+   This attribute is a :class:`tuple` (possibly of length 1) of generic
+   types passed to the original :meth:`__class_getitem__`
+   of the generic container::
+
+      >>> dict[str, list[int]].__args__
+      (<class 'str'>, list[int])
+
+
+.. attribute:: genericalias.__parameters__
+
+   This attribute is a lazily computed tuple (possibly empty) of unique type
+   variables found in ``__args__``::
+
+      >>> from typing import TypeVar
+
+      >>> T = TypeVar('T')
+      >>> list[T].__parameters__
+      (~T,)
+
+
+   .. note::
+      A ``GenericAlias`` object with :class:`typing.ParamSpec` parameters may not
+      have correct ``__parameters__`` after substitution because
+      :class:`typing.ParamSpec` is intended primarily for static type checking.
+
+.. seealso::
+
+   * :pep:`585` -- "Type Hinting Generics In Standard Collections"
+   * :meth:`__class_getitem__` -- Used to implement parameterized generics.
+   * :ref:`generics` -- Generics in the :mod:`typing` module.
+
+.. versionadded:: 3.9
+
+
+.. _types-union:
+
+Union Type
+----------
+
+.. index::
+   object: Union
+   pair: union; type
+
+A union object holds the value of the ``|`` (bitwise or) operation on
+multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
+primarily for :term:`type annotations <annotation>`. The union type expression
+enables cleaner type hinting syntax compared to :data:`typing.Union`.
+
+.. describe:: X | Y | ...
+
+   Defines a union object which holds types *X*, *Y*, and so forth. ``X | Y``
+   means either X or Y.  It is equivalent to ``typing.Union[X, Y]``.
+   For example, the following function expects an argument of type
+   :class:`int` or :class:`float`::
+
+      def square(number: int | float) -> int | float:
+          return number ** 2
+
+.. describe:: union_object == other
+
+   Union objects can be tested for equality with other union objects.  Details:
+
+   * Unions of unions are flattened::
+
+       (int | str) | float == int | str | float
+
+   * Redundant types are removed::
+
+       int | str | int == int | str
+
+   * When comparing unions, the order is ignored::
+
+      int | str == str | int
+
+   * It is compatible with :data:`typing.Union`::
+
+      int | str == typing.Union[int, str]
+
+   * Optional types can be spelled as a union with ``None``::
+
+      str | None == typing.Optional[str]
+
+.. describe:: isinstance(obj, union_object)
+.. describe:: issubclass(obj, union_object)
+
+   Calls to :func:`isinstance` and :func:`issubclass` are also supported with a
+   union object::
+
+      >>> isinstance("", int | str)
+      True
+
+   However, union objects containing :ref:`parameterized generics
+   <types-genericalias>` cannot be used::
+
+      >>> isinstance(1, int | list[int])
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+
+The user-exposed type for the union object can be accessed from
+:data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
+instantiated from the type::
+
+   >>> import types
+   >>> isinstance(int | str, types.Union)
+   True
+   >>> types.Union()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: cannot create 'types.Union' instances
+
+.. note::
+   The :meth:`__or__` method for type objects was added to support the syntax
+   ``X | Y``.  If a metaclass implements :meth:`__or__`, the Union may
+   override it::
+
+      >>> class M(type):
+      ...     def __or__(self, other):
+      ...         return "Hello"
+      ...
+      >>> class C(metaclass=M):
+      ...     pass
+      ...
+      >>> C | int
+      'Hello'
+      >>> int | C
+      int | __main__.C
+
+.. seealso::
+
+   :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
+
+.. versionadded:: 3.10
+
+
 .. _typesother:
 
 Other Built-in Types
@@ -5020,8 +5347,8 @@ types, where they are relevant.  Some of these are not reported by the
 .. method:: class.__subclasses__
 
    Each class keeps a list of weak references to its immediate subclasses.  This
-   method returns a list of all those references still alive.
-   Example::
+   method returns a list of all those references still alive.  The list is in
+   definition order.  Example::
 
       >>> int.__subclasses__()
       [<class 'bool'>]

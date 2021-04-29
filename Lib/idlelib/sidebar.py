@@ -1,18 +1,32 @@
 """Line numbering implementation for IDLE as an extension.
 Includes BaseSideBar which can be extended for other sidebar based extensions
 """
+import contextlib
 import functools
 import itertools
 
 import tkinter as tk
+from tkinter.font import Font
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
 
 
-def get_end_linenumber(text):
-    """Utility to get the last line's number in a Tk text widget."""
-    return int(float(text.index('end-1c')))
+def get_lineno(text, index):
+    """Return the line number of an index in a Tk text widget."""
+    return int(float(text.index(index)))
 
+
+def get_end_linenumber(text):
+    """Return the number of the last line in a Tk text widget."""
+    return get_lineno(text, 'end-1c')
+
+
+def get_displaylines(text, index):
+    """Display height, in lines, of a logical line in a Tk text widget."""
+    res = text.count(f"{index} linestart",
+                     f"{index} lineend",
+                     "displaylines")
+    return res[0] if res else 0
 
 def get_widget_padding(widget):
     """Get the total padding of a Tk widget, including its border."""
@@ -40,10 +54,17 @@ def get_widget_padding(widget):
     return padx, pady
 
 
+@contextlib.contextmanager
+def temp_enable_text_widget(text):
+    text.configure(state=tk.NORMAL)
+    try:
+        yield
+    finally:
+        text.configure(state=tk.DISABLED)
+
+
 class BaseSideBar:
-    """
-    The base class for extensions which require a sidebar.
-    """
+    """A base class for sidebars using Text."""
     def __init__(self, editwin):
         self.editwin = editwin
         self.parent = editwin.text_frame
@@ -119,14 +140,11 @@ class BaseSideBar:
 
 
 class EndLineDelegator(Delegator):
-    """Generate callbacks with the current end line number after
-       insert or delete operations"""
+    """Generate callbacks with the current end line number.
+
+    The provided callback is called after every insert and delete.
+    """
     def __init__(self, changed_callback):
-        """
-        changed_callback - Callable, will be called after insert
-                           or delete operations with the current
-                           end line number.
-        """
         Delegator.__init__(self)
         self.changed_callback = changed_callback
 
@@ -159,16 +177,8 @@ class LineNumbers(BaseSideBar):
         end_line_delegator = EndLineDelegator(self.update_sidebar_text)
         # Insert the delegator after the undo delegator, so that line numbers
         # are properly updated after undo and redo actions.
-        end_line_delegator.setdelegate(self.editwin.undo.delegate)
-        self.editwin.undo.setdelegate(end_line_delegator)
-        # Reset the delegator caches of the delegators "above" the
-        # end line delegator we just inserted.
-        delegator = self.editwin.per.top
-        while delegator is not end_line_delegator:
-            delegator.resetcache()
-            delegator = delegator.delegate
-
-        self.is_shown = False
+        self.editwin.per.insertfilterafter(filter=end_line_delegator,
+                                           after=self.editwin.undo)
 
     def bind_events(self):
         # Ensure focus is always redirected to the main editor text widget.
@@ -297,18 +307,207 @@ class LineNumbers(BaseSideBar):
             new_width = cur_width + width_difference
             self.sidebar_text['width'] = self._sidebar_width_type(new_width)
 
-        self.sidebar_text.config(state=tk.NORMAL)
-        if end > self.prev_end:
-            new_text = '\n'.join(itertools.chain(
-                [''],
-                map(str, range(self.prev_end + 1, end + 1)),
-            ))
-            self.sidebar_text.insert(f'end -1c', new_text, 'linenumber')
-        else:
-            self.sidebar_text.delete(f'{end+1}.0 -1c', 'end -1c')
-        self.sidebar_text.config(state=tk.DISABLED)
+        with temp_enable_text_widget(self.sidebar_text):
+            if end > self.prev_end:
+                new_text = '\n'.join(itertools.chain(
+                    [''],
+                    map(str, range(self.prev_end + 1, end + 1)),
+                ))
+                self.sidebar_text.insert(f'end -1c', new_text, 'linenumber')
+            else:
+                self.sidebar_text.delete(f'{end+1}.0 -1c', 'end -1c')
 
         self.prev_end = end
+
+
+class WrappedLineHeightChangeDelegator(Delegator):
+    def __init__(self, callback):
+        """
+        callback - Callable, will be called when an insert, delete or replace
+                   action on the text widget may require updating the shell
+                   sidebar.
+        """
+        Delegator.__init__(self)
+        self.callback = callback
+
+    def insert(self, index, chars, tags=None):
+        is_single_line = '\n' not in chars
+        if is_single_line:
+            before_displaylines = get_displaylines(self, index)
+
+        self.delegate.insert(index, chars, tags)
+
+        if is_single_line:
+            after_displaylines = get_displaylines(self, index)
+            if after_displaylines == before_displaylines:
+                return  # no need to update the sidebar
+
+        self.callback()
+
+    def delete(self, index1, index2=None):
+        if index2 is None:
+            index2 = index1 + "+1c"
+        is_single_line = get_lineno(self, index1) == get_lineno(self, index2)
+        if is_single_line:
+            before_displaylines = get_displaylines(self, index1)
+
+        self.delegate.delete(index1, index2)
+
+        if is_single_line:
+            after_displaylines = get_displaylines(self, index1)
+            if after_displaylines == before_displaylines:
+                return  # no need to update the sidebar
+
+        self.callback()
+
+
+class ShellSidebar:
+    """Sidebar for the PyShell window, for prompts etc."""
+    def __init__(self, editwin):
+        self.editwin = editwin
+        self.parent = editwin.text_frame
+        self.text = editwin.text
+
+        self.canvas = tk.Canvas(self.parent, width=30,
+                                borderwidth=0, highlightthickness=0,
+                                takefocus=False)
+
+        self.bind_events()
+
+        change_delegator = \
+            WrappedLineHeightChangeDelegator(self.change_callback)
+
+        # Insert the TextChangeDelegator after the last delegator, so that
+        # the sidebar reflects final changes to the text widget contents.
+        d = self.editwin.per.top
+        if d.delegate is not self.text:
+            while d.delegate is not self.editwin.per.bottom:
+                d = d.delegate
+        self.editwin.per.insertfilterafter(change_delegator, after=d)
+
+        self.text['yscrollcommand'] = self.yscroll_event
+
+        self.is_shown = False
+
+        self.update_font()
+        self.update_colors()
+        self.update_sidebar()
+        self.canvas.grid(row=1, column=0, sticky=tk.NSEW, padx=2, pady=0)
+        self.is_shown = True
+
+    def change_callback(self):
+        if self.is_shown:
+            self.update_sidebar()
+
+    def update_sidebar(self):
+        text = self.text
+        text_tagnames = text.tag_names
+        canvas = self.canvas
+
+        canvas.delete(tk.ALL)
+
+        index = text.index("@0,0")
+        if index.split('.', 1)[1] != '0':
+            index = text.index(f'{index}+1line linestart')
+        while True:
+            lineinfo = text.dlineinfo(index)
+            if lineinfo is None:
+                break
+            y = lineinfo[1]
+            prev_newline_tagnames = text_tagnames(f"{index} linestart -1c")
+            prompt = (
+                '>>>' if "console" in prev_newline_tagnames else
+                '...' if "stdin" in prev_newline_tagnames else
+                None
+            )
+            if prompt:
+                canvas.create_text(2, y, anchor=tk.NW, text=prompt,
+                                   font=self.font, fill=self.colors[0])
+            index = text.index(f'{index}+1line')
+
+    def yscroll_event(self, *args, **kwargs):
+        """Redirect vertical scrolling to the main editor text widget.
+
+        The scroll bar is also updated.
+        """
+        self.editwin.vbar.set(*args)
+        self.change_callback()
+        return 'break'
+
+    def update_font(self):
+        """Update the sidebar text font, usually after config changes."""
+        font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
+        tk_font = Font(self.text, font=font)
+        char_width = max(tk_font.measure(char) for char in ['>', '.'])
+        self.canvas.configure(width=char_width * 3 + 4)
+        self._update_font(font)
+
+    def _update_font(self, font):
+        self.font = font
+        self.change_callback()
+
+    def update_colors(self):
+        """Update the sidebar text colors, usually after config changes."""
+        linenumbers_colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'linenumber')
+        prompt_colors = idleConf.GetHighlight(idleConf.CurrentTheme(), 'console')
+        self._update_colors(foreground=prompt_colors['foreground'],
+                            background=linenumbers_colors['background'])
+
+    def _update_colors(self, foreground, background):
+        self.colors = (foreground, background)
+        self.canvas.configure(background=self.colors[1])
+        self.change_callback()
+
+    def redirect_focusin_event(self, event):
+        """Redirect focus-in events to the main editor text widget."""
+        self.text.focus_set()
+        return 'break'
+
+    def redirect_mousebutton_event(self, event, event_name):
+        """Redirect mouse button events to the main editor text widget."""
+        self.text.focus_set()
+        self.text.event_generate(event_name, x=0, y=event.y)
+        return 'break'
+
+    def redirect_mousewheel_event(self, event):
+        """Redirect mouse wheel events to the editwin text widget."""
+        self.text.event_generate('<MouseWheel>',
+                                 x=0, y=event.y, delta=event.delta)
+        return 'break'
+
+    def bind_events(self):
+        # Ensure focus is always redirected to the main editor text widget.
+        self.canvas.bind('<FocusIn>', self.redirect_focusin_event)
+
+        # Redirect mouse scrolling to the main editor text widget.
+        #
+        # Note that without this, scrolling with the mouse only scrolls
+        # the line numbers.
+        self.canvas.bind('<MouseWheel>', self.redirect_mousewheel_event)
+
+        # Redirect mouse button events to the main editor text widget,
+        # except for the left mouse button (1).
+        #
+        # Note: X-11 sends Button-4 and Button-5 events for the scroll wheel.
+        def bind_mouse_event(event_name, target_event_name):
+            handler = functools.partial(self.redirect_mousebutton_event,
+                                        event_name=target_event_name)
+            self.canvas.bind(event_name, handler)
+
+        for button in [2, 3, 4, 5]:
+            for event_name in (f'<Button-{button}>',
+                               f'<ButtonRelease-{button}>',
+                               f'<B{button}-Motion>',
+                               ):
+                bind_mouse_event(event_name, target_event_name=event_name)
+
+            # Convert double- and triple-click events to normal click events,
+            # since event_generate() doesn't allow generating such events.
+            for event_name in (f'<Double-Button-{button}>',
+                               f'<Triple-Button-{button}>',
+                               ):
+                bind_mouse_event(event_name,
+                                 target_event_name=f'<Button-{button}>')
 
 
 def _linenumbers_drag_scrolling(parent):  # htest #

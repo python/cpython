@@ -33,11 +33,6 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. deprecated-removed:: 3.3 3.10
-    Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
-    For backwards compatibility, they continue to be visible in this module through
-    Python 3.9.
-
 
 :class:`ChainMap` objects
 -------------------------
@@ -77,18 +72,22 @@ The class can be used to simulate nested scopes and is useful in templating.
         be modified to change which mappings are searched.  The list should
         always contain at least one mapping.
 
-    .. method:: new_child(m=None)
+    .. method:: new_child(m=None, **kwargs)
 
         Returns a new :class:`ChainMap` containing a new map followed by
         all of the maps in the current instance.  If ``m`` is specified,
         it becomes the new map at the front of the list of mappings; if not
         specified, an empty dict is used, so that a call to ``d.new_child()``
-        is equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
-        creating subcontexts that can be updated without altering values in any
-        of the parent mappings.
+        is equivalent to: ``ChainMap({}, *d.maps)``. If any keyword arguments
+        are specified, they update passed map or new empty dict. This method
+        is used for creating subcontexts that can be updated without altering
+        values in any of the parent mappings.
 
         .. versionchanged:: 3.4
            The optional ``m`` parameter was added.
+
+        .. versionchanged:: 3.10
+           Keyword arguments support was added.
 
     .. attribute:: parents
 
@@ -128,7 +127,7 @@ The class can be used to simulate nested scopes and is useful in templating.
       writing to any mapping in the chain.
 
     * Django's `Context class
-      <https://github.com/django/django/blob/master/django/template/context.py>`_
+      <https://github.com/django/django/blob/main/django/template/context.py>`_
       for templating is a read-only chain of mappings.  It also features
       pushing and popping of contexts similar to the
       :meth:`~collections.ChainMap.new_child` method and the
@@ -861,6 +860,9 @@ they add the ability to access fields by name instead of position index.
 
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
+
+    To support pickling, the named tuple class should be assigned to a variable
+    that matches *typename*.
 
     .. versionchanged:: 3.1
        Added support for *rename*.

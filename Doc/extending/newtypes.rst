@@ -12,7 +12,7 @@ This section aims to give a quick fly-by on the various type methods you can
 implement and what they do.
 
 Here is the definition of :c:type:`PyTypeObject`, with some fields only used in
-debug builds omitted:
+:ref:`debug builds <debug-build>` omitted:
 
 .. literalinclude:: ../includes/typestruct.h
 

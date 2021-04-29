@@ -33,6 +33,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
+    sys.audit("glob.glob", pathname, recursive)
+    sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
     if root_dir is not None:
         root_dir = os.fspath(root_dir)
     else:

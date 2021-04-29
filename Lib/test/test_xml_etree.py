@@ -108,6 +108,19 @@ EXTERNAL_ENTITY_XML = """\
 <document>&entity;</document>
 """
 
+ATTLIST_XML = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Foo [
+<!ELEMENT foo (bar*)>
+<!ELEMENT bar (#PCDATA)*>
+<!ATTLIST bar xml:lang CDATA "eng">
+<!ENTITY qux "quux">
+]>
+<foo>
+<bar>&qux;</bar>
+</foo>
+"""
+
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
@@ -315,6 +328,9 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(elem, '<body><tag2 /><tag /></body>')
         elem.remove(e)
         elem.extend([e])
+        self.serialize_check(elem, '<body><tag /><tag2 /></body>')
+        elem.remove(e)
+        elem.extend(iter([e]))
         self.serialize_check(elem, '<body><tag /><tag2 /></body>')
         elem.remove(e)
 
@@ -1353,6 +1369,12 @@ class ElementTreeTest(unittest.TestCase):
                          '<cirriculum status="public" company="example" />')
         self.assertEqual(serialize(root, method='html'),
                 '<cirriculum status="public" company="example"></cirriculum>')
+
+    def test_attlist_default(self):
+        # Test default attribute values; See BPO 42151.
+        root = ET.fromstring(ATTLIST_XML)
+        self.assertEqual(root[0].attrib,
+                         {'{http://www.w3.org/XML/1998/namespace}lang': 'eng'})
 
 
 class XMLPullParserTest(unittest.TestCase):
@@ -2852,8 +2874,12 @@ class ElementFindTest(unittest.TestCase):
             ['tag'] * 3)
         self.assertEqual(summarize_list(e.findall('.//tag[@class="a"]')),
             ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//tag[@class!="a"]')),
+            ['tag'] * 2)
         self.assertEqual(summarize_list(e.findall('.//tag[@class="b"]')),
             ['tag'] * 2)
+        self.assertEqual(summarize_list(e.findall('.//tag[@class!="b"]')),
+            ['tag'])
         self.assertEqual(summarize_list(e.findall('.//tag[@id]')),
             ['tag'])
         self.assertEqual(summarize_list(e.findall('.//section[tag]')),
@@ -2875,6 +2901,19 @@ class ElementFindTest(unittest.TestCase):
         self.assertEqual(summarize_list(e.findall(".//section[ tag = 'subtext' ]")),
             ['section'])
 
+        # Negations of above tests. They match nothing because the sole section
+        # tag has subtext.
+        self.assertEqual(summarize_list(e.findall(".//section[tag!='subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag !='subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag!= 'subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[tag != 'subtext']")),
+            [])
+        self.assertEqual(summarize_list(e.findall(".//section[ tag != 'subtext' ]")),
+            [])
+
         self.assertEqual(summarize_list(e.findall(".//tag[.='subtext']")),
                          ['tag'])
         self.assertEqual(summarize_list(e.findall(".//tag[. ='subtext']")),
@@ -2889,6 +2928,24 @@ class ElementFindTest(unittest.TestCase):
                          [])
         self.assertEqual(summarize_list(e.findall(".//tag[.= ' subtext']")),
                          [])
+
+        # Negations of above tests.
+        #   Matches everything but the tag containing subtext
+        self.assertEqual(summarize_list(e.findall(".//tag[.!='subtext']")),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall(".//tag[. !='subtext']")),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[.!= "subtext"]')),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[ . != "subtext" ]')),
+                         ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall(".//tag[. != 'subtext']")),
+                         ['tag'] * 3)
+        # Matches all tags.
+        self.assertEqual(summarize_list(e.findall(".//tag[. != 'subtext ']")),
+                         ['tag'] * 4)
+        self.assertEqual(summarize_list(e.findall(".//tag[.!= ' subtext']")),
+                         ['tag'] * 4)
 
         # duplicate section => 2x tag matches
         e[1] = e[2]
@@ -3898,6 +3955,14 @@ class C14NTest(unittest.TestCase):
         # fragments from PJ's tests
         #self.assertEqual(c14n_roundtrip("<doc xmlns:x='http://example.com/x' xmlns='http://example.com/default'><b y:a1='1' xmlns='http://example.com/default' a3='3' xmlns:y='http://example.com/y' y:a2='2'/></doc>"),
         #'<doc xmlns:x="http://example.com/x"><b xmlns:y="http://example.com/y" a3="3" y:a1="1" y:a2="2"></b></doc>')
+
+        # Namespace issues
+        xml = '<X xmlns="http://nps/a"><Y targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
+        xml = '<X xmlns="http://nps/a"><Y xmlns="http://nsp/b" targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
+        xml = '<X xmlns="http://nps/a"><Y xmlns:b="http://nsp/b" b:targets="abc,xyz"></Y></X>'
+        self.assertEqual(c14n_roundtrip(xml), xml)
 
     def test_c14n_exclusion(self):
         xml = textwrap.dedent("""\
