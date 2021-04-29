@@ -352,7 +352,8 @@ PEP 590: Vectorcall: a fast calling protocol for CPython
 :ref:`vectorcall` is added to the Python/C API.
 It is meant to formalize existing optimizations which were already done
 for various classes.
-Any static type implementing a callable can use this protocol.
+Any :ref:`static type <static-types>` implementing a callable can use this
+protocol.
 
 This is currently provisional.
 The aim is to make it fully public in Python 3.9.
@@ -2040,7 +2041,7 @@ Changes in the C API
   This makes types created through :c:func:`PyType_FromSpec` behave like
   other classes in managed code.
 
-  Statically allocated types are not affected.
+  :ref:`Statically allocated types <static-types>` are not affected.
 
   For the vast majority of cases, there should be no side effect.
   However, types that manually increase the reference count after allocating
