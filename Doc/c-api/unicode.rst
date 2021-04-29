@@ -149,7 +149,7 @@ access internal read-only data of Unicode objects:
       ``PyUnicode_WCHAR_KIND`` is deprecated.
 
 
-.. c:function:: int PyUnicode_KIND(PyObject *o)
+.. c:function:: unsigned int PyUnicode_KIND(PyObject *o)
 
    Return one of the PyUnicode kind constants (see above) that indicate how many
    bytes per character this Unicode object uses to store its data.  *o* has to
