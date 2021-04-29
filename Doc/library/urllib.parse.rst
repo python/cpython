@@ -313,7 +313,7 @@ or on combining URL components into a URL string.
    decomposed before parsing, no error will be raised.
 
    Following the `WHATWG spec`_ that updates RFC 3986, ASCII newline
-   ``\n``, ``\r`` and tab ``\t`` characters are stripped from the url.
+   ``\n``, ``\r`` and tab ``\t`` characters are stripped from the URL.
 
    .. versionchanged:: 3.6
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
