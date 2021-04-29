@@ -15,6 +15,7 @@ PyDoc_STRVAR(_abc__doc__,
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__flags__);
 _Py_IDENTIFIER(__bases__);
 _Py_IDENTIFIER(_abc_impl);
 _Py_IDENTIFIER(__subclasscheck__);
@@ -426,6 +427,8 @@ _abc._abc_init
 Internal ABC helper for class set-up. Should be never used outside abc module.
 [clinic start generated code]*/
 
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
+
 static PyObject *
 _abc__abc_init(PyObject *module, PyObject *self)
 /*[clinic end generated code: output=594757375714cda1 input=8d7fe470ff77f029]*/
@@ -446,6 +449,27 @@ _abc__abc_init(PyObject *module, PyObject *self)
         return NULL;
     }
     Py_DECREF(data);
+    if (PyType_Check(self)) {
+        PyTypeObject *cls = (PyTypeObject *)self;
+        PyObject *flags = _PyDict_GetItemIdWithError(cls->tp_dict, &PyId___flags__);
+        if (flags == NULL) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
+        }
+        else {
+            if (PyLong_CheckExact(flags)) {
+                long val = PyLong_AsLong(flags);
+                if (val == -1 && PyErr_Occurred()) {
+                    return NULL;
+                }
+                ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
+            }
+            if (_PyDict_DelItemId(cls->tp_dict, &PyId___flags__) < 0) {
+                return NULL;
+            }
+        }
+    }
     Py_RETURN_NONE;
 }
 
@@ -499,6 +523,9 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     /* Invalidate negative cache */
     get_abc_state(module)->abc_invalidation_counter++;
 
+    if (!PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE)) {
+        ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
+    }
     Py_INCREF(subclass);
     return subclass;
 }
