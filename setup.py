@@ -2191,10 +2191,12 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
 
+        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
         self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                            define_macros=[('WITH_APPINIT', 1)] + defs,
                            include_dirs=include_dirs,
                            libraries=libs,
+                           extra_compile_args=extra_compile_args,
                            library_dirs=added_lib_dirs))
         return True
 
