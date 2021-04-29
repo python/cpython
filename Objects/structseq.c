@@ -459,8 +459,10 @@ initialize_members(PyStructSequence_Desc *desc, PyMemberDef* members,
     members[k].name = NULL;
 }
 
+
 int
-PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
+_PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc,
+                           unsigned long tp_flags)
 {
     PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
@@ -488,7 +490,7 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     type->tp_base = &PyTuple_Type;
     type->tp_methods = structseq_methods;
     type->tp_new = structseq_new;
-    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     type->tp_traverse = (traverseproc) structseq_traverse;
 
     n_members = count_members(desc, &n_unnamed_members);
@@ -514,6 +516,12 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     }
 
     return 0;
+}
+
+int
+PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
+{
+    return _PyStructSequence_InitType(type, desc, 0);
 }
 
 void
