@@ -3,6 +3,8 @@ Description of the internal format of the exception table.
 Conceptually, the exception table consists of a sequence of 5-tuples:
     start-offset (inclusive), end-offset (exclusive), target, stack-depth, push-lasti (boolean)
 
+All offsets and lengths are in instructions, not bytes.
+
 We want the format to be compact, but quickly searchable.
 For it to be compact, it needs to have variable sized entries so that we can store common (small) offsets compactly, but handle large offsets if needed.
 For it to be searchable quickly, we need to support binary search giving us log(n) performance in all cases.
@@ -11,7 +13,7 @@ Binary search typically assumes fixed size entries, but that is not necesary, as
 It is worth noting that the size (end-start) is always smaller that the end, so we encode the entries as:
     start, size, target, depth, push-lasti
 
-Also, sizes are limited to 2**30 as the code lenght cannot exceed 2**31 and each instruction takes 2 bytes.
+Also, sizes are limited to 2**30 as the code length cannot exceed 2**31 and each instruction takes 2 bytes.
 It also happens that depth is generally quie small, and cannot exceed about 140.
 
 So, we need to encode:
@@ -49,3 +51,29 @@ Where is then encoded as:
 
 for a total of five bytes.
 
+
+Script to parse the exception table:
+
+def parse_varint(iterator):
+    b = next(iterator)
+    val = b & 63
+    while b&64:
+        val <<= 6
+        b = next(iterator)
+        val |= b&63
+    return val
+
+def parse_exception_table(code):
+    iterator = iter(code.co_exceptiontable)
+    try:
+        while True:
+            start = parse_varint(iterator)*2
+            length = parse_varint(iterator)*2
+            end = start + length - 2 # Present as inclusive, not exclusive
+            target = parse_varint(iterator)*2
+            dl = parse_varint(iterator)
+            depth = dl >> 1
+            lasti = bool(dl&1)
+            yield start, end, target, depth, lasti
+    except StopIteration:
+        return
