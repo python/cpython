@@ -97,10 +97,6 @@ Copyright (c) Corporation for National Research Initiatives.
 #  include <wchar.h>
 #endif
 
-#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
-#  include <uchar.h>
-#endif
-
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
 typedef uint32_t Py_UCS4;
