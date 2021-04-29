@@ -292,7 +292,7 @@ combined using bitwise-OR.
 |                           | reading.                                     |
 +---------------------------+----------------------------------------------+
 
-.. version-changed:: 3.10
+.. versionchanged:: 3.10
    :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
    are deprecated. However, :const:`READ_RESTRICTED` is an alias for
    :const:`AUDIT_READ`, so fields that specify either :const:`RESTRICTED` or
