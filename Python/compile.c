@@ -6959,10 +6959,6 @@ assemble(struct compiler *c, int addNone)
     if (!assemble_line_range(&a)) {
         return 0;
     }
-    /* Emit sentinel at end of line number table */
-    if (!assemble_emit_linetable_pair(&a, 255, -128)) {
-        goto error;
-    }
 
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0) {
         goto error;
