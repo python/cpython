@@ -208,43 +208,48 @@ recommended for best performance.
 
 .. _debug-build:
 
-Debug build
------------
+Python Debug Build
+------------------
 
 A debug build is Python built with the :option:`--with-pydebug` configure
 option.
 
 Effects of a debug build:
 
-* Define ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros.
+* Display all warnings by default: the list of default warning filters is empty
+  in the :mod:`warnings` module.
 * Add ``d`` to :data:`sys.abiflags`.
 * Add :func:`sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :envvar:`PYTHONTHREADDEBUG` environment variable.
 * Add support for the ``__ltrace__`` variable: enable low-level tracing in the
   bytecode evaluation loop if the variable is defined.
-* The list of default warning filters is empty in the :mod:`warnings` module.
-* Install debug hooks on memory allocators to detect buffer overflow and other
-  memory errors: see :c:func:`PyMem_SetupDebugHooks`.
-* Build Python with assertions (don't set ``NDEBUG`` macro):
-  ``assert(...);`` and ``_PyObject_ASSERT(...);``.
-  See also the :option:`--with-assertions` configure option.
-* Unicode and int objects are created with their memory filled with a pattern
-  to help detecting uninitialized bytes.
-* Many functions ensure that are not called with an exception raised, since
-  they can clear or replace the current exception.
-* The garbage collector (:func:`gc.collect` function) runs some basic checks on
-  objects consistency.
-* More generally, add runtime checks, code surroundeded by ``#ifdef Py_DEBUG``
-  and ``#endif``.
+* Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
+  to detect buffer overflow and other memory errors.
+* Define ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros.
+* Add runtime checks: code surroundeded by ``#ifdef Py_DEBUG`` and ``#endif``.
+  Enable ``assert(...)`` and ``_PyObject_ASSERT(...)`` assertions: don't set
+  the ``NDEBUG`` macro (see also the :option:`--with-assertions` configure
+  option). Main runtime checks:
+
+  * Add sanity checks on the function arguments.
+  * Unicode and int objects are created with their memory filled with a pattern
+    to detect usage of uninitialized objects.
+  * Ensure that functions which can clear or replace the current exception are
+    not called with an exception raised.
+  * The garbage collector (:func:`gc.collect` function) runs some basic checks
+    on objects consistency.
+  * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and
+    overflow when downcasting from wide types to narrow types.
 
 See also the :ref:`Python Development Mode <devmode>` and the
 :option:`--with-trace-refs` configure option.
 
 .. versionchanged:: 3.8
    Release builds and debug builds are now ABI compatible: defining the
-   ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro, which
-   introduces the only ABI incompatibility.
+   ``Py_DEBUG`` macro no longer implies the ``Py_TRACE_REFS`` macro (see the
+   :option:`--with-trace-refs` option), which introduces the only ABI
+   incompatibility.
 
 
 Debug options
