@@ -299,7 +299,7 @@ or on combining URL components into a URL string.
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.6.14
       ASCII newline and tab characters are stripped from the URL.
 
 .. _WHATWG spec: https://url.spec.whatwg.org/#concept-basic-url-parser
