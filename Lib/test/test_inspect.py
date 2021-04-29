@@ -3482,6 +3482,31 @@ class TestSignatureObject(unittest.TestCase):
                             par('b', PORK, annotation=tuple),
                         )))
 
+    def test_signature_none_annotation(self):
+        class funclike:
+            # Has to be callable, and have correct
+            # __code__, __annotations__, __defaults__, __name__,
+            # and __kwdefaults__ attributes
+
+            def __init__(self, func):
+                self.__name__ = func.__name__
+                self.__code__ = func.__code__
+                self.__annotations__ = func.__annotations__
+                self.__defaults__ = func.__defaults__
+                self.__kwdefaults__ = func.__kwdefaults__
+                self.func = func
+
+            def __call__(self, *args, **kwargs):
+                return self.func(*args, **kwargs)
+
+        def foo(): pass
+        foo = funclike(foo)
+        foo.__annotations__ = None
+        for signature_func in (inspect.signature, inspect.Signature.from_callable):
+            with self.subTest(signature_func = signature_func):
+                self.assertEqual(signature_func(foo), inspect.Signature())
+        self.assertEqual(inspect.get_annotations(foo), {})
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):

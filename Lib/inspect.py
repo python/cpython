@@ -24,6 +24,8 @@ Here are some of the useful functions provided by this module:
     stack(), trace() - get info about frames on the stack or in a traceback
 
     signature() - get a Signature object for the callable
+
+    get_annotations() - safely compute an object's annotations
 """
 
 # This module is in the public domain.  No warranties.
@@ -2015,7 +2017,7 @@ def _signature_is_functionlike(obj):
             isinstance(name, str) and
             (defaults is None or isinstance(defaults, tuple)) and
             (kwdefaults is None or isinstance(kwdefaults, dict)) and
-            isinstance(annotations, (dict, None)))
+            (isinstance(annotations, (dict)) or annotations is None) )
 
 
 def _signature_get_bound_param(spec):
