@@ -2,9 +2,9 @@
 
 .. _stable:
 
-*******************
-C API Compatibility
-*******************
+***************
+C API Stability
+***************
 
 Python's C API is covered by the Backwards Compatibility Policy, :pep:`387`.
 While the C API will change with every minor release (e.g. from 3.9 to 3.10),
@@ -39,19 +39,21 @@ necessary to support older versions of the Limited API.
 and Stable ABI work the same way for all uses of the API – for example,
 embedding Python.)
 
-To opt in to use the Limited API, define the macro ``Py_LIMITED_API``
-before including ``Python.h``.
+.. c:macro:: Py_LIMITED_API
 
-Defining ``Py_LIMITED_API`` to ``3`` will limit the available API so that
-the extension will work without recompilation with all Python 3.x releases
-(x>=2) on the particular  :ref:`platform <stable-abi-platform>`.
+   Define this macro ``Py_LIMITED_API`` before including ``Python.h`` to
+   opt in to only use the Limited API.
 
-Defining ``Py_LIMITED_API`` to a value of :c:data:`PY_VERSION_HEX` will
-do the same, but allow additional API added up to specified version,
-and lose compatibility with earlier versions.
-Rather than using the macro directly, hardcode a minimum minor version
-(e.g. ``0x030A0000`` for Python 3.10) for stability when compiling with
-future Python versions.
+   Defining ``Py_LIMITED_API`` to ``3`` will limit the available API so that
+   the extension will work without recompilation with all Python 3.x releases
+   (x>=2) on the particular  :ref:`platform <stable-abi-platform>`.
+
+   Defining ``Py_LIMITED_API`` to a value of :c:data:`PY_VERSION_HEX` will
+   do the same, but allow additional API added up to specified version,
+   and lose compatibility with earlier versions.
+   Rather than using the macro directly, hardcode a minimum minor version
+   (e.g. ``0x030A0000`` for Python 3.10) for stability when compiling with
+   future Python versions.
 
 On Windows, extensions that use the Stable ABI should be linked against
 ``python3.dll`` rather than a version-specific library such as
@@ -81,13 +83,13 @@ The macro can be faster because it can rely on version-specific implementation
 details of the list object.
 
 Without ``Py_LIMITED_API`` defined, some C API functions are inlined or
-replaced by similar macros.
+replaced by macros.
 Defining ``Py_LIMITED_API`` disables this inlining, allowing stability as
 Python's data structures are improved, but possibly reducing performance.
 
 By leaving out the ``Py_LIMITED_API`` definition, it is possible to compile
-a Limited API extension with a version-specific ABI, gaining performance
-but limiting compatibility.
+a Limited API extension with a version-specific ABI. This can improve
+performance for that Python version, but will limit compatibility.
 Compiling with ``Py_LIMITED_API`` will then yield an extension that can be
 distributed where a version-specific one is not available – for example,
 for prereleases of an upcoming Python version.
