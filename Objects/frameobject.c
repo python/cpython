@@ -58,7 +58,7 @@ frame_getlineno(PyFrameObject *f, void *closure)
         Py_RETURN_NONE;
     }
     else {
-        return PyLong_FromLong(PyFrame_GetLineNumber(f));
+        return PyLong_FromLong(lineno);
     }
 }
 
