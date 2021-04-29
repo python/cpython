@@ -831,11 +831,7 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
             if (arena == NULL)
                 goto error;
             mod = PyAST_obj2mod(source, arena, compile_mode);
-            if (mod == NULL) {
-                _PyArena_Free(arena);
-                goto error;
-            }
-            if (!_PyAST_Validate(mod)) {
+            if (mod == NULL || !_PyAST_Validate(mod)) {
                 _PyArena_Free(arena);
                 goto error;
             }
