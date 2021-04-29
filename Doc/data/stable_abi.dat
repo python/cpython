@@ -286,9 +286,6 @@ PyFrame_GetLineNumber
 PyFrozenSet_New
 PyFrozenSet_Type
 PyGC_Collect
-PyGC_Disable
-PyGC_Enable
-PyGC_IsEnabled
 PyGILState_Ensure
 PyGILState_GetThisThreadState
 PyGILState_Release
