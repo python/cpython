@@ -61,12 +61,7 @@ for k, v in dis.COMPILER_FLAG_NAMES.items():
 TPFLAGS_IS_ABSTRACT = 1 << 20
 
 
-class ONLY_IF_STRINGIZED_type:
-    def __repr__(self):
-        return "<ONLY_IF_STRINGIZED>"
-ONLY_IF_STRINGIZED = ONLY_IF_STRINGIZED_type()
-
-def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZED):
+def get_annotations(obj, *, globals=None, locals=None, eval_str=False):
     """Compute the annotations dict for an object.
 
     obj may be a callable, class, or module.
@@ -78,8 +73,8 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
 
     This function handles several details for you:
 
-      * Values of type str may be un-stringized using eval(),
-        depending on the value of eval_str.  This is intended
+      * If eval_str is true, values of type str will
+        be un-stringized using eval().  This is intended
         for use with stringized annotations
         ("from __future__ import annotations").
       * If obj doesn't have an annotations dict, returns an
@@ -96,31 +91,20 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
     with the result of calling eval() on those values:
 
       * If eval_str is true, eval() is called on values of type str.
-      * If eval_str is false, values of type str are unchanged.
-      * If eval_str is inspect.ONLY_IF_STRINGIZED (the default),
-        eval() is called on values of type str only if *every* value
-        in the dict is of type str.  This is a heuristic; the goal is
-        to only call eval() on stringized annotations.  If, in a future
-        version of Python, get_annotations() is able to determine
-        authoritatively whether or not an annotations dict contains
-        stringized annotations, inspect.ONLY_IF_STRINGIZED will use that
-        authoritative source instead of the heuristic.
+      * If eval_str is false (the default), values of type str are unchanged.
 
     globals and locals are passed in to eval(); see the documentation
-    for eval() for more information.  If globals is None, this function
-    uses a context-specific default value, contingent on type(obj):
+    for eval() for more information.  If either globals or locals is
+    None, this function may replace that value with a context-specific
+    default, contingent on type(obj):
 
       * If obj is a module, globals defaults to obj.__dict__.
       * If obj is a class, globals defaults to
-        sys.modules[obj.__module__].__dict__.
+        sys.modules[obj.__module__].__dict__ and locals
+        defaults to the obj class namespace.
       * If obj is a callable, globals defaults to obj.__globals__,
         although if obj is a wrapped function (using
         functools.update_wrapper()) it is first unwrapped.
-
-    If get_annotations() doesn't have a usable globals dict--one
-    was not passed in, and the context-specific globals dict
-    was not set--and eval_str is inspect.ONLY_IF_STRINGIZED,
-    get_annotations() will behave as if eval_str is false.
     """
     if isinstance(obj, type):
         # class
@@ -166,8 +150,6 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZ
     if not ann:
         return {}
 
-    if eval_str is ONLY_IF_STRINGIZED:
-        eval_str = bool(obj_globals) and all(isinstance(v, str) for v in ann.values())
     if not eval_str:
         return dict(ann)
 
@@ -2286,7 +2268,7 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
 
 
 def _signature_from_function(cls, func, skip_bound_arg=True,
-                             globals=None, locals=None, eval_str=ONLY_IF_STRINGIZED):
+                             globals=None, locals=None, eval_str=False):
     """Private helper: constructs Signature for the given python function."""
 
     is_duck_function = False
@@ -2385,7 +2367,7 @@ def _signature_from_callable(obj, *,
                              skip_bound_arg=True,
                              globals=None,
                              locals=None,
-                             eval_str=ONLY_IF_STRINGIZED,
+                             eval_str=False,
                              sigcls):
 
     """Private helper function to get signature for arbitrary
@@ -2991,7 +2973,7 @@ class Signature:
 
     @classmethod
     def from_callable(cls, obj, *,
-                      follow_wrapped=True, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZED):
+                      follow_wrapped=True, globals=None, locals=None, eval_str=False):
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
@@ -3243,7 +3225,7 @@ class Signature:
         return rendered
 
 
-def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZED):
+def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
     """Get a signature object for the passed callable."""
     return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
                                    globals=globals, locals=locals, eval_str=eval_str)

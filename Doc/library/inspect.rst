@@ -562,7 +562,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=inspect.ONLY_IF_ALL_STR)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -1118,7 +1118,7 @@ Classes and functions
    .. versionadded:: 3.4
 
 
-.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=ONLY_IF_STRINGIZED)
+.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False)
 
    Compute the annotations dict for an object.
 
@@ -1131,8 +1131,8 @@ Classes and functions
 
    This function handles several details for you:
 
-   * Values of type ``str`` may be un-stringized using :func:`eval()`,
-     depending on the value of ``eval_str``.  This is intended
+   * If ``eval_str`` is true, values of type ``str`` will
+     be un-stringized using :func:`eval()`.  This is intended
      for use with stringized annotations
      (``from __future__ import annotations``).
    * If ``obj`` doesn't have an annotations dict, returns an
@@ -1149,31 +1149,20 @@ Classes and functions
    with the result of calling :func:`eval()` on those values:
 
    * If eval_str is true, :func:`eval()` is called on values of type ``str``.
-   * If eval_str is false, values of type ``str`` are unchanged.
-   * If eval_str is ``inspect.ONLY_IF_STRINGIZED`` (the default),
-     :func:`eval()` is called on values of type ``str`` only if *every* value
-     in the dict is of type ``str``.  This is a heuristic; the goal is
-     to only call :func:`eval()` on stringized annotations.  If, in a future
-     version of Python, ``get_annotations()`` is able to determine
-     authoritatively whether or not an annotations dict contains
-     stringized annotations, ``inspect.ONLY_IF_STRINGIZED`` will use that
-     authoritative source instead of the heuristic.
+   * If eval_str is false (the default), values of type ``str`` are unchanged.
 
    ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
-   for :func:`eval()` for more information.  If ``globals`` is ``None``, this function
-   uses a context-specific default value, contingent on ``type(obj)``:
+   for :func:`eval()` for more information.  If ``globals`` or ``locals``
+   is ``None``, this function may replace that value with a context-specific
+   default, contingent on ``type(obj)``:
 
    * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
    * If ``obj`` is a class, ``globals`` defaults to
-     ``sys.modules[obj.__module__].__dict__``.
+     ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
+     to the ``obj`` class namespace.
    * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
      although if ``obj`` is a wrapped function (using
      ``functools.update_wrapper()``) it is first unwrapped.
-
-   If ``get_annotations()`` doesn't have a usable ``globals`` dict--one
-   was not passed in, and the context-specific ``globals`` dict
-   was not set--and ``eval_str`` is ``inspect.ONLY_IF_STRINGIZED``,
-   ``get_annotations()`` will behave as if ``eval_str`` is false.
 
    .. versionadded:: 3.10
 

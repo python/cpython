@@ -1289,15 +1289,17 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertEqual(inspect.get_annotations(foo), {'a': int, 'b': str})
 
         foo.__annotations__ = {'a': 'foo', 'b':'str'}
-        self.assertEqual(inspect.get_annotations(foo, locals=locals()), {'a': foo, 'b': str})
-        self.assertEqual(inspect.get_annotations(foo, globals=locals()), {'a': foo, 'b': str})
+        self.assertEqual(inspect.get_annotations(foo), {'a': 'foo', 'b': 'str'})
+
+        self.assertEqual(inspect.get_annotations(foo, eval_str=True, locals=locals()), {'a': foo, 'b': str})
+        self.assertEqual(inspect.get_annotations(foo, eval_str=True, globals=locals()), {'a': foo, 'b': str})
 
         isa = inspect_stock_annotations
         self.assertEqual(inspect.get_annotations(isa), {'a': int, 'b': str})
         self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': int, 'b': str})
         self.assertEqual(inspect.get_annotations(isa.function), {'a': int, 'b': str, 'return': isa.MyClass})
         self.assertEqual(inspect.get_annotations(isa.function2), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function3), {'a': int, 'b': str, 'c': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(isa.function3), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
         self.assertEqual(inspect.get_annotations(inspect), {}) # inspect module has no annotations
         self.assertEqual(inspect.get_annotations(isa.UnannotatedClass), {})
         self.assertEqual(inspect.get_annotations(isa.unannotated_function), {})
@@ -1335,11 +1337,11 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def test_get_annotations_with_stringized_annotations(self):
         isa = inspect_stringized_annotations
-        self.assertEqual(inspect.get_annotations(isa), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': int, 'b': str})
-        self.assertEqual(inspect.get_annotations(isa.function), {'a': int, 'b': str, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function2), {'a': int, 'b': 'str', 'c': isa.MyClass, 'return': isa.MyClass})
-        self.assertEqual(inspect.get_annotations(isa.function3), {'a': 'int', 'b': 'str', 'c': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa), {'a': 'int', 'b': 'str'})
+        self.assertEqual(inspect.get_annotations(isa.MyClass), {'a': 'int', 'b': 'str'})
+        self.assertEqual(inspect.get_annotations(isa.function), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.function2), {'a': 'int', 'b': "'str'", 'c': 'MyClass', 'return': 'MyClass'})
+        self.assertEqual(inspect.get_annotations(isa.function3), {'a': "'int'", 'b': "'str'", 'c': "'MyClass'"})
         self.assertEqual(inspect.get_annotations(isa.UnannotatedClass), {})
         self.assertEqual(inspect.get_annotations(isa.unannotated_function), {})
 
@@ -1373,12 +1375,13 @@ class TestClassesAndFunctions(unittest.TestCase):
         wrapped = times_three(isa.function)
         self.assertEqual(wrapped(1, 'x'), isa.MyClass(3, 'xxx'))
         self.assertIsNot(wrapped.__globals__, isa.function.__globals__)
-        self.assertEqual(inspect.get_annotations(wrapped), {'a': int, 'b': str, 'return': isa.MyClass})
+        self.assertEqual(inspect.get_annotations(wrapped), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
         self.assertEqual(inspect.get_annotations(wrapped, eval_str=True), {'a': int, 'b': str, 'return': isa.MyClass})
         self.assertEqual(inspect.get_annotations(wrapped, eval_str=False), {'a': 'int', 'b': 'str', 'return': 'MyClass'})
 
         # test that local namespace lookups work
-        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': int})
+        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations), {'x': 'mytype'})
+        self.assertEqual(inspect.get_annotations(isa.MyClassWithLocalAnnotations, eval_str=True), {'x': int})
 
 
 class TestIsDataDescriptor(unittest.TestCase):
