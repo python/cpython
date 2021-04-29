@@ -2288,5 +2288,7 @@ from Python 3.9; to support a range of macOS versions, continue to target
 for and build on the oldest version in the range.
 
 (Originally contributed by Ronald Oussoren and Lawrence D'Anna in :issue:`41100`,
-with fixes by FX Coudert and Eli Rykoff, and backported to 3.8 by Maxime Bélanger)
+with fixes by FX Coudert and Eli Rykoff, and backported to 3.8 by Maxime Bélanger
+and Ned Deily)
+
 
