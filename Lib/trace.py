@@ -116,7 +116,7 @@ class _Ignore:
         return 0
 
 def _modname(path):
-    """Return a plausible module name for the patch."""
+    """Return a plausible module name for the path."""
 
     base = os.path.basename(path)
     filename, ext = os.path.splitext(base)

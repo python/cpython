@@ -118,10 +118,10 @@ More condensed:
 
 Using :func:`new` with an algorithm provided by OpenSSL:
 
-   >>> h = hashlib.new('ripemd160')
+   >>> h = hashlib.new('sha512_256')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
-   'cc4a5ce1b3df48aec5d22d1f16b894a0b894eccc'
+   '19197dc4d03829df858011c6c87600f994a858103bbc19005f20987aa19a97e2'
 
 Hashlib provides the following constant attributes:
 
@@ -266,6 +266,12 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
       Python implementation uses an inline version of :mod:`hmac`. It is about
       three times slower and doesn't release the GIL.
 
+   .. deprecated:: 3.10
+
+      Slow Python implementation of *pbkdf2_hmac* is deprecated. In the
+      future the function will only be available when Python is compiled
+      with OpenSSL.
+
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
    The function provides scrypt password-based key derivation function as
@@ -279,8 +285,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
-
-   .. availability:: OpenSSL 1.1+.
 
    .. versionadded:: 3.6
 
@@ -746,5 +750,5 @@ Domain Dedication 1.0 Universal:
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
-   https://www.ietf.org/rfc/rfc2898.txt
-      PKCS #5: Password-Based Cryptography Specification Version 2.0
+   https://www.ietf.org/rfc/rfc8018.txt
+      PKCS #5: Password-Based Cryptography Specification Version 2.1

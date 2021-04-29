@@ -35,6 +35,7 @@ class BuildExtTestCase(TempdirManager,
         site.USER_BASE = self.mkdtemp()
         from distutils.command import build_ext
         build_ext.USER_BASE = site.USER_BASE
+        self.old_config_vars = dict(sysconfig._config_vars)
 
         # bpo-30132: On Windows, a .pdb file may be created in the current
         # working directory. Create a temporary working directory to cleanup
@@ -48,6 +49,8 @@ class BuildExtTestCase(TempdirManager,
         site.USER_BASE = self.old_user_base
         from distutils.command import build_ext
         build_ext.USER_BASE = self.old_user_base
+        sysconfig._config_vars.clear()
+        sysconfig._config_vars.update(self.old_config_vars)
         super(BuildExtTestCase, self).tearDown()
 
     def build_ext(self, *args, **kwargs):
@@ -493,12 +496,16 @@ class BuildExtTestCase(TempdirManager,
         # format the target value as defined in the Apple
         # Availability Macros.  We can't use the macro names since
         # at least one value we test with will not exist yet.
-        if target[1] < 10:
+        if target[:2] < (10, 10):
             # for 10.1 through 10.9.x -> "10n0"
             target = '%02d%01d0' % target
         else:
             # for 10.10 and beyond -> "10nn00"
-            target = '%02d%02d00' % target
+            if len(target) >= 2:
+                target = '%02d%02d00' % target
+            else:
+                # 11 and later can have no minor version (11 instead of 11.0)
+                target = '%02d0000' % target
         deptarget_ext = Extension(
             'deptarget',
             [deptarget_c],

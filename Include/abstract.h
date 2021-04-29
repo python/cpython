@@ -324,10 +324,20 @@ PyAPI_FUNC(PyObject *) PyObject_Format(PyObject *obj,
    returns itself. */
 PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
 
-/* Returns 1 if the object 'obj' provides iterator protocols, and 0 otherwise.
+/* Takes an AsyncIterable object and returns an AsyncIterator for it.
+   This is typically a new iterator but if the argument is an AsyncIterator,
+   this returns itself. */
+PyAPI_FUNC(PyObject *) PyObject_GetAiter(PyObject *);
+
+/* Returns non-zero if the object 'obj' provides iterator protocols, and 0 otherwise.
 
    This function always succeeds. */
 PyAPI_FUNC(int) PyIter_Check(PyObject *);
+
+/* Returns non-zero if the object 'obj' provides AsyncIterator protocols, and 0 otherwise.
+
+   This function always succeeds. */
+PyAPI_FUNC(int) PyAiter_Check(PyObject *);
 
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
@@ -338,11 +348,7 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    NULL with an exception means an error occurred. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
-typedef enum {
-    PYGEN_RETURN = 0,
-    PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
-} PySendResult;
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 
 /* Takes generator, coroutine or iterator object and sends the value into it.
    Returns:
@@ -353,6 +359,7 @@ typedef enum {
    - PYGEN_NEXT (1) if generator has yielded.
      'result' parameter is filled with yielded value. */
 PyAPI_FUNC(PySendResult) PyIter_Send(PyObject *, PyObject *, PyObject **);
+#endif
 
 
 /* === Number Protocol ================================================== */

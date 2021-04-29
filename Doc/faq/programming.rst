@@ -29,26 +29,26 @@ Python distribution (normally available as Tools/scripts/idle), includes a
 graphical debugger.
 
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
-Pythonwin debugger colors breakpoints and has quite a few cool features such as
-debugging non-Pythonwin programs.  Pythonwin is available as part of the `Python
-for Windows Extensions <https://sourceforge.net/projects/pywin32/>`__ project and
-as a part of the ActivePython distribution (see
-https://www.activestate.com/activepython\ ).
+PythonWin debugger colors breakpoints and has quite a few cool features such as
+debugging non-PythonWin programs.  PythonWin is available as part of
+`pywin32 <https://github.com/mhammond/pywin32>`_ project and
+as a part of the
+`ActivePython <https://www.activestate.com/products/python/>`_ distribution.
 
 `Eric <http://eric-ide.python-projects.org/>`_ is an IDE built on PyQt
 and the Scintilla editing component.
 
-Pydb is a version of the standard Python debugger pdb, modified for use with DDD
-(Data Display Debugger), a popular graphical debugger front end.  Pydb can be
-found at http://bashdb.sourceforge.net/pydb/ and DDD can be found at
-https://www.gnu.org/software/ddd.
+`trepan3k <https://github.com/rocky/python3-trepan/>`_ is a gdb-like debugger.
+
+`Visual Studio Code <https://code.visualstudio.com/>`_ is an IDE with debugging
+tools that integrates with version-control software.
 
 There are a number of commercial Python IDEs that include graphical debuggers.
 They include:
 
-* Wing IDE (https://wingware.com/)
-* Komodo IDE (https://komodoide.com/)
-* PyCharm (https://www.jetbrains.com/pycharm/)
+* `Wing IDE <https://wingware.com/>`_
+* `Komodo IDE <https://www.activestate.com/products/komodo-ide/>`_
+* `PyCharm <https://www.jetbrains.com/pycharm/>`_
 
 
 Are there tools to help find bugs or perform static analysis?
@@ -90,11 +90,12 @@ then compiles the generated C code and links it with the rest of the Python
 interpreter to form a self-contained binary which acts exactly like your script.
 
 Obviously, freeze requires a C compiler.  There are several other utilities
-which don't. One is Thomas Heller's py2exe (Windows only) at
+which don't:
 
-    http://www.py2exe.org/
-
-Another tool is Anthony Tuininga's `cx_Freeze <https://anthony-tuininga.github.io/cx_Freeze/>`_.
+* `py2exe <http://www.py2exe.org/>`_ for Windows binaries
+* `py2app <https://github.com/ronaldoussoren/py2app>`_ for Mac OS X binaries
+* `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for cross-platform
+  binaries
 
 
 Are there coding standards or a style guide for Python programs?
@@ -942,7 +943,7 @@ There are various techniques.
      f()
 
 
-* Use :func:`locals` or :func:`eval` to resolve the function name::
+* Use :func:`locals` to resolve the function name::
 
      def myFunc():
          print("hello")
@@ -952,12 +953,6 @@ There are various techniques.
      f = locals()[fname]
      f()
 
-     f = eval(fname)
-     f()
-
-  Note: Using :func:`eval` is slow and dangerous.  If you don't have absolute
-  control over the contents of the string, someone could pass a string that
-  resulted in an arbitrary function being executed.
 
 Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
 -------------------------------------------------------------------------------------
@@ -1122,18 +1117,13 @@ trailing newline from a string.
 How do I iterate over a sequence in reverse order?
 --------------------------------------------------
 
-Use the :func:`reversed` built-in function, which is new in Python 2.4::
+Use the :func:`reversed` built-in function::
 
    for x in reversed(sequence):
        ...  # do something with x ...
 
 This won't touch your original sequence, but build a new copy with reversed
 order to iterate over.
-
-With Python 2.3, you can use an extended slice syntax::
-
-   for x in sequence[::-1]:
-       ...  # do something with x ...
 
 
 How do you remove duplicates from a list?
@@ -1381,20 +1371,6 @@ out the element you want. ::
    ['else', 'sort', 'to', 'something']
 
 
-An alternative for the last step is::
-
-   >>> result = []
-   >>> for p in pairs: result.append(p[1])
-
-If you find this more legible, you might prefer to use this instead of the final
-list comprehension.  However, it is almost twice as slow for long lists.  Why?
-First, the ``append()`` operation has to reallocate memory, and while it uses
-some tricks to avoid doing that each time, it still has to do it occasionally,
-and that costs quite a bit.  Second, the expression "result.append" requires an
-extra attribute lookup, and third, there's a speed reduction from having to make
-all those function calls.
-
-
 Objects
 =======
 
@@ -1444,6 +1420,41 @@ is an instance of any of a number of classes by providing a tuple instead of a
 single class, e.g. ``isinstance(obj, (class1, class2, ...))``, and can also
 check whether an object is one of Python's built-in types, e.g.
 ``isinstance(obj, str)`` or ``isinstance(obj, (int, float, complex))``.
+
+Note that :func:`isinstance` also checks for virtual inheritance from an
+:term:`abstract base class`.  So, the test will return ``True`` for a
+registered class even if hasn't directly or indirectly inherited from it.  To
+test for "true inheritance", scan the :term:`MRO` of the class:
+
+.. testcode::
+
+    from collections.abc import Mapping
+
+    class P:
+         pass
+
+    class C(P):
+        pass
+
+    Mapping.register(P)
+
+.. doctest::
+
+    >>> c = C()
+    >>> isinstance(c, C)        # direct
+    True
+    >>> isinstance(c, P)        # indirect
+    True
+    >>> isinstance(c, Mapping)  # virtual
+    True
+
+    # Actual inheritance chain
+    >>> type(c).__mro__
+    (<class 'C'>, <class 'P'>, <class 'object'>)
+
+    # Test for "true inheritance"
+    >>> Mapping in type(c).__mro__
+    False
 
 Note that most programs do not use :func:`isinstance` on user-defined classes
 very often.  If you are developing the classes yourself, a more proper
@@ -1537,18 +1548,18 @@ order` (MRO) with ``type(self).__mro__``, and return the next in line after
 How can I organize my code to make it easier to change the base class?
 ----------------------------------------------------------------------
 
-You could define an alias for the base class, assign the real base class to it
-before your class definition, and use the alias throughout your class.  Then all
+You could assign the base class to an alias and derive from the alias.  Then all
 you have to change is the value assigned to the alias.  Incidentally, this trick
 is also handy if you want to decide dynamically (e.g. depending on availability
 of resources) which base class to use.  Example::
 
-   BaseAlias = <real base class>
+   class Base:
+       ...
+
+   BaseAlias = Base
 
    class Derived(BaseAlias):
-       def meth(self):
-           BaseAlias.meth(self)
-           ...
+       ...
 
 
 How do I create static class data and static class methods?
@@ -1726,6 +1737,93 @@ to the object:
 13891296
 
 
+When can I rely on identity tests with the *is* operator?
+---------------------------------------------------------
+
+The ``is`` operator tests for object identity.  The test ``a is b`` is
+equivalent to ``id(a) == id(b)``.
+
+The most important property of an identity test is that an object is always
+identical to itself, ``a is a`` always returns ``True``.  Identity tests are
+usually faster than equality tests.  And unlike equality tests, identity tests
+are guaranteed to return a boolean ``True`` or ``False``.
+
+However, identity tests can *only* be substituted for equality tests when
+object identity is assured.  Generally, there are three circumstances where
+identity is guaranteed:
+
+1) Assignments create new names but do not change object identity.  After the
+assignment ``new = old``, it is guaranteed that ``new is old``.
+
+2) Putting an object in a container that stores object references does not
+change object identity.  After the list assignment ``s[0] = x``, it is
+guaranteed that ``s[0] is x``.
+
+3) If an object is a singleton, it means that only one instance of that object
+can exist.  After the assignments ``a = None`` and ``b = None``, it is
+guaranteed that ``a is b`` because ``None`` is a singleton.
+
+In most other circumstances, identity tests are inadvisable and equality tests
+are preferred.  In particular, identity tests should not be used to check
+constants such as :class:`int` and :class:`str` which aren't guaranteed to be
+singletons::
+
+    >>> a = 1000
+    >>> b = 500
+    >>> c = b + 500
+    >>> a is c
+    False
+
+    >>> a = 'Python'
+    >>> b = 'Py'
+    >>> c = b + 'thon'
+    >>> a is c
+    False
+
+Likewise, new instances of mutable containers are never identical::
+
+    >>> a = []
+    >>> b = []
+    >>> a is b
+    False
+
+In the standard library code, you will see several common patterns for
+correctly using identity tests:
+
+1) As recommended by :pep:`8`, an identity test is the preferred way to check
+for ``None``.  This reads like plain English in code and avoids confusion with
+other objects that may have boolean values that evaluate to false.
+
+2) Detecting optional arguments can be tricky when ``None`` is a valid input
+value.  In those situations, you can create an singleton sentinel object
+guaranteed to be distinct from other objects.  For example, here is how
+to implement a method that behaves like :meth:`dict.pop`::
+
+   _sentinel = object()
+
+   def pop(self, key, default=_sentinel):
+       if key in self:
+           value = self[key]
+           del self[key]
+           return value
+       if default is _sentinel:
+           raise KeyError(key)
+       return default
+
+3) Container implementations sometimes need to augment equality tests with
+identity tests.  This prevents the code from being confused by objects such as
+``float('NaN')`` that are not equal to themselves.
+
+For example, here is the implementation of
+:meth:`collections.abc.Sequence.__contains__`::
+
+    def __contains__(self, value):
+        for v in self:
+            if v is value or v == value:
+                return True
+        return False
+
+
 Modules
 =======
 
@@ -1801,26 +1899,26 @@ How can I have modules that mutually import each other?
 
 Suppose you have the following modules:
 
-foo.py::
+:file:`foo.py`::
 
    from bar import bar_var
    foo_var = 1
 
-bar.py::
+:file:`bar.py`::
 
    from foo import foo_var
    bar_var = 2
 
 The problem is that the interpreter will perform the following steps:
 
-* main imports foo
-* Empty globals for foo are created
-* foo is compiled and starts executing
-* foo imports bar
-* Empty globals for bar are created
-* bar is compiled and starts executing
-* bar imports foo (which is a no-op since there already is a module named foo)
-* bar.foo_var = foo.foo_var
+* main imports ``foo``
+* Empty globals for ``foo`` are created
+* ``foo`` is compiled and starts executing
+* ``foo`` imports ``bar``
+* Empty globals for ``bar`` are created
+* ``bar`` is compiled and starts executing
+* ``bar`` imports ``foo`` (which is a no-op since there already is a module named ``foo``)
+* The import mechanism tries to read ``foo_var`` from ``foo`` globals, to set ``bar.foo_var = foo.foo_var``
 
 The last step fails, because Python isn't done with interpreting ``foo`` yet and
 the global symbol dictionary for ``foo`` is still empty.

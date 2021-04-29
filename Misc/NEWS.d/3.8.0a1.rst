@@ -1784,7 +1784,7 @@ instead of an OrderedDict.
 .. nonce: Q0ktFC
 .. section: Library
 
-An ExitStack is now used internally within subprocess.POpen to clean up pipe
+An ExitStack is now used internally within subprocess.Popen to clean up pipe
 file handles. No behavior change in normal operation. But if closing one
 handle were ever to cause an exception, the others will now be closed
 instead of leaked.  (patch by Giampaolo Rodola)

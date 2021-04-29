@@ -176,27 +176,12 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(f));
-    if (f->f_lasti == -1) {
-        if (arg && arg != Py_None) {
-            const char *msg = "can't send non-None value to a "
-                              "just-started generator";
-            if (PyCoro_CheckExact(gen)) {
-                msg = NON_INIT_CORO_MSG;
-            }
-            else if (PyAsyncGen_CheckExact(gen)) {
-                msg = "can't send non-None value to a "
-                      "just-started async generator";
-            }
-            PyErr_SetString(PyExc_TypeError, msg);
-            return PYGEN_ERROR;
-        }
-    } else {
-        /* Push arg onto the frame's value stack */
-        result = arg ? arg : Py_None;
-        Py_INCREF(result);
-        gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
-        gen->gi_frame->f_stackdepth++;
-    }
+    assert(f->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(f->f_code->co_code))[0] == GEN_START);
+    /* Push arg onto the frame's value stack */
+    result = arg ? arg : Py_None;
+    Py_INCREF(result);
+    gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
+    gen->gi_frame->f_stackdepth++;
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -268,13 +253,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }
 
-PySendResult
-PyGen_Send(PyGenObject *gen, PyObject *arg, PyObject **result)
+static PySendResult
+PyGen_am_send(PyGenObject *gen, PyObject *arg, PyObject **result)
 {
-    assert(PyGen_CheckExact(gen) || PyCoro_CheckExact(gen));
-    assert(result != NULL);
-    assert(arg != NULL);
-
     return gen_send_ex2(gen, arg, result, 0, 0);
 }
 
@@ -361,7 +342,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[(f->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
         assert(f->f_stackdepth > 0);
         yf = f->f_valuestack[f->f_stackdepth-1];
@@ -485,7 +466,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
             assert(gen->gi_frame->f_lasti >= 0);
-            gen->gi_frame->f_lasti += sizeof(_Py_CODEUNIT);
+            gen->gi_frame->f_lasti += 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -772,6 +753,14 @@ static PyMethodDef gen_methods[] = {
     {NULL, NULL}        /* Sentinel */
 };
 
+static PyAsyncMethods gen_as_async = {
+    0,                                          /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
+};
+
+
 PyTypeObject PyGen_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "generator",                                /* tp_name */
@@ -782,7 +771,7 @@ PyTypeObject PyGen_Type = {
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
+    &gen_as_async,                              /* tp_as_async */
     (reprfunc)gen_repr,                         /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -793,7 +782,8 @@ PyTypeObject PyGen_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)gen_traverse,                 /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1015,7 +1005,8 @@ static PyMethodDef coro_methods[] = {
 static PyAsyncMethods coro_as_async = {
     (unaryfunc)coro_await,                      /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
 };
 
 PyTypeObject PyCoro_Type = {
@@ -1039,7 +1030,8 @@ PyTypeObject PyCoro_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)gen_traverse,                 /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1397,7 +1389,8 @@ static PyMethodDef async_gen_methods[] = {
 static PyAsyncMethods async_gen_as_async = {
     0,                                          /* am_await */
     PyObject_SelfIter,                          /* am_aiter */
-    (unaryfunc)async_gen_anext                  /* am_anext */
+    (unaryfunc)async_gen_anext,                 /* am_anext */
+    (sendfunc)PyGen_am_send,                    /* am_send  */
 };
 
 
@@ -1422,7 +1415,8 @@ PyTypeObject PyAsyncGen_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_AM_SEND,                /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)async_gen_traverse,           /* tp_traverse */
     0,                                          /* tp_clear */
@@ -1480,9 +1474,9 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 
 void
-_PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
+_PyAsyncGen_ClearFreeLists(PyInterpreterState *interp)
 {
-    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+    struct _Py_async_gen_state *state = &interp->async_gen;
 
     while (state->value_numfree) {
         _PyAsyncGenWrappedValue *o;
@@ -1500,11 +1494,11 @@ _PyAsyncGen_ClearFreeLists(PyThreadState *tstate)
 }
 
 void
-_PyAsyncGen_Fini(PyThreadState *tstate)
+_PyAsyncGen_Fini(PyInterpreterState *interp)
 {
-    _PyAsyncGen_ClearFreeLists(tstate);
+    _PyAsyncGen_ClearFreeLists(interp);
 #ifdef Py_DEBUG
-    struct _Py_async_gen_state *state = &tstate->interp->async_gen;
+    struct _Py_async_gen_state *state = &interp->async_gen;
     state->value_numfree = -1;
     state->asend_numfree = -1;
 #endif
@@ -1660,7 +1654,8 @@ static PyMethodDef async_gen_asend_methods[] = {
 static PyAsyncMethods async_gen_asend_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 
@@ -2068,7 +2063,8 @@ static PyMethodDef async_gen_athrow_methods[] = {
 static PyAsyncMethods async_gen_athrow_as_async = {
     PyObject_SelfIter,                          /* am_await */
     0,                                          /* am_aiter */
-    0                                           /* am_anext */
+    0,                                          /* am_anext */
+    0,                                          /* am_send  */
 };
 
 

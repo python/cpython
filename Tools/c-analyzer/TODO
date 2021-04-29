@@ -154,8 +154,6 @@ Objects/bytesobject.c:nullstring                                 static PyBytesO
 Objects/codeobject.c:PyCode_NewEmpty():nulltuple                 static PyObject *nulltuple
 Objects/dictobject.c:empty_values                                static PyObject *empty_values[1]
 Objects/listobject.c:indexerr                                    static PyObject *indexerr
-Objects/longobject.c:_PyLong_One                                 PyObject *_PyLong_One
-Objects/longobject.c:_PyLong_Zero                                PyObject *_PyLong_Zero
 Objects/longobject.c:small_ints                                  static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS]
 Objects/setobject.c:emptyfrozenset                               static PyObject *emptyfrozenset
 Python/context.c:_token_missing                                  static PyObject *_token_missing

@@ -2197,6 +2197,18 @@ class CharmapTest(unittest.TestCase):
             ("", len(allbytes))
         )
 
+        self.assertRaisesRegex(TypeError,
+            "character mapping must be in range\\(0x110000\\)",
+            codecs.charmap_decode,
+            b"\x00\x01\x02", "strict", {0: "A", 1: 'Bb', 2: -2}
+        )
+
+        self.assertRaisesRegex(TypeError,
+            "character mapping must be in range\\(0x110000\\)",
+            codecs.charmap_decode,
+            b"\x00\x01\x02", "strict", {0: "A", 1: 'Bb', 2: 999999999}
+        )
+
     def test_decode_with_int2int_map(self):
         a = ord('a')
         b = ord('b')
@@ -2754,29 +2766,14 @@ _TEST_CODECS = {}
 
 def _get_test_codec(codec_name):
     return _TEST_CODECS.get(codec_name)
-codecs.register(_get_test_codec) # Returns None, not usable as a decorator
-
-try:
-    # Issue #22166: Also need to clear the internal cache in CPython
-    from _codecs import _forget_codec
-except ImportError:
-    def _forget_codec(codec_name):
-        pass
 
 
 class ExceptionChainingTest(unittest.TestCase):
 
     def setUp(self):
-        # There's no way to unregister a codec search function, so we just
-        # ensure we render this one fairly harmless after the test
-        # case finishes by using the test case repr as the codec name
-        # The codecs module normalizes codec names, although this doesn't
-        # appear to be formally documented...
-        # We also make sure we use a truly unique id for the custom codec
-        # to avoid issues with the codec cache when running these tests
-        # multiple times (e.g. when hunting for refleaks)
-        unique_id = repr(self) + str(id(self))
-        self.codec_name = encodings.normalize_encoding(unique_id).lower()
+        self.codec_name = 'exception_chaining_test'
+        codecs.register(_get_test_codec)
+        self.addCleanup(codecs.unregister, _get_test_codec)
 
         # We store the object to raise on the instance because of a bad
         # interaction between the codec caching (which means we can't
@@ -2791,10 +2788,6 @@ class ExceptionChainingTest(unittest.TestCase):
         _TEST_CODECS.pop(self.codec_name, None)
         # Issue #22166: Also pop from caches to avoid appearance of ref leaks
         encodings._cache.pop(self.codec_name, None)
-        try:
-            _forget_codec(self.codec_name)
-        except KeyError:
-            pass
 
     def set_codec(self, encode, decode):
         codec_info = codecs.CodecInfo(encode, decode,
@@ -3417,7 +3410,7 @@ class Rot13UtilTest(unittest.TestCase):
 
 class CodecNameNormalizationTest(unittest.TestCase):
     """Test codec name normalization"""
-    def test_normalized_encoding(self):
+    def test_codecs_lookup(self):
         FOUND = (1, 2, 3, 4)
         NOT_FOUND = (None, None, None, None)
         def search_function(encoding):
@@ -3438,6 +3431,18 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('BBB.8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('a\xe9\u20ac-8'))
+
+    def test_encodings_normalize_encoding(self):
+        # encodings.normalize_encoding() ignores non-ASCII characters.
+        normalize = encodings.normalize_encoding
+        self.assertEqual(normalize('utf_8'), 'utf_8')
+        self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
+        self.assertEqual(normalize('utf   8'), 'utf_8')
+        # encodings.normalize_encoding() doesn't convert
+        # characters to lower case.
+        self.assertEqual(normalize('UTF 8'), 'UTF_8')
+        self.assertEqual(normalize('utf.8'), 'utf.8')
+        self.assertEqual(normalize('utf...8'), 'utf...8')
 
 
 if __name__ == "__main__":

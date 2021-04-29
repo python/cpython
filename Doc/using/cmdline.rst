@@ -380,25 +380,8 @@ Miscellaneous options
 .. _using-on-warnings:
 .. cmdoption:: -W arg
 
-   Warning control.  Python's warning machinery by default prints warning
-   messages to :data:`sys.stderr`.  A typical warning message has the following
-   form:
-
-   .. code-block:: none
-
-       file:line: category: message
-
-   By default, each warning is printed once for each source line where it
-   occurs.  This option controls how often warnings are printed.
-
-   Multiple :option:`-W` options may be given; when a warning matches more than
-   one option, the action for the last matching option is performed.  Invalid
-   :option:`-W` options are ignored (though, a warning message is printed about
-   invalid options when the first warning is issued).
-
-   Warnings can also be controlled using the :envvar:`PYTHONWARNINGS`
-   environment variable and from within a Python program using the
-   :mod:`warnings` module.
+   Warning control. Python's warning machinery by default prints warning
+   messages to :data:`sys.stderr`.
 
    The simplest settings apply a particular action unconditionally to all
    warnings emitted by a process (even those that are otherwise ignored by
@@ -411,13 +394,47 @@ Miscellaneous options
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
 
-   The action names can be abbreviated as desired (e.g. ``-Wi``, ``-Wd``,
-   ``-Wa``, ``-We``) and the interpreter will resolve them to the appropriate
-   action name.
+   The action names can be abbreviated as desired and the interpreter will
+   resolve them to the appropriate action name. For example, ``-Wi`` is the
+   same as ``-Wignore``.
+
+   The full form of argument is::
+
+       action:message:category:module:lineno
+
+   Empty fields match all values; trailing empty fields may be omitted. For
+   example ``-W ignore::DeprecationWarning`` ignores all DeprecationWarning
+   warnings.
+
+   The *action* field is as explained above but only applies to warnings that
+   match the remaining fields.
+
+   The *message* field must match the whole warning message; this match is
+   case-insensitive.
+
+   The *category* field matches the warning category
+   (ex: ``DeprecationWarning``). This must be a class name; the match test
+   whether the actual warning category of the message is a subclass of the
+   specified warning category.
+
+   The *module* field matches the (fully-qualified) module name; this match is
+   case-sensitive.
+
+   The *lineno* field matches the line number, where zero matches all line
+   numbers and is thus equivalent to an omitted line number.
+
+   Multiple :option:`-W` options can be given; when a warning matches more than
+   one option, the action for the last matching option is performed. Invalid
+   :option:`-W` options are ignored (though, a warning message is printed about
+   invalid options when the first warning is issued).
+
+   Warnings can also be controlled using the :envvar:`PYTHONWARNINGS`
+   environment variable and from within a Python program using the
+   :mod:`warnings` module. For example, the :func:`warnings.filterwarnings`
+   function can be used to use a regular expression on the warning message.
 
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
-
 
 .. cmdoption:: -x
 
@@ -433,7 +450,8 @@ Miscellaneous options
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
-     interactive interpreter. This only works on debug builds.
+     interactive interpreter. This only works on :ref:`debug builds
+     <debug-build>`.
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
@@ -447,13 +465,15 @@ Miscellaneous options
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
      default.
-   * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
-     the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
-     mode (even when it would otherwise activate automatically).
-     See :envvar:`PYTHONUTF8` for more details.
+   * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
+     ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
+     (even when it would otherwise activate automatically).
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
+   * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when the
+     locale-specific default encoding is used for opening files.
+     See also :envvar:`PYTHONWARNDEFAULTENCODING`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -482,6 +502,9 @@ Miscellaneous options
       string encoding and decoding operations.
 
       The ``-X showalloccount`` option has been removed.
+
+   .. versionadded:: 3.10
+      The ``-X warn_default_encoding`` option.
 
    .. deprecated-removed:: 3.9 3.10
       The ``-X oldparser`` option.
@@ -558,7 +581,7 @@ conflict.
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
-   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+   .. audit-event:: cpython.run_startup filename envvar-PYTHONSTARTUP
 
       Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
       the filename as the argument when called on startup.
@@ -776,16 +799,12 @@ conflict.
      :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
      the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
 
-   Install debug hooks:
+   Install :ref:`debug hooks <pymem-debug-hooks>`:
 
    * ``debug``: install debug hooks on top of the :ref:`default memory
      allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
-
-   See the :ref:`default memory allocators <default-memory-allocators>` and the
-   :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
-   memory allocators).
 
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
@@ -810,9 +829,10 @@ conflict.
 
 .. envvar:: PYTHONLEGACYWINDOWSFSENCODING
 
-   If set to a non-empty string, the default filesystem encoding and errors mode
-   will revert to their pre-3.6 values of 'mbcs' and 'replace', respectively.
-   Otherwise, the new defaults 'utf-8' and 'surrogatepass' are used.
+   If set to a non-empty string, the default :term:`filesystem encoding and
+   error handler` mode will revert to their pre-3.6 values of 'mbcs' and
+   'replace', respectively.  Otherwise, the new defaults 'utf-8' and
+   'surrogatepass' are used.
 
    This may also be enabled at runtime with
    :func:`sys._enablelegacywindowsfsencoding()`.
@@ -898,66 +918,33 @@ conflict.
 
 .. envvar:: PYTHONUTF8
 
-   If set to ``1``, enables the interpreter's UTF-8 mode, where ``UTF-8`` is
-   used as the text encoding for system interfaces, regardless of the
-   current locale setting.
+   If set to ``1``, enable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
-   This means that:
-
-    * :func:`sys.getfilesystemencoding()` returns ``'UTF-8'`` (the locale
-      encoding is ignored).
-    * :func:`locale.getpreferredencoding()` returns ``'UTF-8'`` (the locale
-      encoding is ignored, and the function's ``do_setlocale`` parameter has no
-      effect).
-    * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
-      UTF-8 as their text encoding, with the ``surrogateescape``
-      :ref:`error handler <error-handlers>` being enabled for :data:`sys.stdin`
-      and :data:`sys.stdout` (:data:`sys.stderr` continues to use
-      ``backslashreplace`` as it does in the default locale-aware mode)
-
-   As a consequence of the changes in those lower level APIs, other higher
-   level APIs also exhibit different default behaviours:
-
-    * Command line arguments, environment variables and filenames are decoded
-      to text using the UTF-8 encoding.
-    * :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
-    * :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
-      encoding by default. However, they still use the strict error handler by
-      default so that attempting to open a binary file in text mode is likely
-      to raise an exception rather than producing nonsense data.
-
-   Note that the standard stream settings in UTF-8 mode can be overridden by
-   :envvar:`PYTHONIOENCODING` (just as they can be in the default locale-aware
-   mode).
-
-   If set to ``0``, the interpreter runs in its default locale-aware mode.
+   If set to ``0``, disable the :ref:`Python UTF-8 Mode <utf8-mode>`.
 
    Setting any other non-empty string causes an error during interpreter
    initialisation.
 
-   If this environment variable is not set at all, then the interpreter defaults
-   to using the current locale settings, *unless* the current locale is
-   identified as a legacy ASCII-based locale
-   (as described for :envvar:`PYTHONCOERCECLOCALE`), and locale coercion is
-   either disabled or fails. In such legacy locales, the interpreter will
-   default to enabling UTF-8 mode unless explicitly instructed not to do so.
-
-   Also available as the :option:`-X` ``utf8`` option.
-
    .. versionadded:: 3.7
-      See :pep:`540` for more details.
+
+.. envvar:: PYTHONWARNDEFAULTENCODING
+
+   If this environment variable is set to a non-empty string, issue a
+   :class:`EncodingWarning` when the locale-specific default encoding is used.
+
+   See :ref:`io-encoding-warning` for details.
+
+   .. versionadded:: 3.10
 
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
-Setting these variables only has an effect in a debug build of Python.
-
 .. envvar:: PYTHONTHREADDEBUG
 
    If set, Python will print threading debug info.
 
-   Need Python configured with the ``--with-pydebug`` build option.
+   Need a :ref:`debug build of Python <debug-build>`.
 
 
 .. envvar:: PYTHONDUMPREFS
@@ -965,4 +952,4 @@ Setting these variables only has an effect in a debug build of Python.
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
 
-   Need Python configured with the ``--with-trace-refs`` build option.
+   Need Python configured with the :option:`--with-trace-refs` build option.

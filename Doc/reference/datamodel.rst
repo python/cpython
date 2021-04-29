@@ -187,6 +187,24 @@ Ellipsis
    related to mathematical numbers, but subject to the limitations of numerical
    representation in computers.
 
+   The string representations of the numeric classes, computed by
+   :meth:`__repr__` and :meth:`__str__`, have the following
+   properties:
+
+   * They are valid numeric literals which, when passed to their
+     class constructor, produce an object having the value of the
+     original numeric.
+
+   * The representation is in base 10, when possible.
+
+   * Leading zeros, possibly excepting a single zero before a
+     decimal point, are not shown.
+
+   * Trailing zeros, possibly excepting a single zero after a
+     decimal point, are not shown.
+
+   * A sign is shown only when the number is negative.
+
    Python distinguishes between integers, floating point numbers, and complex
    numbers:
 
@@ -199,7 +217,6 @@ Ellipsis
       There are two types of integers:
 
       Integers (:class:`int`)
-
          These represent numbers in an unlimited range, subject to available (virtual)
          memory only.  For the purpose of shift and mask operations, a binary
          representation is assumed, and negative numbers are represented in a variant of
@@ -1115,9 +1132,8 @@ Internal types
       around any other object, usually a user-defined method object. When a static
       method object is retrieved from a class or a class instance, the object actually
       returned is the wrapped object, which is not subject to any further
-      transformation. Static method objects are not themselves callable, although the
-      objects they wrap usually are. Static method objects are created by the built-in
-      :func:`staticmethod` constructor.
+      transformation. Static method objects are also callable. Static method
+      objects are created by the built-in :func:`staticmethod` constructor.
 
    Class method objects
       A class method object, like a static method object, is a wrapper around another
@@ -1377,12 +1393,14 @@ Basic customization
    context (e.g., in the condition of an ``if`` statement), Python will call
    :func:`bool` on the value to determine if the result is true or false.
 
-   By default, :meth:`__ne__` delegates to :meth:`__eq__` and
-   inverts the result unless it is ``NotImplemented``.  There are no other
-   implied relationships among the comparison operators, for example,
-   the truth of ``(x<y or x==y)`` does not imply ``x<=y``.
-   To automatically generate ordering operations from a single root operation,
-   see :func:`functools.total_ordering`.
+   By default, ``object`` implements :meth:`__eq__` by using ``is``, returning
+   ``NotImplemented`` in the case of a false comparison:
+   ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
+   delegates to :meth:`__eq__` and inverts the result unless it is
+   ``NotImplemented``.  There are no other implied relationships among the
+   comparison operators or default implementations; for example, the truth of
+   ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
+   operations from a single root operation, see :func:`functools.total_ordering`.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
@@ -1540,6 +1558,12 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
       result of implicit invocation via language syntax or built-in functions.
       See :ref:`special-lookup`.
 
+   .. audit-event:: object.__getattr__ obj,name object.__getattribute__
+
+      For certain sensitive attribute accesses, raises an
+      :ref:`auditing event <auditing>` ``object.__getattr__`` with arguments
+      ``obj`` and ``name``.
+
 
 .. method:: object.__setattr__(self, name, value)
 
@@ -1551,11 +1575,23 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    call the base class method with the same name, for example,
    ``object.__setattr__(self, name, value)``.
 
+   .. audit-event:: object.__setattr__ obj,name,value object.__setattr__
+
+      For certain sensitive attribute assignments, raises an
+      :ref:`auditing event <auditing>` ``object.__setattr__`` with arguments
+      ``obj``, ``name``, ``value``.
+
 
 .. method:: object.__delattr__(self, name)
 
    Like :meth:`__setattr__` but for attribute deletion instead of assignment.  This
    should only be implemented if ``del obj.name`` is meaningful for the object.
+
+   .. audit-event:: object.__delattr__ obj,name object.__delattr__
+
+      For certain sensitive attribute deletions, raises an
+      :ref:`auditing event <auditing>` ``object.__delattr__`` with arguments
+      ``obj`` and ``name``.
 
 
 .. method:: object.__dir__(self)
@@ -1736,7 +1772,7 @@ Super Binding
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
-For instance bindings, the precedence of descriptor invocation depends on the
+For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`__get__`, :meth:`__set__` and :meth:`__delete__`.  If it does not
 define :meth:`__get__`, then accessing the attribute will return the descriptor
@@ -2130,7 +2166,7 @@ Emulating callable objects
    .. index:: pair: call; instance
 
    Called when the instance is "called" as a function; if this method is defined,
-   ``x(arg1, arg2, ...)`` is a shorthand for ``x.__call__(arg1, arg2, ...)``.
+   ``x(arg1, arg2, ...)`` roughly translates to ``type(x).__call__(x, arg1, ...)``.
 
 
 .. _sequence-types:
@@ -2514,6 +2550,38 @@ For more information on context managers, see :ref:`typecontextmanager`.
    :pep:`343` - The "with" statement
       The specification, background, and examples for the Python :keyword:`with`
       statement.
+
+
+.. _class-pattern-matching:
+
+Customizing positional arguments in class pattern matching
+----------------------------------------------------------
+
+When using a class name in a pattern, positional arguments in the pattern are not
+allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
+support in ``MyClass``. To be able to use that kind of patterns, the class needs to
+define a *__match_args__* attribute.
+
+.. data:: object.__match_args__
+
+   This class variable can be assigned a tuple of strings. When this class is
+   used in a class pattern with positional arguments, each positional argument will
+   be converted into a keyword argument, using the corresponding value in
+   *__match_args__* as the keyword. The absence of this attribute is equivalent to
+   setting it to ``()``.
+
+For example, if ``MyClass.__match_args__`` is ``("left", "center", "right")`` that means
+that ``case MyClass(x, y)`` is equivalent to ``case MyClass(left=x, center=y)``. Note
+that the number of arguments in the pattern must be smaller than or equal to the number
+of elements in *__match_args__*; if it is larger, the pattern match attempt will raise
+a :exc:`TypeError`.
+
+.. versionadded:: 3.10
+
+.. seealso::
+
+   :pep:`634` - Structural Pattern Matching
+      The specification for the Python ``match`` statement.
 
 
 .. _special-lookup:

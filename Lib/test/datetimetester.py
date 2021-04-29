@@ -1781,6 +1781,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassDate))
 
     def test_backdoor_resistance(self):
         # For fast unpickling, the constructor accepts a pickle byte string.
@@ -2308,6 +2309,7 @@ class TestDateTime(TestDate):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassDatetime))
 
     def test_compat_unpickle(self):
         tests = [
@@ -2607,6 +2609,7 @@ class TestDateTime(TestDate):
 
         with self.assertRaises(ValueError): strptime("-2400", "%z")
         with self.assertRaises(ValueError): strptime("-000", "%z")
+        with self.assertRaises(ValueError): strptime("z", "%z")
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
@@ -3357,6 +3360,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             green = pickler.dumps(orig, proto)
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
+            self.assertTrue(isinstance(derived, SubclassTime))
 
     def test_compat_unpickle(self):
         tests = [

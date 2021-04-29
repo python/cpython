@@ -195,7 +195,10 @@ def make_msgid(idstring=None, domain=None):
 
 
 def parsedate_to_datetime(data):
-    *dtuple, tz = _parsedate_tz(data)
+    parsed_date_tz = _parsedate_tz(data)
+    if parsed_date_tz is None:
+        raise ValueError('Invalid date value or format "%s"' % str(data))
+    *dtuple, tz = parsed_date_tz
     if tz is None:
         return datetime.datetime(*dtuple[:6])
     return datetime.datetime(*dtuple[:6],

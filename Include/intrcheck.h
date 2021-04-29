@@ -5,7 +5,6 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(int) PyOS_InterruptOccurred(void);
-PyAPI_FUNC(void) PyOS_InitInterrupts(void);
 #ifdef HAVE_FORK
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03070000
 PyAPI_FUNC(void) PyOS_BeforeFork(void);

@@ -12,7 +12,7 @@ class ParserGenerator(object):
     def __init__(self, filename, stream=None):
         close_stream = None
         if stream is None:
-            stream = open(filename)
+            stream = open(filename, encoding="utf-8")
             close_stream = stream.close
         self.filename = filename
         self.stream = stream

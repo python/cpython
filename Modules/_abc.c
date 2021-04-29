@@ -1,6 +1,7 @@
 /* ABCMeta implementation */
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -27,7 +28,7 @@ typedef struct {
 static inline _abcmodule_state*
 get_abc_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_abcmodule_state *)state;
 }
@@ -891,14 +892,14 @@ static PyModuleDef_Slot _abcmodule_slots[] = {
 
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
-    "_abc",
-    _abc__doc__,
-    sizeof(_abcmodule_state),
-    _abcmodule_methods,
-    _abcmodule_slots,
-    _abcmodule_traverse,
-    _abcmodule_clear,
-    _abcmodule_free,
+    .m_name = "_abc",
+    .m_doc = _abc__doc__,
+    .m_size = sizeof(_abcmodule_state),
+    .m_methods = _abcmodule_methods,
+    .m_slots = _abcmodule_slots,
+    .m_traverse = _abcmodule_traverse,
+    .m_clear = _abcmodule_clear,
+    .m_free = _abcmodule_free,
 };
 
 PyMODINIT_FUNC

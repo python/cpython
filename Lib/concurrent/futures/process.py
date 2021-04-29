@@ -533,6 +533,14 @@ def _check_system_limits():
             raise NotImplementedError(_system_limited)
     _system_limits_checked = True
     try:
+        import multiprocessing.synchronize
+    except ImportError:
+        _system_limited = (
+            "This Python build lacks multiprocessing.synchronize, usually due "
+            "to named semaphores being unavailable on this platform."
+        )
+        raise NotImplementedError(_system_limited)
+    try:
         nsems_max = os.sysconf("SC_SEM_NSEMS_MAX")
     except (AttributeError, ValueError):
         # sysconf not available or setting not available

@@ -410,7 +410,7 @@ optionally followed by an import of the module::
        /* Optionally import the module; alternatively,
           import can be deferred until the embedded script
           imports it. */
-       pmodule = PyImport_ImportModule("spam");
+       PyObject *pmodule = PyImport_ImportModule("spam");
        if (!pmodule) {
            PyErr_Print();
            fprintf(stderr, "Error: could not import module 'spam'\n");
@@ -911,12 +911,7 @@ the cycle itself.
 The cycle detector is able to detect garbage cycles and can reclaim them.
 The :mod:`gc` module exposes a way to run the detector (the
 :func:`~gc.collect` function), as well as configuration
-interfaces and the ability to disable the detector at runtime.  The cycle
-detector is considered an optional component; though it is included by default,
-it can be disabled at build time using the :option:`!--without-cycle-gc` option
-to the :program:`configure` script on Unix platforms (including Mac OS X).  If
-the cycle detector is disabled in this way, the :mod:`gc` module will not be
-available.
+interfaces and the ability to disable the detector at runtime.
 
 
 .. _refcountsinpython:

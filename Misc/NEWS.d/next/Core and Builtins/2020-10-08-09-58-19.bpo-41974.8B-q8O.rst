@@ -1,4 +1,0 @@
-Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
-``__mod__``, ``__divmod__``, ``__rfloordiv__``, ``__rmod__`` and
-``__rdivmod__`` of the :class:`complex` class.  They always raised
-a :exc:`TypeError`.

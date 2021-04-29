@@ -33,6 +33,7 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import urlopen, HTTPError
+import re
 import shutil
 import string
 import subprocess
@@ -43,21 +44,17 @@ import tarfile
 log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
-    "1.0.2u",
-    "1.1.0l",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1g",
-    # "3.0.0-alpha2"
+    "1.1.1k",
+    "3.0.0-alpha15"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
-    "2.9.2",
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "3.1.0",
 ]
 
 # store files in ../multissl
@@ -169,7 +166,9 @@ class AbstractBuilder(object):
     url_templates = None
     src_template = None
     build_template = None
+    depend_target = None
     install_target = 'install'
+    jobs = os.cpu_count()
 
     module_files = ("Modules/_ssl.c",
                     "Modules/_hashopenssl.c")
@@ -321,8 +320,11 @@ class AbstractBuilder(object):
         if self.system:
             env['SYSTEM'] = self.system
         self._subprocess_call(cmd, cwd=cwd, env=env)
-        # Old OpenSSL versions do not support parallel builds.
-        self._subprocess_call(["make", "-j1"], cwd=cwd, env=env)
+        if self.depend_target:
+            self._subprocess_call(
+                ["make", "-j1", self.depend_target], cwd=cwd, env=env
+            )
+        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
 
     def _make_install(self):
         self._subprocess_call(
@@ -409,6 +411,7 @@ class BuildOpenSSL(AbstractBuilder):
     build_template = "openssl-{}"
     # only install software, skip docs
     install_target = 'install_sw'
+    depend_target = 'depend'
 
     def _post_install(self):
         if self.version.startswith("3.0"):
@@ -434,11 +437,11 @@ class BuildOpenSSL(AbstractBuilder):
                 self.openssl_cli, "fipsinstall",
                 "-out", fipsinstall_cnf,
                 "-module", fips_mod,
-                "-provider_name", "fips",
-                "-mac_name", "HMAC",
-                "-macopt", "digest:SHA256",
-                "-macopt", "hexkey:00",
-                "-section_name", "fips_sect"
+                # "-provider_name", "fips",
+                # "-mac_name", "HMAC",
+                # "-macopt", "digest:SHA256",
+                # "-macopt", "hexkey:00",
+                # "-section_name", "fips_sect"
             ]
         )
         with open(openssl_fips_cnf, "w") as f:
@@ -446,11 +449,14 @@ class BuildOpenSSL(AbstractBuilder):
     @property
     def short_version(self):
         """Short version for OpenSSL download URL"""
-        short_version = self.version.rstrip(string.ascii_letters)
-        if short_version.startswith("0.9"):
-            short_version = "0.9.x"
-        return short_version
-
+        mo = re.search(r"^(\d+)\.(\d+)\.(\d+)", self.version)
+        parsed = tuple(int(m) for m in mo.groups())
+        if parsed < (1, 0, 0):
+            return "0.9.x"
+        if parsed >= (3, 0, 0):
+            # OpenSSL 3.0.0 -> /old/3.0/
+            parsed = parsed[:2]
+        return ".".join(str(i) for i in parsed)
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"

@@ -1,6 +1,9 @@
-dnl ***********************************************
-dnl * Please run autoreconf to test your changes! *
-dnl ***********************************************
+dnl ***************************************************
+dnl * Please run autoreconf -if to test your changes! *
+dnl ***************************************************
+dnl
+dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.10)
@@ -9,14 +12,18 @@ AC_PREREQ([2.69])
 
 AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
 
-AC_CONFIG_MACRO_DIR(m4)
+m4_ifdef(
+    [AX_C_FLOAT_WORDS_BIGENDIAN],
+    [],
+    [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
+)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
-    #   Include/ -> Python-ast.h
+    #   Include/ -> Python.h
     #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -218,7 +225,7 @@ AC_ARG_WITH(universal-archs,
     AS_HELP_STRING([--with-universal-archs=ARCH],
                    [specify the kind of universal binary that should be created. this option is
                     only valid when --enable-universalsdk is set; options are:
-                    ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
+                    ("universal2", "32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
                     see Mac/README.rst]),
 [
 	UNIVERSAL_ARCHS="$withval"
@@ -512,16 +519,6 @@ case $ac_sys_system/$ac_sys_release in
     define_xopen_source=no;;
   Darwin/@<:@[12]@:>@@<:@0-9@:>@.*)
     define_xopen_source=no;;
-  # On AIX 4 and 5.1, mbstate_t is defined only when _XOPEN_SOURCE == 500 but
-  # used in wcsnrtombs() and mbsnrtowcs() even if _XOPEN_SOURCE is not defined
-  # or has another value. By not (re)defining it, the defaults come in place.
-  AIX/4)
-    define_xopen_source=no;;
-  AIX/5)
-    if test `uname -r` -eq 1; then
-      define_xopen_source=no
-    fi
-    ;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
   QNX/6.3.2)
@@ -1048,10 +1045,7 @@ AC_MSG_CHECKING(EXPORTSYMS)
 case $ac_sys_system in
 AIX*)
 	EXPORTSYMS="Modules/python.exp"
-	if test $ac_sys_release -ge 5 -o \
-		$ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
-	    EXPORTSFROM=. # the main executable
-	fi
+	EXPORTSFROM=. # the main executable
 	;;
 esac
 AC_MSG_RESULT($EXPORTSYMS)
@@ -1146,7 +1140,7 @@ if test $enable_shared = "yes"; then
 	      PY3LIBRARY=libpython3.so
 	  fi
           ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*|VxWorks*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
@@ -1318,6 +1312,16 @@ if test "$Py_OPT" = 'true' ; then
   DEF_MAKE_ALL_RULE="profile-opt"
   REQUIRE_PGO="yes"
   DEF_MAKE_RULE="build_all"
+  case $CC in
+    *gcc*)
+      AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
+      CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
+      LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
+      ])
+      ;;
+  esac
+
+
 else
   DEF_MAKE_ALL_RULE="build_all"
   REQUIRE_PGO="no"
@@ -1328,7 +1332,7 @@ AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
 AC_MSG_CHECKING(PROFILE_TASK)
 if test -z "$PROFILE_TASK"
 then
-	PROFILE_TASK='-m test --pgo'
+	PROFILE_TASK='-m test --pgo --timeout=$(TESTTIMEOUT)'
 fi
 AC_MSG_RESULT($PROFILE_TASK)
 
@@ -1587,7 +1591,7 @@ AC_SUBST(BASECFLAGS)
 AC_SUBST(CFLAGS_NODIST)
 AC_SUBST(LDFLAGS_NODIST)
 
-# The -arch flags for universal builds on OSX
+# The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
 AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 
@@ -1888,6 +1892,11 @@ yes)
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+		;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -1909,7 +1918,7 @@ yes)
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
             *)
-               AC_MSG_ERROR([proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way])
+               AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
                ;;
             esac
 
@@ -1975,6 +1984,13 @@ yes)
         export MACOSX_DEPLOYMENT_TARGET
         EXPORT_MACOSX_DEPLOYMENT_TARGET=''
         AC_MSG_RESULT($MACOSX_DEPLOYMENT_TARGET)
+
+        AC_MSG_CHECKING(if specified universal architectures work)
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[printf("%d", 42);]])],
+            [AC_MSG_RESULT(yes)],
+            [AC_MSG_RESULT(no)
+             AC_MSG_ERROR(check config.log and use the '--with-universal-archs' option)
+        ])
 
         # end of Darwin* tests
         ;;
@@ -2195,7 +2211,8 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h)
+sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h \
+sys/mman.h sys/eventfd.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -2337,10 +2354,11 @@ AC_CHECK_TYPE(ssize_t,
 AC_CHECK_TYPE(__uint128_t,
   AC_DEFINE(HAVE_GCC_UINT128_T, 1, [Define if your compiler provides __uint128_t]),,)
 
-# Sizes of various common basic types
+# Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_ALIGNOF(long)
 AC_CHECK_SIZEOF(long long, 8)
 AC_CHECK_SIZEOF(void *, 4)
 AC_CHECK_SIZEOF(short, 2)
@@ -2348,6 +2366,7 @@ AC_CHECK_SIZEOF(float, 4)
 AC_CHECK_SIZEOF(double, 8)
 AC_CHECK_SIZEOF(fpos_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
+AC_CHECK_ALIGNOF(size_t)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
 
@@ -2479,7 +2498,7 @@ case $ac_sys_system/$ac_sys_release in
     		MACOSX_DEFAULT_ARCH="ppc"
     		;;
     	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
+    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
     		;;
     	esac
     else
@@ -2489,9 +2508,12 @@ case $ac_sys_system/$ac_sys_release in
     		;;
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
+		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
     		;;
     	*)
-    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
+    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
     		;;
     	esac
 
@@ -2785,7 +2807,7 @@ then
 		# when running test_compile.py.
 		LINKFORSHARED='-Wl,-E -N 2048K';;
 	VxWorks*)
-		LINKFORSHARED='--export-dynamic';;
+		LINKFORSHARED='-Wl,-export-dynamic';;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
@@ -2967,7 +2989,7 @@ validate_tzpath() {
 
     # Bad paths are those that don't start with /
     dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-    if ( echo $1 | grep -qE '(^|:)(@<:@^/@:>@|$)' ); then
+    if ( echo $1 | grep '\(^\|:\)\(@<:@^/@:>@\|$\)' > /dev/null); then
         AC_MSG_ERROR([--with-tzpath must contain only absolute paths, not $1])
         return 1;
     fi
@@ -3144,8 +3166,13 @@ then
   then
     AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
   fi
-  TCLTK_INCLUDES=""
-  TCLTK_LIBS=""
+  if test -n "$PKG_CONFIG" && "$PKG_CONFIG" --exists tcl tk; then
+    TCLTK_INCLUDES="`"$PKG_CONFIG" tcl tk --cflags-only-I 2>/dev/null`"
+    TCLTK_LIBS="`"$PKG_CONFIG" tcl tk --libs 2>/dev/null`"
+  else
+    TCLTK_INCLUDES=""
+    TCLTK_LIBS=""
+  fi
 else
   TCLTK_INCLUDES="$with_tcltk_includes"
   TCLTK_LIBS="$with_tcltk_libs"
@@ -3298,10 +3325,10 @@ if test "$posix_threads" = "yes"; then
       main() {
         pthread_attr_t attr;
         pthread_t id;
-        if (pthread_attr_init(&attr)) exit(-1);
-        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
-        if (pthread_create(&id, &attr, foo, NULL)) exit(-1);
-        exit(0);
+        if (pthread_attr_init(&attr)) return (-1);
+        if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) return (-1);
+        if (pthread_create(&id, &attr, foo, NULL)) return (-1);
+        return (0);
       }]])],
       [ac_cv_pthread_system_supported=yes],
       [ac_cv_pthread_system_supported=no],
@@ -3612,7 +3639,7 @@ AC_SUBST(DLINCLDIR)
 DLINCLDIR=.
 
 # the dlopen() function means we might want to use dynload_shlib.o. some
-# platforms, such as AIX, have dlopen(), but don't want to use it.
+# platforms have dlopen(), but don't want to use it.
 AC_CHECK_FUNCS(dlopen)
 
 # DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
@@ -3622,12 +3649,6 @@ AC_MSG_CHECKING(DYNLOADFILE)
 if test -z "$DYNLOADFILE"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) # Use dynload_shlib.c and dlopen() if we have it; otherwise dynload_aix.c
-	if test "$ac_cv_func_dlopen" = yes
-	then DYNLOADFILE="dynload_shlib.o"
-	else DYNLOADFILE="dynload_aix.o"
-	fi
-	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
@@ -3684,9 +3705,9 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
  sched_rr_get_interval \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
- sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
+ sigtimedwait sigwait sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
+ truncate uname unlinkat utimensat utimes vfork waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
@@ -3770,6 +3791,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
+AC_MSG_CHECKING(for _dyld_shared_cache_contains_path)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <mach-o/dyld.h>]], [[void *x=_dyld_shared_cache_contains_path]])],
+  [AC_DEFINE(HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH, 1, Define if you have the '_dyld_shared_cache_contains_path' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
 
 AC_MSG_CHECKING(for memfd_create)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -3781,6 +3808,17 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #endif
 ]], [[void *x=memfd_create]])],
   [AC_DEFINE(HAVE_MEMFD_CREATE, 1, Define if you have the 'memfd_create' function.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for eventfd)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_SYS_EVENTFD_H
+#include <sys/eventfd.h>
+#endif
+]], [[int x = eventfd(0, EFD_CLOEXEC)]])],
+  [AC_DEFINE(HAVE_EVENTFD, 1, Define if you have the 'eventfd' function.)
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)
 ])
@@ -4704,7 +4742,7 @@ then
   int main()
   {
 	/* Success: exit code 0 */
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
+        return ((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
   ]])],
   [ac_cv_wchar_t_signed=yes],
@@ -4762,12 +4800,7 @@ if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
 fi
 
 AC_SUBST(EXT_SUFFIX)
-case $ac_sys_system in
-    Linux*|GNU*|Darwin|VxWorks)
-	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
-    *)
-	EXT_SUFFIX=${SHLIB_SUFFIX};;
-esac
+EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
 
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
@@ -4819,6 +4852,22 @@ else
 fi
 AC_SUBST(LIBPL)
 
+# Check for --with-wheel-pkg-dir=PATH
+AC_SUBST(WHEEL_PKG_DIR)
+WHEEL_PKG_DIR=""
+AC_MSG_CHECKING(for --with-wheel-pkg-dir)
+AC_ARG_WITH(wheel-pkg-dir,
+            AS_HELP_STRING([--with-wheel-pkg-dir=PATH],
+            [Directory of wheel packages used by ensurepip (default: none)]),
+[
+if test -n "$withval"; then
+  AC_MSG_RESULT(yes)
+  WHEEL_PKG_DIR="$withval"
+else
+  AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
+
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
 AC_MSG_CHECKING(whether right shift extends the sign bit)
@@ -4826,7 +4875,7 @@ AC_CACHE_VAL(ac_cv_rshift_extends_sign, [
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main()
 {
-	exit(((-1)>>3 == -1) ? 0 : 1);
+	return (((-1)>>3 == -1) ? 0 : 1);
 }
 ]])],
 [ac_cv_rshift_extends_sign=yes],
@@ -4856,92 +4905,124 @@ then
   [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
+AC_ARG_WITH([readline],
+  [AS_HELP_STRING([--with(out)-readline@<:@=editline@:>@],
+    [use Editline for backend or disable readline module])],
+    [],
+    [with_readline=yes])
+
 # check where readline lives
+py_cv_lib_readline=no
 # save the value of LIBS so we don't actually link Python with readline
 LIBS_no_readline=$LIBS
 
-# On some systems we need to link readline to a termcap compatible
-# library.  NOTE: Keep the precedence of listed libraries synchronised
-# with setup.py.
-py_cv_lib_readline=no
-AC_MSG_CHECKING([how to link readline libs])
-for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
-  if test -z "$py_libtermcap"; then
-    READLINE_LIBS="-lreadline"
+if test "$with_readline" != no; then
+  case "$with_readline" in
+  editline|edit)
+    LIBREADLINE=edit
+    AC_DEFINE(WITH_EDITLINE, 1,
+      [Define to build the readline module against Editline.])
+    ;;
+  yes|readline)
+    LIBREADLINE=readline
+    ;;
+  *)
+    AC_MSG_ERROR([proper usage is --with(out)-readline@<:@=editline@:>@])
+    ;;
+  esac
+
+  # On some systems we need to link readline to a termcap compatible
+  # library.  NOTE: Keep the precedence of listed libraries synchronised
+  # with setup.py.
+  AC_MSG_CHECKING([how to link readline libs])
+  for py_libtermcap in "" tinfo ncursesw ncurses curses termcap; do
+    if test -z "$py_libtermcap"; then
+      READLINE_LIBS="-l$LIBREADLINE"
+    else
+      READLINE_LIBS="-l$LIBREADLINE -l$py_libtermcap"
+    fi
+    LIBS="$READLINE_LIBS $LIBS_no_readline"
+    AC_LINK_IFELSE(
+      [AC_LANG_CALL([],[readline])],
+      [py_cv_lib_readline=yes])
+    if test $py_cv_lib_readline = yes; then
+      break
+    fi
+  done
+
+  # Uncomment this line if you want to use READLINE_LIBS in Makefile or scripts
+  #AC_SUBST([READLINE_LIBS])
+  if test $py_cv_lib_readline = no; then
+    AC_MSG_RESULT([none])
   else
-    READLINE_LIBS="-lreadline -l$py_libtermcap"
+    AC_MSG_RESULT([$READLINE_LIBS])
+    AC_DEFINE(HAVE_LIBREADLINE, 1,
+      [Define to build the readline module.])
   fi
-  LIBS="$READLINE_LIBS $LIBS_no_readline"
-  AC_LINK_IFELSE(
-    [AC_LANG_CALL([],[readline])],
-    [py_cv_lib_readline=yes])
-  if test $py_cv_lib_readline = yes; then
-    break
-  fi
-done
-# Uncomment this line if you want to use READINE_LIBS in Makefile or scripts
-#AC_SUBST([READLINE_LIBS])
-if test $py_cv_lib_readline = no; then
-  AC_MSG_RESULT([none])
-else
-  AC_MSG_RESULT([$READLINE_LIBS])
-  AC_DEFINE(HAVE_LIBREADLINE, 1,
-    [Define if you have the readline library (-lreadline).])
 fi
 
-# check for readline 2.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_completion_append_character;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
-  [Define if you have readline 2.2]), )
-  AC_EGREP_HEADER([extern int rl_completion_suppress_append;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
-  [Define if you have rl_completion_suppress_append]), )
+if test "$py_cv_lib_readline" = yes; then
+  # check for readline 2.2
+  AC_CHECK_DECL(rl_completion_append_character,
+    AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
+      [Define if you have readline 2.2]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+  AC_CHECK_DECL(rl_completion_suppress_append,
+    AC_DEFINE(HAVE_RL_COMPLETION_SUPPRESS_APPEND, 1,
+      [Define if you have rl_completion_suppress_append]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  # check for readline 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_pre_input_hook,
+    AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_display_matches_hook,
+    AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # also in 4.0, but not in editline
+  AC_CHECK_LIB($LIBREADLINE, rl_resize_terminal,
+    AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
+      [Define if you have readline 4.0]),,$READLINE_LIBS)
+
+  # check for readline 4.2
+  AC_CHECK_LIB($LIBREADLINE, rl_completion_matches,
+    AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
+      [Define if you have readline 4.2]),,$READLINE_LIBS)
+
+  # also in readline 4.2
+  AC_CHECK_DECL(rl_catch_signals,
+    AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
+      [Define if you can turn off readline's signal handling.]),,
+    [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+    ])
+
+  AC_CHECK_LIB($LIBREADLINE, append_history,
+    AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
+      [Define if readline supports append_history]),,$READLINE_LIBS)
 fi
-
-# check for readline 4.0
-AC_CHECK_LIB(readline, rl_pre_input_hook,
-	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0
-AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
-	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# also in 4.0, but not in editline
-AC_CHECK_LIB(readline, rl_resize_terminal,
-	AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
-        [Define if you have readline 4.0]), ,$READLINE_LIBS)
-
-# check for readline 4.2
-AC_CHECK_LIB(readline, rl_completion_matches,
-	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
-        [Define if you have readline 4.2]), ,$READLINE_LIBS)
-
-# also in readline 4.2
-AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
-  [have_readline=yes],
-  [have_readline=no]
-)
-if test $have_readline = yes
-then
-  AC_EGREP_HEADER([extern int rl_catch_signals;],
-  [readline/readline.h],
-  AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
-  [Define if you can turn off readline's signal handling.]), )
-fi
-
-AC_CHECK_LIB(readline, append_history,
-	AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
-        [Define if readline supports append_history]), ,$READLINE_LIBS)
 
 # End of readline checks: restore LIBS
 LIBS=$LIBS_no_readline
@@ -4973,6 +5054,7 @@ AC_MSG_CHECKING(for broken poll())
 AC_CACHE_VAL(ac_cv_broken_poll,
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <poll.h>
+#include <unistd.h>
 
 int main()
 {
@@ -5566,14 +5648,15 @@ if test "$have_stdatomic_h" = yes; then
               [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 fi
 
-# Check for GCC >= 4.7 __atomic builtins
-AC_MSG_CHECKING(for GCC >= 4.7 __atomic builtins)
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_MSG_CHECKING(for builtin __atomic_load_n and __atomic_store_n functions)
 AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
-    volatile int val = 1;
+    int val;
     int main() {
-      __atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
       return 0;
     }
   ]])
@@ -5582,7 +5665,7 @@ AC_LINK_IFELSE(
 AC_MSG_RESULT($have_builtin_atomic)
 
 if test "$have_builtin_atomic" = yes; then
-    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin atomics])
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
 fi
 
 # ensurepip option
@@ -5698,41 +5781,29 @@ ac_includes_default="$save_includes_default"
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
-if test "$have_openssl" = yes; then
-    AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-        [#include <openssl/x509_vfy.h>]
-    ], [
-        [X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();]
-        [X509_VERIFY_PARAM_set1_host(p, "localhost", 0);]
-        [X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");]
-        [X509_VERIFY_PARAM_set_hostflags(p, 0);]
-    ])
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=yes
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=no
-    ])
-    AC_MSG_RESULT($ac_cv_has_x509_verify_param_set1_host)
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-        AC_DEFINE(HAVE_X509_VERIFY_PARAM_SET1_HOST, 1,
-        [Define if libssl has X509_VERIFY_PARAM_set1_host and related function])
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
+# rpath to libssl and libcrypto
+AC_MSG_CHECKING(for --with-openssl-rpath)
+AC_ARG_WITH(openssl-rpath,
+    AS_HELP_STRING([--with-openssl-rpath=@<:@DIR|auto|no@:>@],
+                   [Set runtime library directory (rpath) for OpenSSL libraries,
+                    no (default): don't set rpath,
+                    auto: auto-detect rpath from --with-openssl and pkg-config,
+                    DIR: set an explicit rpath
+                   ]),
+    [],
+    [with_openssl_rpath=no]
+)
+AS_CASE($with_openssl_rpath,
+    [auto|yes],[OPENSSL_RPATH=auto],
+    [no],[OPENSSL_RPATH=],
+    [AS_IF(
+        [test -d "$with_openssl_rpath"],
+        [OPENSSL_RPATH="$with_openssl_rpath"],
+        AC_MSG_ERROR([--with-openssl-rpath "$with_openssl_rpath" is not a directory]))
+    ]
+)
+AC_MSG_RESULT($OPENSSL_RPATH)
+AC_SUBST([OPENSSL_RPATH])
 
 # ssl module default cipher suite string
 AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
@@ -5813,6 +5884,47 @@ else
 fi],
 [AC_MSG_RESULT(no)])
 
+# --with-static-libpython
+STATIC_LIBPYTHON=1
+AC_MSG_CHECKING(for --with-static-libpython)
+AC_ARG_WITH(static-libpython,
+  AS_HELP_STRING([--without-static-libpython],
+                 [do not build libpythonMAJOR.MINOR.a and do not install python.o (default is yes)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+  STATIC_LIBPYTHON=0
+else
+  AC_MSG_RESULT(yes);
+fi],
+[AC_MSG_RESULT(yes)])
+LIBRARY_DEPS='$(PY3LIBRARY) $(EXPORTSYMS)'
+if test "$PY_ENABLE_SHARED" = 1 || test "$enable_framework" ; then
+    LIBRARY_DEPS="\$(LDLIBRARY) $LIBRARY_DEPS"
+    if test "$STATIC_LIBPYTHON" = 1; then
+        LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+    fi
+else
+    LIBRARY_DEPS="\$(LIBRARY) $LIBRARY_DEPS"
+fi
+AC_SUBST(STATIC_LIBPYTHON)
+AC_SUBST(LIBRARY_DEPS)
+
+# Check whether to disable test modules. Once set, setup.py will not build
+# test extension modules and "make install" will not install test suites.
+AC_MSG_CHECKING(for --disable-test-modules)
+AC_ARG_ENABLE(test-modules,
+              AS_HELP_STRING([--disable-test-modules], [don't build nor install test modules]))
+if test "$enable_test_modules" = no; then
+    TEST_MODULES=no
+    AC_MSG_RESULT(yes)
+else
+    TEST_MODULES=yes
+    AC_MSG_RESULT(no)
+fi
+AC_SUBST(TEST_MODULES)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
@@ -5839,4 +5951,3 @@ if test "$Py_OPT" = 'false' -a "$Py_DEBUG" != 'true'; then
     echo "" >&AS_MESSAGE_FD
     echo "" >&AS_MESSAGE_FD
 fi
-

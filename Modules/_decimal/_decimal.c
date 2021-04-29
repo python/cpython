@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2012 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,8 +33,6 @@
 
 #include <stdlib.h>
 
-#define CPYTHON_DECIMAL_MODULE
-#include "pydecimal.h"
 #include "docstrings.h"
 
 
@@ -1765,7 +1763,7 @@ ctxmanager_dealloc(PyDecContextManagerObject *self)
 {
     Py_XDECREF(self->local);
     Py_XDECREF(self->global);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyObject *
@@ -3186,6 +3184,31 @@ dotsep_as_utf8(const char *s)
     return utf8;
 }
 
+static int
+dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const char **valuestr)
+{
+    *valueobj = NULL;
+    PyObject *keyobj = PyUnicode_FromString(key);
+    if (keyobj == NULL) {
+        return -1;
+    }
+    PyObject *value = PyDict_GetItemWithError(dict, keyobj);
+    Py_DECREF(keyobj);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    value = PyUnicode_AsUTF8String(value);
+    if (value == NULL) {
+        return -1;
+    }
+    *valueobj = value;
+    *valuestr = PyBytes_AS_STRING(value);
+    return 0;
+}
+
 /* Formatted representation of a PyDecObject. */
 static PyObject *
 dec_format(PyObject *dec, PyObject *args)
@@ -3256,23 +3279,11 @@ dec_format(PyObject *dec, PyObject *args)
                 "optional argument must be a dict");
             goto finish;
         }
-        if ((dot = PyDict_GetItemString(override, "decimal_point"))) {
-            if ((dot = PyUnicode_AsUTF8String(dot)) == NULL) {
-                goto finish;
-            }
-            spec.dot = PyBytes_AS_STRING(dot);
-        }
-        if ((sep = PyDict_GetItemString(override, "thousands_sep"))) {
-            if ((sep = PyUnicode_AsUTF8String(sep)) == NULL) {
-                goto finish;
-            }
-            spec.sep = PyBytes_AS_STRING(sep);
-        }
-        if ((grouping = PyDict_GetItemString(override, "grouping"))) {
-            if ((grouping = PyUnicode_AsUTF8String(grouping)) == NULL) {
-                goto finish;
-            }
-            spec.grouping = PyBytes_AS_STRING(grouping);
+        if (dict_get_item_string(override, "decimal_point", &dot, &spec.dot) ||
+            dict_get_item_string(override, "thousands_sep", &sep, &spec.sep) ||
+            dict_get_item_string(override, "grouping", &grouping, &spec.grouping))
+        {
+            goto finish;
         }
         if (mpd_validate_lconv(&spec) < 0) {
             PyErr_SetString(PyExc_ValueError,
@@ -3282,7 +3293,7 @@ dec_format(PyObject *dec, PyObject *args)
     }
     else {
         size_t n = strlen(spec.dot);
-        if (n > 1 || (n == 1 && !isascii((uchar)spec.dot[0]))) {
+        if (n > 1 || (n == 1 && !isascii((unsigned char)spec.dot[0]))) {
             /* fix locale dependent non-ascii characters */
             dot = dotsep_as_utf8(spec.dot);
             if (dot == NULL) {
@@ -3291,7 +3302,7 @@ dec_format(PyObject *dec, PyObject *args)
             spec.dot = PyBytes_AS_STRING(dot);
         }
         n = strlen(spec.sep);
-        if (n > 1 || (n == 1 && !isascii((uchar)spec.sep[0]))) {
+        if (n > 1 || (n == 1 && !isascii((unsigned char)spec.sep[0]))) {
             /* fix locale dependent non-ascii characters */
             sep = dotsep_as_utf8(spec.sep);
             if (sep == NULL) {
@@ -4525,7 +4536,6 @@ _dec_hash(PyDecObject *v)
     #error "No valid combination of CONFIG_64, CONFIG_32 and _PyHASH_BITS"
 #endif
     const Py_hash_t py_hash_inf = 314159;
-    const Py_hash_t py_hash_nan = 0;
     mpd_uint_t ten_data[1] = {10};
     mpd_t ten = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                  0, 2, 1, 1, ten_data};
@@ -4544,7 +4554,7 @@ _dec_hash(PyDecObject *v)
             return -1;
         }
         else if (mpd_isnan(MPD(v))) {
-            return py_hash_nan;
+            return _Py_HashPointer(v);
         }
         else {
             return py_hash_inf * mpd_arith_sign(MPD(v));
@@ -5557,160 +5567,6 @@ static PyTypeObject PyDecContext_Type =
 };
 
 
-/****************************************************************************/
-/*                                   C-API                                  */
-/****************************************************************************/
-
-static void *_decimal_api[CPYTHON_DECIMAL_MAX_API];
-
-/* Simple API */
-static int
-PyDec_TypeCheck(const PyObject *v)
-{
-    return PyDec_Check(v);
-}
-
-static int
-PyDec_IsSpecial(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_IsSpecial: argument must be a Decimal");
-        return -1;
-    }
-
-    return mpd_isspecial(MPD(v));
-}
-
-static int
-PyDec_IsNaN(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_IsNaN: argument must be a Decimal");
-        return -1;
-    }
-
-    return mpd_isnan(MPD(v));
-}
-
-static int
-PyDec_IsInfinite(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_IsInfinite: argument must be a Decimal");
-        return -1;
-    }
-
-    return mpd_isinfinite(MPD(v));
-}
-
-static int64_t
-PyDec_GetDigits(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_GetDigits: argument must be a Decimal");
-        return -1;
-    }
-
-    return MPD(v)->digits;
-}
-
-static mpd_uint128_triple_t
-PyDec_AsUint128Triple(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        mpd_uint128_triple_t triple = { MPD_TRIPLE_ERROR, 0, 0, 0, 0 };
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_AsUint128Triple: argument must be a Decimal");
-        return triple;
-    }
-
-    return mpd_as_uint128_triple(MPD(v));
-}
-
-static PyObject *
-PyDec_FromUint128Triple(const mpd_uint128_triple_t *triple)
-{
-    PyObject *context;
-    PyObject *result;
-    uint32_t status = 0;
-
-    CURRENT_CONTEXT(context);
-
-    result = dec_alloc();
-    if (result == NULL) {
-        return NULL;
-    }
-
-    if (mpd_from_uint128_triple(MPD(result), triple, &status) < 0) {
-        if (dec_addstatus(context, status)) {
-            Py_DECREF(result);
-            return NULL;
-        }
-    }
-
-    return result;
-}
-
-/* Advanced API */
-static PyObject *
-PyDec_Alloc(void)
-{
-    return dec_alloc();
-}
-
-static mpd_t *
-PyDec_Get(PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_Get: argument must be a Decimal");
-        return NULL;
-    }
-
-    return MPD(v);
-}
-
-static const mpd_t *
-PyDec_GetConst(const PyObject *v)
-{
-    if (!PyDec_Check(v)) {
-        PyErr_SetString(PyExc_TypeError,
-            "PyDec_GetConst: argument must be a Decimal");
-        return NULL;
-    }
-
-    return MPD(v);
-}
-
-static PyObject *
-init_api(void)
-{
-    /* Simple API */
-    _decimal_api[PyDec_TypeCheck_INDEX] = (void *)PyDec_TypeCheck;
-    _decimal_api[PyDec_IsSpecial_INDEX] = (void *)PyDec_IsSpecial;
-    _decimal_api[PyDec_IsNaN_INDEX] = (void *)PyDec_IsNaN;
-    _decimal_api[PyDec_IsInfinite_INDEX] = (void *)PyDec_IsInfinite;
-    _decimal_api[PyDec_GetDigits_INDEX] = (void *)PyDec_GetDigits;
-    _decimal_api[PyDec_AsUint128Triple_INDEX] = (void *)PyDec_AsUint128Triple;
-    _decimal_api[PyDec_FromUint128Triple_INDEX] = (void *)PyDec_FromUint128Triple;
-
-    /* Advanced API */
-    _decimal_api[PyDec_Alloc_INDEX] = (void *)PyDec_Alloc;
-    _decimal_api[PyDec_Get_INDEX] = (void *)PyDec_Get;
-    _decimal_api[PyDec_GetConst_INDEX] = (void *)PyDec_GetConst;
-
-    return PyCapsule_New(_decimal_api, "_decimal._API", NULL);
-}
-
-
-/****************************************************************************/
-/*                                  Module                                  */
-/****************************************************************************/
-
 static PyMethodDef _decimal_methods [] =
 {
   { "getcontext", (PyCFunction)PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
@@ -5821,27 +5677,17 @@ PyInit__decimal(void)
     DecCondMap *cm;
     struct ssize_constmap *ssize_cm;
     struct int_constmap *int_cm;
-    static PyObject *capsule = NULL;
-    static int initialized = 0;
     int i;
 
 
     /* Init libmpdec */
-    if (!initialized) {
-        mpd_traphandler = dec_traphandler;
-        mpd_mallocfunc = PyMem_Malloc;
-        mpd_reallocfunc = PyMem_Realloc;
-        mpd_callocfunc = mpd_callocfunc_em;
-        mpd_free = PyMem_Free;
-        mpd_setminalloc(_Py_DEC_MINALLOC);
+    mpd_traphandler = dec_traphandler;
+    mpd_mallocfunc = PyMem_Malloc;
+    mpd_reallocfunc = PyMem_Realloc;
+    mpd_callocfunc = mpd_callocfunc_em;
+    mpd_free = PyMem_Free;
+    mpd_setminalloc(_Py_DEC_MINALLOC);
 
-        capsule = init_api();
-        if (capsule == NULL) {
-            return NULL;
-        }
-
-        initialized = 1;
-    }
 
     /* Init external C-API functions */
     _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
@@ -6066,11 +5912,6 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
-    /* Add capsule API */
-    Py_INCREF(capsule);
-    if (PyModule_AddObject(m, "_API", capsule) < 0) {
-        goto error;
-    }
 
     return m;
 
@@ -6097,5 +5938,3 @@ error:
 
     return NULL; /* GCOV_NOT_REACHED */
 }
-
-

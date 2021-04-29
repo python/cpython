@@ -213,6 +213,9 @@ def test_pdb_basic_commands():
     BAZ
     """
 
+def reset_Breakpoint():
+    import bdb
+    bdb.Breakpoint.clearBreakpoints()
 
 def test_pdb_breakpoint_commands():
     """Test basic commands related to breakpoints.
@@ -227,10 +230,7 @@ def test_pdb_breakpoint_commands():
     First, need to clear bdb state that might be left over from previous tests.
     Otherwise, the new breakpoints might get assigned different numbers.
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
-    >>> Breakpoint.bplist = {}
-    >>> Breakpoint.bpbynumber = [None]
+    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -323,6 +323,72 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoints_preserved_across_interactive_sessions():
+    """Breakpoints are remembered between interactive sessions
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'import test.test_pdb',
+    ...    'break test.test_pdb.do_something',
+    ...    'break test.test_pdb.do_nothing',
+    ...    'break',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()...
+    (Pdb) import test.test_pdb
+    (Pdb) break test.test_pdb.do_something
+    Breakpoint 1 at ...test_pdb.py:...
+    (Pdb) break test.test_pdb.do_nothing
+    Breakpoint 2 at ...test_pdb.py:...
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    (Pdb) continue
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'break',
+    ...    'break pdb.find_function',
+    ...    'break',
+    ...    'clear 1',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()...
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    (Pdb) break pdb.find_function
+    Breakpoint 3 at ...pdb.py:94
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    3   breakpoint   keep yes   at ...pdb.py:...
+    (Pdb) clear 1
+    Deleted breakpoint 1 at ...test_pdb.py:...
+    (Pdb) continue
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'break',
+    ...    'clear 2',
+    ...    'clear 3',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()...
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    3   breakpoint   keep yes   at ...pdb.py:...
+    (Pdb) clear 2
+    Deleted breakpoint 2 at ...test_pdb.py:...
+    (Pdb) clear 3
+    Deleted breakpoint 3 at ...pdb.py:...
+    (Pdb) continue
+    """
 
 def do_nothing():
     pass
@@ -699,8 +765,7 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -1127,6 +1192,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
@@ -1137,7 +1203,7 @@ def test_pdb_next_command_in_generator_for_loop():
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[1]>(3)test_function()
     -> for i in test_gen():
     (Pdb) break test_gen
-    Breakpoint 6 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>(2)test_gen()
     -> yield 0
@@ -1213,6 +1279,7 @@ def test_pdb_issue_20766():
     ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     ...         i += 1
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
     ...     test_function()
@@ -1443,6 +1510,19 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
 
+    def test_issue26053(self):
+        # run command of pdb prompt echoes the correct args
+        script = "print('hello')"
+        commands = """
+            continue
+            run a b c
+            run d e f
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        res = '\n'.join([x.strip() for x in stdout.splitlines()])
+        self.assertRegex(res, "Restarting .* with arguments:\na b c")
+        self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
@@ -1645,13 +1725,14 @@ def bœr():
             'debug doesnotexist',
             'c',
         ])
-        stdout, _ = self.run_pdb_script('', commands + '\n')
+        stdout, _ = self.run_pdb_script('pass', commands + '\n')
 
         self.assertEqual(stdout.splitlines()[1:], [
-            '(Pdb) *** SyntaxError: unexpected EOF while parsing',
+            '-> pass',
+            '(Pdb) *** SyntaxError: \'(\' was never closed',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
-            '*** SyntaxError: unexpected EOF while parsing',
+            '*** SyntaxError: \'(\' was never closed',
             'LEAVING RECURSIVE DEBUGGER',
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
@@ -1660,6 +1741,71 @@ def bœr():
             'LEAVING RECURSIVE DEBUGGER',
             '(Pdb) ',
         ])
+
+
+    def test_issue42384(self):
+        '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''
+        script = textwrap.dedent("""
+            import sys
+            print('sys.path[0] is', sys.path[0])
+        """)
+        commands = 'c\nq'
+
+        with os_helper.temp_cwd() as cwd:
+            expected = f'(Pdb) sys.path[0] is {os.path.realpath(cwd)}'
+
+            stdout, stderr = self.run_pdb_script(script, commands)
+
+            self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
+
+    @os_helper.skip_unless_symlink
+    def test_issue42384_symlink(self):
+        '''When running `python foo.py` sys.path[0] resolves symlinks. `python -m pdb foo.py` should behave the same'''
+        script = textwrap.dedent("""
+            import sys
+            print('sys.path[0] is', sys.path[0])
+        """)
+        commands = 'c\nq'
+
+        with os_helper.temp_cwd() as cwd:
+            cwd = os.path.realpath(cwd)
+            dir_one = os.path.join(cwd, 'dir_one')
+            dir_two = os.path.join(cwd, 'dir_two')
+            expected = f'(Pdb) sys.path[0] is {dir_one}'
+
+            os.mkdir(dir_one)
+            with open(os.path.join(dir_one, 'foo.py'), 'w') as f:
+                f.write(script)
+            os.mkdir(dir_two)
+            os.symlink(os.path.join(dir_one, 'foo.py'), os.path.join(dir_two, 'foo.py'))
+
+            stdout, stderr = self._run_pdb([os.path.join('dir_two', 'foo.py')], commands)
+
+            self.assertEqual(stdout.split('\n')[2].rstrip('\r'), expected)
+
+    def test_issue42383(self):
+        with os_helper.temp_cwd() as cwd:
+            with open('foo.py', 'w') as f:
+                s = textwrap.dedent("""
+                    print('The correct file was executed')
+
+                    import os
+                    os.chdir("subdir")
+                """)
+                f.write(s)
+
+            subdir = os.path.join(cwd, 'subdir')
+            os.mkdir(subdir)
+            os.mkdir(os.path.join(subdir, 'subdir'))
+            wrong_file = os.path.join(subdir, 'foo.py')
+
+            with open(wrong_file, 'w') as f:
+                f.write('print("The wrong file was executed")')
+
+            stdout, stderr = self._run_pdb(['foo.py'], 'c\nc\nq')
+            expected = '(Pdb) The correct file was executed'
+            self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
+
 
 def load_tests(*args):
     from test import test_pdb

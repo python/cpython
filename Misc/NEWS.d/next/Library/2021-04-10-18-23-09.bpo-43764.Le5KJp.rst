@@ -1,0 +1,2 @@
+Add match_args parameter to @dataclass decorator to allow suppression of
+__match_args__ generation.

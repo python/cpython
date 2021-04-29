@@ -1,3 +1,4 @@
+import io
 import unittest
 
 from importlib import resources
@@ -28,13 +29,22 @@ class PathDiskTests(PathTests, unittest.TestCase):
     data = data01
 
     def test_natural_path(self):
-        """
-        Guarantee the internal implementation detail that
-        file-system-backed resources do not get the tempdir
-        treatment.
-        """
+        # Guarantee the internal implementation detail that
+        # file-system-backed resources do not get the tempdir
+        # treatment.
         with resources.path(self.data, 'utf-8.file') as path:
             assert 'data' in str(path)
+
+
+class PathMemoryTests(PathTests, unittest.TestCase):
+    def setUp(self):
+        file = io.BytesIO(b'Hello, UTF-8 world!\n')
+        self.addCleanup(file.close)
+        self.data = util.create_package(
+            file=file, path=FileNotFoundError("package exists only in memory")
+        )
+        self.data.__spec__.origin = None
+        self.data.__spec__.has_location = False
 
 
 class PathZipTests(PathTests, util.ZipSetup, unittest.TestCase):

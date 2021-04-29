@@ -199,6 +199,8 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyAsyncMethods.am_anext`                    | :c:type:`unaryfunc`               | __anext__    |
    +---------------------------------------------------------+-----------------------------------+--------------+
+   | :c:member:`~PyAsyncMethods.am_send`                     | :c:type:`sendfunc`                |              |
+   +---------------------------------------------------------+-----------------------------------+--------------+
    |                                                                                                            |
    +---------------------------------------------------------+-----------------------------------+--------------+
    | :c:member:`~PyNumberMethods.nb_add`                     | :c:type:`binaryfunc`              | __add__      |
@@ -480,30 +482,14 @@ metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that it
 type objects) *must* have the :attr:`ob_size` field.
 
 
-.. c:member:: PyObject* PyObject._ob_next
-             PyObject* PyObject._ob_prev
-
-   These fields are only present when the macro ``Py_TRACE_REFS`` is defined.
-   Their initialization to ``NULL`` is taken care of by the ``PyObject_HEAD_INIT``
-   macro.  For statically allocated objects, these fields always remain ``NULL``.
-   For dynamically allocated objects, these two fields are used to link the object
-   into a doubly-linked list of *all* live objects on the heap.  This could be used
-   for various debugging purposes; currently the only use is to print the objects
-   that are still alive at the end of a run when the environment variable
-   :envvar:`PYTHONDUMPREFS` is set.
-
-   **Inheritance:**
-
-   These fields are not inherited by subtypes.
-
-
 .. c:member:: Py_ssize_t PyObject.ob_refcnt
 
    This is the type object's reference count, initialized to ``1`` by the
-   ``PyObject_HEAD_INIT`` macro.  Note that for statically allocated type objects,
-   the type's instances (objects whose :attr:`ob_type` points back to the type) do
-   *not* count as references.  But for dynamically allocated type objects, the
-   instances *do* count as references.
+   ``PyObject_HEAD_INIT`` macro.  Note that for :ref:`statically allocated type
+   objects <static-types>`, the type's instances (objects whose :attr:`ob_type`
+   points back to the type) do *not* count as references.  But for
+   :ref:`dynamically allocated type objects <heap-types>`, the instances *do*
+   count as references.
 
    **Inheritance:**
 
@@ -533,13 +519,36 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is inherited by subtypes.
 
 
+.. c:member:: PyObject* PyObject._ob_next
+             PyObject* PyObject._ob_prev
+
+   These fields are only present when the macro ``Py_TRACE_REFS`` is defined
+   (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
+
+   Their initialization to ``NULL`` is taken care of by the
+   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
+   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
+   allocated objects <heap-types>`, these two fields are used to link the
+   object into a doubly-linked list of *all* live objects on the heap.
+
+   This could be used for various debugging purposes; currently the only uses
+   are the :func:`sys.getobjects` function and to print the objects that are
+   still alive at the end of a run when the environment variable
+   :envvar:`PYTHONDUMPREFS` is set.
+
+   **Inheritance:**
+
+   These fields are not inherited by subtypes.
+
+
 PyVarObject Slots
 -----------------
 
 .. c:member:: Py_ssize_t PyVarObject.ob_size
 
-   For statically allocated type objects, this should be initialized to zero.  For
-   dynamically allocated type objects, this field has a special internal meaning.
+   For :ref:`statically allocated type objects <static-types>`, this should be
+   initialized to zero. For :ref:`dynamically allocated type objects
+   <heap-types>`, this field has a special internal meaning.
 
    **Inheritance:**
 
@@ -564,11 +573,13 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :class:`T` defined in module :mod:`M` in subpackage :mod:`Q` in package :mod:`P`
    should have the :c:member:`~PyTypeObject.tp_name` initializer ``"P.Q.M.T"``.
 
-   For dynamically allocated type objects, this should just be the type name, and
+   For :ref:`dynamically allocated type objects <heap-types>`,
+   this should just be the type name, and
    the module name explicitly stored in the type dict as the value for key
    ``'__module__'``.
 
-   For statically allocated type objects, the tp_name field should contain a dot.
+   For :ref:`statically allocated type objects <static-types>`,
+   the *tp_name* field should contain a dot.
    Everything before the last dot is made accessible as the :attr:`__module__`
    attribute, and everything after the last dot is made accessible as the
    :attr:`~definition.__name__` attribute.
@@ -723,7 +734,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    always inherited. If it's not, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
-   This is in particular the case for `heap types`_
+   This is in particular the case for :ref:`heap types <heap-types>`
    (including subclasses defined in Python).
 
 
@@ -1114,7 +1125,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This flag is never inherited by heap types.
+      This flag is never inherited by :ref:`heap types <heap-types>`.
       For extension types, it is inherited whenever
       :c:member:`~PyTypeObject.tp_descr_get` is inherited.
 
@@ -1161,11 +1172,32 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       **Inheritance:**
 
-      This bit is inherited for *static* subtypes if
+      This bit is inherited for :ref:`static subtypes <static-types>` if
       :c:member:`~PyTypeObject.tp_call` is also inherited.
-      `Heap types`_ do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
+      :ref:`Heap types <heap-types>` do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. versionadded:: 3.9
+
+
+   .. data:: Py_TPFLAGS_HAVE_AM_SEND
+
+      This bit is set when the :c:member:`~PyAsyncMethods.am_send` entry is present in the
+      :c:member:`~PyTypeObject.tp_as_async` slot of type structure.
+
+      .. versionadded:: 3.10
+
+   .. data:: Py_TPFLAGS_IMMUTABLETYPE
+
+      This bit is set for type objects that are immutable: type attributes cannot be set nor deleted.
+
+      :c:func:`PyType_Ready` automatically applies this flag to
+      :ref:`static types <static-types>`.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.10
 
 
 .. c:member:: const char* PyTypeObject.tp_doc
@@ -1213,8 +1245,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :func:`~gc.get_referents` function will include it.
 
    .. warning::
-       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the members
-       that the instance *owns* (by having strong references to them) must be
+       When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
+       members that the instance *owns* (by having :term:`strong references
+       <strong reference>` to them) must be
        visited. For instance, if an object supports weak references via the
        :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
        the linked list (what *tp_weaklist* points to) must **not** be
@@ -1227,9 +1260,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    :c:func:`local_traverse` to have these specific names; don't name them just
    anything.
 
-   Heap-allocated types (:const:`Py_TPFLAGS_HEAPTYPE`, such as those created
-   with :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their
-   type. Their traversal function must therefore either visit
+   Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
+   their type. Their traversal function must therefore either visit
    :c:func:`Py_TYPE(self) <Py_TYPE>`, or delegate this responsibility by
    calling ``tp_traverse`` of another heap-allocated type (such as a
    heap-allocated superclass).
@@ -1644,8 +1676,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   This slot has no default.  For static types, if the field is
-   ``NULL`` then no :attr:`__dict__` gets created for instances.
+   This slot has no default.  For :ref:`static types <static-types>`, if the
+   field is ``NULL`` then no :attr:`__dict__` gets created for instances.
 
 
 .. c:member:: initproc PyTypeObject.tp_init
@@ -1680,7 +1712,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Default:**
 
-   For static types this field does not have a default.
+   For :ref:`static types <static-types>` this field does not have a default.
 
 
 .. c:member:: allocfunc PyTypeObject.tp_alloc
@@ -1731,14 +1763,15 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    **Inheritance:**
 
-   This field is inherited by subtypes, except it is not inherited by static types
-   whose :c:member:`~PyTypeObject.tp_base` is ``NULL`` or ``&PyBaseObject_Type``.
+   This field is inherited by subtypes, except it is not inherited by
+   :ref:`static types <static-types>` whose :c:member:`~PyTypeObject.tp_base`
+   is ``NULL`` or ``&PyBaseObject_Type``.
 
    **Default:**
 
-   For static types this field has no default.  This means if the
-   slot is defined as ``NULL``, the type cannot be called to create new
-   instances; presumably there is some other way to create
+   For :ref:`static types <static-types>` this field has no default.
+   This means if the slot is defined as ``NULL``, the type cannot be called
+   to create new instances; presumably there is some other way to create
    instances, like a factory function.
 
 
@@ -1780,7 +1813,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    (The only example of this are types themselves.  The metatype,
    :c:data:`PyType_Type`, defines this function to distinguish between statically
-   and dynamically allocated types.)
+   and :ref:`dynamically allocated types <heap-types>`.)
 
    **Inheritance:**
 
@@ -1926,10 +1959,10 @@ objects on the thread which called tp_dealloc will not violate any assumptions
 of the library.
 
 
-.. _heap-types:
+.. _static-types:
 
-Heap Types
-----------
+Static Types
+------------
 
 Traditionally, types defined in C code are *static*, that is,
 a static :c:type:`PyTypeObject` structure is defined directly in code
@@ -1949,12 +1982,20 @@ Also, since :c:type:`PyTypeObject` is not part of the :ref:`stable ABI <stable>`
 any extension modules using static types must be compiled for a specific
 Python minor version.
 
-An alternative to static types is *heap-allocated types*, or *heap types*
-for short, which correspond closely to classes created by Python's
-``class`` statement.
+
+.. _heap-types:
+
+Heap Types
+----------
+
+An alternative to :ref:`static types <static-types>` is *heap-allocated types*,
+or *heap types* for short, which correspond closely to classes created by
+Python's ``class`` statement. Heap types have the :const:`Py_TPFLAGS_HEAPTYPE`
+flag set.
 
 This is done by filling a :c:type:`PyType_Spec` structure and calling
-:c:func:`PyType_FromSpecWithBases`.
+:c:func:`PyType_FromSpec`, :c:func:`PyType_FromSpecWithBases`,
+or :c:func:`PyType_FromModuleAndSpec`.
 
 
 .. _number-structs:
@@ -2303,6 +2344,7 @@ Async Object Structures
             unaryfunc am_await;
             unaryfunc am_aiter;
             unaryfunc am_anext;
+            sendfunc am_send;
         } PyAsyncMethods;
 
 .. c:member:: unaryfunc PyAsyncMethods.am_await
@@ -2334,6 +2376,15 @@ Async Object Structures
       PyObject *am_anext(PyObject *self);
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   This slot may be set to ``NULL``.
+
+.. c:member:: sendfunc PyAsyncMethods.am_send
+
+   The signature of this function is::
+
+      PySendResult am_send(PyObject *self, PyObject *arg, PyObject **result);
+
+   See :c:func:`PyIter_Send` for details.
    This slot may be set to ``NULL``.
 
 
@@ -2431,6 +2482,10 @@ Slot Type typedefs
 
 .. c:type:: PyObject *(*binaryfunc)(PyObject *, PyObject *)
 
+.. c:type:: PySendResult (*sendfunc)(PyObject *, PyObject *, PyObject **)
+
+   See :c:member:`~PyAsyncMethods.am_send`.
+
 .. c:type:: PyObject *(*ternaryfunc)(PyObject *, PyObject *, PyObject *)
 
 .. c:type:: PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t)
@@ -2452,7 +2507,7 @@ include common usage you may encounter.  Some demonstrate tricky corner
 cases.  For more examples, practical info, and a tutorial, see
 :ref:`defining-new-types` and :ref:`new-types-topics`.
 
-A basic static type::
+A basic :ref:`static type <static-types>`::
 
    typedef struct {
        PyObject_HEAD
@@ -2559,7 +2614,7 @@ to create instances (e.g. uses a separate factory func)::
        .tp_repr = (reprfunc)myobj_repr,
    };
 
-The simplest static type (with fixed-length instances)::
+The simplest :ref:`static type <static-types>` with fixed-length instances::
 
    typedef struct {
        PyObject_HEAD
@@ -2570,7 +2625,7 @@ The simplest static type (with fixed-length instances)::
        .tp_name = "mymod.MyObject",
    };
 
-The simplest static type (with variable-length instances)::
+The simplest :ref:`static type <static-types>` with variable-length instances::
 
    typedef struct {
        PyObject_VAR_HEAD

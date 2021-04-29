@@ -1,6 +1,8 @@
 /* enumerate object */
 
 #include "Python.h"
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 #include "clinic/enumobject.c.h"
 
@@ -115,7 +117,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     next_index = en->en_longindex;
     assert(next_index != NULL);
-    stepped_up = PyNumber_Add(next_index, _PyLong_One);
+    stepped_up = PyNumber_Add(next_index, _PyLong_GetOne());
     if (stepped_up == NULL) {
         Py_DECREF(next_item);
         return NULL;
@@ -130,6 +132,11 @@ enum_next_long(enumobject *en, PyObject* next_item)
         PyTuple_SET_ITEM(result, 1, next_item);
         Py_DECREF(old_index);
         Py_DECREF(old_item);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
         return result;
     }
     result = PyTuple_New(2);
@@ -175,6 +182,11 @@ enum_next(enumobject *en)
         PyTuple_SET_ITEM(result, 1, next_item);
         Py_DECREF(old_index);
         Py_DECREF(old_item);
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
         return result;
     }
     result = PyTuple_New(2);
