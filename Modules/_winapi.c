@@ -36,7 +36,6 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_object.h"        // _PyType_DisabledNew()
 #include "structmember.h"         // PyMemberDef
 
 
@@ -44,6 +43,9 @@
 #include "windows.h"
 #include <crtdbg.h>
 #include "winreparse.h"
+
+// Include pycore_object.h to avoid conflict with windows.h
+#include "pycore_object.h"        // _PyType_DisabledNew()
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #define HANDLE_TO_PYNUM(handle) \
