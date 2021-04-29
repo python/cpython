@@ -199,6 +199,12 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("1e1000j")
         self.check_ast_roundtrip("-1e1000j")
 
+    def test_nan(self):
+        self.assertASTEqual(
+            ast.parse(ast.unparse(ast.Constant(value=float('nan')))),
+            ast.parse('1e1000 - 1e1000')
+        )
+
     def test_min_int(self):
         self.check_ast_roundtrip(str(-(2 ** 31)))
         self.check_ast_roundtrip(str(-(2 ** 63)))
@@ -251,6 +257,12 @@ class UnparseTestCase(ASTTestCase):
 
     def test_set_literal(self):
         self.check_ast_roundtrip("{'a', 'b', 'c'}")
+
+    def test_empty_set(self):
+        self.assertASTEqual(
+            ast.parse(ast.unparse(ast.Set(elts=[]))),
+            ast.parse('{*()}')
+        )
 
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")
@@ -325,9 +337,6 @@ class UnparseTestCase(ASTTestCase):
 
     def test_invalid_fstring_backslash(self):
         self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
-
-    def test_invalid_set(self):
-        self.check_invalid(ast.Set(elts=[]))
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
@@ -509,7 +518,8 @@ class DirectoryTestCase(ASTTestCase):
     lib_dir = pathlib.Path(__file__).parent / ".."
     test_directories = (lib_dir, lib_dir / "test")
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
-                        "test_ast.py", "test_asdl_parser.py", "test_fstring.py"}
+                        "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
+                        "test_patma.py"}
 
     _files_to_test = None
 

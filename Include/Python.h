@@ -72,17 +72,7 @@
 #  endif
 #endif
 
-/* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
- *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
- */
-#if defined(Py_DEBUG) && defined(WITH_PYMALLOC) && !defined(PYMALLOC_DEBUG)
-#define PYMALLOC_DEBUG
-#endif
-#if defined(PYMALLOC_DEBUG) && !defined(WITH_PYMALLOC)
-#error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
-#endif
 #include "pymath.h"
-#include "pytime.h"
 #include "pymem.h"
 
 #include "object.h"
@@ -90,7 +80,7 @@
 #include "typeslots.h"
 #include "pyhash.h"
 
-#include "pydebug.h"
+#include "cpython/pydebug.h"
 
 #include "bytearrayobject.h"
 #include "bytesobject.h"
@@ -105,7 +95,7 @@
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
-#include "odictobject.h"
+#include "cpython/odictobject.h"
 #include "enumobject.h"
 #include "setobject.h"
 #include "methodobject.h"
@@ -127,7 +117,8 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 #include "namespaceobject.h"
-#include "picklebufobject.h"
+#include "cpython/picklebufobject.h"
+#include "cpython/pytime.h"
 
 #include "codecs.h"
 #include "pyerrors.h"
@@ -137,11 +128,9 @@
 #include "pystate.h"
 #include "context.h"
 
-#include "pyarena.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
-#include "parser_interface.h"
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"
@@ -154,11 +143,11 @@
 
 #include "eval.h"
 
-#include "pyctype.h"
+#include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "fileutils.h"
-#include "pyfpe.h"
+#include "cpython/pyfpe.h"
 #include "tracemalloc.h"
 
 #endif /* !Py_PYTHON_H */

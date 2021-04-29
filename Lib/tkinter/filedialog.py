@@ -24,6 +24,7 @@ from tkinter import (
 )
 from tkinter.dialog import Dialog
 from tkinter import commondialog
+from tkinter.simpledialog import _setup_dialog
 
 
 dialogstates = {}
@@ -62,6 +63,7 @@ class FileDialog:
         self.top = Toplevel(master)
         self.top.title(title)
         self.top.iconname(title)
+        _setup_dialog(self.top)
 
         self.botframe = Frame(self.top)
         self.botframe.pack(side=BOTTOM, fill=X)

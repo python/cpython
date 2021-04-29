@@ -12,31 +12,31 @@ are always available.  They are listed here in alphabetical order.
 +=========================+=======================+=======================+=========================+
 | |  **A**                | |  **E**              | |  **L**              | |  **R**                |
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| |  :func:`all`          | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| |  :func:`any`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`ascii`        | |                     | |                     | |  :func:`round`        |
-| |                       | |  **F**              | |  **M**              | |                       |
-| |  **B**                | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
-| |  :func:`bin`          | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| |  :func:`bool`         | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`breakpoint`   | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| |  |func-bytearray|_    | |                     | |                     | |  :func:`sorted`       |
-| |  |func-bytes|_        | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| |                       | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| |  **C**                | |  :func:`globals`    | |                     | |  :func:`sum`          |
-| |  :func:`callable`     | |                     | |  **O**              | |  :func:`super`        |
-| |  :func:`chr`          | |  **H**              | |  :func:`object`     | |                       |
-| |  :func:`classmethod`  | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| |  :func:`compile`      | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`complex`      | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| |                       | |  :func:`hex`        | |                     | |                       |
-| |  **D**                | |                     | |  **P**              | |  **V**                |
-| |  :func:`delattr`      | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| |  |func-dict|_         | |  :func:`id`         | |  :func:`print`      | |                       |
-| |  :func:`dir`          | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| |  :func:`divmod`       | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |                       | |  :func:`isinstance` | |                     | |                       |
-| |                       | |  :func:`issubclass` | |                     | |  **_**                |
+| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
+| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
+| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
+| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
+| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
+| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
+| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
+| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
+| |                       | |                     | |  **O**              | |  :func:`super`        |
+| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
+| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
+| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
+| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
+| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
+| |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
+| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
+| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
+| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
+| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
@@ -61,6 +61,18 @@ are always available.  They are listed here in alphabetical order.
    If the argument is a complex number, its magnitude is returned.
 
 
+.. function:: aiter(async_iterable)
+
+   Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
+   Equivalent to calling ``x.__aiter__()``.
+
+   ``aiter(x)`` itself has an ``__aiter__()`` method that returns ``x``,
+   so ``aiter(aiter(x))`` is the same as ``aiter(x)``.
+
+   Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
+
+   .. versionadded:: 3.10
+
 .. function:: all(iterable)
 
    Return ``True`` if all elements of the *iterable* are true (or if the iterable
@@ -72,6 +84,21 @@ are always available.  They are listed here in alphabetical order.
                   return False
           return True
 
+
+.. awaitablefunction:: anext(async_iterator[, default])
+
+   When awaited, return the next item from the given :term:`asynchronous
+   iterator`, or *default* if given and the iterator is exhausted.
+
+   This is the async variant of the :func:`next` builtin, and behaves
+   similarly.
+
+   This calls the :meth:`~object.__anext__` method of *async_iterator*,
+   returning an :term:`awaitable`. Awaiting this returns the next value of the
+   iterator. If *default* is given, it is returned if the iterator is exhausted,
+   otherwise :exc:`StopAsyncIteration` is raised.
+
+   .. versionadded:: 3.10
 
 .. function:: any(iterable)
 
@@ -241,6 +268,11 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.9
       Class methods can now wrap other :term:`descriptors <descriptor>` such as
       :func:`property`.
+
+   .. versionchanged:: 3.10
+      Class methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
+      have a new ``__wrapped__`` attribute.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
@@ -526,7 +558,8 @@ are always available.  They are listed here in alphabetical order.
    occurs). [#]_ If it is a code object, it is simply executed.  In all cases,
    the code that's executed is expected to be valid as file input (see the
    section "File input" in the Reference Manual). Be aware that the
-   :keyword:`return` and :keyword:`yield` statements may not be used outside of
+   :keyword:`nonlocal`, :keyword:`yield`,  and :keyword:`return`
+   statements may not be used outside of
    function definitions even within the context of code passed to the
    :func:`exec` function. The return value is ``None``.
 
@@ -692,6 +725,13 @@ are always available.  They are listed here in alphabetical order.
    value of that attribute.  For example, ``getattr(x, 'foobar')`` is equivalent to
    ``x.foobar``.  If the named attribute does not exist, *default* is returned if
    provided, otherwise :exc:`AttributeError` is raised.
+
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, one must manually mangle a private attribute's
+      (attributes with two leading underscores) name in order to retrieve it with
+      :func:`getattr`.
 
 
 .. function:: globals()
@@ -862,9 +902,13 @@ are always available.  They are listed here in alphabetical order.
    class>`) subclass thereof.  If *object* is not
    an object of the given type, the function always returns ``False``.
    If *classinfo* is a tuple of type objects (or recursively, other such
-   tuples), return ``True`` if *object* is an instance of any of the types.
+   tuples) or a :ref:`types-union` of multiple types, return ``True`` if
+   *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
+
+   .. versionchanged:: 3.10
+      *classinfo* can be a :ref:`types-union`.
 
 
 .. function:: issubclass(class, classinfo)
@@ -872,8 +916,12 @@ are always available.  They are listed here in alphabetical order.
    Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
-   objects, in which case every entry in *classinfo* will be checked. In any other
+   objects or a :ref:`types-union`, in which case every entry in *classinfo*
+   will be checked. In any other
    case, a :exc:`TypeError` exception is raised.
+
+   .. versionchanged:: 3.10
+      *classinfo* can be a :ref:`types-union`.
 
 
 .. function:: iter(object[, sentinel])
@@ -1512,6 +1560,13 @@ are always available.  They are listed here in alphabetical order.
    object allows it.  For example, ``setattr(x, 'foobar', 123)`` is equivalent to
    ``x.foobar = 123``.
 
+   .. note::
+
+      Since :ref:`private name mangling <private-name-mangling>` happens at
+      compilation time, one must manually mangle a private attribute's
+      (attributes with two leading underscores) name in order to set it with
+      :func:`setattr`.
+
 
 .. class:: slice(stop)
            slice(start, stop[, step])
@@ -1564,8 +1619,9 @@ are always available.  They are listed here in alphabetical order.
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
 
-   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).
+   A static method can be called either on the class (such as ``C.f()``) or on
+   an instance (such as ``C().f()``). Moreover, they can be called as regular
+   functions (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1577,10 +1633,19 @@ are always available.  They are listed here in alphabetical order.
    body and you want to avoid the automatic transformation to instance
    method.  For these cases, use this idiom::
 
+      def regular_function():
+          ...
+
       class C:
-          builtin_open = staticmethod(open)
+          method = staticmethod(regular_function)
 
    For more information on static methods, see :ref:`types`.
+
+   .. versionchanged:: 3.10
+      Static methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``),
+      have a new ``__wrapped__`` attribute, and are now callable as regular
+      functions.
 
 
 .. index::
@@ -1612,7 +1677,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
-.. function:: super([type[, object-or-type]])
+.. class:: super([type[, object-or-type]])
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
@@ -1646,7 +1711,7 @@ are always available.  They are listed here in alphabetical order.
    not found in statically compiled languages or languages that only support
    single inheritance.  This makes it possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
-   that this method have the same calling signature in every case (because the
+   that such implementations have the same calling signature in every case (because the
    order of calls is determined at runtime, because that order adapts
    to changes in the class hierarchy, and because that order can include
    sibling classes that are unknown prior to runtime).
@@ -1690,7 +1755,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: type(object)
-           type(name, bases, dict)
+           type(name, bases, dict, **kwds)
 
    .. index:: object: type
 
@@ -1718,6 +1783,13 @@ are always available.  They are listed here in alphabetical order.
       >>> X = type('X', (), dict(a=1))
 
    See also :ref:`bltin-type-objects`.
+
+   Keyword arguments provided to the three argument form are passed to the
+   appropriate metaclass machinery (usually :meth:`~object.__init_subclass__`)
+   in the same way that keywords in a class
+   definition (besides *metaclass*) would.
+
+   See also :ref:`class-customization`.
 
    .. versionchanged:: 3.6
       Subclasses of :class:`type` which don't override ``type.__new__`` may no

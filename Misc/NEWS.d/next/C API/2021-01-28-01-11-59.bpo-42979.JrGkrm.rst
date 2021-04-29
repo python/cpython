@@ -1,5 +1,0 @@
-When Python is built in debug mode (with C assertions), calling a type slot
-like ``sq_length`` (``__len__()`` in Python) now fails with a fatal error if
-the slot succeeded with an exception set, or failed with no exception set. The
-error message contains the slot, the type name, and the current exception (if
-an exception is set). Patch by Victor Stinner.

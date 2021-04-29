@@ -337,6 +337,7 @@ class socket(_socket.socket):
             buffer = io.BufferedWriter(raw, buffering)
         if binary:
             return buffer
+        encoding = io.text_encoding(encoding)
         text = io.TextIOWrapper(buffer, encoding, errors, newline)
         text.mode = mode
         return text

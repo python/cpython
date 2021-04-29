@@ -1,5 +1,0 @@
-Refactor the ``PyEval_`` family of functions.
-
-* An new function ``_PyEval_Vector`` is added to simplify calls to Python from C.
-* ``_PyEval_EvalCodeWithName`` is removed
-* ``PyEval_EvalCodeEx`` is retained as part of the API, but is not used internally

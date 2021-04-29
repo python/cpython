@@ -995,6 +995,11 @@ PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
     return (PyObject *)descr;
 }
 
+int
+PyDescr_IsData(PyObject *ob)
+{
+    return Py_TYPE(ob)->tp_descr_set != NULL;
+}
 
 /* --- mappingproxy: read-only proxy for mappings --- */
 

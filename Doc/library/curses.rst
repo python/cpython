@@ -915,6 +915,9 @@ the following methods and attributes:
    determining what subset of the screen windows enclose the location of a mouse
    event.
 
+   .. versionchanged:: 3.10
+      Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
+
 
 .. attribute:: window.encoding
 

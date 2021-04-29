@@ -9,6 +9,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 
 PyDoc_STRVAR(pickle_module_doc,
@@ -182,7 +183,7 @@ static struct PyModuleDef _picklemodule;
 static PickleState *
 _Pickle_GetState(PyObject *module)
 {
-    return (PickleState *)PyModule_GetState(module);
+    return (PickleState *)_PyModule_GetState(module);
 }
 
 /* Find the module instance imported in the currently running sub-interpreter

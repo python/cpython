@@ -8,6 +8,7 @@ import unittest
 import pickle
 import weakref
 import errno
+from textwrap import dedent
 
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
@@ -54,9 +55,9 @@ class ExceptionTests(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, sys, "undefined_attribute")
 
         self.raise_catch(EOFError, "EOFError")
-        fp = open(TESTFN, 'w')
+        fp = open(TESTFN, 'w', encoding="utf-8")
         fp.close()
-        fp = open(TESTFN, 'r')
+        fp = open(TESTFN, 'r', encoding="utf-8")
         savestdin = sys.stdin
         try:
             try:
@@ -179,7 +180,7 @@ class ExceptionTests(unittest.TestCase):
 
         # should not apply to subclasses, see issue #31161
         s = '''if True:\nprint "No indent"'''
-        ckmsg(s, "expected an indented block", IndentationError)
+        ckmsg(s, "expected an indented block after 'if' statement on line 1", IndentationError)
 
         s = '''if True:\n        print()\n\texec "mixed tabs and spaces"'''
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
@@ -255,13 +256,13 @@ class ExceptionTests(unittest.TestCase):
         check('from __future__ import doesnt_exist', 1, 1)
         check('from __future__ import braces', 1, 1)
         check('x=1\nfrom __future__ import division', 2, 1)
-        check('foo(1=2)', 1, 6)
+        check('foo(1=2)', 1, 5)
         check('def f():\n  x, y: int', 2, 3)
         check('[*x for x in xs]', 1, 2)
         check('foo(x for x in range(10), 100)', 1, 5)
         check('for 1 in []: pass', 1, 5)
         check('(yield i) = 2', 1, 2)
-        check('def f(*):\n  pass', 1, 8)
+        check('def f(*):\n  pass', 1, 7)
 
     @cpython_only
     def testSettingException(self):
@@ -395,25 +396,31 @@ class ExceptionTests(unittest.TestCase):
                  'filename' : 'filenameStr', 'filename2' : None}),
             (SyntaxError, (), {'msg' : None, 'text' : None,
                 'filename' : None, 'lineno' : None, 'offset' : None,
-                'print_file_and_line' : None}),
+                'end_offset': None, 'print_file_and_line' : None}),
             (SyntaxError, ('msgStr',),
                 {'args' : ('msgStr',), 'text' : None,
                  'print_file_and_line' : None, 'msg' : 'msgStr',
-                 'filename' : None, 'lineno' : None, 'offset' : None}),
+                 'filename' : None, 'lineno' : None, 'offset' : None,
+                 'end_offset': None}),
             (SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr')),
+                           'textStr', 'endLinenoStr', 'endOffsetStr')),
                 {'offset' : 'offsetStr', 'text' : 'textStr',
                  'args' : ('msgStr', ('filenameStr', 'linenoStr',
-                                      'offsetStr', 'textStr')),
+                                      'offsetStr', 'textStr',
+                                      'endLinenoStr', 'endOffsetStr')),
                  'print_file_and_line' : None, 'msg' : 'msgStr',
-                 'filename' : 'filenameStr', 'lineno' : 'linenoStr'}),
+                 'filename' : 'filenameStr', 'lineno' : 'linenoStr',
+                 'end_lineno': 'endLinenoStr', 'end_offset': 'endOffsetStr'}),
             (SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr', 'print_file_and_lineStr'),
+                           'textStr', 'endLinenoStr', 'endOffsetStr',
+                           'print_file_and_lineStr'),
                 {'text' : None,
                  'args' : ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr', 'print_file_and_lineStr'),
+                           'textStr', 'endLinenoStr', 'endOffsetStr',
+                           'print_file_and_lineStr'),
                  'print_file_and_line' : None, 'msg' : 'msgStr',
-                 'filename' : None, 'lineno' : None, 'offset' : None}),
+                 'filename' : None, 'lineno' : None, 'offset' : None,
+                 'end_lineno': None, 'end_offset': None}),
             (UnicodeError, (), {'args' : (),}),
             (UnicodeEncodeError, ('ascii', 'a', 0, 1,
                                   'ordinal not in range'),
@@ -459,7 +466,7 @@ class ExceptionTests(unittest.TestCase):
                 e = exc(*args)
             except:
                 print("\nexc=%r, args=%r" % (exc, args), file=sys.stderr)
-                raise
+                # raise
             else:
                 # Verify module name
                 if not type(e).__name__.endswith('NaiveException'):
@@ -1413,6 +1420,455 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
+global_for_suggestions = None
+
+class NameErrorTests(unittest.TestCase):
+    def test_name_error_has_name(self):
+        try:
+            bluch
+        except NameError as exc:
+            self.assertEqual("bluch", exc.name)
+
+    def test_name_error_suggestions(self):
+        def Substitution():
+            noise = more_noise = a = bc = None
+            blech = None
+            print(bluch)
+
+        def Elimination():
+            noise = more_noise = a = bc = None
+            blch = None
+            print(bluch)
+
+        def Addition():
+            noise = more_noise = a = bc = None
+            bluchin = None
+            print(bluch)
+
+        def SubstitutionOverElimination():
+            blach = None
+            bluc = None
+            print(bluch)
+
+        def SubstitutionOverAddition():
+            blach = None
+            bluchi = None
+            print(bluch)
+
+        def EliminationOverAddition():
+            blucha = None
+            bluc = None
+            print(bluch)
+
+        for func, suggestion in [(Substitution, "'blech'?"),
+                                (Elimination, "'blch'?"),
+                                (Addition, "'bluchin'?"),
+                                (EliminationOverAddition, "'blucha'?"),
+                                (SubstitutionOverElimination, "'blach'?"),
+                                (SubstitutionOverAddition, "'blach'?")]:
+            err = None
+            try:
+                func()
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertIn(suggestion, err.getvalue())
+
+    def test_name_error_suggestions_from_globals(self):
+        def func():
+            print(global_for_suggestio)
+        try:
+            func()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+        self.assertIn("'global_for_suggestions'?", err.getvalue())
+
+    def test_name_error_suggestions_from_builtins(self):
+        def func():
+            print(AttributeErrop)
+        try:
+            func()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+        self.assertIn("'AttributeError'?", err.getvalue())
+
+    def test_name_error_suggestions_do_not_trigger_for_long_names(self):
+        def f():
+            somethingverywronghehehehehehe = None
+            print(somethingverywronghe)
+
+        try:
+            f()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("somethingverywronghehe", err.getvalue())
+
+    def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        vvv = mom = w = id = pytho = None
+
+        with self.subTest(name="b"):
+            try:
+                b
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="v"):
+            try:
+                v
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="m"):
+            try:
+                m
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="py"):
+            try:
+                py
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+    def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
+        def f():
+            # Mutating locals() is unreliable, so we need to do it by hand
+            a1 = a2 = a3 = a4 = a5 = a6 = a7 = a8 = a9 = a10 = a11 = a12 = a13 = \
+            a14 = a15 = a16 = a17 = a18 = a19 = a20 = a21 = a22 = a23 = a24 = a25 = \
+            a26 = a27 = a28 = a29 = a30 = a31 = a32 = a33 = a34 = a35 = a36 = a37 = \
+            a38 = a39 = a40 = a41 = a42 = a43 = a44 = a45 = a46 = a47 = a48 = a49 = \
+            a50 = a51 = a52 = a53 = a54 = a55 = a56 = a57 = a58 = a59 = a60 = a61 = \
+            a62 = a63 = a64 = a65 = a66 = a67 = a68 = a69 = a70 = a71 = a72 = a73 = \
+            a74 = a75 = a76 = a77 = a78 = a79 = a80 = a81 = a82 = a83 = a84 = a85 = \
+            a86 = a87 = a88 = a89 = a90 = a91 = a92 = a93 = a94 = a95 = a96 = a97 = \
+            a98 = a99 = a100 = a101 = a102 = a103 = a104 = a105 = a106 = a107 = \
+            a108 = a109 = a110 = a111 = a112 = a113 = a114 = a115 = a116 = a117 = \
+            a118 = a119 = a120 = a121 = a122 = a123 = a124 = a125 = a126 = \
+            a127 = a128 = a129 = a130 = a131 = a132 = a133 = a134 = a135 = a136 = \
+            a137 = a138 = a139 = a140 = a141 = a142 = a143 = a144 = a145 = \
+            a146 = a147 = a148 = a149 = a150 = a151 = a152 = a153 = a154 = a155 = \
+            a156 = a157 = a158 = a159 = a160 = a161 = None
+            print(a0)
+
+        try:
+            f()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("a1", err.getvalue())
+
+    def test_name_error_with_custom_exceptions(self):
+        def f():
+            blech = None
+            raise NameError()
+
+        try:
+            f()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("blech", err.getvalue())
+
+        def f():
+            blech = None
+            raise NameError
+
+        try:
+            f()
+        except NameError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("blech", err.getvalue())
+
+    def test_unbound_local_error_doesn_not_match(self):
+        def foo():
+            something = 3
+            print(somethong)
+            somethong = 3
+
+        try:
+            foo()
+        except UnboundLocalError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("something", err.getvalue())
+
+
+class AttributeErrorTests(unittest.TestCase):
+    def test_attributes(self):
+        # Setting 'attr' should not be a problem.
+        exc = AttributeError('Ouch!')
+        self.assertIsNone(exc.name)
+        self.assertIsNone(exc.obj)
+
+        sentinel = object()
+        exc = AttributeError('Ouch', name='carry', obj=sentinel)
+        self.assertEqual(exc.name, 'carry')
+        self.assertIs(exc.obj, sentinel)
+
+    def test_getattr_has_name_and_obj(self):
+        class A:
+            blech = None
+
+        obj = A()
+        try:
+            obj.bluch
+        except AttributeError as exc:
+            self.assertEqual("bluch", exc.name)
+            self.assertEqual(obj, exc.obj)
+
+    def test_getattr_has_name_and_obj_for_method(self):
+        class A:
+            def blech(self):
+                return
+
+        obj = A()
+        try:
+            obj.bluch()
+        except AttributeError as exc:
+            self.assertEqual("bluch", exc.name)
+            self.assertEqual(obj, exc.obj)
+
+    def test_getattr_suggestions(self):
+        class Substitution:
+            noise = more_noise = a = bc = None
+            blech = None
+
+        class Elimination:
+            noise = more_noise = a = bc = None
+            blch = None
+
+        class Addition:
+            noise = more_noise = a = bc = None
+            bluchin = None
+
+        class SubstitutionOverElimination:
+            blach = None
+            bluc = None
+
+        class SubstitutionOverAddition:
+            blach = None
+            bluchi = None
+
+        class EliminationOverAddition:
+            blucha = None
+            bluc = None
+
+        for cls, suggestion in [(Substitution, "'blech'?"),
+                                (Elimination, "'blch'?"),
+                                (Addition, "'bluchin'?"),
+                                (EliminationOverAddition, "'bluc'?"),
+                                (SubstitutionOverElimination, "'blach'?"),
+                                (SubstitutionOverAddition, "'blach'?")]:
+            try:
+                cls().bluch
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+
+            self.assertIn(suggestion, err.getvalue())
+
+    def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
+        class A:
+            blech = None
+
+        try:
+            A().somethingverywrong
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("blech", err.getvalue())
+
+    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        class MyClass:
+            vvv = mom = w = id = pytho = None
+
+        with self.subTest(name="b"):
+            try:
+                MyClass.b
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="v"):
+            try:
+                MyClass.v
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="m"):
+            try:
+                MyClass.m
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="py"):
+            try:
+                MyClass.py
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+
+    def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
+        class A:
+            blech = None
+        # A class with a very big __dict__ will not be consider
+        # for suggestions.
+        for index in range(160):
+            setattr(A, f"index_{index}", None)
+
+        try:
+            A().bluch
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("blech", err.getvalue())
+
+    def test_getattr_suggestions_no_args(self):
+        class A:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError()
+
+        try:
+            A().bluch
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("blech", err.getvalue())
+
+        class A:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError
+
+        try:
+            A().bluch
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertIn("blech", err.getvalue())
+
+    def test_getattr_suggestions_invalid_args(self):
+        class NonStringifyClass:
+            __str__ = None
+            __repr__ = None
+
+        class A:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError(NonStringifyClass())
+
+        class B:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError("Error", 23)
+
+        class C:
+            blech = None
+            def __getattr__(self, attr):
+                raise AttributeError(23)
+
+        for cls in [A, B, C]:
+            try:
+                cls().bluch
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+
+            self.assertIn("blech", err.getvalue())
+
+    def test_attribute_error_with_failing_dict(self):
+        class T:
+            bluch = 1
+            def __dir__(self):
+                raise AttributeError("oh no!")
+
+        try:
+            T().blich
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("blech", err.getvalue())
+        self.assertNotIn("oh no!", err.getvalue())
+
+    def test_attribute_error_with_bad_name(self):
+        try:
+            raise AttributeError(name=12, obj=23)
+        except AttributeError as exc:
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
+
+        self.assertNotIn("?", err.getvalue())
+
 
 class ImportErrorTests(unittest.TestCase):
 
@@ -1490,6 +1946,130 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
 
+class SyntaxErrorTests(unittest.TestCase):
+    def test_range_of_offsets(self):
+        cases = [
+            # Basic range from 2->7
+            (("bad.py", 1, 2, "abcdefg", 1, 7),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^^^^^
+             SyntaxError: bad bad
+             """)),
+            # end_offset = start_offset + 1
+            (("bad.py", 1, 2, "abcdefg", 1, 3),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^
+             SyntaxError: bad bad
+             """)),
+            # Negative end offset
+            (("bad.py", 1, 2, "abcdefg", 1, -2),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^
+             SyntaxError: bad bad
+             """)),
+            # end offset before starting offset
+            (("bad.py", 1, 4, "abcdefg", 1, 2),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                    ^
+             SyntaxError: bad bad
+             """)),
+            # Both offsets negative
+            (("bad.py", 1, -4, "abcdefg", 1, -2),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # Both offsets negative and the end more negative
+            (("bad.py", 1, -4, "abcdefg", 1, -5),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # Both offsets 0
+            (("bad.py", 1, 0, "abcdefg", 1, 0),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # Start offset 0 and end offset not 0
+            (("bad.py", 1, 0, "abcdefg", 1, 5),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+             SyntaxError: bad bad
+             """)),
+            # End offset pass the source lenght
+            (("bad.py", 1, 2, "abcdefg", 1, 100),
+             dedent(
+             """
+               File "bad.py", line 1
+                 abcdefg
+                  ^^^^^^
+             SyntaxError: bad bad
+             """)),
+        ]
+        for args, expected in cases:
+            with self.subTest(args=args):
+                try:
+                    raise SyntaxError("bad bad", args)
+                except SyntaxError as exc:
+                    with support.captured_stderr() as err:
+                        sys.__excepthook__(*sys.exc_info())
+                    the_exception = exc
+
+    def test_attributes_new_constructor(self):
+        args = ("bad.py", 1, 2, "abcdefg", 1, 100)
+        the_exception = SyntaxError("bad bad", args)
+        filename, lineno, offset, error, end_lineno, end_offset = args
+        self.assertEqual(filename, the_exception.filename)
+        self.assertEqual(lineno, the_exception.lineno)
+        self.assertEqual(end_lineno, the_exception.end_lineno)
+        self.assertEqual(offset, the_exception.offset)
+        self.assertEqual(end_offset, the_exception.end_offset)
+        self.assertEqual(error, the_exception.text)
+        self.assertEqual("bad bad", the_exception.msg)
+
+    def test_attributes_old_constructor(self):
+        args = ("bad.py", 1, 2, "abcdefg")
+        the_exception = SyntaxError("bad bad", args)
+        filename, lineno, offset, error = args
+        self.assertEqual(filename, the_exception.filename)
+        self.assertEqual(lineno, the_exception.lineno)
+        self.assertEqual(None, the_exception.end_lineno)
+        self.assertEqual(offset, the_exception.offset)
+        self.assertEqual(None, the_exception.end_offset)
+        self.assertEqual(error, the_exception.text)
+        self.assertEqual("bad bad", the_exception.msg)
+
+    def test_incorrect_constructor(self):
+        args = ("bad.py", 1, 2)
+        self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+        args = ("bad.py", 1, 2, 4, 5, 6, 7)
+        self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
+        args = ("bad.py", 1, 2, "abcdefg", 1)
+        self.assertRaises(TypeError, SyntaxError, "bad bad", args)
+
 
 class PEP626Tests(unittest.TestCase):
 
@@ -1501,7 +2081,10 @@ class PEP626Tests(unittest.TestCase):
             while t.tb_next:
                 t = t.tb_next
             frame = t.tb_frame
-            self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+            if line is None:
+                self.assertEqual(frame.f_lineno, line)
+            else:
+                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
 
     def test_lineno_after_raise_simple(self):
         def simple():
@@ -1573,6 +2156,12 @@ class PEP626Tests(unittest.TestCase):
                 pass
         self.lineno_after_raise(after_with, 2)
 
+    def test_missing_lineno_shows_as_none(self):
+        def f():
+            1/0
+        self.lineno_after_raise(f, 1)
+        f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+        self.lineno_after_raise(f, None)
 
 if __name__ == '__main__':
     unittest.main()

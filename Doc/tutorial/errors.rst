@@ -272,7 +272,7 @@ re-raise the exception::
 Exception Chaining
 ==================
 
-The :keyword:`raise` statement allows an optional :keyword:`from` which enables
+The :keyword:`raise` statement allows an optional :keyword:`from<raise>` which enables
 chaining exceptions. For example::
 
     # exc must be exception instance or None.

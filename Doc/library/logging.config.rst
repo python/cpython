@@ -77,7 +77,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
 
    .. versionadded:: 3.2
 
-.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True)
+.. function:: fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=None)
 
    Reads the logging configuration from a :mod:`configparser`\-format file. The
    format of the file should be as described in
@@ -111,6 +111,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
+    :param encoding: The encoding used to open file when *fname* is filename.
+
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
       now accepted as a value for ``fname``. This facilitates:
@@ -120,6 +122,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
       * Use of a configuration read from a file, and then modified by the using
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
+
+    .. versionadded:: 3.10
+       The *encoding* parameter is added.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
@@ -588,7 +593,7 @@ in the configuration, the string ``'cfg://handlers'`` would resolve to
 the dict with key ``handlers``, the string ``'cfg://handlers.email``
 would resolve to the dict with key ``email`` in the ``handlers`` dict,
 and so on.  The string ``'cfg://handlers.email.toaddrs[1]`` would
-resolve to ``'dev_team.domain.tld'`` and the string
+resolve to ``'dev_team@domain.tld'`` and the string
 ``'cfg://handlers.email.toaddrs[0]'`` would resolve to the value
 ``'support_team@domain.tld'``. The ``subject`` value could be accessed
 using either ``'cfg://handlers.email.subject'`` or, equivalently,

@@ -2912,7 +2912,8 @@ PyTypeObject PyBytes_Type = {
     0,                                          /* tp_setattro */
     &bytes_as_buffer,                           /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_BYTES_SUBCLASS,              /* tp_flags */
+        Py_TPFLAGS_BYTES_SUBCLASS |
+        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -3063,9 +3064,9 @@ error:
 
 
 PyStatus
-_PyBytes_Init(PyThreadState *tstate)
+_PyBytes_Init(PyInterpreterState *interp)
 {
-    struct _Py_bytes_state *state = &tstate->interp->bytes;
+    struct _Py_bytes_state *state = &interp->bytes;
     if (bytes_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
@@ -3074,9 +3075,9 @@ _PyBytes_Init(PyThreadState *tstate)
 
 
 void
-_PyBytes_Fini(PyThreadState *tstate)
+_PyBytes_Fini(PyInterpreterState *interp)
 {
-    struct _Py_bytes_state* state = &tstate->interp->bytes;
+    struct _Py_bytes_state* state = &interp->bytes;
     for (int i = 0; i < UCHAR_MAX + 1; i++) {
         Py_CLEAR(state->characters[i]);
     }

@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 #include <signal.h>
 #include <object.h>
@@ -208,7 +209,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
 static PyThreadState*
 get_thread_state(void)
 {
-    PyThreadState *tstate = _PyThreadState_UncheckedGet();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
         /* just in case but very unlikely... */
         PyErr_SetString(PyExc_RuntimeError,

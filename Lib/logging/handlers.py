@@ -23,7 +23,7 @@ Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import logging, socket, os, pickle, struct, time, re
+import io, logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
@@ -150,6 +150,8 @@ class RotatingFileHandler(BaseRotatingHandler):
         # on each run.
         if maxBytes > 0:
             mode = 'a'
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
         BaseRotatingHandler.__init__(self, filename, mode, encoding=encoding,
                                      delay=delay, errors=errors)
         self.maxBytes = maxBytes
@@ -205,6 +207,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     def __init__(self, filename, when='h', interval=1, backupCount=0,
                  encoding=None, delay=False, utc=False, atTime=None,
                  errors=None):
+        encoding = io.text_encoding(encoding)
         BaseRotatingHandler.__init__(self, filename, 'a', encoding=encoding,
                                      delay=delay, errors=errors)
         self.when = when.upper()
@@ -442,6 +445,8 @@ class WatchedFileHandler(logging.FileHandler):
     """
     def __init__(self, filename, mode='a', encoding=None, delay=False,
                  errors=None):
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
         logging.FileHandler.__init__(self, filename, mode=mode,
                                      encoding=encoding, delay=delay,
                                      errors=errors)

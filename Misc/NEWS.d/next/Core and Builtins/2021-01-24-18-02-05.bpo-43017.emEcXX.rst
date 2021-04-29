@@ -1,2 +1,0 @@
-Improve error message in the parser when using un-parenthesised tuples in
-comprehensions. Patch by Pablo Galindo.

@@ -45,6 +45,7 @@ else:
 # Assumption made in _path_join()
 assert all(len(sep) == 1 for sep in path_separators)
 path_sep = path_separators[0]
+path_sep_tuple = tuple(path_separators)
 path_separators = ''.join(path_separators)
 _pathseps_with_colon = {f':{s}' for s in path_separators}
 
@@ -91,22 +92,49 @@ def _unpack_uint16(data):
     return int.from_bytes(data, 'little')
 
 
-def _path_join(*path_parts):
-    """Replacement for os.path.join()."""
-    return path_sep.join([part.rstrip(path_separators)
-                          for part in path_parts if part])
+if _MS_WINDOWS:
+    def _path_join(*path_parts):
+        """Replacement for os.path.join()."""
+        if not path_parts:
+            return ""
+        if len(path_parts) == 1:
+            return path_parts[0]
+        root = ""
+        path = []
+        for new_root, tail in map(_os._path_splitroot, path_parts):
+            if new_root.startswith(path_sep_tuple) or new_root.endswith(path_sep_tuple):
+                root = new_root.rstrip(path_separators) or root
+                path = [path_sep + tail]
+            elif new_root.endswith(':'):
+                if root.casefold() != new_root.casefold():
+                    # Drive relative paths have to be resolved by the OS, so we reset the
+                    # tail but do not add a path_sep prefix.
+                    root = new_root
+                    path = [tail]
+                else:
+                    path.append(tail)
+            else:
+                root = new_root or root
+                path.append(tail)
+        path = [p.rstrip(path_separators) for p in path if p]
+        if len(path) == 1 and not path[0]:
+            # Avoid losing the root's trailing separator when joining with nothing
+            return root + path_sep
+        return root + path_sep.join(path)
+
+else:
+    def _path_join(*path_parts):
+        """Replacement for os.path.join()."""
+        return path_sep.join([part.rstrip(path_separators)
+                              for part in path_parts if part])
 
 
 def _path_split(path):
     """Replacement for os.path.split()."""
-    if len(path_separators) == 1:
-        front, _, tail = path.rpartition(path_sep)
-        return front, tail
-    for x in reversed(path):
-        if x in path_separators:
-            front, tail = path.rsplit(x, maxsplit=1)
-            return front, tail
-    return '', path
+    i = max(path.rfind(p) for p in path_separators)
+    if i < 0:
+        return '', path
+    return path[:i], path[i + 1:]
 
 
 def _path_stat(path):
@@ -140,13 +168,18 @@ def _path_isdir(path):
     return _path_is_mode_type(path, 0o040000)
 
 
-def _path_isabs(path):
-    """Replacement for os.path.isabs.
+if _MS_WINDOWS:
+    def _path_isabs(path):
+        """Replacement for os.path.isabs."""
+        if not path:
+            return False
+        root = _os._path_splitroot(path)[0].replace('/', '\\')
+        return len(root) > 1 and (root.startswith('\\\\') or root.endswith('\\'))
 
-    Considers a Windows drive-relative path (no drive, but starts with slash) to
-    still be "absolute".
-    """
-    return path.startswith(path_separators) or path[1:3] in _pathseps_with_colon
+else:
+    def _path_isabs(path):
+        """Replacement for os.path.isabs."""
+        return path.startswith(path_separators)
 
 
 def _write_atomic(path, data, mode=0o666):
@@ -313,6 +346,11 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10a1 3431 (New line number table format -- PEP 626)
 #     Python 3.10a2 3432 (Function annotation for MAKE_FUNCTION is changed from dict to tuple bpo-42202)
 #     Python 3.10a2 3433 (RERAISE restores f_lasti if oparg != 0)
+#     Python 3.10a6 3434 (PEP 634: Structural Pattern Matching)
+#     Python 3.10a7 3435 Use instruction offsets (as opposed to byte offsets).
+#     Python 3.10b1 3436 (Add GEN_START bytecode #43683)
+#     Python 3.10b1 3437 (Undo making 'annotations' future by default - We like to dance among core devs!)
+#     Python 3.10b1 3438 Safer line number table handling.
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -322,7 +360,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3433).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3438).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -530,6 +568,9 @@ def _find_module_shim(self, fullname):
     This method is deprecated in favor of finder.find_spec().
 
     """
+    _warnings.warn("find_module() is deprecated and "
+                   "slated for removal in Python 3.12; use find_spec() instead",
+                   DeprecationWarning)
     # Call find_loader(). If it returns a string (indicating this
     # is a namespace package portion), generate a warning and
     # return None.
@@ -701,6 +742,11 @@ def spec_from_file_location(name, location=None, *, loader=None,
                 pass
     else:
         location = _os.fspath(location)
+        if not _path_isabs(location):
+            try:
+                location = _path_join(_os.getcwd(), location)
+            except OSError:
+                pass
 
     # If the location is on the filesystem, but doesn't actually exist,
     # we could return None here, indicating that the location is not
@@ -798,9 +844,12 @@ class WindowsRegistryFinder:
     def find_module(cls, fullname, path=None):
         """Find module named in the registry.
 
-        This method is deprecated.  Use exec_module() instead.
+        This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("WindowsRegistryFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is not None:
             return spec.loader
@@ -1229,6 +1278,8 @@ class _NamespaceLoader:
         The method is deprecated.  The import machinery does the job itself.
 
         """
+        _warnings.warn("_NamespaceLoader.module_repr() is deprecated and "
+                       "slated for removal in Python 3.12", DeprecationWarning)
         return '<module {!r} (namespace)>'.format(module.__name__)
 
     def is_package(self, fullname):
@@ -1257,6 +1308,10 @@ class _NamespaceLoader:
                                     self._path)
         # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
+
+    def get_resource_reader(self, module):
+        from importlib.readers import NamespaceReader
+        return NamespaceReader(self._path)
 
 
 # Finders #####################################################################
@@ -1315,8 +1370,14 @@ class PathFinder:
         # This would be a good place for a DeprecationWarning if
         # we ended up going that route.
         if hasattr(finder, 'find_loader'):
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_loader()")
+            _warnings.warn(msg, ImportWarning)
             loader, portions = finder.find_loader(fullname)
         else:
+            msg = (f"{_bootstrap._object_name(finder)}.find_spec() not found; "
+                    "falling back to find_module()")
+            _warnings.warn(msg, ImportWarning)
             loader = finder.find_module(fullname)
             portions = []
         if loader is not None:
@@ -1389,6 +1450,9 @@ class PathFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("PathFinder.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         if spec is None:
             return None
@@ -1427,6 +1491,8 @@ class FileFinder:
         self._loaders = loaders
         # Base (directory) path
         self.path = path or '.'
+        if not _path_isabs(self.path):
+            self.path = _path_join(_os.getcwd(), self.path)
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()
@@ -1444,6 +1510,9 @@ class FileFinder:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FileFinder.find_loader() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = self.find_spec(fullname)
         if spec is None:
             return None, []
@@ -1489,7 +1558,10 @@ class FileFinder:
                 is_namespace = _path_isdir(base_path)
         # Check for a file w/ a proper suffix exists.
         for suffix, loader_class in self._loaders:
-            full_path = _path_join(self.path, tail_module + suffix)
+            try:
+                full_path = _path_join(self.path, tail_module + suffix)
+            except ValueError:
+                return None
             _bootstrap._verbose_message('trying {}', full_path, verbosity=2)
             if cache_module + suffix in cache:
                 if _path_isfile(full_path):

@@ -1,0 +1,3 @@
+Improve :mod:`sqlite3` error handling: ``sqlite3_value_blob()`` errors that
+set ``SQLITE_NOMEM`` now raise :exc:`MemoryError`. Patch by Erlend E.
+Aasland.

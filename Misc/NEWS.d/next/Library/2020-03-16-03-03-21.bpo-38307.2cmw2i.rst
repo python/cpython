@@ -1,3 +1,0 @@
-Add an 'end_lineno' attribute to the Class and Function objects that appear in the
-tree returned by pyclbr functions.  This and the existing 'lineno'
-attribute define the extent of class and def statements.  Patch by Aviral Srivastava.
