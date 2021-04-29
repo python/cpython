@@ -7,7 +7,6 @@ from collections import namedtuple
 from test.support import requires
 from tkinter import Tk
 from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 Editor = editor.EditorWindow
 
@@ -206,7 +205,6 @@ class BackspaceTest(unittest.TestCase):
     @staticmethod
     def perform_backspace(func):
         @functools.wraps(func)
-        @run_in_tk_mainloop
         def new_test_method(self):
             text = self.window.text
             before, position, after = func(self)
@@ -214,7 +212,6 @@ class BackspaceTest(unittest.TestCase):
             text.insert('insert', before)
             text.mark_set('insert', '%s.%d' % (text.index('insert').split('.')[0], position))
             text.event_generate('<<smart-backspace>>')
-            yield
             self.assertEqual(text.get('insert linestart', 'insert lineend'),
                              after)
 
