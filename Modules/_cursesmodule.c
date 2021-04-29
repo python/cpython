@@ -4794,8 +4794,11 @@ PyInit__curses(void)
     /* ncurses_version */
     if (NcursesVersionType.tp_name == NULL) {
         if (PyStructSequence_InitType2(&NcursesVersionType,
-                                       &ncurses_version_desc) < 0)
+                                       &ncurses_version_desc) < 0) {
             return NULL;
+        }
+        /* prevent user from creating new instances */
+        NcursesVersionType.tp_flags |= Py_TPFLAGS_DISABLE_NEW;
     }
     v = make_ncurses_version();
     if (v == NULL) {
@@ -4803,15 +4806,6 @@ PyInit__curses(void)
     }
     PyDict_SetItemString(d, "ncurses_version", v);
     Py_DECREF(v);
-
-    /* prevent user from creating new instances */
-    NcursesVersionType.tp_init = NULL;
-    NcursesVersionType.tp_new = NULL;
-    if (PyDict_DelItemString(NcursesVersionType.tp_dict, "__new__") < 0 &&
-        PyErr_ExceptionMatches(PyExc_KeyError))
-    {
-        PyErr_Clear();
-    }
 #endif /* NCURSES_VERSION */
 
     SetDictInt("ERR", ERR);

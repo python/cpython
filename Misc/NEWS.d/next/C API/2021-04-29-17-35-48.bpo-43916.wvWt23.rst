@@ -1,0 +1,2 @@
+Add a new :c:data:`Py_TPFLAGS_DISABLE_NEW` type flag to disallow creating
+instances of a type. Patch by Victor Stinner.

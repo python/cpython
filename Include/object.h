@@ -320,6 +320,10 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
+/* Disallow creating instances of the type. For example, calling its
+ * constructor raises a TypeError */
+#define Py_TPFLAGS_DISABLE_NEW (1UL << 7)
+
 /* Set if the type object is immutable: type attributes cannot be set nor deleted */
 #define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
 

@@ -1040,9 +1040,9 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    if (type->tp_new == NULL) {
+    if (type->tp_new == NULL || type->tp_flags & Py_TPFLAGS_DISABLE_NEW) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "cannot create '%.100s' instances",
+                      "cannot create '%s' instances",
                       type->tp_name);
         return NULL;
     }
@@ -6824,8 +6824,15 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
                      "__new__() called with non-type 'self'");
         return NULL;
     }
-
     type = (PyTypeObject *)self;
+
+    if (type->tp_flags & Py_TPFLAGS_DISABLE_NEW) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot create '%s' instances",
+                     type->tp_name);
+        return NULL;
+    }
+
     if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(): not enough arguments",

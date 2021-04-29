@@ -1199,6 +1199,17 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       .. versionadded:: 3.10
 
+   .. data:: Py_TPFLAGS_DISABLE_NEW
+
+      Disallow creating instances of the type. For example, calling its
+      constructor raises a :exc:`TypeError`.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.10
+
 
 .. c:member:: const char* PyTypeObject.tp_doc
 
