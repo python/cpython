@@ -1200,6 +1200,36 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       .. versionadded:: 3.10
 
 
+   .. data:: Py_TPFLAGS_MAPPING
+
+      This bit indicates that instances of the class may match mapping patterns
+      when used as the subject of a :keyword:`!match` block.
+
+      It is set automatically when registering or subclassing
+      :class:`collections.abc.Mapping`. See :pep:`634` for more information.
+
+      **Inheritance:**
+
+      This flag is always inherited.
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_SEQUENCE
+
+      This bit indicates that instances of the class may match sequence patterns
+      when used as the subject of a :keyword:`!match` block.
+
+      It is set automatically when registering or subclassing
+      :class:`collections.abc.Sequence`. See :pep:`634` for more information.
+
+      **Inheritance:**
+
+      This flag is always inherited.
+
+      .. versionadded:: 3.10
+
+
 .. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
