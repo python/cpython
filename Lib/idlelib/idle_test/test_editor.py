@@ -219,7 +219,7 @@ class BackspaceTest(unittest.TestCase):
                              after)
 
         return new_test_method
-    
+
     @perform_backspace
     def test_empty(self):
         return '', 0, ''
@@ -243,7 +243,7 @@ class BackspaceTest(unittest.TestCase):
     @perform_backspace
     def test_indent_1(self):
         return ' '*8 + 'a', 7, ' '*5 + 'a'
-    
+
     @perform_backspace
     def test_normal_char_0(self):
         return ' '*8 + 'a'*4, 12, ' '*8 + 'a'*3
