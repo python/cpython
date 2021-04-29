@@ -523,7 +523,9 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     /* Invalidate negative cache */
     get_abc_state(module)->abc_invalidation_counter++;
 
-    if (!PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE)) {
+    if (PyType_Check(subclass) && PyType_Check(self) &&
+        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE))
+    {
         ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
     }
     Py_INCREF(subclass);
