@@ -2084,9 +2084,9 @@ class RequestBodyTest(TestCase):
 
     def test_text_file_body(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as f:
+        with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
             f.write("body")
-        with open(os_helper.TESTFN) as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             self.conn.request("PUT", "/url", f)
             message, f = self.get_headers_and_fp()
             self.assertEqual("text/plain", message.get_content_type())
