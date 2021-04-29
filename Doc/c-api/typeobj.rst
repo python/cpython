@@ -2607,7 +2607,8 @@ A type that supports weakrefs, instance dicts, and hashing::
    };
 
 A str subclass that cannot be subclassed and cannot be called
-to create instances (e.g. uses a separate factory func)::
+to create instances (e.g. uses a separate factory func) using
+:c:data:`Py_TPFLAGS_DISABLE_NEW` flag::
 
    typedef struct {
        PyUnicodeObject raw;
@@ -2620,8 +2621,7 @@ to create instances (e.g. uses a separate factory func)::
        .tp_basicsize = sizeof(MyStr),
        .tp_base = NULL,  // set to &PyUnicode_Type in module init
        .tp_doc = "my custom str",
-       .tp_flags = Py_TPFLAGS_DEFAULT,
-       .tp_new = NULL,
+       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISABLE_NEW,
        .tp_repr = (reprfunc)myobj_repr,
    };
 
