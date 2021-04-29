@@ -1,0 +1,2 @@
+Introduced support for Python distributors to specify a vendor config, via
+--with-vendor-config, which allows them to add custom install schemes.

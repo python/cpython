@@ -6008,6 +6008,27 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
+# --with-vendor-config
+VENDOR_CONFIG=''
+AC_MSG_CHECKING(for --with-vendor-config)
+AC_ARG_WITH(vendor-config,
+            AS_HELP_STRING([--with-vendor-config=<config.py>]
+                           [use a vendor config to customize the certain details of the Python installation]),
+[
+    AC_CHECK_FILE("$withval",
+    [
+        if ( echo "$withval" | grep '.*\.py$' > /dev/null); then
+            VENDOR_CONFIG="$withval"
+        else
+            AC_MSG_ERROR([--with-vendor-config requires a Python file])
+        fi
+    ],
+    [
+        AC_MSG_ERROR([--with-vendor-config requires a valid file])
+    ])
+],
+[])
+AC_SUBST(VENDOR_CONFIG)
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)

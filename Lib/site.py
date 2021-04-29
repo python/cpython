@@ -87,6 +87,8 @@ ENABLE_USER_SITE = None
 USER_SITE = None
 USER_BASE = None
 
+_VENDOR_SCHEMES = None
+
 
 def _trace(message):
     if sys.flags.verbose:
@@ -350,6 +352,7 @@ def getsitepackages(prefixes=None):
     this function will find its `site-packages` subdirectory depending on the
     system environment, and will return a list of full paths.
     """
+    global _VENDOR_SCHEMES
     sitepackages = []
     seen = set()
 
@@ -377,6 +380,23 @@ def getsitepackages(prefixes=None):
             for libdir in libdirs:
                 path = os.path.join(prefix, libdir, "site-packages")
                 sitepackages.append(path)
+
+    if _VENDOR_SCHEMES is None:  # delayed execution
+        try:
+            import _vendor.config
+
+            _VENDOR_SCHEMES = _vendor.config.EXTRA_SITE_INSTALL_SCHEMES
+        except (ModuleNotFoundError, AttributeError):
+            _VENDOR_SCHEMES = []
+
+    # vendor site schemes
+    if _VENDOR_SCHEMES:
+        import _sysconfig
+
+        for scheme in _VENDOR_SCHEMES:
+            paths = _sysconfig._get_paths(scheme)
+            sitepackages += list({paths['purelib'], paths['platlib']})
+
     return sitepackages
 
 def addsitepackages(known_paths, prefixes=None):

@@ -85,6 +85,10 @@ Python currently supports seven schemes:
 - *nt*: scheme for NT platforms like Windows.
 - *nt_user*: scheme for NT platforms, when the *user* option is used.
 
+Additionally to these, Python also supports vendor schemes specified in the
+``EXTRA_INSTALL_SCHEMES`` dictionary variable of the vendor config
+(``--with-vendor-config`` configure option).
+
 Each scheme is itself composed of a series of paths and each path has a unique
 identifier.  Python currently uses eight paths:
 
@@ -125,21 +129,6 @@ identifier.  Python currently uses eight paths:
    The return value is a scheme name listed in :func:`get_scheme_names`. It
    can be passed to :mod:`sysconfig` functions that take a *scheme* argument,
    such as :func:`get_paths`.
-
-   .. versionadded:: 3.10
-
-
-.. function:: _get_preferred_schemes()
-
-   Return a dict containing preferred scheme names on the current platform.
-   Python implementers and redistributors may add their preferred schemes to
-   the ``_INSTALL_SCHEMES`` module-level global value, and modify this function
-   to return those scheme names, to e.g. provide different schemes for system
-   and language package managers to use, so packages installed by either do not
-   mix with those by the other.
-
-   End users should not use this function, but :func:`get_default_scheme` and
-   :func:`get_preferred_scheme()` instead.
 
    .. versionadded:: 3.10
 

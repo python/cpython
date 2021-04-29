@@ -1,21 +1,24 @@
 import unittest
+import unittest.mock
 import sys
 import os
 import subprocess
 import shutil
 from copy import copy
 
-from test.support import (captured_stdout, PythonSymlink)
+from test.support import (captured_stdout, with_test_vendor_config, PythonSymlink)
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
 from test.support.warnings_helper import check_warnings
 
+import _sysconfig
 import sysconfig
+from _sysconfig import _get_preferred_schemes_default, _expand_vars
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes, _main)
+                       get_preferred_scheme, _main)
 import _osx_support
 
 
@@ -43,7 +46,9 @@ class TestSysConfig(unittest.TestCase):
         self.join = os.path.join
         self.isabs = os.path.isabs
         self.splitdrive = os.path.splitdrive
+        self._get_preferred_schemes = _sysconfig._get_preferred_schemes
         self._config_vars = sysconfig._CONFIG_VARS, copy(sysconfig._CONFIG_VARS)
+        self._schemes = sysconfig._INSTALL_SCHEMES, copy(sysconfig._INSTALL_SCHEMES)
         self._added_envvars = []
         self._changed_envvars = []
         for var in ('MACOSX_DEPLOYMENT_TARGET', 'PATH'):
@@ -66,9 +71,13 @@ class TestSysConfig(unittest.TestCase):
         os.path.join = self.join
         os.path.isabs = self.isabs
         os.path.splitdrive = self.splitdrive
+        _sysconfig._get_preferred_schemes = self._get_preferred_schemes
         sysconfig._CONFIG_VARS = self._config_vars[0]
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(self._config_vars[1])
+        sysconfig._INSTALL_SCHEMES = self._schemes[0]
+        sysconfig._INSTALL_SCHEMES.clear()
+        sysconfig._INSTALL_SCHEMES.update(self._schemes[1])
         for var, value in self._changed_envvars:
             os.environ[var] = value
         for var in self._added_envvars:
@@ -113,18 +122,26 @@ class TestSysConfig(unittest.TestCase):
     def test_get_default_scheme(self):
         self.assertIn(get_default_scheme(), _INSTALL_SCHEMES)
 
-    def test_get_preferred_schemes(self):
+    @with_test_vendor_config()
+    def test_get_preferred_schemes_vendor(self):
+        # force re-load of vendor schemes with the patched sys.modules
+        _sysconfig._get_preferred_schemes = None
+        _sysconfig._load_vendor_schemes()
+
+        self.assertEqual(get_preferred_scheme('prefix'), 'some_vendor')
+
+    def test_get_preferred_schemes_default(self):
         expected_schemes = {'prefix', 'home', 'user'}
 
         # Windows.
         os.name = 'nt'
-        schemes = _get_preferred_schemes()
+        schemes = _get_preferred_schemes_default()
         self.assertIsInstance(schemes, dict)
         self.assertEqual(set(schemes), expected_schemes)
 
         # Mac and Linux, shared library build.
         os.name = 'posix'
-        schemes = _get_preferred_schemes()
+        schemes = _get_preferred_schemes_default()
         self.assertIsInstance(schemes, dict)
         self.assertEqual(set(schemes), expected_schemes)
 
@@ -268,6 +285,16 @@ class TestSysConfig(unittest.TestCase):
             wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
         self.assertEqual(get_scheme_names(), tuple(sorted(wanted)))
 
+    @with_test_vendor_config()
+    def test_get_scheme_names_vendor(self):
+        # force re-load of vendor schemes with the patched sys.modules
+        _sysconfig._load_vendor_schemes()
+
+        wanted = ['nt', 'posix_home', 'posix_prefix', 'some_vendor']
+        if HAS_USER_BASE:
+            wanted.extend(['nt_user', 'osx_framework_user', 'posix_user'])
+        self.assertEqual(sysconfig.get_scheme_names(), tuple(sorted(wanted)))
+
     @skip_unless_symlink
     def test_symlink(self): # Issue 7880
         with PythonSymlink() as py:
@@ -376,7 +403,7 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            self.assertTrue(sysconfig._is_python_source_dir(srcdir))
+            self.assertTrue(_sysconfig._is_python_source_dir(srcdir))
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
             # Issue #19340: srcdir has been realpath'ed already

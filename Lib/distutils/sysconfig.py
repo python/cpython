@@ -19,19 +19,23 @@ from functools import partial
 
 from .errors import DistutilsPlatformError
 
-from sysconfig import (
+from _sysconfig import (
     _PREFIX as PREFIX,
     _BASE_PREFIX as BASE_PREFIX,
     _EXEC_PREFIX as EXEC_PREFIX,
     _BASE_EXEC_PREFIX as BASE_EXEC_PREFIX,
     _PROJECT_BASE as project_base,
     _PYTHON_BUILD as python_build,
+    _SYS_HOME as _sys_home,
+
+    _is_python_source_dir,
+)
+
+from sysconfig import (
     _init_posix as sysconfig_init_posix,
     parse_config_h as sysconfig_parse_config_h,
 
     _init_non_posix,
-    _is_python_source_dir,
-    _sys_home,
 
     _variable_rx,
     _findvar1_rx,
@@ -53,7 +57,7 @@ from sysconfig import (
 _config_vars = get_config_vars()
 
 if os.name == "nt":
-    from sysconfig import _fix_pcbuild
+    from _sysconfig import _fix_pcbuild
 
 warnings.warn(
     'The distutils.sysconfig module is deprecated, use sysconfig instead',

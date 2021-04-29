@@ -32,13 +32,19 @@ It starts by constructing up to four directories from a head and a tail part.
 For the head part, it uses ``sys.prefix`` and ``sys.exec_prefix``; empty heads
 are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
-:file:`lib/python{X.Y}/site-packages` (on Unix and macOS).  For each
+:file:`lib/python{X.Y}/site-packages` (on Unix and macOS), and finally
+the ``purelib`` and ``platlib`` paths for each scheme specified in the
+``EXTRA_SITE_INSTALL_SCHEMES`` list variable of the vendor config. For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
 added path for configuration files.
 
 .. versionchanged:: 3.5
    Support for the "site-python" directory has been removed.
+
+.. versionchanged:: 3.11
+   Extra site install schemes specified in the vendor config
+   (``--with-vendor-config`` configure option) will also be loaded.
 
 If a file named "pyvenv.cfg" exists one directory above sys.executable,
 sys.prefix and sys.exec_prefix are set to that directory and

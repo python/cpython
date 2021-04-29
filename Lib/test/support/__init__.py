@@ -15,6 +15,7 @@ import types
 import unittest
 import warnings
 
+import test.vendor_config
 from .testresult import get_test_runner
 
 
@@ -55,6 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
+    "with_test_vendor_config",
     ]
 
 
@@ -2091,3 +2093,25 @@ def clear_ignored_deprecations(*tokens: object) -> None:
     if warnings.filters != new_filters:
         warnings.filters[:] = new_filters
         warnings._filters_mutated()
+
+
+@contextlib.contextmanager
+def with_test_vendor_config():
+    # this is needed because we are mocking package module
+    try:
+        import _vendor.config
+        old_config = _vendor.config
+    except ModuleNotFoundError:
+        old_config = None
+
+    with unittest.mock.patch.dict(sys.modules, {'_vendor.config': test.vendor_config}):
+        import _vendor
+
+        _vendor.config = test.vendor_config
+
+        yield
+
+        if old_config:
+            _vendor.config = old_config
+        else:
+            delattr(_vendor, 'config')

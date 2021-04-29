@@ -116,6 +116,32 @@ General Options
 
    .. versionadded:: 3.10
 
+.. cmdoption:: --with-vendor-config=config.py
+
+   Path to the vendor config (none by default).
+
+   The vendor config is a Python file that allows configuring some aspects of
+   the Python distribution.
+
+   A ``EXTRA_INSTALL_SCHEMES`` dictionary variable can be specified in the
+   config to add extra install schemes. These schemes will be picked up by the
+   :mod:`sysconfig` module.
+
+   A ``EXTRA_SITE_INSTALL_SCHEMES`` list variable can be specified in the config
+   to add extra schemes to the :mod:`site` module initialization. This options
+   allow Python distributors to define custom locations to use for their Python
+   packages.
+
+   A ``get_preferred_schemes()`` function can be specified in the config. This
+   function should return a dict containing preferred scheme names on the
+   current platform. Python implementers and redistributors may add their
+   preferred schemes to the ``EXTRA_INSTALL_SCHEMES`` vendor config variable,
+   and modify this function to return those scheme names, to e.g. provide
+   different schemes for system and language package managers to use, so
+   packages installed by either do not mix with those by the other.
+
+   .. versionadded:: 3.11
+
 
 Install Options
 ---------------
