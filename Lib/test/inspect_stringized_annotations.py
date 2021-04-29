@@ -32,4 +32,3 @@ def unannotated_function(a, b, c): pass
 class MyClassWithLocalAnnotations:
     mytype = int
     x: mytype
-
