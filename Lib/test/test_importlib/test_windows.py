@@ -92,14 +92,18 @@ class WindowsRegistryFinderTests:
 
     def test_module_found(self):
         with setup_module(self.machinery, self.test_module):
-            loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNot(loader, None)
             self.assertIsNot(spec, None)
 
     def test_module_not_found(self):
         with setup_module(self.machinery, self.test_module, path="."):
-            loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNone(loader)
             self.assertIsNone(spec)

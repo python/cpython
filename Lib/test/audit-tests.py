@@ -359,6 +359,27 @@ def test_http_client():
         conn.close()
 
 
+def test_sqlite3():
+    import sqlite3
+
+    def hook(event, *args):
+        if event.startswith("sqlite3."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    cx = sqlite3.connect(":memory:")
+
+    # Configured without --enable-loadable-sqlite-extensions
+    if hasattr(sqlite3.Connection, "enable_load_extension"):
+        cx.enable_load_extension(False)
+        try:
+            cx.load_extension("test")
+        except sqlite3.OperationalError:
+            pass
+        else:
+            raise RuntimeError("Expected sqlite3.load_extension to fail")
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

@@ -280,7 +280,8 @@ class _proto_member:
             # linear.
             enum_class._value2member_map_.setdefault(value, enum_member)
         except TypeError:
-            pass
+            # keep track of the value in a list so containment checks are quick
+            enum_class._unhashable_values_.append(value)
 
 
 class _EnumDict(dict):
@@ -440,6 +441,7 @@ class EnumType(type):
         classdict['_member_names_'] = []
         classdict['_member_map_'] = {}
         classdict['_value2member_map_'] = {}
+        classdict['_unhashable_values_'] = []
         classdict['_member_type_'] = member_type
         #
         # Flag structures (will be removed if final class is not a Flag
@@ -622,6 +624,13 @@ class EnumType(type):
 
     def __contains__(cls, member):
         if not isinstance(member, Enum):
+            import warnings
+            warnings.warn(
+                    "in 3.12 __contains__ will no longer raise TypeError, but will return True or\n"
+                    "False depending on whether the value is a member or the value of a member",
+                    DeprecationWarning,
+                    stacklevel=2,
+                    )
             raise TypeError(
                 "unsupported operand type(s) for 'in': '%s' and '%s'" % (
                     type(member).__qualname__, cls.__class__.__qualname__))
@@ -1005,6 +1014,15 @@ class Enum(metaclass=EnumType):
             val = str(self)
         # mix-in branch
         else:
+            if not format_spec or format_spec in ('{}','{:}'):
+                import warnings
+                warnings.warn(
+                        "in 3.12 format() will use the enum member, not the enum member's value;\n"
+                        "use a format specifier, such as :d for an IntEnum member, to maintain"
+                        "the current display",
+                        DeprecationWarning,
+                        stacklevel=2,
+                        )
             cls = self._member_type_
             val = self._value_
         return cls.__format__(val, format_spec)
@@ -1426,6 +1444,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         body['_member_names_'] = member_names = []
         body['_member_map_'] = member_map = {}
         body['_value2member_map_'] = value2member_map = {}
+        body['_unhashable_values_'] = []
         body['_member_type_'] = member_type = etype._member_type_
         if issubclass(etype, Flag):
             body['_boundary_'] = boundary or etype._boundary_

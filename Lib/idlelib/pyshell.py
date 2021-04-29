@@ -48,14 +48,19 @@ import warnings
 
 from idlelib.colorizer import ColorDelegator
 from idlelib.config import idleConf
+from idlelib.delegator import Delegator
 from idlelib import debugger
 from idlelib import debugger_r
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
+from idlelib import replace
 from idlelib import rpc
 from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
+
+# Default for testing; defaults to True in main() for running.
+use_subprocess = False
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
 PORT = 0  # someday pass in host, port for remote debug capability
@@ -335,34 +340,19 @@ class PyShellFileList(FileList):
 
 class ModifiedColorDelegator(ColorDelegator):
     "Extend base class: colorizer for the shell window itself"
-
-    def __init__(self):
-        ColorDelegator.__init__(self)
-        self.LoadTagDefs()
-
     def recolorize_main(self):
         self.tag_remove("TODO", "1.0", "iomark")
         self.tag_add("SYNC", "1.0", "iomark")
         ColorDelegator.recolorize_main(self)
-
-    def LoadTagDefs(self):
-        ColorDelegator.LoadTagDefs(self)
-        theme = idleConf.CurrentTheme()
-        self.tagdefs.update({
-            "stdin": {'background':None,'foreground':None},
-            "stdout": idleConf.GetHighlight(theme, "stdout"),
-            "stderr": idleConf.GetHighlight(theme, "stderr"),
-            "console": idleConf.GetHighlight(theme, "console"),
-        })
 
     def removecolors(self):
         # Don't remove shell color tags before "iomark"
         for tag in self.tagdefs:
             self.tag_remove(tag, "iomark", "end")
 
+
 class ModifiedUndoDelegator(UndoDelegator):
     "Extend base class: forbid insert/delete before the I/O mark"
-
     def insert(self, index, chars, tags=None):
         try:
             if self.delegate.compare(index, "<", "iomark"):
@@ -380,6 +370,27 @@ class ModifiedUndoDelegator(UndoDelegator):
         except TclError:
             pass
         UndoDelegator.delete(self, index1, index2)
+
+    def undo_event(self, event):
+        # Temporarily monkey-patch the delegate's .insert() method to
+        # always use the "stdin" tag.  This is needed for undo-ing
+        # deletions to preserve the "stdin" tag, because UndoDelegator
+        # doesn't preserve tags for deleted text.
+        orig_insert = self.delegate.insert
+        self.delegate.insert = \
+            lambda index, chars: orig_insert(index, chars, "stdin")
+        try:
+            super().undo_event(event)
+        finally:
+            self.delegate.insert = orig_insert
+
+
+class UserInputTaggingDelegator(Delegator):
+    """Delegator used to tag user input with "stdin"."""
+    def insert(self, index, chars, tags=None):
+        if tags is None:
+            tags = "stdin"
+        self.delegate.insert(index, chars, tags)
 
 
 class MyRPCClient(rpc.RPCClient):
@@ -832,6 +843,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 
 class PyShell(OutputWindow):
+    from idlelib.squeezer import Squeezer
 
     shell_title = "IDLE Shell " + python_version()
 
@@ -855,9 +867,11 @@ class PyShell(OutputWindow):
     ]
 
     allow_line_numbers = False
+    user_input_insert_tags = "stdin"
 
     # New classes
     from idlelib.history import History
+    from idlelib.sidebar import ShellSidebar
 
     def __init__(self, flist=None):
         if use_subprocess:
@@ -870,6 +884,8 @@ class PyShell(OutputWindow):
             fixwordbreaks(root)
             root.withdraw()
             flist = PyShellFileList(root)
+
+        self.shell_sidebar = None  # initialized below
 
         OutputWindow.__init__(self, flist, None, None)
 
@@ -893,9 +909,9 @@ class PyShell(OutputWindow):
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
-        squeezer = self.Squeezer(self)
+        self.squeezer = self.Squeezer(self)
         text.bind("<<squeeze-current-text>>",
-                  squeezer.squeeze_current_text_event)
+                  self.squeeze_current_text_event)
 
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
@@ -925,6 +941,40 @@ class PyShell(OutputWindow):
         self.history = self.History(self.text)
         #
         self.pollinterval = 50  # millisec
+
+        self.shell_sidebar = self.ShellSidebar(self)
+
+        # Insert UserInputTaggingDelegator at the top of the percolator,
+        # but make calls to text.insert() skip it.  This causes only insert
+        # events generated in Tcl/Tk to go through this delegator.
+        self.text.insert = self.per.top.insert
+        self.per.insertfilter(UserInputTaggingDelegator())
+
+    def ResetFont(self):
+        super().ResetFont()
+
+        if self.shell_sidebar is not None:
+            self.shell_sidebar.update_font()
+
+    def ResetColorizer(self):
+        super().ResetColorizer()
+
+        theme = idleConf.CurrentTheme()
+        tag_colors = {
+          "stdin": {'background': None, 'foreground': None},
+          "stdout": idleConf.GetHighlight(theme, "stdout"),
+          "stderr": idleConf.GetHighlight(theme, "stderr"),
+          "console": idleConf.GetHighlight(theme, "normal"),
+        }
+        for tag, tag_colors_config in tag_colors.items():
+            self.text.tag_configure(tag, **tag_colors_config)
+
+        if self.shell_sidebar is not None:
+            self.shell_sidebar.update_colors()
+
+    def replace_event(self, event):
+        replace.replace(self.text, insert_tags="stdin")
+        return "break"
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
@@ -1166,13 +1216,30 @@ class PyShell(OutputWindow):
         # the current line, less a leading prompt, less leading or
         # trailing whitespace
         if self.text.compare("insert", "<", "iomark linestart"):
-            # Check if there's a relevant stdin range -- if so, use it
+            # Check if there's a relevant stdin range -- if so, use it.
+            # Note: "stdin" blocks may include several successive statements,
+            # so look for "console" tags on the newline before each statement
+            # (and possibly on prompts).
             prev = self.text.tag_prevrange("stdin", "insert")
-            if prev and self.text.compare("insert", "<", prev[1]):
+            if (
+                    prev and
+                    self.text.compare("insert", "<", prev[1]) and
+                    # The following is needed to handle empty statements.
+                    "console" not in self.text.tag_names("insert")
+            ):
+                prev_cons = self.text.tag_prevrange("console", "insert")
+                if prev_cons and self.text.compare(prev_cons[1], ">=", prev[0]):
+                    prev = (prev_cons[1], prev[1])
+                next_cons = self.text.tag_nextrange("console", "insert")
+                if next_cons and self.text.compare(next_cons[0], "<", prev[1]):
+                    prev = (prev[0], self.text.index(next_cons[0] + "+1c"))
                 self.recall(self.text.get(prev[0], prev[1]), event)
                 return "break"
             next = self.text.tag_nextrange("stdin", "insert")
             if next and self.text.compare("insert lineend", ">=", next[0]):
+                next_cons = self.text.tag_nextrange("console", "insert lineend")
+                if next_cons and self.text.compare(next_cons[0], "<", next[1]):
+                    next = (next[0], self.text.index(next_cons[0] + "+1c"))
                 self.recall(self.text.get(next[0], next[1]), event)
                 return "break"
             # No stdin mark -- just get the current line, less any prompt
@@ -1204,7 +1271,6 @@ class PyShell(OutputWindow):
             self.text.see("insert")
         else:
             self.newline_and_indent_event(event)
-        self.text.tag_add("stdin", "iomark", "end-1c")
         self.text.update_idletasks()
         if self.reading:
             self.top.quit() # Break out of recursive mainloop()
@@ -1214,7 +1280,7 @@ class PyShell(OutputWindow):
 
     def recall(self, s, event):
         # remove leading and trailing empty or whitespace lines
-        s = re.sub(r'^\s*\n', '' , s)
+        s = re.sub(r'^\s*\n', '', s)
         s = re.sub(r'\n\s*$', '', s)
         lines = s.split('\n')
         self.text.undo_block_start()
@@ -1225,7 +1291,8 @@ class PyShell(OutputWindow):
             if prefix.rstrip().endswith(':'):
                 self.newline_and_indent_event(event)
                 prefix = self.text.get("insert linestart", "insert")
-            self.text.insert("insert", lines[0].strip())
+            self.text.insert("insert", lines[0].strip(),
+                             self.user_input_insert_tags)
             if len(lines) > 1:
                 orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
                 new_base_indent  = re.search(r'^([ \t]*)', prefix).group(0)
@@ -1233,24 +1300,24 @@ class PyShell(OutputWindow):
                     if line.startswith(orig_base_indent):
                         # replace orig base indentation with new indentation
                         line = new_base_indent + line[len(orig_base_indent):]
-                    self.text.insert('insert', '\n'+line.rstrip())
+                    self.text.insert('insert', '\n' + line.rstrip(),
+                                     self.user_input_insert_tags)
         finally:
             self.text.see("insert")
             self.text.undo_block_stop()
 
+    _last_newline_re = re.compile(r"[ \t]*(\n[ \t]*)?\Z")
     def runit(self):
+        index_before = self.text.index("end-2c")
         line = self.text.get("iomark", "end-1c")
         # Strip off last newline and surrounding whitespace.
         # (To allow you to hit return twice to end a statement.)
-        i = len(line)
-        while i > 0 and line[i-1] in " \t":
-            i = i-1
-        if i > 0 and line[i-1] == "\n":
-            i = i-1
-        while i > 0 and line[i-1] in " \t":
-            i = i-1
-        line = line[:i]
-        self.interp.runsource(line)
+        line = self._last_newline_re.sub("", line)
+        input_is_complete = self.interp.runsource(line)
+        if not input_is_complete:
+            if self.text.get(index_before) == '\n':
+                self.text.tag_remove(self.user_input_insert_tags, index_before)
+            self.shell_sidebar.update_sidebar()
 
     def open_stack_viewer(self, event=None):
         if self.interp.rpcclt:
@@ -1276,7 +1343,14 @@ class PyShell(OutputWindow):
 
     def showprompt(self):
         self.resetoutput()
-        self.console.write(self.prompt)
+
+        prompt = self.prompt
+        if self.sys_ps1 and prompt.endswith(self.sys_ps1):
+            prompt = prompt[:-len(self.sys_ps1)]
+        self.text.tag_add("console", "iomark-1c")
+        self.console.write(prompt)
+
+        self.shell_sidebar.update_sidebar()
         self.text.mark_set("insert", "end-1c")
         self.set_line_and_column()
         self.io.reset_undo()
@@ -1325,6 +1399,13 @@ class PyShell(OutputWindow):
         if self.text.compare('insert','<','iomark'):
             return 'disabled'
         return super().rmenu_check_paste()
+
+    def squeeze_current_text_event(self, event=None):
+        self.squeezer.squeeze_current_text()
+        self.shell_sidebar.update_sidebar()
+
+    def on_squeezed_expand(self, index, text, tags):
+        self.shell_sidebar.update_sidebar()
 
 
 def fix_x11_paste(root):

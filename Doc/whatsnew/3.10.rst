@@ -743,6 +743,16 @@ See :pep:`613` for more details.
 
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
+PEP 647: User-Defined Type Guards
+---------------------------------
+
+:data:`TypeGuard` has been added to the :mod:`typing` module to annotate
+type guard functions and improve information provided to static type checkers
+during type narrowing.  For more information, please see :data:`TypeGuard`\ 's
+documentation, and :pep:`647`.
+
+(Contributed by Ken Jin and Guido van Rossum in :issue:`43766`.
+PEP written by Eric Traut.)
 
 Other Language Changes
 ======================
@@ -1080,6 +1090,14 @@ ssl
 Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
 (Contributed by Zackery Spytz in :issue:`31870`.)
 
+sqlite3
+-------
+
+Add audit events for :func:`~sqlite3.connect/handle`,
+:meth:`~sqlite3.Connection.enable_load_extension`, and
+:meth:`~sqlite3.Connection.load_extension`.
+(Contributed by Erlend E. Aasland in :issue:`43762`.)
+
 sys
 ---
 
@@ -1224,6 +1242,12 @@ Optimizations
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
+
+* Use a new output buffer management code for :mod:`bz2` / :mod:`lzma` /
+  :mod:`zlib` modules, and add ``.readall()`` function to
+  ``_compression.DecompressReader`` class. bz2 decompression 1.09x ~ 1.17x
+  faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
+  ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
 
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
@@ -1402,6 +1426,9 @@ Deprecated
 * :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
+
+* ``cgi.log()`` is deprecated and slated for for removal in Python 3.12.
+  (Contributed by Inada Naoki in :issue:`41139`.)
 
 
 Removed
@@ -1641,7 +1668,8 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
-* The :c:func:`PyType_GetSlot` function can accept static types.
+* The :c:func:`PyType_GetSlot` function can accept
+  :ref:`static types <static-types>`.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
 * Add a new :c:func:`PySet_CheckExact` function to the C-API to check if an
@@ -1672,6 +1700,13 @@ New Features
   test if an object is, respectively, the ``None`` singleton, the ``True``
   singleton or the ``False`` singleton.
   (Contributed by Victor Stinner in :issue:`43753`.)
+
+* Add new functions to quickly control the garbage collector from C code:
+  :c:func:`PyGC_Enable()`,
+  :c:func:`PyGC_Disable()`,
+  :c:func:`PyGC_IsEnabled()`.
+  These functions allow to activate, deactivate and query the state of the garbage collector from C code without
+  having to import the :mod:`gc` module.
 
 Porting to Python 3.10
 ----------------------
