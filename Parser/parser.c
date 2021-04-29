@@ -7663,18 +7663,13 @@ items_pattern_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> items_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+"));
-        asdl_seq * items;
+        asdl_seq * _gather_59_var;
         if (
-            (items = _gather_59_rule(p))  // ','.key_value_pattern+
+            (_gather_59_var = _gather_59_rule(p))  // ','.key_value_pattern+
         )
         {
             D(fprintf(stderr, "%*c+ items_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.key_value_pattern+"));
-            _res = items;
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
+            _res = _gather_59_var;
             goto done;
         }
         p->mark = _mark;
@@ -8049,18 +8044,13 @@ keyword_patterns_rule(Parser *p)
             return NULL;
         }
         D(fprintf(stderr, "%*c> keyword_patterns[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "','.keyword_pattern+"));
-        asdl_seq* keywords;
+        asdl_seq * _gather_64_var;
         if (
-            (keywords = (asdl_seq*)_gather_64_rule(p))  // ','.keyword_pattern+
+            (_gather_64_var = _gather_64_rule(p))  // ','.keyword_pattern+
         )
         {
             D(fprintf(stderr, "%*c+ keyword_patterns[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "','.keyword_pattern+"));
-            _res = keywords;
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                D(p->level--);
-                return NULL;
-            }
+            _res = _gather_64_var;
             goto done;
         }
         p->mark = _mark;
