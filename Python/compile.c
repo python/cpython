@@ -6188,7 +6188,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-compiler_pattern_constant(struct compiler *c, pattern_ty p, pattern_context *pc)
+compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchSingleton_kind);
     ADDOP_LOAD_CONST(c, p->v.MatchSingleton.value);
@@ -6204,7 +6204,7 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
         case MatchValue_kind:
             return compiler_pattern_value(c, p, pc);
         case MatchSingleton_kind:
-            return compiler_pattern_constant(c, p, pc);
+            return compiler_pattern_singleton(c, p, pc);
         case MatchSequence_kind:
             return compiler_pattern_sequence(c, p, pc);
         case MatchMapping_kind:
