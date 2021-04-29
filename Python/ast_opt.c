@@ -411,7 +411,7 @@ static int astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
@@ -602,10 +602,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Constant_kind:
         // Already a constant, nothing further to do
         break;
-    case MatchAs_kind:
-    case MatchOr_kind:
-        // These can't occur outside of patterns.
-        Py_UNREACHABLE();
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
@@ -797,112 +793,48 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_pattern_negative(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    assert(node_->kind == UnaryOp_kind);
-    assert(node_->v.UnaryOp.op == USub);
-    assert(node_->v.UnaryOp.operand->kind == Constant_kind);
-    PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
-    assert(PyComplex_CheckExact(value) ||
-           PyFloat_CheckExact(value) ||
-           PyLong_CheckExact(value));
-    PyObject *negated = PyNumber_Negative(value);
-    if (negated == NULL) {
+    // Currently, this is really only used to form complex/negative numeric
+    // constants in MatchValue and MatchMapping nodes
+    // We still recurse into all subexpressions and subpatterns anyway
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
         return 0;
     }
-    assert(PyComplex_CheckExact(negated) ||
-           PyFloat_CheckExact(negated) ||
-           PyLong_CheckExact(negated));
-    return make_const(node_, negated, ctx_);
-}
-
-static int
-astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    expr_ty left = node_->v.BinOp.left;
-    expr_ty right = node_->v.BinOp.right;
-    if (left->kind == UnaryOp_kind) {
-        CALL(astfold_pattern_negative, expr_ty, left);
-    }
-    assert(left->kind = Constant_kind);
-    assert(right->kind = Constant_kind);
-    // LHS must be real, RHS must be imaginary:
-    if (!(PyFloat_CheckExact(left->v.Constant.value) ||
-          PyLong_CheckExact(left->v.Constant.value)) ||
-        !PyComplex_CheckExact(right->v.Constant.value))
-    {
-        // Not actually valid, but it's the compiler's job to complain:
-        return 1;
-    }
-    PyObject *new;
-    if (node_->v.BinOp.op == Add) {
-        new = PyNumber_Add(left->v.Constant.value, right->v.Constant.value);
-    }
-    else {
-        assert(node_->v.BinOp.op == Sub);
-        new = PyNumber_Subtract(left->v.Constant.value, right->v.Constant.value);
-    }
-    if (new == NULL) {
-        return 0;
-    }
-    assert(PyComplex_CheckExact(new));
-    return make_const(node_, new, ctx_);
-}
-
-static int
-astfold_pattern_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    CALL(astfold_pattern, expr_ty, node_->value);
-    return 1;
-}
-
-static int
-astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    // Don't blindly optimize the pattern as an expr; it plays by its own rules!
-    // Currently, this is only used to form complex/negative numeric constants.
     switch (node_->kind) {
-        case Attribute_kind:
+        case MatchValue_kind:
+            CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
             break;
-        case BinOp_kind:
-            CALL(astfold_pattern_complex, expr_ty, node_);
+        case MatchSingleton_kind:
             break;
-        case Call_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.Call.args);
-            CALL_SEQ(astfold_pattern_keyword, keyword, node_->v.Call.keywords);
+        case MatchSequence_kind:
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchSequence.patterns);
             break;
-        case Constant_kind:
+        case MatchMapping_kind:
+            CALL_SEQ(astfold_expr, expr, node_->v.MatchMapping.keys);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchMapping.patterns);
             break;
-        case Dict_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.keys);
-            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.values);
+        case MatchClass_kind:
+            CALL(astfold_expr, expr_ty, node_->v.MatchClass.cls);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.patterns);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.kwd_patterns);
             break;
-        // Not actually valid, but it's the compiler's job to complain:
-        case JoinedStr_kind:
-            break;
-        case List_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.List.elts);
+        case MatchStar_kind:
             break;
         case MatchAs_kind:
-            CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
+            if (node_->v.MatchAs.pattern) {
+                CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
+            }
             break;
         case MatchOr_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.MatchOr.patterns);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchOr.patterns);
             break;
-        case Name_kind:
-            break;
-        case Starred_kind:
-            CALL(astfold_pattern, expr_ty, node_->v.Starred.value);
-            break;
-        case Tuple_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.Tuple.elts);
-            break;
-        case UnaryOp_kind:
-            CALL(astfold_pattern_negative, expr_ty, node_);
-            break;
-        default:
-            Py_UNREACHABLE();
+    // No default case, so the compiler will emit a warning if new pattern
+    // kinds are added without being handled here
     }
+    state->recursion_depth--;
     return 1;
 }
 
