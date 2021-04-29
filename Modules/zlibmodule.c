@@ -38,10 +38,12 @@ Buffer_InitWithSize(_BlocksOutputBuffer *buffer, Py_ssize_t init_size,
 {
     Py_ssize_t allocated;
 
-    if (init_size < 0 || (size_t)init_size > UINT32_MAX) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Initial buffer size should (0 <= size <= UINT32_MAX)");
-        return -1;
+    if (init_size >= 0 &&  // ensure (size_t) cast is safe
+        (size_t)init_size > UINT32_MAX)
+    {
+        /* In 32-bit build, never reach this conditional branch.
+           The maximum block size accepted by zlib is UINT32_MAX. */
+        init_size = UINT32_MAX;
     }
 
     allocated = _BlocksOutputBuffer_InitWithSize(
