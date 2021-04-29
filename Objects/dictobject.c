@@ -1103,8 +1103,9 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
             if (insertion_resize(mp) < 0)
                 goto Fail;
         }
-        if (!PyUnicode_CheckExact(key) && mp->ma_keys->dk_lookup != lookdict)
+        if (!PyUnicode_CheckExact(key) && mp->ma_keys->dk_lookup != lookdict) {
             mp->ma_keys->dk_lookup = lookdict;
+        }
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
         ep = &DK_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
         dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
@@ -3067,8 +3068,9 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
                 return NULL;
             }
         }
-        if (!PyUnicode_CheckExact(key) && mp->ma_keys->dk_lookup != lookdict)
+        if (!PyUnicode_CheckExact(key) && mp->ma_keys->dk_lookup != lookdict) {
             mp->ma_keys->dk_lookup = lookdict;
+        }
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
         ep0 = DK_ENTRIES(mp->ma_keys);
         ep = &ep0[mp->ma_keys->dk_nentries];
