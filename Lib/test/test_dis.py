@@ -172,7 +172,7 @@ def bug42562():
 
 
 # Set line number for 'pass' to None
-bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\x04\x80')
 
 
 dis_bug42562 = """\

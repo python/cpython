@@ -234,20 +234,20 @@ case_block[match_case_ty]:
         _PyAST_match_case(pattern, guard, body, p->arena) }
 guard[expr_ty]: 'if' guard=named_expression { guard }
 
-patterns[expr_ty]:
-    | values[asdl_expr_seq*]=open_sequence_pattern {
-        _PyAST_Tuple(values, Load, EXTRA) }
+patterns[pattern_ty]:
+    | patterns[asdl_pattern_seq*]=open_sequence_pattern {
+        _PyAST_MatchSequence(patterns, EXTRA) }
     | pattern
-pattern[expr_ty]:
+pattern[pattern_ty]:
     | as_pattern
     | or_pattern
-as_pattern[expr_ty]:
-    | pattern=or_pattern 'as' target=capture_pattern {
+as_pattern[pattern_ty]:
+    | pattern=or_pattern 'as' target=pattern_capture_target {
         _PyAST_MatchAs(pattern, target->v.Name.id, EXTRA) }
-or_pattern[expr_ty]:
-    | patterns[asdl_expr_seq*]='|'.closed_pattern+ {
+or_pattern[pattern_ty]:
+    | patterns[asdl_pattern_seq*]='|'.closed_pattern+ {
         asdl_seq_LEN(patterns) == 1 ? asdl_seq_GET(patterns, 0) : _PyAST_MatchOr(patterns, EXTRA) }
-closed_pattern[expr_ty]:
+closed_pattern[pattern_ty]:
     | literal_pattern
     | capture_pattern
     | wildcard_pattern
@@ -257,27 +257,47 @@ closed_pattern[expr_ty]:
     | mapping_pattern
     | class_pattern
 
-literal_pattern[expr_ty]:
+# Literal patterns are used for equality and identity constraints
+literal_pattern[pattern_ty]:
+    | value=signed_number !('+' | '-') { _PyAST_MatchValue(value, EXTRA) }
+    | value=complex_number { _PyAST_MatchValue(value, EXTRA) }
+    | value=strings { _PyAST_MatchValue(value, EXTRA) }
+    | 'None' { _PyAST_MatchSingleton(Py_None, EXTRA) }
+    | 'True' { _PyAST_MatchSingleton(Py_True, EXTRA) }
+    | 'False' { _PyAST_MatchSingleton(Py_False, EXTRA) }
+
+# Literal expressions are used to restrict permitted mapping pattern keys
+literal_expr[expr_ty]:
     | signed_number !('+' | '-')
-    | real=signed_number '+' imag=NUMBER { _PyAST_BinOp(real, Add, imag, EXTRA) }
-    | real=signed_number '-' imag=NUMBER  { _PyAST_BinOp(real, Sub, imag, EXTRA) }
+    | complex_number
     | strings
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
+
+complex_number[expr_ty]:
+    | real=signed_number '+' imag=imaginary_number { _PyAST_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_number '-' imag=imaginary_number  { _PyAST_BinOp(real, Sub, imag, EXTRA) }
+
 signed_number[expr_ty]:
     | NUMBER
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
 
-capture_pattern[expr_ty]:
+imaginary_number[expr_ty]:
+    | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
+
+capture_pattern[pattern_ty]:
+    | target=pattern_capture_target { _PyAST_MatchAs(NULL, target->v.Name.id, EXTRA) }
+
+pattern_capture_target[expr_ty]:
     | !"_" name=NAME !('.' | '(' | '=') {
         _PyPegen_set_expr_context(p, name, Store) }
 
-wildcard_pattern[expr_ty]:
-    | "_" { _PyAST_Name(CHECK(PyObject*, _PyPegen_new_identifier(p, "_")), Store, EXTRA) }
+wildcard_pattern[pattern_ty]:
+    | "_" { _PyAST_MatchAs(NULL, NULL, EXTRA) }
 
-value_pattern[expr_ty]:
-    | attr=attr !('.' | '(' | '=') { attr }
+value_pattern[pattern_ty]:
+    | attr=attr !('.' | '(' | '=') { _PyAST_MatchValue(attr, EXTRA) }
 attr[expr_ty]:
     | value=name_or_attr '.' attr=NAME {
         _PyAST_Attribute(value, attr->v.Name.id, Load, EXTRA) }
@@ -285,50 +305,77 @@ name_or_attr[expr_ty]:
     | attr
     | NAME
 
-group_pattern[expr_ty]:
+group_pattern[pattern_ty]:
     | '(' pattern=pattern ')' { pattern }
 
-sequence_pattern[expr_ty]:
-    | '[' values=maybe_sequence_pattern? ']' { _PyAST_List(values, Load, EXTRA) }
-    | '(' values=open_sequence_pattern? ')' { _PyAST_Tuple(values, Load, EXTRA) }
+sequence_pattern[pattern_ty]:
+    | '[' patterns=maybe_sequence_pattern? ']' { _PyAST_MatchSequence(patterns, EXTRA) }
+    | '(' patterns=open_sequence_pattern? ')' { _PyAST_MatchSequence(patterns, EXTRA) }
 open_sequence_pattern[asdl_seq*]:
-    | value=maybe_star_pattern ',' values=maybe_sequence_pattern? {
-        _PyPegen_seq_insert_in_front(p, value, values) }
+    | pattern=maybe_star_pattern ',' patterns=maybe_sequence_pattern? {
+        _PyPegen_seq_insert_in_front(p, pattern, patterns) }
 maybe_sequence_pattern[asdl_seq*]:
-    | values=','.maybe_star_pattern+ ','? { values }
-maybe_star_pattern[expr_ty]:
+    | patterns=','.maybe_star_pattern+ ','? { patterns }
+maybe_star_pattern[pattern_ty]:
     | star_pattern
     | pattern
-star_pattern[expr_ty]:
-    | '*' value=(capture_pattern | wildcard_pattern) {
-        _PyAST_Starred(value, Store, EXTRA) }
+star_pattern[pattern_ty]:
+    | '*' target=pattern_capture_target {
+        _PyAST_MatchStar(target->v.Name.id, EXTRA) }
+    | '*' wildcard_pattern {
+        _PyAST_MatchStar(NULL, EXTRA) }
 
-mapping_pattern[expr_ty]:
-    | '{' items=items_pattern? '}' {
-        _PyAST_Dict(CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, items)), CHECK(asdl_expr_seq*, _PyPegen_get_values(p, items)), EXTRA) }
+mapping_pattern[pattern_ty]:
+    | '{' '}' {
+        _PyAST_MatchMapping(NULL, NULL, NULL, EXTRA) }
+    | '{' rest=double_star_pattern ','? '}' {
+        _PyAST_MatchMapping(NULL, NULL, rest->v.Name.id, EXTRA) }
+    | '{' items=items_pattern ',' rest=double_star_pattern ','? '}' {
+        _PyAST_MatchMapping(
+            CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, items)),
+            CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, items)),
+            rest->v.Name.id,
+            EXTRA) }
+    | '{' items=items_pattern ','? '}' {
+        _PyAST_MatchMapping(
+            CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, items)),
+            CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, items)),
+            NULL,
+            EXTRA) }
 items_pattern[asdl_seq*]:
-    | items=','.key_value_pattern+ ','? { items }
-key_value_pattern[KeyValuePair*]:
-    | key=(literal_pattern | value_pattern) ':' value=pattern {
-        _PyPegen_key_value_pair(p, key, value) }
-    | double_star_pattern
-double_star_pattern[KeyValuePair*]:
-    | '**' value=capture_pattern { _PyPegen_key_value_pair(p, NULL, value) }
+    | items=','.key_value_pattern+ { items }
+key_value_pattern[KeyPatternPair*]:
+    | key=(literal_expr | attr) ':' pattern=pattern {
+        _PyPegen_key_pattern_pair(p, key, pattern) }
+double_star_pattern[expr_ty]:
+    | '**' target=pattern_capture_target { target }
 
-class_pattern[expr_ty]:
-    | func=name_or_attr '(' ')' { _PyAST_Call(func, NULL, NULL, EXTRA) }
-    | func=name_or_attr '(' args=positional_patterns ','? ')' {
-        _PyAST_Call(func, args, NULL, EXTRA) }
-    | func=name_or_attr '(' keywords=keyword_patterns ','? ')' {
-        _PyAST_Call(func, NULL, keywords, EXTRA) }
-    | func=name_or_attr '(' args=positional_patterns ',' keywords=keyword_patterns ','? ')' {
-        _PyAST_Call(func, args, keywords, EXTRA) }
-positional_patterns[asdl_expr_seq*]:
-    | args[asdl_expr_seq*]=','.pattern+ { args }
-keyword_patterns[asdl_keyword_seq*]:
-    | keywords[asdl_keyword_seq*]=','.keyword_pattern+ { keywords }
-keyword_pattern[keyword_ty]:
-    | arg=NAME '=' value=pattern { _PyAST_keyword(arg->v.Name.id, value, EXTRA) }
+class_pattern[pattern_ty]:
+    | cls=name_or_attr '(' ')' {
+        _PyAST_MatchClass(cls, NULL, NULL, NULL, EXTRA) }
+    | cls=name_or_attr '(' patterns=positional_patterns ','? ')' {
+        _PyAST_MatchClass(cls, patterns, NULL, NULL, EXTRA) }
+    | cls=name_or_attr '(' keywords=keyword_patterns ','? ')' {
+        _PyAST_MatchClass(
+            cls, NULL,
+            CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p,
+                CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, keywords)))),
+            CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, keywords)),
+            EXTRA) }
+    | cls=name_or_attr '(' patterns=positional_patterns ',' keywords=keyword_patterns ','? ')' {
+        _PyAST_MatchClass(
+            cls,
+            patterns,
+            CHECK(asdl_identifier_seq*, _PyPegen_map_names_to_ids(p,
+                CHECK(asdl_expr_seq*, _PyPegen_get_pattern_keys(p, keywords)))),
+            CHECK(asdl_pattern_seq*, _PyPegen_get_patterns(p, keywords)),
+            EXTRA) }
+positional_patterns[asdl_pattern_seq*]:
+    | args[asdl_pattern_seq*]=','.pattern+ { args }
+keyword_patterns[asdl_seq*]:
+    | keywords[asdl_seq*]=','.keyword_pattern+ { keywords }
+keyword_pattern[KeyPatternPair*]:
+    | arg=NAME '=' value=pattern { _PyPegen_key_pattern_pair(p, arg, value) }
 
 return_stmt[stmt_ty]:
     | 'return' a=[star_expressions] { _PyAST_Return(a, EXTRA) }
