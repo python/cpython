@@ -1124,7 +1124,7 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* Instances of heap-allocated types (such as those created with
+* Instances of :ref:`heap-allocated types <heap-types>` (such as those created with
   :c:func:`PyType_FromSpec` and similar APIs) hold a reference to their type
   object since Python 3.8. As indicated in the "Changes in the C API" of Python
   3.8, for the vast majority of cases, there should be no side effect but for
@@ -1147,7 +1147,8 @@ Changes in the C API
 
   If your traverse function delegates to ``tp_traverse`` of its base class
   (or another type), ensure that ``Py_TYPE(self)`` is visited only once.
-  Note that only heap types are expected to visit the type in ``tp_traverse``.
+  Note that only :ref:`heap type <heap-types>` are expected to visit the type
+  in ``tp_traverse``.
 
     For example, if your ``tp_traverse`` function includes:
 
@@ -1160,7 +1161,7 @@ Changes in the C API
     .. code-block:: c
 
         #if PY_VERSION_HEX >= 0x03090000
-            // This was not needed before Python 3.9 (Python issue 35810 and 40217)
+            // This was not needed before Python 3.9 (bpo-35810 and bpo-40217)
             if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
                 // a heap type's tp_traverse already visited Py_TYPE(self)
             } else {
