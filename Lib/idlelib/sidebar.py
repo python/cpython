@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter.font import Font
 from idlelib.config import idleConf
 from idlelib.delegator import Delegator
+from idlelib import macosx
 
 
 def get_lineno(text, index):
@@ -425,6 +426,50 @@ class ShellSidebar(BaseSideBar):
         self.grid()
         return self.canvas
 
+    def bind_events(self):
+        super().bind_events()
+
+        self.main_widget.bind(
+            # AquaTk defines <2> as the right button, not <3>.
+            "<Button-2>" if macosx.isAquaTk() else "<Button-3>",
+            self.context_menu_event,
+        )
+
+    def context_menu_event(self, event):
+        rmenu = tk.Menu(self.main_widget, tearoff=0)
+        rmenu.add_command(label='Copy', command=self.rmenu_copy_handler)
+        rmenu.add_command(label='Copy with prompts',
+                          command=self.rmenu_copy_with_prompts_handler)
+        rmenu.tk_popup(event.x_root, event.y_root)
+        return "break"
+
+    def rmenu_copy_handler(self, event=None):
+        """Copy selected lines to the clipboard."""
+        selected_text = self.text.get('sel.first', 'sel.last')
+
+        self.main_widget.clipboard_clear()
+        self.main_widget.clipboard_append(selected_text)
+
+    def rmenu_copy_with_prompts_handler(self, event=None):
+        """Copy selected lines to the clipboard."""
+        selected_text = self.text.get('sel.first linestart',
+                                      'sel.last +1line linestart')
+        lineno_range = range(
+            get_lineno(self.text, 'sel.first linestart'),
+            get_lineno(self.text, 'sel.last +1line linestart'),
+        )
+        prompts = [
+            self.line_prompts.get(lineno)
+            for lineno in lineno_range
+        ]
+        selected_text_with_prompts = '\n'.join(
+            line if prompt is None else f'{prompt} {line}'
+            for prompt, line in zip(prompts, selected_text.splitlines())
+        ) + '\n'
+
+        self.main_widget.clipboard_clear()
+        self.main_widget.clipboard_append(selected_text_with_prompts)
+
     def grid(self):
         self.canvas.grid(row=1, column=0, sticky=tk.NSEW, padx=2, pady=0)
 
@@ -436,6 +481,7 @@ class ShellSidebar(BaseSideBar):
         text = self.text
         text_tagnames = text.tag_names
         canvas = self.canvas
+        line_prompts = self.line_prompts = {}
 
         canvas.delete(tk.ALL)
 
@@ -456,6 +502,8 @@ class ShellSidebar(BaseSideBar):
             if prompt:
                 canvas.create_text(2, y, anchor=tk.NW, text=prompt,
                                    font=self.font, fill=self.colors[0])
+                lineno = get_lineno(text, index)
+                line_prompts[lineno] = prompt
             index = text.index(f'{index}+1line')
 
     def yscroll_event(self, *args, **kwargs):
