@@ -749,34 +749,12 @@ It is also implied by the presence of the
 not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
-In addition to the reference count debugging described below, the following
-extra checks are performed:
+In addition to the reference count debugging described below, extra checks are
+performed, see :ref:`Python Debug Build <debug-build>`.
 
-* Extra checks are added to the object allocator.
-
-* Extra checks are added to the parser and compiler.
-
-* Downcasts from wide types to narrow types are checked for loss of information.
-
-* A number of assertions are added to the dictionary and set implementations.
-  In addition, the set object acquires a :meth:`test_c_api` method.
-
-* Sanity checks of the input arguments are added to frame creation.
-
-* The storage for ints is initialized with a known invalid pattern to catch
-  reference to uninitialized digits.
-
-* Low-level tracing and extra exception checking are added to the runtime
-  virtual machine.
-
-* Extra checks are added to the memory arena implementation.
-
-* Extra debugging is added to the thread module.
-
-There may be additional checks not mentioned here.
-
-Defining :c:macro:`Py_TRACE_REFS` enables reference tracing.  When defined, a
-circular doubly linked list of active objects is maintained by adding two extra
+Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
+(see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
+When defined, a circular doubly linked list of active objects is maintained by adding two extra
 fields to every :c:type:`PyObject`.  Total allocations are tracked as well.  Upon
 exit, all existing references are printed.  (In interactive mode this happens
 after every statement run by the interpreter.)
