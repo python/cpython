@@ -1,0 +1,3 @@
+``setup.py`` now defines ``Py_BUILD_CORE_MODULE`` for all core modules
+automatically. ``Modules/Setup`` no longer defines ``Py_BUILD_CORE_BUILTIN``.
+The macro is automatically defined for builtins by ``Modules/makesetup``.

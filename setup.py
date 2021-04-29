@@ -372,6 +372,7 @@ class PyBuildExt(build_ext):
             self.parallel = True
 
     def add(self, ext):
+        ext.define_macros.append(("Py_BUILD_CORE_MODULE", None))
         self.extensions.append(ext)
 
     def set_srcdir(self):
@@ -877,8 +878,7 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('array', ['arraymodule.c']))
 
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
@@ -887,14 +887,12 @@ class PyBuildExt(build_ext):
 
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
@@ -911,43 +909,33 @@ class PyBuildExt(build_ext):
         # libm is needed by delta_new() that uses round() and by accum() that
         # uses modf().
         self.add(Extension('_datetime', ['_datetimemodule.c'],
-                           libraries=['m'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+                           libraries=['m']))
         # zoneinfo module
-        self.add(Extension('_zoneinfo', ['_zoneinfo.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('_zoneinfo', ['_zoneinfo.c']))
         # random number generator implemented in C
-        self.add(Extension("_random", ["_randommodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_random", ["_randommodule.c"]))
         # bisect
         self.add(Extension("_bisect", ["_bisectmodule.c"]))
         # heapq
-        self.add(Extension("_heapq", ["_heapqmodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_heapq", ["_heapqmodule.c"]))
         # C-optimized pickle replacement
-        self.add(Extension("_pickle", ["_pickle.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_pickle", ["_pickle.c"]))
         # _json speedups
-        self.add(Extension("_json", ["_json.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_json", ["_json.c"]))
 
         # profiler (_lsprof is for cProfile.py)
         self.add(Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']))
         # static Unicode character database
         self.add(Extension('unicodedata', ['unicodedata.c'],
-                           depends=['unicodedata_db.h', 'unicodename_db.h'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+                           depends=['unicodedata_db.h', 'unicodename_db.h']))
         # _opcode module
         self.add(Extension('_opcode', ['_opcode.c']))
         # asyncio speedups
-        self.add(Extension("_asyncio", ["_asynciomodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_asyncio", ["_asynciomodule.c"]))
         # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension("_queue", ["_queuemodule.c"]))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
@@ -1010,8 +998,7 @@ class PyBuildExt(build_ext):
         self.add(Extension('_csv', ['_csv.c']))
 
         # POSIX subprocess module helper.
-        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('_posixsubprocess', ['_posixsubprocess.c']))
 
     def detect_test_extensions(self):
         # Python C API test module
@@ -1019,8 +1006,7 @@ class PyBuildExt(build_ext):
                            depends=['testcapi_long.h']))
 
         # Python Internal C API test module
-        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c'],
-                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
+        self.add(Extension('_testinternalcapi', ['_testinternalcapi.c']))
 
         # Python PEP-3118 (buffer protocol) test module
         self.add(Extension('_testbuffer', ['_testbuffer.c']))
@@ -1160,7 +1146,6 @@ class PyBuildExt(build_ext):
         if curses_library.startswith('ncurses'):
             curses_libs = [curses_library]
             self.add(Extension('_curses', ['_cursesmodule.c'],
-                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                include_dirs=curses_includes,
                                define_macros=curses_defines,
                                libraries=curses_libs))
@@ -1175,7 +1160,6 @@ class PyBuildExt(build_ext):
                 curses_libs = ['curses']
 
             self.add(Extension('_curses', ['_cursesmodule.c'],
-                               extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                                define_macros=curses_defines,
                                libraries=curses_libs))
         else:
@@ -2199,7 +2183,7 @@ class PyBuildExt(build_ext):
             self.use_system_libffi = '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS")
 
         include_dirs = []
-        extra_compile_args = ['-DPy_BUILD_CORE_MODULE']
+        extra_compile_args = []
         extra_link_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
@@ -2512,14 +2496,12 @@ class PyBuildExt(build_ext):
         if "sha256" in configured:
             self.add(Extension(
                 '_sha256', ['sha256module.c'],
-                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                 depends=['hashlib.h']
             ))
 
         if "sha512" in configured:
             self.add(Extension(
                 '_sha512', ['sha512module.c'],
-                extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                 depends=['hashlib.h']
             ))
 
@@ -2714,9 +2696,12 @@ def main():
                       'install_lib': PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'],
-                                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'])],
-
+          ext_modules=[
+              Extension(
+                '_struct', ['_struct.c'],
+                define_macros=[('Py_BUILD_CORE_MODULE', None)]
+            )
+          ],
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links
           # created by the bininstall target in Makefile.pre.in
