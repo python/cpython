@@ -2081,7 +2081,10 @@ class PEP626Tests(unittest.TestCase):
             while t.tb_next:
                 t = t.tb_next
             frame = t.tb_frame
-            self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+            if line is None:
+                self.assertEqual(frame.f_lineno, line)
+            else:
+                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
 
     def test_lineno_after_raise_simple(self):
         def simple():
@@ -2153,6 +2156,12 @@ class PEP626Tests(unittest.TestCase):
                 pass
         self.lineno_after_raise(after_with, 2)
 
+    def test_missing_lineno_shows_as_none(self):
+        def f():
+            1/0
+        self.lineno_after_raise(f, 1)
+        f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+        self.lineno_after_raise(f, None)
 
 if __name__ == '__main__':
     unittest.main()
