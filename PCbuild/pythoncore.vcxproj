@@ -199,6 +199,7 @@
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
+    <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />

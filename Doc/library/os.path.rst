@@ -344,21 +344,33 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: realpath(path)
+.. function:: realpath(path, *, strict=False)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
    system).
 
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
+
    .. note::
-      When symbolic link cycles occur, the returned path will be one member of
-      the cycle, but no guarantee is made about which member that will be.
+      This function emulates the operating system's procedure for making a path
+      canonical, which differs slightly between Windows and UNIX with respect
+      to how links and subsequent path components interact.
+
+      Operating system APIs make paths canonical as needed, so it's not
+      normally necessary to call this function.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       Symbolic links and junctions are now resolved on Windows.
+
+   .. versionchanged:: 3.10
+      The *strict* parameter was added.
 
 
 .. function:: relpath(path, start=os.curdir)

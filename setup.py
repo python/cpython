@@ -33,8 +33,16 @@ except ImportError:
 
 with warnings.catch_warnings():
     # bpo-41282 (PEP 632) deprecated distutils but setup.py still uses it
-    warnings.filterwarnings("ignore", "The distutils package is deprecated",
-                            DeprecationWarning)
+    warnings.filterwarnings(
+        "ignore",
+        "The distutils package is deprecated",
+        DeprecationWarning
+    )
+    warnings.filterwarnings(
+        "ignore",
+        "The distutils.sysconfig module is deprecated, use sysconfig instead",
+        DeprecationWarning
+    )
 
     from distutils import log
     from distutils.command.build_ext import build_ext
@@ -869,7 +877,8 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.add(Extension('array', ['arraymodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
@@ -934,9 +943,11 @@ class PyBuildExt(build_ext):
         self.add(Extension("_asyncio", ["_asynciomodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"]))
+        self.add(Extension("_abc", ["_abc.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"]))
+        self.add(Extension("_queue", ["_queuemodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
@@ -2455,13 +2466,20 @@ class PyBuildExt(build_ext):
                 extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
             openssl_extension_kwargs["extra_link_args"] = extra_linker_args
             # don't link OpenSSL shared libraries.
-            openssl_extension_kwargs["libraries"] = []
+            # include libz for OpenSSL build flavors with compression support
+            openssl_extension_kwargs["libraries"] = ["z"]
 
         self.add(
             Extension(
                 '_ssl',
                 ['_ssl.c'],
-                depends=['socketmodule.h', '_ssl/debughelpers.c', '_ssl.h'],
+                depends=[
+                    'socketmodule.h',
+                    '_ssl.h',
+                    '_ssl/debughelpers.c',
+                    '_ssl/misc.c',
+                    '_ssl/cert.c',
+                ],
                 **openssl_extension_kwargs
             )
         )
@@ -2696,7 +2714,8 @@ def main():
                       'install_lib': PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('_struct', ['_struct.c'],
+                                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

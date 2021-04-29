@@ -45,7 +45,6 @@ import sys
 import tokenize
 import token
 import types
-import typing
 import warnings
 import functools
 import builtins
@@ -1893,10 +1892,7 @@ def _signature_is_functionlike(obj):
     code = getattr(obj, '__code__', None)
     defaults = getattr(obj, '__defaults__', _void) # Important to use _void ...
     kwdefaults = getattr(obj, '__kwdefaults__', _void) # ... and not None here
-    try:
-        annotations = _get_type_hints(obj)
-    except AttributeError:
-        annotations = None
+    annotations = getattr(obj, '__annotations__', None)
 
     return (isinstance(code, types.CodeType) and
             isinstance(name, str) and
@@ -2137,16 +2133,6 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     return cls(parameters, return_annotation=cls.empty)
 
-def _get_type_hints(func, **kwargs):
-    try:
-        return typing.get_type_hints(func, **kwargs)
-    except Exception:
-        # First, try to use the get_type_hints to resolve
-        # annotations. But for keeping the behavior intact
-        # if there was a problem with that (like the namespace
-        # can't resolve some annotation) continue to use
-        # string annotations
-        return func.__annotations__
 
 def _signature_from_builtin(cls, func, skip_bound_arg=True):
     """Private helper function to get signature for
@@ -2191,8 +2177,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = _get_type_hints(func, globalns=globalns, localns=localns)
-
+    annotations = func.__annotations__
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 

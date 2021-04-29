@@ -26,6 +26,7 @@ from typing import Pattern, Match
 from typing import Annotated, ForwardRef
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
+from typing import TypeGuard
 import abc
 import typing
 import weakref
@@ -363,7 +364,7 @@ class UnionTests(BaseTestCase):
     def test_no_eval_union(self):
         u = Union[int, str]
         def f(x: u): ...
-        self.assertIs(get_type_hints(f, globals(), locals())['x'], u)
+        self.assertIs(get_type_hints(f)['x'], u)
 
     def test_function_repr_union(self):
         def fun() -> int: ...
@@ -2876,7 +2877,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(HasForeignBaseClass),
                          {'some_xrepr': XRepr, 'other_a': mod_generics_cache.A,
                           'some_b': mod_generics_cache.B})
-        self.assertEqual(gth(XRepr),
+        self.assertEqual(gth(XRepr.__new__),
                          {'x': int, 'y': int})
         self.assertEqual(gth(mod_generics_cache.B),
                          {'my_inner_a1': mod_generics_cache.B.A,
@@ -3016,10 +3017,10 @@ class GetTypeHintTests(BaseTestCase):
             {'other': MySet[T], 'return': MySet[T]}
         )
 
-    def test_get_type_hints_classes(self):
+    def test_get_type_hints_classes_str_annotations(self):
         class Foo:
             y = str
-            x: y
+            x: 'y'
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
 
@@ -3689,7 +3690,7 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(tim.cool, 9000)
         self.assertEqual(CoolEmployee.__name__, 'CoolEmployee')
         self.assertEqual(CoolEmployee._fields, ('name', 'cool'))
-        self.assertEqual(gth(CoolEmployee),
+        self.assertEqual(CoolEmployee.__annotations__,
                          collections.OrderedDict(name=str, cool=int))
 
     def test_annotation_usage_with_default(self):
@@ -3703,7 +3704,7 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CoolEmployeeWithDefault.__name__, 'CoolEmployeeWithDefault')
         self.assertEqual(CoolEmployeeWithDefault._fields, ('name', 'cool'))
-        self.assertEqual(gth(CoolEmployeeWithDefault),
+        self.assertEqual(CoolEmployeeWithDefault.__annotations__,
                          dict(name=str, cool=int))
         self.assertEqual(CoolEmployeeWithDefault._field_defaults, dict(cool=0))
 
@@ -3871,7 +3872,7 @@ class TypedDictTests(BaseTestCase):
     def test_py36_class_syntax_usage(self):
         self.assertEqual(LabelPoint2D.__name__, 'LabelPoint2D')
         self.assertEqual(LabelPoint2D.__module__, __name__)
-        self.assertEqual(gth(LabelPoint2D), {'x': int, 'y': int, 'label': str})
+        self.assertEqual(LabelPoint2D.__annotations__, {'x': int, 'y': int, 'label': str})
         self.assertEqual(LabelPoint2D.__bases__, (dict,))
         self.assertEqual(LabelPoint2D.__total__, True)
         self.assertNotIsSubclass(LabelPoint2D, typing.Sequence)
@@ -3934,11 +3935,11 @@ class TypedDictTests(BaseTestCase):
 
         assert BaseAnimal.__required_keys__ == frozenset(['name'])
         assert BaseAnimal.__optional_keys__ == frozenset([])
-        assert gth(BaseAnimal) == {'name': str}
+        assert BaseAnimal.__annotations__ == {'name': str}
 
         assert Animal.__required_keys__ == frozenset(['name'])
         assert Animal.__optional_keys__ == frozenset(['tail', 'voice'])
-        assert gth(Animal) == {
+        assert Animal.__annotations__ == {
             'name': str,
             'tail': bool,
             'voice': str,
@@ -3946,7 +3947,7 @@ class TypedDictTests(BaseTestCase):
 
         assert Cat.__required_keys__ == frozenset(['name', 'fur_color'])
         assert Cat.__optional_keys__ == frozenset(['tail', 'voice'])
-        assert gth(Cat) == {
+        assert Cat.__annotations__ == {
             'fur_color': str,
             'name': str,
             'tail': bool,
@@ -3967,7 +3968,7 @@ class IOTests(BaseTestCase):
         def stuff(a: IO) -> AnyStr:
             return a.readline()
 
-        a = gth(stuff)['a']
+        a = stuff.__annotations__['a']
         self.assertEqual(a.__parameters__, (AnyStr,))
 
     def test_textio(self):
@@ -3975,7 +3976,7 @@ class IOTests(BaseTestCase):
         def stuff(a: TextIO) -> str:
             return a.readline()
 
-        a = gth(stuff)['a']
+        a = stuff.__annotations__['a']
         self.assertEqual(a.__parameters__, ())
 
     def test_binaryio(self):
@@ -3983,7 +3984,7 @@ class IOTests(BaseTestCase):
         def stuff(a: BinaryIO) -> bytes:
             return a.readline()
 
-        a = gth(stuff)['a']
+        a = stuff.__annotations__['a']
         self.assertEqual(a.__parameters__, ())
 
     def test_io_submodule(self):
@@ -4375,6 +4376,45 @@ class ConcatenateTests(BaseTestCase):
         C4 = collections.abc.Callable[Concatenate[int, T, P], T]
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
+
+
+class TypeGuardTests(BaseTestCase):
+    def test_basics(self):
+        TypeGuard[int]  # OK
+
+        def foo(arg) -> TypeGuard[int]: ...
+        self.assertEqual(gth(foo), {'return': TypeGuard[int]})
+
+    def test_repr(self):
+        self.assertEqual(repr(TypeGuard), 'typing.TypeGuard')
+        cv = TypeGuard[int]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[int]')
+        cv = TypeGuard[Employee]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[%s.Employee]' % __name__)
+        cv = TypeGuard[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[tuple[int]]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(TypeGuard)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(TypeGuard[int])):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            TypeGuard()
+        with self.assertRaises(TypeError):
+            type(TypeGuard)()
+        with self.assertRaises(TypeError):
+            type(TypeGuard[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, TypeGuard[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, TypeGuard)
 
 
 class AllTests(BaseTestCase):

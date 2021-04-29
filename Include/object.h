@@ -320,6 +320,9 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
+/* Set if the type object is immutable: type attributes cannot be set nor deleted */
+#define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
+
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1UL << 9)
 

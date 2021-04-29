@@ -1,0 +1,4 @@
+[Enum] Deprecate ``TypeError`` when non-member is used in a containment
+check; In 3.12 ``True`` or ``False`` will be returned instead, and
+containment will return ``True`` if the value is either a member of that
+enum or one of its members' value.

@@ -24,15 +24,21 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
         }
     }
 
+    if (interp != NULL) {
+        if (_PyInterpreterState_IDIncref(interp) < 0) {
+            return NULL;
+        }
+    }
+
     interpid *self = PyObject_New(interpid, cls);
     if (self == NULL) {
+        if (interp != NULL) {
+            _PyInterpreterState_IDDecref(interp);
+        }
         return NULL;
     }
     self->id = id;
 
-    if (interp != NULL) {
-        _PyInterpreterState_IDIncref(interp);
-    }
     return self;
 }
 

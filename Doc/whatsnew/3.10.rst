@@ -171,7 +171,32 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
-A considerable ammount of new specialized messages for :exc:`SyntaxError` exceptions
+:exc:`SyntaxError` exceptions raised by the intepreter will now highlight the
+full error range of the expression that consistutes the syntax error itself,
+instead of just where the problem is detected. In this way, instead of displaying
+(before Python 3.10):
+
+.. code-block:: python
+
+    >>> foo(x, z for z in range(10), t, w)
+      File "<stdin>", line 1
+        foo(x, z for z in range(10), t, w)
+               ^
+    SyntaxError: Generator expression must be parenthesized
+
+now Python 3.10 will display the exception as:
+
+.. code-block:: python
+
+    >>> foo(x, z for z in range(10), t, w)
+      File "<stdin>", line 1
+        foo(x, z for z in range(10), t, w)
+               ^^^^^^^^^^^^^^^^^^^^
+    SyntaxError: Generator expression must be parenthesized
+
+This improvement has been contributed by Pablo Galindo in :issue:`43914`.
+
+A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
 have been incorporated. Some of the most notable ones:
 
 * Missing ``:`` before blocks:
@@ -273,6 +298,23 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`41064`)
 
+IndentationErrors
+~~~~~~~~~~~~~~~~~
+
+Many :exc:`IndentationError` exceptions now have more context regarding what kind of block
+was expecting an indentation, including the location of the statement:
+
+.. code-block:: python
+
+    >>> def foo():
+    ...    if lel:
+    ...    x = 2
+      File "<stdin>", line 3
+        x = 2
+        ^
+    IndentationError: expected an indented block after 'if' statement in line 2
+
+
 AttributeErrors
 ~~~~~~~~~~~~~~~
 
@@ -293,7 +335,7 @@ NameErrors
 ~~~~~~~~~~
 
 When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
-will offer suggestions of simmilar variable names in the function that the exception
+will offer suggestions of similar variable names in the function that the exception
 was raised from:
 
 .. code-block:: python
@@ -624,22 +666,6 @@ This section covers major changes affecting :pep:`484` type annotations and
 the :mod:`typing` module.
 
 
-PEP 563: Postponed Evaluation of Annotations Becomes Default
-------------------------------------------------------------
-
-In Python 3.7, postponed evaluation of annotations was added,
-to be enabled with a ``from __future__ import annotations``
-directive.  In 3.10 this became the default behavior, even
-without that future directive.  With this being default, all
-annotations stored in :attr:`__annotations__` will be strings.
-If needed, annotations can be resolved at runtime using
-:func:`typing.get_type_hints`.  See :pep:`563` for a full
-description.  Also, the :func:`inspect.signature` will try to
-resolve types from now on, and when it fails it will fall back to
-showing the string annotations.  (Contributed by Batuhan Taskaya
-in :issue:`38605`.)
-
-
 PEP 604: New Type Union Operator
 --------------------------------
 
@@ -717,6 +743,16 @@ See :pep:`613` for more details.
 
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
+PEP 647: User-Defined Type Guards
+---------------------------------
+
+:data:`TypeGuard` has been added to the :mod:`typing` module to annotate
+type guard functions and improve information provided to static type checkers
+during type narrowing.  For more information, please see :data:`TypeGuard`\ 's
+documentation, and :pep:`647`.
+
+(Contributed by Ken Jin and Guido van Rossum in :issue:`43766`.
+PEP written by Eric Traut.)
 
 Other Language Changes
 ======================
@@ -765,6 +801,10 @@ Other Language Changes
   Moreover, static methods are now callable as regular functions.
   (Contributed by Victor Stinner in :issue:`43682`.)
 
+* Annotations for complex targets (everything beside ``simple name`` targets
+  defined by :pep:`526`) no longer cause any runtime effects with ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42737`.)
+
 
 New Modules
 ===========
@@ -774,6 +814,13 @@ New Modules
 
 Improved Modules
 ================
+
+asyncio
+-------
+
+Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+method.
+(Contributed by Alex Grönholm in :issue:`41332`.)
 
 argparse
 --------
@@ -793,6 +840,12 @@ base64
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+bdb
+---
+
+Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+(Contributed by Irit Katriel in :issue:`24160`.)
 
 codecs
 ------
@@ -824,6 +877,9 @@ and objects representing asynchronously released resources.
 
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
+
+Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
+as decorators.
 
 curses
 ------
@@ -878,6 +934,9 @@ enum
 :func:`__str__` now returns ``member_name``.  Stdlib enums available as
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
+
+Add :class:`enum.StrEnum` for enums where all members are strings.
+(Contributed by Ethan Furman in :issue:`41816`.)
 
 fileinput
 ---------
@@ -962,6 +1021,11 @@ Added negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
 
+Added :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
+supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+order as :meth:`~pathlib.Path.symlink_to`.
+(Contributed by Barney Gale in :issue:`39950`.)
+
 platform
 --------
 
@@ -997,6 +1061,14 @@ The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
+statistics
+----------
+
+Added :func:`~statistics.covariance`, Pearson's
+:func:`~statistics.correlation`, and simple
+:func:`~statistics.linear_regression` functions.
+(Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
+
 site
 ----
 
@@ -1011,6 +1083,20 @@ The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 
 Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
+
+ssl
+---
+
+Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
+(Contributed by Zackery Spytz in :issue:`31870`.)
+
+sqlite3
+-------
+
+Add audit events for :func:`~sqlite3.connect/handle`,
+:meth:`~sqlite3.Connection.enable_load_extension`, and
+:meth:`~sqlite3.Connection.load_extension`.
+(Contributed by Erlend E. Aasland in :issue:`43762`.)
 
 sys
 ---
@@ -1088,6 +1174,10 @@ and to match the behavior of static type checkers specified in the PEP.
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
 
+Add new function :func:`typing.is_typeddict` to introspect if an annotation
+is a :class:`typing.TypedDict`.
+(Contributed by Patrick Reader in :issue:`41792`)
+
 unittest
 --------
 
@@ -1120,7 +1210,10 @@ zipimport
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 :meth:`zipimport.zipimporter.create_module`, and
 :meth:`zipimport.zipimporter.exec_module`.
-(Contributed by Brett Cannon in :issue:`42131`.
+(Contributed by Brett Cannon in :issue:`42131`.)
+
+Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
+(Contributed by Desmond Cheong in :issue:`14678`.)
 
 
 Optimizations
@@ -1149,6 +1242,12 @@ Optimizations
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
+
+* Use a new output buffer management code for :mod:`bz2` / :mod:`lzma` /
+  :mod:`zlib` modules, and add ``.readall()`` function to
+  ``_compression.DecompressReader`` class. bz2 decompression 1.09x ~ 1.17x
+  faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
+  ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
 
 * Function parameters and their annotations are no longer computed at runtime,
   but rather at compilation time.  They are stored as a tuple of strings at the
@@ -1282,6 +1381,19 @@ Deprecated
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
 
+* :func:`asyncio.get_event_loop` emits now a deprecation warning if there is
+  no running event loop. In future it will be an alias of
+  :func:`~asyncio.get_running_loop`.
+  :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
+  or :class:`~asyncio.Task` objects emit now
+  a deprecation warning if there is no running event loop and no explicit
+  *loop* argument is passed: :func:`~asyncio.ensure_future`,
+  :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
+  :func:`~asyncio.shield`, :func:`~asyncio.as_completed` and constructors of
+  :class:`~asyncio.Future`, :class:`~asyncio.Task`,
+  :class:`~asyncio.StreamReader`, :class:`~asyncio.StreamReaderProtocol`.
+  (Contributed by Serhiy Storchaka in :issue:`39529`.)
+
 * The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly
   discouraged by the SQLite3 documentation.  See `the SQLite3 docs
@@ -1310,6 +1422,13 @@ Deprecated
   * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
 
   (Contributed by Jelle Zijlstra in :issue:`21574`.)
+
+* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+  Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
+  (Contributed by Barney Gale in :issue:`39950`.)
+
+* ``cgi.log()`` is deprecated and slated for for removal in Python 3.12.
+  (Contributed by Inada Naoki in :issue:`41139`.)
 
 
 Removed
@@ -1549,7 +1668,8 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
-* The :c:func:`PyType_GetSlot` function can accept static types.
+* The :c:func:`PyType_GetSlot` function can accept
+  :ref:`static types <static-types>`.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
 * Add a new :c:func:`PySet_CheckExact` function to the C-API to check if an
@@ -1580,6 +1700,13 @@ New Features
   test if an object is, respectively, the ``None`` singleton, the ``True``
   singleton or the ``False`` singleton.
   (Contributed by Victor Stinner in :issue:`43753`.)
+
+* Add new functions to quickly control the garbage collector from C code:
+  :c:func:`PyGC_Enable()`,
+  :c:func:`PyGC_Disable()`,
+  :c:func:`PyGC_IsEnabled()`.
+  These functions allow to activate, deactivate and query the state of the garbage collector from C code without
+  having to import the :mod:`gc` module.
 
 Porting to Python 3.10
 ----------------------
@@ -1712,6 +1839,12 @@ Removed
 
   Use Python :mod:`symtable` module instead.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove :c:func:`PyOS_ReadlineFunctionPointer` from the limited C API headers
+  and from ``python3.dll``, the library that provides the stable ABI on
+  Windows. Since the function takes a ``FILE*`` argument, its ABI stability
+  cannot be guaranteed.
+  (Contributed by Petr Viktorin in :issue:`43868`.)
 
 * Remove ``ast.h``, ``asdl.h``, and ``Python-ast.h`` header files.
   These functions were undocumented and excluded from the limited C API.

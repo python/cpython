@@ -3,8 +3,9 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "pycore_pylifecycle.h"
 #include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_Init()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
@@ -35,7 +36,7 @@ typedef struct {
 static inline thread_module_state*
 get_thread_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (thread_module_state *)state;
 }
