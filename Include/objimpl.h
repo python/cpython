@@ -48,8 +48,8 @@ Functions and macros for modules that implement new object types.
 
 Note that objects created with PyObject_{New, NewVar} are allocated using the
 specialized Python allocator (implemented in obmalloc.c), if WITH_PYMALLOC is
-enabled.  In addition, a special debugging allocator is used if PYMALLOC_DEBUG
-is also #defined.
+enabled.  In addition, a special debugging allocator is used if Py_DEBUG
+macro is also defined.
 
 In case a specific form of memory management is needed (for example, if you
 must use the platform malloc heap(s), or shared memory, or C++ local storage or
