@@ -5609,6 +5609,10 @@ compiler_slice(struct compiler *c, expr_ty s)
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
+    if (n == NULL) {
+        ADDOP(c, POP_TOP);
+        return 1;
+    }
     if (forbidden_name(c, n, Store)) {
         return 0;
     }
@@ -5783,41 +5787,22 @@ compiler_pattern_subpattern(struct compiler *c, pattern_ty p, pattern_context *p
 }
 
 static int
-compiler_pattern_capture(struct compiler *c, identifier n, pattern_context *pc)
-{
-    RETURN_IF_FALSE(pattern_helper_store_name(c, n, pc));
-    ADDOP_LOAD_CONST(c, Py_True);
-    return 1;
-}
-
-static int
-compiler_pattern_wildcard(struct compiler *c, pattern_ty p, pattern_context *pc)
-{
-    assert(p->kind == MatchAs_kind);
-    if (!pc->allow_irrefutable) {
-        // Whoops, can't have a wildcard here!
-        const char *e = "wildcard makes remaining patterns unreachable";
-        return compiler_error(c, e);
-    }
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    return 1;
-}
-
-static int
 compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
-    if (p->v.MatchAs.name == NULL) {
-        return compiler_pattern_wildcard(c, p, pc);
-    }
     if (p->v.MatchAs.pattern == NULL) {
+        // An irrefutable match:
         if (!pc->allow_irrefutable) {
-            // Whoops, can't have a name capture here!
-            const char *e = "name capture %R makes remaining patterns unreachable";
-            return compiler_error(c, e, p->v.MatchAs.name);
+            if (p->v.MatchAs.name) {
+                const char *e = "name capture %R makes remaining patterns unreachable";
+                return compiler_error(c, e, p->v.MatchAs.name);
+            }
+            const char *e = "wildcard makes remaining patterns unreachable";
+            return compiler_error(c, e);
         }
-        return compiler_pattern_capture(c, p->v.MatchAs.name, pc);
+        RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
+        ADDOP_LOAD_CONST(c, Py_True);
+        return 1;
     }
     basicblock *end, *fail_pop_1;
     RETURN_IF_FALSE(end = compiler_new_block(c));
@@ -5842,12 +5827,9 @@ static int
 compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchStar_kind);
-    if (!pc->allow_irrefutable) {
-        // Whoops, can't have a star capture here!
-        const char *e = "star captures are only allowed as part of sequence patterns";
-        return compiler_error(c, e);
-    }
-    return compiler_pattern_capture(c, p->v.MatchStar.name, pc);
+    RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchStar.name, pc));
+    ADDOP_LOAD_CONST(c, Py_True);
+    return 1;
 }
 
 static int
