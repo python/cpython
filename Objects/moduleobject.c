@@ -481,7 +481,7 @@ PyModule_GetNameObject(PyObject *m)
         return NULL;
     }
     d = ((PyModuleObject *)m)->md_dict;
-    if (d == NULL ||
+    if (d == NULL || !PyDict_Check(d) ||
         (name = _PyDict_GetItemIdWithError(d, &PyId___name__)) == NULL ||
         !PyUnicode_Check(name))
     {
@@ -824,11 +824,7 @@ module_dir(PyObject *self, PyObject *args)
             }
         }
         else {
-            const char *name = PyModule_GetName(self);
-            if (name)
-                PyErr_Format(PyExc_TypeError,
-                             "%.200s.__dict__ is not a dictionary",
-                             name);
+            PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
         }
     }
 
