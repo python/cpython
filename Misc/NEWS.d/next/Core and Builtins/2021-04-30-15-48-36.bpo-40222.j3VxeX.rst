@@ -1,4 +1,4 @@
-"Zero cost" exceptino handling.
+"Zero cost" exception handling.
 
 * Uses a lookup table to determine how to handle exceptions
 * Removes SETUP_FINALLY and POP_TOP block instructions, eliminating the runtime overhead of try statements.
