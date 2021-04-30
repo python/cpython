@@ -845,6 +845,7 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
+        Py_XDECREF(dict);
         return NULL;
     }
 
