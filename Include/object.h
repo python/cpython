@@ -327,6 +327,10 @@ given type object has a specified feature.
 #define Py_TPFLAGS_MAPPING (1 << 6)
 #endif
 
+/* Disallow creating instances of the type: set tp_new to NULL and don't create
+ * the "__new__" key in the type dictionary. */
+#define Py_TPFLAGS_DISALLOW_INSTANTIATION (1UL << 7)
+
 /* Set if the type object is immutable: type attributes cannot be set nor deleted */
 #define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
 
