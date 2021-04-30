@@ -18,6 +18,10 @@ extern int winerror_to_errno(int);
 #include <sys/ioctl.h>
 #endif
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#include <iconv.h>
+#endif
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
@@ -93,6 +97,12 @@ _Py_device_encoding(int fd)
 static size_t
 is_valid_wide_char(wchar_t ch)
 {
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris doesn't use Unicode code points as wchar_t encoding
+       for non-Unicode locales, which makes values higher than MAX_UNICODE
+       possibly valid. */
+    return 1;
+#endif
     if (Py_UNICODE_IS_SURROGATE(ch)) {
         // Reject lone surrogate characters
         return 0;
@@ -922,6 +932,102 @@ _Py_GetLocaleEncodingObject(void)
     return str;
 }
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+
+/* Check whether current locale uses Unicode as internal wchar_t form. */
+int
+_Py_LocaleUsesNonUnicodeWchar(void)
+{
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion to UTF first. */
+    char* codeset = nl_langinfo(CODESET);
+    if (!codeset) {
+        return 0;
+    }
+    /* 646 refers to ISO/IEC 646 standard that corresponds to ASCII encoding */
+    return (strcmp(codeset, "UTF-8") != 0 && strcmp(codeset, "646") != 0);
+}
+
+static wchar_t *
+_Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
+                     const char *tocode, const char *fromcode)
+{
+    Py_BUILD_ASSERT(sizeof(wchar_t) == 4);
+
+    /* Ensure we won't overflow the size. */
+    if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    /* the string doesn't have to be NULL terminated */
+    wchar_t* target = PyMem_Malloc(size * sizeof(wchar_t));
+    if (target == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    iconv_t cd = iconv_open(tocode, fromcode);
+    if (cd == (iconv_t)-1) {
+        PyErr_Format(PyExc_ValueError, "iconv_open() failed");
+        PyMem_Free(target);
+        return NULL;
+    }
+
+    char *inbuf = (char *) source;
+    char *outbuf = (char *) target;
+    size_t inbytesleft = sizeof(wchar_t) * size;
+    size_t outbytesleft = inbytesleft;
+
+    size_t ret = iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+    if (ret == DECODE_ERROR) {
+        PyErr_Format(PyExc_ValueError, "iconv() failed");
+        PyMem_Free(target);
+        iconv_close(cd);
+        return NULL;
+    }
+
+    iconv_close(cd);
+    return target;
+}
+
+/* Convert a wide character string to the UCS-4 encoded string. This
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
+
+   Return a pointer to a newly allocated string, use PyMem_Free() to free
+   the memory. Return NULL and raise exception on conversion or memory
+   allocation error. */
+wchar_t *
+_Py_DecodeNonUnicodeWchar(const wchar_t *native, Py_ssize_t size)
+{
+    return _Py_ConvertWCharForm(native, size, "UCS-4-INTERNAL", "wchar_t");
+}
+
+/* Convert a UCS-4 encoded string to native wide character string. This
+   is necessary on systems where internal form of wchar_t are not Unicode
+   code points (e.g. Oracle Solaris).
+
+   The conversion is done in place. This can be done because both wchar_t
+   and UCS-4 use 4-byte encoding, and one wchar_t symbol always correspond
+   to a single UCS-4 symbol and vice versa. (This is true for Oracle Solaris,
+   which is currently the only system using these functions; it doesn't have
+   to be for other systems).
+
+   Return 0 on success. Return -1 and raise exception on conversion
+   or memory allocation error. */
+int
+_Py_EncodeNonUnicodeWchar_InPlace(wchar_t *unicode, Py_ssize_t size)
+{
+    wchar_t* result = _Py_ConvertWCharForm(unicode, size, "wchar_t", "UCS-4-INTERNAL");
+    if (!result) {
+        return -1;
+    }
+    memcpy(unicode, result, size * sizeof(wchar_t));
+    PyMem_Free(result);
+    return 0;
+}
+#endif /* HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION */
 
 #ifdef MS_WINDOWS
 static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
