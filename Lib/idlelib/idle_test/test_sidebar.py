@@ -714,7 +714,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.do_input(dedent('''\
             if True:
             print(1)
-            
+
             '''))
         yield
 
