@@ -728,13 +728,6 @@ newPollObject(PyObject *module)
     return self;
 }
 
-static PyObject *
-poll_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 poll_dealloc(pollObject *self)
 {
@@ -2275,16 +2268,14 @@ static PyMethodDef poll_methods[] = {
 static PyType_Slot poll_Type_slots[] = {
     {Py_tp_dealloc, poll_dealloc},
     {Py_tp_methods, poll_methods},
-    {Py_tp_new, poll_new},
     {0, 0},
 };
 
 static PyType_Spec poll_Type_spec = {
-    "select.poll",
-    sizeof(pollObject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    poll_Type_slots
+    .name = "select.poll",
+    .basicsize = sizeof(pollObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = poll_Type_slots,
 };
 
 #ifdef HAVE_SYS_DEVPOLL_H
