@@ -13,14 +13,15 @@ Annotations Best Practices
   interacts with annotations, we encourage you to follow the
   guidelines described below.
 
-  The document is organized into three sections:
+  The document is organized into four sections:
   best practices for accessing the annotations of an object
   in Python versions 3.10 and newer,
   best practices for accessing the annotations of an object
   in Python versions 3.9 and older,
-  and
   other best practices
-  for ``__annotations__`` that apply to any Python version.
+  for ``__annotations__`` that apply to any Python version,
+  and
+  quirks of ``__annotations__``.
 
 
 Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
@@ -163,3 +164,42 @@ Best Practices For ``__annotations__`` In Any Python Version
 
   * You should avoid deleting the ``__annotations__`` attribute
     of an object.
+
+
+``__annotations__`` Quirks
+==========================
+
+  In all versions of Python 3, function
+  objects lazy-create an annotations dict if no annotations
+  are defined on that object.  You can delete the ``__annotations__``
+  attribute using ``del fn.__annotations__``, but if you then
+  access ``fn.__annotations__`` the object will create a new empty dict
+  that it will store and return as its annotations.  Deleting the
+  annotations on a function before it has lazily created its annotations
+  dict will throw an ``AttributeError``; using ``del fn.__annotations__``
+  twice in a row is guaranteed to always throw an ``AttributeError``.
+
+  Everything in the above paragraph also applies to class and module
+  objects in Python 3.10 and newer.
+
+  In all versions of Python 3, you can set ``__annotations__``
+  on a function object to ``None``.  However, subsequently
+  accessing the annotations on that object using ``fn.__annotations__``
+  will lazy-create an empty dictionary as per the first paragraph of
+  this section.  This is *not* true of modules and classes, in any Python
+  version; those objects permit setting ``__annotations__`` to any
+  Python value, and will retain whatever value is set.
+
+  If Python stringizes your annotations for you
+  (using ``from __future__ import annotations``), and you
+  specify a string as an annotation, the string will
+  itself be quoted.  In effect the annotation is quoted
+  *twice.*  For example::
+
+       from __future__ import annotations
+       def foo(a: "str"): pass
+
+       print(foo.__annotations__)
+
+  This prints ``{'a': "'str'"}``.  This shouldn't really be considered
+  a "quirk"; it's mentioned here simply because it might be surprising.
