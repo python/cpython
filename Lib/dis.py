@@ -201,8 +201,7 @@ _Instruction.argval.__doc__ = "Resolved arg value (if known), otherwise same as 
 _Instruction.argrepr.__doc__ = "Human readable description of operation argument"
 _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence"
 _Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
-_Instruction.is_jump_target.__doc__ = ("1 if this is a target of a normal jump or branch." +
-                                      "2 if this is the target of an exception handler. 0 otherwise")
+_Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
 
 _ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
     "start end target depth lasti")
@@ -221,9 +220,7 @@ class Instruction(_Instruction):
          argrepr - human readable description of operation argument
          offset - start index of operation within bytecode sequence
          starts_line - line started by this opcode (if any), otherwise None
-         is_jump_target - 1 if this is a target of a normal jump or branch,
-                          2 if this is the target of an exception handler,
-                          0 otherwise
+         is_jump_target - True if other code jumps to here, otherwise False
     """
 
     def _disassemble(self, lineno_width=3, mark_as_current=False, offset_width=4):
@@ -247,10 +244,8 @@ class Instruction(_Instruction):
         else:
             fields.append('   ')
         # Column: Jump target marker
-        if self.is_jump_target == 1:
+        if self.is_jump_target:
             fields.append('>>')
-        elif self.is_jump_target == 2:
-            fields.append('Ex')
         else:
             fields.append('  ')
         # Column: Instruction offset from start of code sequence
