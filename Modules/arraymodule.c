@@ -2987,7 +2987,8 @@ static PyType_Slot arrayiter_slots[] = {
 static PyType_Spec arrayiter_spec = {
     .name = "array.arrayiterator",
     .basicsize = sizeof(arrayiterobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = arrayiter_slots,
 };
 
