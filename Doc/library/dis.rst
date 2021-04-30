@@ -699,7 +699,7 @@ iterations of the loop.
     .. versionadded:: 3.9
 
 
-..opcode:: PUSH_EXC_INFO
+.. opcode:: PUSH_EXC_INFO
 
     Pops the three values from the stack. Pushes the current exception to the top of the stack.
     Pushes the three values originally popped back to the stack.
