@@ -320,6 +320,13 @@ Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
 
+#ifndef Py_LIMITED_API
+/* Set if instances of the type object are treated as sequences for pattern matching */
+#define Py_TPFLAGS_SEQUENCE (1 << 5)
+/* Set if instances of the type object are treated as mappings for pattern matching */
+#define Py_TPFLAGS_MAPPING (1 << 6)
+#endif
+
 /* Set if the type object is immutable: type attributes cannot be set nor deleted */
 #define Py_TPFLAGS_IMMUTABLETYPE (1UL << 8)
 

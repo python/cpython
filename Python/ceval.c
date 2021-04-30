@@ -3889,76 +3889,20 @@ main_loop:
         }
 
         case TARGET(MATCH_MAPPING): {
-            // PUSH(isinstance(TOS, _collections_abc.Mapping))
             PyObject *subject = TOP();
-            // Fast path for dicts:
-            if (PyDict_Check(subject)) {
-                Py_INCREF(Py_True);
-                PUSH(Py_True);
-                DISPATCH();
-            }
-            // Lazily import _collections_abc.Mapping, and keep it handy on the
-            // PyInterpreterState struct (it gets cleaned up at exit):
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            if (interp->map_abc == NULL) {
-                PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (abc == NULL) {
-                    goto error;
-                }
-                interp->map_abc = PyObject_GetAttrString(abc, "Mapping");
-                if (interp->map_abc == NULL) {
-                    goto error;
-                }
-            }
-            int match = PyObject_IsInstance(subject, interp->map_abc);
-            if (match < 0) {
-                goto error;
-            }
-            PUSH(PyBool_FromLong(match));
+            int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
+            PyObject *res = match ? Py_True : Py_False;
+            Py_INCREF(res);
+            PUSH(res);
             DISPATCH();
         }
 
         case TARGET(MATCH_SEQUENCE): {
-            // PUSH(not isinstance(TOS, (bytearray, bytes, str))
-            //      and isinstance(TOS, _collections_abc.Sequence))
             PyObject *subject = TOP();
-            // Fast path for lists and tuples:
-            if (PyType_FastSubclass(Py_TYPE(subject),
-                                    Py_TPFLAGS_LIST_SUBCLASS |
-                                    Py_TPFLAGS_TUPLE_SUBCLASS))
-            {
-                Py_INCREF(Py_True);
-                PUSH(Py_True);
-                DISPATCH();
-            }
-            // Bail on some possible Sequences that we intentionally exclude:
-            if (PyType_FastSubclass(Py_TYPE(subject),
-                                    Py_TPFLAGS_BYTES_SUBCLASS |
-                                    Py_TPFLAGS_UNICODE_SUBCLASS) ||
-                PyByteArray_Check(subject))
-            {
-                Py_INCREF(Py_False);
-                PUSH(Py_False);
-                DISPATCH();
-            }
-            // Lazily import _collections_abc.Sequence, and keep it handy on the
-            // PyInterpreterState struct (it gets cleaned up at exit):
-            PyInterpreterState *interp = PyInterpreterState_Get();
-            if (interp->seq_abc == NULL) {
-                PyObject *abc = PyImport_ImportModule("_collections_abc");
-                if (abc == NULL) {
-                    goto error;
-                }
-                interp->seq_abc = PyObject_GetAttrString(abc, "Sequence");
-                if (interp->seq_abc == NULL) {
-                    goto error;
-                }
-            }
-            int match = PyObject_IsInstance(subject, interp->seq_abc);
-            if (match < 0) {
-                goto error;
-            }
-            PUSH(PyBool_FromLong(match));
+            int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
+            PyObject *res = match ? Py_True : Py_False;
+            Py_INCREF(res);
+            PUSH(res);
             DISPATCH();
         }
 
