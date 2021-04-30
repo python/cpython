@@ -35,6 +35,7 @@ _IGNORED_WINERRORS = (
     _WINERROR_INVALID_NAME,
     _WINERROR_CANT_RESOLVE_FILENAME)
 
+
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
@@ -902,6 +903,7 @@ class PurePath(object):
                 return False
         return True
 
+
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().
 os.PathLike.register(PurePath)
@@ -1438,6 +1440,7 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
+
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
@@ -1447,3 +1450,16 @@ class WindowsPath(Path, PureWindowsPath):
 
     def is_mount(self):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")
+
+
+class SimplePath:
+    # Stub for class which will, aside from name, match the class instantiated
+    # by PurePath, however unlike PurePath, will be able to be subclassed
+    # normally.
+    pass
+
+
+class FilePath:
+    # Stub for class which will, aside from name, match the class instantiated
+    # by Path, however unlike Path, will be able to be subclassed normally.
+    pass

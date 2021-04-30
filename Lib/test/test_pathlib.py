@@ -1296,6 +1296,7 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
 
+
 class PurePathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePath
 
@@ -1322,6 +1323,30 @@ class PurePathTest(_BasePurePathTest, unittest.TestCase):
             p >= q
 
 
+class SubclassTestMixin:
+
+    def test_can_subclass(self):
+        P = self.cls
+        try:
+            class Derived(P):
+                pass
+        except Exception as e:
+            self.fail(f"Failed to subclass {P}: {e}")
+        else:
+            self.assertTrue(issubclass(Derived, P))
+            try:
+                derived = Derived()
+            except Exception as e:
+                self.fail("Failed to be able to instantiate a class "
+                          f"derived from {P}: {e}")
+            else:
+                self.assertIsInstance(derived, Derived)
+
+
+class SimplePathTest(unittest.TestCase, SubclassTestMixin):
+    cls = pathlib.SimplePath
+
+
 #
 # Tests for the concrete classes.
 #
@@ -1336,9 +1361,11 @@ only_nt = unittest.skipIf(os.name != 'nt',
 only_posix = unittest.skipIf(os.name == 'nt',
                              'test requires a POSIX-compatible system')
 
+
 @only_posix
 class PosixPathAsPureTest(PurePosixPathTest):
     cls = pathlib.PosixPath
+
 
 @only_nt
 class WindowsPathAsPureTest(PureWindowsPathTest):
@@ -2664,6 +2691,10 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             # bpo-38883: ignore `HOME` when set on windows
             env['HOME'] = 'C:\\Users\\eve'
             check()
+
+
+class FilePathTest(unittest.TestCase, SubclassTestMixin):
+    cls = pathlib.FilePath
 
 
 class CompatiblePathTest(unittest.TestCase):
