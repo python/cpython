@@ -34,16 +34,14 @@ struct _frame {
     PyObject *f_locals;         /* local symbol table (any mapping) */
     PyObject **f_valuestack;    /* points after the last local */
     PyObject *f_trace;          /* Trace function */
-    int f_stackdepth;           /* Depth of value stack */
-    char f_trace_lines;         /* Emit per-line trace events? */
-    char f_trace_opcodes;       /* Emit per-opcode trace events? */
-
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
-
+    int f_stackdepth;           /* Depth of value stack */
     int f_lasti;                /* Last instruction if called */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     PyFrameState f_state;       /* What state the frame is in */
+    char f_trace_lines;         /* Emit per-line trace events? */
+    char f_trace_opcodes;       /* Emit per-opcode trace events? */
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
 };
 
