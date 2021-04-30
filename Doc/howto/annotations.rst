@@ -83,8 +83,8 @@ Accessing The Annotations Dict Of An Object In Python 3.9 And Older
 
       print(Derived.__annotations__)
 
-  This will print the annotations dict from *``Base``*, not
-  *``Derived``*.
+  This will print the annotations dict from ``Base``, not
+  ``Derived``.
 
   Your code will have to have a separate code path if the object
   you're examining is a class (``isinstance(o, type)``).

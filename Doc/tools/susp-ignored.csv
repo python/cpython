@@ -374,3 +374,5 @@ library/typing,1004,`,# Type of ``val`` is narrowed to ``str``
 library/typing,1004,`,"# Else, type of ``val`` is narrowed to ``float``."
 library/typing,1004,`,# Type of ``val`` is narrowed to ``List[str]``.
 library/typing,1004,`,# Type of ``val`` remains as ``List[object]``.
+howto/annotations,77,:int,a:int = 3
+howto/annotations,77,:str,b:str = 'abc'
