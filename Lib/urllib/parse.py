@@ -752,9 +752,8 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
-    pairs = [s1 for s1 in qs.split(separator)]
     r = []
-    for name_value in pairs:
+    for name_value in qs.split(separator):
         if not name_value and not strict_parsing:
             continue
         nv = name_value.split('=', 1)
