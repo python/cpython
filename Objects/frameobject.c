@@ -348,7 +348,6 @@ frame_stack_pop(PyFrameObject *f)
 {
     assert(f->f_stackdepth > 0);
     f->f_stackdepth--;
-    printf("Popping value to depth %d\n", f->f_stackdepth);
     PyObject *v = f->f_valuestack[f->f_stackdepth];
     Py_DECREF(v);
 }
@@ -477,7 +476,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         if (lines[i] == new_lineno) {
             target_block_stack = blocks[i];
             if (compatible_block_stack(start_block_stack, target_block_stack)) {
-                printf("Blocks %ld -> %ld are compatible\n", start_block_stack, target_block_stack);
                 err = 0;
                 if (target_block_stack > best_block_stack) {
                     best_block_stack = target_block_stack;
@@ -513,7 +511,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         frame_stack_pop(f);
         start_block_stack = pop_block(start_block_stack);
     }
-    printf("Jumping from %d to %d\n", f->f_lasti, best_addr);
     /* Finally set the new f_lasti and return OK. */
     f->f_lineno = 0;
     f->f_lasti = best_addr;
