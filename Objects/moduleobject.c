@@ -845,6 +845,7 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
+        Py_XDECREF(dict);
         return NULL;
     }
 
@@ -876,25 +877,31 @@ module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
 static int
 module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
 {
+    int ret = -1;
     PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
 
     if ((dict == NULL) || !PyDict_Check(dict)) {
         PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
-        return -1;
+        goto exit;
     }
 
     if (value != NULL) {
         /* set */
-        return _PyDict_SetItemId(dict, &PyId___annotations__, value);
+        ret = _PyDict_SetItemId(dict, &PyId___annotations__, value);
+        goto exit;
     }
 
     /* delete */
     if (!_PyDict_ContainsId(dict, &PyId___annotations__)) {
         PyErr_Format(PyExc_AttributeError, "__annotations__");
-        return -1;
+        goto exit;
     }
 
-    return _PyDict_DelItemId(dict, &PyId___annotations__);
+    ret = _PyDict_DelItemId(dict, &PyId___annotations__);
+
+exit:
+    Py_XDECREF(dict);
+    return ret;
 }
 
 
