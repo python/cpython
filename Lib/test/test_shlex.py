@@ -347,17 +347,18 @@ class ShlexTest(unittest.TestCase):
         """Test quoting of byte objects"""
         # Copied from testQuote
         safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
-        unsafe = '"`$\\!'
+        unicode_sample = '\xe9\xe0\xdf'  # e + acute accent, a + grave, sharp s
+        unsafe = '"`$\\!' + unicode_sample
 
         self.assertEqual(shlex.quote(b''), b"''")
         self.assertEqual(shlex.quote(safeunquoted.encode("ascii")), safeunquoted.encode("ascii"))
         self.assertEqual(shlex.quote(b'test file name'), b"'test file name'")
         for u in unsafe:
-            self.assertEqual(shlex.quote(('test%sname' % u).encode("ascii")),
-                             ("'test%sname'" % u).encode("ascii"))
+            self.assertEqual(shlex.quote(('test%sname' % u).encode("utf-8")),
+                             ("'test%sname'" % u).encode("utf-8"))
         for u in unsafe:
-            self.assertEqual(shlex.quote(("test%s'name'" % u).encode("ascii")),
-                             ("'test%s'\"'\"'name'\"'\"''" % u).encode("ascii"))
+            self.assertEqual(shlex.quote(("test%s'name'" % u).encode("utf-8")),
+                             ("'test%s'\"'\"'name'\"'\"''" % u).encode("utf-8"))
 
     def testJoin(self):
         for split_command, command in [
