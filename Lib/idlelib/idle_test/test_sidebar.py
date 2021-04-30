@@ -11,7 +11,6 @@ from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
 from idlelib.editor import fixwordbreaks
-from idlelib import macosx
 from idlelib.percolator import Percolator
 import idlelib.pyshell
 from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
@@ -391,7 +390,7 @@ class LineNumbersTest(unittest.TestCase):
         ln.update_colors()
         assert_colors_are_equal(orig_colors)
 
-unittest.skip('')
+
 class ShellSidebarTest(unittest.TestCase):
     root: tk.Tk = None
     shell: PyShell = None
