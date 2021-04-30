@@ -613,7 +613,7 @@ class UrlParseTestCase(unittest.TestCase):
             p.port
 
     def test_urlsplit_remove_unsafe_bytes(self):
-        # Remove ASCII tabs and newlines from input
+        # Remove ASCII tabs and newlines from input, for http common case scenario.
         url = "http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, "http")
@@ -627,7 +627,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/#frag")
 
-        # Remove ASCII tabs and newlines from input as bytes.
+        # Remove ASCII tabs and newlines from input as bytes, for http common case scenario.
         url = b"http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, b"http")
@@ -640,6 +640,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.hostname, b"www.python.org")
         self.assertEqual(p.port, None)
         self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/#frag")
+
+        # any scheme
+        url = "x-new-scheme://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.geturl(), "x-new-scheme://www.python.org/javascript:alert('msg')/#frag")
+
+        # Remove ASCII tabs and newlines from input as bytes, any scheme.
+        url = b"x-new-scheme://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        p = urllib.parse.urlsplit(url)
+        self.assertEqual(p.geturl(), b"x-new-scheme://www.python.org/javascript:alert('msg')/#frag")
 
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""

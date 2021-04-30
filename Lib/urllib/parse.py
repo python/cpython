@@ -412,6 +412,11 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+def _remove_unsafe_bytes_from_url(url):
+    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
+        url = url.replace(b, "")
+    return url
+
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
@@ -442,6 +447,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
             if '?' in url:
                 url, query = url.split('?', 1)
             _checknetloc(netloc)
+            url = _remove_unsafe_bytes_from_url(url)
             v = SplitResult(scheme, netloc, url, query, fragment)
             _parse_cache[key] = v
             return _coerce_result(v)
@@ -456,8 +462,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 # not a port number
                 scheme, url = url[:i].lower(), rest
 
-    for b in _UNSAFE_URL_BYTES_TO_REMOVE:
-        url = url.replace(b, "")
+    url = _remove_unsafe_bytes_from_url(url)
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
