@@ -12,6 +12,9 @@ static Py_ssize_t max_module_number;
 _Py_IDENTIFIER(__doc__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__spec__);
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(__annotations__);
 
 static PyMemberDef module_members[] = {
     {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
@@ -807,8 +810,6 @@ module_clear(PyModuleObject *m)
 static PyObject *
 module_dir(PyObject *self, PyObject *args)
 {
-    _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(__dir__);
     PyObject *result = NULL;
     PyObject *dict = _PyObject_GetAttrId(self, &PyId___dict__);
 
@@ -839,6 +840,71 @@ static PyMethodDef module_methods[] = {
     {"__dir__", module_dir, METH_NOARGS,
      PyDoc_STR("__dir__() -> list\nspecialized dir() implementation")},
     {0}
+};
+
+static PyObject *
+module_get_annotations(PyModuleObject *m, void *Py_UNUSED(ignored))
+{
+    PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
+
+    if ((dict == NULL) || !PyDict_Check(dict)) {
+        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
+        return NULL;
+    }
+
+    PyObject *annotations;
+    /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
+    if (_PyDict_ContainsId(dict, &PyId___annotations__)) {
+        annotations = _PyDict_GetItemIdWithError(dict, &PyId___annotations__);
+        /*
+        ** _PyDict_GetItemIdWithError could still fail,
+        ** for instance with a well-timed Ctrl-C or a MemoryError.
+        ** so let's be totally safe.
+        */
+        if (annotations) {
+            Py_INCREF(annotations);
+        }
+    } else {
+        annotations = PyDict_New();
+        if (annotations) {
+            int result = _PyDict_SetItemId(dict, &PyId___annotations__, annotations);
+            if (result) {
+                Py_CLEAR(annotations);
+            }
+        }
+    }
+    Py_DECREF(dict);
+    return annotations;
+}
+
+static int
+module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignored))
+{
+    PyObject *dict = _PyObject_GetAttrId((PyObject *)m, &PyId___dict__);
+
+    if ((dict == NULL) || !PyDict_Check(dict)) {
+        PyErr_Format(PyExc_TypeError, "<module>.__dict__ is not a dictionary");
+        return -1;
+    }
+
+    if (value != NULL) {
+        /* set */
+        return _PyDict_SetItemId(dict, &PyId___annotations__, value);
+    }
+
+    /* delete */
+    if (!_PyDict_ContainsId(dict, &PyId___annotations__)) {
+        PyErr_Format(PyExc_AttributeError, "__annotations__");
+        return -1;
+    }
+
+    return _PyDict_DelItemId(dict, &PyId___annotations__);
+}
+
+
+static PyGetSetDef module_getsets[] = {
+    {"__annotations__", (getter)module_get_annotations, (setter)module_set_annotations},
+    {NULL}
 };
 
 PyTypeObject PyModule_Type = {
@@ -872,7 +938,7 @@ PyTypeObject PyModule_Type = {
     0,                                          /* tp_iternext */
     module_methods,                             /* tp_methods */
     module_members,                             /* tp_members */
-    0,                                          /* tp_getset */
+    module_getsets,                             /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
