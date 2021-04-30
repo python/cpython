@@ -1824,7 +1824,7 @@ Notes on using *__slots__*
 """"""""""""""""""""""""""
 
 * When inheriting from a class without *__slots__*, the *__dict__* and
-  *__weakref__* attribute of the instances will always be accessible.
+  *__weakref__* attributes of the instances will always be accessible.
 
 * Without a *__dict__* attribute, instances cannot be assigned new attributes not
   listed in the *__slots__* declaration.  Attempts to assign to an unlisted
