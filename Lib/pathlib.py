@@ -561,7 +561,7 @@ class PurePath(object):
         # canonicalize some constructor arguments.
         parts = []
         for a in args:
-            if isinstance(a, PurePath):
+            if isinstance(a, cls):
                 parts += a._parts
             else:
                 a = os.fspath(a)
@@ -650,9 +650,12 @@ class PurePath(object):
             return self._cached_cparts
 
     def __eq__(self, other):
-        if not isinstance(other, PurePath):
+        if not isinstance(other, self.__class__):
             return NotImplemented
-        return self._cparts == other._cparts and self._flavour is other._flavour
+        return (
+            self._cparts == other._cparts
+            and self._flavour is other._flavour
+        )
 
     def __hash__(self):
         try:
@@ -662,22 +665,34 @@ class PurePath(object):
             return self._hash
 
     def __lt__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if (
+            not isinstance(other, self.__class__)
+            or self._flavour is not other._flavour
+        ):
             return NotImplemented
         return self._cparts < other._cparts
 
     def __le__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if (
+            not isinstance(other, self.__class__)
+            or self._flavour is not other._flavour
+        ):
             return NotImplemented
         return self._cparts <= other._cparts
 
     def __gt__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if (
+            not isinstance(other, self.__class__)
+            or self._flavour is not other._flavour
+        ):
             return NotImplemented
         return self._cparts > other._cparts
 
     def __ge__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if (
+            not isinstance(other, self.__class__)
+            or self._flavour is not other._flavour
+        ):
             return NotImplemented
         return self._cparts >= other._cparts
 

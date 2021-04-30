@@ -354,7 +354,9 @@ class _BasePurePathTest(object):
         # Ordering is tuple-alike.
         def assertLess(a, b):
             self.assertLess(a, b)
+            self.assertLessEqual(a, b)
             self.assertGreater(b, a)
+            self.assertGreaterEqual(b, a)
         P = self.cls
         a = P('a')
         b = P('a/b')
