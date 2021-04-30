@@ -9,9 +9,9 @@ Annotations Best Practices
 .. topic:: Abstract
 
   This document is designed to encapsulate the best practices
-  for working with annotations.  If you write Python code that
-  interacts with annotations, we encourage you to follow the
-  guidelines described below.
+  for working with annotations dicts.  If you write Python code
+  that examines ``__annotations__`` on Python objects, we
+  encourage you to follow the guidelines described below.
 
   The document is organized into four sections:
   best practices for accessing the annotations of an object
@@ -22,6 +22,11 @@ Annotations Best Practices
   for ``__annotations__`` that apply to any Python version,
   and
   quirks of ``__annotations__``.
+
+  Note that this document is specifically about working with
+  ``__annotations__``, not uses *for* annotations.
+  If you're looking for information on how to use "type hints"
+  in your code, please see the :mod:`typing` module.
 
 
 Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
@@ -76,8 +81,8 @@ Accessing The Annotations Dict Of An Object In Python 3.9 And Older
   As an example::
 
       class Base:
-          a:int = 3
-          b:str = 'abc'
+          a: int = 3
+          b: str = 'abc'
 
       class Derived(Base):
           pass
@@ -120,13 +125,11 @@ Manually Un-Stringizing Stringized Annotations
   In situations where some annotations may be "stringized",
   and you wish to evaluate those strings to produce the
   Python values they represent, it really is best to
-  call :func:`inspect.get_annotations` to do the evaluations
-  for you.  Un-stringizing is a complicated process, and
-  it's best to let :func:`inspect.get_annotations` do it
+  call :func:`inspect.get_annotations` to do this work
   for you.
 
-  If you are using Python 3.9 or older, or if for some reason
-  you cannot use :func:`inspect.get_annotations`, you'll need
+  If you're using Python 3.9 or older, or if for some reason
+  you can't use :func:`inspect.get_annotations`, you'll need
   to duplicate its logic.  You're encouraged to examine the
   implementation of :func:`inspect.get_annotations` in the
   current Python version and follow a similar approach.
