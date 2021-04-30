@@ -1386,11 +1386,10 @@ static PyType_Slot Comptype_slots[] = {
 };
 
 static PyType_Spec Comptype_spec = {
-    "zlib.Compress",
-    sizeof(compobject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    Comptype_slots
+    .name = "zlib.Compress",
+    .basicsize = sizeof(compobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots= Comptype_slots,
 };
 
 static PyType_Slot Decomptype_slots[] = {
@@ -1401,11 +1400,10 @@ static PyType_Slot Decomptype_slots[] = {
 };
 
 static PyType_Spec Decomptype_spec = {
-    "zlib.Decompress",
-    sizeof(compobject),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    Decomptype_slots
+    .name = "zlib.Decompress",
+    .basicsize = sizeof(compobject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = Decomptype_slots,
 };
 
 PyDoc_STRVAR(zlib_module_documentation,
