@@ -13,7 +13,7 @@
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
-    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
+    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY|PY_AUDIT_READ},
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
@@ -53,7 +53,13 @@ PyFrame_GetLineNumber(PyFrameObject *f)
 static PyObject *
 frame_getlineno(PyFrameObject *f, void *closure)
 {
-    return PyLong_FromLong(PyFrame_GetLineNumber(f));
+    int lineno = PyFrame_GetLineNumber(f);
+    if (lineno < 0) {
+        Py_RETURN_NONE;
+    }
+    else {
+        return PyLong_FromLong(lineno);
+    }
 }
 
 static PyObject *

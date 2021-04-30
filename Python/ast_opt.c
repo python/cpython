@@ -825,7 +825,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             break;
         case MatchAs_kind:
             if (node_->v.MatchAs.pattern) {
-                CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
+                CALL(astfold_pattern, pattern_ty, node_->v.MatchAs.pattern);
             }
             break;
         case MatchOr_kind:

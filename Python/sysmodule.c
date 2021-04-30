@@ -2810,56 +2810,35 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* version_info */
     if (VersionInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&VersionInfoType,
-                                       &version_info_desc) < 0) {
+        if (_PyStructSequence_InitType(&VersionInfoType,
+                                       &version_info_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
             goto type_init_failed;
         }
     }
     version_info = make_version_info(tstate);
     SET_SYS("version_info", version_info);
-    /* prevent user from creating new instances */
-    VersionInfoType.tp_init = NULL;
-    VersionInfoType.tp_new = NULL;
-    res = PyDict_DelItemString(VersionInfoType.tp_dict, "__new__");
-    if (res < 0 && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-        _PyErr_Clear(tstate);
-    }
 
     /* implementation */
     SET_SYS("implementation", make_impl_info(version_info));
 
     // sys.flags: updated in-place later by _PySys_UpdateConfig()
     if (FlagsType.tp_name == 0) {
-        if (PyStructSequence_InitType2(&FlagsType, &flags_desc) < 0) {
+        if (_PyStructSequence_InitType(&FlagsType, &flags_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
             goto type_init_failed;
         }
     }
     SET_SYS("flags", make_flags(tstate->interp));
-    /* prevent user from creating new instances */
-    FlagsType.tp_init = NULL;
-    FlagsType.tp_new = NULL;
-    res = PyDict_DelItemString(FlagsType.tp_dict, "__new__");
-    if (res < 0) {
-        if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-            goto err_occurred;
-        }
-        _PyErr_Clear(tstate);
-    }
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
-    if (WindowsVersionType.tp_name == 0)
-        if (PyStructSequence_InitType2(&WindowsVersionType,
-                                       &windows_version_desc) < 0) {
+    if (WindowsVersionType.tp_name == 0) {
+        if (_PyStructSequence_InitType(&WindowsVersionType,
+                                       &windows_version_desc,
+                                       Py_TPFLAGS_DISALLOW_INSTANTIATION) < 0) {
             goto type_init_failed;
         }
-    /* prevent user from creating new instances */
-    WindowsVersionType.tp_init = NULL;
-    WindowsVersionType.tp_new = NULL;
-    assert(!_PyErr_Occurred(tstate));
-    res = PyDict_DelItemString(WindowsVersionType.tp_dict, "__new__");
-    if (res < 0 && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-        _PyErr_Clear(tstate);
     }
 #endif
 
@@ -3028,7 +3007,7 @@ err_occurred:
 /* Set up a preliminary stderr printer until we have enough
    infrastructure for the io module in place.
 
-   Use UTF-8/surrogateescape and ignore EAGAIN errors. */
+   Use UTF-8/backslashreplace and ignore EAGAIN errors. */
 static PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {

@@ -118,15 +118,6 @@ _setException(PyObject *exc)
 }
 /* LCOV_EXCL_STOP */
 
-/* {Py_tp_new, NULL} doesn't block __new__ */
-static PyObject *
-_disabled_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static PyObject*
 py_digest_name(const EVP_MD *md)
 {
@@ -590,7 +581,6 @@ static PyType_Slot EVPtype_slots[] = {
     {Py_tp_doc, (char *)hashtype_doc},
     {Py_tp_methods, EVP_methods},
     {Py_tp_getset, EVP_getseters},
-    {Py_tp_new, _disabled_new},
     {0, 0},
 };
 
@@ -598,7 +588,7 @@ static PyType_Spec EVPtype_spec = {
     "_hashlib.HASH",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     EVPtype_slots
 };
 
@@ -740,7 +730,6 @@ static PyType_Slot EVPXOFtype_slots[] = {
     {Py_tp_doc, (char *)hashxoftype_doc},
     {Py_tp_methods, EVPXOF_methods},
     {Py_tp_getset, EVPXOF_getseters},
-    {Py_tp_new, _disabled_new},
     {0, 0},
 };
 
@@ -748,7 +737,7 @@ static PyType_Spec EVPXOFtype_spec = {
     "_hashlib.HASHXOF",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     EVPXOFtype_slots
 };
 
@@ -1734,14 +1723,13 @@ static PyType_Slot HMACtype_slots[] = {
     {Py_tp_dealloc,(destructor)_hmac_dealloc},
     {Py_tp_methods, HMAC_methods},
     {Py_tp_getset, HMAC_getset},
-    {Py_tp_new, _disabled_new},
     {0, NULL}
 };
 
 PyType_Spec HMACtype_spec = {
     "_hashlib.HMAC",    /* name */
     sizeof(HMACobject),     /* basicsize */
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = HMACtype_slots,
 };
 

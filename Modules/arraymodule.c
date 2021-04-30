@@ -2848,7 +2848,8 @@ static PyType_Spec array_spec = {
     .name = "array.array",
     .basicsize = sizeof(arrayobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_SEQUENCE),
     .slots = array_slots,
 };
 

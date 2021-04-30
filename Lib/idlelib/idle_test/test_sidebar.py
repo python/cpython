@@ -7,11 +7,10 @@ import unittest
 import unittest.mock
 from test.support import requires, swap_attr
 import tkinter as tk
-from .tkinter_testing_utils import run_in_tk_mainloop
+from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from idlelib.delegator import Delegator
 from idlelib.editor import fixwordbreaks
-from idlelib import macosx
 from idlelib.percolator import Percolator
 import idlelib.pyshell
 from idlelib.pyshell import fix_x11_paste, PyShell, PyShellFileList
@@ -408,7 +407,7 @@ class ShellSidebarTest(unittest.TestCase):
         fix_x11_paste(root)
 
         cls.flist = flist = PyShellFileList(root)
-        macosx.setupApp(root, flist)
+        # See #43981 about macosx.setupApp(root, flist) causing failure.
         root.update_idletasks()
 
         cls.init_shell()
