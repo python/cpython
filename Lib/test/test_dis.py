@@ -1087,7 +1087,7 @@ expected_opinfo_jumpy = [
   Instruction(opname='CALL_FUNCTION', opcode=131, arg=1, argval=1, argrepr='', offset=154, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_TOP', opcode=1, arg=None, argval=None, argrepr='', offset=156, starts_line=None, is_jump_target=False),
   Instruction(opname='POP_BLOCK', opcode=87, arg=None, argval=None, argrepr='', offset=158, starts_line=None, is_jump_target=False),
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=160, starts_line=None, is_jump_target=False),
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=160, starts_line=25, is_jump_target=False),
   Instruction(opname='DUP_TOP', opcode=4, arg=None, argval=None, argrepr='', offset=162, starts_line=None, is_jump_target=False),
   Instruction(opname='DUP_TOP', opcode=4, arg=None, argval=None, argrepr='', offset=164, starts_line=None, is_jump_target=False),
   Instruction(opname='CALL_FUNCTION', opcode=131, arg=3, argval=3, argrepr='', offset=166, starts_line=None, is_jump_target=False),
