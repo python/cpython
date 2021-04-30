@@ -4765,6 +4765,22 @@ else
   AC_MSG_RESULT(no)
 fi
 
+case $ac_sys_system/$ac_sys_release in
+SunOS/*)
+  if test -f /etc/os-release; then
+    OS_NAME=$(awk -F= '/^NAME=/ {print substr($2,2,length($2)-2)}' /etc/os-release)
+    if test "x$OS_NAME" = "xOracle Solaris"; then
+      # bpo-43667: In Oracle Solaris, the internal form of wchar_t in
+      # non-Unicode locales is not Unicode and hence cannot be used directly.
+      # https://docs.oracle.com/cd/E37838_01/html/E61053/gmwke.html
+      AC_DEFINE(HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION, 1,
+      [Define if the internal form of wchar_t in non-Unicode locales
+       is not Unicode.])
+    fi
+  fi
+  ;;
+esac
+
 # check for endianness
 AC_C_BIGENDIAN
 
