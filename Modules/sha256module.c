@@ -544,14 +544,14 @@ static PyType_Slot sha256_types_slots[] = {
 static PyType_Spec sha224_type_spec = {
     .name = "_sha256.sha224",
     .basicsize = sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = sha256_types_slots
 };
 
 static PyType_Spec sha256_type_spec = {
     .name = "_sha256.sha256",
     .basicsize = sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = sha256_types_slots
 };
 
