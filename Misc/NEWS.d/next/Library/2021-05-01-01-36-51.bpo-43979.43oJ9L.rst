@@ -1,0 +1,2 @@
+Removed an unnecessary list comprehension before looping from
+:func:`urllib.parse.parse_qsl`.  Patch by Christoph Zwerschke and Dong-hee Na.
