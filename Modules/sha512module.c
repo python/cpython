@@ -602,7 +602,7 @@ static PyType_Slot sha512_sha384_type_slots[] = {
 static PyType_Spec sha512_sha384_type_spec = {
     .name = "_sha512.sha384",
     .basicsize =  sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = sha512_sha384_type_slots
 };
 
@@ -619,7 +619,7 @@ static PyType_Slot sha512_sha512_type_slots[] = {
 static PyType_Spec sha512_sha512_type_spec = {
     .name = "_sha512.sha512",
     .basicsize =  sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = sha512_sha512_type_slots
 };
 
