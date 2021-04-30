@@ -3951,7 +3951,7 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         PyErr_Format(
             PyExc_TypeError,
-            "cannot set '%R' attribute of immutable type '%s'",
+            "cannot set %R attribute of immutable type '%s'",
             name, type->tp_name);
         return -1;
     }
