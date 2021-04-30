@@ -488,7 +488,6 @@ These can be used as types in annotations and do not support ``[]``.
       def stop() -> NoReturn:
           raise RuntimeError('no way')
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
 .. data:: TypeAlias
@@ -1159,7 +1158,6 @@ Corresponding to types in :mod:`collections`
 
    A generic version of :class:`collections.ChainMap`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -1170,7 +1168,6 @@ Corresponding to types in :mod:`collections`
 
    A generic version of :class:`collections.Counter`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -1181,7 +1178,6 @@ Corresponding to types in :mod:`collections`
 
    A generic version of :class:`collections.deque`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -1517,7 +1513,6 @@ Context manager types
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
@@ -1528,7 +1523,6 @@ Context manager types
 
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9
