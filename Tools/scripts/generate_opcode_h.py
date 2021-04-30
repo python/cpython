@@ -18,6 +18,8 @@ extern "C" {
 footer = """
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
+#define IS_ARTIFICIAL(op) ((op) > 240)
+
 #ifdef __cplusplus
 }
 #endif

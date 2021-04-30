@@ -184,12 +184,6 @@ markblocks(PyCodeObject *code_obj, int len)
                     assert(blocks[j] == UNINITIALIZED || blocks[j] == block_stack);
                     blocks[j] = block_stack;
                     break;
-                case SETUP_FINALLY:
-                case SETUP_CLEANUP:
-                case SETUP_ASYNC_WITH:
-                case POP_BLOCK:
-                    assert(0);
-                    break;
                 case POP_EXCEPT:
                     block_stack = pop_block(pop_block(pop_block(block_stack)));
                     blocks[i+1] = block_stack;

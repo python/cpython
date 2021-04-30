@@ -72,7 +72,6 @@ extern "C" {
 #define IMPORT_STAR              84
 #define SETUP_ANNOTATIONS        85
 #define YIELD_VALUE              86
-#define POP_BLOCK                87
 #define POP_EXCEPT               89
 #define HAVE_ARGUMENT            90
 #define STORE_NAME               90
@@ -105,8 +104,6 @@ extern "C" {
 #define CONTAINS_OP             118
 #define RERAISE                 119
 #define JUMP_IF_NOT_EXC_MATCH   121
-#define SETUP_FINALLY           122
-#define SETUP_CLEANUP           123
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126
@@ -127,7 +124,6 @@ extern "C" {
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
 #define MATCH_CLASS             152
-#define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
 #define BUILD_STRING            157
@@ -142,8 +138,8 @@ static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
     0U,
     536870912U,
-    201342976U,
-    67108864U,
+    16384U,
+    0U,
     0U,
     0U,
     0U,
@@ -152,8 +148,8 @@ static uint32_t _PyOpcode_Jump[8] = {
     0U,
     0U,
     536870912U,
-    235913216U,
-    67108864U,
+    34586624U,
+    0U,
     0U,
     0U,
     0U,
@@ -161,6 +157,8 @@ static uint32_t _PyOpcode_Jump[8] = {
 #endif /* OPCODE_TABLES */
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
+
+#define IS_ARTIFICIAL(op) ((op) > 240)
 
 #ifdef __cplusplus
 }

@@ -1726,9 +1726,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         if (_Py_atomic_load_relaxed(eval_breaker)) {
             opcode = _Py_OPCODE(*next_instr);
-            if (opcode != SETUP_FINALLY &&
-                opcode != SETUP_CLEANUP &&
-                opcode != BEFORE_ASYNC_WITH &&
+            if (opcode != BEFORE_ASYNC_WITH &&
                 opcode != YIELD_FROM) {
                 /* Few cases where we skip running signal handlers and other
                    pending calls:
@@ -2676,11 +2674,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             Py_XDECREF(value);
             Py_XDECREF(traceback);
             goto exception_unwind;
-        }
-
-        case TARGET(POP_BLOCK): {
-            /* PyFrame_BlockPop(f); */
-            DISPATCH();
         }
 
         case TARGET(RERAISE): {
@@ -4021,19 +4014,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        case TARGET(SETUP_FINALLY): {
-            DISPATCH();
-        }
-
-        case TARGET(SETUP_CLEANUP): {
-            DISPATCH();
-        }
-
-        case TARGET(SETUP_ASYNC_WITH): {
-            PREDICTED(SETUP_ASYNC_WITH);
-            DISPATCH();
-        }
-
         case TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
@@ -4081,7 +4061,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 goto error;
             }
             PUSH(res);
-            PREDICT(SETUP_ASYNC_WITH);
             DISPATCH();
         }
 
@@ -4481,7 +4460,6 @@ exception_unwind:
             break;
         }
 
-        assert(from_table.b_type == SETUP_FINALLY || from_table.b_type == SETUP_CLEANUP);
         assert(STACK_LEVEL() >= from_table.b_level);
         while (STACK_LEVEL() > from_table.b_level) {
             PyObject *v = POP();
@@ -4489,7 +4467,7 @@ exception_unwind:
         }
         PyObject *exc, *val, *tb;
         int handler = from_table.b_handler;
-        if (from_table.b_type == SETUP_CLEANUP) {
+        if (from_table.b_type) {
             PyObject *lasti = PyLong_FromLong(f->f_lasti);
             if (lasti == NULL) {
                 goto exception_unwind;
@@ -4823,7 +4801,7 @@ parse_block(unsigned char *p, PyTryBlock *block) {
     p = parse_varint(p, &block->b_handler);
     p = parse_varint(p, &depth_and_lasti);
     block->b_level = depth_and_lasti >> 1;
-    block->b_type = (depth_and_lasti & 1) ? SETUP_CLEANUP : SETUP_FINALLY;
+    block->b_type = depth_and_lasti & 1;
 }
 
 #define MAX_LINEAR_SEARCH 40

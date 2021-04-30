@@ -128,7 +128,6 @@ def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
 def_op('YIELD_VALUE', 86)
-def_op('POP_BLOCK', 87)
 
 def_op('POP_EXCEPT', 89)
 
@@ -168,8 +167,6 @@ def_op('CONTAINS_OP', 118)
 def_op('RERAISE', 119)
 
 jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
-jrel_op('SETUP_FINALLY', 122)   # Distance to target address
-jrel_op('SETUP_CLEANUP', 123)   # Distance to target address
 
 def_op('LOAD_FAST', 124)        # Local variable number
 haslocal.append(124)
@@ -206,7 +203,6 @@ hasfree.append(148)
 
 def_op('MATCH_CLASS', 152)
 
-jrel_op('SETUP_ASYNC_WITH', 154)
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)

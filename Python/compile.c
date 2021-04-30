@@ -67,6 +67,14 @@
  */
 #define MAX_ALLOWED_STACK_USE (STACK_USE_GUIDELINE * 100)
 
+
+/* Pseudo-instructions used in the compiler,
+ * but turned into NOPs by the assembler. */
+#define SETUP_FINALLY 255
+#define SETUP_CLEANUP 254
+#define SETUP_WITH 253
+#define POP_BLOCK 252
+
 #define IS_TOP_LEVEL_AWAIT(c) ( \
         (c->c_flags->cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && (c->u->u_ste->ste_type == ModuleBlock))
@@ -114,7 +122,8 @@ is_relative_jump(struct instr *i)
 static inline int
 is_jump(struct instr *i)
 {
-    return is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
+
+    return i->i_opcode >= SETUP_WITH || is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
 typedef struct basicblock_ {
@@ -1166,7 +1175,7 @@ stack_effect(int opcode, int oparg, int jump)
         /* Iterators and generators */
         case GET_AWAITABLE:
             return 0;
-        case SETUP_ASYNC_WITH:
+        case SETUP_WITH:
             /* 0 in the normal flow.
              * Restore the stack position to the position before the result
              * of __aenter__ and push 7 values before jumping to the handler
@@ -1239,7 +1248,7 @@ compiler_addop_line(struct compiler *c, int opcode, int line)
     basicblock *b;
     struct instr *i;
     int off;
-    assert(!HAS_ARG(opcode));
+    assert(!HAS_ARG(opcode) || IS_ARTIFICIAL(opcode));
     off = compiler_next_instr(c->u->u_curblock);
     if (off < 0)
         return 0;
@@ -5040,9 +5049,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP(c, YIELD_FROM);
 
-    ADDOP_JUMP(c, SETUP_ASYNC_WITH, final);
+    ADDOP_JUMP(c, SETUP_WITH, final);
 
-    /* SETUP_ASYNC_WITH pushes a finally block. */
+    /* SETUP_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, ASYNC_WITH, block, final, s)) {
         return 0;
@@ -5138,9 +5147,9 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
     ADDOP(c, BEFORE_WITH);
-    ADDOP_JUMP(c, SETUP_ASYNC_WITH, final);
+    ADDOP_JUMP(c, SETUP_WITH, final);
 
-    /* SETUP_ASYNC_WITH pushes a finally block. */
+    /* SETUP_WITH pushes a finally block. */
     compiler_use_next_block(c, block);
     if (!compiler_push_fblock(c, WITH, block, final, s)) {
         return 0;
@@ -6532,7 +6541,7 @@ static int
 is_block_push(struct instr *instr)
 {
     int opcode = instr->i_opcode;
-    return opcode == SETUP_FINALLY || opcode == SETUP_ASYNC_WITH || opcode == SETUP_CLEANUP;
+    return opcode == SETUP_FINALLY || opcode == SETUP_WITH || opcode == SETUP_CLEANUP;
 }
 
 static basicblock *
@@ -6540,7 +6549,7 @@ push_except_block(ExceptStack *stack, struct instr *setup) {
     assert(is_block_push(setup));
     int opcode = setup->i_opcode;
     basicblock * target = setup->i_target;
-    if (opcode == SETUP_ASYNC_WITH || opcode == SETUP_CLEANUP) {
+    if (opcode == SETUP_WITH || opcode == SETUP_CLEANUP) {
         target->b_preserve_lasti = 1;
     }
     stack->handlers[++stack->depth] = target;
@@ -7775,7 +7784,7 @@ propogate_line_numbers(struct assembler *a) {
         if (is_jump(&b->b_instr[b->b_iused-1])) {
             switch (b->b_instr[b->b_iused-1].i_opcode) {
                 /* Note: Only actual jumps, not exception handlers */
-                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
                 case SETUP_FINALLY:
                 case SETUP_CLEANUP:
                     continue;
@@ -7882,7 +7891,7 @@ ensure_exits_have_lineno(struct compiler *c)
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             switch (b->b_instr[b->b_iused-1].i_opcode) {
                 /* Note: Only actual jumps, not exception handlers */
-                case SETUP_ASYNC_WITH:
+                case SETUP_WITH:
                 case SETUP_FINALLY:
                 case SETUP_CLEANUP:
                     continue;
