@@ -119,6 +119,13 @@ class ThreadTests(BaseTestCase):
             thread = threading.Thread(target=func)
             self.assertEqual(thread.name, "Thread-5 (func)")
 
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        lock = threading.Lock()
+        tp = type(lock)
+        self.assertRaises(TypeError, tp)
+
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
     def test_various_ops(self):
