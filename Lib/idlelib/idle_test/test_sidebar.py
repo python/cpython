@@ -705,6 +705,66 @@ class ShellSidebarTest(unittest.TestCase):
         yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
+    @run_in_tk_mainloop
+    def test_copy(self):
+        sidebar = self.shell.shell_sidebar
+        text = self.shell.text
+
+        first_line = get_end_linenumber(text)
+
+        self.do_input(dedent('''\
+            if True:
+            print(1)
+            
+            '''))
+        yield
+
+        text.tag_add('sel', f'{first_line}.0', 'end-1c')
+        selected_text = text.get('sel.first', 'sel.last')
+        self.assertIn('if True:\n', selected_text)
+        self.assertIn('\n1\n', selected_text)
+
+        sidebar.rmenu_copy_handler(event=None)
+        self.addCleanup(text.clipboard_clear)
+
+        copied_text = text.clipboard_get()
+        self.assertEqual(copied_text, selected_text)
+
+    @run_in_tk_mainloop
+    def test_copy_with_prompts(self):
+        sidebar = self.shell.shell_sidebar
+        text = self.shell.text
+
+        first_line = get_end_linenumber(text)
+        self.do_input(dedent('''\
+            if True:
+            print(1)
+
+            '''))
+        yield
+
+        text.tag_add('sel', f'{first_line}.3', 'end-1c')
+        selected_text = text.get('sel.first', 'sel.last')
+        self.assertTrue(selected_text.startswith('True:\n'))
+
+        selected_lines_text = text.get('sel.first linestart', 'sel.last')
+        selected_lines = selected_lines_text.split('\n')
+        # Expect a block of input, a single output line, and a new prompt
+        expected_prompts = \
+            ['>>>'] + ['...'] * (len(selected_lines) - 3) + [None, '>>>']
+        selected_text_with_prompts = '\n'.join(
+            line if prompt is None else prompt + ' ' + line
+            for prompt, line in zip(expected_prompts,
+                                    selected_lines,
+                                    strict=True)
+        ) + '\n'
+
+        sidebar.rmenu_copy_with_prompts_handler(event=None)
+        self.addCleanup(text.clipboard_clear)
+
+        copied_text = text.clipboard_get()
+        self.assertEqual(copied_text, selected_text_with_prompts)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
