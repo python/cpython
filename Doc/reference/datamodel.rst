@@ -1540,7 +1540,7 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    :meth:`__getattr__` is not called.  (This is an intentional asymmetry between
    :meth:`__getattr__` and :meth:`__setattr__`.) This is done both for efficiency
    reasons and because otherwise :meth:`__getattr__` would have no way to access
-   other attributes of the instance.  Note that at least for instance variables,
+   other attributes of the instance.  Note that at least for instance attributes,
    you can fake total control by not inserting any values in the instance attribute
    dictionary (but instead inserting them in another object).  See the
    :meth:`__getattribute__` method below for a way to actually get total control
@@ -1814,9 +1814,9 @@ Attribute lookup speed can be significantly improved as well.
 
 .. data:: object.__slots__
 
-   This class variable can be assigned a string, iterable, or sequence of
-   strings with variable names used by instances.  *__slots__* reserves space
-   for the declared variables and prevents the automatic creation of *__dict__*
+   This class attribute can be assigned an identifier string or a non-string iterable of
+   identifier strings with attribute names used by instances.  *__slots__* reserves space
+   for the declared attributes and prevents the automatic creation of *__dict__*
    and *__weakref__* for each instance.
 
 
@@ -1826,20 +1826,20 @@ Notes on using *__slots__*
 * When inheriting from a class without *__slots__*, the *__dict__* and
   *__weakref__* attribute of the instances will always be accessible.
 
-* Without a *__dict__* variable, instances cannot be assigned new variables not
-  listed in the *__slots__* definition.  Attempts to assign to an unlisted
-  variable name raises :exc:`AttributeError`. If dynamic assignment of new
-  variables is desired, then add ``'__dict__'`` to the sequence of strings in
+* Without a *__dict__* attribute, instances cannot be assigned new attributes not
+  listed in the *__slots__* declaration.  Attempts to assign to an unlisted
+  attribute name raises :exc:`AttributeError`. If dynamic assignment of new
+  attributes is desired, then add ``'__dict__'`` to the sequence of strings in
   the *__slots__* declaration.
 
-* Without a *__weakref__* variable for each instance, classes defining
+* Without a *__weakref__* attribute for each instance, classes defining
   *__slots__* do not support weak references to its instances. If weak reference
   support is needed, then add ``'__weakref__'`` to the sequence of strings in the
   *__slots__* declaration.
 
 * *__slots__* are implemented at the class level by creating descriptors
-  (:ref:`descriptors`) for each variable name.  As a result, class attributes
-  cannot be used to set default values for instance variables defined by
+  (:ref:`descriptors`) for each listed attribute name.  As a result, class attributes
+  cannot be used to set default values for instance attributes defined by
   *__slots__*; otherwise, the class attribute would overwrite the descriptor
   assignment.
 
@@ -1849,7 +1849,7 @@ Notes on using *__slots__*
   *__weakref__* unless they also define *__slots__* (which should only
   contain names of any *additional* slots).
 
-* If a class defines a slot also defined in a base class, the instance variable
+* If a class defines a slot also defined in a base class, the instance attribute
   defined by the base class slot is inaccessible (except by retrieving its
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
@@ -1857,9 +1857,9 @@ Notes on using *__slots__*
 * Nonempty *__slots__* does not work for classes derived from "variable-length"
   built-in types such as :class:`int`, :class:`bytes` and :class:`tuple`.
 
-* Any non-string iterable may be assigned to *__slots__*. Mappings may also be
-  used; however, in the future, special meaning may be assigned to the values
-  corresponding to each key.
+* Any non-string iterable of identifier strings may be assigned to *__slots__*.
+  In particular, mappings with identifier string keys may be used; however, in the future,
+  special meaning may be assigned to the values corresponding to the keys.
 
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
@@ -2030,7 +2030,7 @@ class definition occurs inside a function.
 
 However, even when the class definition occurs inside the function, methods
 defined inside the class still cannot see names defined at the class scope.
-Class variables must be accessed through the first parameter of instance or
+Class attributes must be accessed through the first parameter of instance or
 class methods, or through the implicit lexically scoped ``__class__`` reference
 described in the next section.
 
@@ -2570,7 +2570,7 @@ define a *__match_args__* attribute.
 
 .. data:: object.__match_args__
 
-   This class variable can be assigned a tuple of strings. When this class is
+   This class attribute can be assigned a tuple of strings. When this class is
    used in a class pattern with positional arguments, each positional argument will
    be converted into a keyword argument, using the corresponding value in
    *__match_args__* as the keyword. The absence of this attribute is equivalent to
