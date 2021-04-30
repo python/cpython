@@ -713,7 +713,7 @@ static PyGetSetDef gen_getsetlist[] = {
 static PyMemberDef gen_memberlist[] = {
     {"gi_frame",     T_OBJECT, offsetof(PyGenObject, gi_frame),    READONLY|READ_RESTRICTED},
     {"gi_running",   T_BOOL,   offsetof(PyGenObject, gi_running),  READONLY},
-    {"gi_code",      T_OBJECT, offsetof(PyGenObject, gi_code),     READONLY}|READ_RESTRICTED,
+    {"gi_code",      T_OBJECT, offsetof(PyGenObject, gi_code),     READONLY|READ_RESTRICTED},
     {NULL}      /* Sentinel */
 };
 
