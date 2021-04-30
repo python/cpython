@@ -901,8 +901,39 @@ class HashLibTestCase(unittest.TestCase):
         if fips_mode is not None:
             self.assertIsInstance(fips_mode, int)
 
+    def test_disallow_instanciation(self):
+        constructors = []
+        try:
+            import _md5
+            constructors.append(_md5.md5)
+        except ImportError:
+            pass
+        try:
+            import _sha1
+            constructors.append(_sha1.sha1)
+        except ImportError:
+            pass
+        try:
+            import _sha256
+            constructors.append(_sha256.sha224)
+            constructors.append(_sha256.sha256)
+        except ImportError:
+            pass
+        try:
+            import _sha512
+            constructors.append(_sha512.sha384)
+            constructors.append(_sha512.sha512)
+        except ImportError:
+            pass
+
+        for constructor in constructors:
+            h = constructor()
+            with self.subTest(constructor=constructor):
+                hash_type = type(h)
+                self.assertRaises(TypeError, hash_type)
+
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
-    def test_internal_types(self):
+    def test_hash_disallow_instanciation(self):
         # internal types like _hashlib.HASH are not constructable
         with self.assertRaisesRegex(
             TypeError, "cannot create '_hashlib.HASH' instance"
