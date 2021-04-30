@@ -2873,6 +2873,38 @@ class TestPatma(unittest.TestCase):
                 pass
         """)
 
+    @no_perf
+    def test_patma_285(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0j+0:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_286(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0j+0j:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_287(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0j+0: _}:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_288(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0j+0j: _}:
+                pass
+        """)
+
 
 class PerfPatma(TestPatma):
 
