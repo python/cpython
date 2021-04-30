@@ -5924,6 +5924,7 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP_I(c, MATCH_CLASS, nargs);
     // TOS is now a tuple of (nargs + nattrs) attributes. Preserve it:
     pc->on_top++;
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     for (i = 0; i < nargs + nattrs; i++) {
         pattern_ty pattern;
         if (i < nargs) {
