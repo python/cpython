@@ -45,19 +45,19 @@ Content-Type: text/html
 __UNDEF__ = []                          # a special sentinel object
 def small(text):
     if text:
-        return '<small>' + text + '</small>'
+        return f'<small>{text}</small>'
     else:
         return ''
 
 def strong(text):
     if text:
-        return '<strong>' + text + '</strong>'
+        return f'<strong>{text}</strong>'
     else:
         return ''
 
 def grey(text):
     if text:
-        return '<font color="#909090">' + text + '</font>'
+        return f'<font color="#909090">{text}</font>'
     else:
         return ''
 
