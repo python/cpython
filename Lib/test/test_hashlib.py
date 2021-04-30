@@ -905,11 +905,11 @@ class HashLibTestCase(unittest.TestCase):
     def test_internal_types(self):
         # internal types like _hashlib.HASH are not constructable
         with self.assertRaisesRegex(
-            TypeError, "cannot create 'HASH' instance"
+            TypeError, "cannot create '_hashlib.HASH' instance"
         ):
             HASH()
         with self.assertRaisesRegex(
-            TypeError, "cannot create 'HASHXOF' instance"
+            TypeError, "cannot create '_hashlib.HASHXOF' instance"
         ):
             HASHXOF()
 
