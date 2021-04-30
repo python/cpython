@@ -1678,7 +1678,8 @@ class GeneralModuleTests(unittest.TestCase):
         for mode in 'r', 'rb', 'rw', 'w', 'wb':
             with self.subTest(mode=mode):
                 with socket.socket() as sock:
-                    with sock.makefile(mode) as fp:
+                    encoding = None if "b" in mode else "utf-8"
+                    with sock.makefile(mode, encoding=encoding) as fp:
                         self.assertEqual(fp.mode, mode)
 
     def test_makefile_invalid_mode(self):
@@ -5625,7 +5626,7 @@ def isTipcAvailable():
     if not hasattr(socket, "AF_TIPC"):
         return False
     try:
-        f = open("/proc/modules")
+        f = open("/proc/modules", encoding="utf-8")
     except (FileNotFoundError, IsADirectoryError, PermissionError):
         # It's ok if the file does not exist, is a directory or if we
         # have not the permission to read it.
@@ -6222,7 +6223,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(
                     ValueError, "SOCK_STREAM", meth, file)
-        with open(os_helper.TESTFN, 'rt') as file:
+        with open(os_helper.TESTFN, encoding="utf-8") as file:
             with socket.socket() as s:
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(

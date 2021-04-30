@@ -39,7 +39,6 @@ Note that the end - start value is always positive.
 Finally, in order to fit into a single byte we need to convert start deltas to the range 0 <= delta <= 254,
 and line deltas to the range -127  <= delta <= 127.
 A line delta of -128 is used to indicate no line number.
-A start delta of 255 is used as a sentinel to mark the end of the table.
 Also note that a delta of zero indicates that there are no bytecodes in the given range,
 which means we can use an invalid line number for that range.
 
@@ -54,7 +53,6 @@ Final form:
     16              +1
     0               +127 (line 135, but the range is empty as no bytecodes are at line 135)
     4               +73
-    255 (end mark)  ---
 
 Iterating over the table.
 -------------------------
@@ -68,8 +66,6 @@ def co_lines(code):
     end = 0
     table_iter = iter(code.internal_line_table):
     for sdelta, ldelta in table_iter:
-        if sdelta == 255:
-            break
         if ldelta == 0: # No change to line number, just accumulate changes to end
             end += odelta
             continue

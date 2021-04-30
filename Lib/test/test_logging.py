@@ -1428,6 +1428,7 @@ class ConfigFileTest(BaseTest):
     class=FileHandler
     level=DEBUG
     args=("{tempfile}",)
+    kwargs={{"encoding": "utf-8"}}
     """
 
     disable_test = """
@@ -1453,7 +1454,7 @@ class ConfigFileTest(BaseTest):
 
     def apply_config(self, conf, **kwargs):
         file = io.StringIO(textwrap.dedent(conf))
-        logging.config.fileConfig(file, **kwargs)
+        logging.config.fileConfig(file, encoding="utf-8", **kwargs)
 
     def test_config0_ok(self):
         # A simple config file which overrides the default settings.
@@ -1659,6 +1660,7 @@ class ConfigFileTest(BaseTest):
             os.close(fd)
             logging.config.fileConfig(
                 fn,
+                encoding="utf-8",
                 defaults=dict(
                     version=1,
                     disable_existing_loggers=False,
@@ -3204,7 +3206,8 @@ class ConfigDictTest(BaseTest):
                 "handlers": {
                     "file": {
                         "class": "logging.FileHandler",
-                        "filename": fn
+                        "filename": fn,
+                        "encoding": "utf-8",
                     }
                 },
                 "root": {
@@ -5219,7 +5222,7 @@ class RotatingFileHandlerTest(BaseFileTest):
 
             def rotator(self, source, dest):
                 if os.path.exists(source):
-                    os.rename(source, dest + ".rotated")
+                    os.replace(source, dest + ".rotated")
 
         rh = HandlerWithNamerAndRotator(
             self.fn, encoding="utf-8", backupCount=2, maxBytes=1)
@@ -5279,8 +5282,8 @@ class RotatingFileHandlerTest(BaseFileTest):
 class TimedRotatingFileHandlerTest(BaseFileTest):
     # other test methods added below
     def test_rollover(self):
-        fh = logging.handlers.TimedRotatingFileHandler(self.fn, 'S',
-                                                       backupCount=1)
+        fh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, 'S', encoding="utf-8", backupCount=1)
         fmt = logging.Formatter('%(asctime)s %(message)s')
         fh.setFormatter(fmt)
         r1 = logging.makeLogRecord({'msg': 'testing - initial'})
@@ -5323,18 +5326,18 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'X', delay=True)
+                     self.fn, 'X', encoding="utf-8", delay=True)
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'W', delay=True)
+                     self.fn, 'W', encoding="utf-8", delay=True)
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
-                     self.fn, 'W7', delay=True)
+                     self.fn, 'W7', encoding="utf-8", delay=True)
 
     def test_compute_rollover_daily_attime(self):
         currentTime = 0
         atTime = datetime.time(12, 0, 0)
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, when='MIDNIGHT', interval=1, backupCount=0, utc=True,
-            atTime=atTime)
+            self.fn, encoding="utf-8", when='MIDNIGHT', interval=1, backupCount=0,
+            utc=True, atTime=atTime)
         try:
             actual = rh.computeRollover(currentTime)
             self.assertEqual(actual, currentTime + 12 * 60 * 60)
@@ -5354,8 +5357,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         wday = time.gmtime(today).tm_wday
         for day in range(7):
             rh = logging.handlers.TimedRotatingFileHandler(
-                self.fn, when='W%d' % day, interval=1, backupCount=0, utc=True,
-                atTime=atTime)
+                self.fn, encoding="utf-8", when='W%d' % day, interval=1, backupCount=0,
+                utc=True, atTime=atTime)
             try:
                 if wday > day:
                     # The rollover day has already passed this week, so we
@@ -5399,7 +5402,7 @@ for when, exp in (('S', 1),
                  ):
     def test_compute_rollover(self, when=when, exp=exp):
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, when=when, interval=1, backupCount=0, utc=True)
+            self.fn, encoding="utf-8", when=when, interval=1, backupCount=0, utc=True)
         currentTime = 0.0
         actual = rh.computeRollover(currentTime)
         if exp != actual:

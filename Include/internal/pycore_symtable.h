@@ -32,7 +32,6 @@ struct symtable {
                                        the symbol table */
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
-    int in_pattern;                 /* whether we are currently in a pattern */
 };
 
 typedef struct _symtable_entry {

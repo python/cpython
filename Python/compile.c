@@ -300,9 +300,9 @@ static int compiler_async_comprehension_generator(
                                       int depth,
                                       expr_ty elt, expr_ty val, int type);
 
-static int compiler_pattern(struct compiler *, expr_ty, pattern_context *);
+static int compiler_pattern(struct compiler *, pattern_ty, pattern_context *);
 static int compiler_match(struct compiler *, stmt_ty);
-static int compiler_pattern_subpattern(struct compiler *, expr_ty,
+static int compiler_pattern_subpattern(struct compiler *, pattern_ty,
                                        pattern_context *);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
@@ -5281,10 +5281,6 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_list(c, e);
     case Tuple_kind:
         return compiler_tuple(c, e);
-    case MatchAs_kind:
-    case MatchOr_kind:
-        // Can only occur in patterns, which are handled elsewhere.
-        Py_UNREACHABLE();
     }
     return 1;
 }
@@ -5374,6 +5370,12 @@ check_ann_expr(struct compiler *c, expr_ty e)
 static int
 check_annotation(struct compiler *c, stmt_ty s)
 {
+    /* Annotations of complex targets does not produce anything
+       under annotations future */
+    if (c->c_future->ff_features & CO_FUTURE_ANNOTATIONS) {
+        return 1;
+    }
+
     /* Annotations are only evaluated in a module or class. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE ||
         c->u->u_scope_type == COMPILER_SCOPE_CLASS) {
@@ -5618,8 +5620,14 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 
 #define WILDCARD_CHECK(N) \
-    ((N)->kind == Name_kind && \
-    _PyUnicode_EqualToASCIIString((N)->v.Name.id, "_"))
+    ((N)->kind == MatchAs_kind && !(N)->v.MatchAs.name)
+
+#define WILDCARD_STAR_CHECK(N) \
+    ((N)->kind == MatchStar_kind && !(N)->v.MatchStar.name)
+
+// Limit permitted subexpressions, even if the parser & AST validator let them through
+#define MATCH_VALUE_EXPR(N) \
+    ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
 
 
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
@@ -5695,7 +5703,13 @@ compiler_error_duplicate_store(struct compiler *c, identifier n)
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 {
-    assert(!_PyUnicode_EqualToASCIIString(n, "_"));
+    if (n == NULL) {
+        ADDOP(c, POP_TOP);
+        return 1;
+    }
+    if (forbidden_name(c, n, Store)) {
+        return 0;
+    }
     // Can't assign to the same name twice:
     int duplicate = PySequence_Contains(pc->stores, n);
     if (duplicate < 0) {
@@ -5714,23 +5728,47 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
 
 
 static int
-pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
+pattern_unpack_helper(struct compiler *c, asdl_pattern_seq *elts)
+{
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    int seen_star = 0;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        pattern_ty elt = asdl_seq_GET(elts, i);
+        if (elt->kind == MatchStar_kind && !seen_star) {
+            if ((i >= (1 << 8)) ||
+                (n-i-1 >= (INT_MAX >> 8)))
+                return compiler_error(c,
+                    "too many expressions in "
+                    "star-unpacking sequence pattern");
+            ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
+            seen_star = 1;
+        }
+        else if (elt->kind == MatchStar_kind) {
+            return compiler_error(c,
+                "multiple starred expressions in sequence pattern");
+        }
+    }
+    if (!seen_star) {
+        ADDOP_I(c, UNPACK_SEQUENCE, n);
+    }
+    return 1;
+}
+
+
+static int
+pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
                                Py_ssize_t star, pattern_context *pc)
 {
-    RETURN_IF_FALSE(unpack_helper(c, values));
-    Py_ssize_t size = asdl_seq_LEN(values);
+    RETURN_IF_FALSE(pattern_unpack_helper(c, patterns));
+    Py_ssize_t size = asdl_seq_LEN(patterns);
     // We've now got a bunch of new subjects on the stack. They need to remain
     // there after each subpattern match:
     pc->on_top += size;
     for (Py_ssize_t i = 0; i < size; i++) {
         // One less item to keep track of each time we loop through:
         pc->on_top--;
-        expr_ty value = asdl_seq_GET(values, i);
-        if (i == star) {
-            assert(value->kind == Starred_kind);
-            value = value->v.Starred.value;
-        }
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
+        pattern_ty pattern = asdl_seq_GET(patterns, i);
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
     return 1;
 }
@@ -5740,20 +5778,19 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_expr_seq *values,
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
 static int
-pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
+pattern_helper_sequence_subscr(struct compiler *c, asdl_pattern_seq *patterns,
                                Py_ssize_t star, pattern_context *pc)
 {
     // We need to keep the subject around for extracting elements:
     pc->on_top++;
-    Py_ssize_t size = asdl_seq_LEN(values);
+    Py_ssize_t size = asdl_seq_LEN(patterns);
     for (Py_ssize_t i = 0; i < size; i++) {
-        expr_ty value = asdl_seq_GET(values, i);
-        if (WILDCARD_CHECK(value)) {
+        pattern_ty pattern = asdl_seq_GET(patterns, i);
+        if (WILDCARD_CHECK(pattern)) {
             continue;
         }
         if (i == star) {
-            assert(value->kind == Starred_kind);
-            assert(WILDCARD_CHECK(value->v.Starred.value));
+            assert(WILDCARD_STAR_CHECK(pattern));
             continue;
         }
         ADDOP(c, DUP_TOP);
@@ -5768,7 +5805,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
             ADDOP(c, BINARY_SUBTRACT);
         }
         ADDOP(c, BINARY_SUBSCR);
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
     // Pop the subject, we're done with it:
     pc->on_top--;
@@ -5779,7 +5816,7 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_expr_seq *values,
 
 // Like compiler_pattern, but turn off checks for irrefutability.
 static int
-compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_subpattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     int allow_irrefutable = pc->allow_irrefutable;
     pc->allow_irrefutable = 1;
@@ -5790,9 +5827,21 @@ compiler_pattern_subpattern(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchAs_kind);
+    if (p->v.MatchAs.pattern == NULL) {
+        // An irrefutable match:
+        if (!pc->allow_irrefutable) {
+            if (p->v.MatchAs.name) {
+                const char *e = "name capture %R makes remaining patterns unreachable";
+                return compiler_error(c, e, p->v.MatchAs.name);
+            }
+            const char *e = "wildcard makes remaining patterns unreachable";
+            return compiler_error(c, e);
+        }
+        return pattern_helper_store_name(c, p->v.MatchAs.name, pc);
+    }
     // Need to make a copy for (possibly) storing later:
     pc->on_top++;
     ADDOP(c, DUP_TOP);
@@ -5805,65 +5854,94 @@ compiler_pattern_as(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_capture(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
-    assert(p->kind == Name_kind);
-    assert(p->v.Name.ctx == Store);
-    assert(!WILDCARD_CHECK(p));
-    if (!pc->allow_irrefutable) {
-        // Whoops, can't have a name capture here!
-        const char *e = "name capture %R makes remaining patterns unreachable";
-        return compiler_error(c, e, p->v.Name.id);
-    }
-    RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.Name.id, pc));
+    assert(p->kind == MatchStar_kind);
+    RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchStar.name, pc));
     return 1;
 }
 
 
 static int
-compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
+validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_seq* patterns)
 {
-    asdl_expr_seq *args = p->v.Call.args;
-    asdl_keyword_seq *kwargs = p->v.Call.keywords;
-    Py_ssize_t nargs = asdl_seq_LEN(args);
-    Py_ssize_t nkwargs = asdl_seq_LEN(kwargs);
-    if (INT_MAX < nargs || INT_MAX < nargs + nkwargs - 1) {
+    // Any errors will point to the pattern rather than the arg name as the
+    // parser is only supplying identifiers rather than Name or keyword nodes
+    Py_ssize_t nattrs = asdl_seq_LEN(attrs);
+    for (Py_ssize_t i = 0; i < nattrs; i++) {
+        identifier attr = ((identifier)asdl_seq_GET(attrs, i));
+        c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
+        if (forbidden_name(c, attr, Store)) {
+            return -1;
+        }
+        for (Py_ssize_t j = i + 1; j < nattrs; j++) {
+            identifier other = ((identifier)asdl_seq_GET(attrs, j));
+            if (!PyUnicode_Compare(attr, other)) {
+                c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, j))->col_offset;
+                compiler_error(c, "attribute name repeated in class pattern: %U", attr);
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+
+static int
+compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
+{
+    assert(p->kind == MatchClass_kind);
+    asdl_pattern_seq *patterns = p->v.MatchClass.patterns;
+    asdl_identifier_seq *kwd_attrs = p->v.MatchClass.kwd_attrs;
+    asdl_pattern_seq *kwd_patterns = p->v.MatchClass.kwd_patterns;
+    Py_ssize_t nargs = asdl_seq_LEN(patterns);
+    Py_ssize_t nattrs = asdl_seq_LEN(kwd_attrs);
+    Py_ssize_t nkwd_patterns = asdl_seq_LEN(kwd_patterns);
+    if (nattrs != nkwd_patterns) {
+        // AST validator shouldn't let this happen, but if it does,
+        // just fail, don't crash out of the interpreter
+        const char * e = "kwd_attrs (%d) / kwd_patterns (%d) length mismatch in class pattern";
+        return compiler_error(c, e, nattrs, nkwd_patterns);
+    }
+    if (INT_MAX < nargs || INT_MAX < nargs + nattrs - 1) {
         const char *e = "too many sub-patterns in class pattern %R";
-        return compiler_error(c, e, p->v.Call.func);
+        return compiler_error(c, e, p->v.MatchClass.cls);
     }
-    RETURN_IF_FALSE(!validate_keywords(c, kwargs));
-    VISIT(c, expr, p->v.Call.func);
-    PyObject *kwnames;
-    RETURN_IF_FALSE(kwnames = PyTuple_New(nkwargs));
+    if (nattrs) {
+        RETURN_IF_FALSE(!validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
+        c->u->u_col_offset = p->col_offset; // validate_kwd_attrs moves this
+    }
+    VISIT(c, expr, p->v.MatchClass.cls);
+    PyObject *attr_names;
+    RETURN_IF_FALSE(attr_names = PyTuple_New(nattrs));
     Py_ssize_t i;
-    for (i = 0; i < nkwargs; i++) {
-        PyObject *name = ((keyword_ty) asdl_seq_GET(kwargs, i))->arg;
+    for (i = 0; i < nattrs; i++) {
+        PyObject *name = asdl_seq_GET(kwd_attrs, i);
         Py_INCREF(name);
-        PyTuple_SET_ITEM(kwnames, i, name);
+        PyTuple_SET_ITEM(attr_names, i, name);
     }
-    ADDOP_LOAD_CONST_NEW(c, kwnames);
+    ADDOP_LOAD_CONST_NEW(c, attr_names);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    // TOS is now a tuple of (nargs + nkwargs) attributes. Preserve it:
+    // TOS is now a tuple of (nargs + nattrs) attributes. Preserve it:
     pc->on_top++;
-    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
-    for (i = 0; i < nargs + nkwargs; i++) {
-        expr_ty arg;
+    for (i = 0; i < nargs + nattrs; i++) {
+        pattern_ty pattern;
         if (i < nargs) {
             // Positional:
-            arg = asdl_seq_GET(args, i);
+            pattern = asdl_seq_GET(patterns, i);
         }
         else {
             // Keyword:
-            arg = ((keyword_ty) asdl_seq_GET(kwargs, i - nargs))->value;
+            pattern = asdl_seq_GET(kwd_patterns, i - nargs);
         }
-        if (WILDCARD_CHECK(arg)) {
+        if (WILDCARD_CHECK(pattern)) {
             continue;
         }
         // Get the i-th attribute, and match it against the i-th pattern:
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, arg, pc));
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
     // Success! Pop the tuple of attributes:
     pc->on_top--;
@@ -5873,85 +5951,82 @@ compiler_pattern_class(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_literal(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
-    assert(p->kind == Constant_kind);
-    PyObject *v = p->v.Constant.value;
-    ADDOP_LOAD_CONST(c, v);
-    // Literal True, False, and None are compared by identity. All others use
-    // equality:
-    ADDOP_COMPARE(c, (v == Py_None || PyBool_Check(v)) ? Is : Eq);
-    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
-    NEXT_BLOCK(c);
-    return 1;
-}
-
-
-static int
-compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
-{
-    asdl_expr_seq *keys = p->v.Dict.keys;
-    asdl_expr_seq *values = p->v.Dict.values;
-    Py_ssize_t size = asdl_seq_LEN(values);
-    // A starred pattern will be a keyless value. It is guaranteed to be last:
-    int star = size ? !asdl_seq_GET(keys, size - 1) : 0;
+    assert(p->kind == MatchMapping_kind);
+    asdl_expr_seq *keys = p->v.MatchMapping.keys;
+    asdl_pattern_seq *patterns = p->v.MatchMapping.patterns;
+    Py_ssize_t size = asdl_seq_LEN(keys);
+    Py_ssize_t npatterns = asdl_seq_LEN(patterns);
+    if (size != npatterns) {
+        // AST validator shouldn't let this happen, but if it does,
+        // just fail, don't crash out of the interpreter
+        const char * e = "keys (%d) / patterns (%d) length mismatch in mapping pattern";
+        return compiler_error(c, e, size, npatterns);
+    }
+    // We have a double-star target if "rest" is set
+    PyObject *star_target = p->v.MatchMapping.rest;
     // We need to keep the subject on top during the mapping and length checks:
     pc->on_top++;
     ADDOP(c, MATCH_MAPPING);
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
-    if (!size) {
+    if (!size && !star_target) {
         // If the pattern is just "{}", we're done! Pop the subject:
         pc->on_top--;
         ADDOP(c, POP_TOP);
         return 1;
     }
-    if (size - star) {
+    if (size) {
         // If the pattern has any keys in it, perform a length check:
         ADDOP(c, GET_LEN);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - star));
+        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, GtE);
         RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     }
-    if (INT_MAX < size - star - 1) {
+    if (INT_MAX < size - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
     // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
-    for (Py_ssize_t i = 0; i < size - star; i++) {
+    for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
-            const char *e = "can't use starred name here "
-                            "(consider moving to end)";
+            const char *e = "can't use NULL keys in MatchMapping "
+                            "(set 'rest' parameter instead)";
+            c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
+            return compiler_error(c, e);
+        }
+        if (!MATCH_VALUE_EXPR(key)) {
+            const char *e = "mapping pattern keys may only match literals and attribute lookups";
             return compiler_error(c, e);
         }
         VISIT(c, expr, key);
     }
-    ADDOP_I(c, BUILD_TUPLE, size - star);
+    ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
     // There's now a tuple of keys and a tuple of values on top of the subject:
     pc->on_top += 2;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
-    for (Py_ssize_t i = 0; i < size - star; i++) {
-        expr_ty value = asdl_seq_GET(values, i);
-        if (WILDCARD_CHECK(value)) {
+    for (Py_ssize_t i = 0; i < size; i++) {
+        pattern_ty pattern = asdl_seq_GET(patterns, i);
+        if (WILDCARD_CHECK(pattern)) {
             continue;
         }
         ADDOP(c, DUP_TOP);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
-        RETURN_IF_FALSE(compiler_pattern_subpattern(c, value, pc));
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
     // If we get this far, it's a match! We're done with the tuple of values,
     // and whatever happens next should consume the tuple of keys underneath it:
     pc->on_top -= 2;
     ADDOP(c, POP_TOP);
-    if (star) {
-        // If we had a starred name, bind a dict of remaining items to it:
+    if (star_target) {
+        // If we have a starred name, bind a dict of remaining items to it:
         ADDOP(c, COPY_DICT_WITHOUT_KEYS);
-        PyObject *id = asdl_seq_GET(values, size - 1)->v.Name.id;
-        RETURN_IF_FALSE(pattern_helper_store_name(c, id, pc));
+        RETURN_IF_FALSE(pattern_helper_store_name(c, star_target, pc));
     }
     else {
         // Otherwise, we don't care about this tuple of keys anymore:
@@ -5965,7 +6040,7 @@ compiler_pattern_mapping(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
     basicblock *end;
@@ -5981,7 +6056,7 @@ compiler_pattern_or(struct compiler *c, expr_ty p, pattern_context *pc)
     PyObject *control = NULL;
     // NOTE: We can't use returning macros anymore! goto error on error.
     for (Py_ssize_t i = 0; i < size; i++) {
-        expr_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
+        pattern_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
         SET_LOC(c, alt);
         PyObject *pc_stores = PyList_New(0);
         if (pc_stores == NULL) {
@@ -6108,28 +6183,28 @@ error:
 
 
 static int
-compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_sequence(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
-    assert(p->kind == List_kind || p->kind == Tuple_kind);
-    asdl_expr_seq *values = (p->kind == Tuple_kind) ? p->v.Tuple.elts
-                                                    : p->v.List.elts;
-    Py_ssize_t size = asdl_seq_LEN(values);
+    assert(p->kind == MatchSequence_kind);
+    asdl_pattern_seq *patterns = p->v.MatchSequence.patterns;
+    Py_ssize_t size = asdl_seq_LEN(patterns);
     Py_ssize_t star = -1;
     int only_wildcard = 1;
     int star_wildcard = 0;
     // Find a starred name, if it exists. There may be at most one:
     for (Py_ssize_t i = 0; i < size; i++) {
-        expr_ty value = asdl_seq_GET(values, i);
-        if (value->kind == Starred_kind) {
-            value = value->v.Starred.value;
+        pattern_ty pattern = asdl_seq_GET(patterns, i);
+        if (pattern->kind == MatchStar_kind) {
             if (star >= 0) {
                 const char *e = "multiple starred names in sequence pattern";
                 return compiler_error(c, e);
             }
-            star_wildcard = WILDCARD_CHECK(value);
+            star_wildcard = WILDCARD_STAR_CHECK(pattern);
+            only_wildcard &= star_wildcard;
             star = i;
+            continue;
         }
-        only_wildcard &= WILDCARD_CHECK(value);
+        only_wildcard &= WILDCARD_CHECK(pattern);
     }
     // We need to keep the subject on top during the sequence and length checks:
     pc->on_top++;
@@ -6156,21 +6231,25 @@ compiler_pattern_sequence(struct compiler *c, expr_ty p, pattern_context *pc)
         ADDOP(c, POP_TOP);
     }
     else if (star_wildcard) {
-        RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, values, star, pc));
+        RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, patterns, star, pc));
     }
     else {
-        RETURN_IF_FALSE(pattern_helper_sequence_unpack(c, values, star, pc));
+        RETURN_IF_FALSE(pattern_helper_sequence_unpack(c, patterns, star, pc));
     }
     return 1;
 }
 
 
 static int
-compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
-    assert(p->kind == Attribute_kind);
-    assert(p->v.Attribute.ctx == Load);
-    VISIT(c, expr, p);
+    assert(p->kind == MatchValue_kind);
+    expr_ty value = p->v.MatchValue.value;
+    if (!MATCH_VALUE_EXPR(value)) {
+        const char *e = "patterns may only match literals and attribute lookups";
+        return compiler_error(c, e);
+    }
+    VISIT(c, expr, value);
     ADDOP_COMPARE(c, Eq);
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     return 1;
@@ -6178,55 +6257,42 @@ compiler_pattern_value(struct compiler *c, expr_ty p, pattern_context *pc)
 
 
 static int
-compiler_pattern_wildcard(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
-    assert(p->kind == Name_kind);
-    assert(p->v.Name.ctx == Store);
-    assert(WILDCARD_CHECK(p));
-    if (!pc->allow_irrefutable) {
-        // Whoops, can't have a wildcard here!
-        const char *e = "wildcard makes remaining patterns unreachable";
-        return compiler_error(c, e);
-    }
-    ADDOP(c, POP_TOP);
+    assert(p->kind == MatchSingleton_kind);
+    ADDOP_LOAD_CONST(c, p->v.MatchSingleton.value);
+    ADDOP_COMPARE(c, Is);
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     return 1;
 }
 
 
 static int
-compiler_pattern(struct compiler *c, expr_ty p, pattern_context *pc)
+compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     SET_LOC(c, p);
     switch (p->kind) {
-        case Attribute_kind:
+        case MatchValue_kind:
             return compiler_pattern_value(c, p, pc);
-        case BinOp_kind:
-            // Because we allow "2+2j", things like "2+2" make it this far:
-            return compiler_error(c, "patterns cannot include operators");
-        case Call_kind:
-            return compiler_pattern_class(c, p, pc);
-        case Constant_kind:
-            return compiler_pattern_literal(c, p, pc);
-        case Dict_kind:
-            return compiler_pattern_mapping(c, p, pc);
-        case JoinedStr_kind:
-            // Because we allow strings, f-strings make it this far:
-            return compiler_error(c, "patterns cannot include f-strings");
-        case List_kind:
-        case Tuple_kind:
+        case MatchSingleton_kind:
+            return compiler_pattern_singleton(c, p, pc);
+        case MatchSequence_kind:
             return compiler_pattern_sequence(c, p, pc);
+        case MatchMapping_kind:
+            return compiler_pattern_mapping(c, p, pc);
+        case MatchClass_kind:
+            return compiler_pattern_class(c, p, pc);
+        case MatchStar_kind:
+            return compiler_pattern_star(c, p, pc);
         case MatchAs_kind:
             return compiler_pattern_as(c, p, pc);
         case MatchOr_kind:
             return compiler_pattern_or(c, p, pc);
-        case Name_kind:
-            if (WILDCARD_CHECK(p)) {
-                return compiler_pattern_wildcard(c, p, pc);
-            }
-            return compiler_pattern_capture(c, p, pc);
-        default:
-            Py_UNREACHABLE();
     }
+    // AST validator shouldn't let this happen, but if it does,
+    // just fail, don't crash out of the interpreter
+    const char *e = "invalid match pattern node in AST (kind=%d)";
+    return compiler_error(c, e, p->kind);
 }
 
 
@@ -6237,7 +6303,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
-    assert(cases);
+    assert(cases > 0);
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
@@ -6314,7 +6380,7 @@ compiler_match(struct compiler *c, stmt_ty s)
 
 
 #undef WILDCARD_CHECK
-
+#undef WILDCARD_STAR_CHECK
 
 /* End of the compiler section, beginning of the assembler section */
 
@@ -6968,10 +7034,6 @@ assemble(struct compiler *c, int addNone)
     }
     if (!assemble_line_range(&a)) {
         return 0;
-    }
-    /* Emit sentinel at end of line number table */
-    if (!assemble_emit_linetable_pair(&a, 255, -128)) {
-        goto error;
     }
 
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0) {

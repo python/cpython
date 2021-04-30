@@ -7,15 +7,17 @@ import email
 import pathlib
 import zipfile
 import operator
+import textwrap
 import warnings
 import functools
 import itertools
 import posixpath
 import collections
 
+from ._collections import FreezableDefaultDict, Pair
+from ._functools import method_cache
 from ._itertools import unique_everseen
 
-from configparser import ConfigParser
 from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
@@ -49,6 +51,71 @@ class PackageNotFoundError(ModuleNotFoundError):
     def name(self):
         (name,) = self.args
         return name
+
+
+class Sectioned:
+    """
+    A simple entry point config parser for performance
+
+    >>> for item in Sectioned.read(Sectioned._sample):
+    ...     print(item)
+    Pair(name='sec1', value='# comments ignored')
+    Pair(name='sec1', value='a = 1')
+    Pair(name='sec1', value='b = 2')
+    Pair(name='sec2', value='a = 2')
+
+    >>> res = Sectioned.section_pairs(Sectioned._sample)
+    >>> item = next(res)
+    >>> item.name
+    'sec1'
+    >>> item.value
+    Pair(name='a', value='1')
+    >>> item = next(res)
+    >>> item.value
+    Pair(name='b', value='2')
+    >>> item = next(res)
+    >>> item.name
+    'sec2'
+    >>> item.value
+    Pair(name='a', value='2')
+    >>> list(res)
+    []
+    """
+
+    _sample = textwrap.dedent(
+        """
+        [sec1]
+        # comments ignored
+        a = 1
+        b = 2
+
+        [sec2]
+        a = 2
+        """
+    ).lstrip()
+
+    @classmethod
+    def section_pairs(cls, text):
+        return (
+            section._replace(value=Pair.parse(section.value))
+            for section in cls.read(text, filter_=cls.valid)
+            if section.name is not None
+        )
+
+    @staticmethod
+    def read(text, filter_=None):
+        lines = filter(filter_, map(str.strip, text.splitlines()))
+        name = None
+        for value in lines:
+            section_match = value.startswith('[') and value.endswith(']')
+            if section_match:
+                name = value.strip('[]')
+                continue
+            yield Pair(name, value)
+
+    @staticmethod
+    def valid(line):
+        return line and not line.startswith('#')
 
 
 class EntryPoint(
@@ -107,22 +174,6 @@ class EntryPoint(
     def extras(self):
         match = self.pattern.match(self.value)
         return list(re.finditer(r'\w+', match.group('extras') or ''))
-
-    @classmethod
-    def _from_config(cls, config):
-        return (
-            cls(name, value, group)
-            for group in config.sections()
-            for name, value in config.items(group)
-        )
-
-    @classmethod
-    def _from_text(cls, text):
-        config = ConfigParser(delimiters='=')
-        # case sensitive: https://stackoverflow.com/q/1611799/812183
-        config.optionxform = str
-        config.read_string(text)
-        return cls._from_config(config)
 
     def _for(self, dist):
         self.dist = dist
@@ -193,7 +244,18 @@ class EntryPoints(tuple):
 
     @classmethod
     def _from_text_for(cls, text, dist):
-        return cls(ep._for(dist) for ep in EntryPoint._from_text(text))
+        return cls(ep._for(dist) for ep in cls._from_text(text))
+
+    @classmethod
+    def _from_text(cls, text):
+        return itertools.starmap(EntryPoint, cls._parse_groups(text or ''))
+
+    @staticmethod
+    def _parse_groups(text):
+        return (
+            (item.value.name, item.value.value, item.name)
+            for item in Sectioned.section_pairs(text)
+        )
 
 
 def flake8_bypass(func):
@@ -259,7 +321,7 @@ class Deprecated:
         return super().values()
 
 
-class SelectableGroups(dict):
+class SelectableGroups(Deprecated, dict):
     """
     A backward- and forward-compatible result from
     entry_points that fully implements the dict interface.
@@ -277,7 +339,8 @@ class SelectableGroups(dict):
         """
         Reconstruct a list of all entrypoints from the groups.
         """
-        return EntryPoints(itertools.chain.from_iterable(self.values()))
+        groups = super(Deprecated, self).values()
+        return EntryPoints(itertools.chain.from_iterable(groups))
 
     @property
     def groups(self):
@@ -507,24 +570,7 @@ class Distribution:
 
     @classmethod
     def _deps_from_requires_text(cls, source):
-        section_pairs = cls._read_sections(source.splitlines())
-        sections = {
-            section: list(map(operator.itemgetter('line'), results))
-            for section, results in itertools.groupby(
-                section_pairs, operator.itemgetter('section')
-            )
-        }
-        return cls._convert_egg_info_reqs_to_simple_reqs(sections)
-
-    @staticmethod
-    def _read_sections(lines):
-        section = None
-        for line in filter(None, lines):
-            section_match = re.match(r'\[(.*)\]$', line)
-            if section_match:
-                section = section_match.group(1)
-                continue
-            yield locals()
+        return cls._convert_egg_info_reqs_to_simple_reqs(Sectioned.read(source))
 
     @staticmethod
     def _convert_egg_info_reqs_to_simple_reqs(sections):
@@ -549,9 +595,8 @@ class Distribution:
             conditions = list(filter(None, [markers, make_condition(extra)]))
             return '; ' + ' and '.join(conditions) if conditions else ''
 
-        for section, deps in sections.items():
-            for dep in deps:
-                yield dep + parse_condition(section)
+        for section in sections:
+            yield section.value + parse_condition(section.name)
 
 
 class DistributionFinder(MetaPathFinder):
@@ -607,6 +652,10 @@ class FastPath:
     children.
     """
 
+    @functools.lru_cache()  # type: ignore
+    def __new__(cls, root):
+        return super().__new__(cls)
+
     def __init__(self, root):
         self.root = root
         self.base = os.path.basename(self.root).lower()
@@ -629,11 +678,53 @@ class FastPath:
         return dict.fromkeys(child.split(posixpath.sep, 1)[0] for child in names)
 
     def search(self, name):
-        return (
-            self.joinpath(child)
-            for child in self.children()
-            if name.matches(child, self.base)
+        return self.lookup(self.mtime).search(name)
+
+    @property
+    def mtime(self):
+        with suppress(OSError):
+            return os.stat(self.root).st_mtime
+        self.lookup.cache_clear()
+
+    @method_cache
+    def lookup(self, mtime):
+        return Lookup(self)
+
+
+class Lookup:
+    def __init__(self, path: FastPath):
+        base = os.path.basename(path.root).lower()
+        base_is_egg = base.endswith(".egg")
+        self.infos = FreezableDefaultDict(list)
+        self.eggs = FreezableDefaultDict(list)
+
+        for child in path.children():
+            low = child.lower()
+            if low.endswith((".dist-info", ".egg-info")):
+                # rpartition is faster than splitext and suitable for this purpose.
+                name = low.rpartition(".")[0].partition("-")[0]
+                normalized = Prepared.normalize(name)
+                self.infos[normalized].append(path.joinpath(child))
+            elif base_is_egg and low == "egg-info":
+                name = base.rpartition(".")[0].partition("-")[0]
+                legacy_normalized = Prepared.legacy_normalize(name)
+                self.eggs[legacy_normalized].append(path.joinpath(child))
+
+        self.infos.freeze()
+        self.eggs.freeze()
+
+    def search(self, prepared):
+        infos = (
+            self.infos[prepared.normalized]
+            if prepared
+            else itertools.chain.from_iterable(self.infos.values())
         )
+        eggs = (
+            self.eggs[prepared.legacy_normalized]
+            if prepared
+            else itertools.chain.from_iterable(self.eggs.values())
+        )
+        return itertools.chain(infos, eggs)
 
 
 class Prepared:
@@ -642,22 +733,14 @@ class Prepared:
     """
 
     normalized = None
-    suffixes = 'dist-info', 'egg-info'
-    exact_matches = [''][:0]
-    egg_prefix = ''
-    versionless_egg_name = ''
+    legacy_normalized = None
 
     def __init__(self, name):
         self.name = name
         if name is None:
             return
         self.normalized = self.normalize(name)
-        self.exact_matches = [
-            self.normalized + '.' + suffix for suffix in self.suffixes
-        ]
-        legacy_normalized = self.legacy_normalize(self.name)
-        self.egg_prefix = legacy_normalized + '-'
-        self.versionless_egg_name = legacy_normalized + '.egg'
+        self.legacy_normalized = self.legacy_normalize(name)
 
     @staticmethod
     def normalize(name):
@@ -674,26 +757,8 @@ class Prepared:
         """
         return name.lower().replace('-', '_')
 
-    def matches(self, cand, base):
-        low = cand.lower()
-        # rpartition is faster than splitext and suitable for this purpose.
-        pre, _, ext = low.rpartition('.')
-        name, _, rest = pre.partition('-')
-        return (
-            low in self.exact_matches
-            or ext in self.suffixes
-            and (not self.normalized or name.replace('.', '_') == self.normalized)
-            # legacy case:
-            or self.is_egg(base)
-            and low == 'egg-info'
-        )
-
-    def is_egg(self, base):
-        return (
-            base == self.versionless_egg_name
-            or base.startswith(self.egg_prefix)
-            and base.endswith('.egg')
-        )
+    def __bool__(self):
+        return bool(self.name)
 
 
 class MetadataPathFinder(DistributionFinder):
@@ -717,6 +782,9 @@ class MetadataPathFinder(DistributionFinder):
         return itertools.chain.from_iterable(
             path.search(prepared) for path in map(FastPath, paths)
         )
+
+    def invalidate_caches(cls):
+        FastPath.__new__.cache_clear()
 
 
 class PathDistribution(Distribution):

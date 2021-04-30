@@ -3875,7 +3875,7 @@ static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
     int res;
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         PyErr_Format(
             PyExc_TypeError,
             "can't set attributes of built-in/extension type '%s'",
@@ -6228,6 +6228,11 @@ PyType_Ready(PyTypeObject *type)
                      (type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
     type->tp_flags |= Py_TPFLAGS_READYING;
+
+    /* Historically, all static types were immutable. See bpo-43908 */
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+    }
 
     if (type_ready(type) < 0) {
         type->tp_flags &= ~Py_TPFLAGS_READYING;

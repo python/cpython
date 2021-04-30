@@ -2857,7 +2857,56 @@ class TestPatma(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+    @no_perf
     def test_patma_283(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0+0: _}:
+                pass
+        """)
+
+
+    @no_perf
+    def test_patma_284(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {f"": _}:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_285(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0j+0:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_286(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0j+0j:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_287(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0j+0: _}:
+                pass
+        """)
+
+    @no_perf
+    def test_patma_288(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0j+0j: _}:
+                pass
+        """)
+
+    def test_patma_289(self):
         x = {"y": 1}
         match x:
             case {"y": (0 as y) | (1 as y)}:
@@ -2867,7 +2916,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(z, 0)
 
     @no_perf
-    def test_patma_284(self):
+    def test_patma_290(self):
         self.assert_syntax_error("""
         match ...:
             case [a, [b] | [c] | [d]]:
@@ -2875,14 +2924,14 @@ class TestPatma(unittest.TestCase):
         """)
 
     @no_perf
-    def test_patma_285(self):
+    def test_patma_291(self):
         # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
         # just the code under test. This test ensures that if there are leaks in
         # the pattern compiler, those runs will fail:
         with open(__file__) as file:
             compile(file.read(), __file__, "exec")
 
-    def test_patma_286(self):
+    def test_patma_292(self):
         def f(x):
             match x:
                 case ((a, b, c, d, e, f, g, h, i, 9) |
@@ -2906,7 +2955,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(range(-1, -11, -1)), alts[3])
         self.assertEqual(f(range(10, 20)), alts[4])
 
-    def test_patma_287(self):
+    def test_patma_293(self):
         def f(x):
             match x:
                 case [y, (a, b, c, d, e, f, g, h, i, 9) |

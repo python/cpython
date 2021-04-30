@@ -102,7 +102,10 @@ calculate_suggestions(PyObject *dir,
         if (current_distance == -1) {
             return NULL;
         }
-        if (current_distance == 0 || current_distance > MAX_DISTANCE) {
+        if (current_distance == 0 ||
+            current_distance > MAX_DISTANCE ||
+            current_distance * 2 > name_size)
+        {
             continue;
         }
         if (!suggestion || current_distance < suggestion_distance) {

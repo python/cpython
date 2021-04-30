@@ -798,6 +798,9 @@ class _Unparser(NodeVisitor):
         else:
             super().visit(node)
 
+    # Note: as visit() resets the output text, do NOT rely on
+    # NodeVisitor.generic_visit to handle any nodes (as it calls back in to
+    # the subclass visit() method, which resets self._source to an empty list)
     def visit(self, node):
         """Outputs a source code string that, if converted back to an ast
         (using ast.parse) will generate an AST equivalent to *node*"""
@@ -1587,11 +1590,79 @@ class _Unparser(NodeVisitor):
         with self.block():
             self.traverse(node.body)
 
+    def visit_MatchValue(self, node):
+        self.traverse(node.value)
+
+    def visit_MatchSingleton(self, node):
+        self._write_constant(node.value)
+
+    def visit_MatchSequence(self, node):
+        with self.delimit("[", "]"):
+            self.interleave(
+                lambda: self.write(", "), self.traverse, node.patterns
+            )
+
+    def visit_MatchStar(self, node):
+        name = node.name
+        if name is None:
+            name = "_"
+        self.write(f"*{name}")
+
+    def visit_MatchMapping(self, node):
+        def write_key_pattern_pair(pair):
+            k, p = pair
+            self.traverse(k)
+            self.write(": ")
+            self.traverse(p)
+
+        with self.delimit("{", "}"):
+            keys = node.keys
+            self.interleave(
+                lambda: self.write(", "),
+                write_key_pattern_pair,
+                zip(keys, node.patterns, strict=True),
+            )
+            rest = node.rest
+            if rest is not None:
+                if keys:
+                    self.write(", ")
+                self.write(f"**{rest}")
+
+    def visit_MatchClass(self, node):
+        self.set_precedence(_Precedence.ATOM, node.cls)
+        self.traverse(node.cls)
+        with self.delimit("(", ")"):
+            patterns = node.patterns
+            self.interleave(
+                lambda: self.write(", "), self.traverse, patterns
+            )
+            attrs = node.kwd_attrs
+            if attrs:
+                def write_attr_pattern(pair):
+                    attr, pattern = pair
+                    self.write(f"{attr}=")
+                    self.traverse(pattern)
+
+                if patterns:
+                    self.write(", ")
+                self.interleave(
+                    lambda: self.write(", "),
+                    write_attr_pattern,
+                    zip(attrs, node.kwd_patterns, strict=True),
+                )
+
     def visit_MatchAs(self, node):
-        with self.require_parens(_Precedence.TEST, node):
-            self.set_precedence(_Precedence.BOR, node.pattern)
-            self.traverse(node.pattern)
-            self.write(f" as {node.name}")
+        name = node.name
+        pattern = node.pattern
+        if name is None:
+            self.write("_")
+        elif pattern is None:
+            self.write(node.name)
+        else:
+            with self.require_parens(_Precedence.TEST, node):
+                self.set_precedence(_Precedence.BOR, node.pattern)
+                self.traverse(node.pattern)
+                self.write(f" as {node.name}")
 
     def visit_MatchOr(self, node):
         with self.require_parens(_Precedence.BOR, node):

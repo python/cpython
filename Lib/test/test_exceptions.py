@@ -1507,6 +1507,61 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertNotIn("somethingverywronghehe", err.getvalue())
 
+    def test_name_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        vvv = mom = w = id = pytho = None
+
+        with self.subTest(name="b"):
+            try:
+                b
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="v"):
+            try:
+                v
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="m"):
+            try:
+                m
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="py"):
+            try:
+                py
+            except NameError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
     def test_name_error_suggestions_do_not_trigger_for_too_many_locals(self):
         def f():
             # Mutating locals() is unreliable, so we need to do it by hand
@@ -1660,6 +1715,63 @@ class AttributeErrorTests(unittest.TestCase):
                 sys.__excepthook__(*sys.exc_info())
 
         self.assertNotIn("blech", err.getvalue())
+
+    def test_getattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        class MyClass:
+            vvv = mom = w = id = pytho = None
+
+        with self.subTest(name="b"):
+            try:
+                MyClass.b
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="v"):
+            try:
+                MyClass.v
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="m"):
+            try:
+                MyClass.m
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
+        with self.subTest(name="py"):
+            try:
+                MyClass.py
+            except AttributeError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+            self.assertNotIn("you mean", err.getvalue())
+            self.assertNotIn("vvv", err.getvalue())
+            self.assertNotIn("mom", err.getvalue())
+            self.assertNotIn("'id'", err.getvalue())
+            self.assertNotIn("'w'", err.getvalue())
+            self.assertNotIn("'pytho'", err.getvalue())
+
 
     def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
         class A:
@@ -1969,7 +2081,10 @@ class PEP626Tests(unittest.TestCase):
             while t.tb_next:
                 t = t.tb_next
             frame = t.tb_frame
-            self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+            if line is None:
+                self.assertEqual(frame.f_lineno, line)
+            else:
+                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
 
     def test_lineno_after_raise_simple(self):
         def simple():
@@ -2041,6 +2156,12 @@ class PEP626Tests(unittest.TestCase):
                 pass
         self.lineno_after_raise(after_with, 2)
 
+    def test_missing_lineno_shows_as_none(self):
+        def f():
+            1/0
+        self.lineno_after_raise(f, 1)
+        f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
+        self.lineno_after_raise(f, None)
 
 if __name__ == '__main__':
     unittest.main()

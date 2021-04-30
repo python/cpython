@@ -26,6 +26,7 @@ from typing import Pattern, Match
 from typing import Annotated, ForwardRef
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
+from typing import TypeGuard
 import abc
 import typing
 import weakref
@@ -3016,10 +3017,10 @@ class GetTypeHintTests(BaseTestCase):
             {'other': MySet[T], 'return': MySet[T]}
         )
 
-    def test_get_type_hints_classes(self):
+    def test_get_type_hints_classes_str_annotations(self):
         class Foo:
             y = str
-            x: y
+            x: 'y'
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
 
@@ -4375,6 +4376,45 @@ class ConcatenateTests(BaseTestCase):
         C4 = collections.abc.Callable[Concatenate[int, T, P], T]
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
+
+
+class TypeGuardTests(BaseTestCase):
+    def test_basics(self):
+        TypeGuard[int]  # OK
+
+        def foo(arg) -> TypeGuard[int]: ...
+        self.assertEqual(gth(foo), {'return': TypeGuard[int]})
+
+    def test_repr(self):
+        self.assertEqual(repr(TypeGuard), 'typing.TypeGuard')
+        cv = TypeGuard[int]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[int]')
+        cv = TypeGuard[Employee]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[%s.Employee]' % __name__)
+        cv = TypeGuard[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[tuple[int]]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(TypeGuard)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(TypeGuard[int])):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            TypeGuard()
+        with self.assertRaises(TypeError):
+            type(TypeGuard)()
+        with self.assertRaises(TypeError):
+            type(TypeGuard[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, TypeGuard[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, TypeGuard)
 
 
 class AllTests(BaseTestCase):

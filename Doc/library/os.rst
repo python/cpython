@@ -2027,7 +2027,7 @@ features:
       Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` for *src* and *dst*.
+      Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       On Windows, now opens reparse points that represent another path
@@ -2247,6 +2247,7 @@ features:
 
    Remove (delete) the file *path*.  If *path* is a directory, an
    :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
