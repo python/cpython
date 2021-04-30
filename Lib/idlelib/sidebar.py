@@ -404,6 +404,9 @@ class WrappedLineHeightChangeDelegator(Delegator):
 class ShellSidebar(BaseSideBar):
     """Sidebar for the PyShell window, for prompts etc."""
     def __init__(self, editwin):
+        self.canvas = None
+        self.line_prompts = {}
+
         super().__init__(editwin)
 
         change_delegator = \
@@ -443,15 +446,22 @@ class ShellSidebar(BaseSideBar):
         rmenu.tk_popup(event.x_root, event.y_root)
         return "break"
 
-    def rmenu_copy_handler(self, event=None):
-        """Copy selected lines to the clipboard."""
+    def rmenu_copy_handler(self, event):
+        """Copy selected text to the clipboard."""
         selected_text = self.text.get('sel.first', 'sel.last')
 
         self.main_widget.clipboard_clear()
         self.main_widget.clipboard_append(selected_text)
 
-    def rmenu_copy_with_prompts_handler(self, event=None):
-        """Copy selected lines to the clipboard."""
+    def rmenu_copy_with_prompts_handler(self, event):
+        """Copy selected lines to the clipboard, with prompts.
+
+        This makes the copied text useful for doc-tests and interactive
+        shell code examples.
+
+        This always copies entire lines, even if only part of the first
+        and/or last lines is selected.
+        """
         selected_text = self.text.get('sel.first linestart',
                                       'sel.last +1line linestart')
         lineno_range = range(

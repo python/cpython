@@ -271,7 +271,6 @@ class LineNumbersTest(unittest.TestCase):
 
         self.assertEqual(self.get_selection(), ('2.0', '3.0'))
 
-    @unittest.skip('test disabled')
     def simulate_drag(self, start_line, end_line):
         start_x, start_y = self.get_line_screen_position(start_line)
         end_x, end_y = self.get_line_screen_position(end_line)
