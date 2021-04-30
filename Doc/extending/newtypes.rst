@@ -287,7 +287,7 @@ combined using bitwise-OR.
 +===========================+==============================================+
 | :const:`READONLY`         | Never writable.                              |
 +---------------------------+----------------------------------------------+
-| :const:`AUDIT_READ`       | Emit an ``object.__getattr__``               |
+| :const:`PY_AUDIT_READ`    | Emit an ``object.__getattr__``               |
 |                           | :ref:`audit events <audit-events>` before    |
 |                           | reading.                                     |
 +---------------------------+----------------------------------------------+
@@ -295,15 +295,15 @@ combined using bitwise-OR.
 .. versionchanged:: 3.10
    :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
    are deprecated. However, :const:`READ_RESTRICTED` is an alias for
-   :const:`AUDIT_READ`, so fields that specify either :const:`RESTRICTED` or
-   :const:`READ_RESTRICTED` will also raise an audit event.
+   :const:`PY_AUDIT_READ`, so fields that specify either :const:`RESTRICTED`
+   or :const:`READ_RESTRICTED` will also raise an audit event.
 
 .. index::
    single: READONLY
    single: READ_RESTRICTED
    single: WRITE_RESTRICTED
    single: RESTRICTED
-   single: AUDIT_READ
+   single: PY_AUDIT_READ
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can
