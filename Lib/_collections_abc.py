@@ -793,7 +793,6 @@ MutableSet.register(set)
 
 ### MAPPINGS ###
 
-
 class Mapping(Collection):
     """A Mapping is a generic container for associating key/value
     pairs.
@@ -803,6 +802,9 @@ class Mapping(Collection):
     """
 
     __slots__ = ()
+
+    # Tell ABCMeta.__new__ that this class should have TPFLAGS_MAPPING set.
+    __abc_tpflags__ = 1 << 6 # Py_TPFLAGS_MAPPING
 
     @abstractmethod
     def __getitem__(self, key):
@@ -841,7 +843,6 @@ class Mapping(Collection):
         return dict(self.items()) == dict(other.items())
 
     __reversed__ = None
-
 
 Mapping.register(mappingproxy)
 
@@ -1011,7 +1012,6 @@ MutableMapping.register(dict)
 
 ### SEQUENCES ###
 
-
 class Sequence(Reversible, Collection):
     """All the operations on a read-only sequence.
 
@@ -1020,6 +1020,9 @@ class Sequence(Reversible, Collection):
     """
 
     __slots__ = ()
+
+    # Tell ABCMeta.__new__ that this class should have TPFLAGS_SEQUENCE set.
+    __abc_tpflags__ = 1 << 5 # Py_TPFLAGS_SEQUENCE
 
     @abstractmethod
     def __getitem__(self, index):
@@ -1071,7 +1074,6 @@ class Sequence(Reversible, Collection):
     def count(self, value):
         'S.count(value) -> integer -- return number of occurrences of value'
         return sum(1 for v in self if v is value or v == value)
-
 
 Sequence.register(tuple)
 Sequence.register(str)
