@@ -170,7 +170,7 @@ jobs:
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
   build_ubuntu_ssltests:
-    name: 'Ubuntu SSL tests with OpenSSL ${{ matrix.openssl_ver }}'
+    name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ubuntu-20.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_ssl_tests == 'true'
