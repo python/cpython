@@ -463,13 +463,13 @@ check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *nam
 {
     if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot set '%R' attribute of immutable type '%s'",
+                     "cannot set %R attribute of immutable type '%s'",
                      name, type->tp_name);
         return 0;
     }
     if (!value) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot delete '%R' attribute of immutable type '%s'",
+                     "cannot delete %R attribute of immutable type '%s'",
                      name, type->tp_name);
         return 0;
     }
