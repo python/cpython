@@ -2,6 +2,7 @@
 # This just tests whether the parser accepts them all.
 
 from test.support import check_syntax_error
+from test.support import import_helper
 from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
@@ -392,13 +393,13 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
         # outside of module where they were defined
-        from test.ann_module3 import f_bad_ann, g_bad_ann, D_bad_ann
+        ann_module3 = import_helper.import_fresh_module("test.ann_module3")
         with self.assertRaises(NameError):
-            f_bad_ann()
+            ann_module3.f_bad_ann()
         with self.assertRaises(NameError):
-            g_bad_ann()
+            ann_module3.g_bad_ann()
         with self.assertRaises(NameError):
-            D_bad_ann(5)
+            ann_module3.D_bad_ann(5)
 
     def test_var_annot_simple_exec(self):
         gns = {}; lns= {}
