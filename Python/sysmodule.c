@@ -3007,7 +3007,7 @@ err_occurred:
 /* Set up a preliminary stderr printer until we have enough
    infrastructure for the io module in place.
 
-   Use UTF-8/surrogateescape and ignore EAGAIN errors. */
+   Use UTF-8/backslashreplace and ignore EAGAIN errors. */
 static PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {
