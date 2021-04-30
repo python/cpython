@@ -335,7 +335,7 @@ Barrier
    A barrier object.  Not thread-safe.
 
    Create a barrier object for *parties* number of tasks.  An *action*, when
-   provided, is a callable to be called by one of the tasks when they are
+   provided, is a callable to be called by the last waiting task when they are
    released.
 
    A barrier object: a clone of :class:`threading.Barrier`.
