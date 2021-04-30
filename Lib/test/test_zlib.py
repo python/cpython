@@ -130,8 +130,8 @@ class ExceptionTestCase(unittest.TestCase):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
     @support.cpython_only
-    def test_uninitialised_new(self):
-        # Prevent heap types from being created uninitialised (bpo-43916)
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         comp_type = type(zlib.compressobj())
         decomp_type = type(zlib.decompressobj())
         self.assertRaises(TypeError, comp_type)

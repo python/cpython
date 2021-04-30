@@ -120,8 +120,8 @@ class ThreadTests(BaseTestCase):
             self.assertEqual(thread.name, "Thread-5 (func)")
 
     @cpython_only
-    def test_uninitialised_new(self):
-        # Prevent heap types from being created uninitialised (bpo-43916)
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         lock = threading.Lock()
         tp = type(lock)
         self.assertRaises(TypeError, tp)

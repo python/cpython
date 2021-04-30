@@ -28,8 +28,8 @@ class TestGdbm(unittest.TestCase):
         unlink(filename)
 
     @cpython_only
-    def test_uninitialised_new(self):
-        # Prevent heap types from being created uninitialised (bpo-43916)
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         self.g = gdbm.open(filename, 'c')
         tp = type(self.g)
         self.assertRaises(TypeError, tp)

@@ -2216,8 +2216,8 @@ class ImplementationTest(unittest.TestCase):
         self.assertGreaterEqual(sre_compile.MAXGROUPS, 0)
 
     @cpython_only
-    def test_uninitialised_new(self):
-        # Prevent heap types from being created uninitialised (bpo-43916)
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         self.assertRaises(TypeError, re.Match)
         self.assertRaises(TypeError, re.Pattern)
         pat = re.compile("")

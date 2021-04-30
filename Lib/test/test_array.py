@@ -41,8 +41,8 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(ValueError, array.array, 'x')
 
     @support.cpython_only
-    def test_uninitialised_new(self):
-        # Prevent heap types from being created uninitialised (bpo-43916)
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         tp = type(iter(array.array('I')))
         self.assertRaises(TypeError, tp)
 
