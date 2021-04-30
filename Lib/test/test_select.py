@@ -87,6 +87,10 @@ class SelectTestCase(unittest.TestCase):
         a[:] = [F()] * 10
         self.assertEqual(select.select([], a, []), ([], a[:5], []))
 
+    def test_disallow_instantiation(self):
+        tp = type(select.poll())
+        self.assertRaises(TypeError, tp)
+
 def tearDownModule():
     support.reap_children()
 
