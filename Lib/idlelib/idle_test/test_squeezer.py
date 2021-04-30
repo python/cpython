@@ -313,7 +313,6 @@ class ExpandingButtonTest(unittest.TestCase):
         squeezer.editwin.per = Percolator(squeezer.editwin.text)
         self.addCleanup(squeezer.editwin.per.close)
 
-
         # Set default values for the configuration settings.
         squeezer.auto_squeeze_min_lines = 50
         return squeezer
