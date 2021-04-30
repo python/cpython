@@ -1048,7 +1048,8 @@ class TestCurses(unittest.TestCase):
 
     @cpython_only
     @requires_curses_func('panel')
-    def test_new_curses_panel(self):
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
         self.assertRaises(TypeError, type(panel))
