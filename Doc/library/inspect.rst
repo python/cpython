@@ -1164,6 +1164,10 @@ Classes and functions
      although if ``obj`` is a wrapped function (using
      ``functools.update_wrapper()``) it is first unwrapped.
 
+   Calling ``get_annotations`` is best practice for accessing the
+   annotations dict of any object.  See :ref:`annotations-howto` for
+   more information on annotations best practices.
+
    .. versionadded:: 3.10
 
 
