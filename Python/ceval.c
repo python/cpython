@@ -1772,14 +1772,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                                         tstate->c_traceobj,
                                         tstate, f,
                                         &trace_info);
-            /* Reload possibly changed frame fields */
-            JUMPTO(f->f_lasti);
-            stack_pointer = f->f_valuestack+f->f_stackdepth;
-            f->f_stackdepth = -1;
             if (err) {
                 /* trace function raised an exception */
                 goto error;
             }
+            /* Reload possibly changed frame fields */
+            JUMPTO(f->f_lasti);
+            stack_pointer = f->f_valuestack+f->f_stackdepth;
+            f->f_stackdepth = -1;
             NEXTOPARG();
         }
 
