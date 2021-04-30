@@ -3099,6 +3099,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     /* `finally` block */
     compiler_use_next_block(c, end);
 
+    c->u->u_lineno = -1;
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     if (!compiler_push_fblock(c, FINALLY_END, end, NULL, NULL))
@@ -3166,6 +3167,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     n = asdl_seq_LEN(s->v.Try.handlers);
     compiler_use_next_block(c, except);
 
+    c->u->u_lineno = -1;
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
     /* Runtime will push a block here, so we need to account for that */
@@ -3174,9 +3176,10 @@ compiler_try_except(struct compiler *c, stmt_ty s)
     for (i = 0; i < n; i++) {
         excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
             s->v.Try.handlers, i);
-        if (!handler->v.ExceptHandler.type && i < n-1)
-            return compiler_error(c, "default 'except:' must be last");
         SET_LOC(c, handler);
+        if (!handler->v.ExceptHandler.type && i < n-1) {
+            return compiler_error(c, "default 'except:' must be last");
+        }
         except = compiler_new_block(c);
         if (except == NULL)
             return 0;
@@ -7889,6 +7892,7 @@ ensure_exits_have_lineno(struct compiler *c)
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     for (basicblock *b = c->u->u_blocks; b != NULL; b = b->b_list) {
+        entry = b;
         if (b->b_iused > 0 && is_jump(&b->b_instr[b->b_iused-1])) {
             switch (b->b_instr[b->b_iused-1].i_opcode) {
                 /* Note: Only actual jumps, not exception handlers */
@@ -7907,7 +7911,6 @@ ensure_exits_have_lineno(struct compiler *c)
                 b->b_instr[b->b_iused-1].i_target = new_target;
             }
         }
-        entry = b;
     }
     assert(entry != NULL);
     if (is_exit_without_lineno(entry)) {
