@@ -91,6 +91,10 @@ class SelectTestCase(unittest.TestCase):
         tp = type(select.poll())
         self.assertRaises(TypeError, tp)
 
+        if hasattr(select, 'devpoll'):
+            tp = type(select.devpoll())
+            self.assertRaises(TypeError, tp)
+
 def tearDownModule():
     support.reap_children()
 
