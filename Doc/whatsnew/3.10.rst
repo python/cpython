@@ -1708,6 +1708,10 @@ New Features
   These functions allow to activate, deactivate and query the state of the garbage collector from C code without
   having to import the :mod:`gc` module.
 
+* Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+  creating type instances.
+  (Contributed by Victor Stinner in :issue:`43916`.)
+
 Porting to Python 3.10
 ----------------------
 

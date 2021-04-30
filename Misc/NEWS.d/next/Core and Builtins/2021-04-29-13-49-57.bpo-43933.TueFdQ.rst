@@ -1,0 +1,2 @@
+Set frame.f_lineno to the line number of the 'with' kweyword when executing
+the call to ``__exit__``.
