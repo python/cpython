@@ -5618,7 +5618,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 // stored *underneath* them on success. This lets us defer all names stores
 // until the *entire* pattern matches.
 
-
 #define WILDCARD_CHECK(N) \
     ((N)->kind == MatchAs_kind && !(N)->v.MatchAs.name)
 
@@ -5628,7 +5627,6 @@ compiler_slice(struct compiler *c, expr_ty s)
 // Limit permitted subexpressions, even if the parser & AST validator let them through
 #define MATCH_VALUE_EXPR(N) \
     ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
-
 
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
@@ -5653,7 +5651,6 @@ ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
     return 1;
 }
 
-
 // Use op to jump to the correct fail_pop block.
 static int
 jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
@@ -5666,7 +5663,6 @@ jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
     NEXT_BLOCK(c);
     return 1;
 }
-
 
 // Build all of the fail_pop blocks and reset fail_pop.
 static int
@@ -5692,13 +5688,11 @@ cleanup_fail_pop(struct compiler *c, pattern_context *pc)
     return 1;
 }
 
-
 static int
 compiler_error_duplicate_store(struct compiler *c, identifier n)
 {
     return compiler_error(c, "multiple assignments to name %R in pattern", n);
 }
-
 
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
@@ -5754,7 +5748,6 @@ pattern_unpack_helper(struct compiler *c, asdl_pattern_seq *elts)
     return 1;
 }
 
-
 static int
 pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
                                Py_ssize_t star, pattern_context *pc)
@@ -5772,7 +5765,6 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
     }
     return 1;
 }
-
 
 // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
@@ -5813,7 +5805,6 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_pattern_seq *patterns,
     return 1;
 }
 
-
 // Like compiler_pattern, but turn off checks for irrefutability.
 static int
 compiler_pattern_subpattern(struct compiler *c, pattern_ty p, pattern_context *pc)
@@ -5824,7 +5815,6 @@ compiler_pattern_subpattern(struct compiler *c, pattern_ty p, pattern_context *p
     pc->allow_irrefutable = allow_irrefutable;
     return 1;
 }
-
 
 static int
 compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
@@ -5852,7 +5842,6 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
     return 1;
 }
 
-
 static int
 compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
@@ -5860,7 +5849,6 @@ compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchStar.name, pc));
     return 1;
 }
-
 
 static int
 validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_seq* patterns)
@@ -5885,7 +5873,6 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
     }
     return 0;
 }
-
 
 static int
 compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
@@ -5949,7 +5936,6 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP(c, POP_TOP);
     return 1;
 }
-
 
 static int
 compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
@@ -6038,7 +6024,6 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     ADDOP(c, POP_TOP);
     return 1;
 }
-
 
 static int
 compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
@@ -6240,7 +6225,6 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p, pattern_context *pc)
     return 1;
 }
 
-
 static int
 compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
@@ -6256,7 +6240,6 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     return 1;
 }
 
-
 static int
 compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
@@ -6266,7 +6249,6 @@ compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     return 1;
 }
-
 
 static int
 compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
@@ -6295,7 +6277,6 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
     const char *e = "invalid match pattern node in AST (kind=%d)";
     return compiler_error(c, e, p->kind);
 }
-
 
 static int
 compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
@@ -6368,7 +6349,6 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     return 1;
 }
 
-
 static int
 compiler_match(struct compiler *c, stmt_ty s)
 {
@@ -6378,7 +6358,6 @@ compiler_match(struct compiler *c, stmt_ty s)
     PyObject_Free(pc.fail_pop);
     return result;
 }
-
 
 #undef WILDCARD_CHECK
 #undef WILDCARD_STAR_CHECK
@@ -7122,7 +7101,7 @@ fold_tuple_on_constants(struct compiler *c,
 }
 
 
-// Eliminate N * ROTATE.
+// Eliminate n * ROTATE(n).
 static void
 fold_rotations(struct instr *inst, int n)
 {

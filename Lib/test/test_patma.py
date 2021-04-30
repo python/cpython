@@ -2865,7 +2865,6 @@ class TestPatma(unittest.TestCase):
                 pass
         """)
 
-
     @no_perf
     def test_patma_284(self):
         self.assert_syntax_error("""
