@@ -688,8 +688,9 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
                     goto error;
+                }
             }
 
             Py_BEGIN_ALLOW_THREADS
@@ -801,8 +802,9 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
     if (max_length < 0) {
         PyErr_SetString(PyExc_ValueError, "max_length must be non-negative");
         return NULL;
-    } else if (max_length == 0)
+    } else if (max_length == 0) {
         max_length = -1;
+    }
 
     ENTER_ZLIB(self);
 
@@ -1201,8 +1203,9 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
 
         do {
             if (self->zst.avail_out == 0) {
-                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0)
+                if (Buffer_Grow(&buffer, &self->zst.next_out, &self->zst.avail_out) < 0) {
                     goto abort;
+                }
             }
 
             Py_BEGIN_ALLOW_THREADS

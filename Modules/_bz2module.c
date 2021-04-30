@@ -469,8 +469,9 @@ decompress_buf(BZ2Decompressor *d, Py_ssize_t max_length)
         } else if (d->bzs_avail_in_real == 0) {
             break;
         } else if (bzs->avail_out == 0) {
-            if (Buffer_GetDataSize(&buffer, bzs->avail_out) == max_length)
+            if (Buffer_GetDataSize(&buffer, bzs->avail_out) == max_length) {
                 break;
+            }
             if (Buffer_Grow(&buffer, &bzs->next_out, &bzs->avail_out) < 0) {
                 goto error;
             }
