@@ -944,13 +944,16 @@ _Py_LocaleUsesNonUnicodeWchar(void)
     if (!codeset) {
         return 0;
     }
+    /* 646 refers to ISO/IEC 646 standard that corresponds to ASCII encoding */
     return (strcmp(codeset, "UTF-8") != 0 && strcmp(codeset, "646") != 0);
 }
 
-wchar_t *
+static wchar_t *
 _Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
                      const char *tocode, const char *fromcode)
 {
+    Py_BUILD_ASSERT(sizeof(wchar_t) == 4);
+
     /* Ensure we won't overflow the size. */
     if (size > (PY_SSIZE_T_MAX / (Py_ssize_t)sizeof(wchar_t))) {
         PyErr_NoMemory();
@@ -996,7 +999,7 @@ _Py_ConvertWCharForm(const wchar_t *source, Py_ssize_t size,
    the memory. Return NULL and raise exception on conversion or memory
    allocation error. */
 wchar_t *
-_Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
+_Py_DecodeNonUnicodeWchar(const wchar_t *native, Py_ssize_t size)
 {
     return _Py_ConvertWCharForm(native, size, "UCS-4-INTERNAL", "wchar_t");
 }
@@ -1005,19 +1008,24 @@ _Py_ConvertWCharFormToUCS4(const wchar_t *native, Py_ssize_t size)
    is necessary on systems where internal form of wchar_t are not Unicode
    code points (e.g. Oracle Solaris).
 
-   The conversion is done in-place. Return a pointer to the wchar_t buffer
-   given as the first argument. Return NULL and raise exception on conversion
+   The conversion is done in place. This can be done because both wchar_t
+   and UCS-4 use 4-byte encoding, and one wchar_t symbol always correspond
+   to a single UCS-4 symbol and vice versa. (This is true for Oracle Solaris,
+   which is currently the only system using these functions; it doesn't have
+   to be for other systems).
+
+   Return 0 on success. Return -1 and raise exception on conversion
    or memory allocation error. */
-wchar_t *
-_Py_ConvertWCharFormToNative_InPlace(wchar_t *unicode, Py_ssize_t size)
+int
+_Py_EncodeNonUnicodeWchar_InPlace(wchar_t *unicode, Py_ssize_t size)
 {
     wchar_t* result = _Py_ConvertWCharForm(unicode, size, "wchar_t", "UCS-4-INTERNAL");
     if (!result) {
-        return NULL;
+        return -1;
     }
     memcpy(unicode, result, size * sizeof(wchar_t));
     PyMem_Free(result);
-    return unicode;
+    return 0;
 }
 #endif /* HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION */
 
