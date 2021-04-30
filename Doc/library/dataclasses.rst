@@ -33,7 +33,7 @@ using :pep:`526` type annotations.  For example this code::
 
 Will add, among other things, a :meth:`__init__` that looks like::
 
-  def __init__(self, name: str, unit_price: float, quantity_on_hand: int=0):
+  def __init__(self, name: str, unit_price: float, quantity_on_hand: int = 0):
       self.name = name
       self.unit_price = unit_price
       self.quantity_on_hand = quantity_on_hand
