@@ -351,7 +351,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10b1 3436 (Add GEN_START bytecode #43683)
 #     Python 3.10b1 3437 (Undo making 'annotations' future by default - We like to dance among core devs!)
 #     Python 3.10b1 3438 Safer line number table handling.
-#     Python 3.10b1 3439 (replace ROT_* with ROTATE)
+#     Python 3.10b1 3439 (Add ROT_N)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

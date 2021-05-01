@@ -116,8 +116,8 @@ class TestTranforms(BytecodeTestCase):
     def test_pack_unpack(self):
         for line, elem in (
             ('a, = a,', 'LOAD_CONST',),
-            ('a, b = a, b', 'ROTATE',),
-            ('a, b, c = a, b, c', 'ROTATE',),
+            ('a, b = a, b', 'ROT_TWO',),
+            ('a, b, c = a, b, c', 'ROT_THREE',),
             ):
             code = compile(line,'','single')
             self.assertInBytecode(code, elem)

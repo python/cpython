@@ -333,6 +333,25 @@ The Python compiler currently generates the following bytecode instructions.
    Removes the top-of-stack (TOS) item.
 
 
+.. opcode:: ROT_TWO
+
+   Swaps the two top-most stack items.
+
+
+.. opcode:: ROT_THREE
+
+   Lifts second and third stack item one position up, moves top down to position
+   three.
+
+
+.. opcode:: ROT_FOUR
+
+   Lifts second, third and fourth stack items one position up, moves top down
+   to position four.
+
+   .. versionadded:: 3.8
+
+
 .. opcode:: DUP_TOP
 
    Duplicates the reference on top of the stack.
@@ -1238,7 +1257,7 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.10
 
 
-.. opcode:: ROTATE (count)
+.. opcode:: ROT_N (count)
 
    Lift the top *count* stack items one position up, and move TOS down to
    position *count*.
