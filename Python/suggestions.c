@@ -7,13 +7,39 @@
 #define MAX_CANDIDATE_ITEMS 160
 #define MAX_STRING_SIZE 25
 
+#define MOVE_COST 2
+#define CASE_COST 1
+
+static inline int
+substitution_cost(char a, char b)
+{
+    if ((a & 31) != (b & 31)) {
+        // Not the same, not a case flip.
+        return MOVE_COST;
+    }
+    if (a == b) {
+        return 0;
+    }
+    if ('A' <= a && a <= 'Z') {
+        a += ('a' - 'A');
+    }
+    if ('A' <= b && b <= 'Z') {
+        b += ('a' - 'A');
+    }
+    if (a == b) {
+        return CASE_COST;
+    }
+    return MOVE_COST;
+}
+
 /* Calculate the Levenshtein distance between string1 and string2 */
 static Py_ssize_t
 levenshtein_distance(const char *a, size_t a_size,
-                     const char *b, size_t b_size) {
-
+                     const char *b, size_t b_size,
+                     size_t *buffer, size_t max_cost)
+{
     if (a_size > MAX_STRING_SIZE || b_size > MAX_STRING_SIZE) {
-        return 0;
+        return max_cost + 1;
     }
 
     // Both strings are the same (by identity)
@@ -21,60 +47,141 @@ levenshtein_distance(const char *a, size_t a_size,
         return 0;
     }
 
-    // The first string is empty
-    if (a_size == 0) {
-        return b_size;
+    // Trim away common affixes.
+    while (a_size && b_size && a[0] == b[0]) {
+        a++; a_size--;
+        b++; b_size--;
+    }
+    while (a_size && b_size && a[a_size-1] == b[b_size-1]) {
+        a_size--;
+        b_size--;
+    }
+    if (a_size == 0 || b_size == 0) {
+        return (a_size + b_size) * MOVE_COST;
     }
 
-    // The second string is empty
-    if (b_size == 0) {
-        return a_size;
+    // Prefer shorter buffer
+    if (b_size < a_size) {
+        const char *t = a; a = b; b = t;
+        size_t t_size = a_size; a_size = b_size; b_size = t_size;
     }
 
-    size_t *buffer = PyMem_Calloc(a_size, sizeof(size_t));
-    if (buffer == NULL) {
-        return -1;
+    // quick fail when a match is impossible.
+    if ((b_size - a_size)*MOVE_COST > max_cost) {
+        return max_cost + 1;
     }
 
+    // Instead of producing the whole traditional len(a)-by-len(b)
+    // matrix, we can update just one row in place.
     // Initialize the buffer row
-    size_t index = 0;
-    while (index < a_size) {
-        buffer[index] = index + 1;
-        index++;
+    for (size_t i = 0; i < a_size; i++) {
+        // cost from a[:0] to b[:index+1]
+        buffer[i] = (i + 1) * MOVE_COST;
     }
 
-    size_t b_index = 0;
     size_t result = 0;
-    while (b_index < b_size) {
+    for (size_t b_index = 0; b_index < b_size; b_index++) {
         char code = b[b_index];
-        size_t distance = result = b_index++;
-        index = SIZE_MAX;
-        while (++index < a_size) {
-            size_t b_distance = code == a[index] ? distance : distance + 1;
+        // cost(b[:b_index], a[:0]) == b_index * MOVE_COST
+        size_t distance = result = b_index * MOVE_COST;
+        size_t minimum = SIZE_MAX;
+        for (size_t index = 0; index < a_size; index++) {
+
+            // cost(b[:b_index+1], a[:index+1]) = min(
+            //     // 1) substitute
+            //     cost(b[:b_index], a[:index])
+            //         + substitution_cost(b[b_index], a[index]),
+            //     // 2) delete from b
+            //     cost(b[:b_index], a[:index+1]) + MOVE_COST,
+            //     // 3) delete from a
+            //     cost(b[:b_index+1], a[index]) + MOVE_COST
+            // )
+
+            // 1) Previous distance in this row is cost(b[:b_index], a[:index])
+            size_t substitute = distance + substitution_cost(code, a[index]);
+            // 2) cost(b[:b_index], a[:index+1]) from previous row
             distance = buffer[index];
-            if (distance > result) {
-                if (b_distance > result) {
-                    result = result + 1;
-                } else {
-                    result = b_distance;
-                }
-            } else {
-                if (b_distance > distance) {
-                    result = distance + 1;
-                } else {
-                    result = b_distance;
-                }
-            }
+            // 3) existing result is cost(b[:b_index+1], a[index])
+
+            size_t insert_delete = Py_MIN(result, distance) + MOVE_COST;
+            result = Py_MIN(insert_delete, substitute);
+
+            // cost(b[:b_index+1], a[:index+1])
             buffer[index] = result;
+            if (result < minimum) {
+                minimum = result;
+            }
+        }
+        if (minimum > max_cost) {
+            // Everything in this row is too big, so bail early.
+            return max_cost + 1;
         }
     }
-    PyMem_Free(buffer);
     return result;
 }
 
+#define TEST_LEVENSHTEIN 0
+#if TEST_LEVENSHTEIN
+
+static void
+do_test(const char *a, const char *b, size_t d)
+{
+    static size_t buffer[500];
+    size_t a_len = strlen(a);
+    size_t b_len = strlen(b);
+    size_t d2 = levenshtein_distance(a, a_len, b, b_len, buffer, 9999);
+    printf("'%s' -> '%s':", a, b);
+    if (d != d2) {
+        printf("\n    FAILURE: Expected %d, got %d.\n", (int)d, (int)d2);
+    }
+    else {
+        printf("    passed.\n");
+    }
+    size_t d3 = levenshtein_distance(a, a_len, b, b_len, buffer, d2);
+    assert(d2 == d3);
+    size_t d4 = levenshtein_distance(b, b_len, a, a_len, buffer, d2);
+    assert(d2 == d4);
+}
+
+static void
+test_levenshtein_distances()
+{
+    printf("\n\n--- Testing Levenshtein Distances ---\n\n");
+    do_test("", "", 0);
+    do_test("", "a", 2);
+    do_test("a", "A", 1);
+    do_test("Apple", "Aple", 2);
+    do_test("Banana", "B@n@n@", 6);
+    do_test("Cherry", "Cherry!", 2);
+    do_test("abc", "y", 6);
+    do_test("aa", "bb", 4);
+    do_test("aaaaa", "AAAAA", 5);
+    do_test("wxyz", "wXyZ", 2);
+    do_test("wxyz", "wXyZ123", 8);
+    do_test("Python", "Java", 12);
+    do_test("Java", "C#", 8);
+    do_test("AbstractFoobarManager", "abstract_foobar_manager", 3+2*2);
+    do_test("CPython", "PyPy", 10);
+    do_test("CPython", "pypy", 11);
+    do_test("AttributeError", "AttributeErrop", 2);
+    do_test("AttributeError", "AttributeErrorTests", 10);
+    printf("\n\n-------------------------------------\n\n");
+}
+
+#endif
+
 static inline PyObject *
 calculate_suggestions(PyObject *dir,
-                      PyObject *name) {
+                      PyObject *name)
+{
+    #if TEST_LEVENSHTEIN
+    static int did_it;
+    if (!did_it) {
+        did_it = 1;
+        test_levenshtein_distances();
+    }
+    #endif
+
     assert(!PyErr_Occurred());
     assert(PyList_CheckExact(dir));
 
@@ -90,22 +197,25 @@ calculate_suggestions(PyObject *dir,
     if (name_str == NULL) {
         return NULL;
     }
+    size_t *work_buffer = PyMem_Calloc(name_size, sizeof(size_t));
+    if (work_buffer == NULL) {
+        return NULL;
+    }
+
     for (int i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
+            PyMem_Free(work_buffer);
             return NULL;
         }
-        Py_ssize_t current_distance = levenshtein_distance(
-                name_str, name_size, item_str, item_size);
-        if (current_distance == -1) {
-            return NULL;
-        }
-        if (current_distance == 0 ||
-            current_distance > MAX_DISTANCE ||
-            current_distance * 2 > name_size)
-        {
+        Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
+        Py_ssize_t current_distance =
+            levenshtein_distance(name_str, name_size,
+                                 item_str, item_size,
+                                 work_buffer, max_distance);
+        if (current_distance > max_distance) {
             continue;
         }
         if (!suggestion || current_distance < suggestion_distance) {
@@ -113,15 +223,13 @@ calculate_suggestions(PyObject *dir,
             suggestion_distance = current_distance;
         }
     }
-    if (!suggestion) {
-        return NULL;
-    }
-    Py_INCREF(suggestion);
+    Py_XINCREF(suggestion);
     return suggestion;
 }
 
 static PyObject *
-offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc) {
+offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc)
+{
     PyObject *name = exc->name; // borrowed reference
     PyObject *obj = exc->obj; // borrowed reference
 
@@ -142,7 +250,8 @@ offer_suggestions_for_attribute_error(PyAttributeErrorObject *exc) {
 
 
 static PyObject *
-offer_suggestions_for_name_error(PyNameErrorObject *exc) {
+offer_suggestions_for_name_error(PyNameErrorObject *exc)
+{
     PyObject *name = exc->name; // borrowed reference
     PyTracebackObject *traceback = (PyTracebackObject *) exc->traceback; // borrowed reference
     // Abort if we don't have a variable name or we have an invalid one

@@ -1486,13 +1486,13 @@ class NameErrorTests(unittest.TestCase):
 
     def test_name_error_suggestions_from_builtins(self):
         def func():
-            print(AttributeErrop)
+            print(ZeroDivisionErrrrr)
         try:
             func()
         except NameError as exc:
             with support.captured_stderr() as err:
                 sys.__excepthook__(*sys.exc_info())
-        self.assertIn("'AttributeError'?", err.getvalue())
+        self.assertIn("'ZeroDivisionError'?", err.getvalue())
 
     def test_name_error_suggestions_do_not_trigger_for_long_names(self):
         def f():
