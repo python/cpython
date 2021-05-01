@@ -1087,14 +1087,28 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                            tuple(f.name for f in std_init_fields))
 
     if slots:
-        cls = _add_slots(cls)
+        cls = _add_slots(cls, frozen)
 
     abc.update_abstractmethods(cls)
 
     return cls
 
 
-def _add_slots(cls):
+# _dataclass_getstate and _dataclass_setstate are needed for pickling frozen
+# classes with slots.  These could be slighly more performant if we generated
+# the code instead of iterating over fields.  But that can be a project for
+# another day, if performance becomes an issue.
+def _dataclass_getstate(self):
+    return [getattr(self, f.name) for f in fields(self)]
+
+
+def _dataclass_setstate(self, state):
+    for field, value in zip(fields(self), state):
+        # use setattr because dataclass may be frozen
+        object.__setattr__(self, field.name, value)
+
+
+def _add_slots(cls, is_frozen):
     # Need to create a new class, since we can't set __slots__
     #  after a class has been created.
 
@@ -1119,6 +1133,11 @@ def _add_slots(cls):
     cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
     if qualname is not None:
         cls.__qualname__ = qualname
+
+    if is_frozen:
+        # Need this for pickling frozen classes with slots.
+        cls.__getstate__ = _dataclass_getstate
+        cls.__setstate__ = _dataclass_setstate
 
     return cls
 
