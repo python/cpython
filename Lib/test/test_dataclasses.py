@@ -2833,6 +2833,19 @@ class TestSlots(unittest.TestCase):
         self.assertFalse(hasattr(A, "__slots__"))
         self.assertTrue(hasattr(B, "__slots__"))
 
+    # Can't be local to test_frozen_pickle.
+    @dataclass(frozen=True, slots=True)
+    class FrozenSlotsClass:
+        foo: str
+        bar: int
+
+    def test_frozen_pickle(self):
+        # bpo-43999
+
+        assert self.FrozenSlotsClass.__slots__ == ("foo", "bar")
+        p = pickle.dumps(self.FrozenSlotsClass("a", 1))
+        assert pickle.loads(p) == self.FrozenSlotsClass("a", 1)
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
