@@ -1604,8 +1604,8 @@ Optional Packages:
                           override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
                           leave OpenSSL's defaults untouched, STRING: use a
-                          custom string, PROTOCOL_SSLv2 ignores the setting,
-                          see Doc/library/ssl.rst
+                          custom string, python and STRING also set TLS 1.2 as
+                          minimum TLS version
   --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
                           builtin hash modules, md5, sha1, sha256, sha512,
                           sha3 (with shake), blake2

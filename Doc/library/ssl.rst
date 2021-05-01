@@ -1509,6 +1509,14 @@ to speed up repeated connections from the same clients.
       context class will either require :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol in the future.
 
+   .. versionchanged:: 3.10
+
+      The default cipher suites now include only secure AES and ChaCha20
+      ciphers with forward secrecy and security level 2. RSA and DH keys with
+      less than 2048 bits and ECC keys with less than 224 bits are prohibited.
+      :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
+      :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
+
 
 :class:`SSLContext` objects have the following methods and attributes:
 
