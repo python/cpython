@@ -765,8 +765,8 @@ Modules
          module was loaded, if it was loaded from a file.
          The :attr:`__file__`
          attribute may be missing for certain types of modules, such as C modules
-         that are statically linked into the interpreter; for extension modules
-         loaded dynamically from a shared library, it is the pathname of the shared
+         that are statically linked into the interpreter.  For extension modules
+         loaded dynamically from a shared library, it's the pathname of the shared
          library file.
 
       :attr:`__annotations__`
@@ -843,7 +843,7 @@ Custom classes
          The class name.
 
       :attr:`__module__`
-         The module name in which the class was defined.
+         The name of the module in which the class was defined.
 
       :attr:`~object.__dict__`
          The dictionary containing the class's namespace.
