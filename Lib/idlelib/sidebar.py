@@ -442,64 +442,19 @@ class ShellSidebar(BaseSideBar):
     def context_menu_event(self, event):
         rmenu = tk.Menu(self.main_widget, tearoff=0)
         has_selection = bool(self.text.tag_nextrange('sel', '1.0'))
-        rmenu.add_command(label='Copy', command=self.rmenu_copy_handler,
+        def mkcmd(eventname):
+            return lambda: self.text.event_generate(eventname)
+        rmenu.add_command(label='Copy',
+                          command=mkcmd('<<copy>>'),
                           state='normal' if has_selection else 'disabled')
         rmenu.add_command(label='Copy with prompts',
-                          command=self.rmenu_copy_with_prompts_handler,
+                          command=mkcmd('<<copy-with-prompts>>'),
                           state='normal' if has_selection else 'disabled')
         rmenu.add_command(label='Copy only code',
-                          command=self.rmenu_copy_only_code_handler,
+                          command=mkcmd('<<copy-only-code>>'),
                           state='normal' if has_selection else 'disabled')
         rmenu.tk_popup(event.x_root, event.y_root)
         return "break"
-
-    def rmenu_copy_handler(self):
-        """Copy selected text to the clipboard."""
-        selected_text = self.text.get('sel.first', 'sel.last')
-
-        self.main_widget.clipboard_clear()
-        self.main_widget.clipboard_append(selected_text)
-
-    def rmenu_copy_with_prompts_handler(self):
-        """Copy selected lines to the clipboard, with prompts.
-
-        This makes the copied text useful for doc-tests and interactive
-        shell code examples.
-
-        This always copies entire lines, even if only part of the first
-        and/or last lines is selected.
-        """
-        selected_text = self.text.get('sel.first linestart',
-                                      'sel.last +1line linestart')
-        lineno_range = range(
-            get_lineno(self.text, 'sel.first linestart'),
-            get_lineno(self.text, 'sel.last +1line linestart'),
-        )
-        prompts = [
-            self.line_prompts.get(lineno)
-            for lineno in lineno_range
-        ]
-        selected_text_with_prompts = '\n'.join(
-            line if prompt is None else f'{prompt} {line}'
-            for prompt, line in zip(prompts, selected_text.splitlines())
-        ) + '\n'
-
-        self.main_widget.clipboard_clear()
-        self.main_widget.clipboard_append(selected_text_with_prompts)
-
-    def rmenu_copy_only_code_handler(self):
-        """Copy only the code from the selected text to the clipboard."""
-        text = self.text
-
-        # Find all text with the 'stdin' tag in the selected range
-        code_pieces = []
-        index = text.index('sel.first')
-        while tag_range := text.tag_nextrange('stdin', index, 'sel.last'):
-            index = tag_range[1]
-            code_pieces.append(text.get(*tag_range))
-
-        self.main_widget.clipboard_clear()
-        self.main_widget.clipboard_append('\n'.join(code_pieces))
 
     def grid(self):
         self.canvas.grid(row=1, column=0, sticky=tk.NSEW, padx=2, pady=0)

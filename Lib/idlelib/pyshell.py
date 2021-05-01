@@ -33,6 +33,7 @@ if TkVersion < 8.5:
     raise SystemExit(1)
 
 from code import InteractiveInterpreter
+import itertools
 import linecache
 import os
 import os.path
@@ -865,6 +866,16 @@ class PyShell(OutputWindow):
     rmenu_specs = OutputWindow.rmenu_specs + [
         ("Squeeze", "<<squeeze-current-text>>"),
     ]
+    _idx = 1 + len(list(itertools.takewhile(
+        lambda rmenu_item: rmenu_item[0] != "Copy", rmenu_specs)
+    ))
+    rmenu_specs.insert(_idx, ("Copy with prompts",
+                              "<<copy-with-prompts>>",
+                              "rmenu_check_copy"))
+    rmenu_specs.insert(_idx + 1, ("Copy only code",
+                                  "<<copy-only-code>>",
+                                  "rmenu_check_copy"))
+    del _idx
 
     allow_line_numbers = False
     user_input_insert_tags = "stdin"
@@ -906,6 +917,8 @@ class PyShell(OutputWindow):
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
+        text.bind("<<copy-with-prompts>>", self.copy_with_prompts_callback)
+        text.bind("<<copy-only-code>>", self.copy_only_code_callback)
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
@@ -978,6 +991,61 @@ class PyShell(OutputWindow):
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
+
+    def copy_with_prompts_callback(self, event=None):
+        """Copy selected lines to the clipboard, with prompts.
+
+        This makes the copied text useful for doc-tests and interactive
+        shell code examples.
+
+        This always copies entire lines, even if only part of the first
+        and/or last lines is selected.
+        """
+        text = self.text
+
+        selection_indexes = (
+            self.text.index("sel.first linestart"),
+            self.text.index("sel.last +1line linestart"),
+        )
+        if selection_indexes[0] is None:
+            # There is no selection, so do nothing.
+            return
+
+        selected_text = self.text.get(*selection_indexes)
+        selection_lineno_range = range(
+            int(float(selection_indexes[0])),
+            int(float(selection_indexes[1]))
+        )
+        prompts = [
+            self.shell_sidebar.line_prompts.get(lineno)
+            for lineno in selection_lineno_range
+        ]
+        selected_text_with_prompts = "\n".join(
+            line if prompt is None else f"{prompt} {line}"
+            for prompt, line in zip(prompts, selected_text.splitlines())
+        ) + "\n"
+
+        text.clipboard_clear()
+        text.clipboard_append(selected_text_with_prompts)
+
+    def copy_only_code_callback(self, event=None):
+        """Copy only the code from the selected text to the clipboard."""
+        text = self.text
+
+        if not text.tag_ranges("sel"):
+            # There is no selection, so do nothing.
+            return None
+
+        # Find all text with the "stdin" tag in the selected range
+        code_pieces = []
+        index = text.index("sel.first")
+        while tag_range := text.tag_nextrange("stdin", index, "sel.last"):
+            index = tag_range[1]
+            code_pieces.append(text.get(*tag_range))
+
+        text.clipboard_clear()
+        text.clipboard_append("\n".join(code_pieces))
+
 
     reading = False
     executing = False
