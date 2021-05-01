@@ -901,6 +901,7 @@ class HashLibTestCase(unittest.TestCase):
         if fips_mode is not None:
             self.assertIsInstance(fips_mode, int)
 
+    @support.cpython_only
     def test_disallow_instantiation(self):
         for algorithm, constructors in self.constructors_to_test.items():
             if algorithm.startswith(("sha3_", "shake", "blake")):
