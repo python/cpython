@@ -1,0 +1,1 @@
+:func:`glob.iglob` documentation updated with details on memory use.
