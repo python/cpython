@@ -874,7 +874,7 @@ _hash_action = {(False, False, False, False): None,
 
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
-                   match_args, kw_only):
+                   match_args, kw_only, slots):
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
@@ -1086,14 +1086,46 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         _set_new_attribute(cls, '__match_args__',
                            tuple(f.name for f in std_init_fields))
 
+    if slots:
+        cls = _add_slots(cls)
+
     abc.update_abstractmethods(cls)
+
+    return cls
+
+
+def _add_slots(cls):
+    # Need to create a new class, since we can't set __slots__
+    #  after a class has been created.
+
+    # Make sure __slots__ isn't already set.
+    if '__slots__' in cls.__dict__:
+        raise TypeError(f'{cls.__name__} already specifies __slots__')
+
+    # Create a new dict for our new class.
+    cls_dict = dict(cls.__dict__)
+    field_names = tuple(f.name for f in fields(cls))
+    cls_dict['__slots__'] = field_names
+    for field_name in field_names:
+        # Remove our attributes, if present. They'll still be
+        #  available in _MARKER.
+        cls_dict.pop(field_name, None)
+
+    # Remove __dict__ itself.
+    cls_dict.pop('__dict__', None)
+
+    # And finally create the class.
+    qualname = getattr(cls, '__qualname__', None)
+    cls = type(cls)(cls.__name__, cls.__bases__, cls_dict)
+    if qualname is not None:
+        cls.__qualname__ = qualname
 
     return cls
 
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
               unsafe_hash=False, frozen=False, match_args=True,
-              kw_only=False):
+              kw_only=False, slots=False):
     """Returns the same class as was passed in, with dunder methods
     added based on the fields defined in the class.
 
@@ -1105,12 +1137,13 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     __hash__() method function is added. If frozen is true, fields may
     not be assigned to after instance creation. If match_args is true,
     the __match_args__ tuple is added. If kw_only is true, then by
-    default all fields are keyword-only.
+    default all fields are keyword-only. If slots is true, an
+    __slots__ attribute is added.
     """
 
     def wrap(cls):
         return _process_class(cls, init, repr, eq, order, unsafe_hash,
-                              frozen, match_args, kw_only)
+                              frozen, match_args, kw_only, slots)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
@@ -1269,7 +1302,7 @@ def _astuple_inner(obj, tuple_factory):
 
 def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
                    repr=True, eq=True, order=False, unsafe_hash=False,
-                   frozen=False, match_args=True):
+                   frozen=False, match_args=True, slots=False):
     """Return a new dynamically created dataclass.
 
     The dataclass name will be 'cls_name'.  'fields' is an iterable
@@ -1336,7 +1369,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     # Apply the normal decorator.
     return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
                      unsafe_hash=unsafe_hash, frozen=frozen,
-                     match_args=match_args)
+                     match_args=match_args, slots=slots)
 
 
 def replace(obj, /, **changes):

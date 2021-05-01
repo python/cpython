@@ -895,6 +895,12 @@ The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
 they are provided by the underlying curses library.
 (Contributed by Zackery Spytz in :issue:`39273`.)
 
+dataclasses
+-----------
+
+Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+(Contributed by Yurii Karabas in :issue:`42269`)
+
 .. _distutils-deprecated:
 
 distutils
