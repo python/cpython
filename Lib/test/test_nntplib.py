@@ -368,9 +368,10 @@ class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
     # Disabled as the connection will already be encrypted.
     test_starttls = None
 
-    ssl_context = ssl._create_unverified_context()
-    ssl_context.set_ciphers("DEFAULT")
-    ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
+    if ssl is not None:
+        ssl_context = ssl._create_unverified_context()
+        ssl_context.set_ciphers("DEFAULT")
+        ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
 #
 # Non-networked tests using a local server (or something mocking it).
