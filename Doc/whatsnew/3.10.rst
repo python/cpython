@@ -722,8 +722,8 @@ See :class:`typing.Callable`, :class:`typing.ParamSpec`,
 Zijlstra in :issue:`43783`.  PEP written by Mark Mendoza.)
 
 
-PEP 613: TypeAlias Annotation
------------------------------
+PEP 613: TypeAlias
+------------------
 
 :pep:`484` introduced the concept of type aliases, only requiring them to be
 top-level unannotated assignments. This simplicity sometimes made it difficult
@@ -733,8 +733,8 @@ especially when forward references or invalid types were involved. Compare::
    StrCache = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
 
-Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
-declare type aliases more explicitly::
+Now the :mod:`typing` module has a special value :data:`TypeAlias`
+which lets you declare type aliases more explicitly::
 
    StrCache: TypeAlias = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
@@ -998,11 +998,11 @@ it examines. :func:`inspect.get_annotations` can also correctly un-stringize
 stringized annotations.  :func:`inspect.get_annotations` is now considered
 best practice for accessing the annotations dict defined on any Python object.
 Relatedly, :func:`inspect.signature`,
-:func:`inspect.from_callable`, and `inspect.from_function` now call
-:func:`inspect.get_annotations` to retrieve annotations. This means
-:func:`inspect.signature` and :func:`inspect.from_callable` can also now
-un-stringize stringized annotations.  (Contributed by Larry Hastings
-in :issue:`43817`.)
+:func:`inspect.Signature.from_callable`, and ``inspect.Signature.from_function``
+now call :func:`inspect.get_annotations` to retrieve annotations. This means
+:func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
+also now un-stringize stringized annotations.
+(Contributed by Larry Hastings in :issue:`43817`.)
 
 linecache
 ---------
@@ -1267,11 +1267,12 @@ Optimizations
   faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
   ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
 
-* Function parameters and their annotations are no longer computed at runtime,
-  but rather at compilation time.  They are stored as a tuple of strings at the
-  bytecode level. It is now around 2 times faster to create a function with
-  parameter annotations.  (Contributed by Yurii Karabas and Inada Naoki
-  in :issue:`42202`)
+* When using stringized annotations, annotations dicts for functions are no longer
+  created when the function is created.  Instead, they're stored as a tuple of
+  strings, and the function object lazily converts this into the annotations dict
+  on demand.  This optimization cuts the CPU time needed to define an annotated
+  function by half.
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 * Substring search functions such as ``str1 in str2`` and ``str2.find(str1)``
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
@@ -1581,8 +1582,8 @@ Changes in the Python API
 CPython bytecode changes
 ========================
 
-* The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
-  instead of dictionary.
+* The ``MAKE_FUNCTION`` instruction now accepts either a dict or a tuple of
+  strings as the function's annotations.
   (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Build Changes
