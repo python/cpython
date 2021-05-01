@@ -659,10 +659,10 @@ are added to enable the warning.
 See :ref:`io-text-encoding` for more information.
 
 
-New Features Related to Type Annotations
-========================================
+New Features Related to Type Hints
+==================================
 
-This section covers major changes affecting :pep:`484` type annotations and
+This section covers major changes affecting :pep:`484` type hints and
 the :mod:`typing` module.
 
 
@@ -671,7 +671,7 @@ PEP 604: New Type Union Operator
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
-using :data:`typing.Union`, especially in type hints (annotations).
+using :data:`typing.Union`, especially in type hints.
 
 In previous versions of Python, to apply a type hint for functions accepting
 arguments of multiple types, :data:`typing.Union` was used::
@@ -722,8 +722,8 @@ See :class:`typing.Callable`, :class:`typing.ParamSpec`,
 Zijlstra in :issue:`43783`.  PEP written by Mark Mendoza.)
 
 
-PEP 613: TypeAlias Annotation
------------------------------
+PEP 613: TypeAlias
+------------------
 
 :pep:`484` introduced the concept of type aliases, only requiring them to be
 top-level unannotated assignments. This simplicity sometimes made it difficult
@@ -733,8 +733,8 @@ especially when forward references or invalid types were involved. Compare::
    StrCache = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
 
-Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
-declare type aliases more explicitly::
+Now the :mod:`typing` module has a special value :data:`TypeAlias`
+which lets you declare type aliases more explicitly::
 
    StrCache: TypeAlias = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
@@ -805,6 +805,10 @@ Other Language Changes
   defined by :pep:`526`) no longer cause any runtime effects with ``from __future__ import annotations``.
   (Contributed by Batuhan Taskaya in :issue:`42737`.)
 
+* Class and module objects now lazy-create empty annotations dicts on demand.
+  The annotations dicts are stored in the object’s ``__dict__`` for
+  backwards compatibility.
+  (Contributed by Larry Hastings in :issue:`43901`.)
 
 New Modules
 ===========
@@ -895,6 +899,12 @@ The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
 they are provided by the underlying curses library.
 (Contributed by Zackery Spytz in :issue:`39273`.)
 
+dataclasses
+-----------
+
+Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+(Contributed by Yurii Karabas in :issue:`42269`)
+
 .. _distutils-deprecated:
 
 distutils
@@ -981,10 +991,18 @@ inspect
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
-Added *globalns* and *localns* parameters in :func:`~inspect.signature` and
-:meth:`inspect.Signature.from_callable` to retrieve the annotations in given
-local and global namespaces.
-(Contributed by Batuhan Taskaya in :issue:`41960`.)
+Added :func:`inspect.get_annotations`, which safely computes the annotations
+defined on an object. It works around the quirks of accessing the annotations
+on various types of objects, and makes very few assumptions about the object
+it examines. :func:`inspect.get_annotations` can also correctly un-stringize
+stringized annotations.  :func:`inspect.get_annotations` is now considered
+best practice for accessing the annotations dict defined on any Python object.
+Relatedly, :func:`inspect.signature`,
+:func:`inspect.Signature.from_callable`, and ``inspect.Signature.from_function``
+now call :func:`inspect.get_annotations` to retrieve annotations. This means
+:func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
+also now un-stringize stringized annotations.
+(Contributed by Larry Hastings in :issue:`43817`.)
 
 linecache
 ---------
@@ -1149,7 +1167,7 @@ of types readily interpretable by type checkers.
 typing
 ------
 
-For major changes, see `New Features Related to Type Annotations`_.
+For major changes, see `New Features Related to Type Hints`_.
 
 The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
 and to match the behavior of static type checkers specified in the PEP.
@@ -1249,11 +1267,12 @@ Optimizations
   faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
   ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
 
-* Function parameters and their annotations are no longer computed at runtime,
-  but rather at compilation time.  They are stored as a tuple of strings at the
-  bytecode level. It is now around 2 times faster to create a function with
-  parameter annotations.  (Contributed by Yurii Karabas and Inada Naoki
-  in :issue:`42202`)
+* When using stringized annotations, annotations dicts for functions are no longer
+  created when the function is created.  Instead, they're stored as a tuple of
+  strings, and the function object lazily converts this into the annotations dict
+  on demand.  This optimization cuts the CPU time needed to define an annotated
+  function by half.
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 * Substring search functions such as ``str1 in str2`` and ``str2.find(str1)``
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
@@ -1563,8 +1582,8 @@ Changes in the Python API
 CPython bytecode changes
 ========================
 
-* The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
-  instead of dictionary.
+* The ``MAKE_FUNCTION`` instruction now accepts either a dict or a tuple of
+  strings as the function's annotations.
   (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Build Changes
@@ -1707,6 +1726,10 @@ New Features
   :c:func:`PyGC_IsEnabled()`.
   These functions allow to activate, deactivate and query the state of the garbage collector from C code without
   having to import the :mod:`gc` module.
+
+* Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+  creating type instances.
+  (Contributed by Victor Stinner in :issue:`43916`.)
 
 Porting to Python 3.10
 ----------------------

@@ -33,7 +33,7 @@ using :pep:`526` type annotations.  For example this code::
 
 Will add, among other things, a :meth:`__init__` that looks like::
 
-  def __init__(self, name: str, unit_price: float, quantity_on_hand: int=0):
+  def __init__(self, name: str, unit_price: float, quantity_on_hand: int = 0):
       self.name = name
       self.unit_price = unit_price
       self.quantity_on_hand = quantity_on_hand
@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module-level decorators, classes, and functions
 -----------------------------------------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,7 +79,7 @@ Module-level decorators, classes, and functions
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
      class C:
         ...
 
@@ -172,6 +172,11 @@ Module-level decorators, classes, and functions
      fields will be marked as keyword-only.  See the :term:`parameter`
      glossary entry for details.  Also see the ``dataclasses.KW_ONLY``
      section.
+
+   - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
+     will be generated and new class will be returned instead of the original one.
+     If :attr:`__slots__` is already defined in the class, then :exc:`TypeError`
+     is raised.
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -337,7 +342,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -346,8 +351,8 @@ Module-level decorators, classes, and functions
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
-   ``match_args``, and ``kw_only`` have the same meaning as they do
-   in :func:`dataclass`.
+   ``match_args``, ``kw_only``, and  ``slots`` have the same meaning as
+   they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can

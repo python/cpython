@@ -748,7 +748,8 @@ static PyType_Slot multibytecodec_slots[] = {
 static PyType_Spec multibytecodec_spec = {
     .name = MODULE_NAME ".MultibyteCodec",
     .basicsize = sizeof(MultibyteCodecObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = multibytecodec_slots,
 };
 

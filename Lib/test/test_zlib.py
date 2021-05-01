@@ -129,6 +129,14 @@ class ExceptionTestCase(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, 'int too large'):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        comp_type = type(zlib.compressobj())
+        decomp_type = type(zlib.decompressobj())
+        self.assertRaises(TypeError, comp_type)
+        self.assertRaises(TypeError, decomp_type)
+
 
 class BaseCompressTestCase(object):
     def check_big_compress_buffer(self, size, compress_func):
