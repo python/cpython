@@ -3553,7 +3553,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DICT_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_MAPPING,  /* tp_flags */
     dictionary_doc,                             /* tp_doc */
     dict_traverse,                              /* tp_traverse */
     dict_tp_clear,                              /* tp_clear */

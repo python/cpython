@@ -562,7 +562,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globalns=None, localns=None)
+.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -584,11 +584,20 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
-   Raises :exc:`ValueError` if no signature can be provided, and
-   :exc:`TypeError` if that type of object is not supported.
+   For objects defined in modules using stringized annotations
+   (``from __future__ import annotations``), :func:`signature` will
+   attempt to automatically un-stringize the annotations using
+   :func:`inspect.get_annotations()`.  The
+   ``global``, ``locals``, and ``eval_str`` parameters are passed
+   into :func:`inspect.get_annotations()` when resolving the
+   annotations; see the documentation for :func:`inspect.get_annotations()`
+   for instructions on how to use these parameters.
 
-   ``globalns`` and ``localns`` are passed into
-   :func:`typing.get_type_hints` when resolving the annotations.
+   Raises :exc:`ValueError` if no signature can be provided, and
+   :exc:`TypeError` if that type of object is not supported.  Also,
+   if the annotations are stringized, and ``eval_str`` is not false,
+   the ``eval()`` call(s) to un-stringize the annotations could
+   potentially raise any kind of exception.
 
    A slash(/) in the signature of a function denotes that the parameters prior
    to it are positional-only. For more info, see
@@ -600,19 +609,13 @@ function.
       unwrap decorated callables.)
 
    .. versionadded:: 3.10
-      ``globalns`` and ``localns`` parameters.
+      ``globals``, ``locals``, and ``eval_str`` parameters.
 
    .. note::
 
       Some callables may not be introspectable in certain implementations of
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
-
-   .. note::
-
-      Will first try to resolve the annotations, but when it fails and
-      encounters with an error while that operation, the annotations will be
-      returned unchanged (as strings).
 
 
 .. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
@@ -1113,6 +1116,55 @@ Classes and functions
    :exc:`ValueError` is raised if a cycle is encountered.
 
    .. versionadded:: 3.4
+
+
+.. function:: get_annotations(obj, *, globals=None, locals=None, eval_str=False)
+
+   Compute the annotations dict for an object.
+
+   ``obj`` may be a callable, class, or module.
+   Passing in an object of any other type raises :exc:`TypeError`.
+
+   Returns a dict.  ``get_annotations()`` returns a new dict every time
+   it's called; calling it twice on the same object will return two
+   different but equivalent dicts.
+
+   This function handles several details for you:
+
+   * If ``eval_str`` is true, values of type ``str`` will
+     be un-stringized using :func:`eval()`.  This is intended
+     for use with stringized annotations
+     (``from __future__ import annotations``).
+   * If ``obj`` doesn't have an annotations dict, returns an
+     empty dict.  (Functions and methods always have an
+     annotations dict; classes, modules, and other types of
+     callables may not.)
+   * Ignores inherited annotations on classes.  If a class
+     doesn't have its own annotations dict, returns an empty dict.
+   * All accesses to object members and dict values are done
+     using ``getattr()`` and ``dict.get()`` for safety.
+   * Always, always, always returns a freshly-created dict.
+
+   ``eval_str`` controls whether or not values of type ``str`` are replaced
+   with the result of calling :func:`eval()` on those values:
+
+   * If eval_str is true, :func:`eval()` is called on values of type ``str``.
+   * If eval_str is false (the default), values of type ``str`` are unchanged.
+
+   ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
+   for :func:`eval()` for more information.  If ``globals`` or ``locals``
+   is ``None``, this function may replace that value with a context-specific
+   default, contingent on ``type(obj)``:
+
+   * If ``obj`` is a module, ``globals`` defaults to ``obj.__dict__``.
+   * If ``obj`` is a class, ``globals`` defaults to
+     ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
+     to the ``obj`` class namespace.
+   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+     although if ``obj`` is a wrapped function (using
+     ``functools.update_wrapper()``) it is first unwrapped.
+
+   .. versionadded:: 3.10
 
 
 .. _inspect-stack:

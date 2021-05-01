@@ -276,12 +276,21 @@ literal_expr[expr_ty]:
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
 
 complex_number[expr_ty]:
-    | real=signed_number '+' imag=imaginary_number { _PyAST_BinOp(real, Add, imag, EXTRA) }
-    | real=signed_number '-' imag=imaginary_number  { _PyAST_BinOp(real, Sub, imag, EXTRA) }
+    | real=signed_real_number '+' imag=imaginary_number {
+        _PyAST_BinOp(real, Add, imag, EXTRA) }
+    | real=signed_real_number '-' imag=imaginary_number  {
+        _PyAST_BinOp(real, Sub, imag, EXTRA) }
 
 signed_number[expr_ty]:
     | NUMBER
     | '-' number=NUMBER { _PyAST_UnaryOp(USub, number, EXTRA) }
+
+signed_real_number[expr_ty]:
+    | real_number
+    | '-' real=real_number { _PyAST_UnaryOp(USub, real, EXTRA) }
+
+real_number[expr_ty]:
+    | real=NUMBER { _PyPegen_ensure_real(p, real) }
 
 imaginary_number[expr_ty]:
     | imag=NUMBER { _PyPegen_ensure_imaginary(p, imag) }
@@ -343,7 +352,7 @@ mapping_pattern[pattern_ty]:
             NULL,
             EXTRA) }
 items_pattern[asdl_seq*]:
-    | items=','.key_value_pattern+ { items }
+    | ','.key_value_pattern+
 key_value_pattern[KeyPatternPair*]:
     | key=(literal_expr | attr) ':' pattern=pattern {
         _PyPegen_key_pattern_pair(p, key, pattern) }
@@ -373,7 +382,7 @@ class_pattern[pattern_ty]:
 positional_patterns[asdl_pattern_seq*]:
     | args[asdl_pattern_seq*]=','.pattern+ { args }
 keyword_patterns[asdl_seq*]:
-    | keywords[asdl_seq*]=','.keyword_pattern+ { keywords }
+    | ','.keyword_pattern+
 keyword_pattern[KeyPatternPair*]:
     | arg=NAME '=' value=pattern { _PyPegen_key_pattern_pair(p, arg, value) }
 
@@ -954,12 +963,12 @@ invalid_finally_stmt:
     | a='finally' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'finally' statement on line %d", a->lineno) }
 invalid_except_stmt_indent:
-    | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT { 
+    | a='except' expression ['as' NAME ] ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'except' statement on line %d", a->lineno) }
     | a='except' ':' NEWLINE !INDENT { RAISE_SYNTAX_ERROR("expected an indented block after except statement on line %d", a->lineno) }
 invalid_match_stmt:
     | "match" subject_expr !':' { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
-    | a="match" subject=subject_expr ':' NEWLINE !INDENT { 
+    | a="match" subject=subject_expr ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
 invalid_case_block:
     | "case" patterns guard? !':' { RAISE_SYNTAX_ERROR("expected ':'") }

@@ -440,7 +440,7 @@ class ConstructorTestCase(unittest.TestCase):
     def test_internal_types(self):
         # internal types like _hashlib.C_HMAC are not constructable
         with self.assertRaisesRegex(
-            TypeError, "cannot create 'HMAC' instance"
+            TypeError, "cannot create '_hashlib.HMAC' instance"
         ):
             C_HMAC()
 

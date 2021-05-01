@@ -11,7 +11,8 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import open_urlresource, requires_resource, script_helper
+from test.support import (open_urlresource, requires_resource, script_helper,
+                          cpython_only)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -224,6 +225,11 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        self.assertRaises(TypeError, unicodedata.UCD)
 
     def test_failed_import_during_compiling(self):
         # Issue 4367

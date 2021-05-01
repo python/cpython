@@ -1,5 +1,5 @@
 from test import support
-from test.support import import_helper
+from test.support import import_helper, cpython_only
 gdbm = import_helper.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
@@ -26,6 +26,13 @@ class TestGdbm(unittest.TestCase):
         if self.g is not None:
             self.g.close()
         unlink(filename)
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        self.g = gdbm.open(filename, 'c')
+        tp = type(self.g)
+        self.assertRaises(TypeError, tp)
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')
