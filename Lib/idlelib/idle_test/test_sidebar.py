@@ -723,7 +723,7 @@ class ShellSidebarTest(unittest.TestCase):
         self.assertIn('if True:\n', selected_text)
         self.assertIn('\n1\n', selected_text)
 
-        sidebar.rmenu_copy_handler(event=None)
+        sidebar.rmenu_copy_handler()
         self.addCleanup(text.clipboard_clear)
 
         copied_text = text.clipboard_get()
@@ -758,7 +758,7 @@ class ShellSidebarTest(unittest.TestCase):
                                     strict=True)
         ) + '\n'
 
-        sidebar.rmenu_copy_with_prompts_handler(event=None)
+        sidebar.rmenu_copy_with_prompts_handler()
         self.addCleanup(text.clipboard_clear)
 
         copied_text = text.clipboard_get()

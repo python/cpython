@@ -446,14 +446,14 @@ class ShellSidebar(BaseSideBar):
         rmenu.tk_popup(event.x_root, event.y_root)
         return "break"
 
-    def rmenu_copy_handler(self, event):
+    def rmenu_copy_handler(self):
         """Copy selected text to the clipboard."""
         selected_text = self.text.get('sel.first', 'sel.last')
 
         self.main_widget.clipboard_clear()
         self.main_widget.clipboard_append(selected_text)
 
-    def rmenu_copy_with_prompts_handler(self, event):
+    def rmenu_copy_with_prompts_handler(self):
         """Copy selected lines to the clipboard, with prompts.
 
         This makes the copied text useful for doc-tests and interactive
