@@ -224,6 +224,7 @@ class AuditEvent(Directive):
         info['source'].append((env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
+        pnode.line = self.lineno
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
         else:

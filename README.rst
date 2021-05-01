@@ -1,4 +1,4 @@
-This is Python version 3.10.0 alpha 5
+This is Python version 3.10.0 alpha 7
 =====================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master
@@ -13,13 +13,9 @@ This is Python version 3.10.0 alpha 5
    :alt: CPython build status on Azure DevOps
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
 
-.. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
-   :alt: CPython code coverage on Codecov
-   :target: https://codecov.io/gh/python/cpython
-
-.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
-   :alt: Python Zulip chat
-   :target: https://python.zulipchat.com
+.. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
+   :alt: Python Discourse chat
+   :target: https://discuss.python.org/
 
 
 Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.

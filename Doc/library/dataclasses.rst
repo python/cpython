@@ -33,7 +33,7 @@ using :pep:`526` type annotations.  For example this code::
 
 Will add, among other things, a :meth:`__init__` that looks like::
 
-  def __init__(self, name: str, unit_price: float, quantity_on_hand: int=0):
+  def __init__(self, name: str, unit_price: float, quantity_on_hand: int = 0):
       self.name = name
       self.unit_price = unit_price
       self.quantity_on_hand = quantity_on_hand
@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module-level decorators, classes, and functions
 -----------------------------------------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,7 +79,7 @@ Module-level decorators, classes, and functions
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
      class C:
         ...
 
@@ -136,7 +136,7 @@ Module-level decorators, classes, and functions
      attribute ``__hash__ = None`` has a specific meaning to Python, as
      described in the :meth:`__hash__` documentation.
 
-     If :meth:`__hash__` is not explicit defined, or if it is set to ``None``,
+     If :meth:`__hash__` is not explicitly defined, or if it is set to ``None``,
      then :func:`dataclass` *may* add an implicit :meth:`__hash__` method.
      Although not recommended, you can force :func:`dataclass` to create a
      :meth:`__hash__` method with ``unsafe_hash=True``. This might be the case
@@ -160,6 +160,23 @@ Module-level decorators, classes, and functions
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
+
+   - ``match_args``: If true (the default is ``True``), the
+     ``__match_args__`` tuple will be created from the list of
+     parameters to the generated :meth:`__init__` method (even if
+     :meth:`__init__` is not generated, see above).  If false, or if
+     ``__match_args__`` is already defined in the class, then
+     ``__match_args__`` will not be generated.
+
+   - ``kw_only``: If true (the default value is ``False``), then all
+     fields will be marked as keyword-only.  See the :term:`parameter`
+     glossary entry for details.  Also see the ``dataclasses.KW_ONLY``
+     section.
+
+   - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
+     will be generated and new class will be returned instead of the original one.
+     If :attr:`__slots__` is already defined in the class, then :exc:`TypeError`
+     is raised.
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -325,7 +342,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -333,8 +350,9 @@ Module-level decorators, classes, and functions
    iterable whose elements are each either ``name``, ``(name, type)``,
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
-   ``repr``, ``eq``, ``order``, ``unsafe_hash``, and ``frozen`` have
-   the same meaning as they do in :func:`dataclass`.
+   ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
+   ``match_args``, ``kw_only``, and  ``slots`` have the same meaning as
+   they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -511,6 +529,32 @@ The generated :meth:`__init__` method for ``C`` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
 
+Re-ordering of keyword-only parameters in __init__
+--------------------------------------------------
+
+After the fields needed for :meth:`__init__` are computed, any
+keyword-only fields are put after regular fields.  In this example,
+``Base.y`` and ``D.t`` are keyword-only fields::
+
+  @dataclass
+  class Base:
+      x: Any = 15.0
+      _: KW_ONLY
+      y: int = 0
+
+  @dataclass
+  class D(Base):
+      z: int = 10
+      t: int = field(kw_only=True, default=0)
+
+The generated :meth:`__init__` method for ``D`` will look like::
+
+  def __init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, t: int = 0):
+
+The relative ordering of keyword-only arguments is not changed from
+the order they are in computed field :meth:`__init__` list.
+
+
 Default factory functions
 -------------------------
 
@@ -592,4 +636,4 @@ Exceptions
 
    Raised when an implicitly defined :meth:`__setattr__` or
    :meth:`__delattr__` is called on a dataclass which was defined with
-   ``frozen=True``.
+   ``frozen=True``. It is a subclass of :exc:`AttributeError`.

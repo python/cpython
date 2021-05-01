@@ -118,9 +118,23 @@ static PyTypeObject deque_type;
 #define CHECK_NOT_END(link)
 #endif
 
+/* A simple freelisting scheme is used to minimize calls to the memory
+   allocator.  It accommodates common use cases where new blocks are being
+   added at about the same rate as old blocks are being freed.
+ */
+
+#define MAXFREEBLOCKS 16
+static Py_ssize_t numfreeblocks = 0;
+static block *freeblocks[MAXFREEBLOCKS];
+
 static block *
 newblock(void) {
-    block *b = PyMem_Malloc(sizeof(block));
+    block *b;
+    if (numfreeblocks) {
+        numfreeblocks--;
+        return freeblocks[numfreeblocks];
+    }
+    b = PyMem_Malloc(sizeof(block));
     if (b != NULL) {
         return b;
     }
@@ -131,7 +145,12 @@ newblock(void) {
 static void
 freeblock(block *b)
 {
-    PyMem_Free(b);
+    if (numfreeblocks < MAXFREEBLOCKS) {
+        freeblocks[numfreeblocks] = b;
+        numfreeblocks++;
+    } else {
+        PyMem_Free(b);
+    }
 }
 
 static PyObject *
@@ -880,8 +899,19 @@ deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     Py_ssize_t n=1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:rotate", &n)) {
+    if (!_PyArg_CheckPositional("deque.rotate", nargs, 0, 1)) {
         return NULL;
+    }
+    if (nargs) {
+        PyObject *index = _PyNumber_Index(args[0]);
+        if (index == NULL) {
+            return NULL;
+        }
+        n = PyLong_AsSsize_t(index);
+        Py_DECREF(index);
+        if (n == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     if (!_deque_rotate(deque, n))
@@ -1632,7 +1662,8 @@ static PyTypeObject deque_type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+    Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_SEQUENCE,
                                         /* tp_flags */
     deque_doc,                          /* tp_doc */
     (traverseproc)deque_traverse,       /* tp_traverse */

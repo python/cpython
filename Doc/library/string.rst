@@ -188,8 +188,8 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but
-there are differences.
+related to that of :ref:`formatted string literals <f-strings>`, but it is
+less sophisticated and, in particular, does not support arbitrary expressions.
 
 .. index::
    single: {} (curly brackets); in string formatting

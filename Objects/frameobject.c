@@ -1,22 +1,21 @@
 /* Frame object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
+#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
-#include "code.h"
-#include "frameobject.h"
-#include "opcode.h"
+#include "frameobject.h"          // PyFrameObject
+#include "opcode.h"               // EXTENDED_ARG
 #include "structmember.h"         // PyMemberDef
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
-    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
+    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY|PY_AUDIT_READ},
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
-    {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
     {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
@@ -47,14 +46,29 @@ PyFrame_GetLineNumber(PyFrameObject *f)
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_code, f->f_lasti);
+        return PyCode_Addr2Line(f->f_code, f->f_lasti*2);
     }
 }
 
 static PyObject *
 frame_getlineno(PyFrameObject *f, void *closure)
 {
-    return PyLong_FromLong(PyFrame_GetLineNumber(f));
+    int lineno = PyFrame_GetLineNumber(f);
+    if (lineno < 0) {
+        Py_RETURN_NONE;
+    }
+    else {
+        return PyLong_FromLong(lineno);
+    }
+}
+
+static PyObject *
+frame_getlasti(PyFrameObject *f, void *closure)
+{
+    if (f->f_lasti < 0) {
+        return PyLong_FromLong(-1);
+    }
+    return PyLong_FromLong(f->f_lasti*2);
 }
 
 
@@ -136,7 +150,7 @@ markblocks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case JUMP_IF_NOT_EXC_MATCH:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    j = get_arg(code, i);
                     assert(j < len);
                     if (blocks[j] == -1 && j < i) {
                         todo = 1;
@@ -146,7 +160,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[i+1] = block_stack;
                     break;
                 case JUMP_ABSOLUTE:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    j = get_arg(code, i);
                     assert(j < len);
                     if (blocks[j] == -1 && j < i) {
                         todo = 1;
@@ -155,7 +169,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[j] = block_stack;
                     break;
                 case SETUP_FINALLY:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     except_stack = push_block(block_stack, Except);
                     assert(blocks[j] == -1 || blocks[j] == except_stack);
@@ -165,7 +179,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     break;
                 case SETUP_WITH:
                 case SETUP_ASYNC_WITH:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     except_stack = push_block(block_stack, Except);
                     assert(blocks[j] == -1 || blocks[j] == except_stack);
@@ -174,7 +188,7 @@ markblocks(PyCodeObject *code_obj, int len)
                     blocks[i+1] = block_stack;
                     break;
                 case JUMP_FORWARD:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     assert(blocks[j] == -1 || blocks[j] == block_stack);
                     blocks[j] = block_stack;
@@ -187,7 +201,7 @@ markblocks(PyCodeObject *code_obj, int len)
                 case FOR_ITER:
                     blocks[i+1] = block_stack;
                     block_stack = pop_block(block_stack);
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
                     assert(blocks[j] == -1 || blocks[j] == block_stack);
                     blocks[j] = block_stack;
@@ -423,7 +437,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     int64_t target_block_stack = -1;
     int64_t best_block_stack = -1;
     int best_addr = -1;
-    int64_t start_block_stack = blocks[f->f_lasti/sizeof(_Py_CODEUNIT)];
+    int64_t start_block_stack = blocks[f->f_lasti];
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
         if (lines[i] == new_lineno) {
@@ -432,7 +446,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
                 msg = NULL;
                 if (target_block_stack > best_block_stack) {
                     best_block_stack = target_block_stack;
-                    best_addr = i*sizeof(_Py_CODEUNIT);
+                    best_addr = i;
                 }
             }
             else if (msg) {
@@ -512,6 +526,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_lineno",        (getter)frame_getlineno,
                     (setter)frame_setlineno, NULL},
     {"f_trace",         (getter)frame_gettrace, (setter)frame_settrace, NULL},
+    {"f_lasti",         (getter)frame_getlasti, NULL, NULL},
     {0}
 };
 
@@ -762,9 +777,7 @@ _Py_IDENTIFIER(__builtins__);
 static inline PyFrameObject*
 frame_alloc(PyCodeObject *code)
 {
-    PyFrameObject *f;
-
-    f = code->co_zombieframe;
+    PyFrameObject *f = code->co_zombieframe;
     if (f != NULL) {
         code->co_zombieframe = NULL;
         _Py_NewReference((PyObject *)f);
@@ -803,14 +816,11 @@ frame_alloc(PyCodeObject *code)
         _Py_NewReference((PyObject *)f);
     }
 
-    f->f_code = code;
     extras = code->co_nlocals + ncells + nfrees;
     f->f_valuestack = f->f_localsplus + extras;
-    for (Py_ssize_t i=0; i<extras; i++) {
+    for (Py_ssize_t i=0; i < extras; i++) {
         f->f_localsplus[i] = NULL;
     }
-    f->f_locals = NULL;
-    f->f_trace = NULL;
     return f;
 }
 
@@ -818,42 +828,33 @@ frame_alloc(PyCodeObject *code)
 PyFrameObject* _Py_HOT_FUNCTION
 _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
-#ifdef Py_DEBUG
-    if (con == NULL || con->fc_code == NULL ||
-        (locals != NULL && !PyMapping_Check(locals))) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-#endif
-
-    PyFrameObject *back = tstate->frame;
+    assert(con != NULL);
+    assert(con->fc_globals != NULL);
+    assert(con->fc_builtins != NULL);
+    assert(con->fc_code != NULL);
+    assert(locals == NULL || PyMapping_Check(locals));
 
     PyFrameObject *f = frame_alloc((PyCodeObject *)con->fc_code);
     if (f == NULL) {
         return NULL;
     }
 
+    f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
+    f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
+    f->f_builtins = Py_NewRef(con->fc_builtins);
+    f->f_globals = Py_NewRef(con->fc_globals);
+    f->f_locals = Py_XNewRef(locals);
+    // f_valuestack initialized by frame_alloc()
+    f->f_trace = NULL;
     f->f_stackdepth = 0;
-    Py_INCREF(con->fc_builtins);
-    f->f_builtins = con->fc_builtins;
-    Py_XINCREF(back);
-    f->f_back = back;
-    Py_INCREF(con->fc_code);
-    Py_INCREF(con->fc_globals);
-    f->f_globals = con->fc_globals;
-    Py_XINCREF(locals);
-    f->f_locals = locals;
-
+    f->f_trace_lines = 1;
+    f->f_trace_opcodes = 0;
+    f->f_gen = NULL;
     f->f_lasti = -1;
     f->f_lineno = 0;
     f->f_iblock = 0;
     f->f_state = FRAME_CREATED;
-    f->f_gen = NULL;
-    f->f_trace_opcodes = 0;
-    f->f_trace_lines = 1;
-
-    assert(f->f_code != NULL);
-
+    // f_blockstack and f_localsplus initialized by frame_alloc()
     return f;
 }
 
@@ -862,7 +863,10 @@ PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyObject *builtins = _PyEval_BuiltinsFromGlobals(globals);
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    if (builtins == NULL) {
+        return NULL;
+    }
     PyFrameConstructor desc = {
         .fc_globals = globals,
         .fc_builtins = builtins,
@@ -874,9 +878,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_closure = NULL
     };
     PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc, locals);
-    Py_DECREF(builtins);
-    if (f)
+    if (f) {
         _PyObject_GC_TRACK(f);
+    }
     return f;
 }
 
@@ -1120,9 +1124,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(PyThreadState *tstate)
+_PyFrame_ClearFreeList(PyInterpreterState *interp)
 {
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     while (state->free_list != NULL) {
         PyFrameObject *f = state->free_list;
         state->free_list = state->free_list->f_back;
@@ -1133,11 +1137,11 @@ _PyFrame_ClearFreeList(PyThreadState *tstate)
 }
 
 void
-_PyFrame_Fini(PyThreadState *tstate)
+_PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList(tstate);
+    _PyFrame_ClearFreeList(interp);
 #ifdef Py_DEBUG
-    struct _Py_frame_state *state = &tstate->interp->frame;
+    struct _Py_frame_state *state = &interp->frame;
     state->numfree = -1;
 #endif
 }
@@ -1173,27 +1177,20 @@ PyFrame_GetBack(PyFrameObject *frame)
     return back;
 }
 
-PyObject *_PyEval_BuiltinsFromGlobals(PyObject *globals) {
+PyObject*
+_PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
+{
     PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
     if (builtins) {
         if (PyModule_Check(builtins)) {
-            builtins = PyModule_GetDict(builtins);
+            builtins = _PyModule_GetDict(builtins);
             assert(builtins != NULL);
         }
+        return builtins;
     }
-    if (builtins == NULL) {
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        /* No builtins!              Make up a minimal one
-            Give them 'None', at least. */
-        builtins = PyDict_New();
-        if (builtins == NULL ||
-            PyDict_SetItemString(
-                builtins, "None", Py_None) < 0)
-            return NULL;
+    if (PyErr_Occurred()) {
+        return NULL;
     }
-    else
-        Py_INCREF(builtins);
-    return builtins;
+
+    return _PyEval_GetBuiltins(tstate);
 }

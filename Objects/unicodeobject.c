@@ -57,6 +57,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#include "pycore_fileutils.h"     // _Py_LocaleUsesNonUnicodeWchar()
+#endif
+
 /* Uncomment to display statistics on interned strings at exit
    in _PyUnicode_ClearInterned(). */
 /* #define INTERNED_STATS 1 */
@@ -94,7 +98,8 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 extern "C" {
 #endif
 
-/* Maximum code point of Unicode 6.0: 0x10ffff (1,114,111) */
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+// The value must be the same in fileutils.c.
 #define MAX_UNICODE 0x10ffff
 
 #ifdef Py_DEBUG
@@ -1784,8 +1789,8 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
             *maxchar = ch;
             if (*maxchar > MAX_UNICODE) {
                 PyErr_Format(PyExc_ValueError,
-                             "character U+%x is not in range [U+0000; U+10ffff]",
-                             ch);
+                             "character U+%x is not in range [U+0000; U+%x]",
+                             ch, MAX_UNICODE);
                 return -1;
             }
         }
@@ -2215,6 +2220,20 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     /* Optimization for empty strings */
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
+
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion to UCS-4 first. */
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
+        wchar_t* converted = _Py_DecodeNonUnicodeWchar(u, size);
+        if (!converted) {
+            return NULL;
+        }
+        PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
+        PyMem_Free(converted);
+        return unicode;
+    }
+#endif
 
     /* Single character Unicode objects in the Latin-1 range are
        shared when using this constructor */
@@ -3294,6 +3313,17 @@ PyUnicode_AsWideChar(PyObject *unicode,
         res = size;
     }
     unicode_copy_as_widechar(unicode, w, size);
+
+#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion first. */
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
+        if (_Py_EncodeNonUnicodeWchar_InPlace(w, size) < 0) {
+            return -1;
+        }
+    }
+#endif
+
     return res;
 }
 
@@ -3320,6 +3350,17 @@ PyUnicode_AsWideCharString(PyObject *unicode,
         return NULL;
     }
     unicode_copy_as_widechar(unicode, buffer, buflen + 1);
+
+#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion first. */
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
+        if (_Py_EncodeNonUnicodeWchar_InPlace(buffer, (buflen + 1)) < 0) {
+            return NULL;
+        }
+    }
+#endif
+
     if (size != NULL) {
         *size = buflen;
     }
@@ -5069,25 +5110,16 @@ static Py_ssize_t
 ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
 {
     const char *p = start;
-    const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_SIZE_T);
 
-    /*
-     * Issue #17237: m68k is a bit different from most architectures in
-     * that objects do not use "natural alignment" - for example, int and
-     * long are only aligned at 2-byte boundaries.  Therefore the assert()
-     * won't work; also, tests have shown that skipping the "optimised
-     * version" will even speed up m68k.
-     */
-#if !defined(__m68k__)
 #if SIZEOF_SIZE_T <= SIZEOF_VOID_P
-    assert(_Py_IS_ALIGNED(dest, SIZEOF_SIZE_T));
-    if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+    assert(_Py_IS_ALIGNED(dest, ALIGNOF_SIZE_T));
+    if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
         /* Help allocation */
         const char *_p = p;
         Py_UCS1 * q = dest;
-        while (_p < aligned_end) {
+        while (_p + SIZEOF_SIZE_T <= end) {
             size_t value = *(const size_t *) _p;
             if (value & ASCII_CHAR_MASK)
                 break;
@@ -5104,14 +5136,13 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         return p - start;
     }
 #endif
-#endif
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
-        if (_Py_IS_ALIGNED(p, SIZEOF_SIZE_T)) {
+        if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help allocation */
             const char *_p = p;
-            while (_p < aligned_end) {
+            while (_p + SIZEOF_SIZE_T <= end) {
                 size_t value = *(const size_t *) _p;
                 if (value & ASCII_CHAR_MASK)
                     break;
@@ -14089,7 +14120,7 @@ _PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
     {
     case PyUnicode_1BYTE_KIND: maxchar = 0xff; break;
     case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
-    case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
+    case PyUnicode_4BYTE_KIND: maxchar = MAX_UNICODE; break;
     default:
         Py_UNREACHABLE();
     }
@@ -15657,7 +15688,8 @@ PyTypeObject PyUnicode_Type = {
     0,                            /* tp_setattro */
     0,                            /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-    Py_TPFLAGS_UNICODE_SUBCLASS,   /* tp_flags */
+        Py_TPFLAGS_UNICODE_SUBCLASS |
+        _Py_TPFLAGS_MATCH_SELF, /* tp_flags */
     unicode_doc,                  /* tp_doc */
     0,                            /* tp_traverse */
     0,                            /* tp_clear */
@@ -15682,44 +15714,48 @@ PyTypeObject PyUnicode_Type = {
 /* Initialize the Unicode implementation */
 
 PyStatus
-_PyUnicode_Init(PyThreadState *tstate)
+_PyUnicode_Init(PyInterpreterState *interp)
 {
-    /* XXX - move this array to unicodectype.c ? */
-    const Py_UCS2 linebreak[] = {
-        0x000A, /* LINE FEED */
-        0x000D, /* CARRIAGE RETURN */
-        0x001C, /* FILE SEPARATOR */
-        0x001D, /* GROUP SEPARATOR */
-        0x001E, /* RECORD SEPARATOR */
-        0x0085, /* NEXT LINE */
-        0x2028, /* LINE SEPARATOR */
-        0x2029, /* PARAGRAPH SEPARATOR */
-    };
-
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
     if (unicode_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
     }
 
-    if (_Py_IsMainInterpreter(tstate)) {
+    if (_Py_IsMainInterpreter(interp)) {
         /* initialize the linebreak bloom filter */
+        const Py_UCS2 linebreak[] = {
+            0x000A, /* LINE FEED */
+            0x000D, /* CARRIAGE RETURN */
+            0x001C, /* FILE SEPARATOR */
+            0x001D, /* GROUP SEPARATOR */
+            0x001E, /* RECORD SEPARATOR */
+            0x0085, /* NEXT LINE */
+            0x2028, /* LINE SEPARATOR */
+            0x2029, /* PARAGRAPH SEPARATOR */
+        };
         bloom_linebreak = make_bloom_mask(
             PyUnicode_2BYTE_KIND, linebreak,
             Py_ARRAY_LENGTH(linebreak));
+    }
 
-        if (PyType_Ready(&PyUnicode_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize unicode type");
-        }
+    return _PyStatus_OK();
+}
 
-        if (PyType_Ready(&EncodingMapType) < 0) {
-             return _PyStatus_ERR("Can't initialize encoding map type");
-        }
-        if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize field name iterator type");
-        }
-        if (PyType_Ready(&PyFormatterIter_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize formatter iter type");
-        }
+
+PyStatus
+_PyUnicode_InitTypes(void)
+{
+    if (PyType_Ready(&PyUnicode_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize unicode type");
+    }
+    if (PyType_Ready(&EncodingMapType) < 0) {
+         return _PyStatus_ERR("Can't initialize encoding map type");
+    }
+    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize field name iterator type");
+    }
+    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize formatter iter type");
     }
     return _PyStatus_OK();
 }
@@ -15813,9 +15849,9 @@ PyUnicode_InternFromString(const char *cp)
 
 
 void
-_PyUnicode_ClearInterned(PyThreadState *tstate)
+_PyUnicode_ClearInterned(PyInterpreterState *interp)
 {
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
     if (state->interned == NULL) {
         return;
     }
@@ -16093,10 +16129,10 @@ error:
 
 
 static PyStatus
-init_stdio_encoding(PyThreadState *tstate)
+init_stdio_encoding(PyInterpreterState *interp)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
-    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(tstate->interp);
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
     if (config_get_codec_name(&config->stdio_encoding) < 0) {
         return _PyStatus_ERR("failed to get the Python codec name "
                              "of the stdio encoding");
@@ -16189,7 +16225,7 @@ _PyUnicode_InitEncodings(PyThreadState *tstate)
         return status;
     }
 
-    return init_stdio_encoding(tstate);
+    return init_stdio_encoding(tstate->interp);
 }
 
 
@@ -16233,9 +16269,9 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 
 
 void
-_PyUnicode_Fini(PyThreadState *tstate)
+_PyUnicode_Fini(PyInterpreterState *interp)
 {
-    struct _Py_unicode_state *state = &tstate->interp->unicode;
+    struct _Py_unicode_state *state = &interp->unicode;
 
     // _PyUnicode_ClearInterned() must be called before
     assert(state->interned == NULL);
