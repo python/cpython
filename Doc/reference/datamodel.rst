@@ -553,7 +553,10 @@ Callable types
       |                         | the dict are the parameter    |           |
       |                         | names, and ``'return'`` for   |           |
       |                         | the return annotation, if     |           |
-      |                         | provided.                     |           |
+      |                         | provided.  For more           |           |
+      |                         | information on working with   |           |
+      |                         | this attribute, see           |           |
+      |                         | :ref:`annotations-howto`.     |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
       |                         | for keyword-only parameters.  |           |
@@ -750,14 +753,15 @@ Modules
 
    Predefined (writable) attributes: :attr:`__name__` is the module's name;
    :attr:`__doc__` is the module's documentation string, or ``None`` if
-   unavailable; :attr:`__annotations__` (optional) is a dictionary containing
-   :term:`variable annotations <variable annotation>` collected during module
-   body execution; :attr:`__file__` is the pathname of the file from which the
+   unavailable; :attr:`__file__` is the pathname of the file from which the
    module was loaded, if it was loaded from a file. The :attr:`__file__`
    attribute may be missing for certain types of modules, such as C modules
    that are statically linked into the interpreter; for extension modules
    loaded dynamically from a shared library, it is the pathname of the shared
-   library file.
+   library file; :attr:`__annotations__` (optional) is a dictionary containing
+   :term:`variable annotations <variable annotation>` collected during module
+   body execution.  For best practices on working with annotations, please
+   see :ref:`annotations-howto`.
 
    .. index:: single: __dict__ (module attribute)
 
@@ -829,6 +833,7 @@ Custom classes
    or ``None`` if undefined; :attr:`__annotations__` (optional) is a dictionary
    containing :term:`variable annotations <variable annotation>` collected during
    class body execution.
+   For best practices on working with annotations, please see :ref:`annotations-howto`.
 
 Class instances
    .. index::
