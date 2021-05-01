@@ -20,11 +20,15 @@ class NetrcParseError(Exception):
 
 
 class netrc:
+    _use_first = False
+
     def __init__(self, file=None):
+        self._use_first = self._use_first
         default_netrc = file is None
         if file is None:
             file = os.path.join(os.path.expanduser("~"), ".netrc")
         self.hosts = {}
+        self.entries = []
         self.macros = {}
         with open(file) as fp:
             self._parse(file, fp, default_netrc)
@@ -45,10 +49,13 @@ class netrc:
                 continue
             elif tt == 'machine':
                 entryname = lexer.get_token()
+                default_entry = False
             elif tt == 'default':
                 entryname = 'default'
+                default_entry = True
             elif tt == 'macdef':                # Just skip to end of macdefs
                 entryname = lexer.get_token()
+                default_entry = False
                 self.macros[entryname] = []
                 lexer.whitespace = ' \t'
                 while 1:
@@ -65,13 +72,16 @@ class netrc:
             # We're looking at start of an entry for a named machine or default.
             login = ''
             account = password = None
-            self.hosts[entryname] = {}
             while 1:
                 tt = lexer.get_token()
                 if (tt.startswith('#') or
                     tt in {'', 'machine', 'default', 'macdef'}):
                     if password:
-                        self.hosts[entryname] = (login, account, password)
+                        entry = (login, account, password)
+                        if entryname not in self.hosts or not self._use_first:
+                            self.hosts[entryname] = entry
+                        entryhost = None if default_entry else entryname
+                        self.entries.append((entryhost, *entry))
                         lexer.push_token(tt)
                         break
                     else:
@@ -110,21 +120,26 @@ class netrc:
                     raise NetrcParseError("bad follower token %r" % tt,
                                           file, lexer.lineno)
 
-    def authenticators(self, host):
+    def authenticators(self, host, login=None):
         """Return a (user, account, password) tuple for given host."""
-        if host in self.hosts:
-            return self.hosts[host]
-        elif 'default' in self.hosts:
-            return self.hosts['default']
-        else:
-            return None
+        direction = 1 if self._use_first else -1
+        default_auth = None
+        for entry in self.entries[::direction]:
+            if login is None or entry[1] == login:
+                if entry[0] == host:
+                    return entry[1:]
+                elif entry[0] is None and default_auth is None:
+                    default_auth = entry[1:]
+        return default_auth
 
     def __repr__(self):
         """Dump the class data in the format of a .netrc file."""
         rep = ""
-        for host in self.hosts.keys():
-            attrs = self.hosts[host]
-            rep += f"machine {host}\n\tlogin {attrs[0]}\n"
+        for entry in self.entries:
+            host = entry[0]
+            attrs = entry[1:]
+            machine = "default" if host is None else f"machine {host}"
+            rep += f"{machine}\n\tlogin {attrs[0]}\n"
             if attrs[1]:
                 rep += f"\taccount {attrs[1]}\n"
             rep += f"\tpassword {attrs[2]}\n"

@@ -1,6 +1,15 @@
-import netrc, os, unittest, sys, tempfile, textwrap
+import netrc, os, unittest, sys, tempfile, textwrap, contextlib, re
 from test import support
 from test.support import os_helper
+
+@contextlib.contextmanager
+def set_use_first(value):
+    original_value = netrc.netrc._use_first
+    try:
+        netrc.netrc._use_first = value
+        yield
+    finally:
+        netrc.netrc._use_first = original_value
 
 
 class NetrcTestCase(unittest.TestCase):
@@ -60,6 +69,19 @@ class NetrcTestCase(unittest.TestCase):
             machine host.domain.com login log password pa#ss account acct
             """, 'pa#ss')
 
+    def test_password_for_multiple_entries_default_behavior(self):
+        self._test_passwords("""\
+            machine host.domain.com login log password pass_1 account acct
+            machine host.domain.com login log password pass_2 account acct
+            """, 'pass_2')
+
+    def test_password_for_multiple_entries_use_first(self):
+        with set_use_first(True):
+            self._test_passwords("""\
+                machine host.domain.com login log password pass_1 account acct
+                machine host.domain.com login log password pass_2 account acct
+                """, 'pass_1')
+
     def _test_comment(self, nrc, passwd='pass'):
         nrc = self.make_nrc(nrc)
         self.assertEqual(nrc.hosts['foo.domain.com'], ('bar', None, passwd))
@@ -103,6 +125,68 @@ class NetrcTestCase(unittest.TestCase):
             machine foo.domain.com login bar password #pass #comment
             machine bar.domain.com login foo password pass
             """, '#pass')
+
+    def _test_authenticators(self, nrc, login, passwd):
+        nrc = self.make_nrc(nrc)
+        self.assertEqual(
+            nrc.authenticators('host.domain.com', login),
+            (login or 'log', 'acct', passwd)
+        )
+
+    def test_authenticators(self):
+        self._test_authenticators("""\
+            machine host.domain.com login log password pass account acct
+            """, 'log', 'pass')
+
+    def test_authenticators_multiple_entries_default_behavior(self):
+        self._test_authenticators("""\
+            machine host.domain.com login log password pass_1 account acct
+            machine host.domain.com login log password pass_2 account acct
+            """, None, 'pass_2')
+
+    def test_authenticators_multiple_entries_use_first(self):
+        with set_use_first(True):
+            self._test_authenticators("""\
+                machine host.domain.com login log password pass_1 account acct
+                machine host.domain.com login log password pass_2 account acct
+                """, 'log', 'pass_1')
+
+    def test_authenticators_multiple_entries_select_user(self):
+        with set_use_first(True):
+            self._test_authenticators("""\
+                machine host.domain.com login log_1 password pass_1 account acct
+                machine host.domain.com login log_2 password pass_2 account acct
+                """, 'log_2', 'pass_2')
+
+    def test_authenticators_multiple_entries_select_default_user(self):
+        with set_use_first(True):
+            self._test_authenticators("""\
+                machine host.domain.com login log_1 password pass_1 account acct
+                machine host.domain.com login log_2 password pass_2 account acct
+                default login log_3 password pass_3 account acct
+                """, 'log_3', 'pass_3')
+
+    def _test_repr_simplified(self, nrc):
+        # assumes order: login, account, password
+        # comments are not handled
+        _nrc = self.make_nrc(nrc)
+        self.assertEqual(
+            re.sub(r'\s+', ' ', repr(_nrc)).strip(),
+            re.sub(r'\s+', ' ', nrc).strip(),
+        )
+
+    def test_repr(self):
+        self._test_repr_simplified("""\
+                machine host.domain.com login log account acct password pass
+                """)
+
+    def test_repr_multiple_entries(self):
+        self.maxDiff = None
+        self._test_repr_simplified("""\
+                machine host.domain.com login log_1 account acct password pass
+                machine host.domain.com login log_2 account acct password pass
+                default login log_3 account acct password pass_3
+                """)
 
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')

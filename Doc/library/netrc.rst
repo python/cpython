@@ -38,6 +38,8 @@ the Unix :program:`ftp` program and other FTP clients.
       :func:`os.path.expanduser` is used to find the location of the
       :file:`.netrc` file when *file* is not passed as argument.
 
+   .. versionchanged:: 3.9 Handles multiple entries for the same host.
+
 
 .. exception:: NetrcParseError
 
@@ -56,18 +58,22 @@ netrc Objects
 A :class:`~netrc.netrc` instance has the following methods:
 
 
-.. method:: netrc.authenticators(host)
+.. method:: netrc.authenticators(host, [login])
 
-   Return a 3-tuple ``(login, account, password)`` of authenticators for *host*.
+   Return a 3-tuple ``(login, account, password)`` of authenticators for *host*
+   and *login*.
    If the netrc file did not contain an entry for the given host, return the tuple
    associated with the 'default' entry.  If neither matching host nor default entry
    is available, return ``None``.
+   If optional parameter *login* is not provided, it returns the first
+   authenticators for the matching host. For further information see
+   :class:`~netrc.netrc._use_first`.
 
 
 .. method:: netrc.__repr__()
 
    Dump the class data as a string in the format of a netrc file. (This discards
-   comments and may reorder the entries.)
+   comments.)
 
 Instances of :class:`~netrc.netrc` have public instance variables:
 
@@ -76,11 +82,32 @@ Instances of :class:`~netrc.netrc` have public instance variables:
 
    Dictionary mapping host names to ``(login, account, password)`` tuples.  The
    'default' entry, if any, is represented as a pseudo-host by that name.
+   This dictionary only contains a single entry per host. For further information
+   see :class:`~netrc.netrc._use_first`.
 
 
 .. attribute:: netrc.macros
 
    Dictionary mapping macro names to string lists.
+
+Configuration of class :class:`~netrc.netrc` behavior:
+
+
+.. attribute:: netrc._use_first
+
+   Controls the order of machine entries for the same host. If *True*,
+   :class:`~netrc.netrc.authenticators` will return the first entry for a host,
+   when called without providing *login*. Also :class:`~netrc.netrc.hosts` will
+   contain the first entry for this machine. This would be inline with the common
+   netrc implementation of other Unix tools.
+   For backward compatibility the default value is *False*, i.e. the last item
+   is used when no *login* is provided or :class:`~netrc.netrc.hosts` is looked up.
+   Libraries shall not change this value (hence it is not a constructor
+   parameter). The intention is that the end-user can configure the target Python
+   installation (e.g. via sitecustomize) for consistent behavior.
+
+   .. versionchanged:: 3.9
+      Added to control entry order for hosts with multiple login.
 
 .. note::
 
