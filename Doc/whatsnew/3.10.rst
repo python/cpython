@@ -999,7 +999,7 @@ on various types of objects, and makes very few assumptions about the object
 it examines. :func:`inspect.get_annotations` can also correctly un-stringize
 stringized annotations.  :func:`inspect.get_annotations` is now considered
 best practice for accessing the annotations dict defined on any Python object;
-for more information on best practices for working with annotations, please
+for more information on best practices for working with annotations, please see
 :ref:`annotations-howto`.
 Relatedly, :func:`inspect.signature`,
 :func:`inspect.Signature.from_callable`, and ``inspect.Signature.from_function``
