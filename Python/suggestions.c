@@ -10,10 +10,12 @@
 #define MOVE_COST 2
 #define CASE_COST 1
 
+#define LEAST_FIVE_BITS(n) ((n) * 31)
+
 static inline int
 substitution_cost(char a, char b)
 {
-    if ((a & 31) != (b & 31)) {
+    if (LEAST_FIVE_BITS(a) != LEAST_FIVE_BITS(b)) {
         // Not the same, not a case flip.
         return MOVE_COST;
     }
@@ -36,8 +38,9 @@ substitution_cost(char a, char b)
 static Py_ssize_t
 levenshtein_distance(const char *a, size_t a_size,
                      const char *b, size_t b_size,
-                     size_t *buffer, size_t max_cost)
+                     size_t max_cost)
 {
+    static size_t buffer[MAX_STRING_SIZE];
     if (a_size > MAX_STRING_SIZE || b_size > MAX_STRING_SIZE) {
         return max_cost + 1;
     }
@@ -120,68 +123,10 @@ levenshtein_distance(const char *a, size_t a_size,
     return result;
 }
 
-#define TEST_LEVENSHTEIN 0
-#if TEST_LEVENSHTEIN
-
-static void
-do_test(const char *a, const char *b, size_t d)
-{
-    static size_t buffer[500];
-    size_t a_len = strlen(a);
-    size_t b_len = strlen(b);
-    size_t d2 = levenshtein_distance(a, a_len, b, b_len, buffer, 9999);
-    printf("'%s' -> '%s':", a, b);
-    if (d != d2) {
-        printf("\n    FAILURE: Expected %d, got %d.\n", (int)d, (int)d2);
-    }
-    else {
-        printf("    passed.\n");
-    }
-    size_t d3 = levenshtein_distance(a, a_len, b, b_len, buffer, d2);
-    assert(d2 == d3);
-    size_t d4 = levenshtein_distance(b, b_len, a, a_len, buffer, d2);
-    assert(d2 == d4);
-}
-
-static void
-test_levenshtein_distances()
-{
-    printf("\n\n--- Testing Levenshtein Distances ---\n\n");
-    do_test("", "", 0);
-    do_test("", "a", 2);
-    do_test("a", "A", 1);
-    do_test("Apple", "Aple", 2);
-    do_test("Banana", "B@n@n@", 6);
-    do_test("Cherry", "Cherry!", 2);
-    do_test("abc", "y", 6);
-    do_test("aa", "bb", 4);
-    do_test("aaaaa", "AAAAA", 5);
-    do_test("wxyz", "wXyZ", 2);
-    do_test("wxyz", "wXyZ123", 8);
-    do_test("Python", "Java", 12);
-    do_test("Java", "C#", 8);
-    do_test("AbstractFoobarManager", "abstract_foobar_manager", 3+2*2);
-    do_test("CPython", "PyPy", 10);
-    do_test("CPython", "pypy", 11);
-    do_test("AttributeError", "AttributeErrop", 2);
-    do_test("AttributeError", "AttributeErrorTests", 10);
-    printf("\n\n-------------------------------------\n\n");
-}
-
-#endif
-
 static inline PyObject *
 calculate_suggestions(PyObject *dir,
                       PyObject *name)
 {
-    #if TEST_LEVENSHTEIN
-    static int did_it;
-    if (!did_it) {
-        did_it = 1;
-        test_levenshtein_distances();
-    }
-    #endif
-
     assert(!PyErr_Occurred());
     assert(PyList_CheckExact(dir));
 
@@ -213,8 +158,7 @@ calculate_suggestions(PyObject *dir,
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
         Py_ssize_t current_distance =
             levenshtein_distance(name_str, name_size,
-                                 item_str, item_size,
-                                 work_buffer, max_distance);
+                                 item_str, item_size, max_distance);
         if (current_distance > max_distance) {
             continue;
         }
@@ -303,7 +247,9 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
 // Offer suggestions for a given exception. Returns a python string object containing the
 // suggestions. This function returns NULL if no suggestion was found or if an exception happened,
 // users must call PyErr_Occurred() to disambiguate.
-PyObject *_Py_Offer_Suggestions(PyObject *exception) {
+PyObject *
+_Py_Offer_Suggestions(PyObject *exception)
+{
     PyObject *result = NULL;
     assert(!PyErr_Occurred());
     if (Py_IS_TYPE(exception, (PyTypeObject*)PyExc_AttributeError)) {
@@ -312,5 +258,24 @@ PyObject *_Py_Offer_Suggestions(PyObject *exception) {
         result = offer_suggestions_for_name_error((PyNameErrorObject *) exception);
     }
     return result;
+}
+
+Py_ssize_t *
+_Py_UTF8_Edit_Cost(PyObject *a, PyObject *b, Py_ssize_t max_cost)
+{
+    assert(PyUnicode_Check(a) && PyUnicode_Check(b));
+    Py_ssize_t size_a, size_b;
+    const char *utf8_a = PyUnicode_AsUTF8AndSize(a, &size_a);
+    if (utf8_a == NULL) {
+        return -1;
+    }
+    const char *utf8_b = PyUnicode_AsUTF8AndSize(b, &size_b);
+    if (utf8_b == NULL) {
+        return -1;
+    }
+    if (max_cost == -1) {
+        max_cost = MOVE_COST * Py_MAX(size_a, size_b);
+    }
+    return levenshtein_distance(utf8_a, size_a, utf8_b, size_b, max_cost);
 }
 
