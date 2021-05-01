@@ -763,31 +763,6 @@ class ShellSidebarTest(unittest.TestCase):
         copied_text = text.clipboard_get()
         self.assertEqual(copied_text, selected_text_with_prompts)
 
-    @run_in_tk_mainloop
-    def test_copy_only_code(self):
-        sidebar = self.shell.shell_sidebar
-        text = self.shell.text
-
-        first_line = get_end_linenumber(text)
-
-        self.do_input(dedent('''\
-            if True:
-            print(1)
-
-            '''))
-        yield
-
-        text.tag_add('sel', f'{first_line}.0', 'end-1c')
-        selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('if True:\n'))
-        self.assertIn('\n1\n', selected_text)
-
-        text.event_generate('<<copy-only-code>>')
-        self.addCleanup(text.clipboard_clear)
-
-        copied_text = text.clipboard_get()
-        self.assertRegex(copied_text.strip(), r'^if True:\n[ \t]+print\(1\)$')
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

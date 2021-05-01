@@ -872,9 +872,6 @@ class PyShell(OutputWindow):
     rmenu_specs.insert(_idx, ("Copy with prompts",
                               "<<copy-with-prompts>>",
                               "rmenu_check_copy"))
-    rmenu_specs.insert(_idx + 1, ("Copy only code",
-                                  "<<copy-only-code>>",
-                                  "rmenu_check_copy"))
     del _idx
 
     allow_line_numbers = False
@@ -918,7 +915,6 @@ class PyShell(OutputWindow):
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
         text.bind("<<copy-with-prompts>>", self.copy_with_prompts_callback)
-        text.bind("<<copy-only-code>>", self.copy_only_code_callback)
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)
             text.bind("<<restart-shell>>", self.restart_shell)
@@ -1027,25 +1023,6 @@ class PyShell(OutputWindow):
 
         text.clipboard_clear()
         text.clipboard_append(selected_text_with_prompts)
-
-    def copy_only_code_callback(self, event=None):
-        """Copy only the code from the selected text to the clipboard."""
-        text = self.text
-
-        if not text.tag_ranges("sel"):
-            # There is no selection, so do nothing.
-            return None
-
-        # Find all text with the "stdin" tag in the selected range
-        code_pieces = []
-        index = text.index("sel.first")
-        while tag_range := text.tag_nextrange("stdin", index, "sel.last"):
-            index = tag_range[1]
-            code_pieces.append(text.get(*tag_range))
-
-        text.clipboard_clear()
-        text.clipboard_append("\n".join(code_pieces))
-
 
     reading = False
     executing = False
