@@ -14,7 +14,8 @@ from idlelib import macosx
 
 def get_lineno(text, index):
     """Return the line number of an index in a Tk text widget."""
-    return int(float(text.index(index)))
+    text_index = text.index(index)
+    return int(float(text_index)) if text_index else None
 
 
 def get_end_linenumber(text):
@@ -440,11 +441,15 @@ class ShellSidebar(BaseSideBar):
 
     def context_menu_event(self, event):
         rmenu = tk.Menu(self.main_widget, tearoff=0)
-        rmenu.add_command(label='Copy', command=self.rmenu_copy_handler)
+        has_selection = bool(self.text.tag_nextrange('sel', '1.0'))
+        rmenu.add_command(label='Copy', command=self.rmenu_copy_handler,
+                          state='normal' if has_selection else 'disabled')
         rmenu.add_command(label='Copy with prompts',
-                          command=self.rmenu_copy_with_prompts_handler)
+                          command=self.rmenu_copy_with_prompts_handler,
+                          state='normal' if has_selection else 'disabled')
         rmenu.add_command(label='Copy only code',
-                          command=self.rmenu_copy_only_code_handler)
+                          command=self.rmenu_copy_only_code_handler,
+                          state='normal' if has_selection else 'disabled')
         rmenu.tk_popup(event.x_root, event.y_root)
         return "break"
 
