@@ -579,6 +579,9 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
             }
             else {
                 DWORD d = PyLong_AsUnsignedLong(value);
+                if ((d == (DWORD)(-1)) && PyErr_Occurred()) {
+                    return FALSE;
+                }
                 memcpy(*retDataBuf, &d, sizeof(DWORD));
             }
             break;
@@ -597,6 +600,9 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
             }
             else {
                 DWORD64 d = PyLong_AsUnsignedLongLong(value);
+                if ((d == (DWORD64)(-1)) && PyErr_Occurred()) {
+                    return FALSE;
+                }
                 memcpy(*retDataBuf, &d, sizeof(DWORD64));
             }
             break;
