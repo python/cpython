@@ -1,4 +1,2 @@
 Usage of ``await``/``yield``/``yield from`` and named expressions within an
-annotation is now forbidden when PEP 563 is activated. Also the annotations
-won't interact with symbol table at all, and will be considered no different
-than strings.
+annotation is now forbidden when PEP 563 is activated.

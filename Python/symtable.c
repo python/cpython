@@ -48,10 +48,6 @@
 #define ANNOTATION_NOT_ALLOWED \
 "'%s' can not be used within an annotation"
 
-// Annotation blocks shouldn't have any affect on the symbol table
-// since in the compilation stage, they will all be transformed to
-// strings.
-#define IS_PSUEDO_BLOCK(BLOCK) (BLOCK == AnnotationBlock)
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -224,7 +220,7 @@ static int symtable_visit_annotations(struct symtable *st, stmt_ty, arguments_ty
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
-static int symtable_check_annotation(struct symtable *st, const char *, expr_ty);
+static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
@@ -997,9 +993,18 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     /* The entry is owned by the stack. Borrow it for st_cur. */
     Py_DECREF(ste);
     st->st_cur = ste;
+
+    /* Annotation blocks shouldn't have any affect on the symbol table since in
+     * the compilation stage, they will all be transformed to strings. They are
+     * only created if future 'annotations' feature is activated. */
+    if (block == AnnotationBlock) {
+        return 1;
+    }
+
     if (block == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
-    if (prev && !IS_PSUEDO_BLOCK(block)) {
+
+    if (prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
             return 0;
         }
@@ -1577,7 +1582,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     }
     switch (e->kind) {
     case NamedExpr_kind:
-        if (!symtable_check_annotation(st, "named expression", e)) {
+        if (!symtable_raise_if_annotation_block(st, "named expression", e)) {
             VISIT_QUIT(st, 0);
         }
         if(!symtable_handle_namedexpr(st, e))
@@ -1640,7 +1645,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_QUIT(st, 0);
         break;
     case Yield_kind:
-        if (!symtable_check_annotation(st, "yield expression", e)) {
+        if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
             VISIT_QUIT(st, 0);
         }
         if (e->v.Yield.value)
@@ -1648,14 +1653,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         st->st_cur->ste_generator = 1;
         break;
     case YieldFrom_kind:
-        if (!symtable_check_annotation(st, "yield expression", e)) {
+        if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
             VISIT_QUIT(st, 0);
         }
         VISIT(st, expr, e->v.YieldFrom.value);
         st->st_cur->ste_generator = 1;
         break;
     case Await_kind:
-        if (!symtable_check_annotation(st, "await expression", e)) {
+        if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
             VISIT_QUIT(st, 0);
         }
         VISIT(st, expr, e->v.Await.value);
@@ -2088,18 +2093,19 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 }
 
 static int
-symtable_check_annotation(struct symtable *st, const char *name, expr_ty e)
+symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_ty e)
 {
-    if (st->st_cur->ste_type == AnnotationBlock) {
-        PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
-        PyErr_RangedSyntaxLocationObject(st->st_filename,
-                                         e->lineno,
-                                         e->col_offset + 1,
-                                         e->end_lineno,
-                                         e->end_col_offset + 1);
-        return 0;
+    if (st->st_cur->ste_type != AnnotationBlock) {
+        return 1;
     }
-    return 1;
+
+    PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
+    PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                     e->lineno,
+                                     e->col_offset + 1,
+                                     e->end_lineno,
+                                     e->end_col_offset + 1);
+    return 0;
 }
 
 struct symtable *
@@ -2126,6 +2132,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     }
     future->ff_features |= flags->cf_flags;
     st = _PySymtable_Build(mod, filename, future);
+    PyObject_Free((void *)future);
     _PyArena_Free(arena);
     return st;
 }
