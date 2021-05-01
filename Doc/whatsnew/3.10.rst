@@ -1105,6 +1105,13 @@ Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
 ssl
 ---
 
+The ssl module now has more secure default settings. Ciphers without forward
+secrecy or SHA-1 MAC are disabled by default. Security level 2 prohibits
+weak RSA, DH, and ECC keys with less than 112 bits of security.
+:class:`~ssl.SSLContext` defaults to minimum protocol version TLS 1.2.
+Settings are based on Hynek Schlawack's research.
+(Contributed by Christian Heimes in :issue:`43998`.)
+
 Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
 (Contributed by Zackery Spytz in :issue:`31870`.)
 

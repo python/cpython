@@ -5836,7 +5836,7 @@ AC_ARG_WITH(ssl-default-suites,
                             python: use Python's preferred selection (default),
                             openssl: leave OpenSSL's defaults untouched,
                             STRING: use a custom string,
-                            PROTOCOL_SSLv2 ignores the setting, see Doc/library/ssl.rst]),
+                            python and STRING also set TLS 1.2 as minimum TLS version]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in
