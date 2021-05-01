@@ -443,6 +443,8 @@ class ShellSidebar(BaseSideBar):
         rmenu.add_command(label='Copy', command=self.rmenu_copy_handler)
         rmenu.add_command(label='Copy with prompts',
                           command=self.rmenu_copy_with_prompts_handler)
+        rmenu.add_command(label='Copy only code',
+                          command=self.rmenu_copy_only_code_handler)
         rmenu.tk_popup(event.x_root, event.y_root)
         return "break"
 
@@ -479,6 +481,20 @@ class ShellSidebar(BaseSideBar):
 
         self.main_widget.clipboard_clear()
         self.main_widget.clipboard_append(selected_text_with_prompts)
+
+    def rmenu_copy_only_code_handler(self):
+        """Copy only the code from the selected text to the clipboard."""
+        text = self.text
+
+        # Find all text with the 'stdin' tag in the selected range
+        code_pieces = []
+        index = text.index('sel.first')
+        while tag_range := text.tag_nextrange('stdin', index, 'sel.last'):
+            index = tag_range[1]
+            code_pieces.append(text.get(*tag_range))
+
+        self.main_widget.clipboard_clear()
+        self.main_widget.clipboard_append('\n'.join(code_pieces))
 
     def grid(self):
         self.canvas.grid(row=1, column=0, sticky=tk.NSEW, padx=2, pady=0)
