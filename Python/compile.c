@@ -230,8 +230,28 @@ struct compiler {
 };
 
 typedef struct {
+    // A list of strings corresponding to name captures. It is used to track:
+    // - Repeated name assignments in the same pattern.
+    // - Different name assignments in alternatives.
+    // - The order of name assignments in alternatives.
     PyObject *stores;
+    // If 0, any name captures against our subject will raise.
     int allow_irrefutable;
+    // An array of blocks to jump to on failure. Jumping to fail_pop[i] will pop
+    // i items off of the stack. The end result looks like this (with each block
+    // falling through to the next):
+    // fail_pop[4]: POP_TOP
+    // fail_pop[3]: POP_TOP
+    // fail_pop[2]: POP_TOP
+    // fail_pop[1]: POP_TOP
+    // fail_pop[0]: NOP
+    basicblock **fail_pop;
+    // The current length of fail_pop.
+    Py_ssize_t fail_pop_size;
+    // The number of items on top of the stack that need to *stay* on top of the
+    // stack. Variable captures go beneath these. All of them will be popped on
+    // failure.
+    Py_ssize_t on_top;
 } pattern_context;
 
 static int compiler_enter_scope(struct compiler *, identifier, int, void *, int);
@@ -1188,6 +1208,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case MATCH_KEYS:
             return 2;
+        case ROT_N:
+            return 0;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -5594,11 +5616,15 @@ compiler_slice(struct compiler *c, expr_ty s)
 
 // PEP 634: Structural Pattern Matching
 
-// To keep things simple, all compiler_pattern_* routines follow the convention
-// of replacing TOS (the subject for the given pattern) with either True (match)
-// or False (no match). We do this even for irrefutable patterns; the idea is
-// that it's much easier to smooth out any redundant pushing, popping, and
-// jumping in the peephole optimizer than to detect or predict it here.
+// To keep things simple, all compiler_pattern_* and pattern_helper_* routines
+// follow the convention of consuming TOS (the subject for the given pattern)
+// and calling jump_to_fail_pop on failure (no match).
+
+// When calling into these routines, it's important that pc->on_top be kept
+// updated to reflect the current number of items that we are using on the top
+// of the stack: they will be popped on failure, and any name captures will be
+// stored *underneath* them on success. This lets us defer all names stores
+// until the *entire* pattern matches.
 
 #define WILDCARD_CHECK(N) \
     ((N)->kind == MatchAs_kind && !(N)->v.MatchAs.name)
@@ -5609,6 +5635,72 @@ compiler_slice(struct compiler *c, expr_ty s)
 // Limit permitted subexpressions, even if the parser & AST validator let them through
 #define MATCH_VALUE_EXPR(N) \
     ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
+
+// Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
+static int
+ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
+{
+    Py_ssize_t size = n + 1;
+    if (size <= pc->fail_pop_size) {
+        return 1;
+    }
+    Py_ssize_t needed = sizeof(basicblock*) * size;
+    basicblock **resized = PyObject_Realloc(pc->fail_pop, needed);
+    if (resized == NULL) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    pc->fail_pop = resized;
+    while (pc->fail_pop_size < size) {
+        basicblock *new_block;
+        RETURN_IF_FALSE(new_block = compiler_new_block(c));
+        pc->fail_pop[pc->fail_pop_size++] = new_block;
+    }
+    return 1;
+}
+
+// Use op to jump to the correct fail_pop block.
+static int
+jump_to_fail_pop(struct compiler *c, pattern_context *pc, int op)
+{
+    // Pop any items on the top of the stack, plus any objects we were going to
+    // capture on success:
+    Py_ssize_t pops = pc->on_top + PyList_GET_SIZE(pc->stores);
+    RETURN_IF_FALSE(ensure_fail_pop(c, pc, pops));
+    ADDOP_JUMP(c, op, pc->fail_pop[pops]);
+    NEXT_BLOCK(c);
+    return 1;
+}
+
+// Build all of the fail_pop blocks and reset fail_pop.
+static int
+emit_and_reset_fail_pop(struct compiler *c, pattern_context *pc)
+{
+    if (!pc->fail_pop_size) {
+        assert(pc->fail_pop == NULL);
+        NEXT_BLOCK(c);
+        return 1;
+    }
+    while (--pc->fail_pop_size) {
+        compiler_use_next_block(c, pc->fail_pop[pc->fail_pop_size]);
+        if (!compiler_addop(c, POP_TOP)) {
+            pc->fail_pop_size = 0;
+            PyObject_Free(pc->fail_pop);
+            pc->fail_pop = NULL;
+            return 0;
+        }
+    }
+    compiler_use_next_block(c, pc->fail_pop[0]);
+    PyObject_Free(pc->fail_pop);
+    pc->fail_pop = NULL;
+    return 1;
+}
+
+static int
+compiler_error_duplicate_store(struct compiler *c, identifier n)
+{
+    return compiler_error(c, "multiple assignments to name %R in pattern", n);
+}
 
 static int
 pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
@@ -5621,22 +5713,16 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
         return 0;
     }
     // Can't assign to the same name twice:
-    if (pc->stores == NULL) {
-        RETURN_IF_FALSE(pc->stores = PySet_New(NULL));
+    int duplicate = PySequence_Contains(pc->stores, n);
+    if (duplicate < 0) {
+        return 0;
     }
-    else {
-        int duplicate = PySet_Contains(pc->stores, n);
-        if (duplicate < 0) {
-            return 0;
-        }
-        if (duplicate) {
-            const char *e = "multiple assignments to name %R in pattern";
-            return compiler_error(c, e, n);
-        }
+    if (duplicate) {
+        return compiler_error_duplicate_store(c, n);
     }
-    RETURN_IF_FALSE(!PySet_Add(pc->stores, n));
-    RETURN_IF_FALSE(compiler_nameop(c, n, Store));
-    return 1;
+    // Rotate this object underneath any items we need to preserve:
+    ADDOP_I(c, ROT_N, pc->on_top + PyList_GET_SIZE(pc->stores) + 1);
+    return !PyList_Append(pc->stores, n);
 }
 
 
@@ -5672,65 +5758,17 @@ pattern_helper_sequence_unpack(struct compiler *c, asdl_pattern_seq *patterns,
                                Py_ssize_t star, pattern_context *pc)
 {
     RETURN_IF_FALSE(pattern_unpack_helper(c, patterns));
-    // We've now got a bunch of new subjects on the stack. If any of them fail
-    // to match, we need to pop everything else off, then finally push False.
-    // fails is an array of blocks that correspond to the necessary amount of
-    // popping for each element:
-    basicblock **fails;
     Py_ssize_t size = asdl_seq_LEN(patterns);
-    fails = (basicblock **)PyObject_Malloc(sizeof(basicblock*) * size);
-    if (fails == NULL) {
-        PyErr_NoMemory();
-        return 0;
-    }
-    // NOTE: Can't use our nice returning macros anymore: they'll leak memory!
-    // goto error on error.
+    // We've now got a bunch of new subjects on the stack. They need to remain
+    // there after each subpattern match:
+    pc->on_top += size;
     for (Py_ssize_t i = 0; i < size; i++) {
-        fails[i] = compiler_new_block(c);
-        if (fails[i] == NULL) {
-            goto error;
-        }
-    }
-    for (Py_ssize_t i = 0; i < size; i++) {
+        // One less item to keep track of each time we loop through:
+        pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        assert((i == star) == (pattern->kind == MatchStar_kind));
-        if (!compiler_pattern_subpattern(c, pattern, pc) ||
-            !compiler_addop_j(c, POP_JUMP_IF_FALSE, fails[i]) ||
-            compiler_next_block(c) == NULL)
-        {
-            goto error;
-        }
+        RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
-    // Success!
-    basicblock *end = compiler_new_block(c);
-    if (end == NULL ||
-        !compiler_addop_load_const(c, Py_True) ||
-        !compiler_addop_j(c, JUMP_FORWARD, end))
-    {
-        goto error;
-    }
-    // This is where we handle failed sub-patterns. For a sequence pattern like
-    // [a, b, c, d], this will look like:
-    // fails[0]: POP_TOP
-    // fails[1]: POP_TOP
-    // fails[2]: POP_TOP
-    // fails[3]: LOAD_CONST False
-    for (Py_ssize_t i = 0; i < size - 1; i++) {
-        compiler_use_next_block(c, fails[i]);
-        if (!compiler_addop(c, POP_TOP)) {
-            goto error;
-        }
-    }
-    compiler_use_next_block(c, fails[size - 1]);
-    if (!compiler_addop_load_const(c, Py_False)) {
-        goto error;
-    }
-    compiler_use_next_block(c, end);
-    PyObject_Free(fails);
     return 1;
-error:
-    PyObject_Free(fails);
-    return 0;
 }
 
 // Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
@@ -5740,9 +5778,8 @@ static int
 pattern_helper_sequence_subscr(struct compiler *c, asdl_pattern_seq *patterns,
                                Py_ssize_t star, pattern_context *pc)
 {
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
+    // We need to keep the subject around for extracting elements:
+    pc->on_top++;
     Py_ssize_t size = asdl_seq_LEN(patterns);
     for (Py_ssize_t i = 0; i < size; i++) {
         pattern_ty pattern = asdl_seq_GET(patterns, i);
@@ -5766,16 +5803,10 @@ pattern_helper_sequence_subscr(struct compiler *c, asdl_pattern_seq *patterns,
         }
         ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-        NEXT_BLOCK(c);
     }
+    // Pop the subject, we're done with it:
+    pc->on_top--;
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -5804,26 +5835,15 @@ compiler_pattern_as(struct compiler *c, pattern_ty p, pattern_context *pc)
             const char *e = "wildcard makes remaining patterns unreachable";
             return compiler_error(c, e);
         }
-        RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
-        ADDOP_LOAD_CONST(c, Py_True);
-        return 1;
+        return pattern_helper_store_name(c, p->v.MatchAs.name, pc);
     }
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
     // Need to make a copy for (possibly) storing later:
+    pc->on_top++;
     ADDOP(c, DUP_TOP);
     RETURN_IF_FALSE(compiler_pattern(c, p->v.MatchAs.pattern, pc));
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-    NEXT_BLOCK(c);
+    // Success! Store it:
+    pc->on_top--;
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchAs.name, pc));
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    // Need to pop that unused copy from before:
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -5832,7 +5852,6 @@ compiler_pattern_star(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchStar_kind);
     RETURN_IF_FALSE(pattern_helper_store_name(c, p->v.MatchStar.name, pc));
-    ADDOP_LOAD_CONST(c, Py_True);
     return 1;
 }
 
@@ -5884,9 +5903,6 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
         RETURN_IF_FALSE(!validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
         c->u->u_col_offset = p->col_offset; // validate_kwd_attrs moves this
     }
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
     VISIT(c, expr, p->v.MatchClass.cls);
     PyObject *attr_names;
     RETURN_IF_FALSE(attr_names = PyTuple_New(nattrs));
@@ -5898,9 +5914,9 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_LOAD_CONST_NEW(c, attr_names);
     ADDOP_I(c, MATCH_CLASS, nargs);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-    NEXT_BLOCK(c);
-    // TOS is now a tuple of (nargs + nkwargs) attributes.
+    // TOS is now a tuple of (nargs + nattrs) attributes. Preserve it:
+    pc->on_top++;
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     for (i = 0; i < nargs + nattrs; i++) {
         pattern_ty pattern;
         if (i < nargs) {
@@ -5919,17 +5935,10 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-        NEXT_BLOCK(c);
     }
     // Success! Pop the tuple of attributes:
+    pc->on_top--;
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -5937,10 +5946,6 @@ static int
 compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchMapping_kind);
-    basicblock *end, *fail_pop_1, *fail_pop_3;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_3 = compiler_new_block(c));
     asdl_expr_seq *keys = p->v.MatchMapping.keys;
     asdl_pattern_seq *patterns = p->v.MatchMapping.patterns;
     Py_ssize_t size = asdl_seq_LEN(keys);
@@ -5953,18 +5958,14 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     // We have a double-star target if "rest" is set
     PyObject *star_target = p->v.MatchMapping.rest;
+    // We need to keep the subject on top during the mapping and length checks:
+    pc->on_top++;
     ADDOP(c, MATCH_MAPPING);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-    NEXT_BLOCK(c);
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     if (!size && !star_target) {
-        // If the pattern is just "{}", we're done!
+        // If the pattern is just "{}", we're done! Pop the subject:
+        pc->on_top--;
         ADDOP(c, POP_TOP);
-        ADDOP_LOAD_CONST(c, Py_True);
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
-        compiler_use_next_block(c, fail_pop_1);
-        ADDOP(c, POP_TOP);
-        ADDOP_LOAD_CONST(c, Py_False);
-        compiler_use_next_block(c, end);
         return 1;
     }
     if (size) {
@@ -5972,8 +5973,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-        NEXT_BLOCK(c);
+        RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     }
     if (INT_MAX < size - 1) {
         return compiler_error(c, "too many sub-patterns in mapping pattern");
@@ -5996,9 +5996,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_3);
-    NEXT_BLOCK(c);
-    // So far so good. There's now a tuple of values on the stack to match
+    // There's now a tuple of keys and a tuple of values on top of the subject:
+    pc->on_top += 2;
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
+    // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
     for (Py_ssize_t i = 0; i < size; i++) {
         pattern_ty pattern = asdl_seq_GET(patterns, i);
@@ -6009,10 +6010,10 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
         ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_3);
-        NEXT_BLOCK(c);
     }
-    // If we get this far, it's a match! We're done with that tuple of values.
+    // If we get this far, it's a match! We're done with the tuple of values,
+    // and whatever happens next should consume the tuple of keys underneath it:
+    pc->on_top -= 2;
     ADDOP(c, POP_TOP);
     if (star_target) {
         // If we have a starred name, bind a dict of remaining items to it:
@@ -6024,19 +6025,8 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         ADDOP(c, POP_TOP);
     }
     // Pop the subject:
+    pc->on_top--;
     ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    // The top two items are a tuple of values or None, followed by a tuple of
-    // keys. Pop them both:
-    compiler_use_next_block(c, fail_pop_3);
-    ADDOP(c, POP_TOP);
-    ADDOP(c, POP_TOP);
-    compiler_use_next_block(c, fail_pop_1);
-    // Pop the subject:
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -6044,69 +6034,148 @@ static int
 compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchOr_kind);
-    // control is the set of names bound by the first alternative. If all of the
-    // others bind the same names (they should), then this becomes pc->stores.
-    PyObject *control = NULL;
-    basicblock *end, *pass_pop_1;
+    basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(pass_pop_1 = compiler_new_block(c));
     Py_ssize_t size = asdl_seq_LEN(p->v.MatchOr.patterns);
     assert(size > 1);
     // We're going to be messing with pc. Keep the original info handy:
-    PyObject *stores_init = pc->stores;
-    int allow_irrefutable = pc->allow_irrefutable;
+    pattern_context old_pc = *pc;
+    Py_INCREF(pc->stores);
+    // control is the list of names bound by the first alternative. It is used
+    // for checking different name bindings in alternatives, and for correcting
+    // the order in which extracted elements are placed on the stack.
+    PyObject *control = NULL;
+    // NOTE: We can't use returning macros anymore! goto error on error.
     for (Py_ssize_t i = 0; i < size; i++) {
-        // NOTE: Can't use our nice returning macros in here: they'll leak sets!
         pattern_ty alt = asdl_seq_GET(p->v.MatchOr.patterns, i);
-        pc->stores = PySet_New(stores_init);
-        // An irrefutable sub-pattern must be last, if it is allowed at all:
-        int is_last = i == size - 1;
-        pc->allow_irrefutable = allow_irrefutable && is_last;
         SET_LOC(c, alt);
-        if (pc->stores == NULL ||
-            // Only copy the subject if we're *not* on the last alternative:
-            (!is_last && !compiler_addop(c, DUP_TOP)) ||
-            !compiler_pattern(c, alt, pc) ||
-            // Only jump if we're *not* on the last alternative:
-            (!is_last && !compiler_addop_j(c, POP_JUMP_IF_TRUE, pass_pop_1)) ||
-            !compiler_next_block(c))
-        {
-            goto fail;
+        PyObject *pc_stores = PyList_New(0);
+        if (pc_stores == NULL) {
+            goto error;
         }
+        Py_SETREF(pc->stores, pc_stores);
+        // An irrefutable sub-pattern must be last, if it is allowed at all:
+        pc->allow_irrefutable = (i == size - 1) && old_pc.allow_irrefutable;
+        pc->fail_pop = NULL;
+        pc->fail_pop_size = 0;
+        pc->on_top = 0;
+        if (!compiler_addop(c, DUP_TOP) || !compiler_pattern(c, alt, pc)) {
+            goto error;
+        }
+        // Success!
+        Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
         if (!i) {
-            // If this is the first alternative, save its stores as a "control"
-            // for the others (they can't bind a different set of names):
+            // This is the first alternative, so save its stores as a "control"
+            // for the others (they can't bind a different set of names, and
+            // might need to be reordered):
+            assert(control == NULL);
             control = pc->stores;
-            continue;
+            Py_INCREF(control);
         }
-        if (PySet_GET_SIZE(pc->stores) || PySet_GET_SIZE(control)) {
-            // Otherwise, check to see if we differ from the control set:
-            PyObject *diff = PyNumber_InPlaceXor(pc->stores, control);
-            if (diff == NULL) {
-                goto fail;
-            }
-            if (PySet_GET_SIZE(diff)) {
-                // The names differ! Raise.
-                Py_DECREF(diff);
-                compiler_error(c, "alternative patterns bind different names");
-                goto fail;
-            }
-            Py_DECREF(diff);
+        else if (nstores != PyList_GET_SIZE(control)) {
+            goto diff;
         }
-        Py_DECREF(pc->stores);
+        else if (nstores) {
+            // There were captures. Check to see if we differ from control:
+            Py_ssize_t icontrol = nstores;
+            while (icontrol--) {
+                PyObject *name = PyList_GET_ITEM(control, icontrol);
+                Py_ssize_t istores = PySequence_Index(pc->stores, name);
+                if (istores < 0) {
+                    PyErr_Clear();
+                    goto diff;
+                }
+                if (icontrol != istores) {
+                    // Reorder the names on the stack to match the order of the
+                    // names in control. There's probably a better way of doing
+                    // this; the current solution is potentially very
+                    // inefficient when each alternative subpattern binds lots
+                    // of names in different orders. It's fine for reasonable
+                    // cases, though.
+                    assert(istores < icontrol);
+                    Py_ssize_t rotations = istores + 1;
+                    // Perfom the same rotation on pc->stores:
+                    PyObject *rotated = PyList_GetSlice(pc->stores, 0,
+                                                        rotations);
+                    if (rotated == NULL ||
+                        PyList_SetSlice(pc->stores, 0, rotations, NULL) ||
+                        PyList_SetSlice(pc->stores, icontrol - istores,
+                                        icontrol - istores, rotated))
+                    {
+                        Py_XDECREF(rotated);
+                        goto error;
+                    }
+                    Py_DECREF(rotated);
+                    // That just did:
+                    // rotated = pc_stores[:rotations]
+                    // del pc_stores[:rotations]
+                    // pc_stores[icontrol-istores:icontrol-istores] = rotated
+                    // Do the same thing to the stack, using several ROT_Ns:
+                    while (rotations--) {
+                        if (!compiler_addop_i(c, ROT_N, icontrol + 1)) {
+                            goto error;
+                        }
+                    }
+                }
+            }
+        }
+        assert(control);
+        if (!compiler_addop_j(c, JUMP_FORWARD, end) ||
+            !compiler_next_block(c) ||
+            !emit_and_reset_fail_pop(c, pc))
+        {
+            goto error;
+        }
     }
-    Py_XDECREF(stores_init);
-    // Update pc->stores and restore pc->allow_irrefutable:
-    pc->stores = control;
-    pc->allow_irrefutable = allow_irrefutable;
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, pass_pop_1);
-    ADDOP(c, POP_TOP);
-    ADDOP_LOAD_CONST(c, Py_True);
+    Py_DECREF(pc->stores);
+    *pc = old_pc;
+    Py_INCREF(pc->stores);
+    // Need to NULL this for the PyObject_Free call in the error block.
+    old_pc.fail_pop = NULL;
+    // No match. Pop the remaining copy of the subject and fail:
+    if (!compiler_addop(c, POP_TOP) || !jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
+        goto error;
+    }
     compiler_use_next_block(c, end);
+    Py_ssize_t nstores = PyList_GET_SIZE(control);
+    // There's a bunch of stuff on the stack between any where the new stores
+    // are and where they need to be:
+    // - The other stores.
+    // - A copy of the subject.
+    // - Anything else that may be on top of the stack.
+    // - Any previous stores we've already stashed away on the stack.
+    int nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
+    for (Py_ssize_t i = 0; i < nstores; i++) {
+        // Rotate this capture to its proper place on the stack:
+        if (!compiler_addop_i(c, ROT_N, nrots)) {
+            goto error;
+        }
+        // Update the list of previous stores with this new name, checking for
+        // duplicates:
+        PyObject *name = PyList_GET_ITEM(control, i);
+        int dupe = PySequence_Contains(pc->stores, name);
+        if (dupe < 0) {
+            goto error;
+        }
+        if (dupe) {
+            compiler_error_duplicate_store(c, name);
+            goto error;
+        }
+        if (PyList_Append(pc->stores, name)) {
+            goto error;
+        }
+    }
+    Py_DECREF(old_pc.stores);
+    Py_DECREF(control);
+    // NOTE: Returning macros are safe again.
+    // Pop the copy of the subject:
+    ADDOP(c, POP_TOP);
     return 1;
-fail:
-    Py_XDECREF(stores_init);
+diff:
+    compiler_error(c, "alternative patterns bind different names");
+error:
+    PyObject_Free(old_pc.fail_pop);
+    Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
     return 0;
 }
@@ -6136,32 +6205,29 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
         only_wildcard &= WILDCARD_CHECK(pattern);
     }
-    basicblock *end, *fail_pop_1;
-    RETURN_IF_FALSE(end = compiler_new_block(c));
-    RETURN_IF_FALSE(fail_pop_1 = compiler_new_block(c));
+    // We need to keep the subject on top during the sequence and length checks:
+    pc->on_top++;
     ADDOP(c, MATCH_SEQUENCE);
-    ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-    NEXT_BLOCK(c);
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     if (star < 0) {
         // No star: len(subject) == size
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size));
         ADDOP_COMPARE(c, Eq);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-        NEXT_BLOCK(c);
+        RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     }
     else if (size > 1) {
         // Star: len(subject) >= size - 1
         ADDOP(c, GET_LEN);
         ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(size - 1));
         ADDOP_COMPARE(c, GtE);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, fail_pop_1);
-        NEXT_BLOCK(c);
+        RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     }
+    // Whatever comes next should consume the subject:
+    pc->on_top--;
     if (only_wildcard) {
         // Patterns like: [] / [_] / [_, _] / [*_] / [_, *_] / [_, _, *_] / etc.
         ADDOP(c, POP_TOP);
-        ADDOP_LOAD_CONST(c, Py_True);
     }
     else if (star_wildcard) {
         RETURN_IF_FALSE(pattern_helper_sequence_subscr(c, patterns, star, pc));
@@ -6169,11 +6235,6 @@ compiler_pattern_sequence(struct compiler *c, pattern_ty p, pattern_context *pc)
     else {
         RETURN_IF_FALSE(pattern_helper_sequence_unpack(c, patterns, star, pc));
     }
-    ADDOP_JUMP(c, JUMP_FORWARD, end);
-    compiler_use_next_block(c, fail_pop_1);
-    ADDOP(c, POP_TOP)
-    ADDOP_LOAD_CONST(c, Py_False);
-    compiler_use_next_block(c, end);
     return 1;
 }
 
@@ -6188,6 +6249,7 @@ compiler_pattern_value(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     VISIT(c, expr, value);
     ADDOP_COMPARE(c, Eq);
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     return 1;
 }
 
@@ -6197,6 +6259,7 @@ compiler_pattern_singleton(struct compiler *c, pattern_ty p, pattern_context *pc
     assert(p->kind == MatchSingleton_kind);
     ADDOP_LOAD_CONST(c, p->v.MatchSingleton.value);
     ADDOP_COMPARE(c, Is);
+    RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     return 1;
 }
 
@@ -6229,39 +6292,48 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
 }
 
 static int
-compiler_match(struct compiler *c, stmt_ty s)
+compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
     VISIT(c, expr, s->v.Match.subject);
-    basicblock *next, *end;
+    basicblock *end;
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
-    pattern_context pc;
-    // We use pc.stores to track:
-    // - Repeated name assignments in the same pattern.
-    // - Different name assignments in alternatives.
-    // It's a set of names, but we don't create it until it's needed:
-    pc.stores = NULL;
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
         m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
-        RETURN_IF_FALSE(next = compiler_new_block(c));
-        // If pc.allow_irrefutable is 0, any name captures against our subject
-        // will raise. Irrefutable cases must be either guarded, last, or both:
-        pc.allow_irrefutable = m->guard != NULL || i == cases - 1;
         // Only copy the subject if we're *not* on the last case:
         if (i != cases - has_default - 1) {
             ADDOP(c, DUP_TOP);
         }
-        int result = compiler_pattern(c, m->pattern, &pc);
-        Py_CLEAR(pc.stores);
-        RETURN_IF_FALSE(result);
-        ADDOP_JUMP(c, POP_JUMP_IF_FALSE, next);
-        NEXT_BLOCK(c);
+        RETURN_IF_FALSE(pc->stores = PyList_New(0));
+        // Irrefutable cases must be either guarded, last, or both:
+        pc->allow_irrefutable = m->guard != NULL || i == cases - 1;
+        pc->fail_pop = NULL;
+        pc->fail_pop_size = 0;
+        pc->on_top = 0;
+        // NOTE: Can't use returning macros here (they'll leak pc->stores)!
+        if (!compiler_pattern(c, m->pattern, pc)) {
+            Py_DECREF(pc->stores);
+            return 0;
+        }
+        assert(!pc->on_top);
+        // It's a match! Store all of the captured names (they're on the stack).
+        Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
+        for (Py_ssize_t n = 0; n < nstores; n++) {
+            PyObject *name = PyList_GET_ITEM(pc->stores, n);
+            if (!compiler_nameop(c, name, Store)) {
+                Py_DECREF(pc->stores);
+                return 0;
+            }
+        }
+        Py_DECREF(pc->stores);
+        // NOTE: Returning macros are safe again.
         if (m->guard) {
-            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, next, 0));
+            RETURN_IF_FALSE(ensure_fail_pop(c, pc, 0));
+            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
@@ -6269,7 +6341,7 @@ compiler_match(struct compiler *c, stmt_ty s)
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
-        compiler_use_next_block(c, next);
+        RETURN_IF_FALSE(emit_and_reset_fail_pop(c, pc));
     }
     if (has_default) {
         if (cases == 1) {
@@ -6287,6 +6359,16 @@ compiler_match(struct compiler *c, stmt_ty s)
     }
     compiler_use_next_block(c, end);
     return 1;
+}
+
+static int
+compiler_match(struct compiler *c, stmt_ty s)
+{
+    pattern_context pc;
+    pc.fail_pop = NULL;
+    int result = compiler_match_inner(c, s, &pc);
+    PyObject_Free(pc.fail_pop);
+    return result;
 }
 
 #undef WILDCARD_CHECK
@@ -7031,6 +7113,38 @@ fold_tuple_on_constants(struct compiler *c,
 }
 
 
+// Eliminate n * ROT_N(n).
+static void
+fold_rotations(struct instr *inst, int n)
+{
+    for (int i = 0; i < n; i++) {
+        int rot;
+        switch (inst[i].i_opcode) {
+            case ROT_N:
+                rot = inst[i].i_oparg;
+                break;
+            case ROT_FOUR:
+                rot = 4;
+                break;
+            case ROT_THREE:
+                rot = 3;
+                break;
+            case ROT_TWO:
+                rot = 2;
+                break;
+            default:
+                return;
+        }
+        if (rot != n) {
+            return;
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        inst[i].i_opcode = NOP;
+    }
+}
+
+
 static int
 eliminate_jump_to_jump(basicblock *bb, int opcode) {
     assert (bb->b_iused > 0);
@@ -7273,6 +7387,27 @@ optimize_basic_block(struct compiler *c, basicblock *bb, PyObject *consts)
                             bb->b_exit = 1;
                         }
                 }
+                break;
+            case ROT_N:
+                switch (oparg) {
+                    case 0:
+                    case 1:
+                        inst->i_opcode = NOP;
+                        continue;
+                    case 2:
+                        inst->i_opcode = ROT_TWO;
+                        break;
+                    case 3:
+                        inst->i_opcode = ROT_THREE;
+                        break;
+                    case 4:
+                        inst->i_opcode = ROT_FOUR;
+                        break;
+                }
+                if (i >= oparg - 1) {
+                    fold_rotations(inst - oparg + 1, oparg);
+                }
+                break;
         }
     }
     return 0;
