@@ -1,0 +1,1 @@
+Add "Annotations Best Practices" document as a new HOWTO.
