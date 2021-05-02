@@ -1208,8 +1208,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
         PyObject *attr = PyObject_GetAttr(func, attr_name);
         if (attr != NULL) {
-            int err = PyDict_SetItem(obj_dict, attr_name, attr);
-            if (err != 0) {
+            if (PyDict_SetItem(obj_dict, attr_name, attr) != 0) {
                 Py_DECREF(attr);
                 Py_DECREF(cachedict);
                 Py_DECREF(obj_dict);
