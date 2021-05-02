@@ -1730,11 +1730,13 @@ class TestLRU:
 
     def test_lru_defaults_bug44003(self):
         @self.module.lru_cache(maxsize=None)
-        def func(arg='ARG', *, kw='KW'):
+        def func(arg='ARG', *, kw: str = 'KW'):
             return arg, kw
 
+        self.assertEqual(func.__wrapped__.__annotations__, {'kw': str})
         self.assertEqual(func.__wrapped__.__defaults__, ('ARG',))
         self.assertEqual(func.__wrapped__.__kwdefaults__, {'kw': 'KW'})
+        self.assertEqual(func.__annotations__, {'kw': str})
         self.assertEqual(func.__defaults__, ('ARG',))
         self.assertEqual(func.__kwdefaults__, {'kw': 'KW'})
 

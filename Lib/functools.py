@@ -476,6 +476,8 @@ def _make_key(args, kwds, typed,
         return key[0]
     return _HashedSeq(key)
 
+_LRU_CACHE_WRAPPER_ASSIGNMENTS = frozenset(WRAPPER_ASSIGNMENTS).union(
+        ('__defaults__', '__kwdefaults__'))
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
 
@@ -510,7 +512,7 @@ def lru_cache(maxsize=128, typed=False):
         user_function, maxsize = maxsize, 128
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
-        return update_wrapper(wrapper, user_function)
+        return update_wrapper(wrapper, user_function, assigned=_LRU_CACHE_WRAPPER_ASSIGNMENTS)
     elif maxsize is not None:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
@@ -518,7 +520,7 @@ def lru_cache(maxsize=128, typed=False):
     def decorating_function(user_function):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
-        return update_wrapper(wrapper, user_function)
+        return update_wrapper(wrapper, user_function, assigned=_LRU_CACHE_WRAPPER_ASSIGNMENTS)
 
     return decorating_function
 
