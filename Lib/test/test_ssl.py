@@ -2567,8 +2567,8 @@ class ThreadedEchoServer(threading.Thread):
         threading.Thread.start(self)
 
     def run(self):
-        self.sock.settimeout(0.05)
-        self.sock.listen()
+        self.sock.settimeout(0.2)
+        self.sock.listen(5)
         self.active = True
         if self.flag:
             # signal an event
