@@ -81,6 +81,7 @@ extern "C" {
 #define DELETE_ATTR              96
 #define STORE_GLOBAL             97
 #define DELETE_GLOBAL            98
+#define ROT_N                    99
 #define LOAD_CONST              100
 #define LOAD_NAME               101
 #define BUILD_TUPLE             102

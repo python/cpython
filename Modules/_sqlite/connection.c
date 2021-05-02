@@ -86,6 +86,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         return -1;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+        return -1;
+    }
+
     database = PyBytes_AsString(database_obj);
 
     self->initialized = 1;
@@ -178,6 +182,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     self->InternalError         = pysqlite_InternalError;
     self->ProgrammingError      = pysqlite_ProgrammingError;
     self->NotSupportedError     = pysqlite_NotSupportedError;
+
+    if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
+        return -1;
+    }
 
     return 0;
 }
