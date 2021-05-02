@@ -2979,6 +2979,47 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f((False, range(10, 20), True)), alts[4])
 
 
+class TestInheritance(unittest.TestCase):
+
+    def test_multiple_inheritance(self):
+        class C:
+            pass
+        class S1(collections.UserList, collections.abc.Mapping):
+            pass
+        class S2(C, collections.UserList, collections.abc.Mapping):
+            pass
+        class S3(list, C, collections.abc.Mapping):
+            pass
+        class S4(collections.UserList, dict, C):
+            pass
+        class M1(collections.UserDict, collections.abc.Sequence):
+            pass
+        class M2(C, collections.UserDict, collections.abc.Sequence):
+            pass
+        class M3(collections.UserDict, C, list):
+            pass
+        class M4(dict, collections.abc.Sequence, C):
+            pass
+        def f(x):
+            match x:
+                case []:
+                    return "seq"
+                case {}:
+                    return "map"
+        def g(x):
+            match x:
+                case {}:
+                    return "map"
+                case []:
+                    return "seq"
+        for Seq in (S1, S2, S3, S4):
+            self.assertEqual(f(Seq()), "seq")
+            self.assertEqual(g(Seq()), "seq")
+        for Map in (M1, M2, M3, M4):
+            self.assertEqual(f(Map()), "map")
+            self.assertEqual(g(Map()), "map")
+
+
 class PerfPatma(TestPatma):
 
     def assertEqual(*_, **__):
