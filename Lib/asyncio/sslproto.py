@@ -560,7 +560,7 @@ class SSLProtocol(protocols.BufferedProtocol):
     def _on_handshake_complete(self, handshake_exc):
         if self._handshake_timeout_handle is not None:
             self._handshake_timeout_handle.cancel()
-            self._shutdown_timeout_handle = None
+            self._handshake_timeout_handle = None
 
         sslobj = self._sslobj
         try:
