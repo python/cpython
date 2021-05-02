@@ -752,6 +752,7 @@ PYTHONFRAMEWORKPREFIX
 PYTHONFRAMEWORKDIR
 PYTHONFRAMEWORKIDENTIFIER
 PYTHONFRAMEWORK
+LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
@@ -1519,11 +1520,12 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
-                          specify the kind of universal binary that should be
-                          created. this option is only valid when
+                          specify the kind of macOS universal binary that
+                          should be created. This option is only valid when
                           --enable-universalsdk is set; options are:
-                          ("universal2", "32-bit", "64-bit", "3-way", "intel",
-                          "intel-32", "intel-64", or "all") see Mac/README.rst
+                          ("universal2", "intel-64", "intel-32", "intel",
+                          "32-bit", "64-bit", "3-way", or "all") see
+                          Mac/README.rst
   --with-framework-name=FRAMEWORK
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
@@ -1604,8 +1606,8 @@ Optional Packages:
                           override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
                           leave OpenSSL's defaults untouched, STRING: use a
-                          custom string, PROTOCOL_SSLv2 ignores the setting,
-                          see Doc/library/ssl.rst
+                          custom string, python and STRING also set TLS 1.2 as
+                          minimum TLS version
   --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
                           builtin hash modules, md5, sha1, sha256, sha512,
                           sha3 (with shake), blake2
@@ -3137,6 +3139,7 @@ then
 		fi
 	fi
 fi
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-universal-archs" >&5
@@ -7522,6 +7525,7 @@ $as_echo_n "checking which compiler should be used... " >&6; }
 $as_echo "$CC" >&6; }
         fi
 
+        LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
@@ -7543,8 +7547,9 @@ $as_echo "$CC" >&6; }
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
+               LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
-		;;
+               ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -15264,6 +15269,22 @@ else
 $as_echo "no" >&6; }
 fi
 
+case $ac_sys_system/$ac_sys_release in
+SunOS/*)
+  if test -f /etc/os-release; then
+    OS_NAME=$(awk -F= '/^NAME=/ {print substr($2,2,length($2)-2)}' /etc/os-release)
+    if test "x$OS_NAME" = "xOracle Solaris"; then
+      # bpo-43667: In Oracle Solaris, the internal form of wchar_t in
+      # non-Unicode locales is not Unicode and hence cannot be used directly.
+      # https://docs.oracle.com/cd/E37838_01/html/E61053/gmwke.html
+
+$as_echo "#define HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION 1" >>confdefs.h
+
+    fi
+  fi
+  ;;
+esac
+
 # check for endianness
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether byte ordering is bigendian" >&5
 $as_echo_n "checking whether byte ordering is bigendian... " >&6; }
@@ -17706,60 +17727,6 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
-
-if test "$have_openssl" = yes; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X509_VERIFY_PARAM_set1_host in libssl" >&5
-$as_echo_n "checking for X509_VERIFY_PARAM_set1_host in libssl... " >&6; }
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-        #include <openssl/x509_vfy.h>
-
-int
-main ()
-{
-
-        X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();
-        X509_VERIFY_PARAM_set1_host(p, "localhost", 0);
-        X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");
-        X509_VERIFY_PARAM_set_hostflags(p, 0);
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-
-        ac_cv_has_x509_verify_param_set1_host=yes
-
-else
-
-        ac_cv_has_x509_verify_param_set1_host=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_x509_verify_param_set1_host" >&5
-$as_echo "$ac_cv_has_x509_verify_param_set1_host" >&6; }
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-
-$as_echo "#define HAVE_X509_VERIFY_PARAM_SET1_HOST 1" >>confdefs.h
-
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
 
 # rpath to libssl and libcrypto
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-openssl-rpath" >&5

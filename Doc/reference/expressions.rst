@@ -185,7 +185,7 @@ Common syntax elements for comprehensions are:
    comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
-   comp_if: "if" `expression_nocond` [`comp_iter`]
+   comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
 :keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
@@ -1707,7 +1707,6 @@ Conditional expressions
 .. productionlist:: python-grammar
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
-   expression_nocond: `or_test` | `lambda_expr_nocond`
 
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
@@ -1733,7 +1732,6 @@ Lambdas
 
 .. productionlist:: python-grammar
    lambda_expr: "lambda" [`parameter_list`] ":" `expression`
-   lambda_expr_nocond: "lambda" [`parameter_list`] ":" `expression_nocond`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
 functions. The expression ``lambda parameters: expression`` yields a function
@@ -1821,8 +1819,8 @@ Operator precedence
 .. index::
    pair: operator; precedence
 
-The following table summarizes the operator precedence in Python, from lowest
-precedence (least binding) to highest precedence (most binding).  Operators in
+The following table summarizes the operator precedence in Python, from highest
+precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
 exponentiation, which groups from right to left).
@@ -1835,50 +1833,50 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
-| ``:=``                                        | Assignment expression               |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`lambda`                             | Lambda expression                   |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`or`                                 | Boolean OR                          |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`and`                                | Boolean AND                         |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`not` ``x``                          | Boolean NOT                         |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
-| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
-| ``<=``, ``>``, ``>=``, ``!=``, ``==``         |                                     |
-+-----------------------------------------------+-------------------------------------+
-| ``|``                                         | Bitwise OR                          |
-+-----------------------------------------------+-------------------------------------+
-| ``^``                                         | Bitwise XOR                         |
-+-----------------------------------------------+-------------------------------------+
-| ``&``                                         | Bitwise AND                         |
-+-----------------------------------------------+-------------------------------------+
-| ``<<``, ``>>``                                | Shifts                              |
-+-----------------------------------------------+-------------------------------------+
-| ``+``, ``-``                                  | Addition and subtraction            |
-+-----------------------------------------------+-------------------------------------+
-| ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
-|                                               | multiplication, division, floor     |
-|                                               | division, remainder [#]_            |
-+-----------------------------------------------+-------------------------------------+
-| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
-+-----------------------------------------------+-------------------------------------+
-| ``**``                                        | Exponentiation [#]_                 |
-+-----------------------------------------------+-------------------------------------+
-| :keyword:`await` ``x``                        | Await expression                    |
-+-----------------------------------------------+-------------------------------------+
-| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
-| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
-+-----------------------------------------------+-------------------------------------+
 | ``(expressions...)``,                         | Binding or parenthesized            |
 |                                               | expression,                         |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |
++-----------------------------------------------+-------------------------------------+
+| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
+| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`await` ``x``                        | Await expression                    |
++-----------------------------------------------+-------------------------------------+
+| ``**``                                        | Exponentiation [#]_                 |
++-----------------------------------------------+-------------------------------------+
+| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
++-----------------------------------------------+-------------------------------------+
+| ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
+|                                               | multiplication, division, floor     |
+|                                               | division, remainder [#]_            |
++-----------------------------------------------+-------------------------------------+
+| ``+``, ``-``                                  | Addition and subtraction            |
++-----------------------------------------------+-------------------------------------+
+| ``<<``, ``>>``                                | Shifts                              |
++-----------------------------------------------+-------------------------------------+
+| ``&``                                         | Bitwise AND                         |
++-----------------------------------------------+-------------------------------------+
+| ``^``                                         | Bitwise XOR                         |
++-----------------------------------------------+-------------------------------------+
+| ``|``                                         | Bitwise OR                          |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
+| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
+| ``<=``, ``>``, ``>=``, ``!=``, ``==``         |                                     |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`not` ``x``                          | Boolean NOT                         |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`and`                                | Boolean AND                         |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`or`                                 | Boolean OR                          |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
++-----------------------------------------------+-------------------------------------+
+| :keyword:`lambda`                             | Lambda expression                   |
++-----------------------------------------------+-------------------------------------+
+| ``:=``                                        | Assignment expression               |
 +-----------------------------------------------+-------------------------------------+
 
 

@@ -1,2 +1,0 @@
-The import system now prefers using ``__spec__`` for ``ModuleType.__repr__``
-over ``module_repr()``.

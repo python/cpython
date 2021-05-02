@@ -761,6 +761,9 @@ class BuiltinImporter:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("BuiltinImporter.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         spec = cls.find_spec(fullname, path)
         return spec.loader if spec is not None else None
 
@@ -834,6 +837,9 @@ class FrozenImporter:
         This method is deprecated.  Use find_spec() instead.
 
         """
+        _warnings.warn("FrozenImporter.find_module() is deprecated and "
+                       "slated for removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         return cls if _imp.is_frozen(fullname) else None
 
     @staticmethod

@@ -57,6 +57,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+#include "pycore_fileutils.h"     // _Py_LocaleUsesNonUnicodeWchar()
+#endif
+
 /* Uncomment to display statistics on interned strings at exit
    in _PyUnicode_ClearInterned(). */
 /* #define INTERNED_STATS 1 */
@@ -2217,6 +2221,20 @@ PyUnicode_FromWideChar(const wchar_t *u, Py_ssize_t size)
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion to UCS-4 first. */
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
+        wchar_t* converted = _Py_DecodeNonUnicodeWchar(u, size);
+        if (!converted) {
+            return NULL;
+        }
+        PyObject *unicode = _PyUnicode_FromUCS4(converted, size);
+        PyMem_Free(converted);
+        return unicode;
+    }
+#endif
+
     /* Single character Unicode objects in the Latin-1 range are
        shared when using this constructor */
     if (size == 1 && (Py_UCS4)*u < 256)
@@ -3295,6 +3313,17 @@ PyUnicode_AsWideChar(PyObject *unicode,
         res = size;
     }
     unicode_copy_as_widechar(unicode, w, size);
+
+#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion first. */
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
+        if (_Py_EncodeNonUnicodeWchar_InPlace(w, size) < 0) {
+            return -1;
+        }
+    }
+#endif
+
     return res;
 }
 
@@ -3321,6 +3350,17 @@ PyUnicode_AsWideCharString(PyObject *unicode,
         return NULL;
     }
     unicode_copy_as_widechar(unicode, buffer, buflen + 1);
+
+#if HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+    /* Oracle Solaris uses non-Unicode internal wchar_t form for
+       non-Unicode locales and hence needs conversion first. */
+    if (_Py_LocaleUsesNonUnicodeWchar()) {
+        if (_Py_EncodeNonUnicodeWchar_InPlace(buffer, (buflen + 1)) < 0) {
+            return NULL;
+        }
+    }
+#endif
+
     if (size != NULL) {
         *size = buflen;
     }
@@ -15676,18 +15716,6 @@ PyTypeObject PyUnicode_Type = {
 PyStatus
 _PyUnicode_Init(PyInterpreterState *interp)
 {
-    /* XXX - move this array to unicodectype.c ? */
-    const Py_UCS2 linebreak[] = {
-        0x000A, /* LINE FEED */
-        0x000D, /* CARRIAGE RETURN */
-        0x001C, /* FILE SEPARATOR */
-        0x001D, /* GROUP SEPARATOR */
-        0x001E, /* RECORD SEPARATOR */
-        0x0085, /* NEXT LINE */
-        0x2028, /* LINE SEPARATOR */
-        0x2029, /* PARAGRAPH SEPARATOR */
-    };
-
     struct _Py_unicode_state *state = &interp->unicode;
     if (unicode_create_empty_string_singleton(state) < 0) {
         return _PyStatus_NO_MEMORY();
@@ -15695,23 +15723,39 @@ _PyUnicode_Init(PyInterpreterState *interp)
 
     if (_Py_IsMainInterpreter(interp)) {
         /* initialize the linebreak bloom filter */
+        const Py_UCS2 linebreak[] = {
+            0x000A, /* LINE FEED */
+            0x000D, /* CARRIAGE RETURN */
+            0x001C, /* FILE SEPARATOR */
+            0x001D, /* GROUP SEPARATOR */
+            0x001E, /* RECORD SEPARATOR */
+            0x0085, /* NEXT LINE */
+            0x2028, /* LINE SEPARATOR */
+            0x2029, /* PARAGRAPH SEPARATOR */
+        };
         bloom_linebreak = make_bloom_mask(
             PyUnicode_2BYTE_KIND, linebreak,
             Py_ARRAY_LENGTH(linebreak));
+    }
 
-        if (PyType_Ready(&PyUnicode_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize unicode type");
-        }
+    return _PyStatus_OK();
+}
 
-        if (PyType_Ready(&EncodingMapType) < 0) {
-             return _PyStatus_ERR("Can't initialize encoding map type");
-        }
-        if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize field name iterator type");
-        }
-        if (PyType_Ready(&PyFormatterIter_Type) < 0) {
-            return _PyStatus_ERR("Can't initialize formatter iter type");
-        }
+
+PyStatus
+_PyUnicode_InitTypes(void)
+{
+    if (PyType_Ready(&PyUnicode_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize unicode type");
+    }
+    if (PyType_Ready(&EncodingMapType) < 0) {
+         return _PyStatus_ERR("Can't initialize encoding map type");
+    }
+    if (PyType_Ready(&PyFieldNameIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize field name iterator type");
+    }
+    if (PyType_Ready(&PyFormatterIter_Type) < 0) {
+        return _PyStatus_ERR("Can't initialize formatter iter type");
     }
     return _PyStatus_OK();
 }

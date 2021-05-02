@@ -2027,7 +2027,7 @@ features:
       Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object` for *src* and *dst*.
+      Accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.8
       On Windows, now opens reparse points that represent another path
@@ -2247,6 +2247,7 @@ features:
 
    Remove (delete) the file *path*.  If *path* is a directory, an
    :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
+   If the file does not exist, a :exc:`FileNotFoundError` is raised.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -3477,9 +3478,9 @@ These functions are all available on Linux only.
    indirectly through the :class:`PathLike` interface). If it is a str,
    it is encoded with the :term:`filesystem encoding and error handler`.  *flags* may be
    :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
-   given and the attribute does not exist, ``EEXISTS`` will be raised.
+   given and the attribute does not exist, ``ENODATA`` will be raised.
    If :data:`XATTR_CREATE` is given and the attribute already exists, the
-   attribute will not be created and ``ENODATA`` will be raised.
+   attribute will not be created and ``EEXISTS`` will be raised.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
@@ -4155,7 +4156,7 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Windows.
 
 
-.. function:: startfile(path[, operation])
+.. function:: startfile(path, [operation], [arguments], [cwd], [show_cmd])
 
    Start a file with its associated application.
 
@@ -4169,13 +4170,25 @@ written in Python, such as a mail server's external command delivery program.
    ``'print'`` and  ``'edit'`` (to be used on files) as well as ``'explore'`` and
    ``'find'`` (to be used on directories).
 
+   When launching an application, specify *arguments* to be passed as a single
+   string. This argument may have no effect when using this function to launch a
+   document.
+
+   The default working directory is inherited, but may be overridden by the *cwd*
+   argument. This should be an absolute path. A relative *path* will be resolved
+   against this argument.
+
+   Use *show_cmd* to override the default window style. Whether this has any
+   effect will depend on the application being launched. Values are integers as
+   supported by the Win32 :c:func:`ShellExecute` function.
+
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
    the application's exit status.  The *path* parameter is relative to the current
-   directory.  If you want to use an absolute path, make sure the first character
-   is not a slash (``'/'``); the underlying Win32 :c:func:`ShellExecute` function
-   doesn't work if it is.  Use the :func:`os.path.normpath` function to ensure that
-   the path is properly encoded for Win32.
+   directory or *cwd*.  If you want to use an absolute path, make sure the first
+   character is not a slash (``'/'``)  Use :mod:`pathlib` or the
+   :func:`os.path.normpath` function to ensure that paths are properly encoded for
+   Win32.
 
    To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
    function is not resolved until this function is first called.  If the function
@@ -4183,7 +4196,13 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.startfile path,operation os.startfile
 
+   .. audit-event:: os.startfile/2 path,operation,arguments,cwd,show_cmd os.startfile
+
    .. availability:: Windows.
+
+   .. versionchanged:: 3.10
+      Added the *arguments*, *cwd* and *show_cmd* arguments, and the
+      ``os.startfile/2`` audit event.
 
 
 .. function:: system(command)

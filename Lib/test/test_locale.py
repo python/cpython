@@ -1,3 +1,4 @@
+from decimal import Decimal
 from test.support import verbose, is_android
 from test.support.warnings_helper import check_warnings
 import unittest
@@ -634,6 +635,33 @@ class TestfrFRDelocalizeTest(FrFRCookedTest, BaseDelocalizeTest):
     def test_atoi(self):
         self._test_atoi('50000', 50000)
         self._test_atoi('50 000', 50000)
+
+
+class BaseLocalizeTest(BaseLocalizedTest):
+
+    def _test_localize(self, value, out, grouping=False):
+        self.assertEqual(locale.localize(value, grouping=grouping), out)
+
+
+class TestEnUSLocalize(EnUSCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000.00')
+        self._test_localize(
+            '{0:.16f}'.format(Decimal('1.15')), '1.1500000000000000')
+
+
+class TestCLocalize(CCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000.00')
+
+
+class TestfrFRLocalize(FrFRCookedTest, BaseLocalizeTest):
+
+    def test_localize(self):
+        self._test_localize('50000.00', '50000,00')
+        self._test_localize('50000.00', '50 000,00', grouping=True)
 
 
 if __name__ == '__main__':

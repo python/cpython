@@ -269,6 +269,11 @@ are always available.  They are listed here in alphabetical order.
       Class methods can now wrap other :term:`descriptors <descriptor>` such as
       :func:`property`.
 
+   .. versionchanged:: 3.10
+      Class methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
+      have a new ``__wrapped__`` attribute.
+
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
@@ -1614,8 +1619,9 @@ are always available.  They are listed here in alphabetical order.
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
 
-   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).
+   A static method can be called either on the class (such as ``C.f()``) or on
+   an instance (such as ``C().f()``). Moreover, they can be called as regular
+   functions (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1627,10 +1633,19 @@ are always available.  They are listed here in alphabetical order.
    body and you want to avoid the automatic transformation to instance
    method.  For these cases, use this idiom::
 
+      def regular_function():
+          ...
+
       class C:
-          builtin_open = staticmethod(open)
+          method = staticmethod(regular_function)
 
    For more information on static methods, see :ref:`types`.
+
+   .. versionchanged:: 3.10
+      Static methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``),
+      have a new ``__wrapped__`` attribute, and are now callable as regular
+      functions.
 
 
 .. index::
@@ -1662,7 +1677,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
-.. function:: super([type[, object-or-type]])
+.. class:: super([type[, object-or-type]])
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
@@ -1696,7 +1711,7 @@ are always available.  They are listed here in alphabetical order.
    not found in statically compiled languages or languages that only support
    single inheritance.  This makes it possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
-   that this method have the same calling signature in every case (because the
+   that such implementations have the same calling signature in every case (because the
    order of calls is determined at runtime, because that order adapts
    to changes in the class hierarchy, and because that order can include
    sibling classes that are unknown prior to runtime).

@@ -42,6 +42,7 @@ static const char copyright[] =
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 
 #include "sre.h"
@@ -258,7 +259,7 @@ typedef struct {
 static _sremodulestate *
 get_sre_module_state(PyObject *m)
 {
-    _sremodulestate *state = (_sremodulestate *)PyModule_GetState(m);
+    _sremodulestate *state = (_sremodulestate *)_PyModule_GetState(m);
     assert(state);
     return state;
 }
@@ -2689,7 +2690,8 @@ static PyType_Spec pattern_spec = {
     .name = "re.Pattern",
     .basicsize = sizeof(PatternObject),
     .itemsize = sizeof(SRE_CODE),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = pattern_slots,
 };
 
@@ -2754,7 +2756,8 @@ static PyType_Spec match_spec = {
     .name = "re.Match",
     .basicsize = sizeof(MatchObject),
     .itemsize = sizeof(Py_ssize_t),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = match_slots,
 };
 
@@ -2780,7 +2783,8 @@ static PyType_Slot scanner_slots[] = {
 static PyType_Spec scanner_spec = {
     .name = "_" SRE_MODULE ".SRE_Scanner",
     .basicsize = sizeof(ScannerObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = scanner_slots,
 };
 

@@ -1,3 +1,0 @@
-Enum: adjust ``repr()`` to show only enum and member name (not value, nor
-angle brackets) and ``str()`` to show only member name.  Update and improve
-documentation to match.

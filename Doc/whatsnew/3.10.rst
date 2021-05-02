@@ -65,6 +65,7 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`644`, require OpenSSL 1.1.1 or newer
 
 
 New Features
@@ -125,8 +126,11 @@ Check :pep:`617` for more details.
 in :issue:`12782` and :issue:`40334`.)
 
 
-Better error messages in the parser
------------------------------------
+Better error messages
+---------------------
+
+SyntaxErrors
+~~~~~~~~~~~~
 
 When parsing code that contains unclosed parentheses or brackets the interpreter
 now includes the location of the unclosed bracket of parentheses instead of displaying
@@ -142,7 +146,7 @@ For instance, consider the following code (notice the unclosed '{'):
 previous versions of the interpreter reported confusing places as the location of
 the syntax error:
 
-.. code-block:: text
+.. code-block:: python
 
    File "example.py", line 3
        some_other_code = foo()
@@ -151,7 +155,7 @@ the syntax error:
 
 but in Python3.10 a more informative error is emitted:
 
-.. code-block:: text
+.. code-block:: python
 
     File "example.py", line 1
         expected = {9: 1, 18: 2, 19: 2, 27: 3, 28: 3, 29: 3, 36: 4, 37: 4,
@@ -167,13 +171,190 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
+:exc:`SyntaxError` exceptions raised by the intepreter will now highlight the
+full error range of the expression that consistutes the syntax error itself,
+instead of just where the problem is detected. In this way, instead of displaying
+(before Python 3.10):
+
+.. code-block:: python
+
+    >>> foo(x, z for z in range(10), t, w)
+      File "<stdin>", line 1
+        foo(x, z for z in range(10), t, w)
+               ^
+    SyntaxError: Generator expression must be parenthesized
+
+now Python 3.10 will display the exception as:
+
+.. code-block:: python
+
+    >>> foo(x, z for z in range(10), t, w)
+      File "<stdin>", line 1
+        foo(x, z for z in range(10), t, w)
+               ^^^^^^^^^^^^^^^^^^^^
+    SyntaxError: Generator expression must be parenthesized
+
+This improvement has been contributed by Pablo Galindo in :issue:`43914`.
+
+A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
+have been incorporated. Some of the most notable ones:
+
+* Missing ``:`` before blocks:
+
+    .. code-block:: python
+
+        >>> if rocket.position > event_horizon
+          File "<stdin>", line 1
+            if rocket.position > event_horizon
+                                              ^
+        SyntaxError: expected ':'
+
+    (Contributed by Pablo Galindo in :issue:`42997`)
+
+* Unparenthesised tuples in comprehensions targets:
+
+    .. code-block:: python
+
+        >>> {x,y for x,y in range(100)}
+          File "<stdin>", line 1
+            {x,y for x,y in range(100)}
+             ^
+        SyntaxError: did you forget parentheses around the comprehension target?
+
+    (Contributed by Pablo Galindo in :issue:`43017`)
+
+* Missing commas in collection literals and between expressions:
+
+    .. code-block:: python
+
+        >>> items = {
+        ... x: 1,
+        ... y: 2
+        ... z: 3,
+          File "<stdin>", line 3
+            y: 2
+               ^
+        SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+    (Contributed by Pablo Galindo in :issue:`43822`)
+
+* Exception groups without parentheses:
+
+    .. code-block:: python
+
+        >>> try:
+        ...     build_dyson_sphere()
+        ... except NotEnoughScienceError, NotEnoughResourcesError:
+          File "<stdin>", line 3
+            except NotEnoughScienceError, NotEnoughResourcesError:
+                   ^
+        SyntaxError: exception group must be parenthesized
+
+    (Contributed by Pablo Galindo in :issue:`43149`)
+
+* Missing ``:`` and values in dictionary literals:
+
+    .. code-block:: python
+
+        >>> values = {
+        ... x: 1,
+        ... y: 2,
+        ... z:
+        ... }
+          File "<stdin>", line 4
+            z:
+             ^
+        SyntaxError: expression expected after dictionary key and ':'
+
+        >>> values = {x:1, y:2, z w:3}
+          File "<stdin>", line 1
+            values = {x:1, y:2, z w:3}
+                                ^
+        SyntaxError: ':' expected after dictionary key
+
+    (Contributed by Pablo Galindo in :issue:`43823`)
+
+* Usage of ``=`` instead of ``==`` in comparisons:
+
+    .. code-block:: python
+
+        >>> if rocket.position = event_horizon:
+          File "<stdin>", line 1
+            if rocket.position = event_horizon:
+                               ^
+        SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+    (Contributed by Pablo Galindo in :issue:`43797`)
+
+* Usage of ``*`` in f-strings:
+
+    .. code-block:: python
+
+        >>> f"Black holes {*all_black_holes} and revelations"
+          File "<stdin>", line 1
+            (*all_black_holes)
+             ^
+        SyntaxError: f-string: cannot use starred expression here
+
+    (Contributed by Pablo Galindo in :issue:`41064`)
+
+IndentationErrors
+~~~~~~~~~~~~~~~~~
+
+Many :exc:`IndentationError` exceptions now have more context regarding what kind of block
+was expecting an indentation, including the location of the statement:
+
+.. code-block:: python
+
+    >>> def foo():
+    ...    if lel:
+    ...    x = 2
+      File "<stdin>", line 3
+        x = 2
+        ^
+    IndentationError: expected an indented block after 'if' statement in line 2
+
+
+AttributeErrors
+~~~~~~~~~~~~~~~
+
+When printing :exc:`AttributeError`, :c:func:`PyErr_Display` will offer
+suggestions of similar attribute names in the object that the exception was
+raised from:
+
+.. code-block:: python
+
+    >>> collections.namedtoplo
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    AttributeError: module 'collections' has no attribute 'namedtoplo'. Did you mean: namedtuple?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
+
+NameErrors
+~~~~~~~~~~
+
+When printing :exc:`NameError` raised by the interpreter, :c:func:`PyErr_Display`
+will offer suggestions of similar variable names in the function that the exception
+was raised from:
+
+.. code-block:: python
+
+    >>> schwarzschild_black_hole = None
+    >>> schwarschild_black_hole
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
+
+(Contributed by Pablo Galindo in :issue:`38530`.)
+
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
 
 PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
 Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
 
-The ``f_lineo`` attribute of frame objects will always contain the expected line number.
+The ``f_lineno`` attribute of frame objects will always contain the expected line number.
 
 The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
 Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
@@ -383,7 +564,7 @@ For example::
        case ('warning', code, 40):
            print("A warning has been received.")
        case ('error', code, _):
-           print(f"An error {code} occured.")
+           print(f"An error {code} occurred.")
 
 In the above case, ``test_variable`` will match for ('error', code, 100) and
 ('error', code, 800).
@@ -420,7 +601,7 @@ Several other key features:
 - Mapping patterns: ``{"bandwidth": b, "latency": l}`` captures the
   ``"bandwidth"`` and ``"latency"`` values from a dict.  Unlike sequence
   patterns, extra keys are ignored.  A wildcard ``**rest`` is also
-  supported.  (But ``**_`` would be redundant, so it not allowed.)
+  supported.  (But ``**_`` would be redundant, so is not allowed.)
 
 - Subpatterns may be captured using the ``as`` keyword::
 
@@ -462,13 +643,13 @@ Optional ``EncodingWarning`` and ``encoding="locale"`` option
 The default encoding of :class:`TextIOWrapper` and :func:`open` is
 platform and locale dependent. Since UTF-8 is used on most Unix
 platforms, omitting ``encoding`` option when opening UTF-8 files
-(e.g. JSON, YAML, TOML, Markdown) is very common bug. For example::
+(e.g. JSON, YAML, TOML, Markdown) is a very common bug. For example::
 
    # BUG: "rb" mode or encoding="utf-8" should be used.
    with open("data.json") as f:
-       data = json.laod(f)
+       data = json.load(f)
 
-To find this type of bugs, optional ``EncodingWarning`` is added.
+To find this type of bug, optional ``EncodingWarning`` is added.
 It is emitted when :data:`sys.flags.warn_default_encoding <sys.flags>`
 is true and locale-specific default encoding is used.
 
@@ -478,27 +659,11 @@ are added to enable the warning.
 See :ref:`io-text-encoding` for more information.
 
 
-New Features Related to Type Annotations
-========================================
+New Features Related to Type Hints
+==================================
 
-This section covers major changes affecting :pep:`484` type annotations and
+This section covers major changes affecting :pep:`484` type hints and
 the :mod:`typing` module.
-
-
-PEP 563: Postponed Evaluation of Annotations Becomes Default
-------------------------------------------------------------
-
-In Python 3.7, postponed evaluation of annotations was added,
-to be enabled with a ``from __future__ import annotations``
-directive.  In 3.10 this became the default behavior, even
-without that future directive.  With this being default, all
-annotations stored in :attr:`__annotations__` will be strings.
-If needed, annotations can be resolved at runtime using
-:func:`typing.get_type_hints`.  See :pep:`563` for a full
-description.  Also, the :func:`inspect.signature` will try to
-resolve types from now on, and when it fails it will fall back to
-showing the string annotations.  (Contributed by Batuhan Taskaya
-in :issue:`38605`.)
 
 
 PEP 604: New Type Union Operator
@@ -506,7 +671,7 @@ PEP 604: New Type Union Operator
 
 A new type union operator was introduced which enables the syntax ``X | Y``.
 This provides a cleaner way of expressing 'either type X or type Y' instead of
-using :data:`typing.Union`, especially in type hints (annotations).
+using :data:`typing.Union`, especially in type hints.
 
 In previous versions of Python, to apply a type hint for functions accepting
 arguments of multiple types, :data:`typing.Union` was used::
@@ -550,13 +715,15 @@ which adds or removes parameters of another callable.  Examples of usage can
 be found in :class:`typing.Concatenate`.
 
 See :class:`typing.Callable`, :class:`typing.ParamSpec`,
-:class:`typing.Concatenate` and :pep:`612` for more details.
+:class:`typing.Concatenate`, :class:`typing.ParamSpecArgs`,
+:class:`typing.ParamSpecKwargs`, and :pep:`612` for more details.
 
-(Contributed by Ken Jin in :issue:`41559`.)
+(Contributed by Ken Jin in :issue:`41559`, with minor enhancements by Jelle
+Zijlstra in :issue:`43783`.  PEP written by Mark Mendoza.)
 
 
-PEP 613: TypeAlias Annotation
------------------------------
+PEP 613: TypeAlias
+------------------
 
 :pep:`484` introduced the concept of type aliases, only requiring them to be
 top-level unannotated assignments. This simplicity sometimes made it difficult
@@ -566,8 +733,8 @@ especially when forward references or invalid types were involved. Compare::
    StrCache = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
 
-Now the :mod:`typing` module has a special annotation :data:`TypeAlias` to
-declare type aliases more explicitly::
+Now the :mod:`typing` module has a special value :data:`TypeAlias`
+which lets you declare type aliases more explicitly::
 
    StrCache: TypeAlias = 'Cache[str]'  # a type alias
    LOG_PREFIX = 'LOG[DEBUG]'  # a module constant
@@ -576,6 +743,16 @@ See :pep:`613` for more details.
 
 (Contributed by Mikhail Golubev in :issue:`41923`.)
 
+PEP 647: User-Defined Type Guards
+---------------------------------
+
+:data:`TypeGuard` has been added to the :mod:`typing` module to annotate
+type guard functions and improve information provided to static type checkers
+during type narrowing.  For more information, please see :data:`TypeGuard`\ 's
+documentation, and :pep:`647`.
+
+(Contributed by Ken Jin and Guido van Rossum in :issue:`43766`.
+PEP written by Eric Traut.)
 
 Other Language Changes
 ======================
@@ -617,6 +794,23 @@ Other Language Changes
   respectively.
   (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
+* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
+  (:func:`@classmethod <classmethod>`) now inherit the method attributes
+  (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
+  ``__annotations__``) and have a new ``__wrapped__`` attribute.
+  Moreover, static methods are now callable as regular functions.
+  (Contributed by Victor Stinner in :issue:`43682`.)
+
+* Annotations for complex targets (everything beside ``simple name`` targets
+  defined by :pep:`526`) no longer cause any runtime effects with ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42737`.)
+
+* Class and module objects now lazy-create empty annotations dicts on demand.
+  The annotations dicts are stored in the object’s ``__dict__`` for
+  backwards compatibility.  This improves the best practices for working
+  with ``__annotations__``; for more information, please see
+  :ref:`annotations-howto`.
+  (Contributed by Larry Hastings in :issue:`43901`.)
 
 New Modules
 ===========
@@ -627,17 +821,37 @@ New Modules
 Improved Modules
 ================
 
+asyncio
+-------
+
+Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+method.
+(Contributed by Alex Grönholm in :issue:`41332`.)
+
 argparse
 --------
 
 Misleading phrase "optional arguments" was replaced with "options" in argparse help. Some tests might require adaptation if they rely on exact output match.
 (Contributed by Raymond Hettinger in :issue:`9694`.)
 
+array
+-----
+
+The :meth:`~array.array.index` method of :class:`array.array` now has
+optional *start* and *stop* parameters.
+(Contributed by Anders Lorentsen and Zackery Spytz in :issue:`31956`.)
+
 base64
 ------
 
 Add :func:`base64.b32hexencode` and :func:`base64.b32hexdecode` to support the
 Base32 Encoding with Extended Hex Alphabet.
+
+bdb
+---
+
+Add :meth:`~bdb.Breakpoint.clearBreakpoints` to reset all set breakpoints.
+(Contributed by Irit Katriel in :issue:`24160`.)
 
 codecs
 ------
@@ -670,6 +884,9 @@ and objects representing asynchronously released resources.
 Add asynchronous context manager support to :func:`contextlib.nullcontext`.
 (Contributed by Tom Gringauz in :issue:`41543`.)
 
+Add :class:`AsyncContextDecorator`, for supporting usage of async context managers
+as decorators.
+
 curses
 ------
 
@@ -683,6 +900,12 @@ support is provided by the underlying ncurses library.
 The ``BUTTON5_*`` constants are now exposed in the :mod:`curses` module if
 they are provided by the underlying curses library.
 (Contributed by Zackery Spytz in :issue:`39273`.)
+
+dataclasses
+-----------
+
+Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+(Contributed by Yurii Karabas in :issue:`42269`)
 
 .. _distutils-deprecated:
 
@@ -724,6 +947,20 @@ enum
 module constants have a :func:`repr` of ``module_name.member_name``.
 (Contributed by Ethan Furman in :issue:`40066`.)
 
+Add :class:`enum.StrEnum` for enums where all members are strings.
+(Contributed by Ethan Furman in :issue:`41816`.)
+
+fileinput
+---------
+
+Added *encoding* and *errors* parameters in :func:`fileinput.input` and
+:class:`fileinput.FileInput`.
+(Contributed by Inada Naoki in :issue:`43712`.)
+
+:func:`fileinput.hook_compressed` now returns :class:`TextIOWrapper` object
+when *mode* is "r" and file is compressed, like uncompressed files.
+(Contributed by Inada Naoki in :issue:`5758`.)
+
 gc
 --
 
@@ -756,10 +993,20 @@ inspect
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
-Added *globalns* and *localns* parameters in :func:`~inspect.signature` and
-:meth:`inspect.Signature.from_callable` to retrieve the annotations in given
-local and global namespaces.
-(Contributed by Batuhan Taskaya in :issue:`41960`.)
+Added :func:`inspect.get_annotations`, which safely computes the annotations
+defined on an object. It works around the quirks of accessing the annotations
+on various types of objects, and makes very few assumptions about the object
+it examines. :func:`inspect.get_annotations` can also correctly un-stringize
+stringized annotations.  :func:`inspect.get_annotations` is now considered
+best practice for accessing the annotations dict defined on any Python object;
+for more information on best practices for working with annotations, please see
+:ref:`annotations-howto`.
+Relatedly, :func:`inspect.signature`,
+:func:`inspect.Signature.from_callable`, and ``inspect.Signature.from_function``
+now call :func:`inspect.get_annotations` to retrieve annotations. This means
+:func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
+also now un-stringize stringized annotations.
+(Contributed by Larry Hastings in :issue:`43817`.)
 
 linecache
 ---------
@@ -796,6 +1043,11 @@ Added negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
 
+Added :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
+supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+order as :meth:`~pathlib.Path.symlink_to`.
+(Contributed by Barney Gale in :issue:`39950`.)
+
 platform
 --------
 
@@ -803,6 +1055,12 @@ Added :func:`platform.freedesktop_os_release()` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
 (Contributed by Christian Heimes in :issue:`28468`)
+
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
+(Contributed by Lewis Gaul in :issue:`43080`.)
 
 py_compile
 ----------
@@ -825,6 +1083,14 @@ The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
+statistics
+----------
+
+Added :func:`~statistics.covariance`, Pearson's
+:func:`~statistics.correlation`, and simple
+:func:`~statistics.linear_regression` functions.
+(Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
+
 site
 ----
 
@@ -839,6 +1105,27 @@ The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 
 Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
+
+ssl
+---
+
+The ssl module now has more secure default settings. Ciphers without forward
+secrecy or SHA-1 MAC are disabled by default. Security level 2 prohibits
+weak RSA, DH, and ECC keys with less than 112 bits of security.
+:class:`~ssl.SSLContext` defaults to minimum protocol version TLS 1.2.
+Settings are based on Hynek Schlawack's research.
+(Contributed by Christian Heimes in :issue:`43998`.)
+
+Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
+(Contributed by Zackery Spytz in :issue:`31870`.)
+
+sqlite3
+-------
+
+Add audit events for :func:`~sqlite3.connect/handle`,
+:meth:`~sqlite3.Connection.enable_load_extension`, and
+:meth:`~sqlite3.Connection.load_extension`.
+(Contributed by Erlend E. Aasland in :issue:`43762`.)
 
 sys
 ---
@@ -891,7 +1178,7 @@ of types readily interpretable by type checkers.
 typing
 ------
 
-For major changes, see `New Features Related to Type Annotations`_.
+For major changes, see `New Features Related to Type Hints`_.
 
 The behavior of :class:`typing.Literal` was changed to conform with :pep:`586`
 and to match the behavior of static type checkers specified in the PEP.
@@ -915,6 +1202,10 @@ and to match the behavior of static type checkers specified in the PEP.
       TypeError: unhashable type: 'set'
 
 (Contributed by Yurii Karabas in :issue:`42345`.)
+
+Add new function :func:`typing.is_typeddict` to introspect if an annotation
+is a :class:`typing.TypedDict`.
+(Contributed by Patrick Reader in :issue:`41792`)
 
 unittest
 --------
@@ -948,7 +1239,10 @@ zipimport
 Add methods related to :pep:`451`: :meth:`~zipimport.zipimporter.find_spec`,
 :meth:`zipimport.zipimporter.create_module`, and
 :meth:`zipimport.zipimporter.exec_module`.
-(Contributed by Brett Cannon in :issue:`42131`.
+(Contributed by Brett Cannon in :issue:`42131`.)
+
+Add :meth:`~zipimport.zipimporter.invalidate_caches` method.
+(Contributed by Desmond Cheong in :issue:`14678`.)
 
 
 Optimizations
@@ -970,19 +1264,26 @@ Optimizations
   van Rossum in :issue:`42927`, based on ideas implemented originally in PyPy
   and MicroPython.)
 
-* When building Python with ``--enable-optimizations`` now
+* When building Python with :option:`--enable-optimizations` now
   ``-fno-semantic-interposition`` is added to both the compile and link line.
-  This speeds builds of the Python interpreter created with ``--enable-shared``
+  This speeds builds of the Python interpreter created with :option:`--enable-shared`
   with ``gcc`` by up to 30%. See `this article
   <https://developers.redhat.com/blog/2020/06/25/red-hat-enterprise-linux-8-2-brings-faster-python-3-8-run-speeds/>`_
   for more details. (Contributed by Victor Stinner and Pablo Galindo in
   :issue:`38980`.)
 
-* Function parameters and their annotations are no longer computed at runtime,
-  but rather at compilation time.  They are stored as a tuple of strings at the
-  bytecode level. It is now around 2 times faster to create a function with
-  parameter annotations.  (Contributed by Yurii Karabas and Inada Naoki
-  in :issue:`42202`)
+* Use a new output buffer management code for :mod:`bz2` / :mod:`lzma` /
+  :mod:`zlib` modules, and add ``.readall()`` function to
+  ``_compression.DecompressReader`` class. bz2 decompression 1.09x ~ 1.17x
+  faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
+  ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
+
+* When using stringized annotations, annotations dicts for functions are no longer
+  created when the function is created.  Instead, they're stored as a tuple of
+  strings, and the function object lazily converts this into the annotations dict
+  on demand.  This optimization cuts the CPU time needed to define an annotated
+  function by half.
+  (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 * Substring search functions such as ``str1 in str2`` and ``str2.find(str1)``
   now sometimes use Crochemore & Perrin's "Two-Way" string searching
@@ -992,6 +1293,15 @@ Optimizations
 * Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
   performance in the common case of cache hits. This makes the interpreter 1.04 times faster
   in average (Contributed by Dino Viehland in :issue:`43452`)
+
+* Following built-in functions now support the faster :pep:`590` vectorcall calling convention:
+  :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
+  (Contributed by Dong-hee Na and Jeroen Demeyerin in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+
+* :class:`BZ2File` performance is improved by removing internal ``RLock``.
+  This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
+  readers or writers, just like its equivalent classes in :mod:`gzip` and
+  :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
 
 Deprecated
 ==========
@@ -1043,7 +1353,46 @@ Deprecated
   :meth:`importlib.abc.PathEntryFinder.find_spec`
   are preferred, respectively. You can use
   :func:`importlib.util.spec_from_loader` to help in porting.
-  (Contributed by Brett Cannon in  :issue:`42134`.)
+  (Contributed by Brett Cannon in :issue:`42134`.)
+
+* The use of :meth:`importlib.abc.PathEntryFinder.find_loader` by the import
+  system now triggers an :exc:`ImportWarning` as
+  :meth:`importlib.abc.PathEntryFinder.find_spec` is preferred. You can use
+  :func:`importlib.util.spec_from_loader` to help in porting.
+  (Contributed by Brett Cannon in :issue:`43672`.)
+
+* The various implementations of
+  :meth:`importlib.abc.MetaPathFinder.find_module` (
+  :meth:`importlib.machinery.BuiltinImporter.find_module`,
+  :meth:`importlib.machinery.FrozenImporter.find_module`,
+  :meth:`importlib.machinery.WindowsRegistryFinder.find_module`,
+  :meth:`importlib.machinery.PathFinder.find_module`,
+  :meth:`importlib.abc.MetaPathFinder.find_module`),
+  :meth:`importlib.abc.PathEntryFinder.find_module` (
+  :meth:`importlib.machinery.FileFinder.find_module`,
+  ), and
+  :meth:`importlib.abc.PathEntryFinder.find_loader` (
+  :meth:`importlib.machinery.FileFinder.find_loader`
+  ) now raise :exc:`DeprecationWarning` and are slated for removal in
+  Python 3.12 (previously they were documented as deprecated in Python 3.4).
+  (Contributed by Brett Cannon in :issue:`42135`.)
+
+* :class:`importlib.abc.Finder` is deprecated (including its sole method,
+  :meth:`~importlib.abc.Finder.find_module`). Both
+  :class:`importlib.abc.MetaPathFinder` and :class:`importlib.abc.PathEntryFinder`
+  no longer inherit from the class. Users should inherit from one of these two
+  classes as appropriate instead.
+  (Contributed by Brett Cannon in :issue:`42135`.)
+
+* The deprecations of :mod:`imp`, :func:`importlib.find_loader`,
+  :func:`importlib.util.set_package_wrapper`,
+  :func:`importlib.util.set_loader_wrapper`,
+  :func:`importlib.util.module_for_loader`,
+  :class:`pkgutil.ImpImporter`, and
+  :class:`pkgutil.ImpLoader` have all been updated to list Python 3.12 as the
+  slated version of removal (they began raising :exc:`DeprecationWarning` in
+  previous versions of Python).
+  (Contributed by Brett Cannon in :issue:`43720`.)
 
 * The import system now uses the ``__spec__`` attribute on modules before
   falling back on :meth:`~importlib.abc.Loader.module_repr` for a module's
@@ -1062,6 +1411,19 @@ Deprecated
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
 
+* :func:`asyncio.get_event_loop` emits now a deprecation warning if there is
+  no running event loop. In future it will be an alias of
+  :func:`~asyncio.get_running_loop`.
+  :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
+  or :class:`~asyncio.Task` objects emit now
+  a deprecation warning if there is no running event loop and no explicit
+  *loop* argument is passed: :func:`~asyncio.ensure_future`,
+  :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
+  :func:`~asyncio.shield`, :func:`~asyncio.as_completed` and constructors of
+  :class:`~asyncio.Future`, :class:`~asyncio.Task`,
+  :class:`~asyncio.StreamReader`, :class:`~asyncio.StreamReaderProtocol`.
+  (Contributed by Serhiy Storchaka in :issue:`39529`.)
+
 * The undocumented built-in function ``sqlite3.enable_shared_cache`` is now
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly
   discouraged by the SQLite3 documentation.  See `the SQLite3 docs
@@ -1069,6 +1431,34 @@ Deprecated
   If shared cache must be used, open the database in URI mode using the
   ``cache=shared`` query parameter.
   (Contributed by Erlend E. Aasland in :issue:`24464`.)
+
+* The following ``threading`` methods are now deprecated:
+
+  * ``threading.currentThread`` => :func:`threading.current_thread`
+
+  * ``threading.activeCount`` => :func:`threading.active_count`
+
+  * ``threading.Condition.notifyAll`` =>
+    :meth:`threading.Condition.notify_all`
+
+  * ``threading.Event.isSet`` => :meth:`threading.Event.is_set`
+
+  * ``threading.Thread.setName`` => :attr:`threading.Thread.name`
+
+  * ``threading.thread.getName`` => :attr:`threading.Thread.name`
+
+  * ``threading.Thread.isDaemon`` => :attr:`threading.Thread.daemon`
+
+  * ``threading.Thread.setDaemon`` => :attr:`threading.Thread.daemon`
+
+  (Contributed by Jelle Zijlstra in :issue:`21574`.)
+
+* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+  Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
+  (Contributed by Barney Gale in :issue:`39950`.)
+
+* ``cgi.log()`` is deprecated and slated for for removal in Python 3.12.
+  (Contributed by Inada Naoki in :issue:`41139`.)
 
 
 Removed
@@ -1203,12 +1593,16 @@ Changes in the Python API
 CPython bytecode changes
 ========================
 
-* The ``MAKE_FUNCTION`` instruction accepts tuple of strings as annotations
-  instead of dictionary.
+* The ``MAKE_FUNCTION`` instruction now accepts either a dict or a tuple of
+  strings as the function's annotations.
   (Contributed by Yurii Karabas and Inada Naoki in :issue:`42202`)
 
 Build Changes
 =============
+
+* :pep:`644`: Python now requires OpenSSL 1.1.1 or newer. OpenSSL 1.0.2 is no
+  longer supported.
+  (Contributed by Christian Heimes in :issue:`43669`.)
 
 * The C99 functions :c:func:`snprintf` and :c:func:`vsnprintf` are now required
   to build Python.
@@ -1220,11 +1614,12 @@ Build Changes
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
-* Added ``--disable-test-modules`` option to the ``configure`` script:
+* Added :option:`--disable-test-modules` option to the ``configure`` script:
   don't build nor install test modules.
   (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
-* Add ``--with-wheel-pkg-dir=PATH`` option to the ``./configure`` script. If
+* Add :option:`--with-wheel-pkg-dir=PATH option <--with-wheel-pkg-dir>`
+  to the ``./configure`` script. If
   specified, the :mod:`ensurepip` module looks for ``setuptools`` and ``pip``
   wheel packages in this directory: if both are present, these wheel packages
   are used instead of ensurepip bundled wheel packages.
@@ -1236,23 +1631,22 @@ Build Changes
 
   (Contributed by Victor Stinner in :issue:`42856`.)
 
-* Add a new configure ``--without-static-libpython`` option to not build the
-  ``libpythonMAJOR.MINOR.a`` static library and not install the ``python.o``
-  object file.
+* Add a new :option:`configure --without-static-libpython option
+  <--without-static-libpython>` to not build the ``libpythonMAJOR.MINOR.a``
+  static library and not install the ``python.o`` object file.
 
   (Contributed by Victor Stinner in :issue:`43103`.)
 
 * The ``configure`` script now uses the ``pkg-config`` utility, if available,
   to detect the location of Tcl/Tk headers and libraries.  As before, those
-  locations can be explicitly specified with the ``--with-tcltk-includes``
-  and ``--with-tcltk-libs`` configuration options.
+  locations can be explicitly specified with the :option:`--with-tcltk-includes`
+  and :option:`--with-tcltk-libs` configuration options.
   (Contributed by Manolis Stamatogiannakis in :issue:`42603`.)
 
-* Add ``--with-openssl-rpath`` option to ``configure`` script. The option
+* Add :option:`--with-openssl-rpath` option to ``configure`` script. The option
   simplifies building Python with a custom OpenSSL installation, e.g.
   ``./configure --with-openssl=/path/to/openssl --with-openssl-rpath=auto``.
   (Contributed by Christian Heimes in :issue:`43466`.)
-
 
 
 C API Changes
@@ -1304,7 +1698,8 @@ New Features
   slot.
   (Contributed by Hai Shi in :issue:`41832`.)
 
-* The :c:func:`PyType_GetSlot` function can accept static types.
+* The :c:func:`PyType_GetSlot` function can accept
+  :ref:`static types <static-types>`.
   (Contributed by Hai Shi and Petr Viktorin in :issue:`41073`.)
 
 * Add a new :c:func:`PySet_CheckExact` function to the C-API to check if an
@@ -1315,6 +1710,37 @@ New Features
   to simulate.
   (Contributed by Antoine Pitrou in :issue:`43356`.)
 
+* The limited C API is now supported if :ref:`Python is built in debug mode
+  <debug-build>` (if the ``Py_DEBUG`` macro is defined). In the limited C API,
+  the :c:func:`Py_INCREF` and :c:func:`Py_DECREF` functions are now implemented
+  as opaque function
+  calls, rather than accessing directly the :c:member:`PyObject.ob_refcnt`
+  member, if Python is built in debug mode and the ``Py_LIMITED_API`` macro
+  targets Python 3.10 or newer. It became possible to support the limited C API
+  in debug mode because the :c:type:`PyObject` structure is the same in release
+  and debug mode since Python 3.8 (see :issue:`36465`).
+
+  The limited C API is still not supported in the :option:`--with-trace-refs`
+  special build (``Py_TRACE_REFS`` macro).
+  (Contributed by Victor Stinner in :issue:`43688`.)
+
+* Add the :c:func:`Py_Is(x, y) <Py_Is>` function to test if the *x* object is
+  the *y* object, the same as ``x is y`` in Python. Add also the
+  :c:func:`Py_IsNone`, :c:func:`Py_IsTrue`, :c:func:`Py_IsFalse` functions to
+  test if an object is, respectively, the ``None`` singleton, the ``True``
+  singleton or the ``False`` singleton.
+  (Contributed by Victor Stinner in :issue:`43753`.)
+
+* Add new functions to quickly control the garbage collector from C code:
+  :c:func:`PyGC_Enable()`,
+  :c:func:`PyGC_Disable()`,
+  :c:func:`PyGC_IsEnabled()`.
+  These functions allow to activate, deactivate and query the state of the garbage collector from C code without
+  having to import the :mod:`gc` module.
+
+* Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+  creating type instances.
+  (Contributed by Victor Stinner in :issue:`43916`.)
 
 Porting to Python 3.10
 ----------------------
@@ -1447,6 +1873,12 @@ Removed
 
   Use Python :mod:`symtable` module instead.
   (Contributed by Victor Stinner in :issue:`43244`.)
+
+* Remove :c:func:`PyOS_ReadlineFunctionPointer` from the limited C API headers
+  and from ``python3.dll``, the library that provides the stable ABI on
+  Windows. Since the function takes a ``FILE*`` argument, its ABI stability
+  cannot be guaranteed.
+  (Contributed by Petr Viktorin in :issue:`43868`.)
 
 * Remove ``ast.h``, ``asdl.h``, and ``Python-ast.h`` header files.
   These functions were undocumented and excluded from the limited C API.

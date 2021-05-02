@@ -1,0 +1,2 @@
+:c:func:`PyMem_Calloc` is now available in the limited C API
+(``Py_LIMITED_API``).
