@@ -5720,12 +5720,9 @@ pattern_helper_store_name(struct compiler *c, identifier n, pattern_context *pc)
     if (duplicate) {
         return compiler_error_duplicate_store(c, n);
     }
-    RETURN_IF_FALSE(!PyList_Append(pc->stores, n));
-    if (pc->on_top) {
-        // Rotate this object underneath any items we need to preserve:
-        ADDOP_I(c, ROT_N, pc->on_top + 1);
-    }
-    return 1;
+    // Rotate this object underneath any items we need to preserve:
+    ADDOP_I(c, ROT_N, pc->on_top + PyList_GET_SIZE(pc->stores) + 1);
+    return !PyList_Append(pc->stores, n);
 }
 
 
@@ -6080,7 +6077,8 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
         }
         else if (nstores) {
             // There were captures. Check to see if we differ from control:
-            for (Py_ssize_t icontrol = 0; icontrol < nstores; icontrol++) {
+            Py_ssize_t icontrol = nstores;
+            while (icontrol--) {
                 PyObject *name = PyList_GET_ITEM(control, icontrol);
                 Py_ssize_t istores = PySequence_Index(pc->stores, name);
                 if (istores < 0) {
@@ -6094,25 +6092,27 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
                     // inefficient when each alternative subpattern binds lots
                     // of names in different orders. It's fine for reasonable
                     // cases, though.
-                    assert(icontrol < istores);
+                    assert(istores < icontrol);
+                    Py_ssize_t rotations = istores + 1;
                     // Perfom the same rotation on pc->stores:
-                    PyObject *rotate = PyList_GetSlice(pc->stores, istores,
-                                                       nstores);
-                    if (rotate == NULL ||
-                        PyList_SetSlice(pc->stores, istores, nstores, NULL) ||
-                        PyList_SetSlice(pc->stores, icontrol, icontrol, rotate))
+                    PyObject *rotated = PyList_GetSlice(pc->stores, 0,
+                                                        rotations);
+                    if (rotated == NULL ||
+                        PyList_SetSlice(pc->stores, 0, rotations, NULL) ||
+                        PyList_SetSlice(pc->stores, icontrol - istores,
+                                        icontrol - istores, rotated))
                     {
-                        Py_XDECREF(rotate);
+                        Py_XDECREF(rotated);
                         goto error;
                     }
-                    Py_DECREF(rotate);
+                    Py_DECREF(rotated);
                     // That just did:
-                    // rotate = pc_stores[istores:]
-                    // del pc_stores[istores:]
-                    // pc_stores[icontrol:icontrol] = rotate
-                    // Do the same thing to the stack, using several rotations:
-                    while (istores++ < nstores) {
-                        if (!compiler_addop_i(c, ROT_N, nstores - icontrol)) {
+                    // rotated = pc_stores[:rotations]
+                    // del pc_stores[:rotations]
+                    // pc_stores[icontrol-istores:icontrol-istores] = rotated
+                    // Do the same thing to the stack, using several ROT_Ns:
+                    while (rotations--) {
+                        if (!compiler_addop_i(c, ROT_N, icontrol + 1)) {
                             goto error;
                         }
                     }
@@ -6136,10 +6136,22 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     if (!compiler_addop(c, POP_TOP) || !jump_to_fail_pop(c, pc, JUMP_FORWARD)) {
         goto error;
     }
-    // Update the list of previous stores with the names in the control list,
-    // checking for duplicates:
+    compiler_use_next_block(c, end);
     Py_ssize_t nstores = PyList_GET_SIZE(control);
+    // There's a bunch of stuff on the stack between any where the new stores
+    // are and where they need to be:
+    // - The other stores.
+    // - A copy of the subject.
+    // - Anything else that may be on top of the stack.
+    // - Any previous stores we've already stashed away on the stack.
+    int nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
     for (Py_ssize_t i = 0; i < nstores; i++) {
+        // Rotate this capture to its proper place on the stack:
+        if (!compiler_addop_i(c, ROT_N, nrots)) {
+            goto error;
+        }
+        // Update the list of previous stores with this new name, checking for
+        // duplicates:
         PyObject *name = PyList_GET_ITEM(control, i);
         int dupe = PySequence_Contains(pc->stores, name);
         if (dupe < 0) {
@@ -6156,13 +6168,6 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     Py_DECREF(old_pc.stores);
     Py_DECREF(control);
     // NOTE: Returning macros are safe again.
-    compiler_use_next_block(c, end);
-    // There is a copy of the subject underneath all of the new name stores.
-    // There may also be important items under it that need to be rotated back
-    // up to the top:
-    for (Py_ssize_t i = 0; i < nstores; i++) {
-        ADDOP_I(c, ROT_N, nstores + pc->on_top + 1);
-    }
     // Pop the copy of the subject:
     ADDOP(c, POP_TOP);
     return 1;
@@ -6315,11 +6320,10 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             return 0;
         }
         assert(!pc->on_top);
-        // It's a match! Store all of the captured names (they're on the stack
-        // in reverse order).
+        // It's a match! Store all of the captured names (they're on the stack).
         Py_ssize_t nstores = PyList_GET_SIZE(pc->stores);
-        while (nstores--) {
-            PyObject *name = PyList_GET_ITEM(pc->stores, nstores);
+        for (Py_ssize_t n = 0; n < nstores; n++) {
+            PyObject *name = PyList_GET_ITEM(pc->stores, n);
             if (!compiler_nameop(c, name, Store)) {
                 Py_DECREF(pc->stores);
                 return 0;
