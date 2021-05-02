@@ -19,7 +19,7 @@ typedef struct _functools_state {
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
-    PyObject *list_of_lru_obj_attrs_to_clone;
+    PyObject *lru_obj_attrs_to_clone;
 } _functools_state;
 
 static inline _functools_state *
@@ -1198,9 +1198,9 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     /* Copy special attributes from the original function over to ours. */
     {
-        Py_ssize_t n_attrs = PyTuple_GET_SIZE(state->list_of_lru_obj_attrs_to_clone);
+        Py_ssize_t n_attrs = PyTuple_GET_SIZE(state->lru_obj_attrs_to_clone);
         for (Py_ssize_t idx = 0; idx < n_attrs; ++idx) {
-            PyObject *attr_name = PyTuple_GET_ITEM(state->list_of_lru_obj_attrs_to_clone, idx);
+            PyObject *attr_name = PyTuple_GET_ITEM(state->lru_obj_attrs_to_clone, idx);
             if (attr_name == NULL) {
                 Py_DECREF(cachedict);
                 Py_DECREF(obj_dict);
@@ -1457,13 +1457,13 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
-    state->list_of_lru_obj_attrs_to_clone = PyTuple_New(2);
-    if (state->list_of_lru_obj_attrs_to_clone == NULL) {
+    state->lru_obj_attrs_to_clone = PyTuple_New(2);
+    if (state->lru_obj_attrs_to_clone == NULL) {
         return -1;
     }
     {
         PyObject *tmp;
-        PyObject *lru_attrs = state->list_of_lru_obj_attrs_to_clone;
+        PyObject *lru_attrs = state->lru_obj_attrs_to_clone;
         if (lru_attrs == NULL) {
             return -1;
         }
@@ -1533,7 +1533,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
-    Py_VISIT(state->list_of_lru_obj_attrs_to_clone);
+    Py_VISIT(state->lru_obj_attrs_to_clone);
     return 0;
 }
 
@@ -1545,7 +1545,7 @@ _functools_clear(PyObject *module)
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);
-    Py_CLEAR(state->list_of_lru_obj_attrs_to_clone);
+    Py_CLEAR(state->lru_obj_attrs_to_clone);
     return 0;
 }
 
