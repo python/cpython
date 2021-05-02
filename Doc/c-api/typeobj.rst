@@ -1203,14 +1203,21 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. data:: Py_TPFLAGS_MAPPING
 
       This bit indicates that instances of the class may match mapping patterns
-      when used as the subject of a :keyword:`!match` block.
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Mapping`, and
+      unset when registering :class:`collections.abc.Sequence`.
 
-      It is set automatically when registering or subclassing
-      :class:`collections.abc.Mapping`. See :pep:`634` for more information.
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error enable both flags simultaneously.
 
       **Inheritance:**
 
-      This flag is always inherited.
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_SEQUENCE`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
 
@@ -1218,14 +1225,21 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    .. data:: Py_TPFLAGS_SEQUENCE
 
       This bit indicates that instances of the class may match sequence patterns
-      when used as the subject of a :keyword:`!match` block.
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Sequence`, and
+      unset when registering :class:`collections.abc.Mapping`.
 
-      It is set automatically when registering or subclassing
-      :class:`collections.abc.Sequence`. See :pep:`634` for more information.
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error enable both flags simultaneously.
 
       **Inheritance:**
 
-      This flag is always inherited.
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_MAPPING`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
 
       .. versionadded:: 3.10
 
