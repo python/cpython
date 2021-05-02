@@ -1149,6 +1149,9 @@ Classes and functions
    with the result of calling :func:`eval()` on those values:
 
    * If eval_str is true, :func:`eval()` is called on values of type ``str``.
+     (Note that ``get_annotations`` doesn't catch exceptions; if :func:`eval()`
+     raises an exception, it will unwind the stack past the ``get_annotations``
+     call.)
    * If eval_str is false (the default), values of type ``str`` are unchanged.
 
    ``globals`` and ``locals`` are passed in to :func:`eval()`; see the documentation
@@ -1163,6 +1166,10 @@ Classes and functions
    * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
      although if ``obj`` is a wrapped function (using
      ``functools.update_wrapper()``) it is first unwrapped.
+
+   Calling ``get_annotations`` is best practice for accessing the
+   annotations dict of any object.  See :ref:`annotations-howto` for
+   more information on annotations best practices.
 
    .. versionadded:: 3.10
 

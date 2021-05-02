@@ -553,7 +553,10 @@ Callable types
       |                         | the dict are the parameter    |           |
       |                         | names, and ``'return'`` for   |           |
       |                         | the return annotation, if     |           |
-      |                         | provided.                     |           |
+      |                         | provided.  For more           |           |
+      |                         | information on working with   |           |
+      |                         | this attribute, see           |           |
+      |                         | :ref:`annotations-howto`.     |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
       |                         | for keyword-only parameters.  |           |
@@ -748,16 +751,29 @@ Modules
       single: __annotations__ (module attribute)
       pair: module; namespace
 
-   Predefined (writable) attributes: :attr:`__name__` is the module's name;
-   :attr:`__doc__` is the module's documentation string, or ``None`` if
-   unavailable; :attr:`__annotations__` (optional) is a dictionary containing
-   :term:`variable annotations <variable annotation>` collected during module
-   body execution; :attr:`__file__` is the pathname of the file from which the
-   module was loaded, if it was loaded from a file. The :attr:`__file__`
-   attribute may be missing for certain types of modules, such as C modules
-   that are statically linked into the interpreter; for extension modules
-   loaded dynamically from a shared library, it is the pathname of the shared
-   library file.
+   Predefined (writable) attributes:
+
+      :attr:`__name__`
+         The module's name.
+
+      :attr:`__doc__`
+         The module's documentation string, or ``None`` if
+         unavailable.
+
+      :attr:`__file__`
+         The pathname of the file from which the
+         module was loaded, if it was loaded from a file.
+         The :attr:`__file__`
+         attribute may be missing for certain types of modules, such as C modules
+         that are statically linked into the interpreter.  For extension modules
+         loaded dynamically from a shared library, it's the pathname of the shared
+         library file.
+
+      :attr:`__annotations__`
+         A dictionary containing
+         :term:`variable annotations <variable annotation>` collected during
+         module body execution.  For best practices on working
+         with :attr:`__annotations__`, please see :ref:`annotations-howto`.
 
    .. index:: single: __dict__ (module attribute)
 
@@ -821,14 +837,30 @@ Custom classes
       single: __doc__ (class attribute)
       single: __annotations__ (class attribute)
 
-   Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
-   the module name in which the class was defined; :attr:`~object.__dict__` is the
-   dictionary containing the class's namespace; :attr:`~class.__bases__` is a
-   tuple containing the base classes, in the order of their occurrence in the
-   base class list; :attr:`__doc__` is the class's documentation string,
-   or ``None`` if undefined; :attr:`__annotations__` (optional) is a dictionary
-   containing :term:`variable annotations <variable annotation>` collected during
-   class body execution.
+   Special attributes:
+
+      :attr:`~definition.__name__`
+         The class name.
+
+      :attr:`__module__`
+         The name of the module in which the class was defined.
+
+      :attr:`~object.__dict__`
+         The dictionary containing the class's namespace.
+
+      :attr:`~class.__bases__`
+         A tuple containing the base classes, in the order of
+         their occurrence in the base class list.
+
+      :attr:`__doc__`
+         The class's documentation string, or ``None`` if undefined.
+
+      :attr:`__annotations__`
+         A dictionary containing
+         :term:`variable annotations <variable annotation>`
+         collected during class body execution.  For best practices on
+         working with :attr:`__annotations__`, please see
+         :ref:`annotations-howto`.
 
 Class instances
    .. index::
