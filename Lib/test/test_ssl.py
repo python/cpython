@@ -345,6 +345,25 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_TLSv1_2
         self.assertEqual(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv23)
 
+    def test_ssl_types(self):
+        ssl_types = [
+            _ssl._SSLContext,
+            _ssl._SSLSocket,
+            _ssl.MemoryBIO,
+            _ssl.Certificate,
+            _ssl.SSLSession,
+            _ssl.SSLError,
+        ]
+        for ssl_type in ssl_types:
+            with self.subTest(ssl_type=ssl_type):
+                with self.assertRaisesRegex(TypeError, "immutable type"):
+                    ssl_type.value = None
+        with self.assertRaisesRegex(
+            TypeError,
+            "cannot create '_ssl.Certificate' instances"
+        ):
+            _ssl.Certificate()
+
     def test_private_init(self):
         with self.assertRaisesRegex(TypeError, "public constructor"):
             with socket.socket() as s:
