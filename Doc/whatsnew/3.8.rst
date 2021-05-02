@@ -2274,10 +2274,13 @@ channel.  We reuse the ftp server IP address instead.  For unusual code
 requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
 attribute on your FTP instance to ``True``.  (See :issue:`43285`)
 
+Notable changes in Python 3.8.10
+================================
+
 macOS 11.0 (Big Sur) and Apple Silicon Mac support
 --------------------------------------------------
 
-As of 3.8.9, Python now supports building and running on macOS 11
+As of 3.8.10, Python now supports building and running on macOS 11
 (Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
 A new universal build variant, ``universal2``, is now available to natively
 support both ``ARM64`` and ``Intel 64`` in one set of executables.
