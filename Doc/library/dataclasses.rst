@@ -168,6 +168,8 @@ Module-level decorators, classes, and functions
      ``__match_args__`` is already defined in the class, then
      ``__match_args__`` will not be generated.
 
+    .. versionadded:: 3.10
+
    - ``kw_only``: If true (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only affect is that the :meth:`__init__`
@@ -177,10 +179,14 @@ Module-level decorators, classes, and functions
      :term:`parameter` glossary entry for details.  Also see the
      ``dataclasses.KW_ONLY`` section.
 
+    .. versionadded:: 3.10
+
    - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
      will be generated and new class will be returned instead of the original one.
      If :attr:`__slots__` is already defined in the class, then :exc:`TypeError`
      is raised.
+
+    .. versionadded:: 3.10
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
