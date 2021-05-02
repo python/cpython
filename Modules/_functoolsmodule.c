@@ -1463,15 +1463,13 @@ _functools_exec(PyObject *module)
         PyObject *tmp;
         PyObject *lru_attrs = state->lru_obj_attrs_to_clone;
         tmp = PyUnicode_InternFromString("__defaults__");
-        if (tmp == NULL || PyTuple_SetItem(lru_attrs, 0, tmp) != 0) {
+        if (tmp == NULL || PyTuple_SetItem(lru_attrs, 0, tmp) != 0) {  // steal
             return -1;
         }
-        Py_DECREF(tmp);
         tmp = PyUnicode_InternFromString("__kwdefaults__");
-        if (tmp == NULL || PyTuple_SetItem(lru_attrs, 1, tmp) != 0) {
+        if (tmp == NULL || PyTuple_SetItem(lru_attrs, 1, tmp) != 0) {  // steal
             return -1;
         }
-        Py_DECREF(tmp);
     }
 
     state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
