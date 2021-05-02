@@ -2905,6 +2905,29 @@ class TestPatma(unittest.TestCase):
                 pass
         """)
 
+class TestInheritance(unittest.TestCase):
+
+    def test_multiple_inheritance(self):
+        class S(collections.UserList, collections.abc.Mapping):
+            pass
+        class M(collections.UserDict, collections.abc.Sequence):
+            pass
+        def f(x):
+            match x:
+                case []:
+                    return "seq"
+                case {}:
+                    return "map"
+        def g(x):
+            match x:
+                case {}:
+                    return "map"
+                case []:
+                    return "seq"
+        self.assertEqual(f(S()), "seq")
+        self.assertEqual(f(M()), "map")
+        self.assertEqual(g(S()), "seq")
+        self.assertEqual(g(M()), "map")
 
 class PerfPatma(TestPatma):
 
