@@ -433,7 +433,9 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
-@functools.lru_cache
+# typed=True avoids BytesWarnings being emitted during cache key
+# comparison since this API supports both bytes and str input.
+@functools.lru_cache(typed=True)
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
