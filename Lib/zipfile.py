@@ -4,7 +4,6 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import binascii
-import functools
 import importlib.util
 import io
 import itertools
@@ -17,7 +16,7 @@ import sys
 import threading
 import time
 import contextlib
-from collections import OrderedDict
+import pathlib
 
 try:
     import zlib # We may need its compression method
@@ -38,7 +37,8 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
-           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile"]
+           "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
+           "Path"]
 
 class BadZipFile(Exception):
     pass
@@ -1535,7 +1535,7 @@ class ZipFile:
                 # strong encryption
                 raise NotImplementedError("strong encryption (flag bit 6)")
 
-            if zinfo.flag_bits & 0x800:
+            if fheader[_FH_GENERAL_PURPOSE_FLAG_BITS] & 0x800:
                 # UTF-8 filename
                 fname_str = fname.decode("utf-8")
             else:
@@ -1919,6 +1919,8 @@ class ZipFile:
                              centDirSize, centDirOffset, len(self._comment))
         self.fp.write(endrec)
         self.fp.write(self._comment)
+        if self.mode == "a":
+            self.fp.truncate()
         self.fp.flush()
 
     def _fpclose(self, fp):
@@ -2102,24 +2104,6 @@ class PyZipFile(ZipFile):
         return (fname, archivename)
 
 
-def _unique_everseen(iterable, key=None):
-    "List unique elements, preserving order. Remember all elements ever seen."
-    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
-    # unique_everseen('ABBCcAD', str.lower) --> A B C D
-    seen = set()
-    seen_add = seen.add
-    if key is None:
-        for element in itertools.filterfalse(seen.__contains__, iterable):
-            seen_add(element)
-            yield element
-    else:
-        for element in iterable:
-            k = key(element)
-            if k not in seen:
-                seen_add(k)
-                yield element
-
-
 def _parents(path):
     """
     Given a path with elements separated by
@@ -2161,6 +2145,18 @@ def _ancestry(path):
         path, tail = posixpath.split(path)
 
 
+_dedupe = dict.fromkeys
+"""Deduplicate an iterable in original order"""
+
+
+def _difference(minuend, subtrahend):
+    """
+    Return items in minuend not in subtrahend, retaining order
+    with O(1) lookup.
+    """
+    return itertools.filterfalse(set(subtrahend).__contains__, minuend)
+
+
 class CompleteDirs(ZipFile):
     """
     A ZipFile subclass that ensures that implied directories
@@ -2170,13 +2166,8 @@ class CompleteDirs(ZipFile):
     @staticmethod
     def _implied_dirs(names):
         parents = itertools.chain.from_iterable(map(_parents, names))
-        # Deduplicate entries in original order
-        implied_dirs = OrderedDict.fromkeys(
-            p + posixpath.sep for p in parents
-            # Cast names to a set for O(1) lookups
-            if p + posixpath.sep not in set(names)
-        )
-        return implied_dirs
+        as_dirs = (p + posixpath.sep for p in parents)
+        return _dedupe(_difference(as_dirs, names))
 
     def namelist(self):
         names = super(CompleteDirs, self).namelist()
@@ -2207,13 +2198,12 @@ class CompleteDirs(ZipFile):
         if not isinstance(source, ZipFile):
             return cls(source)
 
-        # Only allow for FastPath when supplied zipfile is read-only
+        # Only allow for FastLookup when supplied zipfile is read-only
         if 'r' not in source.mode:
             cls = CompleteDirs
 
-        res = cls.__new__(cls)
-        vars(res).update(vars(source))
-        return res
+        source.__class__ = cls
+        return source
 
 
 class FastLookup(CompleteDirs):
@@ -2221,6 +2211,7 @@ class FastLookup(CompleteDirs):
     ZipFile subclass to ensure implicit
     dirs exist and are resolved rapidly.
     """
+
     def namelist(self):
         with contextlib.suppress(AttributeError):
             return self.__names
@@ -2252,7 +2243,7 @@ class Path:
     >>> zf.writestr('a.txt', 'content of a')
     >>> zf.writestr('b/c.txt', 'content of c')
     >>> zf.writestr('b/d/e.txt', 'content of e')
-    >>> zf.filename = 'abcde.zip'
+    >>> zf.filename = 'mem/abcde.zip'
 
     Path accepts the zipfile object itself or a filename
 
@@ -2264,9 +2255,9 @@ class Path:
 
     >>> a, b = root.iterdir()
     >>> a
-    Path('abcde.zip', 'a.txt')
+    Path('mem/abcde.zip', 'a.txt')
     >>> b
-    Path('abcde.zip', 'b/')
+    Path('mem/abcde.zip', 'b/')
 
     name property:
 
@@ -2277,7 +2268,7 @@ class Path:
 
     >>> c = b / 'c.txt'
     >>> c
-    Path('abcde.zip', 'b/c.txt')
+    Path('mem/abcde.zip', 'b/c.txt')
     >>> c.name
     'c.txt'
 
@@ -2295,43 +2286,86 @@ class Path:
 
     Coercion to string:
 
-    >>> str(c)
-    'abcde.zip/b/c.txt'
+    >>> import os
+    >>> str(c).replace(os.sep, posixpath.sep)
+    'mem/abcde.zip/b/c.txt'
+
+    At the root, ``name``, ``filename``, and ``parent``
+    resolve to the zipfile. Note these attributes are not
+    valid and will raise a ``ValueError`` if the zipfile
+    has no filename.
+
+    >>> root.name
+    'abcde.zip'
+    >>> str(root.filename).replace(os.sep, posixpath.sep)
+    'mem/abcde.zip'
+    >>> str(root.parent)
+    'mem'
     """
 
     __repr = "{self.__class__.__name__}({self.root.filename!r}, {self.at!r})"
 
     def __init__(self, root, at=""):
+        """
+        Construct a Path from a ZipFile or filename.
+
+        Note: When the source is an existing ZipFile object,
+        its type (__class__) will be mutated to a
+        specialized type. If the caller wishes to retain the
+        original type, the caller should either create a
+        separate ZipFile object or pass a filename.
+        """
         self.root = FastLookup.make(root)
         self.at = at
 
-    @property
-    def open(self):
-        return functools.partial(self.root.open, self.at)
+    def open(self, mode='r', *args, pwd=None, **kwargs):
+        """
+        Open this entry as text or binary following the semantics
+        of ``pathlib.Path.open()`` by passing arguments through
+        to io.TextIOWrapper().
+        """
+        if self.is_dir():
+            raise IsADirectoryError(self)
+        zip_mode = mode[0]
+        if not self.exists() and zip_mode == 'r':
+            raise FileNotFoundError(self)
+        stream = self.root.open(self.at, zip_mode, pwd=pwd)
+        if 'b' in mode:
+            if args or kwargs:
+                raise ValueError("encoding args invalid for binary operation")
+            return stream
+        else:
+            kwargs["encoding"] = io.text_encoding(kwargs.get("encoding"))
+        return io.TextIOWrapper(stream, *args, **kwargs)
 
     @property
     def name(self):
-        return posixpath.basename(self.at.rstrip("/"))
+        return pathlib.Path(self.at).name or self.filename.name
+
+    @property
+    def filename(self):
+        return pathlib.Path(self.root.filename).joinpath(self.at)
 
     def read_text(self, *args, **kwargs):
-        with self.open() as strm:
-            return io.TextIOWrapper(strm, *args, **kwargs).read()
+        kwargs["encoding"] = io.text_encoding(kwargs.get("encoding"))
+        with self.open('r', *args, **kwargs) as strm:
+            return strm.read()
 
     def read_bytes(self):
-        with self.open() as strm:
+        with self.open('rb') as strm:
             return strm.read()
 
     def _is_child(self, path):
         return posixpath.dirname(path.at.rstrip("/")) == self.at.rstrip("/")
 
     def _next(self, at):
-        return Path(self.root, at)
+        return self.__class__(self.root, at)
 
     def is_dir(self):
         return not self.at or self.at.endswith("/")
 
     def is_file(self):
-        return not self.is_dir()
+        return self.exists() and not self.is_dir()
 
     def exists(self):
         return self.at in self.root._name_set()
@@ -2348,14 +2382,16 @@ class Path:
     def __repr__(self):
         return self.__repr.format(self=self)
 
-    def joinpath(self, add):
-        next = posixpath.join(self.at, add)
+    def joinpath(self, *other):
+        next = posixpath.join(self.at, *other)
         return self._next(self.root.resolve_dir(next))
 
     __truediv__ = joinpath
 
     @property
     def parent(self):
+        if not self.at:
+            return self.filename.parent
         parent_at = posixpath.dirname(self.at.rstrip('/'))
         if parent_at:
             parent_at += '/'

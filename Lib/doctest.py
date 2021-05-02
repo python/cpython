@@ -102,7 +102,7 @@ import re
 import sys
 import traceback
 import unittest
-from io import StringIO
+from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
 
 TestResults = namedtuple('TestResults', 'failed attempted')
@@ -211,17 +211,25 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
+def _newline_convert(data):
+    # The IO module provides a handy decoder for universal newline conversion
+    return IncrementalNewlineDecoder(None, True).decode(data, True)
+
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
         filename = _module_relative_path(package, filename)
-        if getattr(package, '__loader__', None) is not None:
-            if hasattr(package.__loader__, 'get_data'):
-                file_contents = package.__loader__.get_data(filename)
-                file_contents = file_contents.decode(encoding)
-                # get_data() opens files as 'rb', so one must do the equivalent
-                # conversion as universal newlines would do.
-                return file_contents.replace(os.linesep, '\n'), filename
+        if (loader := getattr(package, '__loader__', None)) is None:
+            try:
+                loader = package.__spec__.loader
+            except AttributeError:
+                pass
+        if hasattr(loader, 'get_data'):
+            file_contents = loader.get_data(filename)
+            file_contents = file_contents.decode(encoding)
+            # get_data() opens files as 'rb', so one must do the equivalent
+            # conversion as universal newlines would do.
+            return _newline_convert(file_contents), filename
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 

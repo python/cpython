@@ -23,7 +23,7 @@ Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import logging, socket, os, pickle, struct, time, re
+import io, logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
@@ -150,6 +150,8 @@ class RotatingFileHandler(BaseRotatingHandler):
         # on each run.
         if maxBytes > 0:
             mode = 'a'
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
         BaseRotatingHandler.__init__(self, filename, mode, encoding=encoding,
                                      delay=delay, errors=errors)
         self.maxBytes = maxBytes
@@ -205,6 +207,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     def __init__(self, filename, when='h', interval=1, backupCount=0,
                  encoding=None, delay=False, utc=False, atTime=None,
                  errors=None):
+        encoding = io.text_encoding(encoding)
         BaseRotatingHandler.__init__(self, filename, 'a', encoding=encoding,
                                      delay=delay, errors=errors)
         self.when = when.upper()
@@ -442,6 +445,8 @@ class WatchedFileHandler(logging.FileHandler):
     """
     def __init__(self, filename, mode='a', encoding=None, delay=False,
                  errors=None):
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
         logging.FileHandler.__init__(self, filename, mode=mode,
                                      encoding=encoding, delay=delay,
                                      errors=errors)
@@ -1173,6 +1178,20 @@ class HTTPHandler(logging.Handler):
         """
         return record.__dict__
 
+    def getConnection(self, host, secure):
+        """
+        get a HTTP[S]Connection.
+
+        Override when a custom connection is required, for example if
+        there is a proxy.
+        """
+        import http.client
+        if secure:
+            connection = http.client.HTTPSConnection(host, context=self.context)
+        else:
+            connection = http.client.HTTPConnection(host)
+        return connection
+
     def emit(self, record):
         """
         Emit a record.
@@ -1180,12 +1199,9 @@ class HTTPHandler(logging.Handler):
         Send the record to the Web server as a percent-encoded dictionary
         """
         try:
-            import http.client, urllib.parse
+            import urllib.parse
             host = self.host
-            if self.secure:
-                h = http.client.HTTPSConnection(host, context=self.context)
-            else:
-                h = http.client.HTTPConnection(host)
+            h = self.getConnection(host, self.secure)
             url = self.url
             data = urllib.parse.urlencode(self.mapLogRecord(record))
             if self.method == "GET":
@@ -1313,7 +1329,11 @@ class MemoryHandler(BufferingHandler):
         """
         Set the target handler for this handler.
         """
-        self.target = target
+        self.acquire()
+        try:
+            self.target = target
+        finally:
+            self.release()
 
     def flush(self):
         """

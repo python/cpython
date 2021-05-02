@@ -128,7 +128,7 @@ Object Protocol
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyObject_GenericSetDict(PyObject *o, void *context)
+.. c:function:: int PyObject_GenericSetDict(PyObject *o, PyObject *value, void *context)
 
    A generic implementation for the setter of a ``__dict__`` descriptor. This
    implementation does not allow the dictionary to be deleted.
@@ -291,14 +291,14 @@ Object Protocol
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
    function instead of the common expression ``o->ob_type``, which returns a
-   pointer of type :c:type:`PyTypeObject\*`, except when the incremented reference
+   pointer of type :c:type:`PyTypeObject*`, except when the incremented reference
    count is needed.
 
 
 .. c:function:: int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)
 
-   Return true if the object *o* is of type *type* or a subtype of *type*.  Both
-   parameters must be non-``NULL``.
+   Return non-zero if the object *o* is of type *type* or a subtype of *type*, and
+   ``0`` otherwise.  Both parameters must be non-``NULL``.
 
 
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
@@ -356,3 +356,14 @@ Object Protocol
    iterator for the object argument, or the object  itself if the object is already
    an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
+
+
+.. c:function:: PyObject* PyObject_GetAiter(PyObject *o)
+
+   This is the equivalent to the Python expression ``aiter(o)``. Takes an
+   :class:`AsyncIterable` object and returns an :class:`AsyncIterator` for it.
+   This is typically a new iterator but if the argument is an
+   :class:`AsyncIterator`, this returns itself. Raises :exc:`TypeError` and
+   returns ``NULL`` if the object cannot be iterated.
+
+   .. versionadded:: 3.10

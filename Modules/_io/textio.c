@@ -8,8 +8,12 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_interp.h"        // PyInterpreterState.fs_codec
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
 #include "pycore_object.h"
-#include "structmember.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -24,7 +28,6 @@ _Py_IDENTIFIER(_dealloc_warn);
 _Py_IDENTIFIER(decode);
 _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(getpreferredencoding);
 _Py_IDENTIFIER(isatty);
 _Py_IDENTIFIER(mode);
 _Py_IDENTIFIER(name);
@@ -340,7 +343,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
             goto error;
         kind = PyUnicode_KIND(modified);
         out = PyUnicode_DATA(modified);
-        PyUnicode_WRITE(kind, PyUnicode_DATA(modified), 0, '\r');
+        PyUnicode_WRITE(kind, out, 0, '\r');
         memcpy(out + kind, PyUnicode_DATA(output), kind * output_len);
         Py_DECREF(output);
         output = modified; /* output remains ready */
@@ -367,7 +370,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
     /* Record which newlines are read and do newline translation if desired,
        all in one pass. */
     {
-        void *in_str;
+        const void *in_str;
         Py_ssize_t len;
         int seennl = self->seennl;
         int only_lf = 0;
@@ -447,7 +450,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
         else {
             void *translated;
             int kind = PyUnicode_KIND(output);
-            void *in_str = PyUnicode_DATA(output);
+            const void *in_str = PyUnicode_DATA(output);
             Py_ssize_t in, out;
             /* XXX: Previous in-place translation here is disabled as
                resizing is not possible anymore */
@@ -897,7 +900,7 @@ _textiowrapper_decode(PyObject *decoder, PyObject *bytes, int eof)
 {
     PyObject *chars;
 
-    if (Py_TYPE(decoder) == &PyIncrementalNewlineDecoder_Type)
+    if (Py_IS_TYPE(decoder, &PyIncrementalNewlineDecoder_Type))
         chars = _PyIncrementalNewlineDecoder_decode(decoder, bytes, eof);
     else
         chars = PyObject_CallMethodObjArgs(decoder, _PyIO_str_decode, bytes,
@@ -969,7 +972,7 @@ _textiowrapper_fix_encoder_state(textio *self)
         return -1;
     }
 
-    int cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
+    int cmp = PyObject_RichCompareBool(cookieObj, _PyLong_GetZero(), Py_EQ);
     Py_DECREF(cookieObj);
     if (cmp < 0) {
         return -1;
@@ -978,7 +981,7 @@ _textiowrapper_fix_encoder_state(textio *self)
     if (cmp == 0) {
         self->encoding_start_of_stream = 0;
         PyObject *res = PyObject_CallMethodOneArg(
-            self->encoder, _PyIO_str_setstate, _PyLong_Zero);
+            self->encoder, _PyIO_str_setstate, _PyLong_GetZero());
         if (res == NULL) {
             return -1;
         }
@@ -993,10 +996,10 @@ io_check_errors(PyObject *errors)
 {
     assert(errors != NULL && errors != Py_None);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifndef Py_DEBUG
     /* In release mode, only check in development mode (-X dev) */
-    if (!interp->config.dev_mode) {
+    if (!_PyInterpreterState_GetConfig(interp)->dev_mode) {
         return 0;
     }
 #else
@@ -1005,7 +1008,7 @@ io_check_errors(PyObject *errors)
 
     /* Avoid calling PyCodec_LookupError() before the codec registry is ready:
        before_PyUnicode_InitEncodings() is called. */
-    if (!interp->fs_codec.encoding) {
+    if (!interp->unicode.fs_codec.encoding) {
         return 0;
     }
 
@@ -1082,6 +1085,19 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->ok = 0;
     self->detached = 0;
 
+    if (encoding == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            if (PyErr_WarnEx(PyExc_EncodingWarning,
+                             "'encoding' argument not specified", 1)) {
+                return -1;
+            }
+        }
+    }
+    else if (strcmp(encoding, "locale") == 0) {
+        encoding = NULL;
+    }
+
     if (errors == Py_None) {
         errors = _PyUnicode_FromId(&PyId_strict); /* borrowed */
         if (errors == NULL) {
@@ -1152,29 +1168,11 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
-        PyObject *locale_module = _PyIO_get_locale_module(state);
-        if (locale_module == NULL)
-            goto catch_ImportError;
-        self->encoding = _PyObject_CallMethodIdOneArg(
-            locale_module, &PyId_getpreferredencoding, Py_False);
-        Py_DECREF(locale_module);
+        self->encoding = _Py_GetLocaleEncodingObject();
         if (self->encoding == NULL) {
-          catch_ImportError:
-            /*
-             Importing locale can raise an ImportError because of
-             _functools, and locale.getpreferredencoding can raise an
-             ImportError if _locale is not available.  These will happen
-             during module building.
-            */
-            if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-                PyErr_Clear();
-                self->encoding = PyUnicode_FromString("ascii");
-            }
-            else
-                goto error;
+            goto error;
         }
-        else if (!PyUnicode_Check(self->encoding))
-            Py_CLEAR(self->encoding);
+        assert(PyUnicode_Check(self->encoding));
     }
     if (self->encoding != NULL) {
         encoding = PyUnicode_AsUTF8(self->encoding);
@@ -1226,15 +1224,15 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Finished sorting out the codec details */
     Py_CLEAR(codec_info);
 
-    if (Py_TYPE(buffer) == &PyBufferedReader_Type ||
-        Py_TYPE(buffer) == &PyBufferedWriter_Type ||
-        Py_TYPE(buffer) == &PyBufferedRandom_Type)
+    if (Py_IS_TYPE(buffer, &PyBufferedReader_Type) ||
+        Py_IS_TYPE(buffer, &PyBufferedWriter_Type) ||
+        Py_IS_TYPE(buffer, &PyBufferedRandom_Type))
     {
         if (_PyObject_LookupAttrId(buffer, &PyId_raw, &raw) < 0)
             goto error;
         /* Cache the raw FileIO object to speed up 'closed' checks */
         if (raw != NULL) {
-            if (Py_TYPE(raw) == &PyFileIO_Type)
+            if (Py_IS_TYPE(raw, &PyFileIO_Type))
                 self->raw = raw;
             else
                 Py_DECREF(raw);
@@ -1466,7 +1464,7 @@ textiowrapper_closed_get(textio *self, void *context);
     do { \
         int r; \
         PyObject *_res; \
-        if (Py_TYPE(self) == &PyTextIOWrapper_Type) { \
+        if (Py_IS_TYPE(self, &PyTextIOWrapper_Type)) { \
             if (self->raw != NULL) \
                 r = _PyFileIO_closed(self->raw); \
             else { \
@@ -1600,6 +1598,8 @@ _textiowrapper_writeflush(textio *self)
         ret = PyObject_CallMethodOneArg(self->buffer, _PyIO_str_write, b);
     } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
+    // NOTE: We cleared buffer but we don't know how many bytes are actually written
+    // when an error occurred.
     if (ret == NULL)
         return -1;
     Py_DECREF(ret);
@@ -1657,7 +1657,10 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
 
     /* XXX What if we were just reading? */
     if (self->encodefunc != NULL) {
-        if (PyUnicode_IS_ASCII(text) && is_asciicompat_encoding(self->encodefunc)) {
+        if (PyUnicode_IS_ASCII(text) &&
+                // See bpo-43260
+                PyUnicode_GET_LENGTH(text) <= self->chunk_size &&
+                is_asciicompat_encoding(self->encodefunc)) {
             b = text;
             Py_INCREF(b);
         }
@@ -1666,8 +1669,9 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         }
         self->encoding_start_of_stream = 0;
     }
-    else
+    else {
         b = PyObject_CallMethodOneArg(self->encoder, _PyIO_str_encode, text);
+    }
 
     Py_DECREF(text);
     if (b == NULL)
@@ -1692,6 +1696,14 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
         self->pending_bytes_count = 0;
         self->pending_bytes = b;
     }
+    else if (self->pending_bytes_count + bytes_len > self->chunk_size) {
+        // Prevent to concatenate more than chunk_size data.
+        if (_textiowrapper_writeflush(self) < 0) {
+            Py_DECREF(b);
+            return NULL;
+        }
+        self->pending_bytes = b;
+    }
     else if (!PyList_CheckExact(self->pending_bytes)) {
         PyObject *list = PyList_New(2);
         if (list == NULL) {
@@ -1711,7 +1723,7 @@ _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
     }
 
     self->pending_bytes_count += bytes_len;
-    if (self->pending_bytes_count > self->chunk_size || needflush ||
+    if (self->pending_bytes_count >= self->chunk_size || needflush ||
         text_needflush) {
         if (_textiowrapper_writeflush(self) < 0)
             return NULL;
@@ -1937,7 +1949,7 @@ _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
         if (bytes == NULL)
             goto fail;
 
-        if (Py_TYPE(self->decoder) == &PyIncrementalNewlineDecoder_Type)
+        if (Py_IS_TYPE(self->decoder, &PyIncrementalNewlineDecoder_Type))
             decoded = _PyIncrementalNewlineDecoder_decode(self->decoder,
                                                           bytes, 1);
         else
@@ -2085,7 +2097,7 @@ _PyIO_find_line_ending(
     else {
         /* Non-universal mode. */
         Py_ssize_t readnl_len = PyUnicode_GET_LENGTH(readnl);
-        Py_UCS1 *nl = PyUnicode_1BYTE_DATA(readnl);
+        const Py_UCS1 *nl = PyUnicode_1BYTE_DATA(readnl);
         /* Assume that readnl is an ASCII character. */
         assert(PyUnicode_KIND(readnl) == PyUnicode_1BYTE_KIND);
         if (readnl_len == 1) {
@@ -2139,7 +2151,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
     chunked = 0;
 
     while (1) {
-        char *ptr;
+        const char *ptr;
         Py_ssize_t line_len;
         int kind;
         Py_ssize_t consumed = 0;
@@ -2413,7 +2425,7 @@ _textiowrapper_encoder_reset(textio *self, int start_of_stream)
     }
     else {
         res = PyObject_CallMethodOneArg(self->encoder, _PyIO_str_setstate,
-                                        _PyLong_Zero);
+                                        _PyLong_GetZero());
         self->encoding_start_of_stream = 0;
     }
     if (res == NULL)
@@ -2457,10 +2469,12 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
+    PyObject *zero = _PyLong_GetZero();  // borrowed reference
+
     switch (whence) {
     case SEEK_CUR:
         /* seek relative to current position */
-        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -2480,7 +2494,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 
     case SEEK_END:
         /* seek relative to end of file */
-        cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_EQ);
+        cmp = PyObject_RichCompareBool(cookieObj, zero, Py_EQ);
         if (cmp < 0)
             goto fail;
 
@@ -2509,7 +2523,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         if (self->encoder) {
             /* If seek() == 0, we are at the start of stream, otherwise not */
-            cmp = PyObject_RichCompareBool(res, _PyLong_Zero, Py_EQ);
+            cmp = PyObject_RichCompareBool(res, zero, Py_EQ);
             if (cmp < 0 || _textiowrapper_encoder_reset(self, cmp)) {
                 Py_DECREF(res);
                 goto fail;
@@ -2527,7 +2541,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    cmp = PyObject_RichCompareBool(cookieObj, _PyLong_Zero, Py_LT);
+    cmp = PyObject_RichCompareBool(cookieObj, zero, Py_LT);
     if (cmp < 0)
         goto fail;
 
@@ -2640,7 +2654,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
     Py_ssize_t chars_to_skip, chars_decoded;
     Py_ssize_t skip_bytes, skip_back;
     PyObject *saved_state = NULL;
-    char *input, *input_end;
+    const char *input, *input_end;
     Py_ssize_t dec_buffer_len;
     int dec_flags;
 
@@ -3079,7 +3093,7 @@ textiowrapper_iternext(textio *self)
     CHECK_ATTACHED(self);
 
     self->telling = 0;
-    if (Py_TYPE(self) == &PyTextIOWrapper_Type) {
+    if (Py_IS_TYPE(self, &PyTextIOWrapper_Type)) {
         /* Skip method call overhead for speed */
         line = _textiowrapper_readline(self, -1);
     }

@@ -23,12 +23,12 @@ import xml.etree.ElementTree
 import textwrap
 from io import StringIO
 from collections import namedtuple
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok
-from test.support import (
-    TESTFN, rmtree,
-    reap_children, reap_threads, captured_output, captured_stdout,
-    captured_stderr, unlink, requires_docstrings
-)
+from test.support import threading_helper
+from test.support import (reap_children, captured_output, captured_stdout,
+                          captured_stderr, requires_docstrings)
+from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
 
@@ -453,7 +453,7 @@ class PydocDocTest(unittest.TestCase):
             zero = 0
             one = 1
         doc = pydoc.render_doc(BinaryInteger)
-        self.assertIn('<BinaryInteger.zero: 0>', doc)
+        self.assertIn('BinaryInteger.zero', doc)
 
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
@@ -476,6 +476,7 @@ class PydocDocTest(unittest.TestCase):
     def test_non_str_name(self):
         # issue14638
         # Treat illegal (non-str) name like no name
+
         class A:
             __name__ = 42
         class B:
@@ -726,7 +727,7 @@ class PydocDocTest(unittest.TestCase):
         self.assertEqual(synopsis, expected)
 
     def test_synopsis_sourceless_empty_doc(self):
-        with test.support.temp_cwd() as test_dir:
+        with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, 'foomod42.py')
             cached_path = importlib.util.cache_from_source(init_path)
             with open(init_path, 'w') as fobj:
@@ -743,11 +744,11 @@ class PydocDocTest(unittest.TestCase):
                          ('I Am A Doc', '\nHere is my description'))
 
     def test_is_package_when_not_package(self):
-        with test.support.temp_cwd() as test_dir:
+        with os_helper.temp_cwd() as test_dir:
             self.assertFalse(pydoc.ispackage(test_dir))
 
     def test_is_package_when_is_package(self):
-        with test.support.temp_cwd() as test_dir:
+        with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
             self.assertTrue(pydoc.ispackage(test_dir))
@@ -1141,7 +1142,8 @@ class TestDescriptions(unittest.TestCase):
                 '''A static method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['sm']),
-                         "<staticmethod object>")
+                         'sm(x, y)\n'
+                         '    A static method\n')
         self.assertEqual(self._get_summary_lines(X.sm), """\
 sm(x, y)
     A static method
@@ -1161,7 +1163,8 @@ sm(x, y)
                 '''A class method'''
                 ...
         self.assertEqual(self._get_summary_lines(X.__dict__['cm']),
-                         "<classmethod object>")
+                         'cm(...)\n'
+                         '    A class method\n')
         self.assertEqual(self._get_summary_lines(X.cm), """\
 cm(x) method of builtins.type instance
     A class method
@@ -1254,7 +1257,9 @@ cm(x) method of builtins.type instance
 
         X.attr.__doc__ = 'Custom descriptor'
         self.assertEqual(self._get_summary_lines(X.attr), """\
-<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>""")
+<test.test_pydoc.TestDescriptions.test_custom_non_data_descriptor.<locals>.Descr object>
+    Custom descriptor
+""")
 
         X.attr.__name__ = 'foo'
         self.assertEqual(self._get_summary_lines(X.attr), """\
@@ -1371,17 +1376,11 @@ class PydocUrlHandlerTest(PydocBaseTest):
             ("topic?key=def", "Pydoc: KEYWORD def"),
             ("topic?key=STRINGS", "Pydoc: TOPIC STRINGS"),
             ("foobar", "Pydoc: Error - foobar"),
-            ("getfile?key=foobar", "Pydoc: Error - getfile?key=foobar"),
             ]
 
         with self.restrict_walk_packages():
             for url, title in requests:
                 self.call_url_handler(url, title)
-
-            path = string.__file__
-            title = "Pydoc: getfile " + path
-            url = "getfile?key=" + path
-            self.call_url_handler(url, title)
 
 
 class TestHelper(unittest.TestCase):
@@ -1572,7 +1571,7 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
 
 
-@reap_threads
+@threading_helper.reap_threads
 def test_main():
     try:
         test.support.run_unittest(PydocDocTest,

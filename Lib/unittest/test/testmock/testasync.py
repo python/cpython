@@ -199,9 +199,9 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
+    @unittest.skip('Broken test from https://bugs.python.org/issue37251')
     def test_create_autospec_awaitable_class(self):
-        awaitable_mock = create_autospec(spec=AwaitableClass())
-        self.assertIsInstance(create_autospec(awaitable_mock), AsyncMock)
+        self.assertIsInstance(create_autospec(AwaitableClass), AsyncMock)
 
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
@@ -499,6 +499,17 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         self.assertEqual(result, value)
         mock.assert_awaited()
         self.assertTrue(ran)
+
+    async def test_await_args_list_order(self):
+        async_mock = AsyncMock()
+        mock2 = async_mock(2)
+        mock1 = async_mock(1)
+        await mock1
+        await mock2
+        async_mock.assert_has_awaits([call(1), call(2)])
+        self.assertEqual(async_mock.await_args_list, [call(1), call(2)])
+        self.assertEqual(async_mock.call_args_list, [call(2), call(1)])
+
 
 class AsyncMagicMethods(unittest.TestCase):
     def test_async_magic_methods_return_async_mocks(self):

@@ -10,9 +10,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_object.h"
-#include "pycore_pystate.h"
-#include "structmember.h"
-#include "pythread.h"
+#include "structmember.h"         // PyMemberDef
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -292,12 +290,11 @@ _enter_buffered_busy(buffered *self)
     }
     Py_END_ALLOW_THREADS
     if (relax_locking && st != PY_LOCK_ACQUIRED) {
-        PyObject *msgobj = PyUnicode_FromFormat(
-            "could not acquire lock for %A at interpreter "
+        PyObject *ascii = PyObject_ASCII((PyObject*)self);
+        _Py_FatalErrorFormat(__func__,
+            "could not acquire lock for %s at interpreter "
             "shutdown, possibly due to daemon threads",
-            (PyObject *) self);
-        const char *msg = PyUnicode_AsUTF8(msgobj);
-        Py_FatalError(msg);
+            ascii ? PyUnicode_AsUTF8(ascii) : "<ascii(self) failed>");
     }
     return 1;
 }
@@ -1449,8 +1446,8 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
     _bufferedreader_reset_buf(self);
 
-    self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedReader_Type &&
-                                Py_TYPE(raw) == &PyFileIO_Type);
+    self->fast_closed_checks = (Py_IS_TYPE(self, &PyBufferedReader_Type) &&
+                                Py_IS_TYPE(raw, &PyFileIO_Type));
 
     self->ok = 1;
     return 0;
@@ -1486,6 +1483,15 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     }
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
+
+    if (n == -1 && PyErr_Occurred()) {
+        _PyErr_FormatFromCause(
+            PyExc_OSError,
+            "raw readinto() failed"
+        );
+        return -1;
+    }
+
     if (n < 0 || n > len) {
         PyErr_Format(PyExc_OSError,
                      "raw readinto() returned invalid length %zd "
@@ -1795,8 +1801,8 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedWriter_Type &&
-                                Py_TYPE(raw) == &PyFileIO_Type);
+    self->fast_closed_checks = (Py_IS_TYPE(self, &PyBufferedWriter_Type) &&
+                                Py_IS_TYPE(raw, &PyFileIO_Type));
 
     self->ok = 1;
     return 0;
@@ -2309,8 +2315,8 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
     _bufferedwriter_reset_buf(self);
     self->pos = 0;
 
-    self->fast_closed_checks = (Py_TYPE(self) == &PyBufferedRandom_Type &&
-                                Py_TYPE(raw) == &PyFileIO_Type);
+    self->fast_closed_checks = (Py_IS_TYPE(self, &PyBufferedRandom_Type) &&
+                                Py_IS_TYPE(raw, &PyFileIO_Type));
 
     self->ok = 1;
     return 0;

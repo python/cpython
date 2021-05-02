@@ -14,9 +14,10 @@ import shutil
 import threading
 import unittest
 from unittest import mock
-from test.support import (
-    verbose, run_unittest, TESTFN, reap_threads,
-    forget, unlink, rmtree, start_threads)
+from test.support import (verbose, run_unittest)
+from test.support.import_helper import forget
+from test.support.os_helper import (TESTFN, unlink, rmtree)
+from test.support import script_helper, threading_helper
 
 def task(N, done, done_tasks, errors):
     try:
@@ -124,9 +125,9 @@ class ThreadedImportTests(unittest.TestCase):
             done_tasks = []
             done.clear()
             t0 = time.monotonic()
-            with start_threads(threading.Thread(target=task,
-                                                args=(N, done, done_tasks, errors,))
-                               for i in range(N)):
+            with threading_helper.start_threads(
+                    threading.Thread(target=task, args=(N, done, done_tasks, errors,))
+                    for i in range(N)):
                 pass
             completed = done.wait(10 * 60)
             dt = time.monotonic() - t0
@@ -244,8 +245,20 @@ class ThreadedImportTests(unittest.TestCase):
         __import__(TESTFN)
         del sys.modules[TESTFN]
 
+    def test_concurrent_futures_circular_import(self):
+        # Regression test for bpo-43515
+        fn = os.path.join(os.path.dirname(__file__),
+                          'partial', 'cfimport.py')
+        script_helper.assert_python_ok(fn)
 
-@reap_threads
+    def test_multiprocessing_pool_circular_import(self):
+        # Regression test for bpo-41567
+        fn = os.path.join(os.path.dirname(__file__),
+                          'partial', 'pool_in_threads.py')
+        script_helper.assert_python_ok(fn)
+
+
+@threading_helper.reap_threads
 def test_main():
     old_switchinterval = None
     try:

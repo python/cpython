@@ -66,20 +66,6 @@ class CommonTest(seq_tests.CommonTest):
             a = self.type2test([a])
         self.assertRaises(RecursionError, repr, a)
 
-    def test_print(self):
-        d = self.type2test(range(200))
-        d.append(d)
-        d.extend(range(200,400))
-        d.append(d)
-        d.append(400)
-        try:
-            with open(support.TESTFN, "w") as fo:
-                fo.write(str(d))
-            with open(support.TESTFN, "r") as fo:
-                self.assertEqual(fo.read(), repr(d))
-        finally:
-            os.remove(support.TESTFN)
-
     def test_set_subscript(self):
         a = self.type2test(range(20))
         self.assertRaises(ValueError, a.__setitem__, slice(0, 10, 0), [1,2,3])

@@ -252,7 +252,7 @@ class Element:
         """
         for element in elements:
             self._assert_is_element(element)
-        self._children.extend(elements)
+            self._children.append(element)
 
     def insert(self, index, subelement):
         """Insert *subelement* at position *index*."""
@@ -1057,15 +1057,15 @@ def _escape_attrib(text):
             text = text.replace(">", "&gt;")
         if "\"" in text:
             text = text.replace("\"", "&quot;")
-        # The following business with carriage returns is to satisfy
-        # Section 2.11 of the XML specification, stating that
-        # CR or CR LN should be replaced with just LN
+        # Although section 2.11 of the XML specification states that CR or
+        # CR LN should be replaced with just LN, it applies only to EOLNs
+        # which take part of organizing file into lines. Within attributes,
+        # we are replacing these with entity numbers, so they do not count.
         # http://www.w3.org/TR/REC-xml/#sec-line-ends
-        if "\r\n" in text:
-            text = text.replace("\r\n", "\n")
+        # The current solution, contained in following six lines, was
+        # discussed in issue 17582 and 39011.
         if "\r" in text:
-            text = text.replace("\r", "\n")
-        #The following four lines are issue 17582
+            text = text.replace("\r", "&#13;")
         if "\n" in text:
             text = text.replace("\n", "&#10;")
         if "\t" in text:
@@ -1560,7 +1560,6 @@ class XMLParser:
         # Configure pyexpat: buffering, new-style attribute handling.
         parser.buffer_text = 1
         parser.ordered_attributes = 1
-        parser.specified_attributes = 1
         self._doctype = None
         self.entity = {}
         try:
@@ -1580,7 +1579,6 @@ class XMLParser:
         for event_name in events_to_report:
             if event_name == "start":
                 parser.ordered_attributes = 1
-                parser.specified_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
                             start=self._start):
                     append((event, start(tag, attrib_in)))
@@ -1875,6 +1873,11 @@ class C14NWriterTarget:
             if u == uri:
                 self._declared_ns_stack[-1].append((uri, prefix))
                 return f'{prefix}:{tag}' if prefix else tag, tag, uri
+
+        if not uri:
+            # As soon as a default namespace is defined,
+            # anything that has no namespace (and thus, no prefix) goes there.
+            return tag, tag, uri
 
         raise ValueError(f'Namespace "{uri}" is not declared in scope')
 

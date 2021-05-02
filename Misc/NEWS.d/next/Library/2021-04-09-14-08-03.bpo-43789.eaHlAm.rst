@@ -1,0 +1,2 @@
+OpenSSL 3.0.0: Don't call the password callback function a second time when
+first call has signaled an error condition.

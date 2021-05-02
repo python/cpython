@@ -1,0 +1,2 @@
+[Enum] Deprecate non-standard mixin format() behavior: in 3.12 the enum
+member, not the member's value, will be used for format() calls.

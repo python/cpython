@@ -17,7 +17,7 @@ Objects, values and types
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
 is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer," code is also
+conformance to Von Neumann's model of a "stored program computer", code is also
 represented by objects.)
 
 .. index::
@@ -156,12 +156,17 @@ NotImplemented
    object is accessed through the built-in name ``NotImplemented``. Numeric methods
    and rich comparison methods should return this value if they do not implement the
    operation for the operands provided.  (The interpreter will then try the
-   reflected operation, or some other fallback, depending on the operator.)  Its
-   truth value is true.
+   reflected operation, or some other fallback, depending on the operator.)  It
+   should not be evaluated in a boolean context.
 
    See
    :ref:`implementing-the-arithmetic-operations`
    for more details.
+
+   .. versionchanged:: 3.9
+      Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+      it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
+      It will raise a :exc:`TypeError` in a future version of Python.
 
 
 Ellipsis
@@ -182,6 +187,24 @@ Ellipsis
    related to mathematical numbers, but subject to the limitations of numerical
    representation in computers.
 
+   The string representations of the numeric classes, computed by
+   :meth:`__repr__` and :meth:`__str__`, have the following
+   properties:
+
+   * They are valid numeric literals which, when passed to their
+     class constructor, produce an object having the value of the
+     original numeric.
+
+   * The representation is in base 10, when possible.
+
+   * Leading zeros, possibly excepting a single zero before a
+     decimal point, are not shown.
+
+   * Trailing zeros, possibly excepting a single zero after a
+     decimal point, are not shown.
+
+   * A sign is shown only when the number is negative.
+
    Python distinguishes between integers, floating point numbers, and complex
    numbers:
 
@@ -194,7 +217,6 @@ Ellipsis
       There are two types of integers:
 
       Integers (:class:`int`)
-
          These represent numbers in an unlimited range, subject to available (virtual)
          memory only.  For the purpose of shift and mask operations, a binary
          representation is assumed, and negative numbers are represented in a variant of
@@ -420,6 +442,11 @@ Mappings
       equal (e.g., ``1`` and ``1.0``) then they can be used interchangeably to index
       the same dictionary entry.
 
+      Dictionaries preserve insertion order, meaning that keys will be produced
+      in the same order they were added sequentially over the dictionary.
+      Replacing an existing key does not change the order, however removing a key
+      and re-inserting it will add it to the end instead of keeping its old place.
+
       Dictionaries are mutable; they can be created by the ``{...}`` notation (see
       section :ref:`dict`).
 
@@ -430,6 +457,11 @@ Mappings
       The extension modules :mod:`dbm.ndbm` and :mod:`dbm.gnu` provide
       additional examples of mapping types, as does the :mod:`collections`
       module.
+
+      .. versionchanged:: 3.7
+         Dictionaries did not preserve insertion order in versions of Python before 3.6.
+         In CPython 3.6, insertion order was preserved, but it was considered
+         an implementation detail at that time rather than a language guarantee.
 
 Callable types
    .. index::
@@ -521,7 +553,10 @@ Callable types
       |                         | the dict are the parameter    |           |
       |                         | names, and ``'return'`` for   |           |
       |                         | the return annotation, if     |           |
-      |                         | provided.                     |           |
+      |                         | provided.  For more           |           |
+      |                         | information on working with   |           |
+      |                         | this attribute, see           |           |
+      |                         | :ref:`annotations-howto`.     |           |
       +-------------------------+-------------------------------+-----------+
       | :attr:`__kwdefaults__`  | A dict containing defaults    | Writable  |
       |                         | for keyword-only parameters.  |           |
@@ -716,16 +751,29 @@ Modules
       single: __annotations__ (module attribute)
       pair: module; namespace
 
-   Predefined (writable) attributes: :attr:`__name__` is the module's name;
-   :attr:`__doc__` is the module's documentation string, or ``None`` if
-   unavailable; :attr:`__annotations__` (optional) is a dictionary containing
-   :term:`variable annotations <variable annotation>` collected during module
-   body execution; :attr:`__file__` is the pathname of the file from which the
-   module was loaded, if it was loaded from a file. The :attr:`__file__`
-   attribute may be missing for certain types of modules, such as C modules
-   that are statically linked into the interpreter; for extension modules
-   loaded dynamically from a shared library, it is the pathname of the shared
-   library file.
+   Predefined (writable) attributes:
+
+      :attr:`__name__`
+         The module's name.
+
+      :attr:`__doc__`
+         The module's documentation string, or ``None`` if
+         unavailable.
+
+      :attr:`__file__`
+         The pathname of the file from which the
+         module was loaded, if it was loaded from a file.
+         The :attr:`__file__`
+         attribute may be missing for certain types of modules, such as C modules
+         that are statically linked into the interpreter.  For extension modules
+         loaded dynamically from a shared library, it's the pathname of the shared
+         library file.
+
+      :attr:`__annotations__`
+         A dictionary containing
+         :term:`variable annotations <variable annotation>` collected during
+         module body execution.  For best practices on working
+         with :attr:`__annotations__`, please see :ref:`annotations-howto`.
 
    .. index:: single: __dict__ (module attribute)
 
@@ -789,14 +837,30 @@ Custom classes
       single: __doc__ (class attribute)
       single: __annotations__ (class attribute)
 
-   Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
-   the module name in which the class was defined; :attr:`~object.__dict__` is the
-   dictionary containing the class's namespace; :attr:`~class.__bases__` is a
-   tuple containing the base classes, in the order of their occurrence in the
-   base class list; :attr:`__doc__` is the class's documentation string,
-   or ``None`` if undefined; :attr:`__annotations__` (optional) is a dictionary
-   containing :term:`variable annotations <variable annotation>` collected during
-   class body execution.
+   Special attributes:
+
+      :attr:`~definition.__name__`
+         The class name.
+
+      :attr:`__module__`
+         The name of the module in which the class was defined.
+
+      :attr:`~object.__dict__`
+         The dictionary containing the class's namespace.
+
+      :attr:`~class.__bases__`
+         A tuple containing the base classes, in the order of
+         their occurrence in the base class list.
+
+      :attr:`__doc__`
+         The class's documentation string, or ``None`` if undefined.
+
+      :attr:`__annotations__`
+         A dictionary containing
+         :term:`variable annotations <variable annotation>`
+         collected during class body execution.  For best practices on
+         working with :attr:`__annotations__`, please see
+         :ref:`annotations-howto`.
 
 Class instances
    .. index::
@@ -973,6 +1037,9 @@ Internal types
       :attr:`f_lasti` gives the precise instruction (this is an index into the
       bytecode string of the code object).
 
+      Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+
       .. index::
          single: f_trace (frame attribute)
          single: f_trace_lines (frame attribute)
@@ -1057,6 +1124,9 @@ Internal types
       :keyword:`try` statement with no matching except clause or with a
       finally clause.
 
+      Accessing ``tb_frame`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"tb_frame"``.
+
       .. index::
          single: tb_next (traceback attribute)
 
@@ -1100,9 +1170,8 @@ Internal types
       around any other object, usually a user-defined method object. When a static
       method object is retrieved from a class or a class instance, the object actually
       returned is the wrapped object, which is not subject to any further
-      transformation. Static method objects are not themselves callable, although the
-      objects they wrap usually are. Static method objects are created by the built-in
-      :func:`staticmethod` constructor.
+      transformation. Static method objects are also callable. Static method
+      objects are created by the built-in :func:`staticmethod` constructor.
 
    Class method objects
       A class method object, like a static method object, is a wrapper around another
@@ -1335,7 +1404,7 @@ Basic customization
 
    .. versionchanged:: 3.7
       ``object.__format__(x, '')`` is now equivalent to ``str(x)`` rather
-      than ``format(str(self), '')``.
+      than ``format(str(x), '')``.
 
 
 .. _richcmpfuncs:
@@ -1362,12 +1431,14 @@ Basic customization
    context (e.g., in the condition of an ``if`` statement), Python will call
    :func:`bool` on the value to determine if the result is true or false.
 
-   By default, :meth:`__ne__` delegates to :meth:`__eq__` and
-   inverts the result unless it is ``NotImplemented``.  There are no other
-   implied relationships among the comparison operators, for example,
-   the truth of ``(x<y or x==y)`` does not imply ``x<=y``.
-   To automatically generate ordering operations from a single root operation,
-   see :func:`functools.total_ordering`.
+   By default, ``object`` implements :meth:`__eq__` by using ``is``, returning
+   ``NotImplemented`` in the case of a false comparison:
+   ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
+   delegates to :meth:`__eq__` and inverts the result unless it is
+   ``NotImplemented``.  There are no other implied relationships among the
+   comparison operators or default implementations; for example, the truth of
+   ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
+   operations from a single root operation, see :func:`functools.total_ordering`.
 
    See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
@@ -1525,6 +1596,12 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
       result of implicit invocation via language syntax or built-in functions.
       See :ref:`special-lookup`.
 
+   .. audit-event:: object.__getattr__ obj,name object.__getattribute__
+
+      For certain sensitive attribute accesses, raises an
+      :ref:`auditing event <auditing>` ``object.__getattr__`` with arguments
+      ``obj`` and ``name``.
+
 
 .. method:: object.__setattr__(self, name, value)
 
@@ -1536,11 +1613,23 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
    call the base class method with the same name, for example,
    ``object.__setattr__(self, name, value)``.
 
+   .. audit-event:: object.__setattr__ obj,name,value object.__setattr__
+
+      For certain sensitive attribute assignments, raises an
+      :ref:`auditing event <auditing>` ``object.__setattr__`` with arguments
+      ``obj``, ``name``, ``value``.
+
 
 .. method:: object.__delattr__(self, name)
 
    Like :meth:`__setattr__` but for attribute deletion instead of assignment.  This
    should only be implemented if ``del obj.name`` is meaningful for the object.
+
+   .. audit-event:: object.__delattr__ obj,name object.__delattr__
+
+      For certain sensitive attribute deletions, raises an
+      :ref:`auditing event <auditing>` ``object.__delattr__`` with arguments
+      ``obj`` and ``name``.
 
 
 .. method:: object.__dir__(self)
@@ -1721,7 +1810,7 @@ Super Binding
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
-For instance bindings, the precedence of descriptor invocation depends on the
+For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`__get__`, :meth:`__set__` and :meth:`__delete__`.  If it does not
 define :meth:`__get__`, then accessing the attribute will return the descriptor
@@ -1951,7 +2040,7 @@ namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
 the final class object is created the namespace is copied into a new ``dict``.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
-is initialised as an empty :func:`dict`.
+is initialised as an empty ordered mapping.
 
 .. seealso::
 
@@ -2115,7 +2204,7 @@ Emulating callable objects
    .. index:: pair: call; instance
 
    Called when the instance is "called" as a function; if this method is defined,
-   ``x(arg1, arg2, ...)`` is a shorthand for ``x.__call__(arg1, arg2, ...)``.
+   ``x(arg1, arg2, ...)`` roughly translates to ``type(x).__call__(x, arg1, ...)``.
 
 
 .. _sequence-types:
@@ -2361,10 +2450,11 @@ left undefined.
 
    .. note::
 
-      If the right operand's type is a subclass of the left operand's type and that
-      subclass provides the reflected method for the operation, this method will be
-      called before the left operand's non-reflected method.  This behavior allows
-      subclasses to override their ancestors' operations.
+      If the right operand's type is a subclass of the left operand's type and
+      that subclass provides a different implementation of the reflected method
+      for the operation, this method will be called before the left operand's
+      non-reflected method. This behavior allows subclasses to override their
+      ancestors' operations.
 
 
 .. method:: object.__iadd__(self, other)
@@ -2500,6 +2590,38 @@ For more information on context managers, see :ref:`typecontextmanager`.
       statement.
 
 
+.. _class-pattern-matching:
+
+Customizing positional arguments in class pattern matching
+----------------------------------------------------------
+
+When using a class name in a pattern, positional arguments in the pattern are not
+allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
+support in ``MyClass``. To be able to use that kind of patterns, the class needs to
+define a *__match_args__* attribute.
+
+.. data:: object.__match_args__
+
+   This class variable can be assigned a tuple of strings. When this class is
+   used in a class pattern with positional arguments, each positional argument will
+   be converted into a keyword argument, using the corresponding value in
+   *__match_args__* as the keyword. The absence of this attribute is equivalent to
+   setting it to ``()``.
+
+For example, if ``MyClass.__match_args__`` is ``("left", "center", "right")`` that means
+that ``case MyClass(x, y)`` is equivalent to ``case MyClass(left=x, center=y)``. Note
+that the number of arguments in the pattern must be smaller than or equal to the number
+of elements in *__match_args__*; if it is larger, the pattern match attempt will raise
+a :exc:`TypeError`.
+
+.. versionadded:: 3.10
+
+.. seealso::
+
+   :pep:`634` - Structural Pattern Matching
+      The specification for the Python ``match`` statement.
+
+
 .. _special-lookup:
 
 Special method lookup
@@ -2586,7 +2708,7 @@ Awaitable Objects
 -----------------
 
 An :term:`awaitable` object generally implements an :meth:`__await__` method.
-:term:`Coroutine` objects returned from :keyword:`async def` functions
+:term:`Coroutine objects <coroutine>` returned from :keyword:`async def` functions
 are awaitable.
 
 .. note::
@@ -2611,7 +2733,7 @@ are awaitable.
 Coroutine Objects
 -----------------
 
-:term:`Coroutine` objects are :term:`awaitable` objects.
+:term:`Coroutine objects <coroutine>` are :term:`awaitable` objects.
 A coroutine's execution can be controlled by calling :meth:`__await__` and
 iterating over the result.  When the coroutine has finished executing and
 returns, the iterator raises :exc:`StopIteration`, and the exception's
@@ -2756,6 +2878,6 @@ An example of an asynchronous context manager class::
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.
 
-.. [#] For operands of the same type, it is assumed that if the non-reflected method
-   (such as :meth:`__add__`) fails the operation is not supported, which is why the
-   reflected method is not called.
+.. [#] For operands of the same type, it is assumed that if the non-reflected
+   method -- such as :meth:`__add__` -- fails then the overall operation is not
+   supported, which is why the reflected method is not called.

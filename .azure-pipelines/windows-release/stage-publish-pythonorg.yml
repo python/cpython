@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), and(eq(variables['DoMSI'], 'true'), eq(variables['DoEmbed'], 'true')))
 
   pool:
-    #vmName: win2016-vs2017
+    #vmImage: windows-2019
     name: 'Windows Release'
 
   workspace:

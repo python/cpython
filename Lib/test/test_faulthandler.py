@@ -2,11 +2,13 @@ from contextlib import contextmanager
 import datetime
 import faulthandler
 import os
+import re
 import signal
 import subprocess
 import sys
 import sysconfig
 from test import support
+from test.support import os_helper
 from test.support import script_helper, is_android
 import tempfile
 import unittest
@@ -51,7 +53,7 @@ def temporary_filename():
     try:
         yield filename
     finally:
-        support.unlink(filename)
+        os_helper.unlink(filename)
 
 class FaultHandlerTests(unittest.TestCase):
     def get_output(self, code, filename=None, fd=None):
@@ -123,7 +125,9 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
 
-    def check_fatal_error(self, code, line_number, name_regex, **kw):
+    def check_fatal_error(self, code, line_number, name_regex, func=None, **kw):
+        if func:
+            name_regex = '%s: %s' % (func, name_regex)
         fatal_error = 'Fatal Python error: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
@@ -173,6 +177,7 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'in new thread',
             know_current_thread=False,
+            func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
     def test_sigabrt(self):
@@ -223,23 +228,23 @@ class FaultHandlerTests(unittest.TestCase):
             5,
             'Illegal instruction')
 
+    def check_fatal_error_func(self, release_gil):
+        # Test that Py_FatalError() dumps a traceback
+        with support.SuppressCrashReport():
+            self.check_fatal_error(f"""
+                import _testcapi
+                _testcapi.fatal_error(b'xyz', {release_gil})
+                """,
+                2,
+                'xyz',
+                func='test_fatal_error',
+                py_fatal_error=True)
+
     def test_fatal_error(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler._fatal_error(b'xyz')
-            """,
-            2,
-            'xyz',
-            py_fatal_error=True)
+        self.check_fatal_error_func(False)
 
     def test_fatal_error_without_gil(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler._fatal_error(b'xyz', True)
-            """,
-            2,
-            'xyz',
-            py_fatal_error=True)
+        self.check_fatal_error_func(True)
 
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
@@ -324,6 +329,26 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertTrue(not_expected not in stderr,
                      "%r is present in %r" % (not_expected, stderr))
         self.assertNotEqual(exitcode, 0)
+
+    @skip_segfault_on_android
+    def test_dump_ext_modules(self):
+        code = """
+            import faulthandler
+            import sys
+            # Don't filter stdlib module names
+            sys.stdlib_module_names = frozenset()
+            faulthandler.enable()
+            faulthandler._sigsegv()
+            """
+        stderr, exitcode = self.get_output(code)
+        stderr = '\n'.join(stderr)
+        match = re.search(r'^Extension modules:(.*) \(total: [0-9]+\)$',
+                          stderr, re.MULTILINE)
+        if not match:
+            self.fail(f"Cannot find 'Extension modules:' in {stderr!r}")
+        modules = set(match.group(1).strip().split(', '))
+        for name in ('sys', 'faulthandler'):
+            self.assertIn(name, modules)
 
     def test_is_enabled(self):
         orig_stderr = sys.stderr

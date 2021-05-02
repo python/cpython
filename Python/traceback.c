@@ -2,12 +2,11 @@
 /* Traceback implementation */
 
 #include "Python.h"
-#include "pycore_pystate.h"
 
 #include "code.h"
-#include "frameobject.h"
-#include "structmember.h"
-#include "osdefs.h"
+#include "frameobject.h"          // PyFrame_GetBack()
+#include "structmember.h"         // PyMemberDef
+#include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -148,7 +147,7 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY},
+    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
     {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
     {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
     {NULL}      /* Sentinel */
@@ -234,7 +233,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 
@@ -376,7 +375,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     int fd;
     int i;
     char *found_encoding;
-    char *encoding;
+    const char *encoding;
     PyObject *io;
     PyObject *binary;
     PyObject *fob = NULL;
@@ -384,7 +383,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     PyObject *res;
     char buf[MAXPATHLEN+1];
     int kind;
-    void *data;
+    const void *data;
 
     /* open the file */
     if (filename == NULL)
@@ -420,12 +419,12 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
         Py_DECREF(io);
         Py_DECREF(binary);
-        PyMem_FREE(found_encoding);
+        PyMem_Free(found_encoding);
         return 0;
     }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
-    PyMem_FREE(found_encoding);
+    PyMem_Free(found_encoding);
 
     if (fob == NULL) {
         PyErr_Clear();
@@ -561,28 +560,28 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
         tb = tb->tb_next;
     }
     while (tb != NULL && err == 0) {
+        PyCodeObject *code = PyFrame_GetCode(tb->tb_frame);
         if (last_file == NULL ||
-            tb->tb_frame->f_code->co_filename != last_file ||
+            code->co_filename != last_file ||
             last_line == -1 || tb->tb_lineno != last_line ||
-            last_name == NULL || tb->tb_frame->f_code->co_name != last_name) {
+            last_name == NULL || code->co_name != last_name) {
             if (cnt > TB_RECURSIVE_CUTOFF) {
                 err = tb_print_line_repeated(f, cnt);
             }
-            last_file = tb->tb_frame->f_code->co_filename;
+            last_file = code->co_filename;
             last_line = tb->tb_lineno;
-            last_name = tb->tb_frame->f_code->co_name;
+            last_name = code->co_name;
             cnt = 0;
         }
         cnt++;
         if (err == 0 && cnt <= TB_RECURSIVE_CUTOFF) {
-            err = tb_displayline(f,
-                                 tb->tb_frame->f_code->co_filename,
-                                 tb->tb_lineno,
-                                 tb->tb_frame->f_code->co_name);
+            err = tb_displayline(f, code->co_filename, tb->tb_lineno,
+                                 code->co_name);
             if (err == 0) {
                 err = PyErr_CheckSignals();
             }
         }
+        Py_DECREF(code);
         tb = tb->tb_next;
     }
     if (err == 0 && cnt > TB_RECURSIVE_CUTOFF) {
@@ -623,17 +622,18 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
     return err;
 }
 
-/* Reverse a string. For example, "abcd" becomes "dcba".
+/* Format an integer in range [0; 0xffffffff] to decimal and write it
+   into the file fd.
 
    This function is signal safe. */
 
 void
-_Py_DumpDecimal(int fd, unsigned long value)
+_Py_DumpDecimal(int fd, size_t value)
 {
     /* maximum number of characters required for output of %lld or %p.
        We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
        plus 1 for the null byte.  53/22 is an upper bound for log10(256). */
-    char buffer[1 + (sizeof(unsigned long)*53-1) / 22 + 1];
+    char buffer[1 + (sizeof(size_t)*53-1) / 22 + 1];
     char *ptr, *end;
 
     end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
@@ -649,15 +649,12 @@ _Py_DumpDecimal(int fd, unsigned long value)
     _Py_write_noraise(fd, ptr, end - ptr);
 }
 
-/* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
-   and write it into the file fd.
-
-   This function is signal safe. */
-
+/* Format an integer as hexadecimal with width digits into fd file descriptor.
+   The function is signal safe. */
 void
-_Py_DumpHexadecimal(int fd, unsigned long value, Py_ssize_t width)
+_Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
 {
-    char buffer[sizeof(unsigned long) * 2 + 1], *ptr, *end;
+    char buffer[sizeof(uintptr_t) * 2 + 1], *ptr, *end;
     const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
@@ -754,12 +751,9 @@ _Py_DumpASCII(int fd, PyObject *text)
 static void
 dump_frame(int fd, PyFrameObject *frame)
 {
-    PyCodeObject *code;
-    int lineno;
-
-    code = frame->f_code;
+    PyCodeObject *code = PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
-    if (code != NULL && code->co_filename != NULL
+    if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
     {
         PUTS(fd, "\"");
@@ -769,18 +763,17 @@ dump_frame(int fd, PyFrameObject *frame)
         PUTS(fd, "???");
     }
 
-    /* PyFrame_GetLineNumber() was introduced in Python 2.7.0 and 3.2.0 */
-    lineno = PyCode_Addr2Line(code, frame->f_lasti);
+    int lineno = PyFrame_GetLineNumber(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
-        _Py_DumpDecimal(fd, (unsigned long)lineno);
+        _Py_DumpDecimal(fd, (size_t)lineno);
     }
     else {
         PUTS(fd, "???");
     }
     PUTS(fd, " in ");
 
-    if (code != NULL && code->co_name != NULL
+    if (code->co_name != NULL
        && PyUnicode_Check(code->co_name)) {
         _Py_DumpASCII(fd, code->co_name);
     }
@@ -789,6 +782,7 @@ dump_frame(int fd, PyFrameObject *frame)
     }
 
     PUTS(fd, "\n");
+    Py_DECREF(code);
 }
 
 static void
@@ -801,22 +795,31 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = _PyThreadState_GetFrame(tstate);
+    frame = PyThreadState_GetFrame(tstate);
     if (frame == NULL) {
         PUTS(fd, "<no Python frame>\n");
         return;
     }
 
     depth = 0;
-    while (frame != NULL) {
+    while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
+            Py_DECREF(frame);
             PUTS(fd, "  ...\n");
             break;
         }
-        if (!PyFrame_Check(frame))
+        if (!PyFrame_Check(frame)) {
+            Py_DECREF(frame);
             break;
+        }
         dump_frame(fd, frame);
-        frame = frame->f_back;
+        PyFrameObject *back = PyFrame_GetBack(frame);
+        Py_DECREF(frame);
+
+        if (back == NULL) {
+            break;
+        }
+        frame = back;
         depth++;
     }
 }

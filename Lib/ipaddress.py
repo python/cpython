@@ -1124,7 +1124,6 @@ class _BaseNetwork(_IPAddressBase):
         return (self.network_address.is_loopback and
                 self.broadcast_address.is_loopback)
 
-
 class _BaseV4:
 
     """Base IPv4 object.
@@ -1215,7 +1214,7 @@ class _BaseV4:
         """
         if not octet_str:
             raise ValueError("Empty octet not permitted")
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
@@ -1223,6 +1222,11 @@ class _BaseV4:
         # is likely to be more informative for the user
         if len(octet_str) > 3:
             msg = "At most 3 characters permitted in %r"
+            raise ValueError(msg % octet_str)
+        # Handle leading zeros as strict as glibc's inet_pton()
+        # See security bug bpo-36384
+        if octet_str != '0' and octet_str[0] == '0':
+            msg = "Leading zeros are not permitted in %r"
             raise ValueError(msg % octet_str)
         # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
@@ -1398,7 +1402,7 @@ class IPv4Interface(IPv4Address):
 
     def __eq__(self, other):
         address_equal = IPv4Address.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented or not address_equal:
             return address_equal
         try:
             return self.network == other.network
@@ -1421,7 +1425,7 @@ class IPv4Interface(IPv4Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -1467,7 +1471,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             address: A string or integer representing the IP [& network].
               '192.0.2.0/24'
               '192.0.2.0/255.255.255.0'
-              '192.0.0.2/0.0.0.255'
+              '192.0.2.0/0.0.0.255'
               are all functionally the same in IPv4. Similarly,
               '192.0.2.1'
               '192.0.2.1/255.255.255.255'
@@ -1509,6 +1513,8 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
+        elif self._prefixlen == (self._max_prefixlen):
+            self.hosts = lambda: [IPv4Address(addr)]
 
     @property
     @functools.lru_cache()
@@ -1718,7 +1724,7 @@ class _BaseV6:
               [0..FFFF].
 
         """
-        # Whitelist the characters, since int() allows a lot of bizarre stuff.
+        # Reject non-ASCII digits.
         if not cls._HEX_DIGITS.issuperset(hextet_str):
             raise ValueError("Only hex digits permitted in %r" % hextet_str)
         # We do the length check second, since the invalid character error
@@ -2096,7 +2102,7 @@ class IPv6Interface(IPv6Address):
 
     def __eq__(self, other):
         address_equal = IPv6Address.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented or not address_equal:
             return address_equal
         try:
             return self.network == other.network
@@ -2109,7 +2115,7 @@ class IPv6Interface(IPv6Address):
     def __lt__(self, other):
         address_less = IPv6Address.__lt__(self, other)
         if address_less is NotImplemented:
-            return NotImplemented
+            return address_less
         try:
             return (self.network < other.network or
                     self.network == other.network and address_less)
@@ -2119,7 +2125,7 @@ class IPv6Interface(IPv6Address):
             return False
 
     def __hash__(self):
-        return self._ip ^ self._prefixlen ^ int(self.network.network_address)
+        return hash((self._ip, self._prefixlen, int(self.network.network_address)))
 
     __reduce__ = _IPAddressBase.__reduce__
 
@@ -2212,6 +2218,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
+        elif self._prefixlen == self._max_prefixlen:
+            self.hosts = lambda: [IPv6Address(addr)]
 
     def hosts(self):
         """Generate Iterator over usable hosts in a network.

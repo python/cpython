@@ -1,24 +1,13 @@
-from __future__ import unicode_literals
-
 import os
 import sys
 import shutil
+import pathlib
 import tempfile
 import textwrap
 import contextlib
 
-try:
-    from contextlib import ExitStack
-except ImportError:
-    from contextlib2 import ExitStack
-
-try:
-    import pathlib
-except ImportError:
-    import pathlib2 as pathlib
-
-
-__metaclass__ = type
+from test.support.os_helper import FS_NONASCII
+from typing import Dict, Union
 
 
 @contextlib.contextmanager
@@ -58,7 +47,7 @@ def install_finder(finder):
 
 class Fixtures:
     def setUp(self):
-        self.fixtures = ExitStack()
+        self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
 
 
@@ -83,8 +72,13 @@ class OnSysPath(Fixtures):
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
 
 
+# Except for python/mypy#731, prefer to define
+# FilesDef = Dict[str, Union['FilesDef', str]]
+FilesDef = Dict[str, Union[Dict[str, Union[Dict[str, str], str]], str]]
+
+
 class DistInfoPkg(OnSysPath, SiteDir):
-    files = {
+    files: FilesDef = {
         "distinfo_pkg-1.0.0.dist-info": {
             "METADATA": """
                 Name: distinfo-pkg
@@ -92,23 +86,63 @@ class DistInfoPkg(OnSysPath, SiteDir):
                 Version: 1.0.0
                 Requires-Dist: wheel >= 1.0
                 Requires-Dist: pytest; extra == 'test'
+                Keywords: sample package
+
+                Once upon a time
+                There was a distinfo pkg
                 """,
             "RECORD": "mod.py,sha256=abc,20\n",
             "entry_points.txt": """
                 [entries]
                 main = mod:main
                 ns:sub = mod:main
-            """
-            },
+            """,
+        },
         "mod.py": """
             def main():
                 print("hello world")
             """,
-        }
+    }
 
     def setUp(self):
         super(DistInfoPkg, self).setUp()
         build_files(DistInfoPkg.files, self.site_dir)
+
+
+class DistInfoPkgWithDot(OnSysPath, SiteDir):
+    files: FilesDef = {
+        "pkg_dot-1.0.0.dist-info": {
+            "METADATA": """
+                Name: pkg.dot
+                Version: 1.0.0
+                """,
+        },
+    }
+
+    def setUp(self):
+        super(DistInfoPkgWithDot, self).setUp()
+        build_files(DistInfoPkgWithDot.files, self.site_dir)
+
+
+class DistInfoPkgWithDotLegacy(OnSysPath, SiteDir):
+    files: FilesDef = {
+        "pkg.dot-1.0.0.dist-info": {
+            "METADATA": """
+                Name: pkg.dot
+                Version: 1.0.0
+                """,
+        },
+        "pkg.lot.egg-info": {
+            "METADATA": """
+                Name: pkg.lot
+                Version: 1.0.0
+                """,
+        },
+    }
+
+    def setUp(self):
+        super(DistInfoPkgWithDotLegacy, self).setUp()
+        build_files(DistInfoPkgWithDotLegacy.files, self.site_dir)
 
 
 class DistInfoPkgOffPath(SiteDir):
@@ -118,7 +152,7 @@ class DistInfoPkgOffPath(SiteDir):
 
 
 class EggInfoPkg(OnSysPath, SiteDir):
-    files = {
+    files: FilesDef = {
         "egginfo_pkg.egg-info": {
             "PKG-INFO": """
                 Name: egginfo-pkg
@@ -127,6 +161,9 @@ class EggInfoPkg(OnSysPath, SiteDir):
                 Version: 1.0.0
                 Classifier: Intended Audience :: Developers
                 Classifier: Topic :: Software Development :: Libraries
+                Keywords: sample package
+                Description: Once upon a time
+                        There was an egginfo package
                 """,
             "SOURCES.txt": """
                 mod.py
@@ -141,13 +178,13 @@ class EggInfoPkg(OnSysPath, SiteDir):
                 [test]
                 pytest
             """,
-            "top_level.txt": "mod\n"
-            },
+            "top_level.txt": "mod\n",
+        },
         "mod.py": """
             def main():
                 print("hello world")
             """,
-        }
+    }
 
     def setUp(self):
         super(EggInfoPkg, self).setUp()
@@ -155,7 +192,7 @@ class EggInfoPkg(OnSysPath, SiteDir):
 
 
 class EggInfoFile(OnSysPath, SiteDir):
-    files = {
+    files: FilesDef = {
         "egginfo_file.egg-info": """
             Metadata-Version: 1.0
             Name: egginfo_file
@@ -168,11 +205,26 @@ class EggInfoFile(OnSysPath, SiteDir):
             Description: UNKNOWN
             Platform: UNKNOWN
             """,
-        }
+    }
 
     def setUp(self):
         super(EggInfoFile, self).setUp()
         build_files(EggInfoFile.files, prefix=self.site_dir)
+
+
+class LocalPackage:
+    files: FilesDef = {
+        "setup.py": """
+            import setuptools
+            setuptools.setup(name="local-pkg", version="2.0.1")
+            """,
+    }
+
+    def setUp(self):
+        self.fixtures = contextlib.ExitStack()
+        self.addCleanup(self.fixtures.close)
+        self.fixtures.enter_context(tempdir_as_cwd())
+        build_files(self.files)
 
 
 def build_files(file_defs, prefix=pathlib.Path()):
@@ -205,8 +257,13 @@ def build_files(file_defs, prefix=pathlib.Path()):
                 with full_name.open('wb') as f:
                     f.write(contents)
             else:
-                with full_name.open('w') as f:
+                with full_name.open('w', encoding='utf-8') as f:
                     f.write(DALS(contents))
+
+
+class FileBuilder:
+    def unicode_filename(self):
+        return FS_NONASCII or self.skip("File system does not support non-ascii.")
 
 
 def DALS(str):

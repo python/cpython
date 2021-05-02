@@ -7,6 +7,9 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{34615a62-f999-4659-83f5-19d17a644530}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{1dcf6347-2248-42e1-ab3c-1b19f4f6f647}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_multiprocessing\multiprocessing.h">
@@ -20,5 +23,10 @@
     <ClCompile Include="..\Modules\_multiprocessing\semaphore.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_nt.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
