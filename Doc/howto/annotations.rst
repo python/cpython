@@ -149,6 +149,24 @@ Manually Un-Stringizing Stringized Annotations
   * If ``o`` is a callable (but not a class), use
     ``o.__globals__`` as the globals when calling :func:`eval`.
 
+  However, not all string values used as annotations can
+  be successfully turned into Python values by :func:`eval`.
+  String values could theoretically contain any valid string,
+  and in practice there are valid use cases for type hints that
+  require annotating with string values that specifically
+  *can't* be evaluated.  For example:
+
+  * :pep:`604` union types using `|`, before support for this
+    was added to Python 3.10.
+  * Definitions that aren't needed at runtime, only imported
+    when :const:`typing.TYPE_CHECKING` is true.
+
+  If :func:`eval` attempts to evaluate such values, it will
+  fail and raise an exception.  So, when designing a library
+  API that works with annotations, it's recommended to only
+  attempt to evaluate string values when explicitly requested
+  to by the caller.
+
 
 Best Practices For ``__annotations__`` In Any Python Version
 ============================================================
