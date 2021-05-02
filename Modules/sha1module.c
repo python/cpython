@@ -462,7 +462,7 @@ static PyType_Slot sha1_type_slots[] = {
 static PyType_Spec sha1_type_spec = {
     .name = "_sha1.sha1",
     .basicsize =  sizeof(SHA1object),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = sha1_type_slots
 };
 

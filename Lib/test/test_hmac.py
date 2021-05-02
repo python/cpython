@@ -444,6 +444,9 @@ class ConstructorTestCase(unittest.TestCase):
         ):
             C_HMAC()
 
+        with self.assertRaisesRegex(TypeError, "immutable type"):
+            C_HMAC.value = None
+
     @unittest.skipUnless(sha256_module is not None, 'need _sha256')
     def test_with_sha256_module(self):
         h = hmac.HMAC(b"key", b"hash this!", digestmod=sha256_module.sha256)
