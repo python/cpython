@@ -128,7 +128,7 @@ write code that handles both IP versions correctly.  Address objects are
       :func:`~socket.inet_pton`.
 
    .. versionchanged:: 3.9.5
-   
+
       The above change was also included in Python 3.9 starting with
       version 3.9.5.
 
