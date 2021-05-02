@@ -1,12 +1,13 @@
 import asyncio
 import asyncio.sslproto
+import contextlib
 import gc
+import logging
 import os
 import select
 import socket
-import unittest.mock
 import ssl
-import sys
+import tempfile
 import threading
 import time
 import weakref
@@ -72,6 +73,95 @@ class TestSSL(test_utils.TestCase):
         self.doCleanups()
         support.gc_collect()
         super().tearDown()
+
+    def tcp_server(self, server_prog, *,
+                   family=socket.AF_INET,
+                   addr=None,
+                   timeout=5,
+                   backlog=1,
+                   max_clients=10):
+
+        if addr is None:
+            if family == socket.AF_UNIX:
+                with tempfile.NamedTemporaryFile() as tmp:
+                    addr = tmp.name
+            else:
+                addr = ('127.0.0.1', 0)
+
+        sock = socket.socket(family, socket.SOCK_STREAM)
+
+        if timeout is None:
+            raise RuntimeError('timeout is required')
+        if timeout <= 0:
+            raise RuntimeError('only blocking sockets are supported')
+        sock.settimeout(timeout)
+
+        try:
+            sock.bind(addr)
+            sock.listen(backlog)
+        except OSError as ex:
+            sock.close()
+            raise ex
+
+        return TestThreadedServer(
+            self, sock, server_prog, timeout, max_clients)
+
+    def tcp_client(self, client_prog,
+                   family=socket.AF_INET,
+                   timeout=10):
+
+        sock = socket.socket(family, socket.SOCK_STREAM)
+
+        if timeout is None:
+            raise RuntimeError('timeout is required')
+        if timeout <= 0:
+            raise RuntimeError('only blocking sockets are supported')
+        sock.settimeout(timeout)
+
+        return TestThreadedClient(
+            self, sock, client_prog, timeout)
+
+    def unix_server(self, *args, **kwargs):
+        return self.tcp_server(*args, family=socket.AF_UNIX, **kwargs)
+
+    def unix_client(self, *args, **kwargs):
+        return self.tcp_client(*args, family=socket.AF_UNIX, **kwargs)
+
+    def _create_server_ssl_context(self, certfile, keyfile=None):
+        sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        sslcontext.options |= ssl.OP_NO_SSLv2
+        sslcontext.load_cert_chain(certfile, keyfile)
+        return sslcontext
+
+    def _create_client_ssl_context(self, *, disable_verify=True):
+        sslcontext = ssl.create_default_context()
+        sslcontext.check_hostname = False
+        if disable_verify:
+            sslcontext.verify_mode = ssl.CERT_NONE
+        return sslcontext
+
+    @contextlib.contextmanager
+    def _silence_eof_received_warning(self):
+        # TODO This warning has to be fixed in asyncio.
+        logger = logging.getLogger('asyncio')
+        filter = logging.Filter('has no effect when using ssl')
+        logger.addFilter(filter)
+        try:
+            yield
+        finally:
+            logger.removeFilter(filter)
+
+    def _abort_socket_test(self, ex):
+        try:
+            self.loop.stop()
+        finally:
+            self.fail(ex)
+
+    def new_loop(self):
+        return asyncio.new_event_loop()
+
+    def new_policy(self):
+        return asyncio.DefaultEventLoopPolicy()
 
     async def wait_closed(self, obj):
         if not isinstance(obj, asyncio.StreamWriter):
@@ -253,6 +343,10 @@ class TestSSL(test_utils.TestCase):
             nonlocal CNT
             CNT = 0
 
+            async def _gather(*tasks):
+                # trampoline
+                return await asyncio.gather(*tasks)
+
             with self.tcp_server(server,
                                  max_clients=TOTAL_CNT,
                                  backlog=TOTAL_CNT) as srv:
@@ -260,7 +354,7 @@ class TestSSL(test_utils.TestCase):
                 for _ in range(TOTAL_CNT):
                     tasks.append(coro(srv.addr))
 
-                self.loop.run_until_complete(asyncio.gather(*tasks))
+                self.loop.run_until_complete(_gather(*tasks))
 
             self.assertEqual(CNT, TOTAL_CNT)
 
@@ -307,7 +401,10 @@ class TestSSL(test_utils.TestCase):
         # silence error logger
         self.loop.set_exception_handler(lambda *args: None)
 
-        sslctx = self._create_server_ssl_context(self.ONLYCERT, self.ONLYKEY)
+        sslctx = self._create_server_ssl_context(
+            test_utils.ONLYCERT,
+            test_utils.ONLYKEY
+        )
         client_sslctx = self._create_client_ssl_context(disable_verify=False)
 
         def server(sock):
@@ -334,10 +431,7 @@ class TestSSL(test_utils.TestCase):
                              max_clients=1,
                              backlog=1) as srv:
 
-            exc_type = ssl.SSLError
-            if self.PY37:
-                exc_type = ssl.SSLCertVerificationError
-            with self.assertRaises(exc_type):
+            with self.assertRaises(ssl.SSLCertVerificationError):
                 self.loop.run_until_complete(client(srv.addr))
 
     def test_ssl_handshake_timeout(self):
@@ -433,10 +527,7 @@ class TestSSL(test_utils.TestCase):
             self.fail("unexpected call to connection_made()")
 
     def test_ssl_connect_accepted_socket(self):
-        if hasattr(ssl, 'PROTOCOL_TLS'):
-            proto = ssl.PROTOCOL_TLS
-        else:
-            proto = ssl.PROTOCOL_SSLv23
+        proto = ssl.PROTOCOL_TLS_SERVER
         server_context = ssl.SSLContext(proto)
         server_context.load_cert_chain(test_utils.ONLYCERT, test_utils.ONLYKEY)
         if hasattr(server_context, 'check_hostname'):
@@ -628,7 +719,7 @@ class TestSSL(test_utils.TestCase):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
         server_context = self._create_server_ssl_context(
-            self.ONLYCERT, self.ONLYKEY)
+            test_utils.ONLYCERT, test_utils.ONLYKEY)
         client_context = self._create_client_ssl_context()
 
         def serve(sock):
@@ -714,7 +805,7 @@ class TestSSL(test_utils.TestCase):
             sock.unwrap()
             sock.close()
 
-        class ClientProtoFirst(asyncio.BaseProtocol):
+        class ClientProtoFirst(asyncio.BufferedProtocol):
             def __init__(self, on_data):
                 self.on_data = on_data
                 self.buf = bytearray(1)
@@ -928,9 +1019,11 @@ class TestSSL(test_utils.TestCase):
         A_DATA = b'A' * 1024 * 1024
         B_DATA = b'B' * 1024 * 1024
 
-        sslctx_1 = self._create_server_ssl_context(self.ONLYCERT, self.ONLYKEY)
+        sslctx_1 = self._create_server_ssl_context(
+            test_utils.ONLYCERT, test_utils.ONLYKEY)
         client_sslctx_1 = self._create_client_ssl_context()
-        sslctx_2 = self._create_server_ssl_context(self.ONLYCERT, self.ONLYKEY)
+        sslctx_2 = self._create_server_ssl_context(
+            test_utils.ONLYCERT, test_utils.ONLYKEY)
         client_sslctx_2 = self._create_client_ssl_context()
 
         clients = []
@@ -1063,107 +1156,14 @@ class TestSSL(test_utils.TestCase):
         for client in clients:
             client.stop()
 
-    def test_shutdown_timeout(self):
-        CNT = 0           # number of clients that were successful
-        TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 10.0    # timeout for this test
-
-        A_DATA = b'A' * 1024 * 1024
-
-        sslctx = self._create_server_ssl_context(self.ONLYCERT, self.ONLYKEY)
-        client_sslctx = self._create_client_ssl_context()
-
-        clients = []
-
-        async def handle_client(reader, writer):
-            nonlocal CNT
-
-            data = await reader.readexactly(len(A_DATA))
-            self.assertEqual(data, A_DATA)
-            writer.write(b'OK')
-            await writer.drain()
-            writer.close()
-            with self.assertRaisesRegex(asyncio.TimeoutError,
-                                        'SSL shutdown timed out'):
-                await reader.read()
-            CNT += 1
-
-        async def test_client(addr):
-            fut = asyncio.Future()
-
-            def prog(sock):
-                try:
-                    sock.starttls(client_sslctx)
-                    sock.connect(addr)
-                    sock.send(A_DATA)
-
-                    data = sock.recv_all(2)
-                    self.assertEqual(data, b'OK')
-
-                    data = sock.recv(1024)
-                    self.assertEqual(data, b'')
-
-                    fd = sock.detach()
-                    try:
-                        select.select([fd], [], [], 3)
-                    finally:
-                        os.close(fd)
-
-                except Exception as ex:
-                    self.loop.call_soon_threadsafe(fut.set_exception, ex)
-                else:
-                    self.loop.call_soon_threadsafe(fut.set_result, None)
-
-            client = self.tcp_client(prog)
-            client.start()
-            clients.append(client)
-
-            await fut
-
-        async def start_server():
-            extras = {}
-            extras['ssl_shutdown_timeout'] = 10.0
-
-            srv = await asyncio.start_server(
-                handle_client,
-                '127.0.0.1', 0,
-                family=socket.AF_INET,
-                ssl=sslctx,
-                **extras)
-
-            try:
-                srv_socks = srv.sockets
-                self.assertTrue(srv_socks)
-
-                addr = srv_socks[0].getsockname()
-
-                tasks = []
-                for _ in range(TOTAL_CNT):
-                    tasks.append(test_client(addr))
-
-                await asyncio.wait_for(
-                    asyncio.gather(*tasks),
-                    TIMEOUT)
-
-            finally:
-                self.loop.call_soon(srv.close)
-                await srv.wait_closed()
-
-        with self._silence_eof_received_warning():
-            self.loop.run_until_complete(start_server())
-
-        self.assertEqual(CNT, TOTAL_CNT)
-
-        for client in clients:
-            client.stop()
-
     def test_shutdown_cleanly(self):
         CNT = 0
         TOTAL_CNT = 25
 
         A_DATA = b'A' * 1024 * 1024
 
-        sslctx = self._create_server_ssl_context(self.ONLYCERT, self.ONLYKEY)
+        sslctx = self._create_server_ssl_context(
+            test_utils.ONLYCERT, test_utils.ONLYKEY)
         client_sslctx = self._create_client_ssl_context()
 
         def server(sock):
@@ -1204,6 +1204,9 @@ class TestSSL(test_utils.TestCase):
             nonlocal CNT
             CNT = 0
 
+            async def _gather(*tasks):
+                return await asyncio.gather(*tasks)
+
             with self.tcp_server(server,
                                  max_clients=TOTAL_CNT,
                                  backlog=TOTAL_CNT) as srv:
@@ -1212,94 +1215,19 @@ class TestSSL(test_utils.TestCase):
                     tasks.append(coro(srv.addr))
 
                 self.loop.run_until_complete(
-                    asyncio.gather(*tasks))
+                    _gather(*tasks))
 
             self.assertEqual(CNT, TOTAL_CNT)
 
         with self._silence_eof_received_warning():
             run(client)
 
-    def test_write_to_closed_transport(self):
-        sslctx = test_utils.simple_server_sslcontext()
-        client_sslctx = test_utils.simple_client_sslcontext()
-        future = None
-
-        def server(sock):
-            sock.starttls(sslctx, server_side=True)
-            sock.shutdown(socket.SHUT_RDWR)
-            sock.close()
-
-        def unwrap_server(sock):
-            sock.starttls(sslctx, server_side=True)
-            while True:
-                try:
-                    sock.unwrap()
-                    break
-                except ssl.SSLError as ex:
-                    # Since OpenSSL 1.1.1, it raises "application data after
-                    # close notify"
-                    if ex.reason == 'KRB5_S_INIT':
-                        break
-                except OSError as ex:
-                    # OpenSSL < 1.1.1
-                    if ex.errno != 0:
-                        raise
-            sock.close()
-
-        async def client(addr):
-            nonlocal future
-            future = self.loop.create_future()
-
-            reader, writer = await asyncio.open_connection(
-                *addr,
-                ssl=client_sslctx,
-                server_hostname='')
-            writer.write(b'I AM WRITING NOWHERE1' * 100)
-
-            try:
-                data = await reader.read()
-                self.assertEqual(data, b'')
-            except (ConnectionResetError, BrokenPipeError):
-                pass
-
-            for i in range(25):
-                writer.write(b'I AM WRITING NOWHERE2' * 100)
-
-            self.assertEqual(
-                writer.transport.get_write_buffer_size(), 0)
-
-            await future
-
-            writer.close()
-            await self.wait_closed(writer)
-
-        def run(meth):
-            def wrapper(sock):
-                try:
-                    meth(sock)
-                except Exception as ex:
-                    self.loop.call_soon_threadsafe(future.set_exception, ex)
-                else:
-                    self.loop.call_soon_threadsafe(future.set_result, None)
-            return wrapper
-
-        with self._silence_eof_received_warning():
-            with self.tcp_server(run(server)) as srv:
-                self.loop.run_until_complete(client(srv.addr))
-
-            with self.tcp_server(run(unwrap_server)) as srv:
-                self.loop.run_until_complete(client(srv.addr))
-
     def test_flush_before_shutdown(self):
         CHUNK = 1024 * 128
         SIZE = 32
 
-        sslctx = self._create_server_ssl_context(self.ONLYCERT, self.ONLYKEY)
-        sslctx_openssl = openssl_ssl.Context(openssl_ssl.TLSv1_2_METHOD)
-        if hasattr(openssl_ssl, 'OP_NO_SSLV2'):
-            sslctx_openssl.set_options(openssl_ssl.OP_NO_SSLV2)
-        sslctx_openssl.use_privatekey_file(self.ONLYKEY)
-        sslctx_openssl.use_certificate_chain_file(self.ONLYCERT)
+        sslctx = self._create_server_ssl_context(
+            test_utils.ONLYCERT, test_utils.ONLYKEY)
         client_sslctx = self._create_client_ssl_context()
         if hasattr(ssl, 'OP_NO_TLSv1_3'):
             client_sslctx.options |= ssl.OP_NO_TLSv1_3
@@ -1332,7 +1260,7 @@ class TestSSL(test_utils.TestCase):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='')
-            sslprotocol = writer.get_extra_info('uvloop.sslproto')
+            sslprotocol = writer.transport._ssl_protocol
             writer.write(b'ping')
             data = await reader.readexactly(4)
             self.assertEqual(data, b'pong')
@@ -1626,3 +1554,165 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(server) as srv:
             loop.run_until_complete(client(srv.addr))
+
+
+###############################################################################
+# Socket Testing Utilities
+###############################################################################
+
+
+class TestSocketWrapper:
+
+    def __init__(self, sock):
+        self.__sock = sock
+
+    def recv_all(self, n):
+        buf = b''
+        while len(buf) < n:
+            data = self.recv(n - len(buf))
+            if data == b'':
+                raise ConnectionAbortedError
+            buf += data
+        return buf
+
+    def starttls(self, ssl_context, *,
+                 server_side=False,
+                 server_hostname=None,
+                 do_handshake_on_connect=True):
+
+        assert isinstance(ssl_context, ssl.SSLContext)
+
+        ssl_sock = ssl_context.wrap_socket(
+            self.__sock, server_side=server_side,
+            server_hostname=server_hostname,
+            do_handshake_on_connect=do_handshake_on_connect)
+
+        if server_side:
+            ssl_sock.do_handshake()
+
+        self.__sock.close()
+        self.__sock = ssl_sock
+
+    def __getattr__(self, name):
+        return getattr(self.__sock, name)
+
+    def __repr__(self):
+        return '<{} {!r}>'.format(type(self).__name__, self.__sock)
+
+
+class SocketThread(threading.Thread):
+
+    def stop(self):
+        self._active = False
+        self.join()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *exc):
+        self.stop()
+
+
+class TestThreadedClient(SocketThread):
+
+    def __init__(self, test, sock, prog, timeout):
+        threading.Thread.__init__(self, None, None, 'test-client')
+        self.daemon = True
+
+        self._timeout = timeout
+        self._sock = sock
+        self._active = True
+        self._prog = prog
+        self._test = test
+
+    def run(self):
+        try:
+            self._prog(TestSocketWrapper(self._sock))
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as ex:
+            self._test._abort_socket_test(ex)
+
+
+class TestThreadedServer(SocketThread):
+
+    def __init__(self, test, sock, prog, timeout, max_clients):
+        threading.Thread.__init__(self, None, None, 'test-server')
+        self.daemon = True
+
+        self._clients = 0
+        self._finished_clients = 0
+        self._max_clients = max_clients
+        self._timeout = timeout
+        self._sock = sock
+        self._active = True
+
+        self._prog = prog
+
+        self._s1, self._s2 = socket.socketpair()
+        self._s1.setblocking(False)
+
+        self._test = test
+
+    def stop(self):
+        try:
+            if self._s2 and self._s2.fileno() != -1:
+                try:
+                    self._s2.send(b'stop')
+                except OSError:
+                    pass
+        finally:
+            super().stop()
+
+    def run(self):
+        try:
+            with self._sock:
+                self._sock.setblocking(0)
+                self._run()
+        finally:
+            self._s1.close()
+            self._s2.close()
+
+    def _run(self):
+        while self._active:
+            if self._clients >= self._max_clients:
+                return
+
+            r, w, x = select.select(
+                [self._sock, self._s1], [], [], self._timeout)
+
+            if self._s1 in r:
+                return
+
+            if self._sock in r:
+                try:
+                    conn, addr = self._sock.accept()
+                except BlockingIOError:
+                    continue
+                except socket.timeout:
+                    if not self._active:
+                        return
+                    else:
+                        raise
+                else:
+                    self._clients += 1
+                    conn.settimeout(self._timeout)
+                    try:
+                        with conn:
+                            self._handle_client(conn)
+                    except (KeyboardInterrupt, SystemExit):
+                        raise
+                    except BaseException as ex:
+                        self._active = False
+                        try:
+                            raise
+                        finally:
+                            self._test._abort_socket_test(ex)
+
+    def _handle_client(self, sock):
+        self._prog(TestSocketWrapper(sock))
+
+    @property
+    def addr(self):
+        return self._sock.getsockname()
