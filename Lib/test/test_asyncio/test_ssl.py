@@ -82,7 +82,7 @@ class TestSSL(test_utils.TestCase):
                    max_clients=10):
 
         if addr is None:
-            if family == socket.AF_UNIX:
+            if family == getattr(socket, "AF_UNIX", None):
                 with tempfile.NamedTemporaryFile() as tmp:
                     addr = tmp.name
             else:
