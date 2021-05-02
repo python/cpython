@@ -433,8 +433,7 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
-# Cache size chosen by random die roll; prior to functools it was 20 in 1997.
-@functools.lru_cache(maxsize=99)
+@functools.lru_cache
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
@@ -886,7 +885,7 @@ def quote_plus(string, safe='', encoding=None, errors=None):
     return string.replace(' ', '+')
 
 # Expectation: A typical program is unlikely to create more than 5 of these.
-@functools.lru_cache(maxsize=30)
+@functools.lru_cache
 def _byte_quoter_factory(safe):
   return _Quoter(safe).__getitem__
 
