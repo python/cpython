@@ -127,6 +127,11 @@ write code that handles both IP versions correctly.  Address objects are
       IPv4 address strings are now parsed as strict as glibc
       :func:`~socket.inet_pton`.
 
+   .. versionchanged:: 3.9.5
+   
+      The above change was also included in Python 3.9 starting with
+      version 3.9.5.
+
    .. attribute:: version
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.
