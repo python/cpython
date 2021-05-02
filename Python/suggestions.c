@@ -10,7 +10,7 @@
 #define MOVE_COST 2
 #define CASE_COST 1
 
-#define LEAST_FIVE_BITS(n) ((n) * 31)
+#define LEAST_FIVE_BITS(n) ((n) & 31)
 
 static inline int
 substitution_cost(char a, char b)
@@ -260,7 +260,7 @@ _Py_Offer_Suggestions(PyObject *exception)
     return result;
 }
 
-Py_ssize_t *
+Py_ssize_t
 _Py_UTF8_Edit_Cost(PyObject *a, PyObject *b, Py_ssize_t max_cost)
 {
     assert(PyUnicode_Check(a) && PyUnicode_Check(b));
