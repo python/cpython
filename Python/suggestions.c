@@ -69,7 +69,7 @@ levenshtein_distance(const char *a, size_t a_size,
     }
 
     // quick fail when a match is impossible.
-    if ((b_size - a_size)*MOVE_COST > max_cost) {
+    if ((b_size - a_size) * MOVE_COST > max_cost) {
         return max_cost + 1;
     }
 
@@ -77,7 +77,7 @@ levenshtein_distance(const char *a, size_t a_size,
     // matrix, we can update just one row in place.
     // Initialize the buffer row
     for (size_t i = 0; i < a_size; i++) {
-        // cost from a[:0] to b[:index+1]
+        // cost from b[:0] to a[:i+1]
         buffer[i] = (i + 1) * MOVE_COST;
     }
 
