@@ -18,6 +18,11 @@ __all__ = [
     'parse_config_h',
 ]
 
+# Keys for get_config_var() that are never converted to Python integers.
+_ALWAYS_STR = {
+    'MACOSX_DEPLOYMENT_TARGET',
+}
+
 _INSTALL_SCHEMES = {
     'posix_prefix': {
         'stdlib': '{installed_base}/lib/python{py_version_short}',
@@ -242,6 +247,9 @@ def _parse_makefile(filename, vars=None):
                 notdone[n] = v
             else:
                 try:
+                    if n in _ALWAYS_STR:
+                        raise ValueError
+
                     v = int(v)
                 except ValueError:
                     # insert literal `$'
@@ -300,6 +308,8 @@ def _parse_makefile(filename, vars=None):
                         notdone[name] = value
                     else:
                         try:
+                            if name in _ALWAYS_STR:
+                                raise ValueError
                             value = int(value)
                         except ValueError:
                             done[name] = value.strip()
@@ -461,6 +471,8 @@ def parse_config_h(fp, vars=None):
         if m:
             n, v = m.group(1, 2)
             try:
+                if n in _ALWAYS_STR:
+                    raise ValueError
                 v = int(v)
             except ValueError:
                 pass

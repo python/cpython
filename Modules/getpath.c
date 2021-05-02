@@ -777,11 +777,7 @@ calculate_program_full_path(PyCalculatePath *calculate, _PyPathConfig *pathconfi
 
 #ifdef __APPLE__
     char execpath[MAXPATHLEN + 1];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     uint32_t nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
-#else
-    unsigned long nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
-#endif
 #endif
 
     /* If there is no slash in the argv0 path, then we have to

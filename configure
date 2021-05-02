@@ -1492,7 +1492,7 @@ Optional Packages:
   --with-universal-archs=ARCH
                           select architectures for universal build ("32-bit",
                           "64-bit", "3-way", "intel", "intel-32", "intel-64",
-                          or "all")
+                          "universal2", or "all")
   --with-framework-name=FRAMEWORK
                           specify an alternate name of the framework built
                           with --enable-framework
@@ -6905,7 +6905,7 @@ fi
 
 
 
-# The -arch flags for universal builds on OSX
+# The -arch flags for universal builds on macOS
 UNIVERSAL_ARCH_FLAGS=
 
 
@@ -7391,6 +7391,11 @@ $as_echo "$CC" >&6; }
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
+            universal2)
+               UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
+               LIPO_32BIT_FLAGS=""
+               ARCH_RUN_32BIT="true"
+		;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -7412,7 +7417,7 @@ $as_echo "$CC" >&6; }
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
                ;;
             *)
-               as_fn_error $? "proper usage is --with-universal-arch=32-bit|64-bit|all|intel|3-way" "$LINENO" 5
+               as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
                ;;
             esac
 
@@ -9266,7 +9271,7 @@ fi
     		MACOSX_DEFAULT_ARCH="ppc"
     		;;
     	*)
-    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
     		;;
     	esac
     else
@@ -9276,9 +9281,12 @@ fi
     		;;
     	ppc)
     		MACOSX_DEFAULT_ARCH="ppc64"
+		;;
+    	arm64)
+    		MACOSX_DEFAULT_ARCH="arm64"
     		;;
     	*)
-    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
     		;;
     	esac
 
@@ -11828,6 +11836,31 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define HAVE_PRLIMIT 1" >>confdefs.h
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dyld_shared_cache_contains_path" >&5
+$as_echo_n "checking for _dyld_shared_cache_contains_path... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mach-o/dyld.h>
+int
+main ()
+{
+void *x=_dyld_shared_cache_contains_path
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+$as_echo "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
