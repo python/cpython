@@ -272,6 +272,8 @@ Module-level decorators, classes, and functions
    - ``kw_only``: If true, this field will be marked as keyword-only.
      This is used when the generated :meth:`__init__` method's
      parameters are computed.
+     
+    .. versionadded:: 3.10
 
    If the default value of a field is specified by a call to
    :func:`field()`, then the class attribute for this field will be
