@@ -19,6 +19,7 @@ typedef struct _functools_state {
     PyTypeObject *partial_type;
     PyTypeObject *keyobject_type;
     PyTypeObject *lru_list_elem_type;
+    PyObject *list_of_lru_obj_attrs_to_clone;
 } _functools_state;
 
 static inline _functools_state *
@@ -1138,7 +1139,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 static PyObject *
 lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *maxsize_O, *cache_info_type, *cachedict;
+    PyObject *func, *maxsize_O, *cache_info_type, *cachedict, *obj_dict;
+    PyObject *defaults_str;
     int typed;
     lru_cache_object *obj;
     Py_ssize_t maxsize;
@@ -1188,9 +1190,43 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (!(cachedict = PyDict_New()))
         return NULL;
 
+    obj_dict = PyDict_New();
+    if (obj_dict == NULL) {
+        Py_DECREF(cachedict);
+        return NULL;
+    }
+
+    /* Copy special attributes from the original function over to ours. */
+    {
+        Py_ssize_t n_attrs = PyTuple_GET_SIZE(state->list_of_lru_obj_attrs_to_clone);
+        for (Py_ssize_t idx = 0; idx < n_attrs; ++idx) {
+            PyObject *attr_name = PyTuple_GET_ITEM(state->list_of_lru_obj_attrs_to_clone, idx);
+            if (attr_name == NULL) {
+                Py_DECREF(cachedict);
+                Py_DECREF(obj_dict);
+                return NULL;
+            }
+            PyObject *attr = PyObject_GetAttr(func, attr_name);
+            if (attr != NULL) {
+                int err = PyDict_SetItem(obj_dict, attr_name, attr);
+                if (err != 0) {
+                    Py_DECREF(attr);
+                    Py_DECREF(cachedict);
+                    Py_DECREF(obj_dict);
+                    return NULL;
+                }
+                Py_DECREF(attr);
+            } else {
+                /* The wrapped object didn't have attribute attr_name. */
+                PyErr_Clear();
+            }
+        }
+    }
+
     obj = (lru_cache_object *)type->tp_alloc(type, 0);
     if (obj == NULL) {
         Py_DECREF(cachedict);
+        Py_DECREF(obj_dict);
         return NULL;
     }
 
@@ -1209,7 +1245,7 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->lru_list_elem_type = state->lru_list_elem_type;
     Py_INCREF(cache_info_type);
     obj->cache_info_type = cache_info_type;
-    obj->dict = NULL;
+    obj->dict = obj_dict;
     obj->weakreflist = NULL;
     return (PyObject *)obj;
 }
@@ -1421,6 +1457,28 @@ static int
 _functools_exec(PyObject *module)
 {
     _functools_state *state = get_functools_state(module);
+    state->list_of_lru_obj_attrs_to_clone = PyTuple_New(2);
+    if (state->list_of_lru_obj_attrs_to_clone == NULL) {
+        return -1;
+    }
+    {
+        PyObject *tmp;
+        PyObject *lru_attrs = state->list_of_lru_obj_attrs_to_clone;
+        if (lru_attrs == NULL) {
+            return -1;
+        }
+        tmp = PyUnicode_InternFromString("__defaults__");
+        if (tmp == NULL || PyTuple_SetItem(lru_attrs, 0, tmp) != 0) {
+            return -1;
+        }
+        Py_DECREF(tmp);
+        tmp = PyUnicode_InternFromString("__kwdefaults__");
+        if (tmp == NULL || PyTuple_SetItem(lru_attrs, 1, tmp) != 0) {
+            return -1;
+        }
+        Py_DECREF(tmp);
+    }
+
     state->kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (state->kwd_mark == NULL) {
         return -1;
@@ -1475,6 +1533,7 @@ _functools_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->partial_type);
     Py_VISIT(state->keyobject_type);
     Py_VISIT(state->lru_list_elem_type);
+    Py_VISIT(state->list_of_lru_obj_attrs_to_clone);
     return 0;
 }
 
@@ -1486,6 +1545,7 @@ _functools_clear(PyObject *module)
     Py_CLEAR(state->partial_type);
     Py_CLEAR(state->keyobject_type);
     Py_CLEAR(state->lru_list_elem_type);
+    Py_CLEAR(state->list_of_lru_obj_attrs_to_clone);
     return 0;
 }
 
