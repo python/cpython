@@ -149,8 +149,10 @@ calculate_suggestions(PyObject *dir,
         if (item_str == NULL) {
             return NULL;
         }
+        // No more than 1/3 of the involved characters should need changed.
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
-        max_distance = Py_MIN(max_distance, suggestion_distance);
+        // Don't take matches we've already beaten.
+        max_distance = Py_MIN(max_distance, suggestion_distance - 1);
         Py_ssize_t current_distance =
             levenshtein_distance(name_str, name_size,
                                  item_str, item_size, max_distance);
