@@ -974,6 +974,26 @@ Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
+hashlib
+-------
+
+The hashlib module requires OpenSSL 1.1.1 or newer.
+(Contributed by Christian Heimes in :pep:`644` and :issue:`43669`.)
+
+The hashlib module has preliminary support for OpenSSL 3.0.0.
+(Contributed by Christian Heimes in :issue:`38820` and other issues.)
+
+The pure-Python fallback of :func:`~hashlib.pbkdf2_hmac` is deprecated. In
+the future PBKDF2-HMAC will only be available when Python has been built with
+OpenSSL support.
+(Contributed by Christian Heimes in :issue:`43880`.)
+
+hmac
+----
+
+The hmac module now uses OpenSSL's HMAC implementation internally.
+(Contributed by Christian Heimes in :issue:`40645`.)
+
 importlib.metadata
 ------------------
 
@@ -1109,6 +1129,30 @@ Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
 ssl
 ---
 
+The ssl module requires OpenSSL 1.1.1 or newer.
+(Contributed by Christian Heimes in :pep:`644` and :issue:`43669`.)
+
+The ssl module has preliminary support for OpenSSL 3.0.0 and new option
+:data:`~ssl.OP_IGNORE_UNEXPECTED_EOF`.
+(Contributed by Christian Heimes in :issue:`38820`, :issue:`43794`,
+:issue:`43788`, :issue:`43791`, :issue:`43799`, :issue:`43920`,
+:issue:`43789`, and :issue:`43811`.)
+
+Deprecated function and use of deprecated constants now result in
+a :exc:`DeprecationWarning`. The following features have been deprecated
+since Python 3.6, Python 3.7, or OpenSSL 1.1.0:
+:data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
+:data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`,
+:data:`~ssl.OP_NO_TLSv1_3`, :data:`~ssl.PROTOCOL_SSLv2`,
+:data:`~ssl.PROTOCOL_SSLv3`, :data:`~ssl.PROTOCOL_SSLv23`,
+:data:`~ssl.PROTOCOL_TLSv1`, :data:`~ssl.PROTOCOL_TLSv1_1`,
+:data:`~ssl.PROTOCOL_TLSv1_2`, :data:`~ssl.PROTOCOL_TLS`,
+:func:`~ssl.wrap_socket`, :func:`~ssl.match_hostname`,
+:func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`,
+:meth:`ssl.SSLSocket.selected_npn_protocol`,
+:meth:`ssl.SSLContext.set_npn_protocols`.
+(Contributed by Christian Heimes in :issue:`43880`.)
+
 The ssl module now has more secure default settings. Ciphers without forward
 secrecy or SHA-1 MAC are disabled by default. Security level 2 prohibits
 weak RSA, DH, and ECC keys with less than 112 bits of security.
@@ -1116,8 +1160,19 @@ weak RSA, DH, and ECC keys with less than 112 bits of security.
 Settings are based on Hynek Schlawack's research.
 (Contributed by Christian Heimes in :issue:`43998`.)
 
+The deprecated protocols SSL 3.0, TLS 1.0, and TLS 1.1 are no longer
+officially supported. Python does not block them actively. However
+OpenSSL build options, distro configurations, vendor patches, and cipher
+suites may prevent a successful handshake.
+
 Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
 (Contributed by Zackery Spytz in :issue:`31870`.)
+
+The ssl module uses heap-types and multi-phase initialization.
+(Contributed by Christian Heimes in :issue:`42333`.)
+
+A new verify flag :data:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
+(Contributed by l0x in :issue:`40849`.)
 
 sqlite3
 -------
