@@ -135,15 +135,11 @@ calculate_suggestions(PyObject *dir,
         return NULL;
     }
 
-    Py_ssize_t suggestion_distance = PyUnicode_GetLength(name);
+    Py_ssize_t suggestion_distance = PY_SSIZE_T_MAX;
     PyObject *suggestion = NULL;
     Py_ssize_t name_size;
     const char *name_str = PyUnicode_AsUTF8AndSize(name, &name_size);
     if (name_str == NULL) {
-        return NULL;
-    }
-    size_t *work_buffer = PyMem_Calloc(name_size, sizeof(size_t));
-    if (work_buffer == NULL) {
         return NULL;
     }
 
@@ -152,10 +148,10 @@ calculate_suggestions(PyObject *dir,
         Py_ssize_t item_size;
         const char *item_str = PyUnicode_AsUTF8AndSize(item, &item_size);
         if (item_str == NULL) {
-            PyMem_Free(work_buffer);
             return NULL;
         }
         Py_ssize_t max_distance = (name_size + item_size + 3) * MOVE_COST / 6;
+        max_distance = Py_MIN(max_distance, suggestion_distance);
         Py_ssize_t current_distance =
             levenshtein_distance(name_str, name_size,
                                  item_str, item_size, max_distance);
