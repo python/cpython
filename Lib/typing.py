@@ -104,7 +104,7 @@ __all__ = [
     'BinaryIO',
     'IO',
     'Match',
-    'Patern',
+    'Pattern',
     'TextIO',
 
     # One-off things.
