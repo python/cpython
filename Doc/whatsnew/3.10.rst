@@ -1775,7 +1775,7 @@ Porting to Python 3.10
 
 * Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
   objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
-  object is mutable or not; check for :c:data:`Py_TPFLAGS_IMMUTABLETYPE`
+  object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
   instead.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 
