@@ -98,6 +98,10 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
         return -1;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+        return -1;
+    }
+
     database = PyBytes_AsString(database_obj);
 
     self->initialized = 1;
