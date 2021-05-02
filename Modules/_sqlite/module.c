@@ -91,17 +91,8 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         factory = (PyObject*)pysqlite_ConnectionType;
     }
 
-    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
-        return NULL;
-    }
-
     result = PyObject_Call(factory, args, kwargs);
     if (result == NULL) {
-        return NULL;
-    }
-
-    if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
-        Py_DECREF(result);
         return NULL;
     }
 
