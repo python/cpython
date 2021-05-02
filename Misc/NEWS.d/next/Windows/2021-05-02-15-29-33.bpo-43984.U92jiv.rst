@@ -1,0 +1,1 @@
+Update winreg.SetValueEx to make sure the value set is not -1.
