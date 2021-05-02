@@ -575,6 +575,8 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          KeepFlag.BLUE|0x10
 
+.. versionadded:: 3.10  ``FlagBoundary``
+
 
 Utilites and Decorators
 -----------------------
