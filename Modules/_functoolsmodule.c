@@ -1462,9 +1462,6 @@ _functools_exec(PyObject *module)
     {
         PyObject *tmp;
         PyObject *lru_attrs = state->lru_obj_attrs_to_clone;
-        if (lru_attrs == NULL) {
-            return -1;
-        }
         tmp = PyUnicode_InternFromString("__defaults__");
         if (tmp == NULL || PyTuple_SetItem(lru_attrs, 0, tmp) != 0) {
             return -1;
