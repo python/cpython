@@ -532,13 +532,12 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     get_abc_state(module)->abc_invalidation_counter++;
 
     /* Set Py_TPFLAGS_SEQUENCE  or Py_TPFLAGS_MAPPING flag */
-    if (PyType_Check(subclass) && PyType_Check(self) &&
-        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE))
+    if (PyType_Check(self) &&
+        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE) &&
+        ((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS)
     {
-        if (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS) {
-            ((PyTypeObject *)subclass)->tp_flags &= ~COLLECTION_FLAGS;
-            ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
-        }
+        ((PyTypeObject *)subclass)->tp_flags &= ~COLLECTION_FLAGS;
+        ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
     }
     Py_INCREF(subclass);
     return subclass;

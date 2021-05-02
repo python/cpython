@@ -5713,12 +5713,6 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
         type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
     }
-    if (PyType_HasFeature(base, Py_TPFLAGS_SEQUENCE)) {
-        type->tp_flags |= Py_TPFLAGS_SEQUENCE;
-    }
-    if (PyType_HasFeature(base, Py_TPFLAGS_MAPPING)) {
-        type->tp_flags |= Py_TPFLAGS_MAPPING;
-    }
 }
 
 static int
@@ -6163,13 +6157,9 @@ type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
 
 static void
 inherit_patma_flags(PyTypeObject *type, PyTypeObject *base) {
-    if (type->tp_flags & COLLECTION_FLAGS) {
-        return;
+    if ((type->tp_flags & COLLECTION_FLAGS) == 0) {
+        type->tp_flags |= base->tp_flags & COLLECTION_FLAGS;
     }
-    if ((base->tp_flags & COLLECTION_FLAGS) == 0) {
-        return;
-    }
-    base->tp_flags |= base->tp_flags & COLLECTION_FLAGS;
 }
 
 static int
