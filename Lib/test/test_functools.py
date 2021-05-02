@@ -1728,6 +1728,16 @@ class TestLRU:
         for ref in refs:
             self.assertIsNone(ref())
 
+    def test_lru_defaults_bug44003(self):
+        @self.module.lru_cache(maxsize=None)
+        def func(arg='ARG', *, kw='KW'):
+            return arg, kw
+
+        self.assertEqual(func.__wrapped__.__defaults__, ('ARG',))
+        self.assertEqual(func.__wrapped__.__kwdefaults__, {'kw': 'KW'})
+        self.assertEqual(func.__defaults__, ('ARG',))
+        self.assertEqual(func.__kwdefaults__, {'kw': 'KW'})
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):
