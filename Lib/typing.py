@@ -99,6 +99,13 @@ __all__ = [
     'NamedTuple',  # Not really a type.
     'TypedDict',  # Not really a type.
     'Generator',
+  
+    # Other concrete types.
+    'BinaryIO',
+    'IO',
+    'Match',
+    'Patern',
+    'TextIO',
 
     # One-off things.
     'AnyStr',
