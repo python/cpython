@@ -1197,29 +1197,28 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     /* Copy special attributes from the original function over to ours. */
-    {
-        Py_ssize_t n_attrs = PyTuple_GET_SIZE(state->lru_obj_attrs_to_clone);
-        for (Py_ssize_t idx = 0; idx < n_attrs; ++idx) {
-            PyObject *attr_name = PyTuple_GET_ITEM(state->lru_obj_attrs_to_clone, idx);
-            if (attr_name == NULL) {
+    for (Py_ssize_t idx = 0;
+         idx < PyTuple_GET_SIZE(state->lru_obj_attrs_to_clone);
+         ++idx) {
+        PyObject *attr_name = PyTuple_GET_ITEM(state->lru_obj_attrs_to_clone, idx);
+        if (attr_name == NULL) {
+            Py_DECREF(cachedict);
+            Py_DECREF(obj_dict);
+            return NULL;
+        }
+        PyObject *attr = PyObject_GetAttr(func, attr_name);
+        if (attr != NULL) {
+            int err = PyDict_SetItem(obj_dict, attr_name, attr);
+            if (err != 0) {
+                Py_DECREF(attr);
                 Py_DECREF(cachedict);
                 Py_DECREF(obj_dict);
                 return NULL;
             }
-            PyObject *attr = PyObject_GetAttr(func, attr_name);
-            if (attr != NULL) {
-                int err = PyDict_SetItem(obj_dict, attr_name, attr);
-                if (err != 0) {
-                    Py_DECREF(attr);
-                    Py_DECREF(cachedict);
-                    Py_DECREF(obj_dict);
-                    return NULL;
-                }
-                Py_DECREF(attr);
-            } else {
-                /* The wrapped object didn't have attribute attr_name. */
-                PyErr_Clear();
-            }
+            Py_DECREF(attr);
+        } else {
+            /* The wrapped object didn't have attribute attr_name. */
+            PyErr_Clear();
         }
     }
 
