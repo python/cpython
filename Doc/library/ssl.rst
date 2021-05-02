@@ -1358,6 +1358,10 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.10
+
+      NPN has been superseded by ALPN
+
 .. method:: SSLSocket.unwrap()
 
    Performs the SSL shutdown handshake, which removes the TLS layer from the
@@ -1713,6 +1717,10 @@ to speed up repeated connections from the same clients.
    ``False``.
 
    .. versionadded:: 3.3
+
+   .. deprecated:: 3.10
+
+      NPN has been superseded by ALPN
 
 .. attribute:: SSLContext.sni_callback
 
