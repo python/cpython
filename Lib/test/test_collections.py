@@ -1967,6 +1967,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertEqual(len(mss), len(mss2))
         self.assertEqual(list(mss), list(mss2))
 
+    def test_illegal_patma_flags(self):
+        with self.assertRaises(TypeError):
+            class Both(Collection):
+                __abc_tpflags__ = (Sequence.__flags__ | Mapping.__flags__)
+
+
 
 ################################################################################
 ### Counter
