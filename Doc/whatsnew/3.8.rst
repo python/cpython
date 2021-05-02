@@ -1847,6 +1847,7 @@ Changes in Python behavior
   or :c:func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
+
 Changes in the Python API
 -------------------------
 
