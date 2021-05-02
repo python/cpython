@@ -3,9 +3,8 @@
 
 #include "pycore_pyerrors.h"
 
-#define MAX_DISTANCE 3
-#define MAX_CANDIDATE_ITEMS 160
-#define MAX_STRING_SIZE 25
+#define MAX_CANDIDATE_ITEMS 750
+#define MAX_STRING_SIZE 40
 
 #define MOVE_COST 2
 #define CASE_COST 1
@@ -41,9 +40,6 @@ levenshtein_distance(const char *a, size_t a_size,
                      size_t max_cost)
 {
     static size_t buffer[MAX_STRING_SIZE];
-    if (a_size > MAX_STRING_SIZE || b_size > MAX_STRING_SIZE) {
-        return max_cost + 1;
-    }
 
     // Both strings are the same (by identity)
     if (a == b) {
@@ -61,6 +57,9 @@ levenshtein_distance(const char *a, size_t a_size,
     }
     if (a_size == 0 || b_size == 0) {
         return (a_size + b_size) * MOVE_COST;
+    }
+    if (a_size > MAX_STRING_SIZE || b_size > MAX_STRING_SIZE) {
+        return max_cost + 1;
     }
 
     // Prefer shorter buffer
