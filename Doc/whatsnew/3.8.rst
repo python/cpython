@@ -910,14 +910,6 @@ fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
 
 
-ipaddress
----------
-
-Starting with Python 3.8.9 and 3.9.2 the :mod:`ipaddress` module no longer
-accepts any leading zeros in IPv4 address strings.
-(Contributed by Christian Heimes in :issue:`36384`).
-
-
 itertools
 ---------
 
