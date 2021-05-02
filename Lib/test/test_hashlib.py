@@ -926,6 +926,15 @@ class HashLibTestCase(unittest.TestCase):
         ):
             HASHXOF()
 
+    def test_readonly_types(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                hash_type = type(constructor())
+                with self.subTest(hash_type=hash_type):
+                    with self.assertRaisesRegex(TypeError, "immutable type"):
+                        hash_type.value = False
+
 
 class KDFTests(unittest.TestCase):
 
