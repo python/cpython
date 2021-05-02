@@ -207,11 +207,11 @@ class StatementCacheTests(unittest.TestCase):
         info = cache.cache_info()
         self.assertEqual(info.hits, 1)
         self.assertEqual(info.misses, 1)
-        self.assertEqual(info.maxsize, 100)
+        self.assertEqual(info.maxsize, 128)
         self.assertEqual(info.currsize, 1)
 
     def test_statement_cache_maxsize(self):
-        maxsize = 5
+        maxsize = 8
         testsize = maxsize + 1
         cx = sqlite.connect(':memory:', cached_statements=maxsize)
         for i in range(testsize):

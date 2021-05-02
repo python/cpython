@@ -213,7 +213,7 @@ Module functions and constants
    The :mod:`sqlite3` module internally uses a statement cache to avoid SQL parsing
    overhead. If you want to explicitly set the number of statements that are cached
    for the connection, you can set the *cached_statements* parameter. The currently
-   implemented default is to cache 100 statements.
+   implemented default is to cache 128 statements.
 
    If *uri* is true, *database* is interpreted as a URI. This allows you
    to specify options. For example, to open a database in read-only mode
