@@ -537,11 +537,11 @@ The generated :meth:`__init__` method for ``C`` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
 
-Re-ordering of keyword-only parameters in __init__
---------------------------------------------------
+Re-ordering of keyword-only parameters in :meth:`__init__`
+----------------------------------------------------------
 
 After the parameters needed for :meth:`__init__` are computed, any
-keyword-only parameters are moved to come after regular
+keyword-only parameters are moved to come after all regular
 (non-keyword-only) fields.  In this example, ``Base.y``, ``Base.w``,
 and ``D.t`` are keyword-only fields, and ``Base.x`` and ``D.z`` are
 regular fields::
@@ -566,8 +566,8 @@ Note that the parameters have been re-ordered from how they appear in
 the list of fields: parameters derived from regular fields are
 followed by parameters derived from keyword-only fields.
 
-The relative ordering of keyword-only parameters is not changed from
-the order they are in computed field :meth:`__init__` list.
+The relative ordering of keyword-only parameters is maintained in the
+re-ordered :meth:`__init__` parameter list.
 
 
 Default factory functions
