@@ -670,8 +670,16 @@ IDLE uses a socket to communicate between the IDLE GUI process and the user
 code execution process.  A connection must be established whenever the Shell
 starts or restarts.  (The latter is indicated by a divider line that says
 'RESTART'). If the user process fails to connect to the GUI process, it
-displays a ``Tk`` error box with a 'cannot connect' message that directs the
-user here.  It then exits.
+usually displays a ``Tk`` error box with a 'cannot connect' message
+that directs the user here.  It then exits.
+
+One specific connection failure on Unix systems results from
+misconfigured masquerading rules somewhere in a system's network setup.
+When IDLE is started from a terminal, one will see a message starting
+with ``** Invalid host:``.
+The valid value is ``127.0.0.1 (idlelib.rpc.LOCALHOST)``.
+One can diagnose with ``tcpconnect -irv 127.0.0.1 6543`` in one
+terminal window and ``tcplisten <same args>`` in another.
 
 A common cause of failure is a user-written file with the same name as a
 standard library module, such as *random.py* and *tkinter.py*. When such a
@@ -709,6 +717,13 @@ If IDLE quits with no message, and it was not started from a console, try
 starting it from a console or terminal (``python -m idlelib``) and see if
 this results in an error message.
 
+On Unix-based systems with tcl/tk older than ``8.6.11`` (see
+``About IDLE``) certain characters of certain fonts can cause
+a tk failure with a message to the terminal.  This can happen either
+if one starts IDLE to edit a file with such a character or later
+when entering such a character.  If one cannot upgrade tcl/tk,
+then re-configure IDLE to use a font that works better.
+
 Running user code
 ^^^^^^^^^^^^^^^^^
 
@@ -717,7 +732,7 @@ intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, ``sys.modules`` starts with more entries,
-and ``threading.activeCount()`` returns 2 instead of 1.
+and ``threading.active_count()`` returns 2 instead of 1.
 
 By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution

@@ -1,0 +1,4 @@
+The internal representation of line number tables is changed to not use
+sentinels, and an explicit length parameter is added to the out of process
+API function ``PyLineTable_InitAddressRange``. This makes the handling of
+line number tables more robust in some circumstances.

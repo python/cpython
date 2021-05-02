@@ -189,6 +189,9 @@ STRIPFLAG=-s
 # Flags to lipo to produce a 32-bit-only universal executable
 LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
 
+# Flags to lipo to produce an intel-64-only universal executable
+LIPO_INTEL64_FLAGS=@LIPO_INTEL64_FLAGS@
+
 # Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
 OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
@@ -317,7 +320,7 @@ PEGEN_OBJS=		\
 
 
 PEGEN_HEADERS= \
-		$(srcdir)/Include/cpython/parser_interface.h \
+		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
@@ -387,6 +390,7 @@ PYTHON_OBJS=	\
 		Python/dtoa.o \
 		Python/formatter_unicode.o \
 		Python/fileutils.o \
+		Python/suggestions.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -751,10 +755,7 @@ regen-importlib: Programs/_freeze_importlib
 
 
 regen-limited-abi: all
-	@$(MKDIR_P) $(srcdir)/Doc/data/
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py generate $(srcdir)/Doc/data/stable_abi.dat.new
-	$(UPDATE_FILE) $(srcdir)/Doc/data/stable_abi.dat \
-	$(srcdir)/Doc/data/stable_abi.dat.new
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
 
 
 ############################################################################
@@ -849,16 +850,19 @@ regen-pegen:
 
 .PHONY=regen-ast
 regen-ast:
-	# Regenerate Include/Python-ast.h and Python/Python-ast.c using Parser/asdl_c.py
+	# Regenerate 3 files using using Parser/asdl_c.py:
+	# - Include/internal/pycore_ast.h
+	# - Include/internal/pycore_ast_state.h
+	# - Python/Python-ast.c
 	$(MKDIR_P) $(srcdir)/Include
 	$(MKDIR_P) $(srcdir)/Python
 	$(PYTHON_FOR_REGEN) $(srcdir)/Parser/asdl_c.py \
 		$(srcdir)/Parser/Python.asdl \
-		-H $(srcdir)/Include/Python-ast.h.new \
+		-H $(srcdir)/Include/internal/pycore_ast.h.new \
 		-I $(srcdir)/Include/internal/pycore_ast_state.h.new \
 		-C $(srcdir)/Python/Python-ast.c.new
 
-	$(UPDATE_FILE) $(srcdir)/Include/Python-ast.h $(srcdir)/Include/Python-ast.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast_state.h $(srcdir)/Include/internal/pycore_ast_state.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
@@ -922,7 +926,7 @@ regen-stdlib-module-names: build_all Programs/_testembed
 		> $(srcdir)/Python/stdlib_module_names.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/stdlib_module_names.h $(srcdir)/Python/stdlib_module_names.h.new
 
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/Python-ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -1020,8 +1024,6 @@ regen-typeslots:
 PYTHON_HEADERS= \
 		$(srcdir)/Include/Python.h \
 		$(srcdir)/Include/abstract.h \
-		$(srcdir)/Include/asdl.h \
-		$(srcdir)/Include/ast.h \
 		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
 		$(srcdir)/Include/bytearrayobject.h \
@@ -1098,13 +1100,13 @@ PYTHON_HEADERS= \
 		\
 		pyconfig.h \
 		$(PARSER_HEADERS) \
-		$(srcdir)/Include/Python-ast.h \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
 		$(srcdir)/Include/cpython/bytearrayobject.h \
 		$(srcdir)/Include/cpython/bytesobject.h \
 		$(srcdir)/Include/cpython/ceval.h \
 		$(srcdir)/Include/cpython/code.h \
+		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
 		$(srcdir)/Include/cpython/fileutils.h \
@@ -1118,7 +1120,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/objimpl.h \
 		$(srcdir)/Include/cpython/odictobject.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
-		$(srcdir)/Include/cpython/pyarena.h \
 		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
@@ -1135,6 +1136,7 @@ PYTHON_HEADERS= \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_accu.h \
+		$(srcdir)/Include/internal/pycore_asdl.h \
 		$(srcdir)/Include/internal/pycore_ast.h \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atomic.h \
@@ -1144,6 +1146,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_call.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_code.h \
+		$(srcdir)/Include/internal/pycore_compile.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
 		$(srcdir)/Include/internal/pycore_dtoa.h \
@@ -1158,8 +1161,10 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_list.h \
 		$(srcdir)/Include/internal/pycore_long.h \
+		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
+		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \
@@ -1342,6 +1347,12 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE) \
 			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
+	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
+		rm -f $(DESTDIR)$(BINDIR)python$(VERSION)-intel64$(EXE); \
+		lipo $(LIPO_INTEL64_FLAGS) \
+			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-intel64$(EXE) \
+			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
+	fi
 
 bininstall: altbininstall
 	if test ! -d $(DESTDIR)$(LIBPC); then \
@@ -1376,6 +1387,10 @@ bininstall: altbininstall
 	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
 		rm -f $(DESTDIR)$(BINDIR)/python3-32$(EXE); \
 		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-32$(EXE) python3-32$(EXE)) \
+	fi
+	if test "x$(LIPO_INTEL64_FLAGS)" != "x" ; then \
+		rm -f $(DESTDIR)$(BINDIR)/python3-intel64$(EXE); \
+		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-intel64$(EXE) python3-intel64$(EXE)) \
 	fi
 
 # Install the versioned manual page
@@ -1488,6 +1503,8 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_importlib/namespace_pkgs/project3 \
 		test/test_importlib/namespace_pkgs/project3/parent \
 		test/test_importlib/namespace_pkgs/project3/parent/child \
+		test/test_importlib/namespacedata01 \
+		test/test_importlib/partial \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
@@ -1976,7 +1993,7 @@ patchcheck: @DEF_MAKE_RULE@
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/patchcheck.py
 
 check-limited-abi: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py check $(srcdir)/Doc/data/stable_abi.dat
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --all $(srcdir)/Misc/stable_abi.txt
 
 # Dependencies
 

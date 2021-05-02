@@ -33,6 +33,7 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import urlopen, HTTPError
+import re
 import shutil
 import string
 import subprocess
@@ -43,21 +44,17 @@ import tarfile
 log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
-    "1.0.2u",
-    "1.1.0l",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1j",
-    # "3.0.0-alpha12"
+    "1.1.1k",
+    "3.0.0-alpha15"
 ]
 
 LIBRESSL_OLD_VERSIONS = [
-    "2.9.2",
 ]
 
 LIBRESSL_RECENT_VERSIONS = [
-    "3.2.4",
 ]
 
 # store files in ../multissl
@@ -452,11 +449,14 @@ class BuildOpenSSL(AbstractBuilder):
     @property
     def short_version(self):
         """Short version for OpenSSL download URL"""
-        short_version = self.version.rstrip(string.ascii_letters)
-        if short_version.startswith("0.9"):
-            short_version = "0.9.x"
-        return short_version
-
+        mo = re.search(r"^(\d+)\.(\d+)\.(\d+)", self.version)
+        parsed = tuple(int(m) for m in mo.groups())
+        if parsed < (1, 0, 0):
+            return "0.9.x"
+        if parsed >= (3, 0, 0):
+            # OpenSSL 3.0.0 -> /old/3.0/
+            parsed = parsed[:2]
+        return ".".join(str(i) for i in parsed)
 
 class BuildLibreSSL(AbstractBuilder):
     library = "LibreSSL"

@@ -62,6 +62,7 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
         raise TypeError("filename must be a str or bytes object, or a file")
 
     if "t" in mode:
+        encoding = io.text_encoding(encoding)
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
         return binary_file
@@ -396,6 +397,10 @@ class GzipFile(_compression.BaseStream):
     def readline(self, size=-1):
         self._check_not_closed()
         return self._buffer.readline(size)
+
+    def __iter__(self):
+        self._check_not_closed()
+        return self._buffer.__iter__()
 
 
 class _GzipReader(_compression.DecompressReader):

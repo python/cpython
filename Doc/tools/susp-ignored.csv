@@ -149,8 +149,8 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,:db8,'2001:db8::1000'
 library/ipaddress,,::,'2001:db8::1000'
-library/ipaddress,231,:db8,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
-library/ipaddress,231,::,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
+library/ipaddress,,:db8,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
+library/ipaddress,,::,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
 library/ipaddress,,::,IPv6Address('ff02::5678%1')
 library/ipaddress,,::,fe80::1234
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
@@ -209,9 +209,9 @@ library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
 library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
-library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
+library/sqlite3,,:name,"cur.execute(""select * from lang where lang_name=:name and lang_age=:age"","
+library/sqlite3,,:age,"cur.execute(""select * from lang where lang_name=:name and lang_age=:age"","
 library/sqlite3,,:memory,
-library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/sqlite3,,:path,"db = sqlite3.connect('file:path/to/database?mode=ro', uri=True)"
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
 library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
@@ -279,7 +279,11 @@ tutorial/stdlib2,,:start,"fields = struct.unpack('<IIIHH', data[start:start+16])
 tutorial/stdlib2,,:start,filename = data[start:start+filenamesize]
 tutorial/stdlib2,,:Warning,WARNING:root:Warning:config file server.conf not found
 using/cmdline,,:errorhandler,:errorhandler
-using/cmdline,,:line,file:line: category: message
+using/cmdline,,:message,action:message:category:module:lineno
+using/cmdline,,:category,action:message:category:module:lineno
+using/cmdline,,:module,action:message:category:module:lineno
+using/cmdline,,:lineno,action:message:category:module:lineno
+using/cmdline,,::,-W ignore::DeprecationWarning
 using/unix,,:Packaging,https://en.opensuse.org/Portal:Packaging
 whatsnew/2.0,,:len,
 whatsnew/2.3,,::,
@@ -365,3 +369,8 @@ whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
 library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
 library/re,,`,"`"
+using/configure,84,:db2,=db1:db2:...
+library/typing,1004,`,# Type of ``val`` is narrowed to ``str``
+library/typing,1004,`,"# Else, type of ``val`` is narrowed to ``float``."
+library/typing,1004,`,# Type of ``val`` is narrowed to ``List[str]``.
+library/typing,1004,`,# Type of ``val`` remains as ``List[object]``.

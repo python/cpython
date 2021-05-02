@@ -1,6 +1,9 @@
-dnl ***********************************************
-dnl * Please run autoreconf to test your changes! *
-dnl ***********************************************
+dnl ***************************************************
+dnl * Please run autoreconf -if to test your changes! *
+dnl ***************************************************
+dnl
+dnl Python's configure script requires autoconf 2.69 and autoconf-archive.
+dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 m4_define(PYTHON_VERSION, 3.10)
@@ -9,14 +12,18 @@ AC_PREREQ([2.69])
 
 AC_INIT([python],[PYTHON_VERSION],[https://bugs.python.org/])
 
-AC_CONFIG_MACRO_DIR(m4)
+m4_ifdef(
+    [AX_C_FLOAT_WORDS_BIGENDIAN],
+    [],
+    [AC_MSG_ERROR([Please install autoconf-archive package and re-run autoreconf])]
+)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
     #   Objects/ -> typeslots.inc
-    #   Include/ -> Python-ast.h
+    #   Include/ -> Python.h
     #   Python/  -> importlib.h
     # (A side effect of this is that these resources will automatically be
     #  regenerated when building out-of-tree, regardless of whether or not
@@ -213,12 +220,14 @@ then
 fi
 
 AC_SUBST(LIPO_32BIT_FLAGS)
+AC_SUBST(LIPO_INTEL64_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
     AS_HELP_STRING([--with-universal-archs=ARCH],
-                   [specify the kind of universal binary that should be created. this option is
-                    only valid when --enable-universalsdk is set; options are:
-                    ("universal2", "32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
+                   [specify the kind of macOS universal binary that should be created.
+                    This option is only valid when --enable-universalsdk is set; options are:
+                    ("universal2", "intel-64", "intel-32", "intel", "32-bit",
+                    "64-bit", "3-way", or "all")
                     see Mac/README.rst]),
 [
 	UNIVERSAL_ARCHS="$withval"
@@ -1867,6 +1876,7 @@ yes)
             AC_MSG_RESULT($CC)
         fi
 
+        LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
@@ -1888,8 +1898,9 @@ yes)
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
+               LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
-		;;
+               ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -2347,10 +2358,11 @@ AC_CHECK_TYPE(ssize_t,
 AC_CHECK_TYPE(__uint128_t,
   AC_DEFINE(HAVE_GCC_UINT128_T, 1, [Define if your compiler provides __uint128_t]),,)
 
-# Sizes of various common basic types
+# Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_ALIGNOF(long)
 AC_CHECK_SIZEOF(long long, 8)
 AC_CHECK_SIZEOF(void *, 4)
 AC_CHECK_SIZEOF(short, 2)
@@ -2358,6 +2370,7 @@ AC_CHECK_SIZEOF(float, 4)
 AC_CHECK_SIZEOF(double, 8)
 AC_CHECK_SIZEOF(fpos_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
+AC_CHECK_ALIGNOF(size_t)
 AC_CHECK_SIZEOF(pid_t, 4)
 AC_CHECK_SIZEOF(uintptr_t)
 
@@ -4744,6 +4757,22 @@ else
   AC_MSG_RESULT(no)
 fi
 
+case $ac_sys_system/$ac_sys_release in
+SunOS/*)
+  if test -f /etc/os-release; then
+    OS_NAME=$(awk -F= '/^NAME=/ {print substr($2,2,length($2)-2)}' /etc/os-release)
+    if test "x$OS_NAME" = "xOracle Solaris"; then
+      # bpo-43667: In Oracle Solaris, the internal form of wchar_t in
+      # non-Unicode locales is not Unicode and hence cannot be used directly.
+      # https://docs.oracle.com/cd/E37838_01/html/E61053/gmwke.html
+      AC_DEFINE(HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION, 1,
+      [Define if the internal form of wchar_t in non-Unicode locales
+       is not Unicode.])
+    fi
+  fi
+  ;;
+esac
+
 # check for endianness
 AC_C_BIGENDIAN
 
@@ -5760,42 +5789,6 @@ ac_includes_default="$save_includes_default"
 # Check for usable OpenSSL
 AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 
-if test "$have_openssl" = yes; then
-    AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
-
-    save_LIBS="$LIBS"
-    save_LDFLAGS="$LDFLAGS"
-    save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
-    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
-        [#include <openssl/x509_vfy.h>]
-    ], [
-        [X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();]
-        [X509_VERIFY_PARAM_set1_host(p, "localhost", 0);]
-        [X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");]
-        [X509_VERIFY_PARAM_set_hostflags(p, 0);]
-    ])
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=yes
-    ],
-    [
-        ac_cv_has_x509_verify_param_set1_host=no
-    ])
-    AC_MSG_RESULT($ac_cv_has_x509_verify_param_set1_host)
-    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
-        AC_DEFINE(HAVE_X509_VERIFY_PARAM_SET1_HOST, 1,
-        [Define if libssl has X509_VERIFY_PARAM_set1_host and related function])
-    fi
-
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LIBS="$save_LIBS"
-fi
-
 # rpath to libssl and libcrypto
 AC_MSG_CHECKING(for --with-openssl-rpath)
 AC_ARG_WITH(openssl-rpath,
@@ -5835,7 +5828,7 @@ AC_ARG_WITH(ssl-default-suites,
                             python: use Python's preferred selection (default),
                             openssl: leave OpenSSL's defaults untouched,
                             STRING: use a custom string,
-                            PROTOCOL_SSLv2 ignores the setting, see Doc/library/ssl.rst]),
+                            python and STRING also set TLS 1.2 as minimum TLS version]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in

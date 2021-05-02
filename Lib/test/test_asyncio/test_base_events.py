@@ -1437,44 +1437,51 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop._make_ssl_transport.side_effect = mock_make_ssl_transport
         ANY = mock.ANY
         handshake_timeout = object()
+        shutdown_timeout = object()
         # First try the default server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
                 MyProto, 'python.org', 80, ssl=True,
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
             server_hostname='python.org',
-            ssl_handshake_timeout=handshake_timeout)
+            ssl_handshake_timeout=handshake_timeout,
+            ssl_shutdown_timeout=shutdown_timeout)
         # Next try an explicit server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
                 MyProto, 'python.org', 80, ssl=True,
                 server_hostname='perl.com',
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
             ANY, ANY, ANY, ANY,
             server_side=False,
             server_hostname='perl.com',
-            ssl_handshake_timeout=handshake_timeout)
+            ssl_handshake_timeout=handshake_timeout,
+            ssl_shutdown_timeout=shutdown_timeout)
         # Finally try an explicit empty server_hostname.
         self.loop._make_ssl_transport.reset_mock()
         coro = self.loop.create_connection(
                 MyProto, 'python.org', 80, ssl=True,
                 server_hostname='',
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
         transport, _ = self.loop.run_until_complete(coro)
         transport.close()
         self.loop._make_ssl_transport.assert_called_with(
                 ANY, ANY, ANY, ANY,
                 server_side=False,
                 server_hostname='',
-                ssl_handshake_timeout=handshake_timeout)
+                ssl_handshake_timeout=handshake_timeout,
+                ssl_shutdown_timeout=shutdown_timeout)
 
     def test_create_connection_no_ssl_server_hostname_errors(self):
         # When not using ssl, server_hostname must be None.
@@ -1881,7 +1888,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             constants.ACCEPT_RETRY_DELAY,
             # self.loop._start_serving
             mock.ANY,
-            MyProto, sock, None, None, mock.ANY, mock.ANY)
+            MyProto, sock, None, None, mock.ANY, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
         with self.assertWarns(DeprecationWarning):
@@ -2096,7 +2103,7 @@ class BaseLoopSockSendfileTests(test_utils.TestCase):
 
     def test_nonbinary_file(self):
         sock = self.make_socket()
-        with open(os_helper.TESTFN, 'r') as f:
+        with open(os_helper.TESTFN, encoding="utf-8") as f:
             with self.assertRaisesRegex(ValueError, "binary mode"):
                 self.run_loop(self.loop.sock_sendfile(sock, f))
 

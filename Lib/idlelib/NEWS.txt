@@ -4,6 +4,13 @@ Released on 2021-10-04?
 =========================
 
 
+bpo-37892: Change Shell input indents from tabs to spaces.
+
+bpo-37903: Move the Shell input prompt to a side bar.
+
+bpo-43655: Make window managers on macOS and X Window recognize
+IDLE dialog windows as dialogs.
+
 bpo-43283: Document why printing to IDLE's Shell is often slower than
 printing to a system terminal and that it can be made faster by
 pre-formatting a single string before printing.

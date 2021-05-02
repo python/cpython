@@ -1518,9 +1518,9 @@ class GeneralModuleTests(unittest.TestCase):
         infos = socket.getaddrinfo(HOST, 80, socket.AF_INET, socket.SOCK_STREAM)
         for family, type, _, _, _ in infos:
             self.assertEqual(family, socket.AF_INET)
-            self.assertEqual(str(family), 'AddressFamily.AF_INET')
+            self.assertEqual(str(family), 'AF_INET')
             self.assertEqual(type, socket.SOCK_STREAM)
-            self.assertEqual(str(type), 'SocketKind.SOCK_STREAM')
+            self.assertEqual(str(type), 'SOCK_STREAM')
         infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
@@ -1678,7 +1678,8 @@ class GeneralModuleTests(unittest.TestCase):
         for mode in 'r', 'rb', 'rw', 'w', 'wb':
             with self.subTest(mode=mode):
                 with socket.socket() as sock:
-                    with sock.makefile(mode) as fp:
+                    encoding = None if "b" in mode else "utf-8"
+                    with sock.makefile(mode, encoding=encoding) as fp:
                         self.assertEqual(fp.mode, mode)
 
     def test_makefile_invalid_mode(self):
@@ -1793,8 +1794,8 @@ class GeneralModuleTests(unittest.TestCase):
         # Make sure that the AF_* and SOCK_* constants have enum-like string
         # reprs.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            self.assertEqual(str(s.family), 'AddressFamily.AF_INET')
-            self.assertEqual(str(s.type), 'SocketKind.SOCK_STREAM')
+            self.assertEqual(str(s.family), 'AF_INET')
+            self.assertEqual(str(s.type), 'SOCK_STREAM')
 
     def test_socket_consistent_sock_type(self):
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
@@ -1940,6 +1941,41 @@ class GeneralModuleTests(unittest.TestCase):
                     socket.SOCK_STREAM,
                     fileno=afile.fileno())
             self.assertEqual(cm.exception.errno, errno.ENOTSOCK)
+
+    def test_addressfamily_enum(self):
+        import _socket, enum
+        CheckedAddressFamily = enum._old_convert_(
+                enum.IntEnum, 'AddressFamily', 'socket',
+                lambda C: C.isupper() and C.startswith('AF_'),
+                source=_socket,
+                )
+        enum._test_simple_enum(CheckedAddressFamily, socket.AddressFamily)
+
+    def test_socketkind_enum(self):
+        import _socket, enum
+        CheckedSocketKind = enum._old_convert_(
+                enum.IntEnum, 'SocketKind', 'socket',
+                lambda C: C.isupper() and C.startswith('SOCK_'),
+                source=_socket,
+                )
+        enum._test_simple_enum(CheckedSocketKind, socket.SocketKind)
+
+    def test_msgflag_enum(self):
+        import _socket, enum
+        CheckedMsgFlag = enum._old_convert_(
+                enum.IntFlag, 'MsgFlag', 'socket',
+                lambda C: C.isupper() and C.startswith('MSG_'),
+                source=_socket,
+                )
+        enum._test_simple_enum(CheckedMsgFlag, socket.MsgFlag)
+
+    def test_addressinfo_enum(self):
+        import _socket, enum
+        CheckedAddressInfo = enum._old_convert_(
+                enum.IntFlag, 'AddressInfo', 'socket',
+                lambda C: C.isupper() and C.startswith('AI_'),
+                source=_socket)
+        enum._test_simple_enum(CheckedAddressInfo, socket.AddressInfo)
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
@@ -5590,7 +5626,7 @@ def isTipcAvailable():
     if not hasattr(socket, "AF_TIPC"):
         return False
     try:
-        f = open("/proc/modules")
+        f = open("/proc/modules", encoding="utf-8")
     except (FileNotFoundError, IsADirectoryError, PermissionError):
         # It's ok if the file does not exist, is a directory or if we
         # have not the permission to read it.
@@ -6187,7 +6223,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(
                     ValueError, "SOCK_STREAM", meth, file)
-        with open(os_helper.TESTFN, 'rt') as file:
+        with open(os_helper.TESTFN, encoding="utf-8") as file:
             with socket.socket() as s:
                 meth = self.meth_from_sock(s)
                 self.assertRaisesRegex(

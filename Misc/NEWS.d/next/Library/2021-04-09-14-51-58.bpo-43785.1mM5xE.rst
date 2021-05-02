@@ -1,0 +1,4 @@
+Improve ``bz2.BZ2File`` performance by removing the RLock from BZ2File.
+This makes BZ2File thread unsafe in the face of multiple simultaneous
+readers or writers, just like its equivalent classes in :mod:`gzip` and
+:mod:`lzma` have always been.  Patch by Inada Naoki.

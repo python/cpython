@@ -45,8 +45,8 @@ class PosixTester(unittest.TestCase):
 
     def setUp(self):
         # create empty file
-        fp = open(os_helper.TESTFN, 'w+')
-        fp.close()
+        with open(os_helper.TESTFN, "wb"):
+            pass
         self.teardown_files = [ os_helper.TESTFN ]
         self._warnings_manager = warnings_helper.check_warnings()
         self._warnings_manager.__enter__()
@@ -1579,7 +1579,7 @@ class _PosixSpawnMixin:
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args, os.environ)
         support.wait_process(pid, exitcode=0)
-        with open(pidfile) as f:
+        with open(pidfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), str(pid))
 
     def test_no_such_executable(self):
@@ -1602,14 +1602,14 @@ class _PosixSpawnMixin:
         self.addCleanup(os_helper.unlink, envfile)
         script = f"""if 1:
             import os
-            with open({envfile!r}, "w") as envfile:
+            with open({envfile!r}, "w", encoding="utf-8") as envfile:
                 envfile.write(os.environ['foo'])
         """
         args = self.python_args('-c', script)
         pid = self.spawn_func(args[0], args,
                               {**os.environ, 'foo': 'bar'})
         support.wait_process(pid, exitcode=0)
-        with open(envfile) as f:
+        with open(envfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'bar')
 
     def test_none_file_actions(self):
@@ -1861,7 +1861,7 @@ class _PosixSpawnMixin:
                               file_actions=file_actions)
 
         support.wait_process(pid, exitcode=0)
-        with open(outfile) as f:
+        with open(outfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
     def test_close_file(self):
@@ -1872,7 +1872,7 @@ class _PosixSpawnMixin:
             try:
                 os.fstat(0)
             except OSError as e:
-                with open({closefile!r}, 'w') as closefile:
+                with open({closefile!r}, 'w', encoding='utf-8') as closefile:
                     closefile.write('is closed %d' % e.errno)
             """
         args = self.python_args('-c', script)
@@ -1880,7 +1880,7 @@ class _PosixSpawnMixin:
                               file_actions=[(os.POSIX_SPAWN_CLOSE, 0)])
 
         support.wait_process(pid, exitcode=0)
-        with open(closefile) as f:
+        with open(closefile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'is closed %d' % errno.EBADF)
 
     def test_dup2(self):
@@ -1898,7 +1898,7 @@ class _PosixSpawnMixin:
             pid = self.spawn_func(args[0], args, os.environ,
                                   file_actions=file_actions)
             support.wait_process(pid, exitcode=0)
-        with open(dupfile) as f:
+        with open(dupfile, encoding="utf-8") as f:
             self.assertEqual(f.read(), 'hello')
 
 

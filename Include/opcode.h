@@ -81,6 +81,7 @@ extern "C" {
 #define DELETE_ATTR              96
 #define STORE_GLOBAL             97
 #define DELETE_GLOBAL            98
+#define ROT_N                    99
 #define LOAD_CONST              100
 #define LOAD_NAME               101
 #define BUILD_TUPLE             102
@@ -106,6 +107,7 @@ extern "C" {
 #define LOAD_FAST               124
 #define STORE_FAST              125
 #define DELETE_FAST             126
+#define GEN_START               129
 #define RAISE_VARARGS           130
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132

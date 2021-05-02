@@ -1,0 +1,4 @@
+In ``importlib.metadata``, provide a uniform interface to ``Description``,
+allow for any field to be encoded with multiline values, remove continuation
+lines from multiline values, and add a ``.json`` property for easy access to
+the PEP 566 JSON-compatible form. Sync with ``importlib_metadata 4.0``.

@@ -139,9 +139,26 @@ class BaseFutureTests:
         f.cancel()
         self.assertTrue(f.cancelled())
 
-    def test_init_constructor_default_loop(self):
+    def test_constructor_without_loop(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaisesRegex(RuntimeError, 'There is no current event loop'):
+                self._new_future()
+        self.assertEqual(cm.warnings[0].filename, __file__)
+
+    def test_constructor_use_running_loop(self):
+        async def test():
+            return self._new_future()
+        f = self.loop.run_until_complete(test())
+        self.assertIs(f._loop, self.loop)
+        self.assertIs(f.get_loop(), self.loop)
+
+    def test_constructor_use_global_loop(self):
+        # Deprecated in 3.10
         asyncio.set_event_loop(self.loop)
-        f = self._new_future()
+        self.addCleanup(asyncio.set_event_loop, None)
+        with self.assertWarns(DeprecationWarning) as cm:
+            f = self._new_future()
+        self.assertEqual(cm.warnings[0].filename, __file__)
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
 
@@ -472,16 +489,41 @@ class BaseFutureTests:
         f2 = asyncio.wrap_future(f1)
         self.assertIs(f1, f2)
 
+    def test_wrap_future_without_loop(self):
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        with self.assertWarns(DeprecationWarning) as cm:
+            with self.assertRaises(RuntimeError):
+                asyncio.wrap_future(f1)
+        self.assertEqual(cm.warnings[0].filename, __file__)
+        ex.shutdown(wait=True)
+
+    def test_wrap_future_use_running_loop(self):
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        async def test():
+            return asyncio.wrap_future(f1)
+        f2 = self.loop.run_until_complete(test())
+        self.assertIs(self.loop, f2._loop)
+        ex.shutdown(wait=True)
+
     def test_wrap_future_use_global_loop(self):
-        with mock.patch('asyncio.futures.events') as events:
-            events.get_event_loop = lambda: self.loop
-            def run(arg):
-                return (arg, threading.get_ident())
-            ex = concurrent.futures.ThreadPoolExecutor(1)
-            f1 = ex.submit(run, 'oi')
+        # Deprecated in 3.10
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        def run(arg):
+            return (arg, threading.get_ident())
+        ex = concurrent.futures.ThreadPoolExecutor(1)
+        f1 = ex.submit(run, 'oi')
+        with self.assertWarns(DeprecationWarning) as cm:
             f2 = asyncio.wrap_future(f1)
-            self.assertIs(self.loop, f2._loop)
-            ex.shutdown(wait=True)
+        self.assertEqual(cm.warnings[0].filename, __file__)
+        self.assertIs(self.loop, f2._loop)
+        ex.shutdown(wait=True)
 
     def test_wrap_future_cancel(self):
         f1 = concurrent.futures.Future()

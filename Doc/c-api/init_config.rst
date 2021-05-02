@@ -229,20 +229,24 @@ PyPreConfig
       Name of the Python memory allocators:
 
       * ``PYMEM_ALLOCATOR_NOT_SET`` (``0``): don't change memory allocators
-        (use defaults)
-      * ``PYMEM_ALLOCATOR_DEFAULT`` (``1``): default memory allocators
-      * ``PYMEM_ALLOCATOR_DEBUG`` (``2``): default memory allocators with
-        debug hooks
-      * ``PYMEM_ALLOCATOR_MALLOC`` (``3``): force usage of ``malloc()``
+        (use defaults).
+      * ``PYMEM_ALLOCATOR_DEFAULT`` (``1``): :ref:`default memory allocators
+        <default-memory-allocators>`.
+      * ``PYMEM_ALLOCATOR_DEBUG`` (``2``): :ref:`default memory allocators
+        <default-memory-allocators>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
+      * ``PYMEM_ALLOCATOR_MALLOC`` (``3``): use ``malloc()`` of the C library.
       * ``PYMEM_ALLOCATOR_MALLOC_DEBUG`` (``4``): force usage of
-        ``malloc()`` with debug hooks
+        ``malloc()`` with :ref:`debug hooks <pymem-debug-hooks>`.
       * ``PYMEM_ALLOCATOR_PYMALLOC`` (``5``): :ref:`Python pymalloc memory
-        allocator <pymalloc>`
+        allocator <pymalloc>`.
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
-        memory allocator <pymalloc>` with debug hooks
+        memory allocator <pymalloc>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
 
-      ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG``
-      are not supported if Python is configured using ``--without-pymalloc``
+      ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` are
+      not supported if Python is :option:`configured using --without-pymalloc
+      <--without-pymalloc>`.
 
       See :ref:`Memory Management <memory>`.
 
@@ -583,6 +587,15 @@ PyConfig
 
       Default: ``0``.
 
+   .. c:member:: int warn_default_encoding
+
+      If non-zero, emit a :exc:`EncodingWarning` warning when :class:`io.TextIOWrapper`
+      uses its default encoding. See :ref:`io-encoding-warning` for details.
+
+      Default: ``0``.
+
+      .. versionadded:: 3.10
+
    .. c:member:: wchar_t* check_hash_pycs_mode
 
       Control the validation behavior of hash-based ``.pyc`` files:
@@ -627,7 +640,8 @@ PyConfig
 
       Set to ``1`` by the :envvar:`PYTHONDUMPREFS` environment variable.
 
-      Need a special build of Python with the ``Py_TRACE_REFS`` macro defined.
+      Need a special build of Python with the ``Py_TRACE_REFS`` macro defined:
+      see the :option:`configure --with-trace-refs option <--with-trace-refs>`.
 
       Default: ``0``.
 
@@ -808,7 +822,8 @@ PyConfig
 
       Set to ``1`` by the :envvar:`PYTHONMALLOCSTATS` environment variable.
 
-      The option is ignored if Python is built using ``--without-pymalloc``.
+      The option is ignored if Python is :option:`configured using
+      the --without-pymalloc option <--without-pymalloc>`.
 
       Default: ``0``.
 
@@ -818,8 +833,9 @@ PyConfig
 
       Set by the :envvar:`PYTHONPLATLIBDIR` environment variable.
 
-      Default: value of the ``PLATLIBDIR`` macro which is set at configure time
-      by ``--with-platlibdir`` (default: ``"lib"``).
+      Default: value of the ``PLATLIBDIR`` macro which is set by the
+      :option:`configure --with-platlibdir option <--with-platlibdir>`
+      (default: ``"lib"``).
 
       Part of the :ref:`Python Path Configuration <init-path-config>` input.
 
@@ -1007,7 +1023,8 @@ PyConfig
 
       Set to 1 by :option:`-X showrefcount <-X>` command line option.
 
-      Need a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
+      Need a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
+      macro must be defined).
 
       Default: ``0``.
 
@@ -1120,6 +1137,13 @@ PyConfig
       order: the last :c:member:`PyConfig.warnoptions` item becomes the first
       item of :data:`warnings.filters` which is checked first (highest
       priority).
+
+      The :option:`-W` command line options adds its value to
+      :c:member:`~PyConfig.warnoptions`, it can be used multiple times.
+
+      The :envvar:`PYTHONWARNINGS` environment variable can also be used to add
+      warning options. Multiple options can be specified, separated by commas
+      (``,``).
 
       Default: empty list.
 

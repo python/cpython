@@ -1,6 +1,8 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_compile.h"       // _PyASTOptimizeState
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 
 static int
@@ -15,7 +17,7 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
         PyErr_Clear();
         return 1;
     }
-    if (PyArena_AddPyObject(arena, val) < 0) {
+    if (_PyArena_AddPyObject(arena, val) < 0) {
         Py_DECREF(val);
         return 0;
     }
@@ -405,10 +407,11 @@ static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state
 static int astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
-static int astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
+static int astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 
 #define CALL(FUNC, TYPE, ARG) \
     if (!FUNC((ARG), ctx_, state)) \
@@ -450,8 +453,9 @@ astfold_body(asdl_stmt_seq *stmts, PyArena *ctx_, _PyASTOptimizeState *state)
             return 0;
         }
         asdl_seq_SET(values, 0, st->v.Expr.value);
-        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset,
-                                 st->end_lineno, st->end_col_offset, ctx_);
+        expr_ty expr = _PyAST_JoinedStr(values, st->lineno, st->col_offset,
+                                        st->end_lineno, st->end_col_offset,
+                                        ctx_);
         if (!expr) {
             return 0;
         }
@@ -485,6 +489,11 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        return 0;
+    }
     switch (node_->kind) {
     case BoolOp_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.BoolOp.values);
@@ -583,6 +592,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Name_kind:
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
+            state->recursion_depth--;
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;
@@ -592,13 +602,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Constant_kind:
         // Already a constant, nothing further to do
         break;
-    case MatchAs_kind:
-    case MatchOr_kind:
-        // These can't occur outside of patterns.
-        Py_UNREACHABLE();
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
+    state->recursion_depth--;
     return 1;
 }
 
@@ -623,24 +630,49 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState
 static int
 astfold_arguments(arguments_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    CALL_SEQ(astfold_arg, arg, node_->posonlyargs);
+    CALL_SEQ(astfold_arg, arg, node_->args);
+    CALL_OPT(astfold_arg, arg_ty, node_->vararg);
+    CALL_SEQ(astfold_arg, arg, node_->kwonlyargs);
     CALL_SEQ(astfold_expr, expr, node_->kw_defaults);
+    CALL_OPT(astfold_arg, arg_ty, node_->kwarg);
     CALL_SEQ(astfold_expr, expr, node_->defaults);
+    return 1;
+}
+
+static int
+astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+        CALL_OPT(astfold_expr, expr_ty, node_->annotation);
+    }
     return 1;
 }
 
 static int
 astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
+        return 0;
+    }
     switch (node_->kind) {
     case FunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
+        if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+            CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
+        }
         break;
     case AsyncFunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
+        if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+            CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
+        }
         break;
     case ClassDef_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
@@ -664,6 +696,9 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case AnnAssign_kind:
         CALL(astfold_expr, expr_ty, node_->v.AnnAssign.target);
+        if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
+            CALL(astfold_expr, expr_ty, node_->v.AnnAssign.annotation);
+        }
         CALL_OPT(astfold_expr, expr_ty, node_->v.AnnAssign.value);
         break;
     case For_kind:
@@ -731,6 +766,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
     }
+    state->recursion_depth--;
     return 1;
 }
 
@@ -757,112 +793,48 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 }
 
 static int
-astfold_pattern_negative(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
+astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    assert(node_->kind == UnaryOp_kind);
-    assert(node_->v.UnaryOp.op == USub);
-    assert(node_->v.UnaryOp.operand->kind == Constant_kind);
-    PyObject *value = node_->v.UnaryOp.operand->v.Constant.value;
-    assert(PyComplex_CheckExact(value) ||
-           PyFloat_CheckExact(value) ||
-           PyLong_CheckExact(value));
-    PyObject *negated = PyNumber_Negative(value);
-    if (negated == NULL) {
+    // Currently, this is really only used to form complex/negative numeric
+    // constants in MatchValue and MatchMapping nodes
+    // We still recurse into all subexpressions and subpatterns anyway
+    if (++state->recursion_depth > state->recursion_limit) {
+        PyErr_SetString(PyExc_RecursionError,
+                        "maximum recursion depth exceeded during compilation");
         return 0;
     }
-    assert(PyComplex_CheckExact(negated) ||
-           PyFloat_CheckExact(negated) ||
-           PyLong_CheckExact(negated));
-    return make_const(node_, negated, ctx_);
-}
-
-static int
-astfold_pattern_complex(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    expr_ty left = node_->v.BinOp.left;
-    expr_ty right = node_->v.BinOp.right;
-    if (left->kind == UnaryOp_kind) {
-        CALL(astfold_pattern_negative, expr_ty, left);
-    }
-    assert(left->kind = Constant_kind);
-    assert(right->kind = Constant_kind);
-    // LHS must be real, RHS must be imaginary:
-    if (!(PyFloat_CheckExact(left->v.Constant.value) ||
-          PyLong_CheckExact(left->v.Constant.value)) ||
-        !PyComplex_CheckExact(right->v.Constant.value))
-    {
-        // Not actually valid, but it's the compiler's job to complain:
-        return 1;
-    }
-    PyObject *new;
-    if (node_->v.BinOp.op == Add) {
-        new = PyNumber_Add(left->v.Constant.value, right->v.Constant.value);
-    }
-    else {
-        assert(node_->v.BinOp.op == Sub);
-        new = PyNumber_Subtract(left->v.Constant.value, right->v.Constant.value);
-    }
-    if (new == NULL) {
-        return 0;
-    }
-    assert(PyComplex_CheckExact(new));
-    return make_const(node_, new, ctx_);
-}
-
-static int
-astfold_pattern_keyword(keyword_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    CALL(astfold_pattern, expr_ty, node_->value);
-    return 1;
-}
-
-static int
-astfold_pattern(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    // Don't blindly optimize the pattern as an expr; it plays by its own rules!
-    // Currently, this is only used to form complex/negative numeric constants.
     switch (node_->kind) {
-        case Attribute_kind:
+        case MatchValue_kind:
+            CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
             break;
-        case BinOp_kind:
-            CALL(astfold_pattern_complex, expr_ty, node_);
+        case MatchSingleton_kind:
             break;
-        case Call_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.Call.args);
-            CALL_SEQ(astfold_pattern_keyword, keyword, node_->v.Call.keywords);
+        case MatchSequence_kind:
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchSequence.patterns);
             break;
-        case Constant_kind:
+        case MatchMapping_kind:
+            CALL_SEQ(astfold_expr, expr, node_->v.MatchMapping.keys);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchMapping.patterns);
             break;
-        case Dict_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.keys);
-            CALL_SEQ(astfold_pattern, expr, node_->v.Dict.values);
+        case MatchClass_kind:
+            CALL(astfold_expr, expr_ty, node_->v.MatchClass.cls);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.patterns);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchClass.kwd_patterns);
             break;
-        // Not actually valid, but it's the compiler's job to complain:
-        case JoinedStr_kind:
-            break;
-        case List_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.List.elts);
+        case MatchStar_kind:
             break;
         case MatchAs_kind:
-            CALL(astfold_pattern, expr_ty, node_->v.MatchAs.pattern);
+            if (node_->v.MatchAs.pattern) {
+                CALL(astfold_pattern, pattern_ty, node_->v.MatchAs.pattern);
+            }
             break;
         case MatchOr_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.MatchOr.patterns);
+            CALL_SEQ(astfold_pattern, pattern, node_->v.MatchOr.patterns);
             break;
-        case Name_kind:
-            break;
-        case Starred_kind:
-            CALL(astfold_pattern, expr_ty, node_->v.Starred.value);
-            break;
-        case Tuple_kind:
-            CALL_SEQ(astfold_pattern, expr, node_->v.Tuple.elts);
-            break;
-        case UnaryOp_kind:
-            CALL(astfold_pattern_negative, expr_ty, node_);
-            break;
-        default:
-            Py_UNREACHABLE();
+    // No default case, so the compiler will emit a warning if new pattern
+    // kinds are added without being handled here
     }
+    state->recursion_depth--;
     return 1;
 }
 
@@ -880,10 +852,38 @@ astfold_match_case(match_case_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 #undef CALL_INT_SEQ
 
+/* See comments in symtable.c. */
+#define COMPILER_STACK_FRAME_SCALE 3
+
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, _PyASTOptimizeState *state)
 {
+    PyThreadState *tstate;
+    int recursion_limit = Py_GetRecursionLimit();
+    int starting_recursion_depth;
+
+    /* Setup recursion depth check counters */
+    tstate = _PyThreadState_GET();
+    if (!tstate) {
+        return 0;
+    }
+    /* Be careful here to prevent overflow. */
+    starting_recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    state->recursion_depth = starting_recursion_depth;
+    state->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
+
     int ret = astfold_mod(mod, arena, state);
     assert(ret || PyErr_Occurred());
+
+    /* Check that the recursion depth counting balanced correctly */
+    if (ret && state->recursion_depth != starting_recursion_depth) {
+        PyErr_Format(PyExc_SystemError,
+            "AST optimizer recursion depth mismatch (before=%d, after=%d)",
+            starting_recursion_depth, state->recursion_depth);
+        return 0;
+    }
+
     return ret;
 }
