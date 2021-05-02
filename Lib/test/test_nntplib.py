@@ -37,6 +37,8 @@ else:
 
 class NetworkedNNTPTestsMixin:
 
+    ssl_context = None
+
     def test_welcome(self):
         welcome = self.server.getwelcome()
         self.assertEqual(str, type(welcome))
@@ -273,18 +275,21 @@ class NetworkedNNTPTestsMixin:
                 return False
             return True
 
+        kwargs = dict(
+            timeout=support.INTERNET_TIMEOUT,
+            usenetrc=False
+        )
+        if self.ssl_context is not None:
+            kwargs["ssl_context"] = self.ssl_context
+
         try:
-            server = self.NNTP_CLASS(self.NNTP_HOST,
-                                     timeout=support.INTERNET_TIMEOUT,
-                                     usenetrc=False)
+            server = self.NNTP_CLASS(self.NNTP_HOST, **kwargs)
             with server:
                 self.assertTrue(is_connected())
                 self.assertTrue(server.help())
             self.assertFalse(is_connected())
 
-            server = self.NNTP_CLASS(self.NNTP_HOST,
-                                     timeout=support.INTERNET_TIMEOUT,
-                                     usenetrc=False)
+            server = self.NNTP_CLASS(self.NNTP_HOST, **kwargs)
             with server:
                 server.quit()
             self.assertFalse(is_connected())
@@ -316,16 +321,21 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         support.requires("network")
+        kwargs = dict(
+            timeout=support.INTERNET_TIMEOUT,
+            usenetrc=False
+        )
+        if cls.ssl_context is not None:
+            kwargs["ssl_context"] = cls.ssl_context
         with socket_helper.transient_internet(cls.NNTP_HOST):
             try:
-                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST,
-                                            timeout=support.INTERNET_TIMEOUT,
-                                            usenetrc=False)
+                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, **kwargs)
             except SSLError as ssl_err:
                 # matches "[SSL: DH_KEY_TOO_SMALL] dh key too small"
                 if re.search(r'(?i)KEY.TOO.SMALL', ssl_err.reason):
                     raise unittest.SkipTest(f"{cls} got {ssl_err} connecting "
                                             f"to {cls.NNTP_HOST!r}")
+                print(cls.NNTP_HOST)
                 raise
             except EOF_ERRORS:
                 raise unittest.SkipTest(f"{cls} got EOF error on connecting "
@@ -358,6 +368,10 @@ class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
     # Disabled as the connection will already be encrypted.
     test_starttls = None
 
+    if ssl is not None:
+        ssl_context = ssl._create_unverified_context()
+        ssl_context.set_ciphers("DEFAULT")
+        ssl_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
 #
 # Non-networked tests using a local server (or something mocking it).

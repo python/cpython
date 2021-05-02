@@ -978,7 +978,7 @@ class Path(PurePath):
         """Return a new path pointing to the current working directory
         (as returned by os.getcwd()).
         """
-        return cls(cls()._accessor.getcwd())
+        return cls(cls._accessor.getcwd())
 
     @classmethod
     def home(cls):

@@ -1471,6 +1471,106 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
 
+    def test_str_nonstr(self):
+        # cpython uses a different lookup function if the dict only contains
+        # `str` keys. Make sure the unoptimized path is used when a non-`str`
+        # key appears.
+
+        class StrSub(str):
+            pass
+
+        eq_count = 0
+        # This class compares equal to the string 'key3'
+        class Key3:
+            def __hash__(self):
+                return hash('key3')
+
+            def __eq__(self, other):
+                nonlocal eq_count
+                if isinstance(other, Key3) or isinstance(other, str) and other == 'key3':
+                    eq_count += 1
+                    return True
+                return False
+
+        key3_1 = StrSub('key3')
+        key3_2 = Key3()
+        key3_3 = Key3()
+
+        dicts = []
+
+        # Create dicts of the form `{'key1': 42, 'key2': 43, key3: 44}` in a
+        # bunch of different ways. In all cases, `key3` is not of type `str`.
+        # `key3_1` is a `str` subclass and `key3_2` is a completely unrelated
+        # type.
+        for key3 in (key3_1, key3_2):
+            # A literal
+            dicts.append({'key1': 42, 'key2': 43, key3: 44})
+
+            # key3 inserted via `dict.__setitem__`
+            d = {'key1': 42, 'key2': 43}
+            d[key3] = 44
+            dicts.append(d)
+
+            # key3 inserted via `dict.setdefault`
+            d = {'key1': 42, 'key2': 43}
+            self.assertEqual(d.setdefault(key3, 44), 44)
+            dicts.append(d)
+
+            # key3 inserted via `dict.update`
+            d = {'key1': 42, 'key2': 43}
+            d.update({key3: 44})
+            dicts.append(d)
+
+            # key3 inserted via `dict.__ior__`
+            d = {'key1': 42, 'key2': 43}
+            d |= {key3: 44}
+            dicts.append(d)
+
+            # `dict(iterable)`
+            def make_pairs():
+                yield ('key1', 42)
+                yield ('key2', 43)
+                yield (key3, 44)
+            d = dict(make_pairs())
+            dicts.append(d)
+
+            # `dict.copy`
+            d = d.copy()
+            dicts.append(d)
+
+            # dict comprehension
+            d = {key: 42 + i for i,key in enumerate(['key1', 'key2', key3])}
+            dicts.append(d)
+
+        for d in dicts:
+            with self.subTest(d=d):
+                self.assertEqual(d.get('key1'), 42)
+
+                # Try to make an object that is of type `str` and is equal to
+                # `'key1'`, but (at least on cpython) is a different object.
+                noninterned_key1 = 'ke'
+                noninterned_key1 += 'y1'
+                if support.check_impl_detail(cpython=True):
+                    # suppress a SyntaxWarning
+                    interned_key1 = 'key1'
+                    self.assertFalse(noninterned_key1 is interned_key1)
+                self.assertEqual(d.get(noninterned_key1), 42)
+
+                self.assertEqual(d.get('key3'), 44)
+                self.assertEqual(d.get(key3_1), 44)
+                self.assertEqual(d.get(key3_2), 44)
+
+                # `key3_3` itself is definitely not a dict key, so make sure
+                # that `__eq__` gets called.
+                #
+                # Note that this might not hold for `key3_1` and `key3_2`
+                # because they might be the same object as one of the dict keys,
+                # in which case implementations are allowed to skip the call to
+                # `__eq__`.
+                eq_count = 0
+                self.assertEqual(d.get(key3_3), 44)
+                self.assertGreaterEqual(eq_count, 1)
+
 
 class CAPITest(unittest.TestCase):
 

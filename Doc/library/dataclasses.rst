@@ -33,7 +33,7 @@ using :pep:`526` type annotations.  For example this code::
 
 Will add, among other things, a :meth:`__init__` that looks like::
 
-  def __init__(self, name: str, unit_price: float, quantity_on_hand: int=0):
+  def __init__(self, name: str, unit_price: float, quantity_on_hand: int = 0):
       self.name = name
       self.unit_price = unit_price
       self.quantity_on_hand = quantity_on_hand
@@ -46,7 +46,7 @@ directly specified in the ``InventoryItem`` definition shown above.
 Module-level decorators, classes, and functions
 -----------------------------------------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
+.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special method`\s to classes, as described below.
@@ -79,7 +79,7 @@ Module-level decorators, classes, and functions
      class C:
          ...
 
-     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
+     @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
      class C:
         ...
 
@@ -169,9 +169,18 @@ Module-level decorators, classes, and functions
      ``__match_args__`` will not be generated.
 
    - ``kw_only``: If true (the default value is ``False``), then all
-     fields will be marked as keyword-only.  See the :term:`parameter`
-     glossary entry for details.  Also see the ``dataclasses.KW_ONLY``
-     section.
+     fields will be marked as keyword-only.  If a field is marked as
+     keyword-only, then the only affect is that the :meth:`__init__`
+     parameter generated from a keyword-only field must be specified
+     with a keyword when :meth:`__init__` is called.  There is no
+     effect on any other aspect of dataclasses.  See the
+     :term:`parameter` glossary entry for details.  Also see the
+     ``dataclasses.KW_ONLY`` section.
+
+   - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
+     will be generated and new class will be returned instead of the original one.
+     If :attr:`__slots__` is already defined in the class, then :exc:`TypeError`
+     is raised.
 
    ``field``\s may optionally specify a default value, using normal
    Python syntax::
@@ -190,7 +199,7 @@ Module-level decorators, classes, and functions
    follows a field with a default value.  This is true either when this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, repr=True, hash=None, init=True, compare=True, metadata=None)
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING):
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -229,10 +238,6 @@ Module-level decorators, classes, and functions
    - ``repr``: If true (the default), this field is included in the
      string returned by the generated :meth:`__repr__` method.
 
-   - ``compare``: If true (the default), this field is included in the
-     generated equality and comparison methods (:meth:`__eq__`,
-     :meth:`__gt__`, et al.).
-
    - ``hash``: This can be a bool or ``None``.  If true, this field is
      included in the generated :meth:`__hash__` method.  If ``None`` (the
      default), use the value of ``compare``: this would normally be
@@ -246,6 +251,10 @@ Module-level decorators, classes, and functions
      fields that contribute to the type's hash value.  Even if a field
      is excluded from the hash, it will still be used for comparisons.
 
+   - ``compare``: If true (the default), this field is included in the
+     generated equality and comparison methods (:meth:`__eq__`,
+     :meth:`__gt__`, et al.).
+
    - ``metadata``: This can be a mapping or None. None is treated as
      an empty dict.  This value is wrapped in
      :func:`~types.MappingProxyType` to make it read-only, and exposed
@@ -253,6 +262,10 @@ Module-level decorators, classes, and functions
      Classes, and is provided as a third-party extension mechanism.
      Multiple third-parties can each have their own key, to use as a
      namespace in the metadata.
+
+   - ``kw_only``: If true, this field will be marked as keyword-only.
+     This is used when the generated :meth:`__init__` method's
+     parameters are computed.
 
    If the default value of a field is specified by a call to
    :func:`field()`, then the class attribute for this field will be
@@ -337,7 +350,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -346,8 +359,8 @@ Module-level decorators, classes, and functions
    or ``(name, type, Field)``.  If just ``name`` is supplied,
    ``typing.Any`` is used for ``type``.  The values of ``init``,
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
-   ``match_args``, and ``kw_only`` have the same meaning as they do
-   in :func:`dataclass`.
+   ``match_args``, ``kw_only``, and  ``slots`` have the same meaning as
+   they do in :func:`dataclass`.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -524,18 +537,21 @@ The generated :meth:`__init__` method for ``C`` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
 
-Re-ordering of keyword-only parameters in __init__
---------------------------------------------------
+Re-ordering of keyword-only parameters in :meth:`__init__`
+----------------------------------------------------------
 
-After the fields needed for :meth:`__init__` are computed, any
-keyword-only fields are put after regular fields.  In this example,
-``Base.y`` and ``D.t`` are keyword-only fields::
+After the parameters needed for :meth:`__init__` are computed, any
+keyword-only parameters are moved to come after all regular
+(non-keyword-only) fields.  In this example, ``Base.y``, ``Base.w``,
+and ``D.t`` are keyword-only fields, and ``Base.x`` and ``D.z`` are
+regular fields::
 
   @dataclass
   class Base:
       x: Any = 15.0
       _: KW_ONLY
       y: int = 0
+      w: int = 1
 
   @dataclass
   class D(Base):
@@ -544,10 +560,14 @@ keyword-only fields are put after regular fields.  In this example,
 
 The generated :meth:`__init__` method for ``D`` will look like::
 
-  def __init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, t: int = 0):
+  def __init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, w: int = 1, t: int = 0):
 
-The relative ordering of keyword-only arguments is not changed from
-the order they are in computed field :meth:`__init__` list.
+Note that the parameters have been re-ordered from how they appear in
+the list of fields: parameters derived from regular fields are
+followed by parameters derived from keyword-only fields.
+
+The relative ordering of keyword-only parameters is maintained in the
+re-ordered :meth:`__init__` parameter list.
 
 
 Default factory functions

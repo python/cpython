@@ -936,10 +936,11 @@ class TraceTestCase(unittest.TestCase):
              (-4, 'line'),
              (-4, 'return'),
              (2, 'line'),
+             (1, 'line'),
              (-3, 'call'),
              (-2, 'line'),
              (-2, 'return'),
-             (2, 'return')])
+             (1, 'return')])
 
     def test_if_false_in_try_except(self):
 

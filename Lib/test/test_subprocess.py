@@ -2148,8 +2148,6 @@ class POSIXProcessTestCase(BaseTestCase):
         # This tests the code that disables garbage collection if the child
         # process will execute any Python.
         enabled = gc.isenabled()
-        orig_gc_disable = gc.disable
-        orig_gc_isenabled = gc.isenabled
         try:
             gc.disable()
             self.assertFalse(gc.isenabled())
@@ -2164,8 +2162,6 @@ class POSIXProcessTestCase(BaseTestCase):
                             preexec_fn=lambda: None)
             self.assertTrue(gc.isenabled(), "Popen left gc disabled.")
         finally:
-            gc.disable = orig_gc_disable
-            gc.isenabled = orig_gc_isenabled
             if not enabled:
                 gc.disable()
 
