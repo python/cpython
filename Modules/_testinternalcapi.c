@@ -283,20 +283,24 @@ test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
 static int
 check_edit_cost(const char *a, const char *b, Py_ssize_t expected)
 {
-    PyObject *a_obj = PyUnicode_FromString(a);
+    int ret = -1;
+    PyObject *a_obj = NULL;
+    PyObject *b_obj = NULL;
+
+    a_obj = PyUnicode_FromString(a);
     if (a_obj == NULL) {
-        return -1;
+        goto exit;
     }
-    PyObject *b_obj = PyUnicode_FromString(b);
+    b_obj = PyUnicode_FromString(b);
     if (a_obj == NULL) {
-        return -1;
+        goto exit;
     }
     Py_ssize_t result = _Py_UTF8_Edit_Cost(a_obj, b_obj, -1);
     if (result != expected) {
         PyErr_Format(PyExc_AssertionError,
                      "Edit cost from '%s' to '%s' returns %zd, expected %zd",
                      a, b, result, expected);
-        return -1;
+        goto exit;
     }
     // Check that smaller max_edits thresholds are exceeded.
     Py_ssize_t max_edits = result;
@@ -308,7 +312,7 @@ check_edit_cost(const char *a, const char *b, Py_ssize_t expected)
                          "Edit cost from '%s' to '%s' (threshold %zd) "
                          "returns %zd, expected greater than %zd",
                          a, b, max_edits, result2, max_edits);
-            return -1;
+            goto exit;
         }
     }
     // Check that bigger max_edits thresholds don't change anything
@@ -318,9 +322,13 @@ check_edit_cost(const char *a, const char *b, Py_ssize_t expected)
                      "Edit cost from '%s' to '%s' (threshold %zd) "
                      "returns %zd, expected %zd",
                      a, b, result * 2, result3, result);
-        return -1;
+        goto exit;
     }
-    return 0;
+    ret = 0;
+exit:
+    Py_XDECREF(a_obj);
+    Py_XDECREF(b_obj);
+    return ret;
 }
 
 static PyObject *
