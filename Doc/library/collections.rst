@@ -313,6 +313,16 @@ For example::
 
         .. versionadded:: 3.2
 
+    .. method:: total()
+
+        Compute the sum of the counts.
+
+            >>> c = Counter(a=10, b=5, c=0)
+            >>> c.total()
+            15
+
+        .. versionadded:: 3.10
+
     The usual dictionary methods are available for :class:`Counter` objects
     except for two which work differently for counters.
 
@@ -342,7 +352,7 @@ All of those tests treat missing elements as having zero counts so that
 
 Common patterns for working with :class:`Counter` objects::
 
-    sum(c.values())                 # total of all counts
+    c.total()                       # total of all counts
     c.clear()                       # reset all counts
     list(c)                         # list unique elements
     set(c)                          # convert to a set
