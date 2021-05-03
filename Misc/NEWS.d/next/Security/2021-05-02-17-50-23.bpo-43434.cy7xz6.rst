@@ -1,4 +1,0 @@
-Creating a :class:`sqlite3.Connection` object now also produces
-a ``sqlite3.connect`` :ref:`auditing event <auditing>`.
-Previously this event was only produced by :func:`sqlite3.connect`
-calls. Patch by Erlend E. Aasland.
