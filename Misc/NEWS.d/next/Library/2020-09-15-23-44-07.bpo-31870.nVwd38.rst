@@ -1,2 +1,0 @@
-The :func:`ssl.get_server_certificate` function now has a *timeout*
-parameter.
