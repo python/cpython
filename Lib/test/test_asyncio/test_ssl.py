@@ -3,14 +3,18 @@ import asyncio.sslproto
 import contextlib
 import gc
 import logging
-import os
 import select
 import socket
-import ssl
 import tempfile
 import threading
 import time
 import weakref
+import unittest
+
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 from test import support
 from test.test_asyncio import utils as test_utils
@@ -54,6 +58,7 @@ class MyBaseProto(asyncio.Protocol):
             self.done.set_result(None)
 
 
+@unittest.skipIf(ssl is None, 'No ssl module')
 class TestSSL(test_utils.TestCase):
 
     PAYLOAD_SIZE = 1024 * 100
