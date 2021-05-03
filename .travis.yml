@@ -21,7 +21,7 @@ env:
 
 branches:
   only:
-    - master
+    - main
     - /^\d\.\d+$/
     - buildbot-custom
 
