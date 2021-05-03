@@ -12,7 +12,8 @@ from . import protocols
 from . import transports
 from .log import logger
 
-SSLAgainErrors = (ssl.SSLWantReadError, ssl.SSLSyscallError)
+if ssl is not None:
+    SSLAgainErrors = (ssl.SSLWantReadError, ssl.SSLSyscallError)
 
 
 class SSLProtocolState(enum.Enum):
