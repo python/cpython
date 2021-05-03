@@ -45,7 +45,6 @@ def make_pat():
     return "|".join([
         builtin, comment, string, any("SYNC", [r"\n"]),
         kw, match_softkw, match_case_default, match_case_nondefault,
-        # kw, match_case_default,
     ])
 
 
