@@ -20,7 +20,7 @@ def make_pat():
     match_softkw = (
         r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
         r"(?P<PM_MATCH>match)\b" +
-        r"(?!([ \t]|\\\n)*[=,])"  # not followed by = or ,
+        r"(?!([ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
     )
     match_case_default = (
         r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
@@ -29,7 +29,7 @@ def make_pat():
     match_case_nondefault = (
         r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
         r"(?P<PM_NONDEFAULT_CASE>case)\b" +
-        r"(?!([ \t]|\\\n)*[=,])"  # not followed by = or ,
+        r"(?!([ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
     )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
@@ -322,7 +322,7 @@ def _color_delegator(parent):  # htest #
     top = Toplevel(parent)
     top.title("Test ColorDelegator")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("700x350+%d+%d" % (x + 20, y + 175))
+    top.geometry("700x500+%d+%d" % (x + 20, y + 175))
     source = textwrap.dedent("""\
         if True: int ('1') # keyword, builtin, string, comment
         elif False: print(0)
@@ -347,7 +347,8 @@ def _color_delegator(parent):  # htest #
             case,
             _,
         )
-        'case _:'
+        '''
+        case _:'''
         "match x:"
         """)
     text = Text(top, background="white")

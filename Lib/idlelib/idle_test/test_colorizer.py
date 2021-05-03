@@ -37,7 +37,8 @@ source = textwrap.dedent("""\
         case,
         _,
     )
-    'case _:'
+    '''
+    case _:'''
     "match x:"
 """)
 
@@ -382,7 +383,7 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('9.4', ('KEYWORD',)),
                     ('11.4', ('KEYWORD',)), ('11.9', ('KEYWORD',)),
                     ('14.0', ()), ('15.4', ()), ('16.4', ()),
-                    ('18.1', ('STRING',)), ('19.1', ('STRING',)),
+                    ('19.0', ('STRING',)), ('20.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -413,7 +414,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '7.12'), ('7.14', '7.17'))
         eq(text.tag_nextrange('STRING', '7.17'), ('7.19', '7.26'))
         eq(text.tag_nextrange('SYNC', '7.0'), ('7.26', '8.0'))
-        eq(text.tag_nextrange('SYNC', '19.0'), ('19.10', '21.0'))
+        eq(text.tag_nextrange('SYNC', '20.0'), ('20.10', '22.0'))
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
