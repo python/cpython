@@ -17,6 +17,20 @@ def any(name, alternates):
 
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
+    match_softkw = (
+        r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
+        r"(?P<PM_MATCH>match)\b" +
+        r"(?!([ \t]|\\\n)*[=,])"  # not followed by = or ,
+    )
+    match_case_default = (
+        r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
+        r"(?P<PM_DEFAULT_CASE>case)[ \t]+(?P<PM_DEFAULT_UNDERSCORE>_)[ \t]*:"
+    )
+    match_case_nondefault = (
+        r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
+        r"(?P<PM_NONDEFAULT_CASE>case)\b" +
+        r"(?!([ \t]|\\\n)*[=,])"  # not followed by = or ,
+    )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
@@ -28,12 +42,21 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return (kw + "|" + builtin + "|" + comment + "|" + string +
-            "|" + any("SYNC", [r"\n"]))
+    return "|".join([
+        builtin, comment, string, any("SYNC", [r"\n"]),
+        kw, match_softkw, match_case_default, match_case_nondefault,
+        # kw, match_case_default,
+    ])
 
 
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
+prog_group_name_to_tag = {
+    "PM_MATCH": "KEYWORD",
+    "PM_DEFAULT_CASE": "KEYWORD",
+    "PM_DEFAULT_UNDERSCORE": "KEYWORD",
+    "PM_NONDEFAULT_CASE": "KEYWORD",
+}
 
 
 def color_config(text):
@@ -259,7 +282,8 @@ class ColorDelegator(Delegator):
                         if not value:
                             continue
                         a, b = m.span(key)
-                        self.tag_add(key,
+                        tag = prog_group_name_to_tag.get(key, key)
+                        self.tag_add(tag,
                                      head + "+%dc" % a,
                                      head + "+%dc" % b)
                         if value in ("def", "class"):
@@ -314,11 +338,17 @@ def _color_delegator(parent):  # htest #
         b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
         # Invalid combinations of legal characters should be half colored.
         ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
+        'case _:'
         match point:
             case (x, 0):
                 print(f"X={x}")
             case _:
                 raise ValueError("Not a point")
+        # The following statement should all be in the default color for code.
+        match = (
+            case,
+            _,
+        )
         """)
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
