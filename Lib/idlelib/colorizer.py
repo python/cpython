@@ -1,6 +1,7 @@
 import builtins
 import keyword
 import re
+import textwrap
 import time
 
 from idlelib.config import idleConf
@@ -298,22 +299,27 @@ def _color_delegator(parent):  # htest #
     top = Toplevel(parent)
     top.title("Test ColorDelegator")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("700x250+%d+%d" % (x + 20, y + 175))
-    source = (
-        "if True: int ('1') # keyword, builtin, string, comment\n"
-        "elif False: print(0)\n"
-        "else: float(None)\n"
-        "if iF + If + IF: 'keyword matching must respect case'\n"
-        "if'': x or''  # valid keyword-string no-space combinations\n"
-        "async def f(): await g()\n"
-        "# All valid prefixes for unicode and byte strings should be colored.\n"
-        "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
-        "r'x', u'x', R'x', U'x', f'x', F'x'\n"
-        "fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'\n"
-        "b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'\n"
-        "# Invalid combinations of legal characters should be half colored.\n"
-        "ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'\n"
-        )
+    top.geometry("700x350+%d+%d" % (x + 20, y + 175))
+    source = textwrap.dedent("""\
+        if True: int ('1') # keyword, builtin, string, comment
+        elif False: print(0)
+        else: float(None)
+        if iF + If + IF: 'keyword matching must respect case'
+        if'': x or''  # valid keyword-string no-space combinations
+        async def f(): await g()
+        # All valid prefixes for unicode and byte strings should be colored.
+        'x', '''x''', "x", \"""x\"""
+        r'x', u'x', R'x', U'x', f'x', F'x'
+        fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
+        b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
+        # Invalid combinations of legal characters should be half colored.
+        ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
+        match point:
+            case (x, 0):
+                print(f"X={x}")
+            case _:
+                raise ValueError("Not a point")
+        """)
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
     text.insert("insert", source)
