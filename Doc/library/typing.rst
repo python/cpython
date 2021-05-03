@@ -1714,11 +1714,6 @@ Introspection helpers
    ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
    a user, but may be used by introspection tools.
 
-   .. note::
-      :pep:`585` generic types such as ``list["SomeClass"]`` will not be
-      implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
-      will not automatically resolve to ``list[SomeClass]``.
-
    .. versionadded:: 3.7.4
 
 Constant
