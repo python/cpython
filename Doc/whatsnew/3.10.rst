@@ -1285,7 +1285,7 @@ Optimizations
 
 * The following built-in functions now support the faster :pep:`590` vectorcall calling convention:
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
-  (Contributed by Dong-hee Na and Jeroen Demeyer in in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+  (Contributed by Dong-hee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
 
 * :class:`BZ2File` performance is improved by removing internal ``RLock``.
   This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
