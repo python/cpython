@@ -1405,6 +1405,20 @@ class WindowsPathAsPureTest(PureWindowsPathTest):
             P('c:/').group()
 
 
+@only_posix
+class FilePathAsPurePosixTest(PurePosixPathTest):
+    cls = pathlib.FilePath
+
+
+@only_nt
+class FilePathAsPureWindowsTest(PureWindowsPathTest):
+    cls = pathlib.FilePath
+
+
+class FilePathAsPureTest(_BasePurePathTest, unittest.TestCase):
+    cls = pathlib.FilePath
+
+
 class _BasePathTest(object):
     """Tests for the FS-accessing functionalities of the Path classes."""
 

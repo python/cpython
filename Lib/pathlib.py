@@ -1510,7 +1510,14 @@ class SimplePath(_PurePathBase):
     pass
 
 
-class FilePath:
-    # Stub for class which will, aside from name, match the class instantiated
-    # by Path, however unlike Path, will be able to be subclassed normally.
+class FilePath(SimplePath):
+    """
+    SimplePath subclass that can make system calls.
+
+    FilePath represents a filesystem path but unlike SimplePath, also
+    offers methods to do system calls on path objects. The methods in
+    this class will return values that are appropriate for your system
+    flavour, be that Windows or Posix, though the return values are not
+    guaranteed to be the same for both platforms.
+    """
     pass
