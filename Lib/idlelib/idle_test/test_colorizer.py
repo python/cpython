@@ -27,6 +27,10 @@ source = textwrap.dedent("""\
     if'': x or''  # valid string-keyword no-space combinations
     async def f(): await g()
     'x', '''x''', "x", \"""x\"""
+    'abc\\
+    def'
+    '''abc\\
+    def'''
     match point:
         case (x, 0):
             print(f"X={x}")
@@ -379,11 +383,11 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('6.0', ('KEYWORD',)), ('6.10', ('DEFINITION',)), ('6.11', ()),
                     ('7.0', ('STRING',)), ('7.4', ()), ('7.5', ('STRING',)),
                     ('7.12', ()), ('7.14', ('STRING',)),
-                    ('8.0', ('KEYWORD',)),
-                    ('9.4', ('KEYWORD',)),
-                    ('11.4', ('KEYWORD',)), ('11.9', ('KEYWORD',)),
-                    ('14.0', ()), ('15.4', ()), ('16.4', ()),
-                    ('19.0', ('STRING',)), ('20.1', ('STRING',)),
+                    ('12.0', ('KEYWORD',)),
+                    ('13.4', ('KEYWORD',)),
+                    ('15.4', ('KEYWORD',)), ('15.9', ('KEYWORD',)),
+                    ('18.0', ()), ('19.4', ()), ('20.4', ()),
+                    ('23.0', ('STRING',)), ('24.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -414,7 +418,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '7.12'), ('7.14', '7.17'))
         eq(text.tag_nextrange('STRING', '7.17'), ('7.19', '7.26'))
         eq(text.tag_nextrange('SYNC', '7.0'), ('7.26', '8.0'))
-        eq(text.tag_nextrange('SYNC', '20.0'), ('20.10', '22.0'))
+        eq(text.tag_nextrange('SYNC', '24.0'), ('24.10', '26.0'))
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')

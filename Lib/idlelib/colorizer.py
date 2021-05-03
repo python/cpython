@@ -18,16 +18,16 @@ def any(name, alternates):
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     match_softkw = (
-        r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
+        r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<PM_MATCH>match)\b" +
         r"(?!([ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
     )
     match_case_default = (
-        r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
+        r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<PM_DEFAULT_CASE>case)[ \t]+(?P<PM_DEFAULT_UNDERSCORE>_)[ \t]*:"
     )
     match_case_nondefault = (
-        r"(^|(?<=\n))[ \t]*" +  # at beginning of string or after \n
+        r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<PM_NONDEFAULT_CASE>case)\b" +
         r"(?!([ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
     )
@@ -48,8 +48,8 @@ def make_pat():
     ])
 
 
-prog = re.compile(make_pat(), re.S)
-idprog = re.compile(r"\s+(\w+)", re.S)
+prog = re.compile(make_pat(), re.DOTALL | re.MULTILINE)
+idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
     "PM_MATCH": "KEYWORD",
     "PM_DEFAULT_CASE": "KEYWORD",
@@ -322,7 +322,7 @@ def _color_delegator(parent):  # htest #
     top = Toplevel(parent)
     top.title("Test ColorDelegator")
     x, y = map(int, parent.geometry().split('+')[1:])
-    top.geometry("700x500+%d+%d" % (x + 20, y + 175))
+    top.geometry("700x550+%d+%d" % (x + 20, y + 175))
     source = textwrap.dedent("""\
         if True: int ('1') # keyword, builtin, string, comment
         elif False: print(0)
@@ -332,6 +332,10 @@ def _color_delegator(parent):  # htest #
         async def f(): await g()
         # All valid prefixes for unicode and byte strings should be colored.
         'x', '''x''', "x", \"""x\"""
+        'abc\\
+        def'
+        '''abc\\
+        def'''
         r'x', u'x', R'x', U'x', f'x', F'x'
         fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
         b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
