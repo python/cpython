@@ -443,7 +443,7 @@ Module contents
    pseudo-field with the type of :const:`KW_ONLY` are marked as
    keyword-only fields.  Note that a pseudo-field of type
    :const:`KW_ONLY` is otherwise completely ignored.  This includes the
-   name of such a field.  By convention, a name of `_` is used for a
+   name of such a field.  By convention, a name of ``_`` is used for a
    :const:`KW_ONLY` field.  Keyword-only fields signify
    :meth:`__init__` parameters that must be specified as keywords when
    the class is instantiated.
@@ -683,4 +683,3 @@ Mutable default values
          x: list = field(default_factory=list)
 
      assert D().x is not D().x
-
