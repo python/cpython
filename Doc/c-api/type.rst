@@ -172,7 +172,7 @@ The following functions and structs are used to create
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.9.5
 
       The function now accepts NULL ``tp_doc`` slot.
 
