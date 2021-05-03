@@ -179,7 +179,7 @@ class TestSSL(test_utils.TestCase):
     def test_create_server_ssl_1(self):
         CNT = 0           # number of clients that were successful
         TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 10.0    # timeout for this test
+        TIMEOUT = 60.0    # timeout for this test
 
         A_DATA = b'A' * 1024 * 1024
         B_DATA = b'B' * 1024 * 1024
@@ -238,7 +238,7 @@ class TestSSL(test_utils.TestCase):
 
         async def start_server():
             extras = {}
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=40.0)
 
             srv = await asyncio.start_server(
                 handle_client,
@@ -303,7 +303,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=40.0)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
@@ -466,7 +466,7 @@ class TestSSL(test_utils.TestCase):
                     *addr,
                     ssl=client_sslctx,
                     server_hostname='',
-                    ssl_handshake_timeout=10.0),
+                    ssl_handshake_timeout=40.0),
                 0.5)
 
         with self.tcp_server(server,
@@ -590,7 +590,7 @@ class TestSSL(test_utils.TestCase):
 
         extras = {}
         if server_ssl:
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=40.0)
 
         f = loop.create_task(
             loop.connect_accepted_socket(
@@ -1019,7 +1019,7 @@ class TestSSL(test_utils.TestCase):
     def test_create_server_ssl_over_ssl(self):
         CNT = 0           # number of clients that were successful
         TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 10.0    # timeout for this test
+        TIMEOUT = 60.0    # timeout for this test
 
         A_DATA = b'A' * 1024 * 1024
         B_DATA = b'B' * 1024 * 1024
@@ -1186,7 +1186,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=40.0)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
