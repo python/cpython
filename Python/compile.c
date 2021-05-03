@@ -6144,7 +6144,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     // - A copy of the subject.
     // - Anything else that may be on top of the stack.
     // - Any previous stores we've already stashed away on the stack.
-    int nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
+    Py_ssize_t nrots = nstores + 1 + pc->on_top + PyList_GET_SIZE(pc->stores);
     for (Py_ssize_t i = 0; i < nstores; i++) {
         // Rotate this capture to its proper place on the stack:
         if (!compiler_addop_i(c, ROT_N, nrots)) {
