@@ -307,8 +307,8 @@ Module contents
      - ``type``: The type of the field.
 
      - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-       ``compare``, and ``metadata`` have the identical meaning and
-       values as they do in the :func:`field` declaration.
+       ``compare``, ``metadata``, and ``kw_only`` have the identical
+       meaning and values as they do in the :func:`field` declaration.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
@@ -459,6 +459,9 @@ Module contents
 
     p = Point(0, y=1.5, z=2.0)
 
+   In a single dataclass, it is an error to specify more than one
+   field whose type is :const:`KW_ONLY`.
+
 .. exception:: FrozenInstanceError
 
    Raised when an implicitly defined :meth:`__setattr__` or
@@ -582,9 +585,12 @@ Re-ordering of keyword-only parameters in :meth:`__init__`
 
 After the parameters needed for :meth:`__init__` are computed, any
 keyword-only parameters are moved to come after all regular
-(non-keyword-only) parameters.  In this example, ``Base.y``,
-``Base.w``, and ``D.t`` are keyword-only fields, and ``Base.x`` and
-``D.z`` are regular fields::
+(non-keyword-only) parameters.  This is a requirement of how
+keyword-only parameters are implemented in Python: they must come
+after non-keyword-only parameters.
+
+In this example, ``Base.y``, ``Base.w``, and ``D.t`` are keyword-only
+fields, and ``Base.x`` and ``D.z`` are regular fields::
 
   @dataclass
   class Base:
@@ -666,14 +672,15 @@ Mutable default values
      assert D().x is D().x
 
    This has the same issue as the original example using class ``C``.
-   That is, two instances of class ``D`` that do not specify a value for
-   ``x`` when creating a class instance will share the same copy of
-   ``x``.  Because dataclasses just use normal Python class creation
-   they also share this behavior.  There is no general way for Data
-   Classes to detect this condition.  Instead, dataclasses will raise a
-   :exc:`TypeError` if it detects a default parameter of type ``list``,
-   ``dict``, or ``set``.  This is a partial solution, but it does protect
-   against many common errors.
+   That is, two instances of class ``D`` that do not specify a value
+   for ``x`` when creating a class instance will share the same copy
+   of ``x``.  Because dataclasses just use normal Python class
+   creation they also share this behavior.  There is no general way
+   for Data Classes to detect this condition.  Instead, the
+   :func:`dataclass` decorator will raise a :exc:`TypeError` if it
+   detects a default parameter of type ``list``, ``dict``, or ``set``.
+   This is a partial solution, but it does protect against many common
+   errors.
 
    Using default factory functions is a way to create new instances of
    mutable types as default values for fields::
