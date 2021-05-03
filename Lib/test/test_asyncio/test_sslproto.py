@@ -15,6 +15,7 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
+from test import support
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -43,13 +44,16 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
     def connection_made(self, ssl_proto, *, do_handshake=None):
         transport = mock.Mock()
-        sslobj = mock.Mock()
-        # emulate reading decompressed data
-        sslobj.read.side_effect = ssl.SSLWantReadError
-        if do_handshake is not None:
-            sslobj.do_handshake = do_handshake
-        ssl_proto._sslobj = sslobj
-        ssl_proto.connection_made(transport)
+        sslpipe = mock.Mock()
+        sslpipe.shutdown.return_value = b''
+        if do_handshake:
+            sslpipe.do_handshake.side_effect = do_handshake
+        else:
+            def mock_handshake(callback):
+                return []
+            sslpipe.do_handshake.side_effect = mock_handshake
+        with mock.patch('asyncio.sslproto._SSLPipe', return_value=sslpipe):
+            ssl_proto.connection_made(transport)
         return transport
 
     def test_handshake_timeout_zero(self):
@@ -71,10 +75,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
     def test_eof_received_waiter(self):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(
-            ssl_proto,
-            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
-        )
+        self.connection_made(ssl_proto)
         ssl_proto.eof_received()
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionResetError)
@@ -99,10 +100,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # yield from waiter hang if lost_connection was called.
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(
-            ssl_proto,
-            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
-        )
+        self.connection_made(ssl_proto)
         ssl_proto.connection_lost(ConnectionAbortedError)
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
@@ -112,10 +110,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
 
-        transport = self.connection_made(
-            ssl_proto,
-            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
-        )
+        transport = self.connection_made(ssl_proto)
         test_utils.run_briefly(self.loop)
 
         ssl_proto._app_transport.close()
@@ -148,7 +143,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         transp.close()
 
         # should not raise
-        self.assertIsNone(ssl_proto.buffer_updated(5))
+        self.assertIsNone(ssl_proto.data_received(b'data'))
 
     def test_write_after_closing(self):
         ssl_proto = self.ssl_protocol()

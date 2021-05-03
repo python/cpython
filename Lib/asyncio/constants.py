@@ -15,16 +15,9 @@ DEBUG_STACK_DEPTH = 10
 # The default timeout matches that of Nginx.
 SSL_HANDSHAKE_TIMEOUT = 60.0
 
-# Number of seconds to wait for SSL shutdown to complete
-# The default timeout mimics lingering_time
-SSL_SHUTDOWN_TIMEOUT = 30.0
-
 # Used in sendfile fallback code.  We use fallback for platforms
 # that don't support sendfile, or for TLS connections.
 SENDFILE_FALLBACK_READBUFFER_SIZE = 1024 * 256
-
-FLOW_CONTROL_HIGH_WATER_SSL_READ = 256  # KiB
-FLOW_CONTROL_HIGH_WATER_SSL_WRITE = 512  # KiB
 
 # The enum should be here to break circular dependencies between
 # base_events and sslproto
