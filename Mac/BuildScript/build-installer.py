@@ -436,6 +436,14 @@ def library_recipes():
 
     return result
 
+def compilerCanOptimize():
+    """
+    Return True iff the default Xcode version can use PGO and LTO
+    """
+    # bpo-42235: The version check is pretty conservative, can be
+    # adjusted after testing
+    mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
+    return mac_ver >= (10, 15)
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
@@ -1176,6 +1184,7 @@ def buildPython():
                "%s "
                "%s "
                "%s "
+               "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
@@ -1188,6 +1197,7 @@ def buildPython():
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
