@@ -1005,6 +1005,9 @@ Internal types
       :attr:`f_lasti` gives the precise instruction (this is an index into the
       bytecode string of the code object).
 
+      Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+
       .. index::
          single: f_trace (frame attribute)
          single: f_trace_lines (frame attribute)
@@ -1088,6 +1091,9 @@ Internal types
       line number of its frame object if the exception occurred in a
       :keyword:`try` statement with no matching except clause or with a
       finally clause.
+
+      Accessing ``tb_frame`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"tb_frame"``.
 
       .. index::
          single: tb_next (traceback attribute)
