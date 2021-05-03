@@ -333,6 +333,8 @@ static int compiler_match(struct compiler *, stmt_ty);
 static int compiler_pattern_subpattern(struct compiler *, pattern_ty,
                                        pattern_context *);
 
+static void clean_basic_block(basicblock *bb);
+
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__, *__annotations__;
 
@@ -7320,13 +7322,6 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    if (label_exception_targets(entryblock)) {
-        goto error;
-    }
-
-    /* Can't modify the bytecode after computing jump offsets. */
-    assemble_jump_offsets(&a, c);
-
     int maxdepth = stackdepth(c);
     if (maxdepth < 0) {
         goto error;
@@ -7337,7 +7332,17 @@ assemble(struct compiler *c, int addNone)
                      maxdepth);
         goto error;
     }
+
+    if (label_exception_targets(entryblock)) {
+        goto error;
+    }
     convert_exception_handlers_to_nops(entryblock);
+    for (basicblock *b = a.a_entry; b != NULL; b = b->b_next) {
+        clean_basic_block(b);
+    }
+
+    /* Can't modify the bytecode after computing jump offsets. */
+    assemble_jump_offsets(&a, c);
 
     /* Emit code. */
     for(b = entryblock; b != NULL; b = b->b_next) {
@@ -7747,9 +7752,10 @@ error:
 
 
 static void
-clean_basic_block(basicblock *bb, int prev_lineno) {
+clean_basic_block(basicblock *bb) {
     /* Remove NOPs when legal to do so. */
     int dest = 0;
+    int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
         int lineno = bb->b_instr[src].i_lineno;
         if (bb->b_instr[src].i_opcode == NOP) {
@@ -7781,7 +7787,6 @@ clean_basic_block(basicblock *bb, int prev_lineno) {
                     }
                 }
             }
-
         }
         if (dest != src) {
             bb->b_instr[dest] = bb->b_instr[src];
@@ -7950,7 +7955,7 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
         if (optimize_basic_block(c, b, consts)) {
             return -1;
         }
-        clean_basic_block(b, -1);
+        clean_basic_block(b);
         assert(b->b_predecessors == 0);
     }
     if (mark_reachable(a)) {
@@ -7963,16 +7968,10 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
             b->b_nofallthrough = 0;
        }
     }
-    basicblock *pred = NULL;
-    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
-        int prev_lineno = -1;
-        if (pred && pred->b_iused) {
-            prev_lineno = pred->b_instr[pred->b_iused-1].i_lineno;
-        }
-        clean_basic_block(b, prev_lineno);
-        pred = b->b_nofallthrough ? NULL : b;
-    }
     eliminate_empty_basic_blocks(a->a_entry);
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        clean_basic_block(b);
+    }
     /* Delete jump instructions made redundant by previous step. If a non-empty
        block ends with a jump instruction, check if the next non-empty block
        reached through normal flow control is the target of that jump. If it
@@ -7988,7 +7987,6 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts)
                     assert(b->b_next->b_iused);
                     b->b_nofallthrough = 0;
                     b_last_instr->i_opcode = NOP;
-                    clean_basic_block(b, -1);
                     maybe_empty_blocks = 1;
                 }
             }
