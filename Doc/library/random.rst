@@ -419,7 +419,7 @@ Basic examples::
    >>> random()                             # Random float:  0.0 <= x < 1.0
    0.37444887175646646
 
-   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x < 10.0
+   >>> uniform(2.5, 10.0)                   # Random float:  2.5 <= x <= 10.0
    3.1800146073117523
 
    >>> expovariate(1 / 5)                   # Interval between arrivals averaging 5 seconds
