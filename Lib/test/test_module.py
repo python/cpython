@@ -2,6 +2,7 @@
 import unittest
 import weakref
 from test.support import gc_collect
+from test.support import import_helper
 from test.support.script_helper import assert_python_ok
 
 import sys
@@ -334,7 +335,7 @@ a = A(destroyed)"""
             del foo.__annotations__
 
     def test_annotations_are_created_correctly(self):
-        from test import ann_module4
+        ann_module4 = import_helper.import_fresh_module('test.ann_module4')
         self.assertTrue("__annotations__" in ann_module4.__dict__)
         del ann_module4.__annotations__
         self.assertFalse("__annotations__" in ann_module4.__dict__)

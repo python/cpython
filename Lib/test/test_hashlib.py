@@ -901,8 +901,21 @@ class HashLibTestCase(unittest.TestCase):
         if fips_mode is not None:
             self.assertIsInstance(fips_mode, int)
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            if algorithm.startswith(("sha3_", "shake", "blake")):
+                # _sha3 and _blake types can be instantiated
+                continue
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                h = constructor()
+                with self.subTest(constructor=constructor):
+                    hash_type = type(h)
+                    self.assertRaises(TypeError, hash_type)
+
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
-    def test_internal_types(self):
+    def test_hash_disallow_instanciation(self):
         # internal types like _hashlib.HASH are not constructable
         with self.assertRaisesRegex(
             TypeError, "cannot create '_hashlib.HASH' instance"
@@ -912,6 +925,15 @@ class HashLibTestCase(unittest.TestCase):
             TypeError, "cannot create '_hashlib.HASHXOF' instance"
         ):
             HASHXOF()
+
+    def test_readonly_types(self):
+        for algorithm, constructors in self.constructors_to_test.items():
+            # all other types have DISALLOW_INSTANTIATION
+            for constructor in constructors:
+                hash_type = type(constructor())
+                with self.subTest(hash_type=hash_type):
+                    with self.assertRaisesRegex(TypeError, "immutable type"):
+                        hash_type.value = False
 
 
 class KDFTests(unittest.TestCase):

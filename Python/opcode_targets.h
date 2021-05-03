@@ -98,7 +98,7 @@ static void *opcode_targets[256] = {
     &&TARGET_DELETE_ATTR,
     &&TARGET_STORE_GLOBAL,
     &&TARGET_DELETE_GLOBAL,
-    &&_unknown_opcode,
+    &&TARGET_ROT_N,
     &&TARGET_LOAD_CONST,
     &&TARGET_LOAD_NAME,
     &&TARGET_BUILD_TUPLE,
