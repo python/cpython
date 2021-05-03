@@ -231,14 +231,10 @@ class ColorDelegator(Delegator):
     def recolorize_main(self):
         "Evaluate text and apply colorizing tags."
         next = "1.0"
-        while True:
-            item = self.tag_nextrange("TODO", next)
-            if not item:
-                break
-            head, tail = item
-            self.tag_remove("SYNC", head, tail)
-            item = self.tag_prevrange("SYNC", head)
-            head = item[1] if item else "1.0"
+        while todo_tag_range := self.tag_nextrange("TODO", next):
+            self.tag_remove("SYNC", todo_tag_range[0], todo_tag_range[1])
+            sync_tag_range = self.tag_prevrange("SYNC", todo_tag_range[0])
+            head = sync_tag_range[1] if sync_tag_range else "1.0"
 
             chars = ""
             next = head
@@ -257,22 +253,20 @@ class ColorDelegator(Delegator):
                 for tag in self.tagdefs:
                     self.tag_remove(tag, mark, next)
                 chars = chars + line
-                m = self.prog.search(chars)
-                while m:
+                for m in self.prog.finditer(chars):
                     for key, value in m.groupdict().items():
-                        if value:
-                            a, b = m.span(key)
-                            self.tag_add(key,
-                                         head + "+%dc" % a,
-                                         head + "+%dc" % b)
-                            if value in ("def", "class"):
-                                m1 = self.idprog.match(chars, b)
-                                if m1:
-                                    a, b = m1.span(1)
-                                    self.tag_add("DEFINITION",
-                                                 head + "+%dc" % a,
-                                                 head + "+%dc" % b)
-                    m = self.prog.search(chars, m.end())
+                        if not value:
+                            continue
+                        a, b = m.span(key)
+                        self.tag_add(key,
+                                     head + "+%dc" % a,
+                                     head + "+%dc" % b)
+                        if value in ("def", "class"):
+                            if m1 := self.idprog.match(chars, b):
+                                a, b = m1.span(1)
+                                self.tag_add("DEFINITION",
+                                             head + "+%dc" % a,
+                                             head + "+%dc" % b)
                 if "SYNC" in self.tag_names(next + "-1c"):
                     head = next
                     chars = ""
