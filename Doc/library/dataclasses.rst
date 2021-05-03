@@ -439,7 +439,7 @@ Module contents
 
 .. data:: KW_ONLY
 
-   A sentinel value used a type annotation.  Any fields after a
+   A sentinel value used as a type annotation.  Any fields after a
    pseudo-field with the type of :const:`KW_ONLY` are marked as
    keyword-only fields.  Note that a pseudo-field of type
    :const:`KW_ONLY` is otherwise completely ignored.  This includes the
