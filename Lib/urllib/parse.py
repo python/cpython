@@ -429,6 +429,8 @@ def urlsplit(url, scheme='', allow_fragments=True):
     Note that we don't break the components up in smaller bits
     (e.g. netloc is a single string) and we don't expand % escapes."""
     url, scheme, _coerce_result = _coerce_args(url, scheme)
+    url = _remove_unsafe_bytes_from_url(url)
+    scheme = _remove_unsafe_bytes_from_url(scheme)
     allow_fragments = bool(allow_fragments)
     key = url, scheme, allow_fragments, type(url), type(scheme)
     cached = _parse_cache.get(key, None)
@@ -451,7 +453,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
             if '?' in url:
                 url, query = url.split('?', 1)
             _checknetloc(netloc)
-            url = _remove_unsafe_bytes_from_url(url)
             v = SplitResult('http', netloc, url, query, fragment)
             _parse_cache[key] = v
             return _coerce_result(v)
@@ -465,8 +466,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
             if not rest or any(c not in '0123456789' for c in rest):
                 # not a port number
                 scheme, url = url[:i].lower(), rest
-
-    url = _remove_unsafe_bytes_from_url(url)
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)

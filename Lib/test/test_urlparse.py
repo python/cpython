@@ -614,42 +614,51 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_urlsplit_remove_unsafe_bytes(self):
         # Remove ASCII tabs and newlines from input, for http common case scenario.
-        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        url = "h\nttp://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, "http")
         self.assertEqual(p.netloc, "www.python.org")
         self.assertEqual(p.path, "/javascript:alert('msg')/")
-        self.assertEqual(p.query, "")
-        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.query, "query=something")
+        self.assertEqual(p.fragment, "fragment")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, "www.python.org")
         self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/#frag")
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
         # Remove ASCII tabs and newlines from input as bytes, for http common case scenario.
-        url = b"http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        url = b"h\nttp://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, b"http")
         self.assertEqual(p.netloc, b"www.python.org")
         self.assertEqual(p.path, b"/javascript:alert('msg')/")
-        self.assertEqual(p.query, b"")
-        self.assertEqual(p.fragment, b"frag")
+        self.assertEqual(p.query, b"query=something")
+        self.assertEqual(p.fragment, b"fragment")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, b"www.python.org")
         self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/#frag")
+        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
         # any scheme
-        url = "x-new-scheme://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        url = "x-new-scheme\t://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
-        self.assertEqual(p.geturl(), "x-new-scheme://www.python.org/javascript:alert('msg')/#frag")
+        self.assertEqual(p.geturl(), "x-new-scheme://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
         # Remove ASCII tabs and newlines from input as bytes, any scheme.
-        url = b"x-new-scheme://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        url = b"x-new-scheme\t://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
-        self.assertEqual(p.geturl(), b"x-new-scheme://www.python.org/javascript:alert('msg')/#frag")
+        self.assertEqual(p.geturl(), b"x-new-scheme://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
+        # Unsafe bytes is not returned from urlparse cache.
+        # scheme is stored after parsing, sending an scheme with unsafe bytes *will not* return an unsafe scheme
+        url = "https://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        scheme = "htt\nps"
+        for _ in range(2):
+            p = urllib.parse.urlsplit(url, scheme=scheme)
+            self.assertEqual(p.scheme, "https")
+            self.assertEqual(p.geturl(), "https://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
