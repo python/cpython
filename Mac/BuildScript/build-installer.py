@@ -163,7 +163,6 @@ def getTargetCompilers():
         '10.6': ('gcc', 'g++'),
         '10.7': ('gcc', 'g++'),
         '10.8': ('gcc', 'g++'),
-        '10.9': ('gcc', 'g++'),
     }
     return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
