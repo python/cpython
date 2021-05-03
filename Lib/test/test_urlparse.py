@@ -614,7 +614,7 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_urlsplit_remove_unsafe_bytes(self):
         # Remove ASCII tabs and newlines from input
-        url = "http\t://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        url = "http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, "http")
         self.assertEqual(p.netloc, "www.python.org")
@@ -628,7 +628,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
         # Remove ASCII tabs and newlines from input as bytes.
-        url = b"http\t://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        url = b"http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, b"http")
         self.assertEqual(p.netloc, b"www.python.org")
@@ -645,7 +645,7 @@ class UrlParseTestCase(unittest.TestCase):
         url = "http://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         scheme = "ht\ntp"
         for _ in range(2):
-            p = urllib.parse.urlsplit(url)
+            p = urllib.parse.urlsplit(url, scheme=scheme)
             self.assertEqual(p.scheme, "http")
             self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
