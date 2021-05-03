@@ -1,0 +1,1 @@
+In @dataclass(), raise a TypeError if KW_ONLY is specified more than once.
