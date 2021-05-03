@@ -325,21 +325,24 @@ class _NormalAccessor(_Accessor):
         readlink = os.readlink
     else:
         def readlink(self, path):
-            raise NotImplementedError("os.readlink() not available on this system")
+            raise NotImplementedError("os.readlink() is not available "
+                                      "on this system")
 
     def owner(self, path):
         try:
             import pwd
             return pwd.getpwuid(self.stat(path).st_uid).pw_name
         except ImportError:
-            raise NotImplementedError("Path.owner() is unsupported on this system")
+            raise NotImplementedError(f"{self.__class__.__name__}.owner() "
+                                      f"is unsupported on this system")
 
     def group(self, path):
         try:
             import grp
             return grp.getgrgid(self.stat(path).st_gid).gr_name
         except ImportError:
-            raise NotImplementedError("Path.group() is unsupported on this system")
+            raise NotImplementedError(f"{self.__class__.__name__}.group() "
+                                      f"is unsupported on this system")
 
     getcwd = os.getcwd
 
@@ -965,7 +968,7 @@ class Path(PurePath):
         # In previous versions of pathlib, this method marked this path as
         # closed; subsequent attempts to perform I/O would raise an IOError.
         # This functionality was never documented, and had the effect of
-        # making Path objects mutable, contrary to PEP 428. In Python 3.9 the
+        # making path objects mutable, contrary to PEP 428. In Python 3.9 the
         # _closed attribute was removed, and this method made a no-op.
         # This method and __enter__()/__exit__() should be deprecated and
         # removed in the future.
@@ -1012,7 +1015,7 @@ class Path(PurePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        sys.audit("pathlib.Path.glob", self, pattern)
+        sys.audit(f"pathlib.{self.__class__.__name__}.glob", self, pattern)
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
@@ -1027,7 +1030,7 @@ class Path(PurePath):
         directories) matching the given relative pattern, anywhere in
         this subtree.
         """
-        sys.audit("pathlib.Path.rglob", self, pattern)
+        sys.audit(f"pathlib.{self.__class__.__name__}.rglob", self, pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
@@ -1215,9 +1218,9 @@ class Path(PurePath):
 
         The target path may be absolute or relative. Relative paths are
         interpreted relative to the current working directory, *not* the
-        directory of the Path object.
+        directory of this object.
 
-        Returns the new Path instance pointing to the target path.
+        Returns the new class instance pointing to the target path.
         """
         self._accessor.rename(self, target)
         return self.__class__(target)
@@ -1228,9 +1231,9 @@ class Path(PurePath):
 
         The target path may be absolute or relative. Relative paths are
         interpreted relative to the current working directory, *not* the
-        directory of the Path object.
+        directory of this object.
 
-        Returns the new Path instance pointing to the target path.
+        Returns the new class instance pointing to the target path.
         """
         self._accessor.replace(self, target)
         return self.__class__(target)
@@ -1256,15 +1259,16 @@ class Path(PurePath):
 
         Note this function does not make this path a hard link to *target*,
         despite the implication of the function and argument names. The order
-        of arguments (target, link) is the reverse of Path.symlink_to, but
+        of arguments (target, link) is the reverse of symlink_to, but
         matches that of os.link.
 
         Deprecated since Python 3.10 and scheduled for removal in Python 3.12.
         Use `hardlink_to()` instead.
         """
-        warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
-                      "for removal in Python 3.12. "
-                      "Use pathlib.Path.hardlink_to() instead.",
+        classname = self.__class__.__name__
+        warnings.warn(f"pathlib.{classname}.link_to() is deprecated and is "
+                      f"scheduled for removal in Python 3.12. "
+                      f"Use pathlib.{classname}.hardlink_to() instead.",
                       DeprecationWarning, stacklevel=2)
         self._accessor.link(self, target)
 
@@ -1323,8 +1327,8 @@ class Path(PurePath):
         Check if this path is a POSIX mount point
         """
         if os.name != "posix":
-            raise NotImplementedError("Path.is_mount() is "
-                                      "unsupported on this system")
+            raise NotImplementedError(f"{self.__class__.__name__}.is_mount() "
+                                      f"is unsupported on this system")
         # Need to exist and be a dir
         if not self.exists() or not self.is_dir():
             return False
