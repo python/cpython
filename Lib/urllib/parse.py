@@ -83,12 +83,7 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
 def clear_cache():
-    """Clear the parse cache and the quoters cache."""
-    warnings.warn(
-        'Deprecated in 3.11. '
-        'urllib.parse.clear_cache() will be removed in Python 3.14. '
-        'Use urllib.parse.urlsplit.cache_clear() on Python 3.11 or later.',
-        PendingDeprecationWarning)
+    """Clear internal performance caches. Undocumented; some tests want it."""
     urlsplit.cache_clear()
     _byte_quoter_factory.cache_clear()
 
@@ -790,7 +785,7 @@ def __getattr__(name):
         warnings.warn('Deprecated in 3.11. '
                       'urllib.parse.Quoter will be removed in Python 3.14. '
                       'It was not intended to be a public API.',
-                      PendingDeprecationWarning, stacklevel=2)
+                      DeprecationWarning, stacklevel=2)
         return _Quoter
     raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
@@ -889,7 +884,7 @@ def quote_plus(string, safe='', encoding=None, errors=None):
 # Expectation: A typical program is unlikely to create more than 5 of these.
 @functools.lru_cache
 def _byte_quoter_factory(safe):
-  return _Quoter(safe).__getitem__
+    return _Quoter(safe).__getitem__
 
 def quote_from_bytes(bs, safe='/'):
     """Like quote(), but accepts a bytes object rather than a str, and does

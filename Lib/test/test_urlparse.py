@@ -2,7 +2,6 @@ import sys
 import unicodedata
 import unittest
 import urllib.parse
-import warnings
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -1036,30 +1035,12 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.path, '863-1234')
         self.assertEqual(p1.params, 'phone-context=+1-914-555')
 
-    def test_clear_cache_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            urllib.parse.clear_cache()
-        self.assertEqual(len(w), 1, msg=repr(w))
-        v = sys.version_info
-        exc = PendingDeprecationWarning if v <= (3, 11) else DeprecationWarning
-        self.assertIs(w[0].category, exc)
-        self.assertIn('clear_cache() will be removed', str(w[0].message))
-
-    def test_Quoter_deprecation(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            old_class = urllib.parse.Quoter
-            self.assertIs(old_class, urllib.parse._Quoter)
-        self.assertEqual(len(w), 1, msg=repr(w))
-        v = sys.version_info
-        exc = PendingDeprecationWarning if v <= (3, 11) else DeprecationWarning
-        self.assertIs(w[0].category, exc)
-        self.assertIn('Quoter will be removed', str(w[0].message))
-
     def test_Quoter_repr(self):
         quoter = urllib.parse._Quoter(urllib.parse._ALWAYS_SAFE)
         self.assertIn('Quoter', repr(quoter))
+
+    def test_clear_cache_for_code_coverage(self):
+        urllib.parse.clear_cache()
 
     def test_all(self):
         expected = []
@@ -1067,7 +1048,7 @@ class UrlParseTestCase(unittest.TestCase):
             'splitattr', 'splithost', 'splitnport', 'splitpasswd',
             'splitport', 'splitquery', 'splittag', 'splittype', 'splituser',
             'splitvalue',
-            'Quoter', 'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
+            'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
         }
         for name in dir(urllib.parse):
             if name.startswith('_') or name in undocumented:
@@ -1258,6 +1239,12 @@ class Utility_Tests(unittest.TestCase):
 
 
 class DeprecationTest(unittest.TestCase):
+
+    def test_Quoter_deprecation(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            old_class = urllib.parse.Quoter
+            self.assertIs(old_class, urllib.parse._Quoter)
+        self.assertIn('Quoter will be removed', str(cm.warning))
 
     def test_splittype_deprecation(self):
         with self.assertWarns(DeprecationWarning) as cm:
