@@ -1138,8 +1138,9 @@ Internal types
       around any other object, usually a user-defined method object. When a static
       method object is retrieved from a class or a class instance, the object actually
       returned is the wrapped object, which is not subject to any further
-      transformation. Static method objects are also callable. Static method
-      objects are created by the built-in :func:`staticmethod` constructor.
+      transformation. Static method objects are not themselves callable, although the
+      objects they wrap usually are. Static method objects are created by the built-in
+      :func:`staticmethod` constructor.
 
    Class method objects
       A class method object, like a static method object, is a wrapper around another
@@ -2452,6 +2453,13 @@ left undefined.
    :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
    part of the data model.
 
+   .. note::
+
+      Due to a bug in the dispatching mechanism for ``**=``, a class that
+      defines :meth:`__ipow__` but returns ``NotImplemented`` would fail to
+      fall back to ``x.__pow__(y)`` and ``y.__rpow__(x)``. This bug is fixed
+      in Python 3.10.
+
 
 .. method:: object.__neg__(self)
             object.__pos__(self)
@@ -2556,38 +2564,6 @@ For more information on context managers, see :ref:`typecontextmanager`.
    :pep:`343` - The "with" statement
       The specification, background, and examples for the Python :keyword:`with`
       statement.
-
-
-.. _class-pattern-matching:
-
-Customizing positional arguments in class pattern matching
-----------------------------------------------------------
-
-When using a class name in a pattern, positional arguments in the pattern are not
-allowed by default, i.e. ``case MyClass(x, y)`` is typically invalid without special
-support in ``MyClass``. To be able to use that kind of patterns, the class needs to
-define a *__match_args__* attribute.
-
-.. data:: object.__match_args__
-
-   This class variable can be assigned a tuple of strings. When this class is
-   used in a class pattern with positional arguments, each positional argument will
-   be converted into a keyword argument, using the corresponding value in
-   *__match_args__* as the keyword. The absence of this attribute is equivalent to
-   setting it to ``()``.
-
-For example, if ``MyClass.__match_args__`` is ``("left", "center", "right")`` that means
-that ``case MyClass(x, y)`` is equivalent to ``case MyClass(left=x, center=y)``. Note
-that the number of arguments in the pattern must be smaller than or equal to the number
-of elements in *__match_args__*; if it is larger, the pattern match attempt will raise
-a :exc:`TypeError`.
-
-.. versionadded:: 3.10
-
-.. seealso::
-
-   :pep:`634` - Structural Pattern Matching
-      The specification for the Python ``match`` statement.
 
 
 .. _special-lookup:
