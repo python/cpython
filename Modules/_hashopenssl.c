@@ -588,7 +588,7 @@ static PyType_Spec EVPtype_spec = {
     "_hashlib.HASH",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     EVPtype_slots
 };
 
@@ -737,7 +737,7 @@ static PyType_Spec EVPXOFtype_spec = {
     "_hashlib.HASHXOF",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     EVPXOFtype_slots
 };
 
@@ -1729,7 +1729,7 @@ static PyType_Slot HMACtype_slots[] = {
 PyType_Spec HMACtype_spec = {
     "_hashlib.HMAC",    /* name */
     sizeof(HMACobject),     /* basicsize */
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACtype_slots,
 };
 

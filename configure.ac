@@ -220,12 +220,14 @@ then
 fi
 
 AC_SUBST(LIPO_32BIT_FLAGS)
+AC_SUBST(LIPO_INTEL64_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
     AS_HELP_STRING([--with-universal-archs=ARCH],
-                   [specify the kind of universal binary that should be created. this option is
-                    only valid when --enable-universalsdk is set; options are:
-                    ("universal2", "32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
+                   [specify the kind of macOS universal binary that should be created.
+                    This option is only valid when --enable-universalsdk is set; options are:
+                    ("universal2", "intel-64", "intel-32", "intel", "32-bit",
+                    "64-bit", "3-way", or "all")
                     see Mac/README.rst]),
 [
 	UNIVERSAL_ARCHS="$withval"
@@ -1874,6 +1876,7 @@ yes)
             AC_MSG_RESULT($CC)
         fi
 
+        LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
@@ -1895,8 +1898,9 @@ yes)
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
+               LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
-		;;
+               ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
@@ -5836,7 +5840,7 @@ AC_ARG_WITH(ssl-default-suites,
                             python: use Python's preferred selection (default),
                             openssl: leave OpenSSL's defaults untouched,
                             STRING: use a custom string,
-                            PROTOCOL_SSLv2 ignores the setting, see Doc/library/ssl.rst]),
+                            python and STRING also set TLS 1.2 as minimum TLS version]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in

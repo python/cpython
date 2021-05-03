@@ -752,6 +752,7 @@ PYTHONFRAMEWORKPREFIX
 PYTHONFRAMEWORKDIR
 PYTHONFRAMEWORKIDENTIFIER
 PYTHONFRAMEWORK
+LIPO_INTEL64_FLAGS
 LIPO_32BIT_FLAGS
 ARCH_RUN_32BIT
 UNIVERSALSDK
@@ -1519,11 +1520,12 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
-                          specify the kind of universal binary that should be
-                          created. this option is only valid when
+                          specify the kind of macOS universal binary that
+                          should be created. This option is only valid when
                           --enable-universalsdk is set; options are:
-                          ("universal2", "32-bit", "64-bit", "3-way", "intel",
-                          "intel-32", "intel-64", or "all") see Mac/README.rst
+                          ("universal2", "intel-64", "intel-32", "intel",
+                          "32-bit", "64-bit", "3-way", or "all") see
+                          Mac/README.rst
   --with-framework-name=FRAMEWORK
                           specify the name for the python framework on macOS
                           only valid when --enable-framework is set. see
@@ -1604,8 +1606,8 @@ Optional Packages:
                           override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
                           leave OpenSSL's defaults untouched, STRING: use a
-                          custom string, PROTOCOL_SSLv2 ignores the setting,
-                          see Doc/library/ssl.rst
+                          custom string, python and STRING also set TLS 1.2 as
+                          minimum TLS version
   --with-builtin-hashlib-hashes=md5,sha1,sha256,sha512,sha3,blake2
                           builtin hash modules, md5, sha1, sha256, sha512,
                           sha3 (with shake), blake2
@@ -3137,6 +3139,7 @@ then
 		fi
 	fi
 fi
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-universal-archs" >&5
@@ -7522,6 +7525,7 @@ $as_echo_n "checking which compiler should be used... " >&6; }
 $as_echo "$CC" >&6; }
         fi
 
+        LIPO_INTEL64_FLAGS=""
         if test "${enable_universalsdk}"
         then
             case "$UNIVERSAL_ARCHS" in
@@ -7543,8 +7547,9 @@ $as_echo "$CC" >&6; }
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
+               LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
-		;;
+               ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
