@@ -536,6 +536,14 @@ class _PurePathBase(object):
         '_str', '_hash', '_pparts', '_cached_cparts',
     )
 
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        mro_names = [class_.__name__ for class_ in cls.mro()[:-1]]
+        if "PurePath" not in mro_names:
+            is_posix = os.name == "posix"
+            cls._flavour = _posix_flavour if is_posix else _windows_flavour
+        return cls
+
     def __new__(cls, *args):
         # Utilize __new__ rather __init__ in order to provide a setup
         # method in common with PurePath and Path which are derived from
@@ -1489,10 +1497,16 @@ class WindowsPath(Path, PureWindowsPath):
         raise NotImplementedError("Path.is_mount() is unsupported on this system")
 
 
-class SimplePath:
-    # Stub for class which will, aside from name, match the class instantiated
-    # by PurePath, however unlike PurePath, will be able to be subclassed
-    # normally.
+class SimplePath(_PurePathBase):
+    """
+    Class for manipulating paths without I/O.
+
+    SimplePath represents a filesystem path and offers operations
+    which don't perform any actual filesystem I/O. The methods in this
+    class will return values that are appropriate for your system
+    flavour, be that Windows or Posix, though the return values are not
+    guaranteed to be the same for both platforms.
+    """
     pass
 
 

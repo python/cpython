@@ -21,6 +21,12 @@ except ImportError:
     grp = pwd = None
 
 
+only_nt = unittest.skipIf(os.name != 'nt',
+                          'test requires a Windows-compatible system')
+only_posix = unittest.skipIf(os.name == 'nt',
+                             'test requires a POSIX-compatible system')
+
+
 class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
@@ -703,6 +709,11 @@ class _BasePurePathTest(object):
 class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePosixPath
 
+    def test_flavour(self):
+        P = self.cls
+        self.assertEqual(P._flavour.__class__,
+                         pathlib._PosixFlavour)
+
     def test_root(self):
         P = self.cls
         self.assertEqual(P('/a/b').root, '/')
@@ -791,6 +802,11 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
             ('//a/b', 'c'), ('//a/b/', 'c'),
             ],
     })
+
+    def test_flavour(self):
+        P = self.cls
+        self.assertEqual(P._flavour.__class__,
+                         pathlib._WindowsFlavour)
 
     def test_str(self):
         p = self.cls('a/b/c')
@@ -1345,7 +1361,17 @@ class SubclassTestMixin:
                 self.assertIsInstance(derived, Derived)
 
 
-class SimplePathTest(unittest.TestCase, SubclassTestMixin):
+class SimplePathTest(_BasePurePathTest, SubclassTestMixin, unittest.TestCase):
+    cls = pathlib.SimplePath
+
+
+@only_posix
+class SimplePathAsPurePosixPathTest(PurePosixPathTest, unittest.TestCase):
+    cls = pathlib.SimplePath
+
+
+@only_nt
+class SimplePathAsPureWindowsPathTest(PureWindowsPathTest, unittest.TestCase):
     cls = pathlib.SimplePath
 
 
@@ -1357,11 +1383,6 @@ class SimplePathTest(unittest.TestCase, SubclassTestMixin):
 BASE = os.path.realpath(TESTFN)
 join = lambda *x: os.path.join(BASE, *x)
 rel_join = lambda *x: os.path.join(TESTFN, *x)
-
-only_nt = unittest.skipIf(os.name != 'nt',
-                          'test requires a Windows-compatible system')
-only_posix = unittest.skipIf(os.name == 'nt',
-                             'test requires a POSIX-compatible system')
 
 
 @only_posix
