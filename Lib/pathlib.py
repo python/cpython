@@ -491,10 +491,6 @@ class _RecursiveWildcardSelector(_Selector):
             return
 
 
-#
-# Public API
-#
-
 class _PathParents(Sequence):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
@@ -526,28 +522,24 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(self._pathcls.__name__)
 
 
-class PurePath(object):
-    """Base class for manipulating paths without I/O.
-
-    PurePath represents a filesystem path and offers operations which
-    don't imply any actual filesystem I/O.  Depending on your system,
-    instantiating a PurePath will return either a PurePosixPath or a
-    PureWindowsPath object.  You can also instantiate either of these classes
-    directly, regardless of your system.
+class _PurePathBase(object):
     """
+    Base class for manipulating paths without I/O.
+
+    Classes deriving from _PurePathBase represent filesystem paths and
+    inherit methods that can be used for path manipulation but which
+    don't perform any actual filesystem I/O.
+    """
+
     __slots__ = (
         '_drv', '_root', '_parts',
         '_str', '_hash', '_pparts', '_cached_cparts',
     )
 
     def __new__(cls, *args):
-        """Construct a PurePath from one or several strings and or existing
-        PurePath objects.  The strings and path objects are combined so as
-        to yield a canonicalized path, which is incorporated into the
-        new PurePath object.
-        """
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        # Utilize __new__ rather __init__ in order to provide a setup
+        # method in common with PurePath and Path which are derived from
+        # this base class and require extra flexibility.
         return cls._from_parts(args)
 
     def __reduce__(self):
@@ -917,6 +909,36 @@ class PurePath(object):
             if not fnmatch.fnmatchcase(part, pat):
                 return False
         return True
+
+
+#
+# Public API
+#
+
+
+class PurePath(_PurePathBase):
+    """
+    Factory to generate instances for manipulating paths without I/O.
+
+    Instantiating PurePath returns an instance of either PureWindowsPath
+    or PurePosixPath in its place depending on the flavour of system
+    present. The resultant class can then be used for path manipulations
+    but will not have any methods which make calls to the filesystem.
+    Alternatively, you can also instantiate either of these classes
+    directly, regardless of your system flavour.
+    """
+
+    def __new__(cls, *args):
+        """
+        Construct a PurePath from string(s) and/or existing PurePaths
+
+        The strings and path objects are combined so as to yield a
+        canonicalized path, which is incorporated into the new PurePath
+        object.
+        """
+        if cls is PurePath:
+            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        return cls._from_parts(args)
 
 
 # Can't subclass os.PathLike from PurePath and keep the constructor
