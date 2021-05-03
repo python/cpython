@@ -27,10 +27,6 @@ PyAPI_FUNC(void) PyStructSequence_InitType(PyTypeObject *type,
 PyAPI_FUNC(int) PyStructSequence_InitType2(PyTypeObject *type,
                                            PyStructSequence_Desc *desc);
 #endif
-PyAPI_FUNC(int) _PyStructSequence_InitType(
-    PyTypeObject *type,
-    PyStructSequence_Desc *desc,
-    unsigned long tp_flags);
 PyAPI_FUNC(PyTypeObject*) PyStructSequence_NewType(PyStructSequence_Desc *desc);
 
 PyAPI_FUNC(PyObject *) PyStructSequence_New(PyTypeObject* type);

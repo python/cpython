@@ -918,7 +918,6 @@ Py_tp_setattro
 Py_tp_str
 Py_tp_traverse
 Py_uintptr_t
-_PyStructSequence_InitType
 _frame
 _node
 allocfunc
