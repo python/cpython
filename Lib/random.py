@@ -154,8 +154,7 @@ class Random(_random.Random):
         elif version == 2 and isinstance(a, (str, bytes, bytearray)):
             if isinstance(a, str):
                 a = a.encode()
-            a += _sha512(a).digest()
-            a = int.from_bytes(a, 'big')
+            a = int.from_bytes(a + _sha512(a).digest(), 'big')
 
         elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
             _warn('Seeding based on hashing is deprecated\n'
