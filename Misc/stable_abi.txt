@@ -2121,8 +2121,6 @@ function PyObject_GetAiter
     added 3.10
 data PyExc_EncodingWarning
     added 3.10
-function _PyStructSequence_InitType
-    added 3.10
 
 # Support for Stable ABI in debug builds
 
