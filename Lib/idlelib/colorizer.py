@@ -338,7 +338,6 @@ def _color_delegator(parent):  # htest #
         b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
         # Invalid combinations of legal characters should be half colored.
         ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
-        'case _:'
         match point:
             case (x, 0):
                 print(f"X={x}")
@@ -349,6 +348,8 @@ def _color_delegator(parent):  # htest #
             case,
             _,
         )
+        'case _:'
+        "match x:"
         """)
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
