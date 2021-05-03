@@ -2066,6 +2066,10 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
 
+    def test_total(self):
+        c = Counter(a=10, b=5, c=0)
+        self.assertEqual(c.total(), 15)
+
     def test_order_preservation(self):
         # Input order dictates items() order
         self.assertEqual(list(Counter('abracadabra').items()),
