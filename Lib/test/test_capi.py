@@ -398,10 +398,6 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
-    def test_heap_ctype_doc_and_text_signature(self):
-        self.assertEqual(_testcapi.HeapDocCType.__doc__, "somedoc")
-        self.assertEqual(_testcapi.HeapDocCType.__text_signature__, "(arg1, arg2)")
-
     def test_null_type_doc(self):
         self.assertEqual(_testcapi.NullTpDocType.__doc__, None)
 
