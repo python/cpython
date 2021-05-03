@@ -4,7 +4,15 @@ Released on 2021-10-04?
 =========================
 
 
-bpo-37892: Change Shell input indents from tabs to spaces.
+bpo-37903: Add mouse actions to the shell sidebar.  Left click and
+optional drag selects one or more lines of text, as with the
+editor line number sidebar.  Right click after selecting text lines
+displays a context menu with 'copy with prompts'.  This zips together
+prompts from the sidebar with lines from the selected text.  This option
+also appears on the context menu for the text.
+
+bpo-37892: Change Shell input indents from tabs to spaces.  Shell input
+now 'looks right'.  Making this feasible motivated the shell sidebar.
 
 bpo-37903: Move the Shell input prompt to a side bar.
 
@@ -19,7 +27,8 @@ bpo-23544: Disable Debug=>Stack Viewer when user code is running or
 Debugger is active, to prevent hang or crash.  Patch by Zackery Spytz.
 
 bpo-43008: Make IDLE invoke :func:`sys.excepthook` in normal,
-2-process mode.  Patch by Ken Hilton.
+2-process mode.  User hooks were previously ignored.
+Patch by Ken Hilton.
 
 bpo-33065: Fix problem debugging user classes with __repr__ method.
 
@@ -32,7 +41,7 @@ installers built on macOS 11.
 
 bpo-42426: Fix reporting offset of the RE error in searchengine.
 
-bpo-42416: Get docstrings for IDLE calltips more often
+bpo-42416: Display docstrings in IDLE calltips in more cases,
 by using inspect.getdoc.
 
 bpo-33987: Mostly finish using ttk widgets, mainly for editor,
