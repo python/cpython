@@ -399,7 +399,7 @@ static int
 begin_transaction(pysqlite_Connection *self)
 {
     int rc;
-    sqlite3_stmt* statement;
+    sqlite3_stmt *statement;
 
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare_v2(self->db, self->begin_statement, -1, &statement,
