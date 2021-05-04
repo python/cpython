@@ -169,6 +169,36 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"count\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
+    def test_argtype0(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, getattr, 'foo', 123)
+
+    def test_argtype1(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, hasattr, 'foo', 123)
+
+    def test_argtype2(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, setattr, 'foo', 123, 'bar')
+
+    def test_argtype3(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        self.assertRaisesRegex(TypeError, msg, delattr, 'foo', 123)
+
+    def test_argtype4(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        with self.assertRaisesRegex(TypeError, msg):
+            object.__getattribute__('foo', 123)
+
+    def test_argtype5(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        with self.assertRaisesRegex(TypeError, msg):
+            object.__setattr__('foo', 123, 'bar')
+
+    def test_argtype6(self):
+        msg = r"^attribute name must be string, not 'int'$"
+        with self.assertRaisesRegex(TypeError, msg):
+            object.__delattr__('foo', 123)
 
 
 class TestCallingConventions(unittest.TestCase):
