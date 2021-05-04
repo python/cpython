@@ -814,23 +814,11 @@ PyAPI_FUNC(PyObject*) _PyUnicode_AsLatin1String(
     PyObject* unicode,
     const char* errors);
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeLatin1(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
-    const char *errors          /* error handling */
-    );
-
 /* --- ASCII Codecs ------------------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) _PyUnicode_AsASCIIString(
     PyObject* unicode,
     const char* errors);
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeASCII(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
-    const char *errors          /* error handling */
-    );
 
 /* --- Character Map Codecs ----------------------------------------------- */
 

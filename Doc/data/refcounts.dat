@@ -2555,11 +2555,6 @@ PyUnicode_DecodeLatin1:const char*:s::
 PyUnicode_DecodeLatin1:Py_ssize_t:size::
 PyUnicode_DecodeLatin1:const char*:errors::
 
-PyUnicode_EncodeLatin1:PyObject*::+1:
-PyUnicode_EncodeLatin1:const Py_UNICODE*:s::
-PyUnicode_EncodeLatin1:Py_ssize_t:size::
-PyUnicode_EncodeLatin1:const char*:errors::
-
 PyUnicode_AsLatin1String:PyObject*::+1:
 PyUnicode_AsLatin1String:PyObject*:unicode:0:
 
@@ -2567,11 +2562,6 @@ PyUnicode_DecodeASCII:PyObject*::+1:
 PyUnicode_DecodeASCII:const char*:s::
 PyUnicode_DecodeASCII:Py_ssize_t:size::
 PyUnicode_DecodeASCII:const char*:errors::
-
-PyUnicode_EncodeASCII:PyObject*::+1:
-PyUnicode_EncodeASCII:const Py_UNICODE*:s::
-PyUnicode_EncodeASCII:Py_ssize_t:size::
-PyUnicode_EncodeASCII:const char*:errors::
 
 PyUnicode_AsASCIIString:PyObject*::+1:
 PyUnicode_AsASCIIString:PyObject*:unicode:0:

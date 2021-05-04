@@ -1283,18 +1283,6 @@ ordinals and only these are accepted by the codecs during encoding.
    raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeLatin1(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Latin-1 and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsLatin1String` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 ASCII Codecs
 """"""""""""
 
@@ -1313,18 +1301,6 @@ codes generate errors.
    Encode a Unicode object using ASCII and return the result as Python bytes
    object.  Error handling is "strict".  Return ``NULL`` if an exception was
    raised by the codec.
-
-
-.. c:function:: PyObject* PyUnicode_EncodeASCII(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using ASCII and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsASCIIString` or
-      :c:func:`PyUnicode_AsEncodedString`.
 
 
 Character Map Codecs

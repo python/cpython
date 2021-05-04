@@ -7193,21 +7193,6 @@ unicode_encode_ucs1(PyObject *unicode,
     return NULL;
 }
 
-/* Deprecated */
-PyObject *
-PyUnicode_EncodeLatin1(const Py_UNICODE *p,
-                       Py_ssize_t size,
-                       const char *errors)
-{
-    PyObject *result;
-    PyObject *unicode = PyUnicode_FromWideChar(p, size);
-    if (unicode == NULL)
-        return NULL;
-    result = unicode_encode_ucs1(unicode, errors, 256);
-    Py_DECREF(unicode);
-    return result;
-}
-
 PyObject *
 _PyUnicode_AsLatin1String(PyObject *unicode, const char *errors)
 {
@@ -7332,21 +7317,6 @@ PyUnicode_DecodeASCII(const char *s,
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return NULL;
-}
-
-/* Deprecated */
-PyObject *
-PyUnicode_EncodeASCII(const Py_UNICODE *p,
-                      Py_ssize_t size,
-                      const char *errors)
-{
-    PyObject *result;
-    PyObject *unicode = PyUnicode_FromWideChar(p, size);
-    if (unicode == NULL)
-        return NULL;
-    result = unicode_encode_ucs1(unicode, errors, 128);
-    Py_DECREF(unicode);
-    return result;
 }
 
 PyObject *
