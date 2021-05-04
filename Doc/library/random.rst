@@ -254,7 +254,7 @@ Functions for sequences
    .. versionchanged:: 3.9
       Added the *counts* parameter.
 
-   .. versionchange:: 3.11
+   .. versionchanged:: 3.11
 
       The *population* must be a sequence.  Automatic conversion of sets
       to lists is longer supported.
