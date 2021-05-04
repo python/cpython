@@ -9297,22 +9297,6 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     return NULL;
 }
 
-/* Deprecated. Use PyUnicode_Translate instead. */
-PyObject *
-PyUnicode_TranslateCharmap(const Py_UNICODE *p,
-                           Py_ssize_t size,
-                           PyObject *mapping,
-                           const char *errors)
-{
-    PyObject *result;
-    PyObject *unicode = PyUnicode_FromWideChar(p, size);
-    if (!unicode)
-        return NULL;
-    result = _PyUnicode_TranslateCharmap(unicode, mapping, errors);
-    Py_DECREF(unicode);
-    return result;
-}
-
 PyObject *
 PyUnicode_Translate(PyObject *str,
                     PyObject *mapping,

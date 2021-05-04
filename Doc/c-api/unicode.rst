@@ -1349,19 +1349,6 @@ The following codec API is special in that maps Unicode to Unicode.
    use the default error handling.
 
 
-.. c:function:: PyObject* PyUnicode_TranslateCharmap(const Py_UNICODE *s, Py_ssize_t size, \
-                              PyObject *mapping, const char *errors)
-
-   Translate a :c:type:`Py_UNICODE` buffer of the given *size* by applying a
-   character *mapping* table to it and return the resulting Unicode object.
-   Return ``NULL`` when an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_Translate`. or :ref:`generic codec based API
-      <codec-registry>`
-
-
 MBCS codecs for Windows
 """""""""""""""""""""""
 

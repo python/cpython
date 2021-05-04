@@ -815,15 +815,8 @@ PyAPI_FUNC(PyObject*) _PyUnicode_AsASCIIString(
 
 /* --- Character Map Codecs ----------------------------------------------- */
 
-PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
-    PyObject *unicode,          /* Unicode object */
-    PyObject *mapping,          /* encoding mapping */
-    const char *errors          /* error handling */
-    );
-
-/* Translate a Py_UNICODE buffer of the given length by applying a
-   character mapping table to it and return the resulting Unicode
-   object.
+/* Translate an Unicode object by applying a character mapping table to
+   it and return the resulting Unicode object.
 
    The mapping table must map Unicode ordinal integers to Unicode strings,
    Unicode ordinal integers or None (causing deletion of the character).
@@ -831,12 +824,10 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
    Mapping tables may be dictionaries or sequences. Unmapped character
    ordinals (ones which cause a LookupError) are left untouched and
    are copied as-is.
-
 */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject *) PyUnicode_TranslateCharmap(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
-    PyObject *table,            /* Translate table */
+PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
+    PyObject *unicode,          /* Unicode object */
+    PyObject *mapping,          /* encoding mapping */
     const char *errors          /* error handling */
     );
 
