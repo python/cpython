@@ -1828,7 +1828,7 @@ Notes on using *__slots__*
 
 * Without a *__dict__* attribute, instances cannot be assigned new attributes not
   listed in the *__slots__* declaration.  Attempts to assign to an unlisted
-  attribute name raises :exc:`AttributeError`. If dynamic assignment of new
+  attribute name raise :exc:`AttributeError`. If dynamic assignment of new
   attributes is desired, then add ``'__dict__'`` to the sequence of strings in
   the *__slots__* declaration.
 
