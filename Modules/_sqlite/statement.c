@@ -58,6 +58,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
 
     self->st = NULL;
     self->in_use = 0;
+    self->column_count = 0;
 
     assert(PyUnicode_Check(sql));
 
@@ -103,10 +104,20 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
 
     self->db = connection->db;
 
-    if (rc == SQLITE_OK && pysqlite_check_remaining_sql(tail)) {
+    if (rc != SQLITE_OK) {
+        return rc;
+    }
+
+    if (pysqlite_check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
         self->st = NULL;
-        rc = PYSQLITE_TOO_MUCH_SQL;
+        return PYSQLITE_TOO_MUCH_SQL;
+    }
+
+    if (!self->is_dml) {
+        Py_BEGIN_ALLOW_THREADS
+        self->column_count = sqlite3_column_count(self->st);
+        Py_END_ALLOW_THREADS
     }
 
     return rc;

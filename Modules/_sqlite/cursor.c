@@ -147,7 +147,8 @@ pysqlite_build_row_cast_map(pysqlite_Cursor* self)
         return -1;
     }
 
-    for (i = 0; i < sqlite3_column_count(self->statement->st); i++) {
+    int column_count = self->statement->column_count;
+    for (i = 0; i < column_count; i++) {
         converter = NULL;
 
         if (self->connection->detect_types & PARSE_COLNAMES) {
@@ -547,9 +548,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         assert(rc == SQLITE_ROW || rc == SQLITE_DONE);
-        Py_BEGIN_ALLOW_THREADS
-        numcols = sqlite3_column_count(self->statement->st);
-        Py_END_ALLOW_THREADS
+        numcols = self->statement->column_count;
         if (self->description == Py_None && numcols > 0) {
             Py_SETREF(self->description, PyTuple_New(numcols));
             if (!self->description) {

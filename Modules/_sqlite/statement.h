@@ -40,6 +40,7 @@ typedef struct
     PyObject* sql;
     int in_use;
     int is_dml;
+    int column_count;
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Statement;
 
