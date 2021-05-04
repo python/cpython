@@ -843,35 +843,6 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
 
 /* --- Decimal Encoder ---------------------------------------------------- */
 
-/* Takes a Unicode string holding a decimal value and writes it into
-   an output buffer using standard ASCII digit codes.
-
-   The output buffer has to provide at least length+1 bytes of storage
-   area. The output string is 0-terminated.
-
-   The encoder converts whitespace to ' ', decimal characters to their
-   corresponding ASCII digit and all other Latin-1 characters except
-   \0 as-is. Characters outside this range (Unicode ordinals 1-256)
-   are treated as errors. This includes embedded NULL bytes.
-
-   Error handling is defined by the errors argument:
-
-      NULL or "strict": raise a ValueError
-      "ignore": ignore the wrong characters (these are not copied to the
-                output buffer)
-      "replace": replaces illegal characters with '?'
-
-   Returns 0 on success, -1 on failure.
-
-*/
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
-    Py_UNICODE *s,              /* Unicode buffer */
-    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
-    char *output,               /* Output buffer; must have size >= length */
-    const char *errors          /* error handling */
-    );
-
 /* Coverts a Unicode object holding a decimal value to an ASCII string
    for using in int, float and complex parsers.
    Transforms code points that have decimal digit property to the
