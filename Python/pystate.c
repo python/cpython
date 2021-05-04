@@ -2011,7 +2011,6 @@ _PyThreadState_PushLocals(PyThreadState *tstate, size_t size)
            _PyErr_SetString(tstate, PyExc_MemoryError, "Out of memory");
             return NULL;
         }
-        printf("Pushing chunk\n");
         tstate->datastack_chunk->top = tstate->datastack_top - &tstate->datastack_chunk->data[0];
         tstate->datastack_chunk = new;
         tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
@@ -2031,7 +2030,6 @@ void
 _PyThreadState_PopLocals(PyThreadState *tstate, PyObject **locals)
 {
     if (locals == &tstate->datastack_chunk->data[0]) {
-        printf("Popping chunk\n");
         _PyStackChunk *chunk = tstate->datastack_chunk;
         _PyStackChunk *previous = chunk->previous;
         tstate->datastack_top = &previous->data[previous->top];

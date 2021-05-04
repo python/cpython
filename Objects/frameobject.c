@@ -564,21 +564,8 @@ static PyGetSetDef frame_getsetlist[] = {
    frame is on the free list, only the following members have a meaning:
     ob_type             == &Frametype
     f_back              next item on free list, or NULL
-    f_stacksize         size of value stack
-    ob_size             size of localsplus
-   Note that the value and block stacks are preserved -- this can save
-   another malloc() call or two (and two free() calls as well!).
-   Also note that, unlike for integers, each frame object is a
-   malloc'ed object in its own right -- it is only the actual calls to
-   malloc() that we are trying to save here, not the administration.
-   After all, while a typical program may make millions of calls, a
-   call depth of more than 20 or 30 is probably already exceptional
-   unless the program contains run-away recursion.  I hope.
-
-   Later, PyFrame_MAXFREELIST was added to bound the # of frames saved on
-   free_list.  Else programs creating lots of cyclic trash involving
-   frames could provoke free_list into growing without bound.
 */
+
 /* max value for numfree */
 #define PyFrame_MAXFREELIST 200
 
