@@ -766,12 +766,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_AsUTF8String(
     PyObject *unicode,
     const char *errors);
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF8(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
-    const char *errors          /* error handling */
-    );
-
 /* --- UTF-32 Codecs ------------------------------------------------------ */
 
 Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF32(

@@ -2502,11 +2502,6 @@ PyUnicode_DecodeUTF8:const char*:s::
 PyUnicode_DecodeUTF8:Py_ssize_t:size::
 PyUnicode_DecodeUTF8:const char*:errors::
 
-PyUnicode_EncodeUTF8:PyObject*::+1:
-PyUnicode_EncodeUTF8:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF8:Py_ssize_t:size::
-PyUnicode_EncodeUTF8:const char*:errors::
-
 PyUnicode_AsUTF8String:PyObject*::+1:
 PyUnicode_AsUTF8String:PyObject*:unicode:0:
 

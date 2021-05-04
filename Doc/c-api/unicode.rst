@@ -1089,18 +1089,6 @@ These are the UTF-8 codec APIs:
       The return type is now ``const char *`` rather of ``char *``.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeUTF8(const Py_UNICODE *s, Py_ssize_t size, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer *s* of the given *size* using UTF-8 and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF8String`, :c:func:`PyUnicode_AsUTF8AndSize` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 UTF-32 Codecs
 """""""""""""
 

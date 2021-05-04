@@ -5690,21 +5690,6 @@ _PyUnicode_AsUTF8String(PyObject *unicode, const char *errors)
 
 
 PyObject *
-PyUnicode_EncodeUTF8(const Py_UNICODE *s,
-                     Py_ssize_t size,
-                     const char *errors)
-{
-    PyObject *v, *unicode;
-
-    unicode = PyUnicode_FromWideChar(s, size);
-    if (unicode == NULL)
-        return NULL;
-    v = _PyUnicode_AsUTF8String(unicode, errors);
-    Py_DECREF(unicode);
-    return v;
-}
-
-PyObject *
 PyUnicode_AsUTF8String(PyObject *unicode)
 {
     return _PyUnicode_AsUTF8String(unicode, NULL);
