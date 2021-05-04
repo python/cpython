@@ -147,7 +147,7 @@ PyAPI_FUNC(int) _PyState_AddModule(
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
-PyObject **_PyThreadState_PushLocals(PyThreadState *, int size);
+PyObject **_PyThreadState_PushLocals(PyThreadState *, size_t size);
 void _PyThreadState_PopLocals(PyThreadState *, PyObject **);
 
 #ifdef __cplusplus

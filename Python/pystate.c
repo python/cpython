@@ -607,12 +607,22 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
-/* Size of data stack
- * Experimentally this can be set as low as 12k and have all the tests
- * pass (64bit linux). */
-#define DATA_STACK_SIZE (62*1024)
-/* Additional stack space for error recovery */
-#define DATA_STACK_HEADROOM (2*1024)
+/* Minimum size of data stack chunk */
+#define DATA_STACK_CHUNK_SIZE (16*1024)
+
+static _PyStackChunk*
+allocate_chunk(int size_in_bytes, _PyStackChunk* previous)
+{
+    assert(size_in_bytes % sizeof(PyObject **) == 0);
+    _PyStackChunk *res = _PyObject_VirtualAlloc(size_in_bytes);
+    if (res == NULL) {
+        return NULL;
+    }
+    res->previous = previous;
+    res->size = size_in_bytes;
+    res->top = 0;
+    return res;
+}
 
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
@@ -665,15 +675,14 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->context = NULL;
     tstate->context_ver = 1;
-    size_t total_size = (DATA_STACK_SIZE+DATA_STACK_HEADROOM);
-    tstate->datastack_base = _PyObject_VirtualAlloc(sizeof(PyObject *)*total_size);
-    if (tstate->datastack_base == NULL) {
+    tstate->datastack_chunk = allocate_chunk(DATA_STACK_CHUNK_SIZE, NULL);
+    if (tstate->datastack_chunk == NULL) {
         PyMem_RawFree(tstate);
         return NULL;
     }
-    tstate->datastack_top = tstate->datastack_base;
-    tstate->datastack_hard_limit = tstate->datastack_base + total_size;
-    tstate->datastack_soft_limit = tstate->datastack_base + DATA_STACK_SIZE;
+    /* If top points to entry 0, then _PyThreadState_PopLocals willl try to pop this chunk */
+    tstate->datastack_top = &tstate->datastack_chunk->data[1];
+    tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
 
     if (init) {
         _PyThreadState_Init(tstate);
@@ -932,7 +941,7 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
         }
     }
     tstate_delete_common(tstate, gilstate);
-    _PyObject_VirtualFree(tstate->datastack_base, sizeof(PyObject *)*DATA_STACK_SIZE);
+    _PyObject_VirtualFree(tstate->datastack_chunk, tstate->datastack_chunk->size);
     PyMem_RawFree(tstate);
 }
 
@@ -1985,28 +1994,34 @@ _Py_GetConfig(void)
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
 
+#define MINIMUM_OVERHEAD 1000
+
 PyObject **
-_PyThreadState_PushLocals(PyThreadState *tstate, int size)
+_PyThreadState_PushLocals(PyThreadState *tstate, size_t size)
 {
     PyObject **res = tstate->datastack_top;
     PyObject **top = res + size;
-    if (top >= tstate->datastack_soft_limit) {
-        if (top >= tstate->datastack_hard_limit) {
-            if (tstate->recursion_headroom) {
-                Py_FatalError("Cannot recover from data-stack overflow.");
-            }
-            else {
-                Py_FatalError("Rapid data-stack overflow.");
-            }
+    if (top >= tstate->datastack_limit) {
+        size_t allocate_size = DATA_STACK_CHUNK_SIZE;
+        while (allocate_size < sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
+            allocate_size *= 2;
         }
-        tstate->recursion_headroom++;
-        _PyErr_Format(tstate, PyExc_RecursionError,
-                    "data stack overflow");
-        tstate->recursion_headroom--;
-        return NULL;
+        _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
+        if (new == NULL) {
+           _PyErr_SetString(tstate, PyExc_MemoryError, "Out of memory");
+            return NULL;
+        }
+        printf("Pushing chunk\n");
+        tstate->datastack_chunk->top = tstate->datastack_top - &tstate->datastack_chunk->data[0];
+        tstate->datastack_chunk = new;
+        tstate->datastack_limit = (PyObject **)(((char *)new) + allocate_size);
+        res = &new->data[0];
+        tstate->datastack_top = res + size;
     }
-    tstate->datastack_top = top;
-    for (Py_ssize_t i=0; i < size; i++) {
+    else {
+        tstate->datastack_top = top;
+    }
+    for (size_t i=0; i < size; i++) {
         res[i] = NULL;
     }
     return res;
@@ -2015,8 +2030,19 @@ _PyThreadState_PushLocals(PyThreadState *tstate, int size)
 void
 _PyThreadState_PopLocals(PyThreadState *tstate, PyObject **locals)
 {
-    assert(tstate->datastack_top >= locals);
-    tstate->datastack_top = locals;
+    if (locals == &tstate->datastack_chunk->data[0]) {
+        printf("Popping chunk\n");
+        _PyStackChunk *chunk = tstate->datastack_chunk;
+        _PyStackChunk *previous = chunk->previous;
+        tstate->datastack_top = &previous->data[previous->top];
+        tstate->datastack_chunk = previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
+    }
+    else {
+        assert(tstate->datastack_top >= locals);
+        tstate->datastack_top = locals;
+    }
 }
 
 
