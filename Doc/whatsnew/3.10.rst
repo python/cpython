@@ -1271,8 +1271,8 @@ and to match the behavior of static type checkers specified in the PEP.
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
 4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
-   equality comparisons if one of their parameters are not :term:`immutable`.
-   Note that declaring ``Literal`` with mutable parameters will not throw
+   equality comparisons if any of their parameters are not :term:`hashable`.
+   Note that declaring ``Literal`` with unhashable parameters will not throw
    an error::
 
       >>> from typing import Literal
