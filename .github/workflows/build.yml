@@ -7,12 +7,14 @@ on:
   push:
     branches:
     - master
+    - 3.10
     - 3.9
     - 3.8
     - 3.7
   pull_request:
     branches:
     - master
+    - 3.10
     - 3.9
     - 3.8
     - 3.7

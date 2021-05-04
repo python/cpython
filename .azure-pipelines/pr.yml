@@ -1,7 +1,7 @@
 variables:
   coverage: false
 
-pr: ['master', '3.9', '3.8', '3.7']
+pr: ['master', '3.10', '3.9', '3.8', '3.7']
 
 jobs:
 - job: Prebuild
