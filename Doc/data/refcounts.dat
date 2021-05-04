@@ -2474,12 +2474,6 @@ PyUnicode_DecodeUTF8Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF8Stateful:const char*:errors::
 PyUnicode_DecodeUTF8Stateful:Py_ssize_t*:consumed::
 
-PyUnicode_Encode:PyObject*::+1:
-PyUnicode_Encode:const Py_UNICODE*:s::
-PyUnicode_Encode:Py_ssize_t:size::
-PyUnicode_Encode:const char*:encoding::
-PyUnicode_Encode:const char*:errors::
-
 PyUnicode_AsEncodedString:PyObject*::+1:
 PyUnicode_AsEncodedString:PyObject*:unicode:0:
 PyUnicode_AsEncodedString:const char*:encoding::

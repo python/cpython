@@ -743,17 +743,6 @@ PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
 #define _PyUnicode_AsString PyUnicode_AsUTF8
 
-/* --- Generic Codecs ----------------------------------------------------- */
-
-/* Encodes a Py_UNICODE buffer of the given size and returns a
-   Python string object. */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_Encode(
-    const Py_UNICODE *s,        /* Unicode char buffer */
-    Py_ssize_t size,            /* number of Py_UNICODE chars to encode */
-    const char *encoding,       /* encoding */
-    const char *errors          /* error handling */
-    );
-
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(

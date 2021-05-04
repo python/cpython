@@ -1027,20 +1027,6 @@ These are the generic codec APIs:
    the codec.
 
 
-.. c:function:: PyObject* PyUnicode_Encode(const Py_UNICODE *s, Py_ssize_t size, \
-                              const char *encoding, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer *s* of the given *size* and return a Python
-   bytes object.  *encoding* and *errors* have the same meaning as the
-   parameters of the same name in the Unicode :meth:`~str.encode` method.  The codec
-   to be used is looked up using the Python codec registry.  Return ``NULL`` if an
-   exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 UTF-8 Codecs
 """"""""""""
 
