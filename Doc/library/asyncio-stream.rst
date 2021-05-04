@@ -39,7 +39,7 @@ streams::
     asyncio.run(tcp_echo_client('Hello World!'))
 
 
-See also the `Examples`_ section below.
+See the **server** and other examples in the `Examples`_ section below.
 
 
 .. rubric:: Stream Functions
