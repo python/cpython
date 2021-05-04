@@ -663,7 +663,7 @@ class FaultHandlerTests(unittest.TestCase):
             import sys
 
             all_threads = {all_threads}
-            signum = {signum}
+            signum = {signum:d}
             unregister = {unregister}
             chain = {chain}
             filename = {filename!r}
