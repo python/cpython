@@ -2535,10 +2535,6 @@ PyUnicode_DecodeUnicodeEscape:const char*:s::
 PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeUnicodeEscape:const char*:errors::
 
-PyUnicode_EncodeUnicodeEscape:PyObject*::+1:
-PyUnicode_EncodeUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeUnicodeEscape:Py_ssize_t:size::
-
 PyUnicode_AsUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsUnicodeEscapeString:PyObject*:unicode:0:
 

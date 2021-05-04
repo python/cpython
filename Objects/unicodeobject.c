@@ -6696,21 +6696,6 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
     return repr;
 }
 
-PyObject *
-PyUnicode_EncodeUnicodeEscape(const Py_UNICODE *s,
-                              Py_ssize_t size)
-{
-    PyObject *result;
-    PyObject *tmp = PyUnicode_FromWideChar(s, size);
-    if (tmp == NULL) {
-        return NULL;
-    }
-
-    result = PyUnicode_AsUnicodeEscapeString(tmp);
-    Py_DECREF(tmp);
-    return result;
-}
-
 /* --- Raw Unicode Escape Codec ------------------------------------------- */
 
 PyObject *
