@@ -2190,16 +2190,6 @@ unicode_encodedecimal(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length))
-        return NULL;
-    return PyUnicode_TransformDecimalToASCII(unicode, length);
-}
-
-static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
 {
     Py_UNICODE *data;
@@ -5716,7 +5706,6 @@ static PyMethodDef TestMethods[] = {
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
 #if USE_UNICODE_WCHAR_CACHE
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
-    {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
 #endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},

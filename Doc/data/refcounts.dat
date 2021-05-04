@@ -2427,10 +2427,6 @@ PyUnicode_FromUnicode:Py_ssize_t:size::
 PyUnicode_AsUnicode:Py_UNICODE*:::
 PyUnicode_AsUnicode:PyObject*:unicode:0:
 
-PyUnicode_TransformDecimalToASCII:PyObject*::+1:
-PyUnicode_TransformDecimalToASCII:Py_UNICODE*:s::
-PyUnicode_TransformDecimalToASCII:Py_ssize_t:size::
-
 PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
 PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
 PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::

@@ -9523,45 +9523,6 @@ _PyUnicode_TransformDecimalAndSpaceToASCII(PyObject *unicode)
     return result;
 }
 
-PyObject *
-PyUnicode_TransformDecimalToASCII(Py_UNICODE *s,
-                                  Py_ssize_t length)
-{
-    PyObject *decimal;
-    Py_ssize_t i;
-    Py_UCS4 maxchar;
-    enum PyUnicode_Kind kind;
-    const void *data;
-
-    maxchar = 127;
-    for (i = 0; i < length; i++) {
-        Py_UCS4 ch = s[i];
-        if (ch > 127) {
-            int decimal = Py_UNICODE_TODECIMAL(ch);
-            if (decimal >= 0)
-                ch = '0' + decimal;
-            maxchar = Py_MAX(maxchar, ch);
-        }
-    }
-
-    /* Copy to a new string */
-    decimal = PyUnicode_New(length, maxchar);
-    if (decimal == NULL)
-        return decimal;
-    kind = PyUnicode_KIND(decimal);
-    data = PyUnicode_DATA(decimal);
-    /* Iterate over code points */
-    for (i = 0; i < length; i++) {
-        Py_UCS4 ch = s[i];
-        if (ch > 127) {
-            int decimal = Py_UNICODE_TODECIMAL(ch);
-            if (decimal >= 0)
-                ch = '0' + decimal;
-        }
-        PyUnicode_WRITE(kind, data, i, ch);
-    }
-    return unicode_result(decimal);
-}
 /* --- Decimal Encoder ---------------------------------------------------- */
 
 int

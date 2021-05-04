@@ -956,18 +956,6 @@ Py_DEPRECATED(3.3) PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
     const char *errors          /* error handling */
     );
 
-/* Transforms code points that have decimal digit property to the
-   corresponding ASCII digit code points.
-
-   Returns a new Unicode string on success, NULL on failure.
-*/
-
-Py_DEPRECATED(3.3)
-PyAPI_FUNC(PyObject*) PyUnicode_TransformDecimalToASCII(
-    Py_UNICODE *s,              /* Unicode buffer */
-    Py_ssize_t length           /* Number of Py_UNICODE chars to transform */
-    );
-
 /* Coverts a Unicode object holding a decimal value to an ASCII string
    for using in int, float and complex parsers.
    Transforms code points that have decimal digit property to the

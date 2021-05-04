@@ -719,17 +719,6 @@ Extension modules can continue using them, as they will not be removed in Python
       :c:func:`PyUnicode_ReadChar` or similar new APIs.
 
 
-.. c:function:: PyObject* PyUnicode_TransformDecimalToASCII(Py_UNICODE *s, Py_ssize_t size)
-
-   Create a Unicode object by replacing all decimal digits in
-   :c:type:`Py_UNICODE` buffer of the given *size* by ASCII digits 0--9
-   according to their decimal value.  Return ``NULL`` if an exception occurs.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`Py_UNICODE_TODECIMAL`.
-
-
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 
    Like :c:func:`PyUnicode_AsUnicode`, but also saves the :c:func:`Py_UNICODE`
