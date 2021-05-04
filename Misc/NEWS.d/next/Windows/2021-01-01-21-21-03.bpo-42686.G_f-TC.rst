@@ -1,0 +1,1 @@
+Build :mod:`sqlite3` with math functions enabled. Patch by Erlend E. Aasland.
