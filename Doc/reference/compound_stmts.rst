@@ -822,7 +822,7 @@ and binds no name.  Syntax:
 
 ``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
 but only within patterns.  It is an identifier, as usual, even within
-``match`` headers, ``guards``, and ``case blocks``.
+``match`` headers, ``guards``, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
 
