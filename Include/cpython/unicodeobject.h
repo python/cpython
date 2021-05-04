@@ -822,13 +822,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_AsASCIIString(
 
 /* --- Character Map Codecs ----------------------------------------------- */
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeCharmap(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* Number of Py_UNICODE chars to encode */
-    PyObject *mapping,          /* encoding mapping */
-    const char *errors          /* error handling */
-    );
-
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
     PyObject *unicode,          /* Unicode object */
     PyObject *mapping,          /* encoding mapping */

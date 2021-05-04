@@ -1342,19 +1342,6 @@ These are the mapping codec APIs:
    ``None`` are treated as "undefined mapping" and cause an error.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeCharmap(const Py_UNICODE *s, Py_ssize_t size, \
-                              PyObject *mapping, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using the given
-   *mapping* object and return the result as a bytes object.  Return ``NULL`` if
-   an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsCharmapString` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 The following codec API is special in that maps Unicode to Unicode.
 
 .. c:function:: PyObject* PyUnicode_Translate(PyObject *str, PyObject *table, const char *errors)

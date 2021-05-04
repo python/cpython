@@ -2572,12 +2572,6 @@ PyUnicode_DecodeCharmap:Py_ssize_t:size::
 PyUnicode_DecodeCharmap:PyObject*:mapping:0:
 PyUnicode_DecodeCharmap:const char*:errors::
 
-PyUnicode_EncodeCharmap:PyObject*::+1:
-PyUnicode_EncodeCharmap:const Py_UNICODE*:s::
-PyUnicode_EncodeCharmap:Py_ssize_t:size::
-PyUnicode_EncodeCharmap:PyObject*:mapping:0:
-PyUnicode_EncodeCharmap:const char*:errors::
-
 PyUnicode_AsCharmapString:PyObject*::+1:
 PyUnicode_AsCharmapString:PyObject*:unicode:0:
 PyUnicode_AsCharmapString:PyObject*:mapping:0:
