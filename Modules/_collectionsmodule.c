@@ -1306,8 +1306,6 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 static void
 deque_dealloc(dequeobject *deque)
 {
-    Py_ssize_t i;
-
     PyObject_GC_UnTrack(deque);
     if (deque->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) deque);
@@ -1318,9 +1316,6 @@ deque_dealloc(dequeobject *deque)
     }
     deque->leftblock = NULL;
     deque->rightblock = NULL;
-    for (i=0 ; i < deque->numfreeblocks ; i++) {
-        free(deque->freeblocks[i]);
-    }
     Py_TYPE(deque)->tp_free(deque);
 }
 
