@@ -268,7 +268,7 @@ class TestSuite(BaseTestSuite):
             case.doModuleCleanups()
         except Exception as e:
             self._createClassOrModuleLevelException(result, e,
-                                                    'tearDownModule',
+                                                    'doModuleCleanups',
                                                     previousModule)
 
     def _tearDownPreviousClass(self, test, result):
