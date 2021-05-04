@@ -405,6 +405,10 @@ points discuss more complex cases when an exception occurs:
   or :keyword:`!else` clause. Again, the exception is re-raised after
   the :keyword:`!finally` clause has been executed.
 
+* If the :keyword:`!finally` clause executes a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, exceptions are not
+  re-raised.
+
 * If the :keyword:`!try` statement reaches a :keyword:`break`,
   :keyword:`continue` or :keyword:`return` statement, the
   :keyword:`!finally` clause will execute just prior to the
