@@ -396,7 +396,7 @@ static int check_cursor(pysqlite_Cursor* cur)
 }
 
 static int
-_pysqlite_connection_begin(pysqlite_Connection *self)
+begin_transaction(pysqlite_Connection *self)
 {
     int rc;
     sqlite3_stmt* statement;
@@ -540,7 +540,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
        SELECT is the only exception. See #9924. */
     if (self->connection->begin_statement && self->statement->is_dml) {
         if (sqlite3_get_autocommit(self->connection->db)) {
-            if (_pysqlite_connection_begin(self->connection) < 0) {
+            if (begin_transaction(self->connection) < 0) {
                 goto error;
             }
         }
