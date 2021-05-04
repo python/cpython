@@ -372,7 +372,8 @@ int pysqlite_check_connection(pysqlite_Connection* con)
     }
 }
 
-PyObject* _pysqlite_connection_begin(pysqlite_Connection* self)
+int
+_pysqlite_connection_begin(pysqlite_Connection *self)
 {
     int rc;
     sqlite3_stmt* statement;
@@ -402,10 +403,9 @@ PyObject* _pysqlite_connection_begin(pysqlite_Connection* self)
 
 error:
     if (PyErr_Occurred()) {
-        return NULL;
-    } else {
-        Py_RETURN_NONE;
+        return -1;
     }
+    return 0;
 }
 
 /*[clinic input]

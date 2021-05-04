@@ -108,7 +108,7 @@ typedef struct
 
 extern PyTypeObject *pysqlite_ConnectionType;
 
-PyObject* _pysqlite_connection_begin(pysqlite_Connection* self);
+int _pysqlite_connection_begin(pysqlite_Connection *self);
 
 int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);

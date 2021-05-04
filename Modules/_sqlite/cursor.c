@@ -404,7 +404,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     int i;
     int rc;
     PyObject* func_args;
-    PyObject* result;
     int numcols;
     PyObject* column_name;
     sqlite_int64 lastrowid;
@@ -505,11 +504,9 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
        SELECT is the only exception. See #9924. */
     if (self->connection->begin_statement && self->statement->is_dml) {
         if (sqlite3_get_autocommit(self->connection->db)) {
-            result = _pysqlite_connection_begin(self->connection);
-            if (!result) {
+            if (_pysqlite_connection_begin(self->connection) < 0) {
                 goto error;
             }
-            Py_DECREF(result);
         }
     }
 
