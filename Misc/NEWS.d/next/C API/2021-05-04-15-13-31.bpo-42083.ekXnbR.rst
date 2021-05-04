@@ -1,0 +1,2 @@
+Fix crash in :c:func:`PyStructSequence_NewType` when passed ``NULL`` in the
+documentation string slot.
