@@ -1319,7 +1319,7 @@ deque_dealloc(dequeobject *deque)
     deque->leftblock = NULL;
     deque->rightblock = NULL;
     for (i=0 ; i < deque->numfreeblocks ; i++) {
-        free(deque->freeblocks[i]);
+        PyMem_Free(deque->freeblocks[i]);
     }
     Py_TYPE(deque)->tp_free(deque);
 }
