@@ -801,13 +801,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_DecodeUnicodeEscape(
                                               string. */
 );
 
-/* --- Raw-Unicode-Escape Codecs ------------------------------------------ */
-
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeRawUnicodeEscape(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length           /* Number of Py_UNICODE chars to encode */
-    );
-
 /* --- Latin-1 Codecs ----------------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) _PyUnicode_AsLatin1String(

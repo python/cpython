@@ -1251,18 +1251,6 @@ These are the "Raw Unicode Escape" codec APIs:
    was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s, \
-                              Py_ssize_t size)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given *size* using Raw-Unicode-Escape
-   and return a bytes object.  Return ``NULL`` if an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsRawUnicodeEscapeString` or
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 Latin-1 Codecs
 """"""""""""""
 

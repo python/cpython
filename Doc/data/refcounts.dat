@@ -2543,10 +2543,6 @@ PyUnicode_DecodeRawUnicodeEscape:const char*:s::
 PyUnicode_DecodeRawUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeRawUnicodeEscape:const char*:errors::
 
-PyUnicode_EncodeRawUnicodeEscape:PyObject*::+1:
-PyUnicode_EncodeRawUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeRawUnicodeEscape:Py_ssize_t:size::
-
 PyUnicode_AsRawUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsRawUnicodeEscapeString:PyObject*:unicode:0:
 
