@@ -2822,21 +2822,6 @@ PyUnicodeDecodeError_SetStart:int:::
 PyUnicodeDecodeError_SetStart:PyObject*:exc:0:
 PyUnicodeDecodeError_SetStart:Py_ssize_t:start::
 
-PyUnicodeEncodeError_Create:PyObject*::+1:
-PyUnicodeEncodeError_Create:const char*:encoding::
-PyUnicodeEncodeError_Create:const Py_UNICODE*:object::
-PyUnicodeEncodeError_Create:Py_ssize_t:length::
-PyUnicodeEncodeError_Create:Py_ssize_t:start::
-PyUnicodeEncodeError_Create:Py_ssize_t:end::
-PyUnicodeEncodeError_Create:const char*:reason::
-
-PyUnicodeTranslateError_Create:PyObject*::+1:
-PyUnicodeTranslateError_Create:const Py_UNICODE*:object::
-PyUnicodeTranslateError_Create:Py_ssize_t:length::
-PyUnicodeTranslateError_Create:Py_ssize_t:start::
-PyUnicodeTranslateError_Create:Py_ssize_t:end::
-PyUnicodeTranslateError_Create:const char*:reason::
-
 PyWeakref_Check:int:::
 PyWeakref_Check:PyObject*:ob::
 
