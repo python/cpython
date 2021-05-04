@@ -157,12 +157,8 @@ class Random(_random.Random):
             a = int.from_bytes(a + _sha512(a).digest(), 'big')
 
         elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
-            _warn('Seeding based on hashing is deprecated\n'
-                  'since Python 3.9 and will be removed in a subsequent '
-                  'version. The only \n'
-                  'supported seed types are: None, '
-                  'int, float, str, bytes, and bytearray.',
-                  DeprecationWarning, 2)
+            raise TypeError('The only supported seed types are: None,\n'
+                            'int, float, str, bytes, and bytearray.')
 
         super().seed(a)
         self.gauss_next = None
@@ -377,34 +373,17 @@ class Random(_random.Random):
         # raises IndexError if seq is empty
         return seq[self._randbelow(len(seq))]
 
-    def shuffle(self, x, random=None):
-        """Shuffle list x in place, and return None.
+    def shuffle(self, x):
+        """Shuffle list x in place, and return None."""
 
-        Optional argument random is a 0-argument function returning a
-        random float in [0.0, 1.0); if it is the default None, the
-        standard random.random will be used.
-
-        """
-
-        if random is None:
-            randbelow = self._randbelow
-            for i in reversed(range(1, len(x))):
-                # pick an element in x[:i+1] with which to exchange x[i]
-                j = randbelow(i + 1)
-                x[i], x[j] = x[j], x[i]
-        else:
-            _warn('The *random* parameter to shuffle() has been deprecated\n'
-                  'since Python 3.9 and will be removed in a subsequent '
-                  'version.',
-                  DeprecationWarning, 2)
-            floor = _floor
-            for i in reversed(range(1, len(x))):
-                # pick an element in x[:i+1] with which to exchange x[i]
-                j = floor(random() * (i + 1))
-                x[i], x[j] = x[j], x[i]
+        randbelow = self._randbelow
+        for i in reversed(range(1, len(x))):
+            # pick an element in x[:i+1] with which to exchange x[i]
+            j = randbelow(i + 1)
+            x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k, *, counts=None):
-        """Chooses k unique random elements from a population sequence or set.
+        """Chooses k unique random elements from a population sequence.
 
         Returns a new list containing elements from the population while
         leaving the original population unchanged.  The resulting list is
@@ -457,13 +436,8 @@ class Random(_random.Random):
         # causing them to eat more entropy than necessary.
 
         if not isinstance(population, _Sequence):
-            if isinstance(population, _Set):
-                _warn('Sampling from a set deprecated\n'
-                      'since Python 3.9 and will be removed in a subsequent version.',
-                      DeprecationWarning, 2)
-                population = tuple(population)
-            else:
-                raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
+            raise TypeError("Population must be a sequence.  "
+                            "For dicts or sets, use sorted(d).")
         n = len(population)
         if counts is not None:
             cum_counts = list(_accumulate(counts))
