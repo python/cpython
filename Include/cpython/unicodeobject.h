@@ -745,14 +745,6 @@ PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF7(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
-    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
-    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
-    const char *errors          /* error handling */
-    );
-
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
     int base64SetO,             /* Encode RFC2152 Set O characters in base64 */

@@ -1211,23 +1211,6 @@ These are the UTF-7 codec APIs:
    bytes that have been decoded will be stored in *consumed*.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeUTF7(const Py_UNICODE *s, Py_ssize_t size, \
-                              int base64SetO, int base64WhiteSpace, const char *errors)
-
-   Encode the :c:type:`Py_UNICODE` buffer of the given size using UTF-7 and
-   return a Python bytes object.  Return ``NULL`` if an exception was raised by
-   the codec.
-
-   If *base64SetO* is nonzero, "Set O" (punctuation that has no otherwise
-   special meaning) will be encoded in base-64.  If *base64WhiteSpace* is
-   nonzero, whitespace will be encoded in base-64.  Both are set to zero for the
-   Python "utf-7" codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsEncodedString`.
-
-
 Unicode-Escape Codecs
 """""""""""""""""""""
 

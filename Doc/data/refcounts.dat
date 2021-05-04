@@ -2490,13 +2490,6 @@ PyUnicode_DecodeUTF7Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF7Stateful:const char*:errors::
 PyUnicode_DecodeUTF7Stateful:Py_ssize_t*:consumed::
 
-PyUnicode_EncodeUTF7:PyObject*::+1:
-PyUnicode_EncodeUTF7:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF7:Py_ssize_t:size::
-PyUnicode_EncodeUTF7:int:base64SetO::
-PyUnicode_EncodeUTF7:int:base64WhiteSpace::
-PyUnicode_EncodeUTF7:const char*:errors::
-
 PyUnicode_DecodeUTF8:PyObject*::+1:
 PyUnicode_DecodeUTF8:const char*:s::
 PyUnicode_DecodeUTF8:Py_ssize_t:size::
