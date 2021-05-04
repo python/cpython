@@ -789,19 +789,7 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF32(
    If byteorder is 0, the output string will always start with the
    Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark is
    prepended.
-
-   Note that Py_UNICODE data is being interpreted as UTF-16 reduced to
-   UCS-2. This trick makes it possible to add full UTF-16 capabilities
-   at a later point without compromising the APIs.
-
 */
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeUTF16(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
-    const char *errors,         /* error handling */
-    int byteorder               /* byteorder to use 0=BOM+native;-1=LE,1=BE */
-    );
-
 PyAPI_FUNC(PyObject*) _PyUnicode_EncodeUTF16(
     PyObject* unicode,          /* Unicode object */
     const char *errors,         /* error handling */

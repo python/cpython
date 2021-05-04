@@ -6337,21 +6337,6 @@ _PyUnicode_EncodeUTF16(PyObject *str,
 }
 
 PyObject *
-PyUnicode_EncodeUTF16(const Py_UNICODE *s,
-                      Py_ssize_t size,
-                      const char *errors,
-                      int byteorder)
-{
-    PyObject *result;
-    PyObject *tmp = PyUnicode_FromWideChar(s, size);
-    if (tmp == NULL)
-        return NULL;
-    result = _PyUnicode_EncodeUTF16(tmp, errors, byteorder);
-    Py_DECREF(tmp);
-    return result;
-}
-
-PyObject *
 PyUnicode_AsUTF16String(PyObject *unicode)
 {
     return _PyUnicode_EncodeUTF16(unicode, NULL, 0);

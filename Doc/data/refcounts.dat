@@ -2518,12 +2518,6 @@ PyUnicode_DecodeUTF16:Py_ssize_t:size::
 PyUnicode_DecodeUTF16:const char*:errors::
 PyUnicode_DecodeUTF16:int*:byteorder::
 
-PyUnicode_EncodeUTF16:PyObject*::+1:
-PyUnicode_EncodeUTF16:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF16:Py_ssize_t:size::
-PyUnicode_EncodeUTF16:const char*:errors::
-PyUnicode_EncodeUTF16:int:byteorder::
-
 PyUnicode_AsUTF16String:PyObject*::+1:
 PyUnicode_AsUTF16String:PyObject*:unicode:0:
 
