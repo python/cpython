@@ -8034,20 +8034,6 @@ encode_code_page(int code_page,
 }
 
 PyObject *
-PyUnicode_EncodeMBCS(const Py_UNICODE *p,
-                     Py_ssize_t size,
-                     const char *errors)
-{
-    PyObject *unicode, *res;
-    unicode = PyUnicode_FromWideChar(p, size);
-    if (unicode == NULL)
-        return NULL;
-    res = encode_code_page(CP_ACP, unicode, errors);
-    Py_DECREF(unicode);
-    return res;
-}
-
-PyObject *
 PyUnicode_EncodeCodePage(int code_page,
                          PyObject *unicode,
                          const char *errors)

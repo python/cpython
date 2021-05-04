@@ -831,16 +831,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_EncodeCharmap(
     const char *errors          /* error handling */
     );
 
-/* --- MBCS codecs for Windows -------------------------------------------- */
-
-#ifdef MS_WINDOWS
-Py_DEPRECATED(3.3) PyAPI_FUNC(PyObject*) PyUnicode_EncodeMBCS(
-    const Py_UNICODE *data,     /* Unicode char buffer */
-    Py_ssize_t length,          /* number of Py_UNICODE chars to encode */
-    const char *errors          /* error handling */
-    );
-#endif
-
 /* --- Decimal Encoder ---------------------------------------------------- */
 
 /* Coverts a Unicode object holding a decimal value to an ASCII string

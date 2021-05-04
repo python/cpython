@@ -2588,11 +2588,6 @@ PyUnicode_EncodeCodePage:int:code_page::
 PyUnicode_EncodeCodePage:PyObject*:unicode:0:
 PyUnicode_EncodeCodePage:const char*:errors::
 
-PyUnicode_EncodeMBCS:PyObject*::+1:
-PyUnicode_EncodeMBCS:const Py_UNICODE*:s::
-PyUnicode_EncodeMBCS:Py_ssize_t:size::
-PyUnicode_EncodeMBCS:const char*:errors::
-
 PyUnicode_AsMBCSString:PyObject*::+1:
 PyUnicode_AsMBCSString:PyObject*:unicode:0:
 
