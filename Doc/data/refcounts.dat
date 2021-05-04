@@ -2543,12 +2543,6 @@ PyUnicode_DecodeUTF32Stateful:Py_ssize_t*:consumed::
 PyUnicode_AsUTF32String:PyObject*::+1:
 PyUnicode_AsUTF32String:PyObject*:unicode:0:
 
-PyUnicode_EncodeUTF32:PyObject*::+1:
-PyUnicode_EncodeUTF32:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF32:Py_ssize_t:size::
-PyUnicode_EncodeUTF32:const char*:errors::
-PyUnicode_EncodeUTF32:int:byteorder::
-
 PyUnicode_DecodeUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeUnicodeEscape:const char*:s::
 PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::

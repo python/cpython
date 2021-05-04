@@ -5999,21 +5999,6 @@ _PyUnicode_EncodeUTF32(PyObject *str,
 }
 
 PyObject *
-PyUnicode_EncodeUTF32(const Py_UNICODE *s,
-                      Py_ssize_t size,
-                      const char *errors,
-                      int byteorder)
-{
-    PyObject *result;
-    PyObject *tmp = PyUnicode_FromWideChar(s, size);
-    if (tmp == NULL)
-        return NULL;
-    result = _PyUnicode_EncodeUTF32(tmp, errors, byteorder);
-    Py_DECREF(tmp);
-    return result;
-}
-
-PyObject *
 PyUnicode_AsUTF32String(PyObject *unicode)
 {
     return _PyUnicode_EncodeUTF32(unicode, NULL, 0);

@@ -1139,29 +1139,6 @@ These are the UTF-32 codec APIs:
    Return ``NULL`` if an exception was raised by the codec.
 
 
-.. c:function:: PyObject* PyUnicode_EncodeUTF32(const Py_UNICODE *s, Py_ssize_t size, \
-                              const char *errors, int byteorder)
-
-   Return a Python bytes object holding the UTF-32 encoded value of the Unicode
-   data in *s*.  Output is written according to the following byte order::
-
-      byteorder == -1: little endian
-      byteorder == 0:  native byte order (writes a BOM mark)
-      byteorder == 1:  big endian
-
-   If byteorder is ``0``, the output string will always start with the Unicode BOM
-   mark (U+FEFF). In the other two modes, no BOM mark is prepended.
-
-   If ``Py_UNICODE_WIDE`` is not defined, surrogate pairs will be output
-   as a single code point.
-
-   Return ``NULL`` if an exception was raised by the codec.
-
-   .. deprecated-removed:: 3.3 3.11
-      Part of the old-style :c:type:`Py_UNICODE` API; please migrate to using
-      :c:func:`PyUnicode_AsUTF32String` or :c:func:`PyUnicode_AsEncodedString`.
-
-
 UTF-16 Codecs
 """""""""""""
 
