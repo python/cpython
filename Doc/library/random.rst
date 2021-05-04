@@ -86,8 +86,8 @@ Bookkeeping functions
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
 
-   .. deprecated:: 3.9
-      In the future, the *seed* must be one of the following types:
+   .. versionchanged:: 3.11
+      The *seed* must be one of the following types:
       *NoneType*, :class:`int`, :class:`float`, :class:`str`,
       :class:`bytes`, or :class:`bytearray`.
 
@@ -208,12 +208,9 @@ Functions for sequences
       Raises a :exc:`ValueError` if all weights are zero.
 
 
-.. function:: shuffle(x[, random])
+.. function:: shuffle(x)
 
    Shuffle the sequence *x* in place.
-
-   The optional argument *random* is a 0-argument function returning a random
-   float in [0.0, 1.0); by default, this is the function :func:`.random`.
 
    To shuffle an immutable sequence and return a new shuffled list, use
    ``sample(x, k=len(x))`` instead.
@@ -230,8 +227,8 @@ Functions for sequences
 
 .. function:: sample(population, k, *, counts=None)
 
-   Return a *k* length list of unique elements chosen from the population sequence
-   or set. Used for random sampling without replacement.
+   Return a *k* length list of unique elements chosen from the population
+   sequence.  Used for random sampling without replacement.
 
    Returns a new list containing elements from the population while leaving the
    original population unchanged.  The resulting list is in selection order so that
@@ -257,11 +254,10 @@ Functions for sequences
    .. versionchanged:: 3.9
       Added the *counts* parameter.
 
-   .. deprecated:: 3.9
-      In the future, the *population* must be a sequence.  Instances of
-      :class:`set` are no longer supported.  The set must first be converted
-      to a :class:`list` or :class:`tuple`, preferably in a deterministic
-      order so that the sample is reproducible.
+   .. versionchanged:: 3.11
+
+      The *population* must be a sequence.  Automatic conversion of sets
+      to lists is longer supported.
 
 
 .. _real-valued-distributions:
