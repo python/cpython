@@ -372,42 +372,6 @@ int pysqlite_check_connection(pysqlite_Connection* con)
     }
 }
 
-int
-_pysqlite_connection_begin(pysqlite_Connection *self)
-{
-    int rc;
-    sqlite3_stmt* statement;
-
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare_v2(self->db, self->begin_statement, -1, &statement,
-                            NULL);
-    Py_END_ALLOW_THREADS
-
-    if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db);
-        goto error;
-    }
-
-    rc = pysqlite_step(statement, self);
-    if (rc != SQLITE_DONE) {
-        _pysqlite_seterror(self->db);
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_finalize(statement);
-    Py_END_ALLOW_THREADS
-
-    if (rc != SQLITE_OK && !PyErr_Occurred()) {
-        _pysqlite_seterror(self->db);
-    }
-
-error:
-    if (PyErr_Occurred()) {
-        return -1;
-    }
-    return 0;
-}
-
 /*[clinic input]
 _sqlite3.Connection.commit as pysqlite_connection_commit
 
