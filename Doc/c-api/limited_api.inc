@@ -77,7 +77,7 @@
 * :c:func:`PyCodec_StreamReader`
 * :c:func:`PyCodec_StreamWriter`
 * :c:func:`PyCodec_StrictErrors`
-* :c:data:`PyCodec_Unregister`
+* :c:func:`PyCodec_Unregister`
 * :c:func:`PyCodec_XMLCharRefReplaceErrors`
 * :c:func:`PyComplex_FromDoubles`
 * :c:func:`PyComplex_ImagAsDouble`

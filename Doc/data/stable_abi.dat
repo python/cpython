@@ -78,7 +78,7 @@ function PyCodec_ReplaceErrors 3.2
 function PyCodec_StreamReader 3.2
 function PyCodec_StreamWriter 3.2
 function PyCodec_StrictErrors 3.2
-var PyCodec_Unregister 3.10
+function PyCodec_Unregister 3.10
 function PyCodec_XMLCharRefReplaceErrors 3.2
 function PyComplex_FromDoubles 3.2
 function PyComplex_ImagAsDouble 3.2
