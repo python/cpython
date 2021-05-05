@@ -1835,6 +1835,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        case TARGET(MAKE_CELL): {
+            // XXX
+            DISPATCH();
+        }
+
         /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
         case TARGET(LOAD_CLOSURE):
         case TARGET(LOAD_FAST): {
