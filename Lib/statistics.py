@@ -952,11 +952,16 @@ def linear_regression(regressor, dependent_variable, /):
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
+    x, y = regressor, dependent_variable
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    xvar = fsum((xi - xbar) ** 2.0 for xi in x)
+    cov = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     try:
-        slope = covariance(regressor, dependent_variable) / variance(regressor)
+        slope = cov / xvar
     except ZeroDivisionError:
         raise StatisticsError('regressor is constant')
-    intercept = fmean(dependent_variable) - slope * fmean(regressor)
+    intercept = ybar - slope * xbar
     return LinearRegression(intercept=intercept, slope=slope)
 
 
