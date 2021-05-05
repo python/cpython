@@ -64,6 +64,12 @@
 #define PLATFORM_BYTE_ORDER IS_BIG_ENDIAN
 #endif
 
+/* Bus error on 32-bit ARM due to un-aligned memory accesses; 64-bit ARM
+ * doesn't complain but un-aligned memory accesses are sub-optimal */
+#if defined(__arm__) || defined(__aarch64__)
+#define NO_MISALIGNED_ACCESSES
+#endif
+
 /* mangle names */
 #define KeccakF1600_FastLoop_Absorb _PySHA3_KeccakF1600_FastLoop_Absorb
 #define Keccak_HashFinal _PySHA3_Keccak_HashFinal
