@@ -10,6 +10,7 @@ import linecache
 import queue
 import sys
 import textwrap
+from test import support
 import time
 import traceback
 import _thread as thread
@@ -220,6 +221,13 @@ def print_exception():
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
     seen = set()
 
+    def fix_exc_last_line(lines, typ, exc):
+        if typ not in (AttributeError, NameError):
+            return lines
+        with support.captured_stderr() as err:
+            sys.__excepthook__(*sys.exc_info())
+        return [err.getvalue().split("\n")[-2] + "\n"]
+
     def print_exc(typ, exc, tb):
         seen.add(id(exc))
         context = exc.__context__
@@ -242,6 +250,7 @@ def print_exception():
             cleanup_traceback(tbe, exclude)
             traceback.print_list(tbe, file=efile)
         lines = traceback.format_exception_only(typ, exc)
+        lines = fix_exc_last_line(lines, typ, exc)
         for line in lines:
             print(line, end='', file=efile)
 
