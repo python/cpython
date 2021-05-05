@@ -1589,10 +1589,10 @@ class Readliner:
 class OfflineTest(TestCase):
     def test_all(self):
         # Documented objects defined in the module should be in __all__
-        expected = {"responses"}  # White-list documented dict() object
+        expected = {"responses"}  # Allowlist documented dict() object
         # HTTPMessage, parse_headers(), and the HTTP status code constants are
         # intentionally omitted for simplicity
-        denylist = {"HTTPMessage", "read_headers", "parse_headers"}
+        denylist = {"HTTPMessage", "parse_headers"}
         for name in dir(client):
             if name.startswith("_") or name in denylist:
                 continue
