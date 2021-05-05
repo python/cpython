@@ -6448,8 +6448,8 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform == 'darwin', 'macOS specific test')
 class TestMacOSTCPFlags(unittest.TestCase):
-     def test_tcp_keepalive(self):
-         self.assertTrue(socket.TCP_KEEPALIVE)
+    def test_tcp_keepalive(self):
+        self.assertTrue(socket.TCP_KEEPALIVE)
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
