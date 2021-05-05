@@ -202,8 +202,8 @@ class HTTPMessage(email.message.Message):
                 lst.append(line)
         return lst
 
-def read_headers(fp):
-    """Reads headers into a list from a file pointer.
+def _read_headers(fp):
+    """Reads potential header lines into a list from a file pointer.
 
     Length of line is limited by _MAXLINE, and number of
     headers is limited by _MAXHEADERS.
@@ -230,7 +230,7 @@ def parse_headers(fp, _class=HTTPMessage):
     to parse.
 
     """
-    headers = read_headers(fp)
+    headers = _read_headers(fp)
     hstring = b''.join(headers).decode('iso-8859-1')
     return email.parser.Parser(_class=_class).parsestr(hstring)
 
@@ -318,9 +318,10 @@ class HTTPResponse(io.BufferedIOBase):
             if status != CONTINUE:
                 break
             # skip the header from the 100 response
-            skip = read_headers(self.fp)
+            skipped_headers = _read_headers(self.fp)
             if self.debuglevel > 0:
-                print("header:", skip)
+                print("headers:", skipped_headers)
+            del skipped_headers
 
         self.code = self.status = status
         self.reason = reason.strip()
