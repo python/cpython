@@ -537,6 +537,10 @@ Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
 If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
 (Contributed by Oleksandr Pavliuk in :issue:`34788`.)
 
+Starting with Python 3.9.5 the :mod:`ipaddress` module no longer
+accepts any leading zeros in IPv4 address strings.
+(Contributed by Christian Heimes in :issue:`36384`).
+
 math
 ----
 
@@ -1114,6 +1118,14 @@ Changes in the Python API
   compatible classes that don't inherit from those mentioned types.
   (Contributed by Roger Aiudi in :issue:`34775`).
 
+* Starting with Python 3.9.5 the :mod:`ipaddress` module no longer
+  accepts any leading zeros in IPv4 address strings. Leading zeros are
+  ambiguous and interpreted as octal notation by some libraries. For example
+  the legacy function :func:`socket.inet_aton` treats leading zeros as octal
+  notatation. glibc implementation of modern :func:`~socket.inet_pton` does
+  not accept any leading zeros.
+  (Contributed by Christian Heimes in :issue:`36384`).
+
 * :func:`codecs.lookup` now normalizes the encoding name the same way as
   :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
   converts the name to lower case. For example, ``"latex+latin1"`` encoding
@@ -1482,7 +1494,7 @@ and to match the behavior of static type checkers specified in the PEP.
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
 4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
-   equality comparisons if one of their parameters are not :term:`immutable`.
+   equality comparisons if any of their parameters are not :term:`hashable`.
    Note that declaring ``Literal`` with mutable parameters will not throw
    an error::
 

@@ -1199,6 +1199,69 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       .. versionadded:: 3.10
 
+   .. data:: Py_TPFLAGS_DISALLOW_INSTANTIATION
+
+      Disallow creating instances of the type: set
+      :c:member:`~PyTypeObject.tp_new` to NULL and don't create the ``__new__``
+      key in the type dictionary.
+
+      The flag must be set before creating the type, not after. For example, it
+      must be set before :c:func:`PyType_Ready` is called on the type.
+
+      The flag is set automatically on :ref:`static types <static-types>` if
+      :c:member:`~PyTypeObject.tp_base` is NULL or ``&PyBaseObject_Type`` and
+      :c:member:`~PyTypeObject.tp_new` is NULL.
+
+      **Inheritance:**
+
+      This flag is not inherited.
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_MAPPING
+
+      This bit indicates that instances of the class may match mapping patterns
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Mapping`, and
+      unset when registering :class:`collections.abc.Sequence`.
+
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error enable both flags simultaneously.
+
+      **Inheritance:**
+
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_SEQUENCE`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
+
+      .. versionadded:: 3.10
+
+
+   .. data:: Py_TPFLAGS_SEQUENCE
+
+      This bit indicates that instances of the class may match sequence patterns
+      when used as the subject of a :keyword:`match` block. It is automatically
+      set when registering or subclassing :class:`collections.abc.Sequence`, and
+      unset when registering :class:`collections.abc.Mapping`.
+
+      .. note::
+
+         :const:`Py_TPFLAGS_MAPPING` and :const:`Py_TPFLAGS_SEQUENCE` are
+         mutually exclusive; it is an error enable both flags simultaneously.
+
+      **Inheritance:**
+
+      This flag is inherited by types that do not already set
+      :const:`Py_TPFLAGS_MAPPING`.
+
+      .. seealso:: :pep:`634` -- Structural Pattern Matching: Specification
+
+      .. versionadded:: 3.10
+
 
 .. c:member:: const char* PyTypeObject.tp_doc
 
@@ -1760,6 +1823,9 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    rule of thumb is that for immutable types, all initialization should take place
    in :c:member:`~PyTypeObject.tp_new`, while for mutable types, most initialization should be
    deferred to :c:member:`~PyTypeObject.tp_init`.
+
+   Set the :const:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag to disallow creating
+   instances of the type in Python.
 
    **Inheritance:**
 
@@ -2596,7 +2662,8 @@ A type that supports weakrefs, instance dicts, and hashing::
    };
 
 A str subclass that cannot be subclassed and cannot be called
-to create instances (e.g. uses a separate factory func)::
+to create instances (e.g. uses a separate factory func) using
+:c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` flag::
 
    typedef struct {
        PyUnicodeObject raw;
@@ -2609,8 +2676,7 @@ to create instances (e.g. uses a separate factory func)::
        .tp_basicsize = sizeof(MyStr),
        .tp_base = NULL,  // set to &PyUnicode_Type in module init
        .tp_doc = "my custom str",
-       .tp_flags = Py_TPFLAGS_DEFAULT,
-       .tp_new = NULL,
+       .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
        .tp_repr = (reprfunc)myobj_repr,
    };
 

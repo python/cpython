@@ -1283,6 +1283,9 @@ _PyPegen_run_parser(Parser *p)
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+                _PyPegen_check_tokenizer_errors(p);
+            }
             return NULL;
         }
         if (p->fill == 0) {
@@ -2352,7 +2355,17 @@ expr_ty
 _PyPegen_ensure_imaginary(Parser *p, expr_ty exp)
 {
     if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "Imaginary number required in complex literal");
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "imaginary number required in complex literal");
+        return NULL;
+    }
+    return exp;
+}
+
+expr_ty
+_PyPegen_ensure_real(Parser *p, expr_ty exp)
+{
+    if (exp->kind != Constant_kind || PyComplex_CheckExact(exp->v.Constant.value)) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "real number required in complex literal");
         return NULL;
     }
     return exp;

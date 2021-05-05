@@ -1018,7 +1018,7 @@ class Enum(metaclass=EnumType):
                 import warnings
                 warnings.warn(
                         "in 3.12 format() will use the enum member, not the enum member's value;\n"
-                        "use a format specifier, such as :d for an IntEnum member, to maintain"
+                        "use a format specifier, such as :d for an IntEnum member, to maintain "
                         "the current display",
                         DeprecationWarning,
                         stacklevel=2,

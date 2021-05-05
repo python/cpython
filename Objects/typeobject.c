@@ -52,6 +52,7 @@ typedef struct PySlot_Offset {
 
 /* alphabetical order */
 _Py_IDENTIFIER(__abstractmethods__);
+_Py_IDENTIFIER(__annotations__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__class_getitem__);
 _Py_IDENTIFIER(__classcell__);
@@ -156,6 +157,11 @@ _PyType_CheckConsistency(PyTypeObject *type)
 
     CHECK(!(type->tp_flags & Py_TPFLAGS_READYING));
     CHECK(type->tp_dict != NULL);
+
+    if (type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
+        CHECK(type->tp_new == NULL);
+        CHECK(_PyDict_ContainsId(type->tp_dict, &PyId___new__) == 0);
+    }
 
     return 1;
 #undef CHECK
@@ -460,14 +466,16 @@ static PyMemberDef type_members[] = {
 static int
 check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *name)
 {
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_Format(PyExc_TypeError,
-                     "can't set %s.%s", type->tp_name, name);
+                     "cannot set '%s' attribute of immutable type '%s'",
+                     name, type->tp_name);
         return 0;
     }
     if (!value) {
         PyErr_Format(PyExc_TypeError,
-                     "can't delete %s.%s", type->tp_name, name);
+                     "cannot delete '%s' attribute of immutable type '%s'",
+                     name, type->tp_name);
         return 0;
     }
 
@@ -930,6 +938,75 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
     return _PyDict_SetItemId(type->tp_dict, &PyId___doc__, value);
 }
 
+static PyObject *
+type_get_annotations(PyTypeObject *type, void *context)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotations__'", type->tp_name);
+        return NULL;
+    }
+
+    PyObject *annotations;
+    /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
+    if (_PyDict_ContainsId(type->tp_dict, &PyId___annotations__)) {
+        annotations = _PyDict_GetItemIdWithError(type->tp_dict, &PyId___annotations__);
+        /*
+        ** _PyDict_GetItemIdWithError could still fail,
+        ** for instance with a well-timed Ctrl-C or a MemoryError.
+        ** so let's be totally safe.
+        */
+        if (annotations) {
+            if (Py_TYPE(annotations)->tp_descr_get) {
+                annotations = Py_TYPE(annotations)->tp_descr_get(annotations, NULL,
+                                                       (PyObject *)type);
+            } else {
+                Py_INCREF(annotations);
+            }
+        }
+    } else {
+        annotations = PyDict_New();
+        if (annotations) {
+            int result = _PyDict_SetItemId(type->tp_dict, &PyId___annotations__, annotations);
+            if (result) {
+                Py_CLEAR(annotations);
+            } else {
+                PyType_Modified(type);
+            }
+        }
+    }
+    return annotations;
+}
+
+static int
+type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
+{
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot set '__annotations__' attribute of immutable type '%s'",
+                     type->tp_name);
+        return -1;
+    }
+
+    int result;
+    if (value != NULL) {
+        /* set */
+        result = _PyDict_SetItemId(type->tp_dict, &PyId___annotations__, value);
+    } else {
+        /* delete */
+        if (!_PyDict_ContainsId(type->tp_dict, &PyId___annotations__)) {
+            PyErr_Format(PyExc_AttributeError, "__annotations__");
+            return -1;
+        }
+        result = _PyDict_DelItemId(type->tp_dict, &PyId___annotations__);
+    }
+
+    if (result == 0) {
+        PyType_Modified(type);
+    }
+    return result;
+}
+
+
 /*[clinic input]
 type.__instancecheck__ -> bool
 
@@ -973,6 +1050,7 @@ static PyGetSetDef type_getsets[] = {
     {"__dict__",  (getter)type_dict,  NULL, NULL},
     {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
     {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
+    {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
     {0}
 };
 
@@ -1042,8 +1120,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (type->tp_new == NULL) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "cannot create '%.100s' instances",
-                      type->tp_name);
+                      "cannot create '%s' instances", type->tp_name);
         return NULL;
     }
 
@@ -3116,6 +3193,8 @@ type_new_impl(type_new_ctx *ctx)
     if (type_new_init_subclass(type, ctx->kwds) < 0) {
         goto error;
     }
+
+    assert(_PyType_CheckConsistency(type));
     return (PyObject *)type;
 
 error:
@@ -3878,8 +3957,8 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         PyErr_Format(
             PyExc_TypeError,
-            "can't set attributes of built-in/extension type '%s'",
-            type->tp_name);
+            "cannot set %R attribute of immutable type '%s'",
+            name, type->tp_name);
         return -1;
     }
     if (PyUnicode_Check(name)) {
@@ -4668,10 +4747,10 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     */
     if (!(PyType_IsSubtype(newto, &PyModule_Type) &&
           PyType_IsSubtype(oldto, &PyModule_Type)) &&
-        (!(newto->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
-         !(oldto->tp_flags & Py_TPFLAGS_HEAPTYPE))) {
+        (_PyType_HasFeature(newto, Py_TPFLAGS_IMMUTABLETYPE) ||
+         _PyType_HasFeature(oldto, Py_TPFLAGS_IMMUTABLETYPE))) {
         PyErr_Format(PyExc_TypeError,
-                     "__class__ assignment only supported for heap types "
+                     "__class__ assignment only supported for mutable types "
                      "or ModuleType subclasses");
         return -1;
     }
@@ -5582,7 +5661,6 @@ type_add_getset(PyTypeObject *type)
 static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
-
     /* Copying tp_traverse and tp_clear is connected to the GC flags */
     if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
         (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
@@ -5593,23 +5671,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         if (type->tp_clear == NULL)
             type->tp_clear = base->tp_clear;
     }
-    {
-        /* The condition below could use some explanation.
-           It appears that tp_new is not inherited for static types
-           whose base class is 'object'; this seems to be a precaution
-           so that old extension types don't suddenly become
-           callable (object.__new__ wouldn't insure the invariants
-           that the extension type's own factory function ensures).
-           Heap types, of course, are under our control, so they do
-           inherit tp_new; static extension types that specify some
-           other built-in type as the default also
-           inherit object.__new__. */
-        if (base != &PyBaseObject_Type ||
-            (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-            if (type->tp_new == NULL)
-                type->tp_new = base->tp_new;
-        }
-    }
+
     if (type->tp_basicsize == 0)
         type->tp_basicsize = base->tp_basicsize;
 
@@ -5648,7 +5710,6 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     else if (PyType_IsSubtype(base, &PyDict_Type)) {
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
     }
-
     if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
         type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
     }
@@ -5867,7 +5928,9 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 }
 
 static int add_operators(PyTypeObject *);
+static int add_tp_new_wrapper(PyTypeObject *type);
 
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 static int
 type_ready_checks(PyTypeObject *type)
@@ -5894,6 +5957,10 @@ type_ready_checks(PyTypeObject *type)
         _PyObject_ASSERT((PyObject *)type, type->tp_as_async->am_send != NULL);
     }
 
+    /* Consistency checks for pattern matching
+     * Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING are mutually exclusive */
+    _PyObject_ASSERT((PyObject *)type, (type->tp_flags & COLLECTION_FLAGS) != COLLECTION_FLAGS);
+
     if (type->tp_name == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "Type does not define the tp_name field.");
@@ -5917,6 +5984,7 @@ type_ready_set_bases(PyTypeObject *type)
             type->tp_base = base;
         }
     }
+    assert(type->tp_base != NULL || type == &PyBaseObject_Type);
 
     /* Now the only way base can still be NULL is if type is
      * &PyBaseObject_Type. */
@@ -6087,6 +6155,12 @@ type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
     }
 }
 
+static void
+inherit_patma_flags(PyTypeObject *type, PyTypeObject *base) {
+    if ((type->tp_flags & COLLECTION_FLAGS) == 0) {
+        type->tp_flags |= base->tp_flags & COLLECTION_FLAGS;
+    }
+}
 
 static int
 type_ready_inherit(PyTypeObject *type)
@@ -6106,6 +6180,7 @@ type_ready_inherit(PyTypeObject *type)
             if (inherit_slots(type, (PyTypeObject *)b) < 0) {
                 return -1;
             }
+            inherit_patma_flags(type, (PyTypeObject *)b);
         }
     }
 
@@ -6175,6 +6250,50 @@ type_ready_add_subclasses(PyTypeObject *type)
 }
 
 
+// Set tp_new and the "__new__" key in the type dictionary.
+// Use the Py_TPFLAGS_DISALLOW_INSTANTIATION flag.
+static int
+type_ready_set_new(PyTypeObject *type)
+{
+    PyTypeObject *base = type->tp_base;
+    /* The condition below could use some explanation.
+
+       It appears that tp_new is not inherited for static types whose base
+       class is 'object'; this seems to be a precaution so that old extension
+       types don't suddenly become callable (object.__new__ wouldn't insure the
+       invariants that the extension type's own factory function ensures).
+
+       Heap types, of course, are under our control, so they do inherit tp_new;
+       static extension types that specify some other built-in type as the
+       default also inherit object.__new__. */
+    if (type->tp_new == NULL
+        && base == &PyBaseObject_Type
+        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+    {
+        type->tp_flags |= Py_TPFLAGS_DISALLOW_INSTANTIATION;
+    }
+
+    if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
+        if (type->tp_new != NULL) {
+            // If "__new__" key does not exists in the type dictionary,
+            // set it to tp_new_wrapper().
+            if (add_tp_new_wrapper(type) < 0) {
+                return -1;
+            }
+        }
+        else {
+            // tp_new is NULL: inherit tp_new from base
+            type->tp_new = base->tp_new;
+        }
+    }
+    else {
+        // Py_TPFLAGS_DISALLOW_INSTANTIATION sets tp_new to NULL
+        type->tp_new = NULL;
+    }
+    return 0;
+}
+
+
 static int
 type_ready(PyTypeObject *type)
 {
@@ -6199,6 +6318,9 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_mro(type) < 0) {
+        return -1;
+    }
+    if (type_ready_set_new(type) < 0) {
         return -1;
     }
     if (type_ready_fill_dict(type) < 0) {
@@ -6824,8 +6946,8 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
                      "__new__() called with non-type 'self'");
         return NULL;
     }
-
     type = (PyTypeObject *)self;
+
     if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
         PyErr_Format(PyExc_TypeError,
                      "%s.__new__(): not enough arguments",
@@ -6887,16 +7009,18 @@ static struct PyMethodDef tp_new_methoddef[] = {
 static int
 add_tp_new_wrapper(PyTypeObject *type)
 {
-    PyObject *func;
-
     int r = _PyDict_ContainsId(type->tp_dict, &PyId___new__);
-    if (r > 0)
+    if (r > 0) {
         return 0;
-    if (r < 0)
+    }
+    if (r < 0) {
         return -1;
-    func = PyCFunction_NewEx(tp_new_methoddef, (PyObject *)type, NULL);
-    if (func == NULL)
+    }
+
+    PyObject *func = PyCFunction_NewEx(tp_new_methoddef, (PyObject *)type, NULL);
+    if (func == NULL) {
         return -1;
+    }
     r = _PyDict_SetItemId(type->tp_dict, &PyId___new__, func);
     Py_DECREF(func);
     return r;
@@ -8482,11 +8606,6 @@ add_operators(PyTypeObject *type)
                 return -1;
             }
             Py_DECREF(descr);
-        }
-    }
-    if (type->tp_new != NULL) {
-        if (add_tp_new_wrapper(type) < 0) {
-            return -1;
         }
     }
     return 0;

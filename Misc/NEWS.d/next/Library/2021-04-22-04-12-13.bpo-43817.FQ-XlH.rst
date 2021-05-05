@@ -1,0 +1,11 @@
+Add :func:`inspect.get_annotations`, which safely computes the annotations
+defined on an object.  It works around the quirks of accessing the
+annotations from various types of objects, and makes very few assumptions
+about the object passed in. :func:`inspect.get_annotations` can also
+correctly un-stringize stringized annotations.
+
+:func:`inspect.signature`, :func:`inspect.from_callable`, and
+:func:`inspect.from_function` now call :func:`inspect.get_annotations`
+to retrieve annotations.  This means :func:`inspect.signature`
+and :func:`inspect.from_callable` can now un-stringize stringized
+annotations, too.

@@ -345,6 +345,25 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_TLSv1_2
         self.assertEqual(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv23)
 
+    def test_ssl_types(self):
+        ssl_types = [
+            _ssl._SSLContext,
+            _ssl._SSLSocket,
+            _ssl.MemoryBIO,
+            _ssl.Certificate,
+            _ssl.SSLSession,
+            _ssl.SSLError,
+        ]
+        for ssl_type in ssl_types:
+            with self.subTest(ssl_type=ssl_type):
+                with self.assertRaisesRegex(TypeError, "immutable type"):
+                    ssl_type.value = None
+        with self.assertRaisesRegex(
+            TypeError,
+            "cannot create '_ssl.Certificate' instances"
+        ):
+            _ssl.Certificate()
+
     def test_private_init(self):
         with self.assertRaisesRegex(TypeError, "public constructor"):
             with socket.socket() as s:
@@ -2568,8 +2587,8 @@ class ThreadedEchoServer(threading.Thread):
         threading.Thread.start(self)
 
     def run(self):
-        self.sock.settimeout(0.05)
-        self.sock.listen()
+        self.sock.settimeout(1.0)
+        self.sock.listen(5)
         self.active = True
         if self.flag:
             # signal an event
@@ -2583,8 +2602,9 @@ class ThreadedEchoServer(threading.Thread):
                 handler = self.ConnectionHandler(self, newconn, connaddr)
                 handler.start()
                 handler.join()
-            except TimeoutError:
-                pass
+            except TimeoutError as e:
+                if support.verbose:
+                    sys.stdout.write(f' connection timeout {e!r}\n')
             except KeyboardInterrupt:
                 self.stop()
             except BaseException as e:
@@ -2592,7 +2612,12 @@ class ThreadedEchoServer(threading.Thread):
                     sys.stdout.write(
                         ' connection handling failed: ' + repr(e) + '\n')
 
-        self.sock.close()
+        self.close()
+
+    def close(self):
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
 
     def stop(self):
         self.active = False

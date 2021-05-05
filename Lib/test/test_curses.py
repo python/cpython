@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-from test.support import requires, verbose, SaveSignals
+from test.support import requires, verbose, SaveSignals, cpython_only
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -1046,8 +1046,10 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    @cpython_only
     @requires_curses_func('panel')
-    def test_new_curses_panel(self):
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
         self.assertRaises(TypeError, type(panel))

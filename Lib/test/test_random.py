@@ -48,14 +48,18 @@ class TestBasicOps:
             self.gen.seed(arg)
 
         for arg in [1+2j, tuple('abc'), MySeed()]:
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
                 self.gen.seed(arg)
 
         for arg in [list(range(3)), dict(one=1)]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertRaises(TypeError, self.gen.seed, arg)
+            self.assertRaises(TypeError, self.gen.seed, arg)
         self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
+
+    def test_seed_no_mutate_bug_44018(self):
+        a = bytearray(b'1234')
+        self.gen.seed(a)
+        self.assertEqual(a, bytearray(b'1234'))
 
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
@@ -99,15 +103,6 @@ class TestBasicOps:
         shuffle(lst)
         self.assertTrue(lst != shuffled_lst)
         self.assertRaises(TypeError, shuffle, (1, 2, 3))
-
-    def test_shuffle_random_argument(self):
-        # Test random argument to shuffle.
-        shuffle = self.gen.shuffle
-        mock_random = unittest.mock.Mock(return_value=0.5)
-        seq = bytearray(b'abcdefghijk')
-        with self.assertWarns(DeprecationWarning):
-            shuffle(seq, mock_random)
-        mock_random.assert_called_with()
 
     def test_choice(self):
         choice = self.gen.choice
@@ -159,7 +154,7 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
 
     def test_sample_on_sets(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             population = {10, 20, 30, 40, 50, 60, 70}
             self.gen.sample(population, k=5)
 

@@ -161,8 +161,10 @@ def getTargetCompilers():
         '10.4': ('gcc-4.0', 'g++-4.0'),
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
+        '10.7': ('gcc', 'g++'),
+        '10.8': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
+    return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -363,6 +365,7 @@ def library_recipes():
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
                             '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
                  '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
               configure_pre=[
@@ -432,6 +435,14 @@ def library_recipes():
 
     return result
 
+def compilerCanOptimize():
+    """
+    Return True iff the default Xcode version can use PGO and LTO
+    """
+    # bpo-42235: The version check is pretty conservative, can be
+    # adjusted after testing
+    mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
+    return mac_ver >= (10, 15)
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
@@ -1172,6 +1183,7 @@ def buildPython():
                "%s "
                "%s "
                "%s "
+               "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
@@ -1184,6 +1196,7 @@ def buildPython():
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
                             shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 

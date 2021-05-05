@@ -100,6 +100,13 @@ __all__ = [
     'TypedDict',  # Not really a type.
     'Generator',
 
+    # Other concrete types.
+    'BinaryIO',
+    'IO',
+    'Match',
+    'Pattern',
+    'TextIO',
+
     # One-off things.
     'AnyStr',
     'cast',
@@ -1677,6 +1684,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
+            if isinstance(ann, types.GetSetDescriptorType):
+                ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
             if localns is None and globalns is None:
                 # This is surprising, but required.  Before Python 3.10,

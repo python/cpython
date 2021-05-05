@@ -25,8 +25,8 @@
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
-Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
-                   uint8_t **next_out, size_t *avail_out)
+OutputBuffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
+                         uint8_t **next_out, size_t *avail_out)
 {
     Py_ssize_t allocated;
 
@@ -39,8 +39,8 @@ Buffer_InitAndGrow(_BlocksOutputBuffer *buffer, Py_ssize_t max_length,
 /* On success, return value >= 0
    On failure, return -1 */
 static inline Py_ssize_t
-Buffer_Grow(_BlocksOutputBuffer *buffer,
-            uint8_t **next_out, size_t *avail_out)
+OutputBuffer_Grow(_BlocksOutputBuffer *buffer,
+                  uint8_t **next_out, size_t *avail_out)
 {
     Py_ssize_t allocated;
 
@@ -51,19 +51,19 @@ Buffer_Grow(_BlocksOutputBuffer *buffer,
 }
 
 static inline Py_ssize_t
-Buffer_GetDataSize(_BlocksOutputBuffer *buffer, size_t avail_out)
+OutputBuffer_GetDataSize(_BlocksOutputBuffer *buffer, size_t avail_out)
 {
     return _BlocksOutputBuffer_GetDataSize(buffer, (Py_ssize_t) avail_out);
 }
 
 static inline PyObject *
-Buffer_Finish(_BlocksOutputBuffer *buffer, size_t avail_out)
+OutputBuffer_Finish(_BlocksOutputBuffer *buffer, size_t avail_out)
 {
     return _BlocksOutputBuffer_Finish(buffer, (Py_ssize_t) avail_out);
 }
 
 static inline void
-Buffer_OnError(_BlocksOutputBuffer *buffer)
+OutputBuffer_OnError(_BlocksOutputBuffer *buffer)
 {
     _BlocksOutputBuffer_OnError(buffer);
 }
@@ -550,7 +550,7 @@ compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(c));
     assert(state != NULL);
 
-    if (Buffer_InitAndGrow(&buffer, -1, &c->lzs.next_out, &c->lzs.avail_out) < 0) {
+    if (OutputBuffer_InitAndGrow(&buffer, -1, &c->lzs.next_out, &c->lzs.avail_out) < 0) {
         goto error;
     }
     c->lzs.next_in = data;
@@ -573,19 +573,19 @@ compress(Compressor *c, uint8_t *data, size_t len, lzma_action action)
             (action == LZMA_FINISH && lzret == LZMA_STREAM_END)) {
             break;
         } else if (c->lzs.avail_out == 0) {
-            if (Buffer_Grow(&buffer, &c->lzs.next_out, &c->lzs.avail_out) < 0) {
+            if (OutputBuffer_Grow(&buffer, &c->lzs.next_out, &c->lzs.avail_out) < 0) {
                 goto error;
             }
         }
     }
 
-    result = Buffer_Finish(&buffer, c->lzs.avail_out);
+    result = OutputBuffer_Finish(&buffer, c->lzs.avail_out);
     if (result != NULL) {
         return result;
     }
 
 error:
-    Buffer_OnError(&buffer);
+    OutputBuffer_OnError(&buffer);
     return NULL;
 }
 
@@ -934,7 +934,7 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     _lzma_state *state = PyType_GetModuleState(Py_TYPE(d));
     assert(state != NULL);
 
-    if (Buffer_InitAndGrow(&buffer, max_length, &lzs->next_out, &lzs->avail_out) < 0) {
+    if (OutputBuffer_InitAndGrow(&buffer, max_length, &lzs->next_out, &lzs->avail_out) < 0) {
         goto error;
     }
 
@@ -962,10 +962,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
                Maybe lzs's internal state still have a few bytes
                can be output, grow the output buffer and continue
                if max_lengh < 0. */
-            if (Buffer_GetDataSize(&buffer, lzs->avail_out) == max_length) {
+            if (OutputBuffer_GetDataSize(&buffer, lzs->avail_out) == max_length) {
                 break;
             }
-            if (Buffer_Grow(&buffer, &lzs->next_out, &lzs->avail_out) < 0) {
+            if (OutputBuffer_Grow(&buffer, &lzs->next_out, &lzs->avail_out) < 0) {
                 goto error;
             }
         } else if (lzs->avail_in == 0) {
@@ -973,13 +973,13 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         }
     }
 
-    result = Buffer_Finish(&buffer, lzs->avail_out);
+    result = OutputBuffer_Finish(&buffer, lzs->avail_out);
     if (result != NULL) {
         return result;
     }
 
 error:
-    Buffer_OnError(&buffer);
+    OutputBuffer_OnError(&buffer);
     return NULL;
 }
 
