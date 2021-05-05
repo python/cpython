@@ -1338,6 +1338,20 @@ class ThreadingExceptionTests(BaseTestCase):
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
 
+    def test_multithread_modify_file(self):
+        import traceback
+        def modify_file():
+            with open(__file__, 'a') as fp:
+                fp.write(' ')
+                traceback.format_stack()
+
+        threads = [
+            threading.Thread(target=modify_file)
+            for i in range(100)
+        ]
+        [t.start() for t in threads]
+        [t.join() for t in threads]
+
 
 class ThreadRunFail(threading.Thread):
     def run(self):
@@ -1634,3 +1648,4 @@ class AtexitTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+                                                                                                                                                                                                        
