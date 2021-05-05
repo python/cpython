@@ -1180,13 +1180,13 @@ class BasicTest(TestCase):
         resp = client.HTTPResponse(FakeSocket(body))
         self.assertRaises(client.LineTooLong, resp.begin)
 
-    def test_overflowing_total_header_size_after_100(self):
+    def test_overflowing_header_limit_after_100(self):
         body = (
             'HTTP/1.1 100 OK\r\n'
             'r\n' * 32768
         )
         resp = client.HTTPResponse(FakeSocket(body))
-        self.assertRaises(client.LineTooLong, resp.begin)
+        self.assertRaises(client.HTTPException, resp.begin)
 
     def test_overflowing_chunked_line(self):
         body = (
