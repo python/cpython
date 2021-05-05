@@ -153,4 +153,4 @@ Contents of Limited API
 
 Currently, the Limited API includes the following items:
 
-.. include:: limited_api.inc
+.. limited-api-list::

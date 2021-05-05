@@ -22,10 +22,21 @@
 from os import path
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.parsers.rst import Directive
+from docutils.statemachine import StringList
 import csv
 
 from sphinx import addnodes
 from sphinx.domains.c import CObject
+
+
+REST_ROLE_MAP = {
+    'function': 'func',
+    'var': 'data',
+    'type': 'type',
+    'macro': 'macro',
+    'type': 'type',
+}
 
 
 class RCEntry:
@@ -71,7 +82,7 @@ class Annotations:
             for record in csv.DictReader(fp):
                 role = record['role']
                 name = record['name']
-                self.stable_abi_data.setdefault(role, {})[name] = record
+                self.stable_abi_data[name] = record
 
     def add_annotations(self, app, doctree):
         for node in doctree.traverse(addnodes.desc_content):
@@ -89,8 +100,12 @@ class Annotations:
             # Stable ABI annotation. These have two forms:
             #   Part of the [Stable ABI](link).
             #   Part of the [Stable ABI](link) since version X.Y.
-            record = self.stable_abi_data.get(objtype, {}).get(name)
+            record = self.stable_abi_data.get(name)
             if record:
+                if record['role'] != objtype:
+                    raise ValueError(
+                        f"Object type mismatch in limited API annotation "
+                        f"for {name}: {record['role']!r} != {objtype!r}")
                 stable_added = record['added']
                 message = ' Part of the '
                 emph_node = nodes.emphasis(message, message,
@@ -127,11 +142,31 @@ class Annotations:
 
 
 def init_annotations(app):
-    refcounts = Annotations(
+    annotations = Annotations(
         path.join(app.srcdir, app.config.refcount_file),
         path.join(app.srcdir, app.config.stable_abi_file),
     )
-    app.connect('doctree-read', refcounts.add_annotations)
+    app.connect('doctree-read', annotations.add_annotations)
+
+    class LimitedAPIList(Directive):
+
+        has_content = False
+        required_arguments = 0
+        optional_arguments = 0
+        final_argument_whitespace = True
+
+        def run(self):
+            content = []
+            for record in annotations.stable_abi_data.values():
+                role = REST_ROLE_MAP[record['role']]
+                name = record['name']
+                content.append(f'* :c:{role}:`{name}`')
+
+            pnode = nodes.paragraph()
+            self.state.nested_parse(StringList(content), 0, pnode)
+            return [pnode]
+
+    app.add_directive('limited-api-list', LimitedAPIList)
 
 
 def setup(app):
