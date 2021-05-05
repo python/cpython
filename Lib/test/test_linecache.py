@@ -38,6 +38,10 @@ def f():
     return 3''' # No ending newline
 
 
+SOURCE_4 = '''
+raise OSError
+'''
+
 class TempFile:
 
     def setUp(self):
@@ -180,6 +184,39 @@ class LineCacheTests(unittest.TestCase):
             for index, line in enumerate(source):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)
+
+    def test_checkcache_oserror(self):
+        linecache.clearcache()
+        _ = linecache.getlines(FILENAME)
+        self.assertTrue(_)
+        self.assertEqual(1, len(linecache.cache.keys()))
+        def raise_oserror(*args, **kwargs):
+            raise OSError
+        with support.swap_attr(os, 'stat', raise_oserror):
+            # pop all cache
+            _ = linecache.checkcache()
+            self.assertEqual(0, len(linecache.cache.keys()))
+
+    def test_updatecache_oserror(self):
+        linecache.clearcache()
+        def raise_oserror(*args, **kwargs):
+            raise OSError
+        source_name = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(source_name, 'w', encoding='utf-8') as source:
+            source.write(SOURCE_4)
+        _ = linecache.getlines(source_name)
+        self.assertEqual(1, len(linecache.cache.keys()))
+        
+        with support.swap_attr(os, 'stat', raise_oserror):
+            # Trace OSError with no pop cache
+            _ = linecache.updatecache('dummy')
+            self.assertEqual(1, len(linecache.cache.keys()))
+
+        with support.swap_attr(os, 'stat', raise_oserror):
+            # Trace OSError with pop cache
+            _ = linecache.updatecache(source_name)
+            self.assertEqual(0, len(linecache.cache.keys()))
 
     def test_lazycache_no_globals(self):
         lines = linecache.getlines(FILENAME)
