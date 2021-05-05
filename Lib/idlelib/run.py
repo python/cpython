@@ -4,13 +4,13 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+import contextlib
 import functools
 import io
 import linecache
 import queue
 import sys
 import textwrap
-from test import support
 import time
 import traceback
 import _thread as thread
@@ -224,7 +224,8 @@ def print_exception():
     def fix_exc_last_line(lines, typ, exc):
         if typ not in (AttributeError, NameError):
             return lines
-        with support.captured_stderr() as err:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
             sys.__excepthook__(*sys.exc_info())
         return [err.getvalue().split("\n")[-2] + "\n"]
 
