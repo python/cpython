@@ -1592,7 +1592,7 @@ class OfflineTest(TestCase):
         expected = {"responses"}  # White-list documented dict() object
         # HTTPMessage, parse_headers(), and the HTTP status code constants are
         # intentionally omitted for simplicity
-        denylist = {"HTTPMessage", "parse_headers"}
+        denylist = {"HTTPMessage", "read_headers", "parse_headers"}
         for name in dir(client):
             if name.startswith("_") or name in denylist:
                 continue
