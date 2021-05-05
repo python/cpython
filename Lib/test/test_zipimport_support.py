@@ -29,7 +29,8 @@ verbose = test.support.verbose
 #  test_cmd_line_script (covers the zipimport support in runpy)
 
 # Retrieve some helpers from other test cases
-from test import (test_doctest, sample_doctest, sample_doctest_no_doctests,
+from test import test_doctest
+from test.doctest import (sample_doctest, sample_doctest_no_doctests,
                   sample_doctest_no_docstrings)
 
 
@@ -104,7 +105,7 @@ class ZipSupportTests(unittest.TestCase):
                          "import test_zipped_doctest as test_doctest")
         test_src = test_src.replace("test.test_doctest",
                                     "test_zipped_doctest")
-        test_src = test_src.replace("test.sample_doctest",
+        test_src = test_src.replace("test.doctest.sample_doctest",
                                     "sample_zipped_doctest")
         # The sample doctest files rewritten to include in the zipped version.
         sample_sources = {}
@@ -113,7 +114,7 @@ class ZipSupportTests(unittest.TestCase):
             src = inspect.getsource(mod)
             src = src.replace("test.test_doctest", "test_zipped_doctest")
             # Rewrite the module name so that, for example,
-            # "test.sample_doctest" becomes "sample_zipped_doctest".
+            # "test.doctest.sample_doctest" becomes "sample_zipped_doctest".
             mod_name = mod.__name__.split(".")[-1]
             mod_name = mod_name.replace("sample_", "sample_zipped_")
             sample_sources[mod_name] = src

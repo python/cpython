@@ -568,14 +568,14 @@ Duplicate Removal
 If a single object is listed twice (under different names), then tests
 will only be generated for it once:
 
-    >>> from test import doctest_aliases
+    >>> from test.doctest import doctest_aliases
     >>> assert doctest_aliases.TwoNames.f
     >>> assert doctest_aliases.TwoNames.g
     >>> tests = excl_empty_finder.find(doctest_aliases)
     >>> print(len(tests))
     2
     >>> print(tests[0].name)
-    test.doctest_aliases.TwoNames
+    test.doctest.doctest_aliases.TwoNames
 
     TwoNames.f and TwoNames.g are bound to the same object.
     We can't guess which will be found in doctest's traversal of
@@ -2114,39 +2114,39 @@ def test_DocTestSuite():
        by passing a module object:
 
          >>> import unittest
-         >>> import test.sample_doctest
-         >>> suite = doctest.DocTestSuite(test.sample_doctest)
+         >>> import test.doctest.sample_doctest
+         >>> suite = doctest.DocTestSuite(test.doctest.sample_doctest)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can also supply the module by name:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest')
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
 
        The module need not contain any doctest examples:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest_no_doctests')
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest_no_doctests')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
 
        The module need not contain any docstrings either:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest_no_docstrings')
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest_no_docstrings')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
 
        We can use the current module:
 
-         >>> suite = test.sample_doctest.test_suite()
+         >>> suite = test.doctest.sample_doctest.test_suite()
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
 
        We can also provide a DocTestFinder:
 
          >>> finder = doctest.DocTestFinder()
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest',
          ...                          test_finder=finder)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=4>
@@ -2154,7 +2154,7 @@ def test_DocTestSuite():
        The DocTestFinder need not return any tests:
 
          >>> finder = doctest.DocTestFinder()
-         >>> suite = doctest.DocTestSuite('test.sample_doctest_no_docstrings',
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest_no_docstrings',
          ...                          test_finder=finder)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
@@ -2163,14 +2163,14 @@ def test_DocTestSuite():
        used instead of the module globals.  Here we'll pass an empty
        globals, triggering an extra error:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest', globs={})
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest', globs={})
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=5>
 
        Alternatively, we can provide extra globals.  Here we'll make an
        error go away by providing an extra global variable:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest',
          ...                              extraglobs={'y': 1})
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=3>
@@ -2178,7 +2178,7 @@ def test_DocTestSuite():
        You can pass option flags.  Here we'll cause an extra error
        by disabling the blank-line feature:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest',
          ...                      optionflags=doctest.DONT_ACCEPT_BLANKLINE)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=5>
@@ -2195,7 +2195,7 @@ def test_DocTestSuite():
 
        Here, we installed a silly variable that the test expects:
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest',
          ...      setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=3>
@@ -2214,7 +2214,7 @@ def test_DocTestSuite():
          >>> def setUp(test):
          ...     test.globs['y'] = 1
 
-         >>> suite = doctest.DocTestSuite('test.sample_doctest', setUp=setUp)
+         >>> suite = doctest.DocTestSuite('test.doctest.sample_doctest', setUp=setUp)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=9 errors=0 failures=3>
 
@@ -2231,11 +2231,9 @@ def test_DocFileSuite():
        files that include examples:
 
          >>> import unittest
-         >>> suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                              'test_doctest2.txt',
-         ...                              'test_doctest4.txt')
+         >>> suite = doctest.DocFileSuite('doctest_DocFileSuite_test.txt',)
          >>> suite.run(unittest.TestResult())
-         <unittest.result.TestResult run=3 errors=0 failures=2>
+         <unittest.result.TestResult run=1 errors=0 failures=0>
 
        The test files are looked for in the directory containing the
        calling module.  A package keyword argument can be provided to
@@ -2245,7 +2243,7 @@ def test_DocFileSuite():
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
          ...                              'test_doctest4.txt',
-         ...                              package='test')
+         ...                              package='test.doctest')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=2>
 
@@ -2261,7 +2259,7 @@ def test_DocFileSuite():
          ...     suite = doctest.DocFileSuite('test_doctest.txt',
          ...                                  'test_doctest2.txt',
          ...                                  'test_doctest4.txt',
-         ...                                  package='test')
+         ...                                  package='test.doctest')
          ...     suite.run(unittest.TestResult())
          ... finally:
          ...     if added_loader:
@@ -2271,7 +2269,7 @@ def test_DocFileSuite():
        '/' should be used as a path separator.  It will be converted
        to a native separator at run time:
 
-         >>> suite = doctest.DocFileSuite('../test/test_doctest.txt')
+         >>> suite = doctest.DocFileSuite('../test/doctest/test_doctest.txt')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=1 errors=0 failures=1>
 
@@ -2281,7 +2279,7 @@ def test_DocFileSuite():
          >>> import types, os.path, test.test_doctest
          >>> save_argv = sys.argv
          >>> sys.argv = [test.test_doctest.__file__]
-         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         >>> suite = doctest.DocFileSuite('doctest/test_doctest.txt',
          ...                              package=types.ModuleType('__main__'))
          >>> sys.argv = save_argv
 
@@ -2294,7 +2292,7 @@ def test_DocFileSuite():
          >>> test_pkg_path = os.path.split(test_doctest_path)[0]
 
          >>> # Use it to find the absolute path of test_doctest.txt.
-         >>> test_file = os.path.join(test_pkg_path, 'test_doctest.txt')
+         >>> test_file = os.path.join(test_pkg_path, 'doctest/test_doctest.txt')
 
          >>> suite = doctest.DocFileSuite(test_file, module_relative=False)
          >>> suite.run(unittest.TestResult())
@@ -2312,6 +2310,7 @@ def test_DocFileSuite():
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
          ...                              'test_doctest4.txt',
+         ...                              package='test.doctest',
          ...                              globs={'favorite_color': 'blue'})
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=1>
@@ -2322,6 +2321,7 @@ def test_DocFileSuite():
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
          ...                              'test_doctest4.txt',
+         ...                              package='test.doctest',
          ...                         optionflags=doctest.DONT_ACCEPT_BLANKLINE,
          ...                              globs={'favorite_color': 'blue'})
          >>> suite.run(unittest.TestResult())
@@ -2342,6 +2342,7 @@ def test_DocFileSuite():
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
          ...                              'test_doctest4.txt',
+         ...                              package='test.doctest',
          ...                              setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=1>
@@ -2361,7 +2362,7 @@ def test_DocFileSuite():
          >>> def setUp(test):
          ...     test.globs['favorite_color'] = 'blue'
 
-         >>> suite = doctest.DocFileSuite('test_doctest.txt', setUp=setUp)
+         >>> suite = doctest.DocFileSuite('doctest/test_doctest.txt', setUp=setUp)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=1 errors=0 failures=0>
 
@@ -2373,7 +2374,7 @@ def test_DocFileSuite():
        `__file__` global, which is set to the name of the file
        containing the tests:
 
-         >>> suite = doctest.DocFileSuite('test_doctest3.txt')
+         >>> suite = doctest.DocFileSuite('doctest/test_doctest3.txt')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=1 errors=0 failures=0>
 
@@ -2384,6 +2385,7 @@ def test_DocFileSuite():
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
          ...                              'test_doctest4.txt',
+         ...                              package='test.doctest',
          ...                              encoding='utf-8')
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=2>
@@ -2424,7 +2426,7 @@ def test_unittest_reportflags():
     output without the flag.  The file test_doctest.txt file has two
     tests. They both fail if blank lines are disabled:
 
-      >>> suite = doctest.DocFileSuite('test_doctest.txt',
+      >>> suite = doctest.DocFileSuite('doctest/test_doctest.txt',
       ...                          optionflags=doctest.DONT_ACCEPT_BLANKLINE)
       >>> import unittest
       >>> result = suite.run(unittest.TestResult())
@@ -2460,7 +2462,7 @@ def test_unittest_reportflags():
     If we give any reporting options when we set up the tests,
     however:
 
-      >>> suite = doctest.DocFileSuite('test_doctest.txt',
+      >>> suite = doctest.DocFileSuite('doctest/test_doctest.txt',
       ...     optionflags=doctest.DONT_ACCEPT_BLANKLINE | doctest.REPORT_NDIFF)
 
     Then the default eporting options are ignored:
@@ -2508,7 +2510,7 @@ We don't want `-v` in sys.argv for these tests.
     ...     sys.argv = [arg for arg in save_argv if arg != '-v']
 
 
-    >>> doctest.testfile('test_doctest.txt') # doctest: +ELLIPSIS
+    >>> doctest.testfile('doctest/test_doctest.txt') # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 6, in test_doctest.txt
     Failed example:
@@ -2530,12 +2532,12 @@ same name.)
 Globals may be specified with the `globs` and `extraglobs` parameters:
 
     >>> globs = {'favorite_color': 'blue'}
-    >>> doctest.testfile('test_doctest.txt', globs=globs)
+    >>> doctest.testfile('doctest/test_doctest.txt', globs=globs)
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
     >>> extraglobs = {'favorite_color': 'red'}
-    >>> doctest.testfile('test_doctest.txt', globs=globs,
+    >>> doctest.testfile('doctest/test_doctest.txt', globs=globs,
     ...                  extraglobs=extraglobs) # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 6, in test_doctest.txt
@@ -2555,14 +2557,14 @@ Globals may be specified with the `globs` and `extraglobs` parameters:
 The file may be made relative to a given module or package, using the
 optional `module_relative` parameter:
 
-    >>> doctest.testfile('test_doctest.txt', globs=globs,
+    >>> doctest.testfile('doctest/test_doctest.txt', globs=globs,
     ...                  module_relative='test')
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 Verbosity can be increased with the optional `verbose` parameter:
 
-    >>> doctest.testfile('test_doctest.txt', globs=globs, verbose=True)
+    >>> doctest.testfile('doctest/test_doctest.txt', globs=globs, verbose=True)
     Trying:
         favorite_color
     Expecting:
@@ -2589,7 +2591,7 @@ Verbosity can be increased with the optional `verbose` parameter:
 The name of the test may be specified with the optional `name`
 parameter:
 
-    >>> doctest.testfile('test_doctest.txt', name='newname')
+    >>> doctest.testfile('doctest/test_doctest.txt', name='newname')
     ... # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 6, in newname
@@ -2600,7 +2602,7 @@ parameter:
 The summary report may be suppressed with the optional `report`
 parameter:
 
-    >>> doctest.testfile('test_doctest.txt', report=False)
+    >>> doctest.testfile('doctest/test_doctest.txt', report=False)
     ... # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 6, in test_doctest.txt
@@ -2616,7 +2618,7 @@ The optional keyword argument `raise_on_error` can be used to raise an
 exception on the first error (which may be useful for postmortem
 debugging):
 
-    >>> doctest.testfile('test_doctest.txt', raise_on_error=True)
+    >>> doctest.testfile('doctest/test_doctest.txt', raise_on_error=True)
     ... # doctest: +ELLIPSIS
     Traceback (most recent call last):
     doctest.UnexpectedException: ...
@@ -2626,7 +2628,7 @@ If the tests contain non-ASCII characters, the tests might fail, since
 it's unknown which encoding is used. The encoding can be specified
 using the optional keyword argument `encoding`:
 
-    >>> doctest.testfile('test_doctest4.txt', encoding='latin-1') # doctest: +ELLIPSIS
+    >>> doctest.testfile('doctest/test_doctest4.txt', encoding='latin-1') # doctest: +ELLIPSIS
     **********************************************************************
     File "...", line 7, in test_doctest4.txt
     Failed example:
@@ -2644,13 +2646,13 @@ using the optional keyword argument `encoding`:
     TestResults(failed=2, attempted=2)
     >>> doctest.master = None  # Reset master.
 
-    >>> doctest.testfile('test_doctest4.txt', encoding='utf-8')
+    >>> doctest.testfile('doctest/test_doctest4.txt', encoding='utf-8')
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
 
 Test the verbose output:
 
-    >>> doctest.testfile('test_doctest4.txt', encoding='utf-8', verbose=True)
+    >>> doctest.testfile('doctest/test_doctest4.txt', encoding='utf-8', verbose=True)
     Trying:
         'föö'
     Expecting:
