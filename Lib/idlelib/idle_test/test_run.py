@@ -38,6 +38,33 @@ class PrintExceptionTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex2', tb[3])
         self.assertIn('UnhashableException: ex1', tb[10])
 
+    def test_print_exception_nameerror(self):
+        try:
+            abc
+        except NameError:
+            with captured_stderr() as output:
+                with mock.patch.object(run,
+                                       'cleanup_traceback') as ct:
+                    ct.side_effect = lambda t, e: t
+                    run.print_exception()
+        else:
+            unittest.skip("Polluted namespace")
+        self.assertIn("NameError: name 'abc' is not defined. Did you mean: 'abs'?",
+                      output.getvalue())
+
+    def test_print_exception_attributeerror(self):
+        abc = type("abc", (), {"something": None})
+        try:
+            abc.somethin
+        except AttributeError:
+            with captured_stderr() as output:
+                with mock.patch.object(run,
+                                       'cleanup_traceback') as ct:
+                    ct.side_effect = lambda t, e: t
+                    run.print_exception()
+        self.assertIn("AttributeError: type object 'abc' has no attribute 'somethin'. "
+                      "Did you mean: 'something'?", output.getvalue())
+
 
 # StdioFile tests.
 
