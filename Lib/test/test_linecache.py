@@ -37,10 +37,13 @@ SOURCE_3 = '''
 def f():
     return 3''' # No ending newline
 
-
 SOURCE_4 = '''
 raise OSError
 '''
+
+def raise_oserror(*args, **kwargs):
+        raise OSError
+
 
 class TempFile:
 
@@ -190,8 +193,7 @@ class LineCacheTests(unittest.TestCase):
         _ = linecache.getlines(FILENAME)
         self.assertTrue(_)
         self.assertEqual(1, len(linecache.cache.keys()))
-        def raise_oserror(*args, **kwargs):
-            raise OSError
+
         with support.swap_attr(os, 'stat', raise_oserror):
             # pop all cache
             _ = linecache.checkcache()
@@ -202,8 +204,6 @@ class LineCacheTests(unittest.TestCase):
         source_name = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
-        def raise_oserror(*args, **kwargs):
-            raise OSError
         with open(source_name, 'w', encoding='utf-8') as source:
             source.write(SOURCE_4)
         _ = linecache.getlines(source_name)
