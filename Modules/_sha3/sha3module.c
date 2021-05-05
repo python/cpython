@@ -64,9 +64,8 @@
 #define PLATFORM_BYTE_ORDER IS_BIG_ENDIAN
 #endif
 
-/* Bus error on 32-bit ARM due to un-aligned memory accesses; 64-bit ARM
- * doesn't complain but un-aligned memory accesses are sub-optimal */
-#if defined(__arm__) || defined(__aarch64__)
+/* Prevent bus errors on platforms requiring aligned accesses such ARM. */
+#if HAVE_ALIGNED_REQUIRED && !defined(NO_MISALIGNED_ACCESSES)
 #define NO_MISALIGNED_ACCESSES
 #endif
 
