@@ -199,15 +199,16 @@ class LineCacheTests(unittest.TestCase):
 
     def test_updatecache_oserror(self):
         linecache.clearcache()
-        def raise_oserror(*args, **kwargs):
-            raise OSError
         source_name = os_helper.TESTFN
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+
+        def raise_oserror(*args, **kwargs):
+            raise OSError
         with open(source_name, 'w', encoding='utf-8') as source:
             source.write(SOURCE_4)
         _ = linecache.getlines(source_name)
         self.assertEqual(1, len(linecache.cache.keys()))
-        
+
         with support.swap_attr(os, 'stat', raise_oserror):
             # Trace OSError with no pop cache
             _ = linecache.updatecache('dummy')
