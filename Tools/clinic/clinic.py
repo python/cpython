@@ -598,6 +598,7 @@ class CLanguage(Language):
         super().__init__(filename)
         self.cpp = cpp.Monitor(filename)
         self.cpp.fail = fail
+        self.use_limited_api = False
 
     def parse_line(self, line):
         self.cpp.writeline(line)
@@ -835,7 +836,7 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, '    {option_group_parsing}')
 
         elif not requires_defining_class and pos_only == len(parameters):
-            if not new_or_init:
+            if not new_or_init and not self.use_limited_api:
                 # positional-only, but no option groups
                 # we only need one call to _PyArg_ParseStack
 
@@ -874,7 +875,14 @@ class CLanguage(Language):
                         """, indent=4) % (nargs, i + 1))
                 parser_code.append(normalize_snippet(parsearg, indent=4))
 
-            if parser_code is not None:
+            if self.use_limited_api:
+                parser_code = [normalize_snippet("""
+                    if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+                    """, indent=4)]
+            elif parser_code is not None:
                 if has_optional:
                     parser_code.append("skip_optional:")
             else:
@@ -887,7 +895,7 @@ class CLanguage(Language):
                         """, indent=4)]
                 else:
                     parser_code = [normalize_snippet("""
-                        if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                        if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
                             {parse_arguments})) {{
                             goto exit;
                         }}
@@ -896,7 +904,7 @@ class CLanguage(Language):
 
         else:
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters))
-            if not new_or_init:
+            if not new_or_init and not self.use_limited_api:
                 flags = "METH_FASTCALL|METH_KEYWORDS"
                 parser_prototype = parser_prototype_fastcall_keywords
                 argname_fmt = 'args[%d]'
@@ -991,7 +999,25 @@ class CLanguage(Language):
                             }}
                             """ % add_label, indent=4))
 
-            if parser_code is not None:
+            if self.use_limited_api:
+                if parser_prototype is parser_prototype_keyword:
+                    declarations = 'static char *_keywords[] = {{{keywords} NULL}};'
+                    parser_code = [normalize_snippet("""
+                        if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords, {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """, indent=4)]
+                else:
+                    declarations = (
+                        'static const char * const _keywords[] = {{{keywords} NULL}};\n'
+                        'static _PyArg_Parser _parser = {{"{format_units}:{name}", _keywords, 0}};')
+                    parser_code = [normalize_snippet("""
+                        if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
+                            {parse_arguments})) {{
+                            goto exit;
+                        }}
+                        """, indent=4)]
+            elif parser_code is not None:
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
@@ -2040,7 +2066,7 @@ impl_definition block
         return module, cls
 
 
-def parse_file(filename, *, verify=True, output=None):
+def parse_file(filename, *, verify=True, output=None, use_limited_api=False):
     if not output:
         output = filename
 
@@ -2050,6 +2076,8 @@ def parse_file(filename, *, verify=True, output=None):
 
     try:
         language = extensions[extension](filename)
+        if isinstance(language, CLanguage):
+            language.use_limited_api = use_limited_api
     except KeyError:
         fail("Can't identify file type for file " + repr(filename))
 
@@ -5032,6 +5060,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')
     cmdline.add_argument("--converters", action='store_true')
+    cmdline.add_argument("--limited_api", action='store_true',
+                         help="Using the limited C API in the generated code.")
     cmdline.add_argument("--make", action='store_true',
                          help="Walk --srcdir to run over all relevant files.")
     cmdline.add_argument("--srcdir", type=str, default=os.curdir,
@@ -5121,7 +5151,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
                 path = os.path.join(root, filename)
                 if ns.verbose:
                     print(path)
-                parse_file(path, verify=not ns.force)
+                parse_file(path, verify=not ns.force,
+                           use_limited_api=ns.limited_api)
         return
 
     if not ns.filename:
@@ -5137,7 +5168,8 @@ For more information see https://docs.python.org/3/howto/clinic.html""")
     for filename in ns.filename:
         if ns.verbose:
             print(filename)
-        parse_file(filename, output=ns.output, verify=not ns.force)
+        parse_file(filename, output=ns.output, verify=not ns.force,
+                   use_limited_api=ns.limited_api)
 
 
 if __name__ == "__main__":
