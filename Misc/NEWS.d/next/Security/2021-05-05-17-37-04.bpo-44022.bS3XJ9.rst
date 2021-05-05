@@ -1,0 +1,1 @@
+Added total header size limit after receving http 100 to httplib client for avoiding malicious server packet causing client hangs.
