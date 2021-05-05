@@ -22,6 +22,7 @@
 from os import path
 from docutils import nodes
 from docutils.parsers.rst import directives
+import csv
 
 from sphinx import addnodes
 from sphinx.domains.c import CObject
@@ -67,12 +68,10 @@ class Annotations:
 
         self.stable_abi_data = {}
         with open(stable_abi_file, 'r') as fp:
-            for line in fp:
-                if line.startswith('#') or not line.strip():
-                    # ignore comments and blanks
-                    continue
-                objtype, name, added = line.split()
-                self.stable_abi_data.setdefault(objtype, {})[name] = added
+            for record in csv.DictReader(fp):
+                role = record['role']
+                name = record['name']
+                self.stable_abi_data.setdefault(role, {})[name] = record
 
     def add_annotations(self, app, doctree):
         for node in doctree.traverse(addnodes.desc_content):
@@ -90,8 +89,9 @@ class Annotations:
             # Stable ABI annotation. These have two forms:
             #   Part of the [Stable ABI](link).
             #   Part of the [Stable ABI](link) since version X.Y.
-            stable_added = self.stable_abi_data.get(objtype, {}).get(name)
-            if stable_added:
+            record = self.stable_abi_data.get(objtype, {}).get(name)
+            if record:
+                stable_added = record['added']
                 message = ' Part of the '
                 emph_node = nodes.emphasis(message, message,
                                            classes=['stableabi'])
@@ -100,6 +100,8 @@ class Annotations:
                     reftype='ref', refexplicit="False")
                 ref_node += nodes.Text('Stable ABI')
                 emph_node += ref_node
+                if record['ifdef_note']:
+                    emph_node += nodes.Text(' ' + record['ifdef_note'])
                 if stable_added == '3.2':
                     # Stable ABI was introduced in 3.2.
                     emph_node += nodes.Text('.')
