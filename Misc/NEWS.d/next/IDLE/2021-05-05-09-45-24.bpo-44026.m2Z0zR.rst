@@ -1,0 +1,1 @@
+IDLE now fetches the core interpreter's possible typo recommendations.
