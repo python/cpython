@@ -2730,7 +2730,17 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             check()
 
 
-class FilePathTest(unittest.TestCase, SubclassTestMixin):
+class FilePathTest(_BasePathTest, SubclassTestMixin, unittest.TestCase):
+    cls = pathlib.FilePath
+
+
+@only_posix
+class FilePathAsPosixPathTest(PosixPathTest):
+    cls = pathlib.FilePath
+
+
+@only_nt
+class FilePathAsWindowsPathTest(WindowsPathTest):
     cls = pathlib.FilePath
 
 

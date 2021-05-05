@@ -922,84 +922,14 @@ class _PurePathBase(object):
         return True
 
 
-#
-# Public API
-#
-
-
-class PurePath(_PurePathBase):
+class PathIOMixin:
     """
-    Factory to generate instances for manipulating paths without I/O.
+    Provides I/O operations for FilePath and Path derivatives.
 
-    Instantiating PurePath returns an instance of either PureWindowsPath
-    or PurePosixPath in its place depending on the flavour of system
-    present. The resultant class can then be used for path manipulations
-    but will not have any methods which make calls to the filesystem.
-    Alternatively, you can also instantiate either of these classes
-    directly, regardless of your system flavour.
+    Requires _PurePathBase in the mro.
     """
 
-    def __new__(cls, *args):
-        """
-        Construct a PurePath from string(s) and/or existing PurePaths
-
-        The strings and path objects are combined so as to yield a
-        canonicalized path, which is incorporated into the new PurePath
-        object.
-        """
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
-
-
-# Can't subclass os.PathLike from PurePath and keep the constructor
-# optimizations in PurePath._parse_args().
-os.PathLike.register(PurePath)
-
-
-class PurePosixPath(PurePath):
-    """PurePath subclass for non-Windows systems.
-
-    On a POSIX system, instantiating a PurePath should return this object.
-    However, you can also instantiate it directly on any system.
-    """
-    _flavour = _posix_flavour
-    __slots__ = ()
-
-
-class PureWindowsPath(PurePath):
-    """PurePath subclass for Windows systems.
-
-    On a Windows system, instantiating a PurePath should return this object.
-    However, you can also instantiate it directly on any system.
-    """
-    _flavour = _windows_flavour
-    __slots__ = ()
-
-
-# Filesystem-accessing classes
-
-
-class Path(PurePath):
-    """PurePath subclass that can make system calls.
-
-    Path represents a filesystem path but unlike PurePath, also offers
-    methods to do system calls on path objects. Depending on your system,
-    instantiating a Path will return either a PosixPath or a WindowsPath
-    object. You can also instantiate a PosixPath or WindowsPath directly,
-    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
-    """
     _accessor = _normal_accessor
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args)
-        if not self._flavour.is_supported:
-            raise NotImplementedError("cannot instantiate %r on your system"
-                                      % (cls.__name__,))
-        return self
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
@@ -1485,6 +1415,85 @@ class Path(PurePath):
         return self
 
 
+#
+# Public API
+#
+
+
+class PurePath(_PurePathBase):
+    """
+    Factory to generate instances for manipulating paths without I/O.
+
+    Instantiating PurePath returns an instance of either PureWindowsPath
+    or PurePosixPath in its place depending on the flavour of system
+    present. The resultant class can then be used for path manipulations
+    but will not have any methods which make calls to the filesystem.
+    Alternatively, you can also instantiate either of these classes
+    directly, regardless of your system flavour.
+    """
+
+    def __new__(cls, *args):
+        """
+        Construct a PurePath from string(s) and/or existing PurePaths
+
+        The strings and path objects are combined so as to yield a
+        canonicalized path, which is incorporated into the new PurePath
+        object.
+        """
+        if cls is PurePath:
+            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        return cls._from_parts(args)
+
+
+# Can't subclass os.PathLike from PurePath and keep the constructor
+# optimizations in PurePath._parse_args().
+os.PathLike.register(PurePath)
+
+
+class PurePosixPath(PurePath):
+    """PurePath subclass for non-Windows systems.
+
+    On a POSIX system, instantiating a PurePath should return this object.
+    However, you can also instantiate it directly on any system.
+    """
+    _flavour = _posix_flavour
+    __slots__ = ()
+
+
+class PureWindowsPath(PurePath):
+    """PurePath subclass for Windows systems.
+
+    On a Windows system, instantiating a PurePath should return this object.
+    However, you can also instantiate it directly on any system.
+    """
+    _flavour = _windows_flavour
+    __slots__ = ()
+
+
+# Filesystem-accessing classes
+
+
+class Path(PurePath, PathIOMixin):
+    """PurePath subclass that can make system calls.
+
+    Path represents a filesystem path but unlike PurePath, also offers
+    methods to do system calls on path objects. Depending on your system,
+    instantiating a Path will return either a PosixPath or a WindowsPath
+    object. You can also instantiate a PosixPath or WindowsPath directly,
+    but cannot instantiate a WindowsPath on a POSIX system or vice versa.
+    """
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Path:
+            cls = WindowsPath if os.name == 'nt' else PosixPath
+        self = cls._from_parts(args)
+        if not self._flavour.is_supported:
+            raise NotImplementedError("cannot instantiate %r on your system"
+                                      % (cls.__name__,))
+        return self
+
+
 class PosixPath(Path, PurePosixPath):
     """Path subclass for non-Windows systems.
 
@@ -1514,7 +1523,7 @@ class SimplePath(_PurePathBase):
     pass
 
 
-class FilePath(SimplePath):
+class FilePath(SimplePath, PathIOMixin):
     """
     SimplePath subclass that can make system calls.
 
