@@ -14,6 +14,7 @@ import itertools
 import posixpath
 import collections
 
+from . import _adapters, _meta
 from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache
 from ._itertools import unique_everseen
@@ -22,7 +23,7 @@ from contextlib import suppress
 from importlib import import_module
 from importlib.abc import MetaPathFinder
 from itertools import starmap
-from typing import Any, List, Mapping, Optional, Protocol, TypeVar, Union
+from typing import List, Mapping, Optional, Union
 
 
 __all__ = [
@@ -385,25 +386,6 @@ class FileHash:
         return '<FileHash mode: {} value: {}>'.format(self.mode, self.value)
 
 
-_T = TypeVar("_T")
-
-
-class PackageMetadata(Protocol):
-    def __len__(self) -> int:
-        ...  # pragma: no cover
-
-    def __contains__(self, item: str) -> bool:
-        ...  # pragma: no cover
-
-    def __getitem__(self, key: str) -> str:
-        ...  # pragma: no cover
-
-    def get_all(self, name: str, failobj: _T = ...) -> Union[List[Any], _T]:
-        """
-        Return all values associated with a possibly multi-valued key.
-        """
-
-
 class Distribution:
     """A Python distribution package."""
 
@@ -488,7 +470,7 @@ class Distribution:
         return PathDistribution(zipfile.Path(meta.build_as_zip(builder)))
 
     @property
-    def metadata(self) -> PackageMetadata:
+    def metadata(self) -> _meta.PackageMetadata:
         """Return the parsed metadata for this Distribution.
 
         The returned object will have keys that name the various bits of
@@ -502,7 +484,7 @@ class Distribution:
             # (which points to the egg-info file) attribute unchanged.
             or self.read_text('')
         )
-        return email.message_from_string(text)
+        return _adapters.Message(email.message_from_string(text))
 
     @property
     def name(self):
@@ -829,7 +811,7 @@ def distributions(**kwargs):
     return Distribution.discover(**kwargs)
 
 
-def metadata(distribution_name) -> PackageMetadata:
+def metadata(distribution_name) -> _meta.PackageMetadata:
     """Get the metadata for the named package.
 
     :param distribution_name: The name of the distribution package to query.

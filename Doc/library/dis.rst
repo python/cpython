@@ -1256,6 +1256,15 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.10
 
+
+.. opcode:: ROT_N (count)
+
+   Lift the top *count* stack items one position up, and move TOS down to
+   position *count*.
+
+   .. versionadded:: 3.10
+
+
 .. opcode:: HAVE_ARGUMENT
 
    This is not really an opcode.  It identifies the dividing line between

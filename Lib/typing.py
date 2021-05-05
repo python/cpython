@@ -100,6 +100,13 @@ __all__ = [
     'TypedDict',  # Not really a type.
     'Generator',
 
+    # Other concrete types.
+    'BinaryIO',
+    'IO',
+    'Match',
+    'Pattern',
+    'TextIO',
+
     # One-off things.
     'AnyStr',
     'cast',

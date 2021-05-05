@@ -4399,6 +4399,14 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(ROT_N): {
+            PyObject *top = TOP();
+            memmove(&PEEK(oparg - 1), &PEEK(oparg),
+                    sizeof(PyObject*) * (oparg - 1));
+            PEEK(oparg) = top;
+            DISPATCH();
+        }
+
         case TARGET(EXTENDED_ARG): {
             int oldoparg = oparg;
             NEXTOPARG();

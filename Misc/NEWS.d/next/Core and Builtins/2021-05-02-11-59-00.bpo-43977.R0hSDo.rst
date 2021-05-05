@@ -1,0 +1,1 @@
+Prevent classes being both a sequence and a mapping when pattern matching.
