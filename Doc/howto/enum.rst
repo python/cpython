@@ -286,7 +286,7 @@ overridden::
     ...     EAST = auto()
     ...     WEST = auto()
     ...
-    >>> [member.value for member in Color]
+    >>> [member.value for member in Ordinal]
     ['NORTH', 'SOUTH', 'EAST', 'WEST']
 
 .. note::

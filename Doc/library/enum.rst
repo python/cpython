@@ -108,7 +108,7 @@ Module Contents
       :class:`Enum` class decorator to apply the appropriate global `__repr__`,
       and export its members into the global name space.
 
-   :func:`property`
+   :func:`.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       other members' names.
@@ -139,6 +139,12 @@ Data Types
         >>> some_var = Color.RED
         >>> some_var in Color
         True
+
+      .. note::
+
+         In Python 3.12 it will be possible to check for member values and not
+         just members; until then, a ``TypeError`` will be raised if a
+         non-Enum-member is used in a containment check.
 
    .. method:: EnumType.__dir__(cls)
 

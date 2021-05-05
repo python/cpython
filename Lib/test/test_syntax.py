@@ -1212,7 +1212,7 @@ class SyntaxTestCase(unittest.TestCase):
         self._check_error(
             "print(end1 + end2 = ' ')",
             'expression cannot contain assignment, perhaps you meant "=="?',
-            offset=19
+            offset=7
         )
 
     def test_curly_brace_after_primary_raises_immediately(self):
