@@ -19,12 +19,16 @@ enum _framestate {
 
 typedef signed char PyFrameState;
 
+enum {
+    FRAME_SPECIALS_GLOBALS_OFFSET = 0,
+    FRAME_SPECIALS_BUILTINS_OFFSET = 1,
+    FRAME_SPECIALS_SIZE = 2
+};
+
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
     PyCodeObject *f_code;       /* code segment */
-    PyObject *f_builtins;       /* builtin symbol table (PyDictObject) */
-    PyObject *f_globals;        /* global symbol table (PyDictObject) */
     PyObject *f_locals;         /* local symbol table (any mapping) */
     PyObject **f_valuestack;    /* points after the last local */
     PyObject *f_trace;          /* Trace function */
@@ -79,4 +83,7 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 
-int _PyFrame_MakeCopyOfLocals(PyFrameObject *f);
+int _PyFrame_StealLocals(PyFrameObject *f);
+
+PyObject *_PyFrame_GetGlobals(PyFrameObject *f);
+PyObject *_PyFrame_GetBuiltins(PyFrameObject *f);

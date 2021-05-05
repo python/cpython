@@ -1547,6 +1547,8 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #endif
 
+#define GLOBALS() specials[FRAME_SPECIALS_GLOBALS_OFFSET]
+#define BUILTINS() specials[FRAME_SPECIALS_BUILTINS_OFFSET]
 
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
@@ -1565,7 +1567,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     const _Py_CODEUNIT *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
-    PyObject **fastlocals, **freevars;
+    PyObject **fastlocals, **freevars, **specials;
     PyObject *retval = NULL;            /* Return value */
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
     PyCodeObject *co;
@@ -1598,6 +1600,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
     /* push frame */
     tstate->frame = f;
+    specials = f->f_valuestack - FRAME_SPECIALS_SIZE;
     co = f->f_code;
 
     if (trace_info.cframe.use_tracing) {
@@ -1692,7 +1695,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
 #ifdef LLTRACE
     {
-        int r = _PyDict_ContainsId(f->f_globals, &PyId___ltrace__);
+        int r = _PyDict_ContainsId(GLOBALS(), &PyId___ltrace__);
         if (r < 0) {
             goto exit_eval_frame;
         }
@@ -2726,8 +2729,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             _Py_IDENTIFIER(__build_class__);
 
             PyObject *bc;
-            if (PyDict_CheckExact(f->f_builtins)) {
-                bc = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___build_class__);
+            if (PyDict_CheckExact(BUILTINS())) {
+                bc = _PyDict_GetItemIdWithError(BUILTINS(), &PyId___build_class__);
                 if (bc == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_SetString(tstate, PyExc_NameError,
@@ -2741,7 +2744,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 PyObject *build_class_str = _PyUnicode_FromId(&PyId___build_class__);
                 if (build_class_str == NULL)
                     goto error;
-                bc = PyObject_GetItem(f->f_builtins, build_class_str);
+                bc = PyObject_GetItem(BUILTINS(), build_class_str);
                 if (bc == NULL) {
                     if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError))
                         _PyErr_SetString(tstate, PyExc_NameError,
@@ -2868,7 +2871,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
             int err;
-            err = PyDict_SetItem(f->f_globals, name, v);
+            err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
             if (err != 0)
                 goto error;
@@ -2878,7 +2881,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(DELETE_GLOBAL): {
             PyObject *name = GETITEM(names, oparg);
             int err;
-            err = PyDict_DelItem(f->f_globals, name);
+            err = PyDict_DelItem(GLOBALS(), name);
             if (err != 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                     format_exc_check_arg(tstate, PyExc_NameError,
@@ -2916,7 +2919,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 }
             }
             if (v == NULL) {
-                v = PyDict_GetItemWithError(f->f_globals, name);
+                v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
                     Py_INCREF(v);
                 }
@@ -2924,8 +2927,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     goto error;
                 }
                 else {
-                    if (PyDict_CheckExact(f->f_builtins)) {
-                        v = PyDict_GetItemWithError(f->f_builtins, name);
+                    if (PyDict_CheckExact(BUILTINS())) {
+                        v = PyDict_GetItemWithError(BUILTINS(), name);
                         if (v == NULL) {
                             if (!_PyErr_Occurred(tstate)) {
                                 format_exc_check_arg(
@@ -2937,7 +2940,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                         Py_INCREF(v);
                     }
                     else {
-                        v = PyObject_GetItem(f->f_builtins, name);
+                        v = PyObject_GetItem(BUILTINS(), name);
                         if (v == NULL) {
                             if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                                 format_exc_check_arg(
@@ -2956,17 +2959,17 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(LOAD_GLOBAL): {
             PyObject *name;
             PyObject *v;
-            if (PyDict_CheckExact(f->f_globals)
-                && PyDict_CheckExact(f->f_builtins))
+            if (PyDict_CheckExact(GLOBALS())
+                && PyDict_CheckExact(BUILTINS()))
             {
                 OPCACHE_CHECK();
                 if (co_opcache != NULL && co_opcache->optimized > 0) {
                     _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
 
                     if (lg->globals_ver ==
-                            ((PyDictObject *)f->f_globals)->ma_version_tag
+                            ((PyDictObject *)GLOBALS())->ma_version_tag
                         && lg->builtins_ver ==
-                           ((PyDictObject *)f->f_builtins)->ma_version_tag)
+                           ((PyDictObject *)BUILTINS())->ma_version_tag)
                     {
                         PyObject *ptr = lg->ptr;
                         OPCACHE_STAT_GLOBAL_HIT();
@@ -2978,8 +2981,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 }
 
                 name = GETITEM(names, oparg);
-                v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
-                                       (PyDictObject *)f->f_builtins,
+                v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                                       (PyDictObject *)BUILTINS(),
                                        name);
                 if (v == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
@@ -3003,9 +3006,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
                     co_opcache->optimized = 1;
                     lg->globals_ver =
-                        ((PyDictObject *)f->f_globals)->ma_version_tag;
+                        ((PyDictObject *)GLOBALS())->ma_version_tag;
                     lg->builtins_ver =
-                        ((PyDictObject *)f->f_builtins)->ma_version_tag;
+                        ((PyDictObject *)BUILTINS())->ma_version_tag;
                     lg->ptr = v; /* borrowed */
                 }
 
@@ -3016,7 +3019,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
                 /* namespace 1: globals */
                 name = GETITEM(names, oparg);
-                v = PyObject_GetItem(f->f_globals, name);
+                v = PyObject_GetItem(GLOBALS(), name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                         goto error;
@@ -3024,7 +3027,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     _PyErr_Clear(tstate);
 
                     /* namespace 2: builtins */
-                    v = PyObject_GetItem(f->f_builtins, name);
+                    v = PyObject_GetItem(BUILTINS(), name);
                     if (v == NULL) {
                         if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
                             format_exc_check_arg(
@@ -4297,7 +4300,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *qualname = POP();
             PyObject *codeobj = POP();
             PyFunctionObject *func = (PyFunctionObject *)
-                PyFunction_NewWithQualName(codeobj, f->f_globals, qualname);
+                PyFunction_NewWithQualName(codeobj, GLOBALS(), qualname);
 
             Py_DECREF(codeobj);
             Py_DECREF(qualname);
@@ -5137,12 +5140,15 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
 {
     PyObject **localsarray;
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
-    int is_coro = code->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
+    int is_coro = code->co_flags &
+        (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     if (is_coro) {
         localsarray = NULL;
     }
     else {
-        localsarray = _PyThreadState_PushLocals(tstate, code->co_nlocalsplus + code->co_stacksize);
+        int size = code->co_nlocalsplus + code->co_stacksize +
+            FRAME_SPECIALS_SIZE;
+        localsarray = _PyThreadState_PushLocals(tstate, size);
         if (localsarray == NULL) {
             return NULL;
         }
@@ -5166,26 +5172,23 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
        current Python frame (f), the associated C stack is still in use,
        so recursion_depth must be boosted for the duration.
     */
+    assert (!is_coro);
+    assert(f->f_own_locals_memory == 0);
+    assert(f->f_stackdepth == 0);
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
         _PyObject_GC_TRACK(f);
-        if (_PyFrame_MakeCopyOfLocals(f)) {
-            Py_XDECREF(retval);
-            if (!is_coro) {
-                _PyThreadState_PopLocals(tstate, localsarray);
-            }
-            return NULL;
+        if (_PyFrame_StealLocals(f)) {
+            Py_CLEAR(retval);
         }
     }
     else {
+        for (int i = 0; i < code->co_nlocalsplus + FRAME_SPECIALS_SIZE; i++) {
+            Py_XDECREF(localsarray[i]);
+        }
         ++tstate->recursion_depth;
         Py_DECREF(f);
         --tstate->recursion_depth;
-    }
-    assert (!is_coro);
-
-    for (int i = 0; i < code->co_nlocalsplus; i++) {
-        Py_XDECREF(localsarray[i]);
     }
     _PyThreadState_PopLocals(tstate, localsarray);
     return retval;
@@ -5793,7 +5796,7 @@ _PyEval_GetBuiltins(PyThreadState *tstate)
 {
     PyFrameObject *frame = tstate->frame;
     if (frame != NULL) {
-        return frame->f_builtins;
+        return _PyFrame_GetBuiltins(frame);
     }
     return tstate->interp->builtins;
 }
@@ -5846,9 +5849,7 @@ PyEval_GetGlobals(void)
     if (current_frame == NULL) {
         return NULL;
     }
-
-    assert(current_frame->f_globals != NULL);
-    return current_frame->f_globals;
+    return _PyFrame_GetGlobals(current_frame);
 }
 
 int
@@ -6099,14 +6100,13 @@ import_name(PyThreadState *tstate, PyFrameObject *f,
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemIdWithError(f->f_builtins, &PyId___import__);
+    import_func = _PyDict_GetItemIdWithError(_PyFrame_GetBuiltins(f), &PyId___import__);
     if (import_func == NULL) {
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
     }
-
     /* Fast path for not overloaded __import__. */
     if (import_func == tstate->interp->import_func) {
         int ilevel = _PyLong_AsInt(level);
@@ -6115,7 +6115,7 @@ import_name(PyThreadState *tstate, PyFrameObject *f,
         }
         res = PyImport_ImportModuleLevelObject(
                         name,
-                        f->f_globals,
+                        _PyFrame_GetGlobals(f),
                         f->f_locals == NULL ? Py_None : f->f_locals,
                         fromlist,
                         ilevel);
@@ -6125,7 +6125,7 @@ import_name(PyThreadState *tstate, PyFrameObject *f,
     Py_INCREF(import_func);
 
     stack[0] = name;
-    stack[1] = f->f_globals;
+    stack[1] = _PyFrame_GetGlobals(f);
     stack[2] = f->f_locals == NULL ? Py_None : f->f_locals;
     stack[3] = fromlist;
     stack[4] = level;

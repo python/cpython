@@ -13,9 +13,6 @@
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
-    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY|PY_AUDIT_READ},
-    {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
-    {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
     {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
@@ -36,6 +33,11 @@ frame_getlocals(PyFrameObject *f, void *closure)
         return NULL;
     Py_INCREF(f->f_locals);
     return f->f_locals;
+}
+
+static inline PyObject **
+_PyFrame_Specials(PyFrameObject *f) {
+    return &f->f_valuestack[-FRAME_SPECIALS_SIZE];
 }
 
 int
@@ -71,6 +73,50 @@ frame_getlasti(PyFrameObject *f, void *closure)
     return PyLong_FromLong(f->f_lasti*2);
 }
 
+/* Returns a *borrowed* reference. Not part of the API. */
+PyObject *
+_PyFrame_GetGlobals(PyFrameObject *f)
+{
+    return _PyFrame_Specials(f)[FRAME_SPECIALS_GLOBALS_OFFSET];
+}
+
+/* Returns a *borrowed* reference. Not part of the API. */
+PyObject *
+_PyFrame_GetBuiltins(PyFrameObject *f)
+{
+    return _PyFrame_Specials(f)[FRAME_SPECIALS_BUILTINS_OFFSET];
+}
+
+static PyObject *
+frame_getglobals(PyFrameObject *f, void *closure)
+{
+    PyObject *globals = _PyFrame_GetGlobals(f);
+    if (globals == NULL) {
+        globals = Py_None;
+    }
+    Py_INCREF(globals);
+    return globals;
+}
+
+static PyObject *
+frame_getbuiltins(PyFrameObject *f, void *closure)
+{
+    PyObject *builtins = _PyFrame_GetBuiltins(f);
+    if (builtins == NULL) {
+        builtins = Py_None;
+    }
+    Py_INCREF(builtins);
+    return builtins;
+}
+
+static PyObject *
+frame_getcode(PyFrameObject *f, void *closure)
+{
+    if (PySys_Audit("object.__getattr__", "Os", f, "f_code") < 0) {
+        return NULL;
+    }
+    return (PyObject *)PyFrame_GetCode(f);
+}
 
 /* Given the index of the effective opcode,
    scan back to construct the oparg with EXTENDED_ARG */
@@ -554,6 +600,9 @@ static PyGetSetDef frame_getsetlist[] = {
                     (setter)frame_setlineno, NULL},
     {"f_trace",         (getter)frame_gettrace, (setter)frame_settrace, NULL},
     {"f_lasti",         (getter)frame_getlasti, NULL, NULL},
+    {"f_globals",       (getter)frame_getglobals, NULL, NULL},
+    {"f_builtins",      (getter)frame_getbuiltins, NULL, NULL},
+    {"f_code",          (getter)frame_getcode, NULL, NULL},
     {0}
 };
 
@@ -581,7 +630,7 @@ frame_dealloc(PyFrameObject *f)
 
     /* Kill all local variables */
     if (f->f_own_locals_memory) {
-        for (int i = 0; i < co->co_nlocalsplus; i++) {
+        for (int i = 0; i < co->co_nlocalsplus+FRAME_SPECIALS_SIZE; i++) {
             Py_CLEAR(f->f_localsptr[i]);
         }
         /* Free items on stack */
@@ -593,8 +642,6 @@ frame_dealloc(PyFrameObject *f)
     }
     f->f_stackdepth = 0;
     Py_XDECREF(f->f_back);
-    Py_DECREF(f->f_builtins);
-    Py_DECREF(f->f_globals);
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
     struct _Py_frame_state *state = get_frame_state();
@@ -618,17 +665,13 @@ frame_dealloc(PyFrameObject *f)
 static inline Py_ssize_t
 frame_nslots(PyFrameObject *frame)
 {
-    PyCodeObject *code = frame->f_code;
-    return code->co_nlocalsplus;
+    return frame->f_valuestack - frame->f_localsptr;
 }
 
 static int
 frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
-    Py_VISIT(f->f_code);
-    Py_VISIT(f->f_builtins);
-    Py_VISIT(f->f_globals);
     Py_VISIT(f->f_locals);
     Py_VISIT(f->f_trace);
 
@@ -766,7 +809,8 @@ frame_alloc(PyCodeObject *code, PyObject **localsarray)
     int owns;
     PyFrameObject *f;
     if (localsarray == NULL) {
-        localsarray = PyMem_Malloc(sizeof(PyObject *)*(code->co_nlocalsplus+code->co_stacksize));
+        int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
+        localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
         if (localsarray == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -803,29 +847,32 @@ frame_alloc(PyCodeObject *code, PyObject **localsarray)
     }
     f->f_localsptr = localsarray;
     f->f_own_locals_memory = owns;
-    f->f_valuestack = f->f_localsptr + code->co_nlocalsplus;
+    f->f_valuestack = f->f_localsptr + code->co_nlocalsplus + FRAME_SPECIALS_SIZE;
     return f;
 }
 
 int
-_PyFrame_MakeCopyOfLocals(PyFrameObject *f)
+_PyFrame_StealLocals(PyFrameObject *f)
 {
-    if (f->f_own_locals_memory) {
-        return 0;
-    }
-    PyObject **copy = PyMem_Malloc(sizeof(PyObject *)*(f->f_code->co_nlocalsplus+f->f_code->co_stacksize));
+    assert(f->f_own_locals_memory == 0);
+    assert(f->f_stackdepth == 0);
+    int size = frame_nslots(f);
+    PyObject **copy = PyMem_Malloc(sizeof(PyObject *)*size);
     if (copy == NULL) {
+        for (int i = 0; i < size; i++) {
+            PyObject *o = f->f_localsptr[i];
+            Py_XDECREF(o);
+        }
         PyErr_NoMemory();
         return -1;
     }
-    for (int i = 0; i < f->f_code->co_nlocalsplus+f->f_stackdepth; i++) {
+    for (int i = 0; i < size; i++) {
         PyObject *o = f->f_localsptr[i];
-        Py_XINCREF(o);
         copy[i] = o;
     }
     f->f_own_locals_memory = 1;
     f->f_localsptr = copy;
-    f->f_valuestack = f->f_localsptr + f->f_code->co_nlocalsplus;
+    f->f_valuestack = copy + size;
     return 0;
 }
 
@@ -845,8 +892,8 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
 
     f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
     f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
-    f->f_builtins = Py_NewRef(con->fc_builtins);
-    f->f_globals = Py_NewRef(con->fc_globals);
+    _PyFrame_Specials(f)[FRAME_SPECIALS_BUILTINS_OFFSET] = Py_NewRef(con->fc_builtins);
+    _PyFrame_Specials(f)[FRAME_SPECIALS_GLOBALS_OFFSET] = Py_NewRef(con->fc_globals);
     f->f_locals = Py_XNewRef(locals);
     // f_valuestack initialized by frame_alloc()
     f->f_trace = NULL;
