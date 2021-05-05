@@ -309,9 +309,12 @@ class HTTPResponse(io.BufferedIOBase):
             if status != CONTINUE:
                 break
             # skip the header from the 100 response
+            header_total_size = 0
             while True:
                 skip = self.fp.readline(_MAXLINE + 1)
-                if len(skip) > _MAXLINE:
+                line_length = len(skip)
+                header_total_size += line_length
+                if line_length > _MAXLINE or header_total_size > _MAXLINE:
                     raise LineTooLong("header line")
                 skip = skip.strip()
                 if not skip:
