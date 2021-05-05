@@ -1,1 +1,2 @@
-Added total header size limit after receving http 100 to httplib client for avoiding malicious server packet causing client hangs.
+mod:`http.client` now avoids infinitely reading potential HTTP headers after a
+``100 Continue`` status response from the server.
