@@ -387,7 +387,7 @@ conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer, float and complex
 types. For integers, when binary, octal, or hexadecimal output
 is used, this option adds the respective prefix ``'0b'``, ``'0o'``,
-``'0x'`` or ``'0X'`` to the output value. For float and complex the
+``'0x'``, or ``'0X'`` to the output value. For float and complex the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
