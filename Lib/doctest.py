@@ -973,6 +973,17 @@ class DocTestFinder:
         else:
             raise ValueError("object must be a class or function")
 
+    def _is_routine(self, obj):
+        """
+        Safely unwrap objects and determine if they are functions.
+        """
+        maybe_routine = obj
+        try:
+            maybe_routine = inspect.unwrap(maybe_routine)
+        except ValueError:
+            pass
+        return inspect.isroutine(maybe_routine)
+
     def _find(self, tests, obj, name, module, source_lines, globs, seen):
         """
         Find tests for the given object and any contained objects, and
@@ -995,9 +1006,9 @@ class DocTestFinder:
         if inspect.ismodule(obj) and self._recurse:
             for valname, val in obj.__dict__.items():
                 valname = '%s.%s' % (name, valname)
+
                 # Recurse to functions & classes.
-                if ((inspect.isroutine(inspect.unwrap(val))
-                     or inspect.isclass(val)) and
+                if ((self._is_routine(val) or inspect.isclass(val)) and
                     self._from_module(module, val)):
                     self._find(tests, val, valname, module, source_lines,
                                globs, seen)
