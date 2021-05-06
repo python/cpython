@@ -1,0 +1,2 @@
+The TARGET_#op label is now available even when computed gotos aren't
+enabled.
