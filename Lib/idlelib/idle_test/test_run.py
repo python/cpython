@@ -1,4 +1,4 @@
-"Test run, coverage 49%."
+"Test run, coverage 54%."
 
 from idlelib import run
 import io
@@ -28,8 +28,7 @@ class ExceptionTest(unittest.TestCase):
                 raise ex1
             except UnhashableException:
                 with captured_stderr() as output:
-                    with mock.patch.object(run,
-                                           'cleanup_traceback') as ct:
+                    with mock.patch.object(run, 'cleanup_traceback') as ct:
                         ct.side_effect = lambda t, e: t
                         run.print_exception()
 
@@ -90,7 +89,6 @@ class ExceptionTest(unittest.TestCase):
                                 return
         unittest.skip("Polluted namespace")
         # Should make impossible.
-
 
 # StdioFile tests.
 
