@@ -37,15 +37,16 @@ class ExceptionTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex2', tb[3])
         self.assertIn('UnhashableException: ex1', tb[10])
 
+    data = (('1/0', ZeroDivisionError, "division by zero\n"),
+            ('abc', NameError, "name 'abc' is not defined. "
+                               "Did you mean: 'abs'?\n"),
+            ('int.reel', AttributeError,
+                 "type object 'int' has no attribute 'reel'. "
+                 "Did you mean: 'real'?\n"),
+            )
+
     def test_get_message(self):
-        data = (('1/0', ZeroDivisionError, "division by zero\n"),
-                ('abc', NameError, "name 'abc' is not defined. "
-                                   "Did you mean: 'abs'?\n"),
-                ('int.reel', AttributeError,
-                     "type object 'int' has no attribute 'reel'. "
-                     "Did you mean: 'real'?\n"),
-                )
-        for code, exc, msg in data:
+        for code, exc, msg in self.data:
             with self.subTest(code=code):
                 try:
                     eval(compile(code, '', 'eval'))
@@ -54,23 +55,14 @@ class ExceptionTest(unittest.TestCase):
                     actual = run.get_message_lines(typ, val, tb)[0]
                     expect = f'{exc.__name__}: {msg}'
                     self.assertEqual(actual, expect)
-                else:
-                    unittest.skip("Polluted namespace")
-                    # Should make impossible.
 
     @mock.patch.object(run, 'cleanup_traceback',
                        new_callable=lambda: (lambda t, e: None))
     def test_get_multiple_message(self, mock):
-        zero = "division by zero\n"
-        name = "name 'abc' is not defined. Did you mean: 'abs'?\n"
-        attr = "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"
-        data = (('abc', '1/0', NameError, ZeroDivisionError, name, zero),
-                ('1/0', 'int.reel', ZeroDivisionError, AttributeError,
-                 zero, attr),
-                ('abc', 'int.reel', NameError, AttributeError, name, attr),
-                )
+        d = self.data
+        data2 = ((d[0], d[1]), (d[1], d[2]), (d[2], d[0]))
         subtests = 0  # Test that all subtests run.
-        for code1, code2, exc1, exc2, msg1, msg2 in data:
+        for (code1, exc1, msg1), (code2, exc2, msg2) in data2:
             with self.subTest(codes=(code1,code2)):
                 try:
                     eval(compile(code1, '', 'eval'))
