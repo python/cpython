@@ -13,8 +13,8 @@
 # inheritance of base classes.
 #
 # As a result after creating a 'w = StdButtonBox', I can write
-#               w.ok['text'] = 'Who Cares'
-# or            w.ok['bg'] = w['bg']
+#              w.ok['text'] = 'Who Cares'
+#    or              w.ok['bg'] = w['bg']
 # or even       w.ok.invoke()
 # etc.
 #
