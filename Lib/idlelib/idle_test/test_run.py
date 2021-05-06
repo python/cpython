@@ -61,7 +61,7 @@ class ExceptionTest(unittest.TestCase):
     def test_get_multiple_message(self, mock):
         d = self.data
         data2 = ((d[0], d[1]), (d[1], d[2]), (d[2], d[0]))
-        subtests = 0  # Test that all subtests run.
+        subtests = 0
         for (code1, exc1, msg1), (code2, exc2, msg2) in data2:
             with self.subTest(codes=(code1,code2)):
                 try:
@@ -76,7 +76,7 @@ class ExceptionTest(unittest.TestCase):
                         self.assertIn(msg1, actual)
                         self.assertIn(msg2, actual)
                         subtests += 1
-        self.assertEqual(subtests, 3)
+        self.assertEqual(subtests, len(data2))  # All subtests ran?
 
 # StdioFile tests.
 
