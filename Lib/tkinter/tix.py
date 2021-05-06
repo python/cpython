@@ -66,7 +66,7 @@ TCL_IDLE_EVENTS   = 1 << 5
 TCL_ALL_EVENTS    = 0
 
 warnings.warn('The Tix Tk extension is unmaintained, and the tkinter.tix wrapper is deprecated in '
-              'favour of tkinter.ttk', DeprecationWarning, stacklevel=2)
+              'favor of tkinter.ttk', DeprecationWarning, stacklevel=2)
 
 # BEWARE - this is implemented by copying some code from the Widget class
 #          in Tkinter (to override Widget initialization) and is therefore
