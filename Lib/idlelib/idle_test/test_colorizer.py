@@ -46,6 +46,7 @@ source = textwrap.dedent("""\
             pass
         case _ if _:
             raise ValueError("Not a point _")
+        case _ if ("a" if _ else set()): pass
     '''
     case _:'''
     "match x:"
@@ -394,8 +395,11 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('23.12', ('KEYWORD',)),
                     ('25.4', ('KEYWORD',)), ('25.9', ('KEYWORD',)), ('25.11', ('KEYWORD',)), ('25.14', (),),
                     ('26.25', ('STRING',)), ('26.38', ('STRING',)),
-                    ('28.0', ('STRING',)),
-                    ('29.1', ('STRING',)),
+                    ('27.4', ('KEYWORD',)), ('27.9', ('KEYWORD',)), ('27.11', ('KEYWORD',)),
+                    ('27.15', ('STRING',)), ('27.19', ('KEYWORD',)), ('27.22', ()),
+                    ('27.24', ('KEYWORD',)), ('27.29', ('BUILTIN',)), ('27.37', ('KEYWORD',)),
+                    ('29.0', ('STRING',)),
+                    ('30.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -426,7 +430,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
         eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
-        eq(text.tag_nextrange('SYNC', '29.0'), ('29.10', '31.0'))
+        eq(text.tag_nextrange('SYNC', '30.0'), ('30.10', '32.0'))
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')

@@ -27,8 +27,8 @@ def make_pats():
         r"(?P<CASE_SOFTKW>case)\b" +
         r"(?!(?:[ \t]|\\\n)*[=,)\]}])" +  # not followed by any of =,)]}
         r"(?P<CASE_PATTERN>.*?)" +  # case pattern
-        r"(?:(?P<CASE_IF>\bif\b).*?)?" +  # possible guard
-        r"(?:(?P<CASE_AS>\bas\b)(?P<CAPTURE_PATTERN>.*?))?" +  # possible capture
+        r"(?P<CASE_IF>\bif\b.*?)?" +  # possible guard
+        r"(?P<CASE_AS>\bas\b.*?)?" +  # possible capture
         r":"
     )
     builtinlist = [str(name) for name in dir(builtins)
@@ -47,13 +47,14 @@ def make_pats():
         match_softkw, case_softkw_and_pattern,
         any("SYNC", [r"\n"]),
     ]), re.DOTALL | re.MULTILINE)
+    guard_prog = re.compile("|".join([builtin, comment, string, kw]))
     pattern_prog = re.compile("|".join([
         builtin, comment, string, kw, any("UNDERSCORE_SOFTKW", [r"\b_\b"])
     ]), re.DOTALL)
-    return prog, pattern_prog
+    return prog, guard_prog, pattern_prog
 
 
-prog, pattern_prog = make_pats()
+prog, guard_prog, pattern_prog = make_pats()
 idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
     "MATCH_SOFTKW": "KEYWORD",
@@ -317,8 +318,13 @@ class ColorDelegator(Delegator):
         for m in self.prog.finditer(chars):
             for name, matched_text in matched_named_groups(m):
                 a, b = m.span(name)
-                if name in {"CASE_PATTERN", "CAPTURE_PATTERN"}:
+                if name in {"CASE_PATTERN", "CASE_AS"}:
                     for m1 in pattern_prog.finditer(matched_text):
+                        for name, matched_text in matched_named_groups(m1):
+                            a1, b1 = m1.span()
+                            self._add_tag(a + a1, a + b1, head, name)
+                elif name == "CASE_IF":
+                    for m1 in guard_prog.finditer(matched_text):
                         for name, matched_text in matched_named_groups(m1):
                             a1, b1 = m1.span()
                             self._add_tag(a + a1, a + b1, head, name)
