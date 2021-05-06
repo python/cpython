@@ -65,10 +65,11 @@ class ExceptionTest(unittest.TestCase):
         name = "name 'abc' is not defined. Did you mean: 'abs'?\n"
         attr = "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"
         data = (('abc', '1/0', NameError, ZeroDivisionError, name, zero),
-                ('0/1', 'int.reel', ZeroDivisionError, AttributeError,
+                ('1/0', 'int.reel', ZeroDivisionError, AttributeError,
                  zero, attr),
                 ('abc', 'int.reel', NameError, AttributeError, name, attr),
                 )
+        subtests = 0  # Test that all subtests run.
         for code1, code2, exc1, exc2, msg1, msg2 in data:
             with self.subTest(codes=(code1,code2)):
                 try:
@@ -82,9 +83,8 @@ class ExceptionTest(unittest.TestCase):
                         actual = output.getvalue()
                         self.assertIn(msg1, actual)
                         self.assertIn(msg2, actual)
-                        return
-        unittest.skip("Polluted namespace")
-        # Should make impossible.
+                        subtests += 1
+        self.assertEqual(subtests, 3)
 
 # StdioFile tests.
 
