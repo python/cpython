@@ -59,15 +59,13 @@ class ExceptionTest(unittest.TestCase):
                     # Should make impossible.
 
     def test_get_multiple_message(self):
-        data = (('abc', '1/0', NameError, ZeroDivisionError,
-                 "name 'abc' is not defined. Did you mean: 'abs'?\n",
-                 "division by zero\n"),
+        zero = "division by zero\n"
+        name = "name 'abc' is not defined. Did you mean: 'abs'?\n"
+        attr = "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"
+        data = (('abc', '1/0', NameError, ZeroDivisionError, name, zero),
                 ('0/1', 'int.reel', ZeroDivisionError, AttributeError,
-                 "division by zero\n",
-                 "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"),
-                ('abc', 'int.reel', NameError, AttributeError,
-                 "name 'abc' is not defined. Did you mean: 'abs'?\n",
-                 "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"),
+                 zero, attr),
+                ('abc', 'int.reel', NameError, AttributeError, name, attr),
                 )
         for code1, code2, exc1, exc2, msg1, msg2 in data:
             with self.subTest(codes=(code1,code2)):
