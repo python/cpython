@@ -6592,6 +6592,7 @@ assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_lnotab);
+    Py_XDECREF(a->a_except_table);
 }
 
 static int
@@ -6712,9 +6713,7 @@ label_exception_targets(basicblock *entry) {
                 if (!instr->i_target->b_visited) {
                     ExceptStack *copy = copy_except_stack(except_stack);
                     if (copy == NULL) {
-                        PyMem_Free(todo_stack);
-                        PyMem_Free(except_stack);
-                        return 0;
+                        goto error;
                     }
                     instr->i_target->b_exceptstack = copy;
                     todo[0] = instr->i_target;
@@ -6733,7 +6732,7 @@ label_exception_targets(basicblock *entry) {
                     if (b->b_nofallthrough == 0) {
                         ExceptStack *copy = copy_except_stack(except_stack);
                         if (copy == NULL) {
-                            return 0;
+                            goto error;
                         }
                         instr->i_target->b_exceptstack = copy;
                     }
@@ -6761,7 +6760,17 @@ label_exception_targets(basicblock *entry) {
            PyMem_Free(except_stack);
         }
     }
+#ifdef Py_DEBUG
+    for (basicblock *b = entry; b != NULL; b = b->b_next) {
+        assert(b->b_exceptstack == NULL);
+    }
+#endif
+    PyMem_Free(todo_stack);
     return 0;
+error:
+    PyMem_Free(todo_stack);
+    PyMem_Free(except_stack);
+    return -1;
 }
 
 

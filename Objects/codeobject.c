@@ -671,6 +671,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_filename);
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_linetable);
+    Py_XDECREF(co->co_exceptiontable);
     if (co->co_cell2arg != NULL)
         PyMem_Free(co->co_cell2arg);
     if (co->co_zombieframe != NULL)
