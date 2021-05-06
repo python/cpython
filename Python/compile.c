@@ -4818,7 +4818,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     compiler_pop_fblock(c, ASYNC_COMPREHENSION_GENERATOR, start);
 
     compiler_use_next_block(c, except);
-    c->u->u_lineno = -1;
+    //c->u->u_lineno = -1;
 
     ADDOP(c, END_ASYNC_FOR);
 
