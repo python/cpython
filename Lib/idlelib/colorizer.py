@@ -15,21 +15,18 @@ def any(name, alternates):
     return "(?P<%s>" % name + "|".join(alternates) + ")"
 
 
-def make_pat():
+def make_pats():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     match_softkw = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<PM_MATCH>match)\b" +
-        r"(?!([ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
+        r"(?P<MATCH_SOFTKW>match)\b" +
+        r"(?!(?:[ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
     )
-    match_case_default = (
+    case_softkw_and_pattern = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<PM_DEFAULT_CASE>case)[ \t]+(?P<PM_DEFAULT_UNDERSCORE>_)[ \t]*:"
-    )
-    match_case_nondefault = (
-        r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<PM_NONDEFAULT_CASE>case)\b" +
-        r"(?!([ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
+        r"(?P<CASE_SOFTKW>case)\b" +
+        r"(?!(?:[ \t]|\\\n)*[=,)\]}])" +  # not followed by any of =,)]}
+        r"(?P<CASE_PATTERN>.*?):[ \t]*$"
     )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
@@ -42,20 +39,28 @@ def make_pat():
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return "|".join([
-        builtin, comment, string, any("SYNC", [r"\n"]),
-        kw, match_softkw, match_case_default, match_case_nondefault,
-    ])
+    prog = re.compile("|".join([
+        builtin, comment, string, kw,
+        match_softkw, case_softkw_and_pattern,
+        any("SYNC", [r"\n"]),
+    ]), re.DOTALL | re.MULTILINE)
+    pattern_prog = re.compile("|".join([
+        builtin, comment, string, kw, any("UNDERSCORE_SOFTKW", [r"\b_\b"])
+    ]), re.DOTALL)
+    return prog, pattern_prog
 
 
-prog = re.compile(make_pat(), re.DOTALL | re.MULTILINE)
+prog, pattern_prog = make_pats()
 idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
-    "PM_MATCH": "KEYWORD",
-    "PM_DEFAULT_CASE": "KEYWORD",
-    "PM_DEFAULT_UNDERSCORE": "KEYWORD",
-    "PM_NONDEFAULT_CASE": "KEYWORD",
+    "MATCH_SOFTKW": "KEYWORD",
+    "CASE_SOFTKW": "KEYWORD",
+    "UNDERSCORE_SOFTKW": "KEYWORD",
 }
+
+
+def matched_named_groups(re_match):
+    return ((k, v) for (k, v) in re_match.groupdict().items() if v)
 
 
 def color_config(text):
@@ -275,22 +280,8 @@ class ColorDelegator(Delegator):
                     return
                 for tag in self.tagdefs:
                     self.tag_remove(tag, mark, next)
-                chars = chars + line
-                for m in self.prog.finditer(chars):
-                    for key, value in m.groupdict().items():
-                        if not value:
-                            continue
-                        a, b = m.span(key)
-                        tag = prog_group_name_to_tag.get(key, key)
-                        self.tag_add(tag,
-                                     head + "+%dc" % a,
-                                     head + "+%dc" % b)
-                        if value in ("def", "class"):
-                            if m1 := self.idprog.match(chars, b):
-                                a, b = m1.span(1)
-                                self.tag_add("DEFINITION",
-                                             head + "+%dc" % a,
-                                             head + "+%dc" % b)
+                chars += line
+                self._add_tags_in_section(chars, head)
                 if "SYNC" in self.tag_names(next + "-1c"):
                     head = next
                     chars = ""
@@ -308,6 +299,30 @@ class ColorDelegator(Delegator):
                 if self.stop_colorizing:
                     if DEBUG: print("colorizing stopped")
                     return
+
+    def _add_tag(self, start, end, head, matched_group_name):
+        tag = prog_group_name_to_tag.get(matched_group_name,
+                                         matched_group_name)
+        self.tag_add(tag,
+                     f"{head}+{start:d}c",
+                     f"{head}+{end:d}c")
+
+    def _add_tags_in_section(self, chars, head):
+        "Add tags to a given section of code."
+        for m in self.prog.finditer(chars):
+            for name, matched_text in matched_named_groups(m):
+                a, b = m.span(name)
+                if name == "CASE_PATTERN":
+                    for m1 in pattern_prog.finditer(matched_text):
+                        for name, matched_text in matched_named_groups(m1):
+                            a1, b1 = m1.span()
+                            self._add_tag(a + a1, a + b1, head, name)
+                else:
+                    self._add_tag(a, b, head, name)
+                    if matched_text in ("def", "class"):
+                        if m1 := self.idprog.match(chars, b):
+                            a, b = m1.span(1)
+                            self._add_tag(a, b, head, "DEFINITION")
 
     def removecolors(self):
         "Remove all colorizing tags."
@@ -344,13 +359,11 @@ def _color_delegator(parent):  # htest #
         match point:
             case (x, 0):
                 print(f"X={x}")
+            case [_, [_], "_",
+                    _]:
+                pass
             case _:
                 raise ValueError("Not a point")
-        # The following statement should all be in the default color for code.
-        match = (
-            case,
-            _,
-        )
         '''
         case _:'''
         "match x:"

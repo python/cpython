@@ -34,17 +34,15 @@ source = textwrap.dedent("""\
     match point:
         case (x, 0):
             print(f"X={x}")
+        case [_, [_], "_",
+                _]:
+            pass
         case _:
             raise ValueError("Not a point")
-    # The following statement should all be in the default color for code.
-    match = (
-        case,
-        _,
-    )
     '''
     case _:'''
     "match x:"
-""")
+    """)
 
 
 def setUpModule():
@@ -63,7 +61,7 @@ class FunctionTest(unittest.TestCase):
 
     def test_make_pat(self):
         # Tested in more detail by testing prog.
-        self.assertTrue(colorizer.make_pat())
+        self.assertTrue(colorizer.make_pats())
 
     def test_prog(self):
         prog = colorizer.prog
@@ -124,7 +122,7 @@ class ColorDelegatorInstantiationTest(unittest.TestCase):
         requires('gui')
         root = cls.root = Tk()
         root.withdraw()
-        text = cls.text = Text(root)
+        cls.text = Text(root)
 
     @classmethod
     def tearDownClass(cls):
@@ -169,7 +167,7 @@ class ColorDelegatorTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.percolator.redir.close()
+        cls.percolator.close()
         del cls.percolator, cls.text
         cls.root.update_idletasks()
         cls.root.destroy()
@@ -385,9 +383,10 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('7.12', ()), ('7.14', ('STRING',)),
                     ('12.0', ('KEYWORD',)),
                     ('13.4', ('KEYWORD',)),
-                    ('15.4', ('KEYWORD',)), ('15.9', ('KEYWORD',)),
-                    ('18.0', ()), ('19.4', ()), ('20.4', ()),
-                    ('23.0', ('STRING',)), ('24.1', ('STRING',)),
+                    ('15.4', ('KEYWORD',)), ('15.10', ('KEYWORD',)), ('15.14', ('KEYWORD',)), ('15.19', ('STRING',)),
+                    ('16.12', ('KEYWORD',)),
+                    ('18.4', ('KEYWORD',)), ('18.9', ('KEYWORD',)),
+                    ('21.0', ('STRING',)), ('22.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -418,7 +417,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '7.12'), ('7.14', '7.17'))
         eq(text.tag_nextrange('STRING', '7.17'), ('7.19', '7.26'))
         eq(text.tag_nextrange('SYNC', '7.0'), ('7.26', '8.0'))
-        eq(text.tag_nextrange('SYNC', '24.0'), ('24.10', '26.0'))
+        eq(text.tag_nextrange('SYNC', '22.0'), ('22.10', '24.0'))
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
