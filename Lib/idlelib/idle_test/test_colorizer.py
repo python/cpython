@@ -32,13 +32,13 @@ source = textwrap.dedent("""\
     '''abc\\
     def'''
     match point:
-        case (x, 0):
+        case (x, 0) as _:
             print(f"X={x}")
         case [_, [_], "_",
                 _]:
             pass
-        case _:
-            raise ValueError("Not a point")
+        case _ if _:
+            raise ValueError("Not a point _")
     '''
     case _:'''
     "match x:"
@@ -382,11 +382,13 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('7.0', ('STRING',)), ('7.4', ()), ('7.5', ('STRING',)),
                     ('7.12', ()), ('7.14', ('STRING',)),
                     ('12.0', ('KEYWORD',)),
-                    ('13.4', ('KEYWORD',)),
+                    ('13.4', ('KEYWORD',)), ('13.16', ('KEYWORD',)), ('13.19', ('KEYWORD',)),
                     ('15.4', ('KEYWORD',)), ('15.10', ('KEYWORD',)), ('15.14', ('KEYWORD',)), ('15.19', ('STRING',)),
                     ('16.12', ('KEYWORD',)),
-                    ('18.4', ('KEYWORD',)), ('18.9', ('KEYWORD',)),
-                    ('21.0', ('STRING',)), ('22.1', ('STRING',)),
+                    ('18.4', ('KEYWORD',)), ('18.9', ('KEYWORD',)), ('18.11', ('KEYWORD',)), ('18.14', (),),
+                    ('19.25', ('STRING',)), ('19.38', ('STRING',)),
+                    ('21.0', ('STRING',)),
+                    ('22.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )

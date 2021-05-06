@@ -26,7 +26,10 @@ def make_pats():
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW>case)\b" +
         r"(?!(?:[ \t]|\\\n)*[=,)\]}])" +  # not followed by any of =,)]}
-        r"(?P<CASE_PATTERN>.*?):[ \t]*$"
+        r"(?P<CASE_PATTERN>.*?)" +  # case pattern
+        r"(?:(?P<CASE_IF>\bif\b).*?)?" +  # possible guard
+        r"(?:(?P<CASE_AS>\bas\b)(?P<CAPTURE_PATTERN>.*?))?" +  # possible capture
+        r":"
     )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
@@ -55,6 +58,8 @@ idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
     "MATCH_SOFTKW": "KEYWORD",
     "CASE_SOFTKW": "KEYWORD",
+    "CASE_AS": "KEYWORD",
+    "CASE_IF": "KEYWORD",
     "UNDERSCORE_SOFTKW": "KEYWORD",
 }
 
@@ -312,7 +317,7 @@ class ColorDelegator(Delegator):
         for m in self.prog.finditer(chars):
             for name, matched_text in matched_named_groups(m):
                 a, b = m.span(name)
-                if name == "CASE_PATTERN":
+                if name in {"CASE_PATTERN", "CAPTURE_PATTERN"}:
                     for m1 in pattern_prog.finditer(matched_text):
                         for name, matched_text in matched_named_groups(m1):
                             a1, b1 = m1.span()
@@ -357,13 +362,13 @@ def _color_delegator(parent):  # htest #
         # Invalid combinations of legal characters should be half colored.
         ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
         match point:
-            case (x, 0):
+            case (x, 0) as _:
                 print(f"X={x}")
             case [_, [_], "_",
                     _]:
                 pass
-            case _:
-                raise ValueError("Not a point")
+            case _ if _:
+                raise ValueError("Not a point _")
         '''
         case _:'''
         "match x:"
