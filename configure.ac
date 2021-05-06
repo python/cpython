@@ -71,12 +71,11 @@ AC_SUBST(PYTHON_FOR_REGEN)
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
     if test -z "$PYTHON_FOR_BUILD"; then
-        for interp in python$PACKAGE_VERSION python3 python; do
+        for interp in python$PACKAGE_VERSION python3 python ''; do
 	    which $interp >/dev/null 2>&1 || continue
 	    if $interp -c "import sys;sys.exit(not '.'.join(str(n) for n in sys.version_info@<:@:2@:>@) == '$PACKAGE_VERSION')"; then
 	        break
 	    fi
-            interp=
 	done
         if test x$interp = x; then
 	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
