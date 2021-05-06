@@ -337,42 +337,14 @@ class ColorDelegator(Delegator):
 
 def _color_delegator(parent):  # htest #
     from tkinter import Toplevel, Text
+    from idlelib.idle_test.test_colorizer import source
     from idlelib.percolator import Percolator
 
     top = Toplevel(parent)
     top.title("Test ColorDelegator")
     x, y = map(int, parent.geometry().split('+')[1:])
     top.geometry("700x550+%d+%d" % (x + 20, y + 175))
-    source = textwrap.dedent("""\
-        if True: int ('1') # keyword, builtin, string, comment
-        elif False: print(0)
-        else: float(None)
-        if iF + If + IF: 'keyword matching must respect case'
-        if'': x or''  # valid keyword-string no-space combinations
-        async def f(): await g()
-        # Strings should be entirely colored, including quotes.
-        'x', '''x''', "x", \"""x\"""
-        'abc\\
-        def'
-        '''abc\\
-        def'''
-        # All valid prefixes for unicode and byte strings should be colored.        r'x', u'x', R'x', U'x', f'x', F'x'
-        fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
-        b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
-        # Invalid combinations of legal characters should be half colored.
-        ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
-        match point:
-            case (x, 0) as _:
-                print(f"X={x}")
-            case [_, [_], "_",
-                    _]:
-                pass
-            case _ if _:
-                raise ValueError("Not a point _")
-        '''
-        case _:'''
-        "match x:"
-        """)
+
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
     text.insert("insert", source)

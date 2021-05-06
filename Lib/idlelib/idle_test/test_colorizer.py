@@ -24,13 +24,20 @@ source = textwrap.dedent("""\
     elif False: print(0)  # 'string' in comment
     else: float(None)  # if in comment
     if iF + If + IF: 'keyword matching must respect case'
-    if'': x or''  # valid string-keyword no-space combinations
+    if'': x or''  # valid keyword-string no-space combinations
     async def f(): await g()
+    # Strings should be entirely colored, including quotes.
     'x', '''x''', "x", \"""x\"""
     'abc\\
     def'
     '''abc\\
     def'''
+    # All valid prefixes for unicode and byte strings should be colored.
+    r'x', u'x', R'x', U'x', f'x', F'x'
+    fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
+    b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
+    # Invalid combinations of legal characters should be half colored.
+    ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
     match point:
         case (x, 0) as _:
             print(f"X={x}")
@@ -379,16 +386,16 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('4.0', ('KEYWORD',)), ('4.3', ()), ('4.6', ()),
                     ('5.2', ('STRING',)), ('5.8', ('KEYWORD',)), ('5.10', ('STRING',)),
                     ('6.0', ('KEYWORD',)), ('6.10', ('DEFINITION',)), ('6.11', ()),
-                    ('7.0', ('STRING',)), ('7.4', ()), ('7.5', ('STRING',)),
-                    ('7.12', ()), ('7.14', ('STRING',)),
-                    ('12.0', ('KEYWORD',)),
-                    ('13.4', ('KEYWORD',)), ('13.16', ('KEYWORD',)), ('13.19', ('KEYWORD',)),
-                    ('15.4', ('KEYWORD',)), ('15.10', ('KEYWORD',)), ('15.14', ('KEYWORD',)), ('15.19', ('STRING',)),
-                    ('16.12', ('KEYWORD',)),
-                    ('18.4', ('KEYWORD',)), ('18.9', ('KEYWORD',)), ('18.11', ('KEYWORD',)), ('18.14', (),),
-                    ('19.25', ('STRING',)), ('19.38', ('STRING',)),
-                    ('21.0', ('STRING',)),
-                    ('22.1', ('STRING',)),
+                    ('8.0', ('STRING',)), ('8.4', ()), ('8.5', ('STRING',)),
+                    ('8.12', ()), ('8.14', ('STRING',)),
+                    ('19.0', ('KEYWORD',)),
+                    ('20.4', ('KEYWORD',)), ('20.16', ('KEYWORD',)), ('20.19', ('KEYWORD',)),
+                    ('22.4', ('KEYWORD',)), ('22.10', ('KEYWORD',)), ('22.14', ('KEYWORD',)), ('22.19', ('STRING',)),
+                    ('23.12', ('KEYWORD',)),
+                    ('25.4', ('KEYWORD',)), ('25.9', ('KEYWORD',)), ('25.11', ('KEYWORD',)), ('25.14', (),),
+                    ('26.25', ('STRING',)), ('26.38', ('STRING',)),
+                    ('28.0', ('STRING',)),
+                    ('29.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -414,12 +421,12 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('COMMENT', '2.0'), ('2.22', '2.43'))
         eq(text.tag_nextrange('SYNC', '2.0'), ('2.43', '3.0'))
         eq(text.tag_nextrange('STRING', '2.0'), ('4.17', '4.53'))
-        eq(text.tag_nextrange('STRING', '7.0'), ('7.0', '7.3'))
-        eq(text.tag_nextrange('STRING', '7.3'), ('7.5', '7.12'))
-        eq(text.tag_nextrange('STRING', '7.12'), ('7.14', '7.17'))
-        eq(text.tag_nextrange('STRING', '7.17'), ('7.19', '7.26'))
-        eq(text.tag_nextrange('SYNC', '7.0'), ('7.26', '8.0'))
-        eq(text.tag_nextrange('SYNC', '22.0'), ('22.10', '24.0'))
+        eq(text.tag_nextrange('STRING', '8.0'), ('8.0', '8.3'))
+        eq(text.tag_nextrange('STRING', '8.3'), ('8.5', '8.12'))
+        eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
+        eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
+        eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
+        eq(text.tag_nextrange('SYNC', '29.0'), ('29.10', '31.0'))
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
