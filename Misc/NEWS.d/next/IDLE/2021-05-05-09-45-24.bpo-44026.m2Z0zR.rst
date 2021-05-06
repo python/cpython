@@ -1,1 +1,2 @@
-IDLE now fetches the core interpreter's possible typo recommendations.
+Include parser's typo fix suggestions in message line for NameErrors
+and AttributeErrors.  Patch by E. Paine.
