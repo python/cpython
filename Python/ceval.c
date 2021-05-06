@@ -1296,11 +1296,10 @@ eval_frame_handle_pending(PyThreadState *tstate)
     #define USE_COMPUTED_GOTOS 0
 #endif
 
-#if USE_COMPUTED_GOTOS
 #define TARGET(op) op: TARGET_##op
+#if USE_COMPUTED_GOTOS
 #define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#define TARGET(op) op
 #define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
