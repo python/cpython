@@ -173,7 +173,6 @@ class AsyncMockTest(unittest.TestCase):
 
     def test_future_isfuture(self):
         loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         fut = loop.create_future()
         loop.stop()
         loop.close()
