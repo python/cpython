@@ -285,7 +285,7 @@ explain_incompatible_block_stack(int64_t to_stack)
         return "stack is too deep to analyze";
     }
     if (to_stack == UNINITIALIZED) {
-        return "can't jump into an exception handler, or code may be unreachable.";
+        return "can't jump into an exception handler, or code may be unreachable";
     }
     Kind target_kind = top_block(to_stack);
     switch(target_kind) {

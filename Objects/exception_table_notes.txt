@@ -1,7 +1,11 @@
 Description of the internal format of the exception table.
 
 Conceptually, the exception table consists of a sequence of 5-tuples:
-    start-offset (inclusive), end-offset (exclusive), target, stack-depth, push-lasti (boolean)
+    1. start-offset (inclusive)
+    2. end-offset (exclusive)
+    3. target
+    4. stack-depth
+    5. push-lasti (boolean)
 
 All offsets and lengths are in instructions, not bytes.
 
@@ -31,19 +35,19 @@ The 8 bits of a bit are (msb left) SXdddddd where S is the start bit. X is the e
 In addition, we will combine depth and lasti into a single value, ((depth<<1)+lasti), before encoding.
 
 For example, the exception entry:
-    start: 20
-    end:   28
-    target 100
-    depth  3
-    lasti  False
+    start:  20
+    end:    28
+    target: 100
+    depth:  3
+    lasti:  False
 
 is encoded first by converting to the more compact four value form:
-    start:        20
-    size:         8
-    target        100
-  depth<<1+lasti  6
+    start:         20
+    size:          8
+    target:        100
+  depth<<1+lasti:  6
 
-Where is then encoded as:
+which is then encoded as:
     148 (MSB + 20 for start)
     8   (size)
     65  (Extend bit + 1)

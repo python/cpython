@@ -4070,7 +4070,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                - (FOURTH, FIFTH, SIXTH) = previous exception
                - SEVENTH: lasti of exception in exc_info()
                - EIGHTH: the context.__exit__ bound method
-               We call SEVENTH(TOP, SECOND, THIRD).
+               We call EIGHTH(TOP, SECOND, THIRD).
                Then we push again the TOP exception and the __exit__
                return value.
             */
@@ -4772,9 +4772,13 @@ fail:
 
 }
 
+/* Exception table parsing code.
+ * See Objects/exception_table_notes.txt for details.
+ */
+
 static inline unsigned char *
 parse_varint(unsigned char *p, int *result) {
-    int val = p[0]&63;
+    int val = p[0] & 63;
     while (p[0] & 64) {
         p++;
         val = (val << 6) | (p[0] & 63);
@@ -4788,11 +4792,13 @@ scan_back_to_entry_start(unsigned char *p) {
     for (; (p[0]&128) == 0; p--);
     return p;
 }
+
 static inline unsigned char *
 skip_to_next_entry(unsigned char *p) {
     for (; (p[0]&128) == 0; p++);
     return p;
 }
+
 static inline unsigned char *
 parse_range(unsigned char *p, int *start, int*end)
 {

@@ -18,6 +18,8 @@ extern "C" {
 footer = """
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
+/* Reserve some bytecodes for internal use in the compiler.
+ * The value of 240 is arbitrary. */
 #define IS_ARTIFICIAL(op) ((op) > 240)
 
 #ifdef __cplusplus

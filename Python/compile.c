@@ -122,7 +122,6 @@ is_relative_jump(struct instr *i)
 static inline int
 is_jump(struct instr *i)
 {
-
     return i->i_opcode >= SETUP_WITH || is_bit_set_in_table(_PyOpcode_Jump, i->i_opcode);
 }
 
@@ -1138,14 +1137,21 @@ stack_effect(int opcode, int oparg, int jump)
         case LOAD_GLOBAL:
             return 1;
 
-        /* Exception handling */
+        /* Exception handling pseudo-instructions */
         case SETUP_FINALLY:
             /* 0 in the normal flow.
-             * Restore the stack position and push 6 values before jumping to
+             * Restore the stack position and push 3 values before jumping to
              * the handler if an exception be raised. */
             return jump ? 3 : 0;
         case SETUP_CLEANUP:
+            /* As SETUP_FINALLY, but pushes lasti as well */
             return jump ? 4 : 0;
+        case SETUP_WITH:
+            /* 0 in the normal flow.
+             * Restore the stack position to the position before the result
+             * of __(a)enter__ and push 4 values before jumping to the handler
+             * if an exception be raised. */
+            return jump ? -1 + 4 : 0;
 
         case RERAISE:
             return -3;
@@ -1197,12 +1203,6 @@ stack_effect(int opcode, int oparg, int jump)
         /* Iterators and generators */
         case GET_AWAITABLE:
             return 0;
-        case SETUP_WITH:
-            /* 0 in the normal flow.
-             * Restore the stack position to the position before the result
-             * of __aenter__ and push 7 values before jumping to the handler
-             * if an exception be raised. */
-            return jump ? -1 + 4 : 0;
 
         case BEFORE_ASYNC_WITH:
         case BEFORE_WITH:
