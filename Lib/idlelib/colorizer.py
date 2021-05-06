@@ -345,13 +345,13 @@ def _color_delegator(parent):  # htest #
         if iF + If + IF: 'keyword matching must respect case'
         if'': x or''  # valid keyword-string no-space combinations
         async def f(): await g()
-        # All valid prefixes for unicode and byte strings should be colored.
+        # Strings should be entirely colored, including quotes.
         'x', '''x''', "x", \"""x\"""
         'abc\\
         def'
         '''abc\\
         def'''
-        r'x', u'x', R'x', U'x', f'x', F'x'
+        # All valid prefixes for unicode and byte strings should be colored.        r'x', u'x', R'x', U'x', f'x', F'x'
         fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
         b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
         # Invalid combinations of legal characters should be half colored.
