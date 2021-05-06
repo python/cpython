@@ -58,7 +58,9 @@ class ExceptionTest(unittest.TestCase):
                     unittest.skip("Polluted namespace")
                     # Should make impossible.
 
-    def test_get_multiple_message(self):
+    @mock.patch.object(run, 'cleanup_traceback',
+                       new_callable=lambda: (lambda t, e: None))
+    def test_get_multiple_message(self, mock):
         zero = "division by zero\n"
         name = "name 'abc' is not defined. Did you mean: 'abs'?\n"
         attr = "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"
@@ -69,8 +71,6 @@ class ExceptionTest(unittest.TestCase):
                 )
         for code1, code2, exc1, exc2, msg1, msg2 in data:
             with self.subTest(codes=(code1,code2)):
-                with mock.patch.object(run, 'cleanup_traceback',
-                                       new_callable=lambda:(lambda t,e: None)):
                     try:
                         eval(compile(code1, '', 'eval'))
                     except exc1:
