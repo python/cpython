@@ -39,29 +39,25 @@ class ExceptionTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex1', tb[10])
 
     def test_get_message(self):
-        expect = ["NameError: name 'abc' is not defined. "
-                  "Did you mean: 'abs'?\n"]
-        try:
-            eval(compile('abc', '', 'eval'))
-        except NameError:
-            typ, val, _ = sys.exc_info()
-            self.assertEqual(run.get_message_lines(typ, val), expect)
-        else:
-            unittest.skip("Polluted namespace")  # Should make impossible.
-
-    def test_attributeerror_message(self):
-        abc = type("abc", (), {"something": None})
-        try:
-            abc.somethin
-        except AttributeError:
-            with captured_stderr() as output:
-                with mock.patch.object(run,
-                                       'cleanup_traceback') as ct:
-                    ct.side_effect = lambda t, e: t
-                    run.print_exception()
-        self.assertIn("AttributeError: type object 'abc' has no attribute 'somethin'. "
-                      "Did you mean: 'something'?", output.getvalue())
-
+        data = (('1/0', ZeroDivisionError, "division by zero\n"),
+                ('abc', NameError, "name 'abc' is not defined. "
+                                   "Did you mean: 'abs'?\n"),
+                ('int.reel', AttributeError,
+                     "type object 'int' has no attribute 'reel'. "
+                     "Did you mean: 'real'?\n"),
+                )
+        for code, exc, msg in data:
+            with self.subTest(code=code):
+                try:
+                    eval(compile(code, '', 'eval'))
+                except exc:
+                    typ, val, _ = sys.exc_info()
+                    actual = run.get_message_lines(typ, val)[0]
+                    expect = f'{exc.__name__}: {msg}'
+                    self.assertEqual(actual, expect)
+                else:
+                    unittest.skip("Polluted namespace")
+                    # Should make impossible.
 
 # StdioFile tests.
 
