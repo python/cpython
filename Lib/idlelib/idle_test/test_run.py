@@ -69,9 +69,8 @@ class ExceptionTest(unittest.TestCase):
                 )
         for code1, code2, exc1, exc2, msg1, msg2 in data:
             with self.subTest(codes=(code1,code2)):
-                with mock.patch.object(run,
-                                       'cleanup_traceback') as ct:
-                    ct.side_effect = lambda t, e: t
+                with mock.patch.object(run, 'cleanup_traceback',
+                                       new_callable=lambda:(lambda t,e: None)):
                     try:
                         eval(compile(code1, '', 'eval'))
                     except exc1:
