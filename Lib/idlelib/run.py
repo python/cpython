@@ -212,6 +212,19 @@ def show_socket_error(err, address):
             parent=root)
     root.destroy()
 
+
+def get_message_lines(typ, exc):
+    "Return line composing the exception message."
+    if typ in (AttributeError, NameError):
+        # 3.10+ hints are not directly accessible from python (#44026).
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            sys.__excepthook__(*sys.exc_info())
+        return [err.getvalue().split("\n")[-2] + "\n"]
+    else:
+        return traceback.format_exception_only(typ, exc)
+
+
 def print_exception():
     import linecache
     linecache.checkcache()
@@ -220,14 +233,6 @@ def print_exception():
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
     seen = set()
-
-    def fix_exc_last_line(lines, typ, exc):
-        if typ not in (AttributeError, NameError):
-            return lines
-        err = io.StringIO()
-        with contextlib.redirect_stderr(err):
-            sys.__excepthook__(*sys.exc_info())
-        return [err.getvalue().split("\n")[-2] + "\n"]
 
     def print_exc(typ, exc, tb):
         seen.add(id(exc))
@@ -250,8 +255,7 @@ def print_exception():
                        "debugger_r.py", "bdb.py")
             cleanup_traceback(tbe, exclude)
             traceback.print_list(tbe, file=efile)
-        lines = traceback.format_exception_only(typ, exc)
-        lines = fix_exc_last_line(lines, typ, exc)
+        lines = get_message_lines(typ, exc)
         for line in lines:
             print(line, end='', file=efile)
 

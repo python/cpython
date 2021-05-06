@@ -12,7 +12,7 @@ from idlelib.idle_test.mock_idle import Func
 idlelib.testing = True  # Use {} for executing test user code.
 
 
-class PrintExceptionTest(unittest.TestCase):
+class ExceptionTest(unittest.TestCase):
 
     def test_print_exception_unhashable(self):
         class UnhashableException(Exception):
@@ -38,21 +38,18 @@ class PrintExceptionTest(unittest.TestCase):
         self.assertIn('UnhashableException: ex2', tb[3])
         self.assertIn('UnhashableException: ex1', tb[10])
 
-    def test_print_exception_nameerror(self):
+    def test_get_message(self):
+        expect = ["NameError: name 'abc' is not defined. "
+                  "Did you mean: 'abs'?\n"]
         try:
-            abc
+            eval(compile('abc', '', 'eval'))
         except NameError:
-            with captured_stderr() as output:
-                with mock.patch.object(run,
-                                       'cleanup_traceback') as ct:
-                    ct.side_effect = lambda t, e: t
-                    run.print_exception()
+            typ, val, _ = sys.exc_info()
+            self.assertEqual(run.get_message_lines(typ, val), expect)
         else:
-            unittest.skip("Polluted namespace")
-        self.assertIn("NameError: name 'abc' is not defined. Did you mean: 'abs'?",
-                      output.getvalue())
+            unittest.skip("Polluted namespace")  # Should make impossible.
 
-    def test_print_exception_attributeerror(self):
+    def test_attributeerror_message(self):
         abc = type("abc", (), {"something": None})
         try:
             abc.somethin
