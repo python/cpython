@@ -386,8 +386,8 @@ The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer, float and complex
 types. For integers, when binary, octal, or hexadecimal output
-is used, this option adds the prefix respective ``'0b'``, ``'0o'``, or
-``'0x'`` to the output value. For float and complex the
+is used, this option adds the respective prefix ``'0b'``, ``'0o'``,
+``'0x'``, or ``'0X'`` to the output value. For float and complex the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
@@ -467,6 +467,8 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
    |         | upper-case letters for the digits above 9.               |
+   |         | In case ``'#'`` is specified, the prefix ``'0x'`` will   |
+   |         | be upper-cased to ``'0X'`` as well.                      |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
