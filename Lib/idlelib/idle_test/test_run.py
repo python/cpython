@@ -51,13 +51,46 @@ class ExceptionTest(unittest.TestCase):
                 try:
                     eval(compile(code, '', 'eval'))
                 except exc:
-                    typ, val, _ = sys.exc_info()
-                    actual = run.get_message_lines(typ, val)[0]
+                    typ, val, tb = sys.exc_info()
+                    actual = run.get_message_lines(typ, val, tb)[0]
                     expect = f'{exc.__name__}: {msg}'
                     self.assertEqual(actual, expect)
                 else:
                     unittest.skip("Polluted namespace")
                     # Should make impossible.
+
+    def test_get_multiple_message(self):
+        data = (('abc', '1/0', NameError, ZeroDivisionError,
+                 "name 'abc' is not defined. Did you mean: 'abs'?\n",
+                 "division by zero\n"),
+                ('0/1', 'int.reel', ZeroDivisionError, AttributeError,
+                 "division by zero\n",
+                 "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"),
+                ('abc', 'int.reel', NameError, AttributeError,
+                 "name 'abc' is not defined. Did you mean: 'abs'?\n",
+                 "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"),
+                )
+        for code1, code2, exc1, exc2, msg1, msg2 in data:
+            with self.subTest(code=code1):
+                with self.subTest(code=code2):
+                    with mock.patch.object(run,
+                                           'cleanup_traceback') as ct:
+                        ct.side_effect = lambda t, e: t
+                        try:
+                            eval(compile(code1, '', 'eval'))
+                        except exc1:
+                            try:
+                                eval(compile(code2, '', 'eval'))
+                            except exc2:
+                                with captured_stderr() as output:
+                                    run.print_exception()
+                                actual = output.getvalue()
+                                self.assertIn(msg1, actual)
+                                self.assertIn(msg2, actual)
+                                return
+        unittest.skip("Polluted namespace")
+        # Should make impossible.
+
 
 # StdioFile tests.
 
