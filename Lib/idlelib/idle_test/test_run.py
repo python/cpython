@@ -70,23 +70,22 @@ class ExceptionTest(unittest.TestCase):
                  "type object 'int' has no attribute 'reel'. Did you mean: 'real'?\n"),
                 )
         for code1, code2, exc1, exc2, msg1, msg2 in data:
-            with self.subTest(code=code1):
-                with self.subTest(code=code2):
-                    with mock.patch.object(run,
-                                           'cleanup_traceback') as ct:
-                        ct.side_effect = lambda t, e: t
+            with self.subTest(codes=(code1,code2)):
+                with mock.patch.object(run,
+                                       'cleanup_traceback') as ct:
+                    ct.side_effect = lambda t, e: t
+                    try:
+                        eval(compile(code1, '', 'eval'))
+                    except exc1:
                         try:
-                            eval(compile(code1, '', 'eval'))
-                        except exc1:
-                            try:
-                                eval(compile(code2, '', 'eval'))
-                            except exc2:
-                                with captured_stderr() as output:
-                                    run.print_exception()
-                                actual = output.getvalue()
-                                self.assertIn(msg1, actual)
-                                self.assertIn(msg2, actual)
-                                return
+                            eval(compile(code2, '', 'eval'))
+                        except exc2:
+                            with captured_stderr() as output:
+                                run.print_exception()
+                            actual = output.getvalue()
+                            self.assertIn(msg1, actual)
+                            self.assertIn(msg2, actual)
+                            return
         unittest.skip("Polluted namespace")
         # Should make impossible.
 
