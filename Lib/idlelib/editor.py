@@ -107,6 +107,11 @@ class EditorWindow:
         self.root = root
         self.menubar = Menu(root)
         self.top = top = window.ListedToplevel(root, menu=self.menubar)
+        if idleConf.GetOption('main', 'EditorWindow', 'max', type='bool'):
+            if sys.platform[:3] == 'win':
+                self.top.state('zoomed')
+            else:
+                self.top.attributes('-zoomed', True)
         if flist:
             self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict available to

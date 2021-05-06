@@ -1819,6 +1819,7 @@ class GenPage(Frame):
                     (*)startup_shell_on: Radiobutton - startup_edit
                 frame_win_size: Frame
                     win_size_title: Label
+                    (*)win_max_title: Checkbutton - win_max
                     win_width_title: Label
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
@@ -1866,6 +1867,8 @@ class GenPage(Frame):
         # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
                 IntVar(self), ('main', 'General', 'editor-on-startup'))
+        self.win_max = tracers.add(
+                BooleanVar(self), ('main', 'EditorWindow', 'max'))
         self.win_width = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
@@ -1917,6 +1920,8 @@ class GenPage(Frame):
         frame_win_size = Frame(frame_window, borderwidth=0)
         win_size_title = Label(
                 frame_win_size, text='Initial Window Size  (in characters)')
+        win_max_title = Checkbutton(frame_win_size, text='Maximised', variable=self.win_max)
+        self.win_max.trace("w", lambda a, b, c: self.toggle_entry_mode())
         win_width_title = Label(frame_win_size, text='Width')
         self.win_width_int = Entry(
                 frame_win_size, textvariable=self.win_width, width=3,
@@ -2032,6 +2037,8 @@ class GenPage(Frame):
         self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
         # frame_win_size.
         frame_win_size.pack(side=TOP, padx=5, pady=0, fill=X)
+        win_size_title.pack(side=LEFT, anchor=NW, padx=5, pady=5)
+        win_max_title.pack(side=TOP, anchor=E, padx=10, pady=5)
         win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
@@ -2091,6 +2098,8 @@ class GenPage(Frame):
         # Set variables for all windows.
         self.startup_edit.set(idleConf.GetOption(
                 'main', 'General', 'editor-on-startup', type='bool'))
+        self.win_max.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'max', type='bool'))
         self.win_width.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
@@ -2126,6 +2135,14 @@ class GenPage(Frame):
         for help_item in self.user_helplist:
             self.helplist.insert(END, help_item[0])
         self.set_add_delete_state()
+
+    def toggle_entry_mode(self):
+        if self.win_max.get():
+            state = "disabled"
+        else:
+            state = "normal"
+        self.win_width_int.config(state=state)
+        self.win_height_int.config(state=state)
 
     def help_source_selected(self, event):
         "Handle event for selecting additional help."
