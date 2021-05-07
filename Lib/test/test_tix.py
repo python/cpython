@@ -10,7 +10,7 @@ _tkinter = import_helper.import_module('_tkinter')
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
-tix = support.import_module('tkinter.tix', deprecated=True)
+tix = import_helper.import_module('tkinter.tix', deprecated=True)
 from tkinter import TclError
 
 
