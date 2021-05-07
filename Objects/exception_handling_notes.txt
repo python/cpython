@@ -1,12 +1,13 @@
 Description of exception handling in Python 3.11
 ------------------------------------------------
 
-Prior to 3.11, exceptions were handled by a runtime stack of "blocks".
 Python 3.11 uses what is known as "zero-cost" exception handling.
+Prior to 3.11, exceptions were handled by a runtime stack of "blocks".
 
-In zero-cost exception handling, the cost of code that does not raise exceptions
-is minimized, but the cost of raising an exception is increased.
-Since exceptions are relatively rare this results in improved performance.
+In zero-cost exception handling, the cost of supporting exceptions is minimized.
+In the common case (where no exception is raised) the cost is reduced
+to zero (or close to zero).
+The cost of raising an exception is increased, but not by much.
 
 The following code:
 
@@ -68,15 +69,15 @@ ExceptionTable:
 
 If an instruction raises an exception then its offset is used to find the target to jump to.
 For example, the CALL_FUNCTION at offset 6, falls into the range 2 to 8.
-So, if g() raises an exception, then control jumps to offset 14,
-once the exception has been pushed to the stack.
+So, if g() raises an exception, then control jumps to offset 14.
 
 
 Unwinding
 ---------
 
 When an exception is raised, the current instruction offset is used to find following:
-target to jump to, stack depth, and 'lasti', which determines the instruction offset should be pushed.
+target to jump to, stack depth, and 'lasti', which determines whether the instruction
+offset of the raising instruction should be pushed.
 
 This information is stored in the exception table, described below.
 
