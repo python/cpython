@@ -411,12 +411,8 @@ begin_transaction(pysqlite_Connection *self)
         goto error;
     }
 
-    rc = pysqlite_step(statement, self);
-    if (rc != SQLITE_DONE) {
-        _pysqlite_seterror(self->db);
-    }
-
     Py_BEGIN_ALLOW_THREADS
+    sqlite3_step(statement);
     rc = sqlite3_finalize(statement);
     Py_END_ALLOW_THREADS
 
