@@ -10,9 +10,7 @@ _tkinter = import_helper.import_module('_tkinter')
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
-warnings.simplefilter('ignore', DeprecationWarning)
-from tkinter import tix
-warnings.simplefilter('always', DeprecationWarning)
+tix = support.import_module('tkinter.tix', deprecated=True)
 from tkinter import TclError
 
 
@@ -29,6 +27,8 @@ class TestTix(unittest.TestCase):
             self.addCleanup(self.root.destroy)
 
     def test_tix_warning(self):
+        support.import_fresh_module('tkinter.tix', fresh=('tkinter.tix',))
+        # Refresh module to issue warning
         with self.assertWarns(DeprecationWarning):
             from tkinter import tix
 
