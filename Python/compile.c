@@ -4261,7 +4261,7 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
         for (Py_ssize_t j = i + 1; j < nkeywords; j++) {
             keyword_ty other = ((keyword_ty)asdl_seq_GET(keywords, j));
             if (other->arg && !PyUnicode_Compare(key->arg, other->arg)) {
-                c->u->u_col_offset = other->col_offset;
+                SET_LOC(c, other);
                 compiler_error(c, "keyword argument repeated: %U", key->arg);
                 return -1;
             }
@@ -5297,11 +5297,15 @@ static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
     int old_lineno = c->u->u_lineno;
+    int old_end_lineno = c->u->u_end_lineno;
     int old_col_offset = c->u->u_col_offset;
+    int old_end_col_offset = c->u->u_end_col_offset;
     SET_LOC(c, e);
     int res = compiler_visit_expr1(c, e);
     c->u->u_lineno = old_lineno;
+    c->u->u_end_lineno = old_end_lineno;
     c->u->u_col_offset = old_col_offset;
+    c->u->u_end_col_offset = old_end_col_offset;
     return res;
 }
 
@@ -5312,7 +5316,9 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     expr_ty e = s->v.AugAssign.target;
 
     int old_lineno = c->u->u_lineno;
+    int old_end_lineno = c->u->u_end_lineno;
     int old_col_offset = c->u->u_col_offset;
+    int old_end_col_offset = c->u->u_end_col_offset;
     SET_LOC(c, e);
 
     switch (e->kind) {
@@ -5342,7 +5348,9 @@ compiler_augassign(struct compiler *c, stmt_ty s)
     }
 
     c->u->u_lineno = old_lineno;
+    c->u->u_end_lineno = old_end_lineno;
     c->u->u_col_offset = old_col_offset;
+    c->u->u_end_col_offset = old_end_col_offset;
 
     VISIT(c, expr, s->v.AugAssign.value);
     ADDOP(c, inplace_binop(s->v.AugAssign.op));
@@ -5863,14 +5871,14 @@ validate_kwd_attrs(struct compiler *c, asdl_identifier_seq *attrs, asdl_pattern_
     Py_ssize_t nattrs = asdl_seq_LEN(attrs);
     for (Py_ssize_t i = 0; i < nattrs; i++) {
         identifier attr = ((identifier)asdl_seq_GET(attrs, i));
-        c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
+        SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, i)));
         if (forbidden_name(c, attr, Store)) {
             return -1;
         }
         for (Py_ssize_t j = i + 1; j < nattrs; j++) {
             identifier other = ((identifier)asdl_seq_GET(attrs, j));
             if (!PyUnicode_Compare(attr, other)) {
-                c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, j))->col_offset;
+                SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, j)));
                 compiler_error(c, "attribute name repeated in class pattern: %U", attr);
                 return -1;
             }
@@ -5901,7 +5909,7 @@ compiler_pattern_class(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     if (nattrs) {
         RETURN_IF_FALSE(!validate_kwd_attrs(c, kwd_attrs, kwd_patterns));
-        c->u->u_col_offset = p->col_offset; // validate_kwd_attrs moves this
+        SET_LOC(c, p);
     }
     VISIT(c, expr, p->v.MatchClass.cls);
     PyObject *attr_names;
@@ -5985,7 +5993,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         if (key == NULL) {
             const char *e = "can't use NULL keys in MatchMapping "
                             "(set 'rest' parameter instead)";
-            c->u->u_col_offset = ((pattern_ty) asdl_seq_GET(patterns, i))->col_offset;
+            SET_LOC(c, ((pattern_ty) asdl_seq_GET(patterns, i)));
             return compiler_error(c, e);
         }
         if (!MATCH_VALUE_EXPR(key)) {
