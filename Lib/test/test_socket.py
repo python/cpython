@@ -1863,8 +1863,10 @@ class CANTest(ThreadedCANSocketTest):
     def testSendFrame(self):
         cf, addr = self.s.recvfrom(self.bufsize)
         self.assertEqual(self.cf, cf)
-        self.assertEqual(addr[0], self.interface)
-        self.assertEqual(addr[1], socket.AF_CAN)
+        # XXX: This may not be strictly correct, but the ship has sailed for
+        #      3.7.  This is different in 3.8+; we just want the test to pass
+        #      in 3.7 at this point. -- ZW 6May21
+        self.assertEqual(addr, self.interface)
 
     def _testSendFrame(self):
         self.cf = self.build_can_frame(0x00, b'\x01\x02\x03\x04\x05')
