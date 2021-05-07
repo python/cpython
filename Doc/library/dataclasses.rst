@@ -491,6 +491,22 @@ depend on one or more other fields.  For example::
         def __post_init__(self):
             self.c = self.a + self.b
 
+If the dataclass inherits from another class, which defines an :meth:`__init__` 
+method, the :meth:`__init__` method of the base class should be called in 
+:meth:`__post_init__`::
+
+    @dataclass
+    class Rectangle:
+        height: float
+        width: float
+
+    @dataclass
+    class Square(Rectangle):
+        side: float
+
+        def __post_init__(self):
+            super().__init__(self.side, self.side)
+
 See the section below on init-only variables for ways to pass
 parameters to :meth:`__post_init__`.  Also see the warning about how
 :func:`replace` handles ``init=False`` fields.
