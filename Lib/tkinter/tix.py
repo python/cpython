@@ -29,7 +29,12 @@ import tkinter
 from tkinter import *
 from tkinter import _cnfmerge
 
-import _tkinter # If this fails your Python may not be configured for Tk
+warnings.warn(
+    'The Tix Tk extension is unmaintained, and the tkinter.tix wrapper module'
+    ' is deprecated in favor of tkinter.ttk',
+    DeprecationWarning,
+    stacklevel=2,
+    )
 
 # Some more constants (for consistency with Tkinter)
 WINDOW = 'window'
@@ -64,10 +69,6 @@ TCL_FILE_EVENTS   = 1 << 3
 TCL_TIMER_EVENTS  = 1 << 4
 TCL_IDLE_EVENTS   = 1 << 5
 TCL_ALL_EVENTS    = 0
-
-warnings.warn('The Tix Tk extension is unmaintained, '
-              'and the tkinter.tix wrapper is deprecated in '
-              'favor of tkinter.ttk', DeprecationWarning, stacklevel=2)
 
 # BEWARE - this is implemented by copying some code from the Widget class
 #          in Tkinter (to override Widget initialization) and is therefore
