@@ -49,11 +49,13 @@ embedding Python.)
    (x>=2) on the particular  :ref:`platform <stable-abi-platform>`.
 
    Defining ``Py_LIMITED_API`` to a value of :c:data:`PY_VERSION_HEX` will
-   do the same, but allow additional API added up to specified version,
-   and lose compatibility with earlier versions.
-   Rather than using the macro directly, hardcode a minimum minor version
-   (e.g. ``0x030A0000`` for Python 3.10) for stability when compiling with
-   future Python versions.
+   limit the available API so that the extension will work without
+   recompilation with all Python 3 releases from the specified one.
+   This will allow using additional API introduced up to this version,
+   but the extension will lose compatibility with earlier Python versions.
+   Rather than using the ``PY_VERSION_HEX`` macro directly, hardcode a minimum
+   minor version (e.g. ``0x030A0000`` for Python 3.10) for stability when
+   compiling with future Python versions.
 
 On Windows, extensions that use the Stable ABI should be linked against
 ``python3.dll`` rather than a version-specific library such as
