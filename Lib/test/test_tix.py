@@ -5,7 +5,7 @@ import sys
 import warnings
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = import_helper.import_module('_tkinter')
+_tkinter = support.import_module('_tkinter')
 
 # Skip test if tk cannot be initialized.
 support.requires('gui')
@@ -27,10 +27,9 @@ class TestTix(unittest.TestCase):
             self.addCleanup(self.root.destroy)
 
     def test_tix_warning(self):
-        support.import_fresh_module('tkinter.tix', fresh=('tkinter.tix',))
         # Refresh module to issue warning
         with self.assertWarns(DeprecationWarning):
-            from tkinter import tix
+            tix = support.import_fresh_module('tkinter.tix', fresh=('tkinter.tix',))
 
 
 if __name__ == '__main__':
