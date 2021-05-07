@@ -407,7 +407,6 @@ begin_transaction(pysqlite_Connection *self)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db);
         goto error;
     }
 
@@ -416,15 +415,15 @@ begin_transaction(pysqlite_Connection *self)
     rc = sqlite3_finalize(statement);
     Py_END_ALLOW_THREADS
 
-    if (rc != SQLITE_OK && !PyErr_Occurred()) {
-        _pysqlite_seterror(self->db);
+    if (rc != SQLITE_OK) {
+        goto error;
     }
 
-error:
-    if (PyErr_Occurred()) {
-        return -1;
-    }
     return 0;
+
+error:
+    _pysqlite_seterror(self->db);
+    return -1;
 }
 
 static PyObject *
