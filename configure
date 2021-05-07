@@ -623,6 +623,9 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+OPT2_PYC_BUILD
+OPT1_PYC_BUILD
+OPT0_PYC_BUILD
 TEST_MODULES
 LIBRARY_DEPS
 STATIC_LIBPYTHON
@@ -862,6 +865,7 @@ with_builtin_hashlib_hashes
 with_experimental_isolated_subinterpreters
 with_static_libpython
 enable_test_modules
+enable_pyc_build
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1522,6 +1526,9 @@ Optional Features:
                           use big digits (30 or 15 bits) for Python longs
                           (default is system-dependent)]
   --disable-test-modules  don't build nor install test modules
+  --enable-pyc-build[=all|none|O0[,O1[,O2]]]
+                          choose what type of .pyc files to compile at
+                          installing libraries (default is all)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -17785,6 +17792,61 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+# choose what type of .pyc files to compile at installing libraries
+OPT0_PYC_BUILD=yes
+OPT1_PYC_BUILD=yes
+OPT2_PYC_BUILD=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-pyc-build" >&5
+$as_echo_n "checking for --enable-pyc-build... " >&6; }
+# Check whether --enable-pyc-build was given.
+if test "${enable_pyc_build+set}" = set; then :
+  enableval=$enable_pyc_build;
+case $enableval in
+    yes|all)
+        ;;
+    no|none)
+        OPT0_PYC_BUILD=no
+        OPT1_PYC_BUILD=no
+        OPT2_PYC_BUILD=no
+        ;;
+    O[012]*)
+        OPT0_PYC_BUILD=no
+        OPT1_PYC_BUILD=no
+        OPT2_PYC_BUILD=no
+        for opt in `echo $enableval | sed 's/,/ /g'`; do
+            case $opt in
+                O0)
+                    OPT0_PYC_BUILD=yes
+                    ;;
+                O1)
+                    OPT1_PYC_BUILD=yes
+                    ;;
+                O2)
+                    OPT2_PYC_BUILD=yes
+                    ;;
+                *)
+                    as_fn_error $? "proper usage is --enable-pyc-build[=all|none|O0[,O1[,O2]]]" "$LINENO" 5
+                    ;;
+            esac
+        done
+        ;;
+    *)
+        as_fn_error $? "proper usage is --enable-pyc-build[=all|none|O0[,O1[,O2]]]" "$LINENO" 5
+        ;;
+esac
+
+else
+
+enable_pyc_build=all
+
+fi
+
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_pyc_build" >&5
+$as_echo "$enable_pyc_build" >&6; }
 
 
 # generate output files

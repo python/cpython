@@ -5933,6 +5933,56 @@ else
 fi
 AC_SUBST(TEST_MODULES)
 
+# choose what type of .pyc files to compile at installing libraries
+OPT0_PYC_BUILD=yes
+OPT1_PYC_BUILD=yes
+OPT2_PYC_BUILD=yes
+AC_MSG_CHECKING(for --enable-pyc-build)
+AC_ARG_ENABLE(pyc-build,
+              AS_HELP_STRING([--enable-pyc-build@<:@=all|none|O0@<:@,O1@<:@,O2@:>@@:>@@:>@],
+                             [choose what type of .pyc files to compile at installing libraries (default is all)]),
+[
+case $enableval in
+    yes|all)
+        ;;
+    no|none)
+        OPT0_PYC_BUILD=no
+        OPT1_PYC_BUILD=no
+        OPT2_PYC_BUILD=no
+        ;;
+    O@<:@012@:>@*)
+        OPT0_PYC_BUILD=no
+        OPT1_PYC_BUILD=no
+        OPT2_PYC_BUILD=no
+        for opt in `echo $enableval | sed 's/,/ /g'`; do
+            case $opt in
+                O0)
+                    OPT0_PYC_BUILD=yes
+                    ;;
+                O1)
+                    OPT1_PYC_BUILD=yes
+                    ;;
+                O2)
+                    OPT2_PYC_BUILD=yes
+                    ;;
+                *)
+                    AC_MSG_ERROR([proper usage is --enable-pyc-build@<:@=all|none|O0@<:@,O1@<:@,O2@:>@@:>@@:>@])
+                    ;;
+            esac
+        done
+        ;;
+    *)
+        AC_MSG_ERROR([proper usage is --enable-pyc-build@<:@=all|none|O0@<:@,O1@<:@,O2@:>@@:>@@:>@])
+        ;;
+esac
+],[
+enable_pyc_build=all
+])
+AC_SUBST(OPT0_PYC_BUILD)
+AC_SUBST(OPT1_PYC_BUILD)
+AC_SUBST(OPT2_PYC_BUILD)
+AC_MSG_RESULT($enable_pyc_build)
+
 
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh)
