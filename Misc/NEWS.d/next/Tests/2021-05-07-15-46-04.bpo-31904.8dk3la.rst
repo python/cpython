@@ -1,0 +1,1 @@
+Correct error string in test_file_not_exists() for VxWorks.
