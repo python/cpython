@@ -5,7 +5,7 @@ import sys
 import warnings
 
 # Skip this test if the _tkinter module wasn't built.
-_tkinter = support.import_module('_tkinter')
+_tkinter = import_helper.import_module('_tkinter')
 
 # Skip test if tk cannot be initialized.
 support.requires('gui')
