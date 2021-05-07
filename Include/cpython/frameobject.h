@@ -22,14 +22,14 @@ typedef signed char PyFrameState;
 enum {
     FRAME_SPECIALS_GLOBALS_OFFSET = 0,
     FRAME_SPECIALS_BUILTINS_OFFSET = 1,
-    FRAME_SPECIALS_SIZE = 2
+    FRAME_SPECIALS_LOCALS_OFFSET = 2,
+    FRAME_SPECIALS_SIZE = 3
 };
 
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
     PyCodeObject *f_code;       /* code segment */
-    PyObject *f_locals;         /* local symbol table (any mapping) */
     PyObject **f_valuestack;    /* points after the last local */
     PyObject *f_trace;          /* Trace function */
     /* Borrowed reference to a generator, or NULL */

@@ -25,19 +25,20 @@ get_frame_state(void)
     return &interp->frame;
 }
 
+static inline PyObject **
+_PyFrame_Specials(PyFrameObject *f) {
+    return &f->f_valuestack[-FRAME_SPECIALS_SIZE];
+}
+
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
     if (PyFrame_FastToLocalsWithError(f) < 0)
         return NULL;
-    Py_INCREF(f->f_locals);
-    return f->f_locals;
-}
-
-static inline PyObject **
-_PyFrame_Specials(PyFrameObject *f) {
-    return &f->f_valuestack[-FRAME_SPECIALS_SIZE];
+    PyObject *locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
+    Py_INCREF(locals);
+    return locals;
 }
 
 int
@@ -642,7 +643,6 @@ frame_dealloc(PyFrameObject *f)
     }
     f->f_stackdepth = 0;
     Py_XDECREF(f->f_back);
-    Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
     struct _Py_frame_state *state = get_frame_state();
 #ifdef Py_DEBUG
@@ -672,7 +672,6 @@ static int
 frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
-    Py_VISIT(f->f_locals);
     Py_VISIT(f->f_trace);
 
     /* locals */
@@ -894,7 +893,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
     _PyFrame_Specials(f)[FRAME_SPECIALS_BUILTINS_OFFSET] = Py_NewRef(con->fc_builtins);
     _PyFrame_Specials(f)[FRAME_SPECIALS_GLOBALS_OFFSET] = Py_NewRef(con->fc_globals);
-    f->f_locals = Py_XNewRef(locals);
+    _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = Py_XNewRef(locals);
     // f_valuestack initialized by frame_alloc()
     f->f_trace = NULL;
     f->f_stackdepth = 0;
@@ -1046,9 +1045,9 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    locals = f->f_locals;
+    locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
     if (locals == NULL) {
-        locals = f->f_locals = PyDict_New();
+        locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = PyDict_New();
         if (locals == NULL)
             return -1;
     }
@@ -1107,7 +1106,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    /* Merge f->f_locals into fast locals */
+    /* Merge locals into fast locals */
     PyObject *locals, *map;
     PyObject **fast;
     PyObject *error_type, *error_value, *error_traceback;
@@ -1116,7 +1115,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     Py_ssize_t ncells, nfreevars;
     if (f == NULL)
         return;
-    locals = f->f_locals;
+    locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
     co = f->f_code;
     map = co->co_varnames;
     if (locals == NULL)
