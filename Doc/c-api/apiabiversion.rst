@@ -7,8 +7,8 @@ API and ABI Versioning
 ***********************
 
 CPython exposes its version number in the following macros.
-Note that these correspond to the version code is built with,
-not necessarily the version used at run time.
+Note that these correspond to the version code is **built** with,
+not necessarily the version used at **run time**.
 
 See :ref:`stable` for a discussion of API and ABI stability across versions.
 
