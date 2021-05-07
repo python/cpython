@@ -491,8 +491,8 @@ depend on one or more other fields.  For example::
         def __post_init__(self):
             self.c = self.a + self.b
 
-If the dataclass inherits from another class, which defines an :meth:`__init__` 
-method, the :meth:`__init__` method of the base class should be called in 
+If the dataclass inherits from another class, which defines an :meth:`__init__`
+method, the :meth:`__init__` method of the base class should be called in
 :meth:`__post_init__`::
 
     @dataclass
