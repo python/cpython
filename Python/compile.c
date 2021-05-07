@@ -7474,6 +7474,7 @@ offset_derefs(basicblock *entryblock, int nlocals)
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
             switch(inst->i_opcode) {
+                case MAKE_CELL:
                 case LOAD_CLOSURE:
                 case LOAD_DEREF:
                 case STORE_DEREF:

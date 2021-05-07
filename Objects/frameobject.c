@@ -961,15 +961,39 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
            former here and will later use the cell for the variable.
         */
         if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
-            assert(fast[i] == NULL);
             continue;
         }
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
-        if (kind & (CO_FAST_CELL | CO_FAST_FREE) && value != NULL) {
-            assert(PyCell_Check(value));
-            value = PyCell_GET(value);
+        if (kind & (CO_FAST_CELL | CO_FAST_FREE)) {
+            if (value != NULL) {
+                // MAKE_CELL must have executed already.
+                assert(PyCell_Check(value));
+                value = PyCell_GET(value);
+            }
+            else {
+                // MAKE_CELL hasn't executed yet.  (This is unlikely.)
+                PyObject *cell = PyCell_New(NULL);
+                if (cell == NULL) {
+                    PyErr_Clear();
+                }
+                else {
+                    if (co->co_cell2arg != NULL) {
+                        int argoffset = co->co_cell2arg[i - co->co_nlocals];
+                        if (argoffset != CO_CELL_NOT_AN_ARG) {
+                            // It will have been set in initialize_locals().
+                            value = fast[argoffset];
+                            assert(value != NULL);
+                            Py_INCREF(value);
+                            PyCell_SET(cell, value);
+                            // Clear the arg slot.
+                            Py_SETREF(fast[argoffset], NULL);
+                        }
+                    }
+                    fast[i] = cell;
+                }
+            }
         }
         if (value == NULL) {
             if (PyObject_DelItem(locals, name) != 0) {
@@ -1039,16 +1063,37 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
                 continue;
             }
         }
+        PyObject *oldvalue = fast[i];
         if (kind & (CO_FAST_CELL | CO_FAST_FREE)) {
-            assert(PyCell_Check(fast[i]));
-            if (PyCell_GET(fast[i]) != value) {
-                if (PyCell_Set(fast[i], value) < 0) {
+            if (oldvalue != NULL) {
+                // MAKE_CELL must have executed already.
+                assert(PyCell_Check(oldvalue));
+                Py_XDECREF(PyCell_GET(oldvalue));
+                Py_XINCREF(value);
+                PyCell_SET(oldvalue, value);
+            }
+            else {
+                // MAKE_CELL hasn't executed yet.  (This is unlikely.)
+                PyObject *cell = PyCell_New(value);
+                if (cell == NULL) {
                     PyErr_Clear();
+                }
+                else {
+                    fast[i] = cell;
+                    // Clear the corresponding arg if there is one.
+                    if (co->co_cell2arg != NULL) {
+                        int argoffset = co->co_cell2arg[i - co->co_nlocals];
+                        if (argoffset != CO_CELL_NOT_AN_ARG) {
+                            // It will have been set in initialize_locals().
+                            assert(fast[argoffset] != NULL);
+                            Py_SETREF(fast[argoffset], NULL);
+                        }
+                    }
                 }
             }
         } else if (fast[i] != value) {
             Py_XINCREF(value);
-            Py_XSETREF(fast[i], value);
+            Py_XSETREF(oldvalue, value);
         }
         Py_XDECREF(value);
     }

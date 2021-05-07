@@ -427,7 +427,7 @@ def _h(y):
     return foo
 
 dis_nested_0 = """\
-              0 MAKE_CELL                0
+              0 MAKE_CELL                2
 
 %3d           2 LOAD_CLOSURE             2 (y)
               4 BUILD_TUPLE              1
@@ -446,7 +446,7 @@ dis_nested_0 = """\
 
 dis_nested_1 = """%s
 Disassembly of <code object foo at 0x..., file "%s", line %d>:
-              0 MAKE_CELL                0
+              0 MAKE_CELL                1
 
 %3d           2 LOAD_CLOSURE             1 (x)
               4 BUILD_TUPLE              1
@@ -966,8 +966,8 @@ expected_jumpy_line = 1
 
 Instruction = dis.Instruction
 expected_opinfo_outer = [
-  Instruction(opname='MAKE_CELL', opcode=135, arg=0, argval=0, argrepr='', offset=0, starts_line=None, is_jump_target=False),
-  Instruction(opname='MAKE_CELL', opcode=135, arg=1, argval=1, argrepr='', offset=2, starts_line=None, is_jump_target=False),
+  Instruction(opname='MAKE_CELL', opcode=135, arg=3, argval=3, argrepr='', offset=0, starts_line=None, is_jump_target=False),
+  Instruction(opname='MAKE_CELL', opcode=135, arg=4, argval=4, argrepr='', offset=2, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=8, argval=(3, 4), argrepr='(3, 4)', offset=4, starts_line=2, is_jump_target=False),
   Instruction(opname='LOAD_CLOSURE', opcode=136, arg=3, argval='a', argrepr='a', offset=6, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CLOSURE', opcode=136, arg=4, argval='b', argrepr='b', offset=8, starts_line=None, is_jump_target=False),
@@ -991,8 +991,8 @@ expected_opinfo_outer = [
 ]
 
 expected_opinfo_f = [
-  Instruction(opname='MAKE_CELL', opcode=135, arg=0, argval=0, argrepr='', offset=0, starts_line=None, is_jump_target=False),
-  Instruction(opname='MAKE_CELL', opcode=135, arg=1, argval=1, argrepr='', offset=2, starts_line=None, is_jump_target=False),
+  Instruction(opname='MAKE_CELL', opcode=135, arg=3, argval=3, argrepr='', offset=0, starts_line=None, is_jump_target=False),
+  Instruction(opname='MAKE_CELL', opcode=135, arg=4, argval=4, argrepr='', offset=2, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CONST', opcode=100, arg=5, argval=(5, 6), argrepr='(5, 6)', offset=4, starts_line=3, is_jump_target=False),
   Instruction(opname='LOAD_CLOSURE', opcode=136, arg=5, argval='a', argrepr='a', offset=6, starts_line=None, is_jump_target=False),
   Instruction(opname='LOAD_CLOSURE', opcode=136, arg=6, argval='b', argrepr='b', offset=8, starts_line=None, is_jump_target=False),

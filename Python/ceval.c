@@ -1835,11 +1835,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        case TARGET(MAKE_CELL): {
-            // XXX
-            DISPATCH();
-        }
-
         /* We keep LOAD_CLOSURE so that the bytecode stays more readable. */
         case TARGET(LOAD_CLOSURE):
         case TARGET(LOAD_FAST): {
@@ -3079,6 +3074,34 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 PyTuple_GetItem(co->co_localsplusnames, oparg)
                 );
             goto error;
+        }
+
+        case TARGET(MAKE_CELL): {
+            if (GETLOCAL(oparg) != NULL) {
+                // A cell must have been set in PyFrame_LocalsToFast().
+                // (This is unlikely to happen.)
+                assert(PyCell_Check(GETLOCAL(oparg)));
+                DISPATCH();
+            }
+            PyObject *cell = PyCell_New(NULL);
+            if (cell == NULL) {
+                goto error;
+            }
+            /* If it is an arg then copy the arg into the cell. */
+            if (co->co_cell2arg != NULL) {
+                int argoffset = co->co_cell2arg[oparg - co->co_nlocals];
+                if (argoffset != CO_CELL_NOT_AN_ARG) {
+                    PyObject *arg = GETLOCAL(argoffset);
+                    // It will have been set in initialize_locals().
+                    assert(arg != NULL);
+                    Py_INCREF(arg);
+                    PyCell_SET(cell, arg);
+                    /* Clear the local copy. */
+                    SETLOCAL(argoffset, NULL);
+                }
+            }
+            SETLOCAL(oparg, cell);
+            DISPATCH();
         }
 
         case TARGET(DELETE_DEREF): {
@@ -5070,27 +5093,6 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                               con->fc_qualname);
             goto fail;
         }
-    }
-
-
-    /* Allocate and initialize storage for cell vars, and copy free
-       vars into frame. */
-    for (i = 0; i < co->co_ncellvars; ++i) {
-        PyObject *c;
-        Py_ssize_t arg;
-        /* Possibly account for the cell variable being an argument. */
-        if (co->co_cell2arg != NULL &&
-            (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG) {
-            c = PyCell_New(GETLOCAL(arg));
-            /* Clear the local copy. */
-            SETLOCAL(arg, NULL);
-        }
-        else {
-            c = PyCell_New(NULL);
-        }
-        if (c == NULL)
-            goto fail;
-        SETLOCAL(co->co_nlocals + i, c);
     }
 
     /* Copy closure variables to free variables */
