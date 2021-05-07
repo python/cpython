@@ -616,13 +616,6 @@ the original TOS1.
    .. versionadded:: 3.5
 
 
-.. opcode:: SETUP_ASYNC_WITH
-
-   Creates a new frame object.
-
-   .. versionadded:: 3.5
-
-
 
 **Miscellaneous opcodes**
 
@@ -692,26 +685,27 @@ iterations of the loop.
    opcode implements ``from module import *``.
 
 
-.. opcode:: POP_BLOCK
-
-   Removes one block from the block stack.  Per frame, there is a stack of
-   blocks, denoting :keyword:`try` statements, and such.
-
-
 .. opcode:: POP_EXCEPT
 
-   Removes one block from the block stack. The popped block must be an exception
-   handler block, as implicitly created when entering an except handler.  In
-   addition to popping extraneous values from the frame stack, the last three
-   popped values are used to restore the exception state.
+   Pops three values from the stack, which are used to restore the exception state.
 
 
 .. opcode:: RERAISE
 
     Re-raises the exception currently on top of the stack. If oparg is non-zero,
-    restores ``f_lasti`` of the current frame to its value when the exception was raised.
+    pops an additional value from the stack which is used to set ``f_lasti``
+    of the current frame.
 
     .. versionadded:: 3.9
+
+
+.. opcode:: PUSH_EXC_INFO
+
+    Pops the three values from the stack. Pushes the current exception to the top of the stack.
+    Pushes the three values originally popped back to the stack.
+    Used in exception handlers.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: WITH_EXCEPT_START
@@ -722,6 +716,17 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
+
+
+.. opcode:: POP_EXCEPT_AND_RERAISE
+
+    Pops the exception currently on top of the stack. Pops the integer value on top
+    of the stack and sets the ``f_lasti`` attribute of the frame with that value.
+    Then pops the next exception from the stack uses it to restore the current exception.
+    Finally it re-raises the originally popped exception.
+    Used in excpetion handler cleanup.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -738,18 +743,15 @@ iterations of the loop.
    by :opcode:`CALL_FUNCTION` to construct a class.
 
 
-.. opcode:: SETUP_WITH (delta)
+.. opcode:: BEFORE_WITH (delta)
 
    This opcode performs several operations before a with block starts.  First,
    it loads :meth:`~object.__exit__` from the context manager and pushes it onto
    the stack for later use by :opcode:`WITH_EXCEPT_START`.  Then,
-   :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
-   is pushed.  Finally, the result of calling the ``__enter__()`` method is pushed onto
-   the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
-   store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
-   :opcode:`UNPACK_SEQUENCE`).
+   :meth:`~object.__enter__` is called. Finally, the result of calling the
+   ``__enter__()`` method is pushed onto the stack.
 
-   .. versionadded:: 3.2
+   .. versionadded:: 3.11
 
 
 .. opcode:: COPY_DICT_WITHOUT_KEYS
@@ -1037,12 +1039,6 @@ All of the following opcodes use their arguments.
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei]`` onto the stack.
-
-
-.. opcode:: SETUP_FINALLY (delta)
-
-   Pushes a try block from a try-finally or try-except clause onto the block
-   stack.  *delta* points to the finally block or the first except block.
 
 
 .. opcode:: LOAD_FAST (var_num)
