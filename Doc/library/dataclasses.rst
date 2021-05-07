@@ -17,7 +17,7 @@ adding generated :term:`special method`\s such as :meth:`__init__` and
 in :pep:`557`.
 
 The member variables to use in these generated methods are defined
-using :pep:`526` type annotations.  For example this code::
+using :pep:`526` type annotations.  For example, this code::
 
   from dataclasses import dataclass
 
@@ -31,7 +31,7 @@ using :pep:`526` type annotations.  For example this code::
       def total_cost(self) -> float:
           return self.unit_price * self.quantity_on_hand
 
-Will add, among other things, a :meth:`__init__` that looks like::
+will add, among other things, a :meth:`__init__` that looks like::
 
   def __init__(self, name: str, unit_price: float, quantity_on_hand: int = 0):
       self.name = name
@@ -52,7 +52,7 @@ Module contents
    :term:`special method`\s to classes, as described below.
 
    The :func:`dataclass` decorator examines the class to find
-   ``field``\s.  A ``field`` is defined as class variable that has a
+   ``field``\s.  A ``field`` is defined as a class variable that has a
    :term:`type annotation <variable annotation>`.  With two
    exceptions described below, nothing in :func:`dataclass`
    examines the type specified in the variable annotation.
@@ -62,8 +62,8 @@ Module contents
 
    The :func:`dataclass` decorator will add various "dunder" methods to
    the class, described below.  If any of the added methods already
-   exist on the class, the behavior depends on the parameter, as documented
-   below. The decorator returns the same class that is called on; no new
+   exist in the class, the behavior depends on the parameter, as documented
+   below. The decorator returns the same class that it is called on; no new
    class is created.
 
    If :func:`dataclass` is used just as a simple decorator with no parameters,
@@ -202,7 +202,7 @@ Module contents
      def __init__(self, a: int, b: int = 0):
 
    :exc:`TypeError` will be raised if a field without a default value
-   follows a field with a default value.  This is true either when this
+   follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
 .. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING):
@@ -395,7 +395,7 @@ Module contents
 
 .. function:: replace(instance, /, **changes)
 
-   Creates a new object of the same type of ``instance``, replacing
+   Creates a new object of the same type as ``instance``, replacing
    fields with values from ``changes``.  If ``instance`` is not a Data
    Class, raises :exc:`TypeError`.  If values in ``changes`` do not
    specify fields, raises :exc:`TypeError`.
