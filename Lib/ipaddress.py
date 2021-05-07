@@ -469,9 +469,12 @@ class _IPAddressBase:
         return prefixlen
 
     @classmethod
-    def _report_invalid_netmask(cls, netmask_str):
+    def _report_invalid_netmask(cls, netmask_str, suppress=True):
         msg = '%r is not a valid netmask' % netmask_str
-        raise NetmaskValueError(msg) from None
+        if suppress:
+            raise NetmaskValueError(msg) from None
+        else:
+            raise NetmaskValueError(msg)
 
     @classmethod
     def _prefix_from_prefix_string(cls, prefixlen_str):
@@ -489,13 +492,13 @@ class _IPAddressBase:
         # int allows a leading +/- as well as surrounding whitespace,
         # so we ensure that isn't the case
         if not (prefixlen_str.isascii() and prefixlen_str.isdigit()):
-            cls._report_invalid_netmask(prefixlen_str)
+            cls._report_invalid_netmask(prefixlen_str, suppress=False)
         try:
             prefixlen = int(prefixlen_str)
         except ValueError:
             cls._report_invalid_netmask(prefixlen_str)
         if not (0 <= prefixlen <= cls._max_prefixlen):
-            cls._report_invalid_netmask(prefixlen_str)
+            cls._report_invalid_netmask(prefixlen_str, suppress=False)
         return prefixlen
 
     @classmethod
@@ -1159,18 +1162,23 @@ class _BaseV4:
             if isinstance(arg, int):
                 prefixlen = arg
                 if not (0 <= prefixlen <= cls._max_prefixlen):
-                    cls._report_invalid_netmask(prefixlen)
+                    cls._report_invalid_netmask(prefixlen, suppress=False)
             else:
-                try:
-                    # Check for a netmask in prefix length form
-                    prefixlen = cls._prefix_from_prefix_string(arg)
-                except NetmaskValueError:
-                    # Check for a netmask or hostmask in dotted-quad form.
-                    # This may raise NetmaskValueError.
-                    prefixlen = cls._prefix_from_ip_string(arg)
+                prefixlen = cls._prefix_from_string(arg)
             netmask = IPv4Address(cls._ip_int_from_prefix(prefixlen))
             cls._netmask_cache[arg] = netmask, prefixlen
         return cls._netmask_cache[arg]
+
+    @classmethod
+    def _prefix_from_string(cls, arg):
+        try:
+            # Check for a netmask in prefix length form
+            return cls._prefix_from_prefix_string(arg)
+        except NetmaskValueError:
+            pass
+        # Check for a netmask or hostmask in dotted-quad form.
+        # This may raise NetmaskValueError.
+        return cls._prefix_from_ip_string(arg)
 
     @classmethod
     def _ip_int_from_string(cls, ip_str):
@@ -1598,7 +1606,7 @@ class _BaseV6:
             if isinstance(arg, int):
                 prefixlen = arg
                 if not (0 <= prefixlen <= cls._max_prefixlen):
-                    cls._report_invalid_netmask(prefixlen)
+                    cls._report_invalid_netmask(prefixlen, suppress=False)
             else:
                 prefixlen = cls._prefix_from_prefix_string(arg)
             netmask = IPv6Address(cls._ip_int_from_prefix(prefixlen))

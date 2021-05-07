@@ -51,7 +51,9 @@ class BaseTestCase(unittest.TestCase):
             yield exc
         # Ensure we produce clean tracebacks on failure
         if exc.exception.__context__ is not None:
-            self.assertTrue(exc.exception.__suppress_context__)
+            self.assertFalse(exc.exception.__suppress_context__)
+            self.assertIsNone(exc.exception.__context__)
+            self.assertIsNone(exc.exception.__cause__)
 
     def assertAddressError(self, details, *args):
         """Ensure a clean AddressValueError"""

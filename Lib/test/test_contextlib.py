@@ -921,10 +921,10 @@ class TestBaseExitStack:
 
         exc = err_ctx.exception
         self.assertIsInstance(exc, UniqueException)
-        self.assertIsInstance(exc.__context__, UniqueRuntimeError)
-        self.assertIsNone(exc.__context__.__context__)
-        self.assertIsNone(exc.__context__.__cause__)
-        self.assertIs(exc.__cause__, exc.__context__)
+        self.assertIsInstance(exc.__cause__, UniqueRuntimeError)
+        self.assertIsNone(exc.__cause__.__context__)
+        self.assertIsNone(exc.__cause__.__cause__)
+        self.assertIsNone(exc.__context__)
 
 
 class TestExitStack(TestBaseExitStack, unittest.TestCase):

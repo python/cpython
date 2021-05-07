@@ -1894,7 +1894,7 @@ class ExceptionContextTestCase(unittest.TestCase):
         cm = self.assertRaises(configparser.InterpolationMissingOptionError)
         with cm:
             parser.get('Paths', 'my_dir')
-        self.assertIs(cm.exception.__suppress_context__, True)
+        self.assertIsNone(cm.exception.__context__)
 
     def test_get_extended_interpolation(self):
         parser = configparser.ConfigParser(
@@ -1908,7 +1908,7 @@ class ExceptionContextTestCase(unittest.TestCase):
         cm = self.assertRaises(configparser.InterpolationMissingOptionError)
         with cm:
             parser.get('Paths', 'my_dir')
-        self.assertIs(cm.exception.__suppress_context__, True)
+        self.assertIsNone(cm.exception.__context__)
 
     def test_missing_options(self):
         parser = configparser.ConfigParser()
@@ -1918,19 +1918,19 @@ class ExceptionContextTestCase(unittest.TestCase):
         """)
         with self.assertRaises(configparser.NoSectionError) as cm:
             parser.options('test')
-        self.assertIs(cm.exception.__suppress_context__, True)
+        self.assertIsNone(cm.exception.__context__)
 
     def test_missing_section(self):
         config = configparser.ConfigParser()
         with self.assertRaises(configparser.NoSectionError) as cm:
             config.set('Section1', 'an_int', '15')
-        self.assertIs(cm.exception.__suppress_context__, True)
+        self.assertIsNone(cm.exception.__context__)
 
     def test_remove_option(self):
         config = configparser.ConfigParser()
         with self.assertRaises(configparser.NoSectionError) as cm:
             config.remove_option('Section1', 'an_int')
-        self.assertIs(cm.exception.__suppress_context__, True)
+        self.assertIsNone(cm.exception.__context__)
 
 
 class ConvertersTestCase(BasicTestCase, unittest.TestCase):

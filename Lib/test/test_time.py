@@ -277,11 +277,15 @@ class TimeTestCase(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
+        self.assertFalse(e.exception.__suppress_context__)
+        self.assertIsNone(e.exception.__context__)
+        self.assertIsNone(e.exception.__cause__)
         # additional check for IndexError branch (issue #19545)
         with self.assertRaises(ValueError) as e:
             time.strptime('19', '%Y %')
-        self.assertIs(e.exception.__suppress_context__, True)
+        self.assertFalse(e.exception.__suppress_context__)
+        self.assertIsNone(e.exception.__context__)
+        self.assertIsNone(e.exception.__cause__)
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))

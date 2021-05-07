@@ -4462,6 +4462,23 @@ exception_unwind:
 
             if (b->b_type == EXCEPT_HANDLER) {
                 UNWIND_EXCEPT_HANDLER(b);
+                if (tstate->curexc_value != NULL) {
+                    assert(PyExceptionInstance_Check(tstate->curexc_value));
+                    PyBaseExceptionObject *curexc_value = (PyBaseExceptionObject *)tstate->curexc_value;
+                    if (curexc_value->suppress_context) {
+                        PyObject *exc_value = _PyErr_GetTopmostException(tstate)->exc_value;
+                        if (exc_value == Py_None) {
+                            exc_value = NULL;
+                        }
+                        if ((PyObject *)curexc_value != exc_value &&
+                            curexc_value->context != exc_value)
+                        {
+                            curexc_value->suppress_context = 0;
+                            Py_XINCREF(exc_value);
+                            PyException_SetContext((PyObject *)curexc_value, exc_value);
+                        }
+                    }
+                }
                 continue;
             }
             UNWIND_BLOCK(b);

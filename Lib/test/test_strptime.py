@@ -243,13 +243,23 @@ class StrptimeTests(unittest.TestCase):
 
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
-        with self.assertRaises(ValueError) as e:
-            _strptime._strptime_time('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
+        try:
+            1/0
+        except:
+            with self.assertRaises(ValueError) as e:
+                _strptime._strptime_time('', '%D')
+        self.assertFalse(e.exception.__suppress_context__)
+        self.assertIsInstance(e.exception.__context__, ZeroDivisionError)
+        self.assertIsNone(e.exception.__cause__)
         # additional check for IndexError branch (issue #19545)
-        with self.assertRaises(ValueError) as e:
-            _strptime._strptime_time('19', '%Y %')
-        self.assertIs(e.exception.__suppress_context__, True)
+        try:
+            1/0
+        except:
+            with self.assertRaises(ValueError) as e:
+                _strptime._strptime_time('19', '%Y %')
+        self.assertFalse(e.exception.__suppress_context__)
+        self.assertIsInstance(e.exception.__context__, ZeroDivisionError)
+        self.assertIsNone(e.exception.__cause__)
 
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
