@@ -87,6 +87,8 @@ PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
 
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
+PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
+                                          Py_ssize_t max_cost);
 
 #ifdef __cplusplus
 }

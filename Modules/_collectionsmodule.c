@@ -30,6 +30,7 @@ static PyTypeObject tuplegetter_type;
 
 #define BLOCKLEN 64
 #define CENTER ((BLOCKLEN - 1) / 2)
+#define MAXFREEBLOCKS 16
 
 /* Data for deque objects is stored in a doubly-linked list of fixed
  * length blocks.  This assures that appends or pops never move any
@@ -92,6 +93,8 @@ typedef struct {
     Py_ssize_t rightindex;      /* 0 <= rightindex < BLOCKLEN */
     size_t state;               /* incremented whenever the indices move */
     Py_ssize_t maxlen;          /* maxlen is -1 for unbounded deques */
+    Py_ssize_t numfreeblocks;
+    block *freeblocks[MAXFREEBLOCKS];
     PyObject *weakreflist;
 } dequeobject;
 
@@ -123,16 +126,12 @@ static PyTypeObject deque_type;
    added at about the same rate as old blocks are being freed.
  */
 
-#define MAXFREEBLOCKS 16
-static Py_ssize_t numfreeblocks = 0;
-static block *freeblocks[MAXFREEBLOCKS];
-
-static block *
-newblock(void) {
+static inline block *
+newblock(dequeobject *deque) {
     block *b;
-    if (numfreeblocks) {
-        numfreeblocks--;
-        return freeblocks[numfreeblocks];
+    if (deque->numfreeblocks) {
+        deque->numfreeblocks--;
+        return deque->freeblocks[deque->numfreeblocks];
     }
     b = PyMem_Malloc(sizeof(block));
     if (b != NULL) {
@@ -142,12 +141,12 @@ newblock(void) {
     return NULL;
 }
 
-static void
-freeblock(block *b)
+static inline void
+freeblock(dequeobject *deque, block *b)
 {
-    if (numfreeblocks < MAXFREEBLOCKS) {
-        freeblocks[numfreeblocks] = b;
-        numfreeblocks++;
+    if (deque->numfreeblocks < MAXFREEBLOCKS) {
+        deque->freeblocks[deque->numfreeblocks] = b;
+        deque->numfreeblocks++;
     } else {
         PyMem_Free(b);
     }
@@ -164,7 +163,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (deque == NULL)
         return NULL;
 
-    b = newblock();
+    b = newblock(deque);
     if (b == NULL) {
         Py_DECREF(deque);
         return NULL;
@@ -180,6 +179,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     deque->rightindex = CENTER;
     deque->state = 0;
     deque->maxlen = -1;
+    deque->numfreeblocks = 0;
     deque->weakreflist = NULL;
 
     return (PyObject *)deque;
@@ -204,7 +204,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
         if (Py_SIZE(deque)) {
             prevblock = deque->rightblock->leftlink;
             assert(deque->leftblock != deque->rightblock);
-            freeblock(deque->rightblock);
+            freeblock(deque, deque->rightblock);
             CHECK_NOT_END(prevblock);
             MARK_END(prevblock->rightlink);
             deque->rightblock = prevblock;
@@ -242,7 +242,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
         if (Py_SIZE(deque)) {
             assert(deque->leftblock != deque->rightblock);
             prevblock = deque->leftblock->rightlink;
-            freeblock(deque->leftblock);
+            freeblock(deque, deque->leftblock);
             CHECK_NOT_END(prevblock);
             MARK_END(prevblock->leftlink);
             deque->leftblock = prevblock;
@@ -278,7 +278,7 @@ static inline int
 deque_append_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
-        block *b = newblock();
+        block *b = newblock(deque);
         if (b == NULL)
             return -1;
         b->leftlink = deque->rightblock;
@@ -315,7 +315,7 @@ static inline int
 deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->leftindex == 0) {
-        block *b = newblock();
+        block *b = newblock(deque);
         if (b == NULL)
             return -1;
         b->rightlink = deque->leftblock;
@@ -584,7 +584,7 @@ deque_clear(dequeobject *deque)
        adversary could cause it to never terminate).
     */
 
-    b = newblock();
+    b = newblock(deque);
     if (b == NULL) {
         PyErr_Clear();
         goto alternate_method;
@@ -623,13 +623,13 @@ deque_clear(dequeobject *deque)
             itemptr = leftblock->data;
             limit = itemptr + m;
             n -= m;
-            freeblock(prevblock);
+            freeblock(deque, prevblock);
         }
         item = *(itemptr++);
         Py_DECREF(item);
     }
     CHECK_END(leftblock->rightlink);
-    freeblock(leftblock);
+    freeblock(deque, leftblock);
     return 0;
 
   alternate_method:
@@ -679,7 +679,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         deque->state++;
         for (i = 0 ; i < n-1 ; ) {
             if (deque->rightindex == BLOCKLEN - 1) {
-                block *b = newblock();
+                block *b = newblock(deque);
                 if (b == NULL) {
                     Py_SET_SIZE(deque, Py_SIZE(deque) + i);
                     return NULL;
@@ -797,7 +797,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     while (n > 0) {
         if (leftindex == 0) {
             if (b == NULL) {
-                b = newblock();
+                b = newblock(deque);
                 if (b == NULL)
                     goto done;
             }
@@ -841,7 +841,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     while (n < 0) {
         if (rightindex == BLOCKLEN - 1) {
             if (b == NULL) {
-                b = newblock();
+                b = newblock(deque);
                 if (b == NULL)
                     goto done;
             }
@@ -885,7 +885,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     rv = 0;
 done:
     if (b != NULL)
-        freeblock(b);
+        freeblock(deque, b);
     deque->leftblock = leftblock;
     deque->rightblock = rightblock;
     deque->leftindex = leftindex;
@@ -1306,16 +1306,21 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 static void
 deque_dealloc(dequeobject *deque)
 {
+    Py_ssize_t i;
+
     PyObject_GC_UnTrack(deque);
     if (deque->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) deque);
     if (deque->leftblock != NULL) {
         deque_clear(deque);
         assert(deque->leftblock != NULL);
-        freeblock(deque->leftblock);
+        freeblock(deque, deque->leftblock);
     }
     deque->leftblock = NULL;
     deque->rightblock = NULL;
+    for (i=0 ; i < deque->numfreeblocks ; i++) {
+        PyMem_Free(deque->freeblocks[i]);
+    }
     Py_TYPE(deque)->tp_free(deque);
 }
 

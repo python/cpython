@@ -1,7 +1,7 @@
-This is Python version 3.10.0 alpha 7
+This is Python version 3.11.0 alpha 0
 =====================================
 
-.. image:: https://travis-ci.com/python/cpython.svg?branch=master
+.. image:: https://travis-ci.com/python/cpython.svg?branch=main
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.com/python/cpython
 
@@ -9,9 +9,9 @@ This is Python version 3.10.0 alpha 7
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=main
    :alt: CPython build status on Azure DevOps
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=main
 
 .. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
    :alt: Python Discourse chat
@@ -75,10 +75,10 @@ dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
 to macOS framework and universal builds.  Refer to `Mac/README.rst
-<https://github.com/python/cpython/blob/master/Mac/README.rst>`_.
+<https://github.com/python/cpython/blob/main/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
-<https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
+<https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -139,9 +139,9 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.10 <https://docs.python.org/3.10/whatsnew/3.10.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/blob/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
-<https://github.com/python/cpython/commits/master>`_.
+<https://github.com/python/cpython/commits/main>`_.
 
 If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
@@ -159,7 +159,7 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
-<https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
+<https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
@@ -255,7 +255,7 @@ rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.  All rights reserved.
 
-See the `LICENSE <https://github.com/python/cpython/blob/master/LICENSE>`_ for
+See the `LICENSE <https://github.com/python/cpython/blob/main/LICENSE>`_ for
 information on the history of this software, terms & conditions for usage, and a
 DISCLAIMER OF ALL WARRANTIES.
 

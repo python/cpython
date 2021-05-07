@@ -3,7 +3,7 @@ name: Docs
 on:
   #push:
   #  branches:
-  #  - master
+  #  - main
   #  - 3.9
   #  - 3.8
   #  - 3.7
@@ -11,7 +11,7 @@ on:
   #  - 'Doc/**'
   pull_request:
     branches:
-    - master
+    - main
     - 3.9
     - 3.8
     - 3.7
@@ -38,7 +38,7 @@ jobs:
     - name: 'Build documentation'
       run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W --keep-going -j4" doctest html suspicious
     - name: 'Upload'
-      uses: actions/upload-artifact@v2.2.2
+      uses: actions/upload-artifact@v2.2.3
       with:
         name: doc-html
         path: Doc/build/html

@@ -882,8 +882,8 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
-    xbar = mean(x)
-    ybar = mean(y)
+    xbar = fmean(x)
+    ybar = fmean(y)
     total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     return total / (n - 1)
 
@@ -952,11 +952,16 @@ def linear_regression(regressor, dependent_variable, /):
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
+    x, y = regressor, dependent_variable
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
     try:
-        slope = covariance(regressor, dependent_variable) / variance(regressor)
+        slope = sxy / s2x
     except ZeroDivisionError:
         raise StatisticsError('regressor is constant')
-    intercept = mean(dependent_variable) - slope * mean(regressor)
+    intercept = ybar - slope * xbar
     return LinearRegression(intercept=intercept, slope=slope)
 
 

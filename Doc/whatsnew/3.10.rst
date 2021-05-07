@@ -42,7 +42,7 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
+   This saves the maintainer the effort of going through the git log
    when researching a change.
 
 This article explains the new features in Python 3.10, compared to 3.9.
@@ -143,7 +143,7 @@ For instance, consider the following code (notice the unclosed '{'):
                 38: 4, 39: 4, 45: 5, 46: 5, 47: 5, 48: 5, 49: 5, 54: 6,
     some_other_code = foo()
 
-previous versions of the interpreter reported confusing places as the location of
+Previous versions of the interpreter reported confusing places as the location of
 the syntax error:
 
 .. code-block:: python
@@ -153,7 +153,7 @@ the syntax error:
                        ^
    SyntaxError: invalid syntax
 
-but in Python3.10 a more informative error is emitted:
+but in Python 3.10 a more informative error is emitted:
 
 .. code-block:: python
 
@@ -171,7 +171,7 @@ These improvements are inspired by previous work in the PyPy interpreter.
 (Contributed by Pablo Galindo in :issue:`42864` and Batuhan Taskaya in
 :issue:`40176`.)
 
-:exc:`SyntaxError` exceptions raised by the intepreter will now highlight the
+:exc:`SyntaxError` exceptions raised by the interpreter will now highlight the
 full error range of the expression that consistutes the syntax error itself,
 instead of just where the problem is detected. In this way, instead of displaying
 (before Python 3.10):
@@ -194,7 +194,7 @@ now Python 3.10 will display the exception as:
                ^^^^^^^^^^^^^^^^^^^^
     SyntaxError: Generator expression must be parenthesized
 
-This improvement has been contributed by Pablo Galindo in :issue:`43914`.
+This improvement was contributed by Pablo Galindo in :issue:`43914`.
 
 A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
 have been incorporated. Some of the most notable ones:
@@ -408,7 +408,7 @@ in C, Java or JavaScript (and many other languages). Often the switch statement
 is used for comparison of an object/expression with case statements containing
 literals.
 
-More powerful examples of pattern matching can be found in languages, such as
+More powerful examples of pattern matching can be found in languages such as
 Scala and Elixir. With structural pattern matching, the approach is "declarative" and
 explicitly states the conditions (the patterns) for data to match.
 
@@ -649,7 +649,7 @@ platforms, omitting ``encoding`` option when opening UTF-8 files
    with open("data.json") as f:
        data = json.load(f)
 
-To find this type of bug, optional ``EncodingWarning`` is added.
+To find this type of bug, an optional ``EncodingWarning`` is added.
 It is emitted when :data:`sys.flags.warn_default_encoding <sys.flags>`
 is true and locale-specific default encoding is used.
 
@@ -824,7 +824,7 @@ Improved Modules
 asyncio
 -------
 
-Added missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
+Add missing :meth:`~asyncio.events.AbstractEventLoop.connect_accepted_socket`
 method.
 (Contributed by Alex Grönholm in :issue:`41332`.)
 
@@ -904,7 +904,7 @@ they are provided by the underlying curses library.
 dataclasses
 -----------
 
-Added ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
+Add ``slots`` parameter in :func:`dataclasses.dataclass` decorator.
 (Contributed by Yurii Karabas in :issue:`42269`)
 
 .. _distutils-deprecated:
@@ -953,7 +953,7 @@ Add :class:`enum.StrEnum` for enums where all members are strings.
 fileinput
 ---------
 
-Added *encoding* and *errors* parameters in :func:`fileinput.input` and
+Add *encoding* and *errors* parameters in :func:`fileinput.input` and
 :class:`fileinput.FileInput`.
 (Contributed by Inada Naoki in :issue:`43712`.)
 
@@ -964,13 +964,13 @@ when *mode* is "r" and file is compressed, like uncompressed files.
 gc
 --
 
-Added audit hooks for :func:`gc.get_objects`, :func:`gc.get_referrers` and
+Add audit hooks for :func:`gc.get_objects`, :func:`gc.get_referrers` and
 :func:`gc.get_referents`. (Contributed by Pablo Galindo in :issue:`43439`.)
 
 glob
 ----
 
-Added the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
+Add the *root_dir* and *dir_fd* parameters in :func:`~glob.glob` and
 :func:`~glob.iglob` which allow to specify the root directory for searching.
 (Contributed by Serhiy Storchaka in :issue:`38144`.)
 
@@ -1039,7 +1039,7 @@ inspect
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
-Added :func:`inspect.get_annotations`, which safely computes the annotations
+Add :func:`inspect.get_annotations`, which safely computes the annotations
 defined on an object. It works around the quirks of accessing the annotations
 on various types of objects, and makes very few assumptions about the object
 it examines. :func:`inspect.get_annotations` can also correctly un-stringize
@@ -1048,7 +1048,7 @@ best practice for accessing the annotations dict defined on any Python object;
 for more information on best practices for working with annotations, please see
 :ref:`annotations-howto`.
 Relatedly, :func:`inspect.signature`,
-:func:`inspect.Signature.from_callable`, and ``inspect.Signature.from_function``
+:func:`inspect.Signature.from_callable`, and :func:`inspect.Signature.from_function`
 now call :func:`inspect.get_annotations` to retrieve annotations. This means
 :func:`inspect.signature` and :func:`inspect.Signature.from_callable` can
 also now un-stringize stringized annotations.
@@ -1063,33 +1063,33 @@ When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 os
 --
 
-Added :func:`os.cpu_count()` support for VxWorks RTOS.
+Add :func:`os.cpu_count()` support for VxWorks RTOS.
 (Contributed by Peixing Xin in :issue:`41440`.)
 
-Added a new function :func:`os.eventfd` and related helpers to wrap the
+Add a new function :func:`os.eventfd` and related helpers to wrap the
 ``eventfd2`` syscall on Linux.
 (Contributed by Christian Heimes in :issue:`41001`.)
 
-Added :func:`os.splice()` that allows to move data between two file
+Add :func:`os.splice()` that allows to move data between two file
 descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
-Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
+Add :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
 and :data:`~os.O_NOFOLLOW_ANY` for macOS.
 (Contributed by Dong-hee Na in :issue:`43106`.)
 
 pathlib
 -------
 
-Added slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
+Add slice support to :attr:`PurePath.parents <pathlib.PurePath.parents>`.
 (Contributed by Joshua Cannon in :issue:`35498`)
 
-Added negative indexing support to :attr:`PurePath.parents
+Add negative indexing support to :attr:`PurePath.parents
 <pathlib.PurePath.parents>`.
 (Contributed by Yaroslav Pankovych in :issue:`21041`)
 
-Added :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
+Add :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
 supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
 order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
@@ -1097,7 +1097,7 @@ order as :meth:`~pathlib.Path.symlink_to`.
 platform
 --------
 
-Added :func:`platform.freedesktop_os_release()` to retrieve operation system
+Add :func:`platform.freedesktop_os_release()` to retrieve operation system
 identification from `freedesktop.org os-release
 <https://www.freedesktop.org/software/systemd/man/os-release.html>`_ standard file.
 (Contributed by Christian Heimes in :issue:`28468`)
@@ -1111,13 +1111,13 @@ pprint
 py_compile
 ----------
 
-Added ``--quiet`` option to command-line interface of :mod:`py_compile`.
+Add ``--quiet`` option to command-line interface of :mod:`py_compile`.
 (Contributed by Gregory Schevchenko in :issue:`38731`.)
 
 pyclbr
 ------
 
-Added an ``end_lineno`` attribute to the ``Function`` and ``Class``
+Add an ``end_lineno`` attribute to the ``Function`` and ``Class``
 objects in the tree returned by :func:`pyclbr.readline` and
 :func:`pyclbr.readline_ex`.  It matches the existing (start) ``lineno``.
 (Contributed by Aviral Srivastava in :issue:`38307`.)
@@ -1132,7 +1132,7 @@ instead of :mod:`pickle` protocol ``3`` when creating shelves.
 statistics
 ----------
 
-Added :func:`~statistics.covariance`, Pearson's
+Add :func:`~statistics.covariance`, Pearson's
 :func:`~statistics.correlation`, and simple
 :func:`~statistics.linear_regression` functions.
 (Contributed by Tymoteusz Wołodźko in :issue:`38490`.)
@@ -1149,7 +1149,7 @@ socket
 The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 (Contributed by Christian Heimes in :issue:`42413`.)
 
-Added option to create MPTCP sockets with ``IPPROTO_MPTCP``
+Add option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
 
 ssl
@@ -1229,7 +1229,7 @@ simulate (the default is still :data:`signal.SIGINT`).
 threading
 ---------
 
-Added :func:`threading.gettrace` and :func:`threading.getprofile` to
+Add :func:`threading.gettrace` and :func:`threading.getprofile` to
 retrieve the functions set by :func:`threading.settrace` and
 :func:`threading.setprofile` respectively.
 (Contributed by Mario Corchero in :issue:`42251`.)
@@ -1251,7 +1251,7 @@ as a positional-only argument.
 types
 -----
 
-Reintroduced the :data:`types.EllipsisType`, :data:`types.NoneType`
+Reintroduce the :data:`types.EllipsisType`, :data:`types.NoneType`
 and :data:`types.NotImplementedType` classes, providing a new set
 of types readily interpretable by type checkers.
 (Contributed by Bas van Beek in :issue:`41810`.)
@@ -1271,8 +1271,8 @@ and to match the behavior of static type checkers specified in the PEP.
    now ``False``.  To support this change, the internally used type cache now
    supports differentiating types.
 4. ``Literal`` objects will now raise a :exc:`TypeError` exception during
-   equality comparisons if one of their parameters are not :term:`immutable`.
-   Note that declaring ``Literal`` with mutable parameters will not throw
+   equality comparisons if any of their parameters are not :term:`hashable`.
+   Note that declaring ``Literal`` with unhashable parameters will not throw
    an error::
 
       >>> from typing import Literal
@@ -1355,12 +1355,12 @@ Optimizations
 
 * Use a new output buffer management code for :mod:`bz2` / :mod:`lzma` /
   :mod:`zlib` modules, and add ``.readall()`` function to
-  ``_compression.DecompressReader`` class. bz2 decompression 1.09x ~ 1.17x
+  ``_compression.DecompressReader`` class. bz2 decompression is now 1.09x ~ 1.17x
   faster, lzma decompression 1.20x ~ 1.32x faster, ``GzipFile.read(-1)`` 1.11x
   ~ 1.18x faster. (Contributed by Ma Lin, reviewed by Gregory P. Smith, in :issue:`41486`)
 
 * When using stringized annotations, annotations dicts for functions are no longer
-  created when the function is created.  Instead, they're stored as a tuple of
+  created when the function is created.  Instead, they are stored as a tuple of
   strings, and the function object lazily converts this into the annotations dict
   on demand.  This optimization cuts the CPU time needed to define an annotated
   function by half.
@@ -1371,13 +1371,13 @@ Optimizations
   algorithm to avoid quadratic behavior on long strings.  (Contributed
   by Dennis Sweeney in :issue:`41972`)
 
-* Added micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
+* Add micro-optimizations to ``_PyType_Lookup()`` to improve type attribute cache lookup
   performance in the common case of cache hits. This makes the interpreter 1.04 times faster
-  in average (Contributed by Dino Viehland in :issue:`43452`)
+  on average. (Contributed by Dino Viehland in :issue:`43452`)
 
-* Following built-in functions now support the faster :pep:`590` vectorcall calling convention:
+* The following built-in functions now support the faster :pep:`590` vectorcall calling convention:
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
-  (Contributed by Dong-hee Na and Jeroen Demeyerin in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
+  (Contributed by Dong-hee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`)
 
 * :class:`BZ2File` performance is improved by removing internal ``RLock``.
   This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
@@ -1492,11 +1492,11 @@ Deprecated
   scheduled for removal in Python 3.12.
   (Contributed by Erlend E. Aasland in :issue:`42264`.)
 
-* :func:`asyncio.get_event_loop` emits now a deprecation warning if there is
-  no running event loop. In future it will be an alias of
+* :func:`asyncio.get_event_loop` now emits a deprecation warning if there is
+  no running event loop. In the future it will be an alias of
   :func:`~asyncio.get_running_loop`.
   :mod:`asyncio` functions which implicitly create a :class:`~asyncio.Future`
-  or :class:`~asyncio.Task` objects emit now
+  or :class:`~asyncio.Task` objects now emit
   a deprecation warning if there is no running event loop and no explicit
   *loop* argument is passed: :func:`~asyncio.ensure_future`,
   :func:`~asyncio.wrap_future`, :func:`~asyncio.gather`,
@@ -1509,7 +1509,7 @@ Deprecated
   deprecated, scheduled for removal in Python 3.12.  Its use is strongly
   discouraged by the SQLite3 documentation.  See `the SQLite3 docs
   <https://sqlite.org/c3ref/enable_shared_cache.html>`_ for more details.
-  If shared cache must be used, open the database in URI mode using the
+  If a shared cache must be used, open the database in URI mode using the
   ``cache=shared`` query parameter.
   (Contributed by Erlend E. Aasland in :issue:`24464`.)
 
@@ -1553,7 +1553,7 @@ Removed
 
 * The ``ParserBase.error()`` method from the private and undocumented ``_markupbase``
   module has been removed.  :class:`html.parser.HTMLParser` is the only subclass of
-  ``ParserBase`` and its ``error()`` implementation has already been removed in
+  ``ParserBase`` and its ``error()`` implementation was already removed in
   Python 3.5.
   (Contributed by Berker Peksag in :issue:`31844`.)
 
@@ -1646,7 +1646,7 @@ Changes in the Python API
   :doc:`high-level API <../library/asyncio-api-index>` following deprecation
   in Python 3.8.
 
-  A coroutine that currently look like this::
+  A coroutine that currently looks like this::
 
      async def foo(loop):
          await asyncio.sleep(1, loop=loop)
@@ -1695,7 +1695,7 @@ Build Changes
 * The :mod:`atexit` module must now always be built as a built-in module.
   (Contributed by Victor Stinner in :issue:`42639`.)
 
-* Added :option:`--disable-test-modules` option to the ``configure`` script:
+* Add :option:`--disable-test-modules` option to the ``configure`` script:
   don't build nor install test modules.
   (Contributed by Xavier de Gaye, Thomas Petazzoni and Peixing Xin in :issue:`27640`.)
 
@@ -1759,15 +1759,15 @@ New Features
   sending value into iterator without raising ``StopIteration`` exception.
   (Contributed by Vladimir Matveev in :issue:`41756`.)
 
-* Added :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
+* Add :c:func:`PyUnicode_AsUTF8AndSize` to the limited C API.
   (Contributed by Alex Gaynor in :issue:`41784`.)
 
-* Added :c:func:`PyModule_AddObjectRef` function: similar to
+* Add :c:func:`PyModule_AddObjectRef` function: similar to
   :c:func:`PyModule_AddObject` but don't steal a reference to the value on
   success.
   (Contributed by Victor Stinner in :issue:`1635741`.)
 
-* Added :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
+* Add :c:func:`Py_NewRef` and :c:func:`Py_XNewRef` functions to increment the
   reference count of an object and return the object.
   (Contributed by Victor Stinner in :issue:`42262`.)
 
@@ -1787,7 +1787,7 @@ New Features
   object is an instance of :class:`set` but not an instance of a subtype.
   (Contributed by Pablo Galindo in :issue:`43277`.)
 
-* Added :c:func:`PyErr_SetInterruptEx` which allows passing a signal number
+* Add :c:func:`PyErr_SetInterruptEx` which allows passing a signal number
   to simulate.
   (Contributed by Antoine Pitrou in :issue:`43356`.)
 
@@ -1812,7 +1812,7 @@ New Features
   singleton or the ``False`` singleton.
   (Contributed by Victor Stinner in :issue:`43753`.)
 
-* Add new functions to quickly control the garbage collector from C code:
+* Add new functions to control the garbage collector from C code:
   :c:func:`PyGC_Enable()`,
   :c:func:`PyGC_Disable()`,
   :c:func:`PyGC_IsEnabled()`.
