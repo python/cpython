@@ -91,10 +91,12 @@ Optimizations
 =============
 
 
+
+
 Build and C API Changes
 =======================
 
-
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
 
 Deprecated
 ==========
