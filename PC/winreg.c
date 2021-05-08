@@ -571,7 +571,8 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 if (d == (DWORD)(-1) && PyErr_Occurred()) {
                     return FALSE;
                 }
-            } else if (value != Py_None) {
+            }
+            else if (value != Py_None) {
                 return FALSE;
             }
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
@@ -2118,5 +2119,4 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_RESOURCE_REQUIREMENTS_LIST);
     return m;
 }
-
 
