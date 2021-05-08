@@ -118,12 +118,8 @@ typedef Py_ssize_t Py_hash_t;
 #define SIZEOF_PY_UHASH_T SIZEOF_SIZE_T
 typedef size_t Py_uhash_t;
 
-/* Only used for compatibility with code that may not be PY_SSIZE_T_CLEAN. */
-#ifdef PY_SSIZE_T_CLEAN
+/* Now PY_SSIZE_T_CLEAN is mandatory. This is just for backward compatibility. */
 typedef Py_ssize_t Py_ssize_clean_t;
-#else
-typedef int Py_ssize_clean_t;
-#endif
 
 /* Largest possible value of size_t. */
 #define PY_SIZE_MAX SIZE_MAX
