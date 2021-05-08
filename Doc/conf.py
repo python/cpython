@@ -65,43 +65,43 @@ master_doc = 'contents'
 # -----------------------
 
 # Use our custom theme.
-html_theme = 'python_docs_theme'
-html_theme_path = ['tools']
-html_theme_options = {
-    'collapsiblesidebar': True,
-    'issues_url': 'https://docs.python.org/3/bugs.html',
-    'root_include_title': False   # We use the version switcher instead.
-}
+html_theme = 'shaphinx'
+# html_theme_path = ['tools']
+# html_theme_options = {
+#     'collapsiblesidebar': True,
+#     'issues_url': 'https://docs.python.org/3/bugs.html',
+#     'root_include_title': False   # We use the version switcher instead.
+# }
 
 # Short title used e.g. for <title> HTML tags.
-html_short_title = '%s Documentation' % release
+html_short_title = '%s 文档' % release
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 html_last_updated_fmt = '%b %d, %Y'
 
 # Path to find HTML templates.
-templates_path = ['tools/templates']
+# templates_path = ['tools/templates']
 
 # Custom sidebar templates, filenames relative to this file.
-html_sidebars = {
-    # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
-    # Removes the quick search block
-    '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
-    'index': ['indexsidebar.html'],
-}
+# html_sidebars = {
+#     # Defaults taken from http://www.sphinx-doc.org/en/stable/config.html#confval-html_sidebars
+#     # Removes the quick search block
+#     '**': ['localtoc.html', 'relations.html', 'customsourcelink.html'],
+#     'index': ['indexsidebar.html'],
+# }
 
-# Additional templates that should be rendered to pages.
-html_additional_pages = {
-    'download': 'download.html',
-    'index': 'indexcontent.html',
-}
+# # Additional templates that should be rendered to pages.
+# html_additional_pages = {
+#     'download': 'download.html',
+#     'index': 'indexcontent.html',
+# }
 
 # Output an OpenSearch description file.
 html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
-html_static_path = ['tools/static']
+# html_static_path = ['tools/static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'python' + release.replace('.', '')
