@@ -1,0 +1,1 @@
+Ignore error string case in test_py_compile ``test_file_not_exists()``.
