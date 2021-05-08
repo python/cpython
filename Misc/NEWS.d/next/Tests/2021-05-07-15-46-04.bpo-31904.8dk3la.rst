@@ -1,1 +1,1 @@
-Correct error string in test_file_not_exists() for VxWorks.
+Ignore error string case in test_file_not_exists().

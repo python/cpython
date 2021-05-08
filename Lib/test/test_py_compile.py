@@ -276,11 +276,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         rc, stdout, stderr = self.pycompilecmd_failure(self.source_path, should_not_exists)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
-        if sys.platform == 'vxworks':
-            err_str = b'no such file or directory'
-        else:
-            err_str = b'No such file or directory'
-        self.assertIn(err_str, stderr)
+        self.assertIn(b'no such file or directory', stderr.lower())
 
     def test_file_not_exists_with_quiet(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
