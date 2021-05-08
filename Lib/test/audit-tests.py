@@ -384,7 +384,13 @@ def test_sqlite3():
 def test_asyncio():
     import asyncio
 
-    ev = asyncio.get_event_loop()
+    def hook(event, args):
+        if event == "asyncio.stalled":
+            print(event, *args[1:])
+
+    sys.addaudithook(hook)
+
+    ev = asyncio.new_event_loop()
     ev.slow_callback_duration = 0.0
 
     def stop_loop(loop):
