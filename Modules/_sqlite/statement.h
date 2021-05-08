@@ -38,7 +38,6 @@ typedef struct
     sqlite3* db;
     sqlite3_stmt* st;
     PyObject* sql;
-    int in_use;
     int is_dml;
     PyObject* in_weakreflist; /* List of weak references */
 } pysqlite_Statement;
@@ -52,7 +51,6 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
 
 int pysqlite_statement_finalize(pysqlite_Statement* self);
 int pysqlite_statement_reset(pysqlite_Statement* self);
-void pysqlite_statement_mark_dirty(pysqlite_Statement* self);
 
 int pysqlite_statement_setup_types(PyObject *module);
 

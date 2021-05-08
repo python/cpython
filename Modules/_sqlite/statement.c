@@ -57,7 +57,6 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     const char* p;
 
     self->st = NULL;
-    self->in_use = 0;
 
     assert(PyUnicode_Check(sql));
 
@@ -339,8 +338,6 @@ int pysqlite_statement_finalize(pysqlite_Statement* self)
         self->st = NULL;
     }
 
-    self->in_use = 0;
-
     return rc;
 }
 
@@ -350,22 +347,13 @@ int pysqlite_statement_reset(pysqlite_Statement* self)
 
     rc = SQLITE_OK;
 
-    if (self->in_use && self->st) {
+    if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
-
-        if (rc == SQLITE_OK) {
-            self->in_use = 0;
-        }
     }
 
     return rc;
-}
-
-void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
-{
-    self->in_use = 1;
 }
 
 static void
