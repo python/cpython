@@ -564,50 +564,44 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 {
     Py_ssize_t i,j;
     switch (typ) {
-        case REG_DWORD:
-            if (value != Py_None && !PyLong_Check(value))
+        case REG_DWORD: {
+            DWORD d = 0;
+            if (PyLong_Check(value)) {
+                d = PyLong_AsUnsignedLong(value);
+                if (d == (DWORD)(-1) && PyErr_Occurred()) {
+                    return FALSE;
+                }
+            } else if (value != Py_None) {
                 return FALSE;
+            }
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
-            if (*retDataBuf == NULL){
+            if (*retDataBuf == NULL) {
                 PyErr_NoMemory();
                 return FALSE;
             }
+            memcpy(*retDataBuf, &d, sizeof(DWORD));
             *retDataSize = sizeof(DWORD);
-            if (value == Py_None) {
-                DWORD zero = 0;
-                memcpy(*retDataBuf, &zero, sizeof(DWORD));
-            }
-            else {
-                DWORD d = PyLong_AsUnsignedLong(value);
-                if ((d == (DWORD)(-1)) && PyErr_Occurred()) {
-                    PyMem_Free(retDataBuf);
+            break;
+        }
+        case REG_QWORD: {
+            DWORD64 d = 0;
+            if (PyLong_Check(value)) {
+                d = PyLong_AsUnsignedLongLong(value);
+                if (d == (DWORD64)(-1) && PyErr_Occurred()) {
                     return FALSE;
                 }
-                memcpy(*retDataBuf, &d, sizeof(DWORD));
-            }
-            break;
-        case REG_QWORD:
-          if (value != Py_None && !PyLong_Check(value))
+            } else if (value != Py_None) {
                 return FALSE;
+            }
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD64, 1);
-            if (*retDataBuf == NULL){
+            if (*retDataBuf == NULL) {
                 PyErr_NoMemory();
                 return FALSE;
             }
+            memcpy(*retDataBuf, &d, sizeof(DWORD64));
             *retDataSize = sizeof(DWORD64);
-            if (value == Py_None) {
-                DWORD64 zero = 0;
-                memcpy(*retDataBuf, &zero, sizeof(DWORD64));
-            }
-            else {
-                DWORD64 d = PyLong_AsUnsignedLongLong(value);
-                if ((d == (DWORD64)(-1)) && PyErr_Occurred()) {
-                    PyMem_Free(retDataBuf);
-                    return FALSE;
-                }
-                memcpy(*retDataBuf, &d, sizeof(DWORD64));
-            }
             break;
+        }
         case REG_SZ:
         case REG_EXPAND_SZ:
             {
