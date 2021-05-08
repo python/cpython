@@ -97,7 +97,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     self->begin_statement = NULL;
 
     Py_CLEAR(self->statement_cache);
-    Py_CLEAR(self->statements);
     Py_CLEAR(self->cursors);
 
     Py_INCREF(Py_None);
@@ -142,10 +141,9 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     self->created_statements = 0;
     self->created_cursors = 0;
 
-    /* Create lists of weak references to statements/cursors */
-    self->statements = PyList_New(0);
+    /* Create list of weak references to cursors */
     self->cursors = PyList_New(0);
-    if (!self->statements || !self->cursors) {
+    if (self->cursors == NULL) {
         return -1;
     }
 
@@ -197,21 +195,20 @@ pysqlite_do_all_statements(pysqlite_Connection *self, int action,
 {
     int i;
     PyObject* weakref;
-    PyObject* statement;
     pysqlite_Cursor* cursor;
 
-    for (i = 0; i < PyList_Size(self->statements); i++) {
-        weakref = PyList_GetItem(self->statements, i);
-        statement = PyWeakref_GetObject(weakref);
-        if (statement != Py_None) {
-            Py_INCREF(statement);
-            if (action == ACTION_RESET) {
-                (void)pysqlite_statement_reset((pysqlite_Statement*)statement);
-            } else {
-                (void)pysqlite_statement_finalize((pysqlite_Statement*)statement);
-            }
-            Py_DECREF(statement);
+    // Reset or finalize all cached statements
+    pysqlite_Node *node = self->statement_cache->first;
+    while (node) {
+        pysqlite_Statement *stmt = (pysqlite_Statement *)node->data;
+        assert(stmt != NULL);
+        if (action == ACTION_RESET) {
+            (void)pysqlite_statement_reset(stmt);
         }
+        else {
+            (void)pysqlite_statement_finalize(stmt);
+        }
+        node = node->next;
     }
 
     if (reset_cursors) {
@@ -244,7 +241,6 @@ pysqlite_connection_dealloc(pysqlite_Connection *self)
     Py_XDECREF(self->row_factory);
     Py_XDECREF(self->text_factory);
     Py_XDECREF(self->collations);
-    Py_XDECREF(self->statements);
     Py_XDECREF(self->cursors);
 
     tp->tp_free(self);
@@ -759,37 +755,6 @@ _pysqlite_final_callback(sqlite3_context *context)
 
 error:
     PyGILState_Release(threadstate);
-}
-
-static void _pysqlite_drop_unused_statement_references(pysqlite_Connection* self)
-{
-    PyObject* new_list;
-    PyObject* weakref;
-    int i;
-
-    /* we only need to do this once in a while */
-    if (self->created_statements++ < 200) {
-        return;
-    }
-
-    self->created_statements = 0;
-
-    new_list = PyList_New(0);
-    if (!new_list) {
-        return;
-    }
-
-    for (i = 0; i < PyList_Size(self->statements); i++) {
-        weakref = PyList_GetItem(self->statements, i);
-        if (PyWeakref_GetObject(weakref) != Py_None) {
-            if (PyList_Append(new_list, weakref) != 0) {
-                Py_DECREF(new_list);
-                return;
-            }
-        }
-    }
-
-    Py_SETREF(self->statements, new_list);
 }
 
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
@@ -1313,7 +1278,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 {
     PyObject* sql;
     pysqlite_Statement* statement;
-    PyObject* weakref;
     int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
@@ -1325,8 +1289,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 
     if (!PyArg_ParseTuple(args, "U", &sql))
         return NULL;
-
-    _pysqlite_drop_unused_statement_references(self);
 
     statement = PyObject_New(pysqlite_Statement, pysqlite_StatementType);
     if (!statement) {
@@ -1352,15 +1314,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
         }
         goto error;
     }
-
-    weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
-    if (weakref == NULL)
-        goto error;
-    if (PyList_Append(self->statements, weakref) != 0) {
-        Py_DECREF(weakref);
-        goto error;
-    }
-    Py_DECREF(weakref);
 
     return (PyObject*)statement;
 
