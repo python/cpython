@@ -812,6 +812,16 @@ Other Language Changes
   :ref:`annotations-howto`.
   (Contributed by Larry Hastings in :issue:`43901`.)
 
+* Annotations consist of ``yield``, ``yield from``, ``await`` or named expressions
+  are now forbidden under ``from __future__ import annotations`` due to their side
+  effects.
+  (Contributed by Batuhan Taskaya in :issue:`42725`.)
+
+* Usage of unbound variables, ``super()`` and other expressions that might
+  alter the processing of symbol table as annotations are now rendered
+  effectless under ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42725`.)
+
 New Modules
 ===========
 
