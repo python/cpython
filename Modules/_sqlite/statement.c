@@ -71,7 +71,6 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         return PYSQLITE_SQL_WRONG_TYPE;
     }
 
-    self->in_weakreflist = NULL;
     self->sql = Py_NewRef(sql);
 
     /* Determine if the statement is a DML statement.
@@ -383,10 +382,6 @@ pysqlite_statement_dealloc(pysqlite_Statement *self)
 
     Py_XDECREF(self->sql);
 
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
-
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -461,12 +456,7 @@ static int pysqlite_check_remaining_sql(const char* tail)
     return 0;
 }
 
-static PyMemberDef stmt_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Statement, in_weakreflist), READONLY},
-    {NULL},
-};
 static PyType_Slot stmt_slots[] = {
-    {Py_tp_members, stmt_members},
     {Py_tp_dealloc, pysqlite_statement_dealloc},
     {Py_tp_new, PyType_GenericNew},
     {0, NULL},

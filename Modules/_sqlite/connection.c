@@ -1299,7 +1299,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
     statement->st = NULL;
     statement->sql = NULL;
     statement->in_use = 0;
-    statement->in_weakreflist = NULL;
 
     rc = pysqlite_statement_create(statement, self, sql);
     if (rc != SQLITE_OK) {
