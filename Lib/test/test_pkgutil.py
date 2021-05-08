@@ -93,11 +93,40 @@ class PkgutilTests(unittest.TestCase):
 
         del sys.modules[pkg]
 
-    def test_iter_modules(self):
+    def test_issue44061_iter_modules(self):
         #see: issue44061
-        actual = list(pkgutil.iter_modules([Path("/home")], 'somepackage.somesubpackage'))
-        self.assertListEqual([], actual)
+        zip = 'test_getdata_zipfile.zip'
+        pkg = 'test_getdata_zipfile'
 
+        # Include a LF and a CRLF, to test that binary data is read back
+        RESOURCE_DATA = b'Hello, world!\nSecond line\r\nThird line'
+
+        # Make a package with some resources
+        zip_file = os.path.join(self.dirname, zip)
+        z = zipfile.ZipFile(zip_file, 'w')
+
+        # Empty init.py
+        z.writestr(pkg + '/__init__.py', "")
+        # Resource files, res.txt
+        z.writestr(pkg + '/res.txt', RESOURCE_DATA)
+        z.close()
+
+        # Check we can read the resources
+        sys.path.insert(0, zip_file)
+        res = pkgutil.get_data(pkg, 'res.txt')
+        self.assertEqual(res, RESOURCE_DATA)
+
+        # make sure iter_modules accepts Path objects
+        names = []
+        for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+            self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
+            names.append(moduleinfo.name)
+        self.assertEqual(names, [pkg])
+
+        del sys.path[0]
+        del sys.modules[pkg]
+
+        # assert path must be None or list of paths
         expected_msg = "path must be None or list of paths to look for modules in"
         with self.assertRaisesRegex(ValueError, expected_msg):
             list(pkgutil.iter_modules("invalid_path"))
