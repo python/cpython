@@ -448,8 +448,8 @@ to create a list in memory that contains them all:
 
 static PyObject *
 _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
-                        Py_ssize_clean_t key_length)
-/*[clinic end generated code: output=204964441fdbaf02 input=fcf6a51a96ce0172]*/
+                        Py_ssize_t key_length)
+/*[clinic end generated code: output=c81a69300ef41766 input=fcf6a51a96ce0172]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;
@@ -570,7 +570,7 @@ static PyType_Spec gdbmtype_spec = {
     // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = gdbmtype_spec_slots,
 };
 

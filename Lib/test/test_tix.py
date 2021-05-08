@@ -1,7 +1,7 @@
+import sys
 import unittest
 from test import support
 from test.support import import_helper
-import sys
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = import_helper.import_module('_tkinter')
@@ -9,7 +9,9 @@ _tkinter = import_helper.import_module('_tkinter')
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
-from tkinter import tix, TclError
+# Suppress the deprecation warning
+tix = import_helper.import_module('tkinter.tix', deprecated=True)
+from tkinter import TclError
 
 
 class TestTix(unittest.TestCase):
@@ -24,9 +26,12 @@ class TestTix(unittest.TestCase):
         else:
             self.addCleanup(self.root.destroy)
 
-    def test_tix_available(self):
-        # this test is just here to make setUp run
-        pass
+    def test_tix_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            import_helper.import_fresh_module(
+                'tkinter.tix',
+                fresh=('tkinter.tix',),
+                )
 
 
 if __name__ == '__main__':

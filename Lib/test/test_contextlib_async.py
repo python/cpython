@@ -369,16 +369,14 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
     class SyncAsyncExitStack(AsyncExitStack):
         @staticmethod
         def run_coroutine(coro):
-            loop = asyncio.get_event_loop()
-
-            f = asyncio.ensure_future(coro)
-            f.add_done_callback(lambda f: loop.stop())
+            loop = asyncio.get_event_loop_policy().get_event_loop()
+            t = loop.create_task(coro)
+            t.add_done_callback(lambda f: loop.stop())
             loop.run_forever()
 
-            exc = f.exception()
-
+            exc = t.exception()
             if not exc:
-                return f.result()
+                return t.result()
             else:
                 context = exc.__context__
 

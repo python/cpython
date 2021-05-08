@@ -736,8 +736,11 @@ class TclTest(unittest.TestCase):
         check('{\n')
         check('}\n')
 
+    @support.cpython_only
     def test_new_tcl_obj(self):
         self.assertRaises(TypeError, _tkinter.Tcl_Obj)
+        self.assertRaises(TypeError, _tkinter.TkttType)
+        self.assertRaises(TypeError, _tkinter.TkappType)
 
 class BigmemTclTest(unittest.TestCase):
 

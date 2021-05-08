@@ -229,17 +229,20 @@ PyPreConfig
       Name of the Python memory allocators:
 
       * ``PYMEM_ALLOCATOR_NOT_SET`` (``0``): don't change memory allocators
-        (use defaults)
-      * ``PYMEM_ALLOCATOR_DEFAULT`` (``1``): default memory allocators
-      * ``PYMEM_ALLOCATOR_DEBUG`` (``2``): default memory allocators with
-        debug hooks
-      * ``PYMEM_ALLOCATOR_MALLOC`` (``3``): force usage of ``malloc()``
+        (use defaults).
+      * ``PYMEM_ALLOCATOR_DEFAULT`` (``1``): :ref:`default memory allocators
+        <default-memory-allocators>`.
+      * ``PYMEM_ALLOCATOR_DEBUG`` (``2``): :ref:`default memory allocators
+        <default-memory-allocators>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
+      * ``PYMEM_ALLOCATOR_MALLOC`` (``3``): use ``malloc()`` of the C library.
       * ``PYMEM_ALLOCATOR_MALLOC_DEBUG`` (``4``): force usage of
-        ``malloc()`` with debug hooks
+        ``malloc()`` with :ref:`debug hooks <pymem-debug-hooks>`.
       * ``PYMEM_ALLOCATOR_PYMALLOC`` (``5``): :ref:`Python pymalloc memory
-        allocator <pymalloc>`
+        allocator <pymalloc>`.
       * ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` (``6``): :ref:`Python pymalloc
-        memory allocator <pymalloc>` with debug hooks
+        memory allocator <pymalloc>` with :ref:`debug hooks
+        <pymem-debug-hooks>`.
 
       ``PYMEM_ALLOCATOR_PYMALLOC`` and ``PYMEM_ALLOCATOR_PYMALLOC_DEBUG`` are
       not supported if Python is :option:`configured using --without-pymalloc

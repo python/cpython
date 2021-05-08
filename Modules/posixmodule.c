@@ -13415,14 +13415,6 @@ typedef struct {
 #endif
 } DirEntry;
 
-static PyObject *
-_disabled_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 DirEntry_dealloc(DirEntry *entry)
 {
@@ -13781,7 +13773,6 @@ static PyMethodDef DirEntry_methods[] = {
 };
 
 static PyType_Slot DirEntryType_slots[] = {
-    {Py_tp_new, _disabled_new},
     {Py_tp_dealloc, DirEntry_dealloc},
     {Py_tp_repr, DirEntry_repr},
     {Py_tp_methods, DirEntry_methods},
@@ -13793,7 +13784,7 @@ static PyType_Spec DirEntryType_spec = {
     MODNAME ".DirEntry",
     sizeof(DirEntry),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     DirEntryType_slots
 };
 
@@ -14213,7 +14204,6 @@ static PyMethodDef ScandirIterator_methods[] = {
 };
 
 static PyType_Slot ScandirIteratorType_slots[] = {
-    {Py_tp_new, _disabled_new},
     {Py_tp_dealloc, ScandirIterator_dealloc},
     {Py_tp_finalize, ScandirIterator_finalize},
     {Py_tp_iter, PyObject_SelfIter},
@@ -14228,7 +14218,8 @@ static PyType_Spec ScandirIteratorType_spec = {
     0,
     // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
     // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE,
+    (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     ScandirIteratorType_slots
 };
 

@@ -1422,6 +1422,13 @@ def case(x):
 case(34)
 """
         compile(code, "<string>", "exec")
+    
+    def test_multiline_compiler_error_points_to_the_end(self):
+        self._check_error(
+            "call(\na=1,\na=1\n)",
+            "keyword argument repeated",
+            lineno=3
+        )
 
 
 def test_main():

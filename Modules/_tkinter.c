@@ -1002,7 +1002,7 @@ static PyType_Spec PyTclObject_Type_spec = {
     "_tkinter.Tcl_Obj",
     sizeof(PyTclObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     PyTclObject_Type_slots,
 };
 
@@ -3294,7 +3294,7 @@ static PyType_Spec Tktt_Type_spec = {
     "_tkinter.tktimertoken",
     sizeof(TkttObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     Tktt_Type_slots,
 };
 
@@ -3349,7 +3349,7 @@ static PyType_Spec Tkapp_Type_spec = {
     "_tkinter.tkapp",
     sizeof(TkappObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     Tkapp_Type_slots,
 };
 
@@ -3537,7 +3537,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkappType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3550,7 +3549,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkttType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3563,7 +3561,6 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
-    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "Tcl_Obj", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
