@@ -381,6 +381,19 @@ def test_sqlite3():
             raise RuntimeError("Expected sqlite3.load_extension to fail")
 
 
+def test_asyncio():
+    import asyncio
+
+    ev = asyncio.get_event_loop()
+    ev.slow_callback_duration = 0.0
+
+    def stop_loop(loop):
+        loop.stop()
+
+    ev.call_soon(stop_loop, ev)
+    ev.run_forever()
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
