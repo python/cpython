@@ -1,4 +1,0 @@
-Fix a bug in the pure-Python pickle implementation when using protocol 5,
-where bytearray instances that occur several time in the pickled object
-graph would incorrectly unpickle into repeated copies of the bytearray
-object.
