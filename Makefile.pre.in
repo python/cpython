@@ -1695,7 +1695,7 @@ LIBPL=		@LIBPL@
 LIBPC=		$(LIBDIR)/pkgconfig
 
 libainstall:	@DEF_MAKE_RULE@ python-config
-	@for i in $(LIBDIR) $(LIBPL) $(LIBPC); \
+	@for i in $(LIBDIR) $(LIBPL) $(LIBPC) $(BINDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
 			echo "Creating directory $$i"; \
