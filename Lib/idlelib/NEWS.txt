@@ -3,6 +3,12 @@ What's New in IDLE 3.9.z
 =========================
 
 
+bpo-44026: Include interpreter's typo fix suggestions in message line
+for NameErrors and AttributeErrors.  Patch by E. Paine.
+
+bpo-43655: Make window managers on macOS and X Window recognize
+IDLE dialog windows as dialogs.
+
 bpo-43283: Document why printing to IDLE's Shell is often slower than
 printing to a system terminal and that it can be made faster by
 pre-formatting a single string before printing.
