@@ -9,4 +9,6 @@ blurb
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
-python-docs-theme
+shaphinx
+
+bs4
