@@ -367,10 +367,10 @@ class SMTP:
     def putcmd(self, cmd, args=""):
         """Send a command to the server."""
         if args == "":
-            str = '%s%s' % (cmd, CRLF)
+            str = cmd
         else:
-            str = '%s %s%s' % (cmd, args, CRLF)
-        self.send(str)
+            str = '%s %s' % (cmd, args)
+        self.send('%s%s' % (str.replace('\n', '\\n'), CRLF))
 
     def getreply(self):
         """Get a reply from the server.
