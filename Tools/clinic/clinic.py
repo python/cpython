@@ -2534,7 +2534,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         # impl_parameters
         data.impl_parameters.append(self.simple_declaration(by_reference=self.impl_by_reference))
         if self.length:
-            data.impl_parameters.append("Py_ssize_clean_t " + self.length_name())
+            data.impl_parameters.append("Py_ssize_t " + self.length_name())
 
     def _render_non_self(self, parameter, data):
         self.parameter = parameter
@@ -2640,7 +2640,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(default)
         declaration.append(";")
         if self.length:
-            declaration.append('\nPy_ssize_clean_t ')
+            declaration.append('\nPy_ssize_t ')
             declaration.append(self.length_name())
             declaration.append(';')
         return "".join(declaration)
