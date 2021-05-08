@@ -956,7 +956,7 @@ invalid_try_stmt:
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
 invalid_except_stmt:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
-        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "exception group must be parenthesized") }
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
     | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
 invalid_finally_stmt:

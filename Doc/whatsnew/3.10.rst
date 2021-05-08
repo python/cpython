@@ -248,7 +248,7 @@ have been incorporated. Some of the most notable ones:
           File "<stdin>", line 3
             except NotEnoughScienceError, NotEnoughResourcesError:
                    ^
-        SyntaxError: exception group must be parenthesized
+        SyntaxError: multiple exception types must be parenthesized
 
     (Contributed by Pablo Galindo in :issue:`43149`)
 
