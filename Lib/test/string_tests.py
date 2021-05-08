@@ -1195,6 +1195,12 @@ class MixinStrUnicodeUserStringTest:
 
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
 
+        for idx in ('def', object()):
+            with self.assertRaises(TypeError) as cm:
+                getattr('abc', '__getitem__')(idx)
+            self.assertEqual(str(cm.exception),
+                             "string indices must be integers, not '{}'".format(type(idx).__name__))
+
     def test_slice(self):
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 3))
