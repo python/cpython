@@ -90,7 +90,10 @@ Improved Modules
 Optimizations
 =============
 
-
+* Compiler optimizes now simple C-style formatting with literal format
+  containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
+  fast as corresponding f-string expression.
+  (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
 
 Build and C API Changes
