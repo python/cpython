@@ -47,7 +47,7 @@
 
 This article explains the new features in Python 3.11, compared to 3.10.
 
-For full details, see the :source:`Misc/NEWS` file.
+For full details, see the :ref:`changelog <changelog>`.
 
 .. note::
 
