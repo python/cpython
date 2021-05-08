@@ -351,8 +351,7 @@ class LocalWinregTests(BaseWinregTests):
                 with self.assertRaises(OverflowError):
                     SetValueEx(ck, "test_name", None, REG_DWORD, -1)
                 with self.assertRaises(FileNotFoundError):
-                    with QueryValueEx(ck, "test_name") as subkey:
-                        pass
+                    QueryValueEx(ck, "test_name")
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
         
