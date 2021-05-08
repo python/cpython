@@ -340,7 +340,7 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
     
-    def test_setvaluex_negative_one_check(self):
+    def test_setvalueex_negative_one_check(self):
         # Test for Issue #43984, check -1 was not set by SetValueEx.
         # Py2Reg, which gets called by SetValueEx, wasn't checking return
         # value by PyLong_AsUnsignedLong, thus setting -1 as value in the registry.
