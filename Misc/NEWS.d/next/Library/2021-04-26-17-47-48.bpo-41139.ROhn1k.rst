@@ -1,1 +1,0 @@
-Deprecate undocumented ``cgi.log()`` API.
