@@ -2155,51 +2155,6 @@ _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
 static PyObject *
-unicode_encodedecimal(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    char *errors = NULL;
-    PyObject *decimal;
-    Py_ssize_t decimal_length, new_length;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length, &errors))
-        return NULL;
-
-    decimal_length = length * 7; /* len('&#8364;') */
-    decimal = PyBytes_FromStringAndSize(NULL, decimal_length);
-    if (decimal == NULL)
-        return NULL;
-
-    res = PyUnicode_EncodeDecimal(unicode, length,
-                                  PyBytes_AS_STRING(decimal),
-                                  errors);
-    if (res < 0) {
-        Py_DECREF(decimal);
-        return NULL;
-    }
-
-    new_length = strlen(PyBytes_AS_STRING(decimal));
-    assert(new_length <= decimal_length);
-    res = _PyBytes_Resize(&decimal, new_length);
-    if (res < 0)
-        return NULL;
-
-    return decimal;
-}
-
-static PyObject *
-unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length))
-        return NULL;
-    return PyUnicode_TransformDecimalToASCII(unicode, length);
-}
-
-static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
 {
     Py_UNICODE *data;
@@ -5455,9 +5410,6 @@ pynumber_tobase(PyObject *module, PyObject *args)
 }
 
 
-static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
-
-
 static PyObject*
 test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -5596,6 +5548,8 @@ test_fatal_error(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
+static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -5703,6 +5657,8 @@ static PyMethodDef TestMethods[] = {
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
+    {"getargs_s_hash_int",      (PyCFunction)(void(*)(void))getargs_s_hash_int,
+      METH_VARARGS|METH_KEYWORDS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
@@ -5736,8 +5692,6 @@ static PyMethodDef TestMethods[] = {
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
 #if USE_UNICODE_WCHAR_CACHE
-    {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
-    {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
 #endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
@@ -7373,5 +7327,21 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyErr_Clear();
 
 
+    Py_RETURN_NONE;
+}
+
+#undef PyArg_ParseTupleAndKeywords
+PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
+                                            const char *, char **, ...);
+
+static PyObject *
+getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {"", "x", NULL};
+    const char *s;
+    int len;
+    int i = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#i", keywords, &s, &len, &i))
+        return NULL;
     Py_RETURN_NONE;
 }

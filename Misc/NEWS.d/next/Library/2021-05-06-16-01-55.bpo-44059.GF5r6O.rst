@@ -1,0 +1,1 @@
+Register the SerenityOS Browser in the :mod:`webbrowser` module.

@@ -2427,10 +2427,6 @@ PyUnicode_FromUnicode:Py_ssize_t:size::
 PyUnicode_AsUnicode:Py_UNICODE*:::
 PyUnicode_AsUnicode:PyObject*:unicode:0:
 
-PyUnicode_TransformDecimalToASCII:PyObject*::+1:
-PyUnicode_TransformDecimalToASCII:Py_UNICODE*:s::
-PyUnicode_TransformDecimalToASCII:Py_ssize_t:size::
-
 PyUnicode_AsUnicodeAndSize:Py_UNICODE*:::
 PyUnicode_AsUnicodeAndSize:PyObject*:unicode:0:
 PyUnicode_AsUnicodeAndSize:Py_ssize_t*:size::
@@ -2478,12 +2474,6 @@ PyUnicode_DecodeUTF8Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF8Stateful:const char*:errors::
 PyUnicode_DecodeUTF8Stateful:Py_ssize_t*:consumed::
 
-PyUnicode_Encode:PyObject*::+1:
-PyUnicode_Encode:const Py_UNICODE*:s::
-PyUnicode_Encode:Py_ssize_t:size::
-PyUnicode_Encode:const char*:encoding::
-PyUnicode_Encode:const char*:errors::
-
 PyUnicode_AsEncodedString:PyObject*::+1:
 PyUnicode_AsEncodedString:PyObject*:unicode:0:
 PyUnicode_AsEncodedString:const char*:encoding::
@@ -2500,22 +2490,10 @@ PyUnicode_DecodeUTF7Stateful:Py_ssize_t:size::
 PyUnicode_DecodeUTF7Stateful:const char*:errors::
 PyUnicode_DecodeUTF7Stateful:Py_ssize_t*:consumed::
 
-PyUnicode_EncodeUTF7:PyObject*::+1:
-PyUnicode_EncodeUTF7:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF7:Py_ssize_t:size::
-PyUnicode_EncodeUTF7:int:base64SetO::
-PyUnicode_EncodeUTF7:int:base64WhiteSpace::
-PyUnicode_EncodeUTF7:const char*:errors::
-
 PyUnicode_DecodeUTF8:PyObject*::+1:
 PyUnicode_DecodeUTF8:const char*:s::
 PyUnicode_DecodeUTF8:Py_ssize_t:size::
 PyUnicode_DecodeUTF8:const char*:errors::
-
-PyUnicode_EncodeUTF8:PyObject*::+1:
-PyUnicode_EncodeUTF8:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF8:Py_ssize_t:size::
-PyUnicode_EncodeUTF8:const char*:errors::
 
 PyUnicode_AsUTF8String:PyObject*::+1:
 PyUnicode_AsUTF8String:PyObject*:unicode:0:
@@ -2532,12 +2510,6 @@ PyUnicode_DecodeUTF16:const char*:s::
 PyUnicode_DecodeUTF16:Py_ssize_t:size::
 PyUnicode_DecodeUTF16:const char*:errors::
 PyUnicode_DecodeUTF16:int*:byteorder::
-
-PyUnicode_EncodeUTF16:PyObject*::+1:
-PyUnicode_EncodeUTF16:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF16:Py_ssize_t:size::
-PyUnicode_EncodeUTF16:const char*:errors::
-PyUnicode_EncodeUTF16:int:byteorder::
 
 PyUnicode_AsUTF16String:PyObject*::+1:
 PyUnicode_AsUTF16String:PyObject*:unicode:0:
@@ -2558,20 +2530,10 @@ PyUnicode_DecodeUTF32Stateful:Py_ssize_t*:consumed::
 PyUnicode_AsUTF32String:PyObject*::+1:
 PyUnicode_AsUTF32String:PyObject*:unicode:0:
 
-PyUnicode_EncodeUTF32:PyObject*::+1:
-PyUnicode_EncodeUTF32:const Py_UNICODE*:s::
-PyUnicode_EncodeUTF32:Py_ssize_t:size::
-PyUnicode_EncodeUTF32:const char*:errors::
-PyUnicode_EncodeUTF32:int:byteorder::
-
 PyUnicode_DecodeUnicodeEscape:PyObject*::+1:
 PyUnicode_DecodeUnicodeEscape:const char*:s::
 PyUnicode_DecodeUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeUnicodeEscape:const char*:errors::
-
-PyUnicode_EncodeUnicodeEscape:PyObject*::+1:
-PyUnicode_EncodeUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeUnicodeEscape:Py_ssize_t:size::
 
 PyUnicode_AsUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsUnicodeEscapeString:PyObject*:unicode:0:
@@ -2581,10 +2543,6 @@ PyUnicode_DecodeRawUnicodeEscape:const char*:s::
 PyUnicode_DecodeRawUnicodeEscape:Py_ssize_t:size::
 PyUnicode_DecodeRawUnicodeEscape:const char*:errors::
 
-PyUnicode_EncodeRawUnicodeEscape:PyObject*::+1:
-PyUnicode_EncodeRawUnicodeEscape:const Py_UNICODE*:s::
-PyUnicode_EncodeRawUnicodeEscape:Py_ssize_t:size::
-
 PyUnicode_AsRawUnicodeEscapeString:PyObject*::+1:
 PyUnicode_AsRawUnicodeEscapeString:PyObject*:unicode:0:
 
@@ -2593,11 +2551,6 @@ PyUnicode_DecodeLatin1:const char*:s::
 PyUnicode_DecodeLatin1:Py_ssize_t:size::
 PyUnicode_DecodeLatin1:const char*:errors::
 
-PyUnicode_EncodeLatin1:PyObject*::+1:
-PyUnicode_EncodeLatin1:const Py_UNICODE*:s::
-PyUnicode_EncodeLatin1:Py_ssize_t:size::
-PyUnicode_EncodeLatin1:const char*:errors::
-
 PyUnicode_AsLatin1String:PyObject*::+1:
 PyUnicode_AsLatin1String:PyObject*:unicode:0:
 
@@ -2605,11 +2558,6 @@ PyUnicode_DecodeASCII:PyObject*::+1:
 PyUnicode_DecodeASCII:const char*:s::
 PyUnicode_DecodeASCII:Py_ssize_t:size::
 PyUnicode_DecodeASCII:const char*:errors::
-
-PyUnicode_EncodeASCII:PyObject*::+1:
-PyUnicode_EncodeASCII:const Py_UNICODE*:s::
-PyUnicode_EncodeASCII:Py_ssize_t:size::
-PyUnicode_EncodeASCII:const char*:errors::
 
 PyUnicode_AsASCIIString:PyObject*::+1:
 PyUnicode_AsASCIIString:PyObject*:unicode:0:
@@ -2620,21 +2568,9 @@ PyUnicode_DecodeCharmap:Py_ssize_t:size::
 PyUnicode_DecodeCharmap:PyObject*:mapping:0:
 PyUnicode_DecodeCharmap:const char*:errors::
 
-PyUnicode_EncodeCharmap:PyObject*::+1:
-PyUnicode_EncodeCharmap:const Py_UNICODE*:s::
-PyUnicode_EncodeCharmap:Py_ssize_t:size::
-PyUnicode_EncodeCharmap:PyObject*:mapping:0:
-PyUnicode_EncodeCharmap:const char*:errors::
-
 PyUnicode_AsCharmapString:PyObject*::+1:
 PyUnicode_AsCharmapString:PyObject*:unicode:0:
 PyUnicode_AsCharmapString:PyObject*:mapping:0:
-
-PyUnicode_TranslateCharmap:PyObject*::+1:
-PyUnicode_TranslateCharmap:const Py_UNICODE*:s::
-PyUnicode_TranslateCharmap:Py_ssize_t:size::
-PyUnicode_TranslateCharmap:PyObject*:mapping:0:
-PyUnicode_TranslateCharmap:const char*:errors::
 
 PyUnicode_DecodeMBCS:PyObject*::+1:
 PyUnicode_DecodeMBCS:const char*:s::
@@ -2651,11 +2587,6 @@ PyUnicode_EncodeCodePage:PyObject*::+1:
 PyUnicode_EncodeCodePage:int:code_page::
 PyUnicode_EncodeCodePage:PyObject*:unicode:0:
 PyUnicode_EncodeCodePage:const char*:errors::
-
-PyUnicode_EncodeMBCS:PyObject*::+1:
-PyUnicode_EncodeMBCS:const Py_UNICODE*:s::
-PyUnicode_EncodeMBCS:Py_ssize_t:size::
-PyUnicode_EncodeMBCS:const char*:errors::
 
 PyUnicode_AsMBCSString:PyObject*::+1:
 PyUnicode_AsMBCSString:PyObject*:unicode:0:
@@ -2890,21 +2821,6 @@ PyUnicodeDecodeError_SetReason:const char*:reason::
 PyUnicodeDecodeError_SetStart:int:::
 PyUnicodeDecodeError_SetStart:PyObject*:exc:0:
 PyUnicodeDecodeError_SetStart:Py_ssize_t:start::
-
-PyUnicodeEncodeError_Create:PyObject*::+1:
-PyUnicodeEncodeError_Create:const char*:encoding::
-PyUnicodeEncodeError_Create:const Py_UNICODE*:object::
-PyUnicodeEncodeError_Create:Py_ssize_t:length::
-PyUnicodeEncodeError_Create:Py_ssize_t:start::
-PyUnicodeEncodeError_Create:Py_ssize_t:end::
-PyUnicodeEncodeError_Create:const char*:reason::
-
-PyUnicodeTranslateError_Create:PyObject*::+1:
-PyUnicodeTranslateError_Create:const Py_UNICODE*:object::
-PyUnicodeTranslateError_Create:Py_ssize_t:length::
-PyUnicodeTranslateError_Create:Py_ssize_t:start::
-PyUnicodeTranslateError_Create:Py_ssize_t:end::
-PyUnicodeTranslateError_Create:const char*:reason::
 
 PyWeakref_Check:int:::
 PyWeakref_Check:PyObject*:ob::

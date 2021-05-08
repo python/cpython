@@ -2532,15 +2532,12 @@ skipitem(const char **p_format, va_list *p_va, int flags)
             }
             if (*format == '#') {
                 if (p_va != NULL) {
-                    if (flags & FLAG_SIZE_T)
-                        (void) va_arg(*p_va, Py_ssize_t *);
-                    else {
-                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
-                            return NULL;
-                        }
-                        (void) va_arg(*p_va, int *);
+                    if (!(flags & FLAG_SIZE_T)) {
+                        PyErr_SetString(PyExc_SystemError,
+                                "PY_SSIZE_T_CLEAN macro must be defined for '#' formats");
+                        return NULL;
                     }
+                    (void) va_arg(*p_va, Py_ssize_t *);
                 }
                 format++;
             } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')

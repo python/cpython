@@ -1,1 +1,0 @@
-Added SNI support to :func:`ssl.get_server_certificate`.
