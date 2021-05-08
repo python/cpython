@@ -37,13 +37,6 @@ SOURCE_3 = '''
 def f():
     return 3''' # No ending newline
 
-SOURCE_4 = '''
-raise OSError
-'''
-
-def raise_oserror(*args, **kwargs):
-        raise OSError
-
 
 class TempFile:
 
@@ -188,37 +181,6 @@ class LineCacheTests(unittest.TestCase):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)
 
-    def test_checkcache_oserror(self):
-        linecache.clearcache()
-        _ = linecache.getlines(FILENAME)
-        self.assertTrue(_)
-        self.assertEqual(1, len(linecache.cache.keys()))
-
-        with support.swap_attr(os, 'stat', raise_oserror):
-            # pop all cache
-            _ = linecache.checkcache()
-            self.assertEqual(0, len(linecache.cache.keys()))
-
-    def test_updatecache_oserror(self):
-        linecache.clearcache()
-        source_name = os_helper.TESTFN
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-
-        with open(source_name, 'w', encoding='utf-8') as source:
-            source.write(SOURCE_4)
-        _ = linecache.getlines(source_name)
-        self.assertEqual(1, len(linecache.cache.keys()))
-
-        with support.swap_attr(os, 'stat', raise_oserror):
-            # Trace OSError with no pop cache
-            _ = linecache.updatecache('dummy')
-            self.assertEqual(1, len(linecache.cache.keys()))
-
-        with support.swap_attr(os, 'stat', raise_oserror):
-            # Trace OSError with pop cache
-            _ = linecache.updatecache(source_name)
-            self.assertEqual(0, len(linecache.cache.keys()))
-
     def test_lazycache_no_globals(self):
         lines = linecache.getlines(FILENAME)
         linecache.clearcache()
@@ -275,6 +237,48 @@ class LineCacheTests(unittest.TestCase):
             lines3 = linecache.getlines(FILENAME)
         self.assertEqual(lines3, [])
         self.assertEqual(linecache.getlines(FILENAME), lines)
+
+    def test_oserror(self):
+        def _oserror_helper():
+            linecache.clearcache()
+            be_deleted_file = os_helper.TESTFN + '.1'
+            be_modified_file = os_helper.TESTFN + '.2'
+            unchange_file = os_helper.TESTFN + '.3'
+            self.addCleanup(os_helper.unlink, be_deleted_file)
+            self.addCleanup(os_helper.unlink, be_modified_file)
+            self.addCleanup(os_helper.unlink, unchange_file)
+            with open(be_deleted_file, 'w', encoding='utf-8') as source:
+                source.write('print("will be deleted")')
+            with open(be_modified_file, 'w', encoding='utf-8') as source:
+                source.write('print("will be modified")')
+            with open(unchange_file, 'w', encoding='utf-8') as source:
+                source.write('print("unchange")')
+
+            _ = linecache.getlines(be_deleted_file)
+            _ = linecache.getlines(be_modified_file)
+            _ = linecache.getlines(unchange_file)
+            self.assertEqual(3, len(linecache.cache.keys()))
+
+            os.remove(be_deleted_file)
+            with open(be_modified_file, 'w', encoding='utf-8') as source:
+                source.write('print("was modified")')
+            return (be_deleted_file, be_modified_file, unchange_file)
+
+        deleted_file, modified_file, unchange_file = _oserror_helper()
+        _ = linecache.checkcache(deleted_file)
+        self.assertEqual(2, len(linecache.cache.keys()))
+        _ = linecache.checkcache(modified_file)
+        self.assertEqual(1, len(linecache.cache.keys()))
+        _ = linecache.checkcache(unchange_file)
+        self.assertEqual(1, len(linecache.cache.keys()))
+
+        deleted_file, modified_file, unchange_file = _oserror_helper()
+        _ = linecache.updatecache(deleted_file)
+        self.assertEqual(2, len(linecache.cache.keys()))
+        _ = linecache.updatecache(modified_file)
+        self.assertEqual(2, len(linecache.cache.keys()))
+        _ = linecache.updatecache(unchange_file)
+        self.assertEqual(2, len(linecache.cache.keys()))
 
 
 if __name__ == "__main__":

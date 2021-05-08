@@ -19,6 +19,7 @@ import os
 import subprocess
 import signal
 import textwrap
+import traceback
 
 from unittest import mock
 from test import lock_tests
@@ -1339,7 +1340,6 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.exc = None
 
     def test_multithread_modify_file_noerror(self):
-        import traceback
         def modify_file():
             with open(__file__, 'a') as fp:
                 fp.write(' ')
