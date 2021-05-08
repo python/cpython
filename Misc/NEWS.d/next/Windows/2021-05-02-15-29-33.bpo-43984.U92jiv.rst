@@ -1,1 +1,3 @@
-Update winreg.SetValueEx to make sure the value set is not -1.
+:meth:`winreg.SetValueEx` now leaves the target register untouched in case of conversion errors.
+Previously, ``-1`` would be written in case of such errors.
+
