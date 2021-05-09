@@ -1349,13 +1349,9 @@ class ThreadingExceptionTests(BaseTestCase):
             threading.Thread(target=modify_file)
             for i in range(100)
         ]
-        try:
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-        finally:
-            pass
+        for t in threads:
+            t.start()
+            t.join()
 
 
 class ThreadRunFail(threading.Thread):
