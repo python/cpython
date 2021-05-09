@@ -317,6 +317,26 @@ class TestSuper(unittest.TestCase):
         for i in range(1000):
             super.__init__(sp, int, i)
 
+    def test_unbound_super_binding(self):
+        class A:
+            def f(self):
+                return 'A.f'
+            @classmethod
+            def g(cls):
+                return 'A.g'
+
+        class B(A):
+            def f(self):
+                return 'B.f ' + self.__super.f()
+            @classmethod
+            def g(cls):
+                return 'B.g ' + cls.__super.g()
+
+        B._B__super = super(B)
+        b = B()
+        self.assertEqual(b.f(), 'B.f A.f')  # instance binding
+        self.assertEqual(b.g(), 'B.g A.g')  # class binding
+
 
 if __name__ == "__main__":
     unittest.main()
