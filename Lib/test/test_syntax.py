@@ -1068,7 +1068,7 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
-Check that an exception group with missing parentheses
+Check that an multiple exception types with missing parentheses
 raise a custom exception
 
    >>> try:
@@ -1076,21 +1076,21 @@ raise a custom exception
    ... except A, B:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
@@ -1099,7 +1099,7 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
 
 >>> f(a=23, a=234)
