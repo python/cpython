@@ -1001,7 +1001,7 @@ class SSLSocket(socket):
             fileno=sock.fileno()
         )
         self = cls.__new__(cls, **kwargs)
-        super(SSLSocket, self).__init__(**kwargs)
+        super(cls, self).__init__(**kwargs)
         self.settimeout(sock.gettimeout())
         sock.detach()
 
