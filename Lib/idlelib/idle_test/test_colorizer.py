@@ -469,6 +469,23 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_names('1.4'), ())
         text.delete('1.0', 'end-1c')
 
+    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
+    def test_long_multiline_string(self, notify_range):
+        text = self.text
+        color = self.color
+        eq = self.assertEqual
+
+        text.insert('insert', textwrap.dedent('''\
+            """a
+            b
+            c
+            d
+            e"""
+            '''))
+        text.tag_add('TODO', '1.0', 'end-1c')
+        color.recolorize_main()
+        eq(text.tag_nextrange('STRING', '1.0'), ('1.0', '5.4'))
+
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
     def test_removecolors(self, mock_notify, mock_recolorize):
