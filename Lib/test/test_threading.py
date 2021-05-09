@@ -1340,6 +1340,7 @@ class ThreadingExceptionTests(BaseTestCase):
         thread.exc = None
 
     def test_multithread_modify_file_noerror(self):
+        # See issue25872
         def modify_file():
             with open(__file__, 'a') as fp:
                 fp.write(' ')
