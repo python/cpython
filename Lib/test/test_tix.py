@@ -26,12 +26,9 @@ class TestTix(unittest.TestCase):
         else:
             self.addCleanup(self.root.destroy)
 
-    def test_tix_deprecation(self):
-        with self.assertWarns(DeprecationWarning):
-            import_helper.import_fresh_module(
-                'tkinter.tix',
-                fresh=('tkinter.tix',),
-                )
+    def test_tix_available(self):
+        # this test is just here to make setUp run
+        pass
 
 
 if __name__ == '__main__':
