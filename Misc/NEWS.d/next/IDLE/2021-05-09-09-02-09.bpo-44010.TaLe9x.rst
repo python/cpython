@@ -1,0 +1,2 @@
+Highlight the new pattern-matching "soft keywords": ``match``,
+``case``, and ``_``.
