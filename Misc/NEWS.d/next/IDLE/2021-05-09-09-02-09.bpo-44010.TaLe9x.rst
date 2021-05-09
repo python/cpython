@@ -1,2 +1,3 @@
-Highlight the new pattern-matching "soft keywords": ``match``,
-``case``, and ``_``.
+Highlight the new :ref:`match <match>` statement's
+:ref:`soft keywords <soft-keywords>`: :keyword:`match`,
+:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>`.
