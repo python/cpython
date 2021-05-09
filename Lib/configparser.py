@@ -956,6 +956,20 @@ class RawConfigParser(MutableMapping):
             del self._proxies[section]
         return existed
 
+    def check_interpolation_errors(self):
+        """Check the configuration for interpolation errors.
+
+        Returns a list of the errors detected
+        """
+        errors = []
+        for section in self._sections:
+            for option in self._sections[section]:
+                try:
+                    _ = self[section][option]
+                except (TypeError, InterpolationError) as e:
+                   errors.append(e)
+        return errors
+
     def __getitem__(self, key):
         if key != self.default_section and not self.has_section(key):
             raise KeyError(key)

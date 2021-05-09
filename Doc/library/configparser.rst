@@ -317,7 +317,10 @@ Interpolation of values
 
 On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
-from ``get()`` calls.
+from ``get()`` calls. The preprocessing is done during the get call and
+not while reading the input. To check for any interpolation errors
+after reading the input, use the
+:meth:`ConfigParser.check_interpolation_errors`.
 
 .. index:: single: % (percent); interpolation in configuration files
 
@@ -1186,6 +1189,13 @@ ConfigParser Objects
 
       Note that when reading configuration files, whitespace around the option
       names is stripped before :meth:`optionxform` is called.
+
+
+   .. method:: check_interpolation_errors()
+
+      Check for errors with interpolation of values in the input. Returns a
+      list of interpolation errors found. If no errors are found, an empty
+      list is returned.
 
 
    .. method:: readfp(fp, filename=None)

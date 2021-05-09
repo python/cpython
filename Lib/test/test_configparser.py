@@ -890,6 +890,7 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
 
     def test_interpolation(self):
         cf = self.get_interpolation_config()
+        self.assertEqual(len(cf.check_interpolation_errors()), 4)
         eq = self.assertEqual
         eq(cf.get("Foo", "bar"), "something with interpolation (1 step)")
         eq(cf.get("Foo", "bar9"),
@@ -935,7 +936,9 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(cf.get("section", "ok"), "xxx/%s")
         if self.interpolation == configparser._UNSET:
             self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
+            self.assertEqual(len(cf.check_interpolation_errors()), 0)
         elif isinstance(self.interpolation, configparser.LegacyInterpolation):
+            self.assertEqual(len(cf.check_interpolation_errors()), 1)
             with self.assertRaises(TypeError):
                 cf.get("section", "not_ok")
 
@@ -1001,6 +1004,7 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
         self.assertEqual(cf['numbers']['two'], '%(one)s * 2')
         self.assertEqual(cf['numbers']['three'], '${common:one} * 3')
         self.assertEqual(cf['hexen']['sixteen'], '${numbers:two} * 8')
+        self.assertEqual(len(cf.check_interpolation_errors()), 0)
 
     def test_no_interpolation(self):
         cf = self.fromstring(self.ini)
@@ -1009,6 +1013,7 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
     def test_empty_case(self):
         cf = self.newconfig()
         self.assertIsNone(cf.read_string(""))
+        self.assertEqual(len(cf.check_interpolation_errors()), 0)
 
     def test_none_as_default_interpolation(self):
         class CustomConfigParser(configparser.ConfigParser):
@@ -1214,6 +1219,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
         eq(cf['stanley']['favourite pope'], 'John Paul II')
         eq(cf['stanley']['favourite song'],
            'black sabbath - paranoid')
+        eq(len(cf.check_interpolation_errors()), 0)
 
     def test_endless_loop(self):
         cf = self.fromstring(textwrap.dedent("""
@@ -1227,6 +1233,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
             me = ${me}
         """).strip())
 
+        self.assertEqual(len(cf.check_interpolation_errors()), 3)
         with self.assertRaises(configparser.InterpolationDepthError):
             cf['one for you']['ping']
         with self.assertRaises(configparser.InterpolationDepthError):
@@ -1244,6 +1251,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
             $trying = ${dollars:${sick}}
         """)
 
+        self.assertEqual(len(cf.check_interpolation_errors()), 1)
         self.assertEqual(cf['dollars']['$var'], '$value')
         self.assertEqual(cf['interpolated']['$other'], '$value')
         self.assertEqual(cf['dollars']['${sick}'], 'cannot interpolate me')
@@ -1276,6 +1284,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
         eq(cf['Common']['OptionUpper'], 'A Better Value')
         eq(cf['random']['foolower'], 'value redefined')
         eq(cf['random']['FooUpper'], 'A Better Value Redefined')
+        eq(len(cf.check_interpolation_errors()), 0)
 
     def test_case_sensitivity_conflicts(self):
         ini = textwrap.dedent("""
@@ -1326,6 +1335,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
             cf['interpolation fail']['case5']
         with self.assertRaises(ValueError):
             cf['interpolation fail']['case6'] = "BLACK $ABBATH"
+        self.assertEqual(len(cf.check_interpolation_errors()), 5)
 
 
 class ConfigParserTestCaseNoValue(ConfigParserTestCase):
