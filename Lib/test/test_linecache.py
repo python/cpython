@@ -270,7 +270,7 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertEqual(2, len(linecache.cache.keys()))
         self.assertNotIn(self.deleted_file, linecache.cache.keys())
 
-    def test_checkcache_with_not_match_size_or_timestamp(self):
+    def test_checkcache_for_modified_file(self):
         self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache(self.modified_file)
         self.assertEqual(2, len(linecache.cache.keys()))
