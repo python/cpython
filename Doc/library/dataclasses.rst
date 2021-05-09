@@ -308,7 +308,7 @@ Module contents
 
      - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
        ``compare``, ``metadata``, and ``kw_only`` have the identical
-       meaning and values as they do in the :func:`field` declaration.
+       meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
