@@ -1,7 +1,6 @@
 import builtins
 import keyword
 import re
-import textwrap
 import time
 
 from idlelib.config import idleConf
