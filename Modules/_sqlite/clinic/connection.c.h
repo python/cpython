@@ -648,6 +648,105 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(serialize__doc__,
+"serialize($self, /, *, schema=\'main\')\n"
+"--\n"
+"\n");
+
+#define SERIALIZE_METHODDEF    \
+    {"serialize", (PyCFunction)(void(*)(void))serialize, METH_FASTCALL|METH_KEYWORDS, serialize__doc__},
+
+static PyObject *
+serialize_impl(pysqlite_Connection *self, const char *schema);
+
+static PyObject *
+serialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"schema", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "serialize", 0};
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    const char *schema = "main";
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("serialize", "argument 'schema'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t schema_length;
+    schema = PyUnicode_AsUTF8AndSize(args[0], &schema_length);
+    if (schema == NULL) {
+        goto exit;
+    }
+    if (strlen(schema) != (size_t)schema_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = serialize_impl(self, schema);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(deserialize__doc__,
+"deserialize($self, data, /, *, schema=\'main\')\n"
+"--\n"
+"\n");
+
+#define DESERIALIZE_METHODDEF    \
+    {"deserialize", (PyCFunction)(void(*)(void))deserialize, METH_FASTCALL|METH_KEYWORDS, deserialize__doc__},
+
+static PyObject *
+deserialize_impl(pysqlite_Connection *self, PyObject *data,
+                 const char *schema);
+
+static PyObject *
+deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "schema", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "deserialize", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *data;
+    const char *schema = "main";
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    data = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("deserialize", "argument 'schema'", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t schema_length;
+    schema = PyUnicode_AsUTF8AndSize(args[1], &schema_length);
+    if (schema == NULL) {
+        goto exit;
+    }
+    if (strlen(schema) != (size_t)schema_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = deserialize_impl(self, data, schema);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(pysqlite_connection_enter__doc__,
 "__enter__($self, /)\n"
 "--\n"
@@ -710,4 +809,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=c1bf09db3bcd0105 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f0f43cd2277f99fd input=a9049054013a1b77]*/

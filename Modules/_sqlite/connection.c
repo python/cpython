@@ -1790,6 +1790,103 @@ finally:
 }
 
 /*[clinic input]
+_sqlite3.Connection.serialize as serialize
+
+    *
+    schema: str = "main"
+
+[clinic start generated code]*/
+
+static PyObject *
+serialize_impl(pysqlite_Connection *self, const char *schema)
+/*[clinic end generated code: output=b246381f2b3f1d84 input=f6782d98caa63008]*/
+{
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
+    sqlite3_int64 size;
+    const unsigned int flags = 0;
+    const char *data = (const char *)sqlite3_serialize(self->db, schema, &size,
+                                                       flags);
+
+    PyObject *ret = PyTuple_New(2);
+    if (ret == NULL) {
+        return NULL;
+    }
+    PyTuple_SET_ITEM(ret, 0, PyBytes_FromStringAndSize(data, (Py_ssize_t)size));
+    PyTuple_SET_ITEM(ret, 1, PyLong_FromUnsignedLong(size));
+    return ret;
+}
+
+static void
+reset_all_statements(sqlite3 *db)
+{
+    assert(db != NULL);
+    sqlite3_stmt *stmt = NULL;
+    while ((stmt = sqlite3_next_stmt(db, stmt))) {
+        if (sqlite3_stmt_busy(stmt)) {
+            (void)sqlite3_reset(stmt);
+        }
+    }
+}
+
+/*[clinic input]
+_sqlite3.Connection.deserialize as deserialize
+
+
+    data: object
+    /
+    *
+    schema: str = "main"
+
+[clinic start generated code]*/
+
+static PyObject *
+deserialize_impl(pysqlite_Connection *self, PyObject *data,
+                 const char *schema)
+/*[clinic end generated code: output=264709775101cd18 input=fc2cc53bd3736b89]*/
+{
+    if (PyObject_CheckBuffer(data) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "could not convert 'data' to buffer");
+        return NULL;
+    }
+
+    Py_buffer view;
+    if (PyObject_GetBuffer(data, &view, PyBUF_SIMPLE) < 0) {
+        return NULL;
+    }
+
+    if (view.len > 9223372036854775807) {
+        PyErr_SetString(PyExc_OverflowError, "'data' is too large");
+        PyBuffer_Release(&view);
+        return NULL;
+    }
+
+    if (self->db) {
+        reset_all_statements(self->db);
+    }
+
+    Py_ssize_t size = view.len;
+    unsigned char *buf = view.buf;
+    const unsigned int flags = 0;
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_deserialize(self->db, schema, buf, size, size, flags);
+    Py_END_ALLOW_THREADS
+
+    PyBuffer_Release(&view);
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(self->db);
+        return NULL;
+    }
+
+    Py_RETURN_TRUE;
+}
+
+
+/*[clinic input]
 _sqlite3.Connection.__enter__ as pysqlite_connection_enter
 
 Called when the connection is used as a context manager.
@@ -1874,6 +1971,8 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
+    SERIALIZE_METHODDEF
+    DESERIALIZE_METHODDEF
     {NULL, NULL}
 };
 
