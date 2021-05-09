@@ -1,1 +1,3 @@
-Don't crash / raise segfault when compiling an AST with recursive fields.
+When compiling :class:`ast.AST` objects with recursive references
+through :func:`compile`, the interpreter doesn't crash anymore instead
+it raises a :exc:`RecursionError`.
