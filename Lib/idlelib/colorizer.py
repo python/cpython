@@ -21,7 +21,7 @@ def make_pats():
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<MATCH_SOFTKW>match)\b" +
         r"(?!(?:[ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
-    )
+        )
     case_softkw_and_pattern = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW>case)\b" +
@@ -30,7 +30,7 @@ def make_pats():
         r"(?P<CASE_IF>\bif\b.*?)?" +  # possible guard
         r"(?P<CASE_AS>\bas\b.*?)?" +  # possible capture
         r":"
-    )
+        )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
@@ -43,10 +43,11 @@ def make_pats():
     dq3string = stringprefix + r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     prog = re.compile("|".join([
-        builtin, comment, string, kw,
-        match_softkw, case_softkw_and_pattern,
-        any("SYNC", [r"\n"]),
-    ]), re.DOTALL | re.MULTILINE)
+                                builtin, comment, string, kw,
+                                match_softkw, case_softkw_and_pattern,
+                                any("SYNC", [r"\n"]),
+                               ]),
+                      re.DOTALL | re.MULTILINE)
     guard_prog = re.compile("|".join([builtin, comment, string, kw]))
     pattern_prog = re.compile("|".join([
         builtin, comment, string, kw, any("UNDERSCORE_SOFTKW", [r"\b_\b"])
@@ -66,6 +67,7 @@ prog_group_name_to_tag = {
 
 
 def matched_named_groups(re_match):
+    "Get only the non-empty named groups from an re.Match object."
     return ((k, v) for (k, v) in re_match.groupdict().items() if v)
 
 
@@ -307,6 +309,16 @@ class ColorDelegator(Delegator):
                     return
 
     def _add_tag(self, start, end, head, matched_group_name):
+        """Add a tag to a given range in the text widget.
+
+        This is a utility function, receiving the range as `start` and
+        `end` positions, each of which is a number of characters
+        relative to the given `head` index in the text widget.
+
+        The tag to add is determined by `matched_group_name`, which is
+        the name of a regular expression "named group" as matched by
+        by the relevant highlighting regexps.
+        """
         tag = prog_group_name_to_tag.get(matched_group_name,
                                          matched_group_name)
         self.tag_add(tag,
@@ -314,7 +326,13 @@ class ColorDelegator(Delegator):
                      f"{head}+{end:d}c")
 
     def _add_tags_in_section(self, chars, head):
-        "Add tags to a given section of code."
+        """Parse and add highlighting tags to a given part of the text.
+
+        `chars` is a string with the text to parse and to which
+        highlighting is to be applied.
+
+            `head` is the index in the text widget where the text is found.
+        """
         for m in self.prog.finditer(chars):
             for name, matched_text in matched_named_groups(m):
                 a, b = m.span(name)
