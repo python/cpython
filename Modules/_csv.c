@@ -1515,7 +1515,7 @@ static PyType_Slot error_slots[] = {
 
 PyType_Spec error_spec = {
     .name = "_csv.Error",
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = error_slots,
 };
 
