@@ -1,0 +1,2 @@
+Add class binding to unbound super objects for allowing autosuper with class
+methods. Patch by Géry Ogam.
