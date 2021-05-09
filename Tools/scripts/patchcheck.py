@@ -77,16 +77,19 @@ def get_git_remote_default_branch(remote_name):
 
     It is typically called 'main', but may differ
     """
-    cmd = "git rev-parse --abbrev-ref {}".format(remote_name).split()
+    cmd = "git remote show {}".format(remote_name).split()
     try:
-        full_name = subprocess.check_output(cmd,
-                                            stderr=subprocess.DEVNULL,
-                                            cwd=SRCDIR,
-                                            encoding='UTF-8')
-        base_branch = full_name.split("/")[1]
-        return base_branch
+        remote_info = subprocess.check_output(cmd,
+                                              stderr=subprocess.DEVNULL,
+                                              cwd=SRCDIR,
+                                              encoding='UTF-8')
     except subprocess.CalledProcessError:
         return None
+    for line in remote_info.splitlines():
+        if "HEAD branch:" in line:
+            base_branch = line.split(":")[1].strip()
+            return base_branch
+    return None
 
 
 @status("Getting base branch for PR",
