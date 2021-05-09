@@ -267,19 +267,19 @@ class LineCacheInvalidationTests(unittest.TestCase):
     def test_checkcache_with_oserror(self):
         self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache(self.deleted_file)
-        self.assertTrue(2 == len(linecache.cache.keys()) and
-                        self.deleted_file not in linecache.cache.keys())
+        self.assertEqual(2, len(linecache.cache.keys()))
+        self.assertNotIn(self.deleted_file, linecache.cache.keys())
 
     def test_checkcache_with_not_match_size_or_timestamp(self):
         self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache(self.modified_file)
-        self.assertTrue(2 == len(linecache.cache.keys()) and
-                        self.modified_file not in linecache.cache.keys())
+        self.assertEqual(2, len(linecache.cache.keys()))
+        self.assertNotIn(self.modified_file, linecache.cache.keys())
 
-    def test_checkcache_with_no_parameters(self):
+    def test_checkcache_with_no_parameter(self):
         self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache()
-        self.assertTrue([self.unchange_file] == list(linecache.cache.keys()))
+        self.assertEqual([self.unchange_file], list(linecache.cache.keys()))
 
 
 if __name__ == "__main__":
