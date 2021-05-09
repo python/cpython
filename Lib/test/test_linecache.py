@@ -264,7 +264,7 @@ class LineCacheInvalidationTests(unittest.TestCase):
         with open(self.modified_file, 'w', encoding='utf-8') as source:
             source.write('print("was modified")')
 
-    def test_checkcache_with_oserror(self):
+    def test_checkcache_for_deleted_file(self):
         self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache(self.deleted_file)
         self.assertEqual(2, len(linecache.cache.keys()))
