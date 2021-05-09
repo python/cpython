@@ -8798,23 +8798,45 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     superobject *su = (superobject *)self;
     superobject *newobj;
 
-    if (obj == NULL || obj == Py_None || su->obj != NULL) {
-        /* Not binding to an object, or already bound */
+    if (su->obj != NULL) {
+        /* Already bound */
         Py_INCREF(self);
         return self;
     }
-    if (!Py_IS_TYPE(su, &PySuper_Type))
+    if (!Py_IS_TYPE(su, &PySuper_Type)) {
         /* If su is an instance of a (strict) subclass of super,
            call its type */
+        if (obj == NULL || obj == Py_None) {
+            /* No instance to bind to */
+            return PyObject_CallFunctionObjArgs((PyObject *)Py_TYPE(su),
+                                                su->type, type, NULL);
+        }
         return PyObject_CallFunctionObjArgs((PyObject *)Py_TYPE(su),
                                             su->type, obj, NULL);
+    }
     else {
         /* Inline the common case */
+        if (obj == NULL || obj == Py_None) {
+            /* No instance to bind to */
+            PyTypeObject *obj_type = supercheck(su->type, type);
+            if (obj_type == NULL)
+                return NULL;
+            newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
+                                                        NULL, NULL);
+            if (newobj == NULL)
+                return NULL;
+            Py_INCREF(su->type);
+            Py_INCREF(type);
+            newobj->type = su->type;
+            newobj->obj = type;
+            newobj->obj_type = obj_type;
+            return (PyObject *)newobj;
+        }
         PyTypeObject *obj_type = supercheck(su->type, obj);
         if (obj_type == NULL)
             return NULL;
         newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
-                                                 NULL, NULL);
+                                                    NULL, NULL);
         if (newobj == NULL)
             return NULL;
         Py_INCREF(su->type);
