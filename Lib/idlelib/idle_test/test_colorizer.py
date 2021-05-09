@@ -432,6 +432,43 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
         eq(text.tag_nextrange('SYNC', '30.0'), ('30.10', '32.0'))
 
+    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
+    def test_def_statement(self, mock_notify):
+        text = self.text
+        color = self.color
+        eq = self.assertEqual
+
+        # empty def
+        text.insert('insert', 'def')
+        text.tag_add('TODO', '1.0', 'end-1c')
+        color.recolorize_main()
+        eq(text.tag_names('1.0'), ('KEYWORD',))
+        text.delete('1.0', 'end-1c')
+
+        # def followed by identifier
+        text.insert('1.0', 'def foo:')
+        text.tag_add('TODO', '1.0', 'end-1c')
+        color.recolorize_main()
+        eq(text.tag_names('1.0'), ('KEYWORD',))
+        eq(text.tag_names('1.4'), ('DEFINITION',))
+        text.delete('1.0', 'end-1c')
+
+        # def followed by partial identifier
+        text.insert('1.0', 'def fo')
+        text.tag_add('TODO', '1.0', 'end-1c')
+        color.recolorize_main()
+        eq(text.tag_names('1.0'), ('KEYWORD',))
+        eq(text.tag_names('1.4'), ('DEFINITION',))
+        text.delete('1.0', 'end-1c')
+
+        # def followed by non-keyword
+        text.insert('1.0', 'def ++')
+        text.tag_add('TODO', '1.0', 'end-1c')
+        color.recolorize_main()
+        eq(text.tag_names('1.0'), ('KEYWORD',))
+        eq(text.tag_names('1.4'), ())
+        text.delete('1.0', 'end-1c')
+
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
     def test_removecolors(self, mock_notify, mock_recolorize):
