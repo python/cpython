@@ -3,6 +3,7 @@ from idlelib import colorizer
 from test.support import requires
 import unittest
 from unittest import mock
+from .tkinter_testing_utils import run_in_tk_mainloop
 
 from functools import partial
 import textwrap
@@ -487,6 +488,51 @@ class ColorDelegatorTest(unittest.TestCase):
         text.tag_add('TODO', '1.0', 'end-1c')
         color.recolorize_main()
         eq(text.tag_nextrange('STRING', '1.0'), ('1.0', '5.4'))
+
+    @run_in_tk_mainloop
+    def test_incremental_editing(self):
+        text = self.text
+        eq = self.assertEqual
+
+        # Simulate typing 'inte'. During this, the highlighting should
+        # change from normal to keyword to builtin to normal.
+        text.insert('insert', 'i')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        text.insert('insert', 'n')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ('1.0', '1.2'))
+
+        text.insert('insert', 't')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ('1.0', '1.3'))
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        text.insert('insert', 'e')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        # Simulate deleting three characters from the end of 'inte'.
+        # During this, the highlighting should change from normal to
+        # builtin to keyword to normal.
+        text.delete('insert-1c', 'insert')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ('1.0', '1.3'))
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        text.delete('insert-1c', 'insert')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ('1.0', '1.2'))
+
+        text.delete('insert-1c', 'insert')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
