@@ -24,12 +24,12 @@ def make_pats():
     case_default = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW>case)" +
-        r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_)[ \t]*:"
+        r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_\b)"
     )
     case_softkw_and_pattern = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW2>case)\b" +
-        r"(?![ \t]*[=,)\]}])"  # not followed by any of =,)]}
+        r"(?![ \t]*(?:[=,)\]}]|_\b))"  # not followed by any of =,)]}
     )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
