@@ -4278,7 +4278,6 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load) {
         return -1;
     }
-
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
