@@ -4211,7 +4211,33 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+        case TARGET(CALL_METHOD_KW): {
+            /* Designed to work in tamdem with LOAD_METHOD. Same as CALL_METHOD
+            but pops TOS to get a tuple of keyword names. */
+            PyObject **sp, *res, *meth;
+            PyObject *names = NULL;
 
+            names = POP();
+
+            sp = stack_pointer;
+
+            meth = PEEK(oparg + 2);
+            if (meth == NULL) {
+                res = call_function(tstate, &trace_info, &sp, oparg, names);
+                stack_pointer = sp;
+                (void)POP(); /* POP the NULL. */
+            }
+            else {
+                res = call_function(tstate, &trace_info, &sp, oparg + 1, names);
+                stack_pointer = sp;
+            }
+
+            PUSH(res);
+            if (res == NULL)
+                goto error;
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
         case TARGET(CALL_FUNCTION): {
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
