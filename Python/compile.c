@@ -4499,13 +4499,13 @@ compiler_call_helper(struct compiler *c,
     Py_ssize_t i, nseen, nelts, nkwelts;
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
+    
+    if (validate_keywords(c, keywords) == -1) {
+        return 0;
+    }
 
     if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
          goto ex_call;
-    }
-
-    if (validate_keywords(c, keywords) == -1) {
-        return 0;
     }
 
     for (i = 0; i < nelts; i++) {
