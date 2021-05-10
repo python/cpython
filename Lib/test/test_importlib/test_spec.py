@@ -815,10 +815,10 @@ class FactoryTests:
 
         self.assertEqual(spec.name, self.name)
         self.assertEqual(spec.loader, self.fileloader)
-        self.assertEqual(spec.origin, self.path)
+        self.assertEqual(spec.origin, os.path.basename(self.path))
         self.assertIs(spec.loader_state, None)
         self.assertIs(spec.submodule_search_locations, None)
-        self.assertEqual(spec.cached, self.cached)
+        self.assertEqual(spec.cached, os.path.relpath(self.cached))
         self.assertTrue(spec.has_location)
 
 (Frozen_FactoryTests,
