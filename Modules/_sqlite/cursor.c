@@ -457,7 +457,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     if (self->statement != NULL) {
         /* There is an active statement */
-        pysqlite_statement_reset(self->statement);
+        (void)pysqlite_statement_reset(self->statement);
     }
 
     /* reset description and rowcount */
@@ -471,10 +471,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
     if (PyTuple_SetItem(func_args, 0, Py_NewRef(operation)) != 0) {
         goto error;
-    }
-
-    if (self->statement) {
-        (void)pysqlite_statement_reset(self->statement);
     }
 
     Py_XSETREF(self->statement,
