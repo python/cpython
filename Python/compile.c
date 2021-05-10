@@ -4282,16 +4282,17 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl + kwdsl >= STACK_USE_GUIDELINE) {
+    if (argsl + kwdsl + (kwdsl != 0) >= STACK_USE_GUIDELINE) {
         return -1;
     }
-    /* Check that there are no * or **varargs types of arguments. */
+    /* Check that there are no *varargs types of arguments. */
     for (i = 0; i < argsl; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
             return -1;
         }
     }
+
     for (i = 0; i < kwdsl; i++) {
         keyword_ty kw = asdl_seq_GET(kwds, i);
         if (kw->arg == NULL) {
@@ -4497,17 +4498,17 @@ compiler_call_helper(struct compiler *c,
                      asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
-    nelts = asdl_seq_LEN(args);
-    nkwelts = asdl_seq_LEN(keywords);
-    
+
     if (validate_keywords(c, keywords) == -1) {
         return 0;
     }
 
+    nelts = asdl_seq_LEN(args);
+    nkwelts = asdl_seq_LEN(keywords);
+
     if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
          goto ex_call;
     }
-
     for (i = 0; i < nelts; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
