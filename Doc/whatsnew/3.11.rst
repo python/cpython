@@ -97,6 +97,7 @@ Optimizations
 
 * "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
   almost eliminated when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
 Build and C API Changes
 =======================
