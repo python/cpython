@@ -3478,9 +3478,9 @@ These functions are all available on Linux only.
    indirectly through the :class:`PathLike` interface). If it is a str,
    it is encoded with the :term:`filesystem encoding and error handler`.  *flags* may be
    :data:`XATTR_REPLACE` or :data:`XATTR_CREATE`. If :data:`XATTR_REPLACE` is
-   given and the attribute does not exist, ``EEXISTS`` will be raised.
+   given and the attribute does not exist, ``ENODATA`` will be raised.
    If :data:`XATTR_CREATE` is given and the attribute already exists, the
-   attribute will not be created and ``ENODATA`` will be raised.
+   attribute will not be created and ``EEXISTS`` will be raised.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.

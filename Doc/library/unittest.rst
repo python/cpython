@@ -331,8 +331,9 @@ the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
    Test discovery supports :term:`namespace packages <namespace package>`
-   for start directory. Note that you need to the top level directory too.
-   (e.g. ``python -m unittest discover -s root/namespace -t root``).
+   for the start directory. Note that you need to specify the top level
+   directory too (e.g.
+   ``python -m unittest discover -s root/namespace -t root``).
 
 
 .. _organizing-tests:

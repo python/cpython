@@ -331,7 +331,7 @@ static PyType_Slot winapi_overlapped_type_slots[] = {
 static PyType_Spec winapi_overlapped_type_spec = {
     .name = "_winapi.Overlapped",
     .basicsize = sizeof(OverlappedObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = winapi_overlapped_type_slots,
 };
 

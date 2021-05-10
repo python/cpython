@@ -5195,6 +5195,9 @@ environment.  Code objects are returned by the built-in :func:`compile` function
 and can be extracted from function objects through their :attr:`__code__`
 attribute. See also the :mod:`code` module.
 
+Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
+``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
+
 .. index::
    builtin: exec
    builtin: eval

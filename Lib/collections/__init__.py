@@ -581,6 +581,10 @@ class Counter(dict):
         # Needed so that self[missing_item] does not raise KeyError
         return 0
 
+    def total(self):
+        'Sum of the counts'
+        return sum(self.values())
+
     def most_common(self, n=None):
         '''List the n most common elements and their counts from the most
         common to the least.  If n is None, then list all element counts.

@@ -16,6 +16,8 @@ from test.support import ALWAYS_EQ
 from test.support import threading_helper
 from datetime import timedelta
 
+python_version = sys.version_info[:2]
+
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(enum))
     if os.path.exists('Doc/library/enum.rst'):
@@ -352,17 +354,38 @@ class TestEnum(unittest.TestCase):
         self.assertTrue(IntLogic.true)
         self.assertFalse(IntLogic.false)
 
-    def test_contains(self):
+    @unittest.skipIf(
+            python_version >= (3, 12),
+            '__contains__ now returns True/False for all inputs',
+            )
+    def test_contains_er(self):
         Season = self.Season
         self.assertIn(Season.AUTUMN, Season)
         with self.assertRaises(TypeError):
-            3 in Season
+            with self.assertWarns(DeprecationWarning):
+                3 in Season
         with self.assertRaises(TypeError):
-            'AUTUMN' in Season
-
+            with self.assertWarns(DeprecationWarning):
+                'AUTUMN' in Season
         val = Season(3)
         self.assertIn(val, Season)
+        #
+        class OtherEnum(Enum):
+            one = 1; two = 2
+        self.assertNotIn(OtherEnum.two, Season)
 
+    @unittest.skipIf(
+            python_version < (3, 12),
+            '__contains__ only works with enum memmbers before 3.12',
+            )
+    def test_contains_tf(self):
+        Season = self.Season
+        self.assertIn(Season.AUTUMN, Season)
+        self.assertTrue(3 in Season)
+        self.assertFalse('AUTUMN' in Season)
+        val = Season(3)
+        self.assertIn(val, Season)
+        #
         class OtherEnum(Enum):
             one = 1; two = 2
         self.assertNotIn(OtherEnum.two, Season)
@@ -528,8 +551,16 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(str(TestFloat.one), 'one')
         self.assertEqual('{}'.format(TestFloat.one), 'TestFloat success!')
 
-    @unittest.skipUnless(
-            sys.version_info[:2] < (3, 12),
+    @unittest.skipIf(
+            python_version < (3, 12),
+            'mixin-format is still using member.value',
+            )
+    def test_mixin_format_warning(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(f'{self.Grades.B}', 'Grades.B')
+
+    @unittest.skipIf(
+            python_version >= (3, 12),
             'mixin-format now uses member instead of member.value',
             )
     def test_mixin_format_warning(self):
@@ -537,7 +568,11 @@ class TestEnum(unittest.TestCase):
             self.assertEqual(f'{self.Grades.B}', '4')
 
     def assertFormatIsValue(self, spec, member):
-        self.assertEqual(spec.format(member), spec.format(member.value))
+        if python_version < (3, 12) and (not spec or spec in ('{}','{:}')):
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(spec.format(member), spec.format(member.value))
+        else:
+            self.assertEqual(spec.format(member), spec.format(member.value))
 
     def test_format_enum_date(self):
         Holiday = self.Holiday
@@ -2202,7 +2237,7 @@ class TestEnum(unittest.TestCase):
                 description   = 'Bn$',      3
 
     @unittest.skipUnless(
-            sys.version_info[:2] == (3, 9),
+            python_version == (3, 9),
             'private variables are now normal attributes',
             )
     def test_warning_for_private_variables(self):
@@ -2225,7 +2260,7 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(Private._Private__major_, 'Hoolihan')
 
     @unittest.skipUnless(
-            sys.version_info[:2] < (3, 12),
+            python_version < (3, 12),
             'member-member access now raises an exception',
             )
     def test_warning_for_member_from_member_access(self):
@@ -2237,7 +2272,7 @@ class TestEnum(unittest.TestCase):
         self.assertIs(Di.NO, nope)
 
     @unittest.skipUnless(
-            sys.version_info[:2] >= (3, 12),
+            python_version >= (3, 12),
             'member-member access currently issues a warning',
             )
     def test_exception_for_member_from_member_access(self):
@@ -2617,19 +2652,41 @@ class TestFlag(unittest.TestCase):
         test_pickle_dump_load(self.assertIs, FlagStooges.CURLY|FlagStooges.MOE)
         test_pickle_dump_load(self.assertIs, FlagStooges)
 
-    def test_contains(self):
+    @unittest.skipIf(
+            python_version >= (3, 12),
+            '__contains__ now returns True/False for all inputs',
+            )
+    def test_contains_er(self):
         Open = self.Open
         Color = self.Color
         self.assertFalse(Color.BLACK in Open)
         self.assertFalse(Open.RO in Color)
         with self.assertRaises(TypeError):
-            'BLACK' in Color
+            with self.assertWarns(DeprecationWarning):
+                'BLACK' in Color
         with self.assertRaises(TypeError):
-            'RO' in Open
+            with self.assertWarns(DeprecationWarning):
+                'RO' in Open
         with self.assertRaises(TypeError):
-            1 in Color
+            with self.assertWarns(DeprecationWarning):
+                1 in Color
         with self.assertRaises(TypeError):
-            1 in Open
+            with self.assertWarns(DeprecationWarning):
+                1 in Open
+
+    @unittest.skipIf(
+            python_version < (3, 12),
+            '__contains__ only works with enum memmbers before 3.12',
+            )
+    def test_contains_tf(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertFalse(Color.BLACK in Open)
+        self.assertFalse(Open.RO in Color)
+        self.assertFalse('BLACK' in Color)
+        self.assertFalse('RO' in Open)
+        self.assertTrue(1 in Color)
+        self.assertTrue(1 in Open)
 
     def test_member_contains(self):
         Perm = self.Perm
@@ -2954,10 +3011,15 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(repr(Open(~4)), '-5')
 
+    @unittest.skipUnless(
+            python_version < (3, 12),
+            'mixin-format now uses member instead of member.value',
+            )
     def test_format(self):
-        Perm = self.Perm
-        self.assertEqual(format(Perm.R, ''), '4')
-        self.assertEqual(format(Perm.R | Perm.X, ''), '5')
+        with self.assertWarns(DeprecationWarning):
+            Perm = self.Perm
+            self.assertEqual(format(Perm.R, ''), '4')
+            self.assertEqual(format(Perm.R | Perm.X, ''), '5')
 
     def test_or(self):
         Perm = self.Perm
@@ -3189,7 +3251,11 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(len(lst), len(Thing))
         self.assertEqual(len(Thing), 0, Thing)
 
-    def test_contains(self):
+    @unittest.skipIf(
+            python_version >= (3, 12),
+            '__contains__ now returns True/False for all inputs',
+            )
+    def test_contains_er(self):
         Open = self.Open
         Color = self.Color
         self.assertTrue(Color.GREEN in Color)
@@ -3197,13 +3263,33 @@ class TestIntFlag(unittest.TestCase):
         self.assertFalse(Color.GREEN in Open)
         self.assertFalse(Open.RW in Color)
         with self.assertRaises(TypeError):
-            'GREEN' in Color
+            with self.assertWarns(DeprecationWarning):
+                'GREEN' in Color
         with self.assertRaises(TypeError):
-            'RW' in Open
+            with self.assertWarns(DeprecationWarning):
+                'RW' in Open
         with self.assertRaises(TypeError):
-            2 in Color
+            with self.assertWarns(DeprecationWarning):
+                2 in Color
         with self.assertRaises(TypeError):
-            2 in Open
+            with self.assertWarns(DeprecationWarning):
+                2 in Open
+
+    @unittest.skipIf(
+            python_version < (3, 12),
+            '__contains__ only works with enum memmbers before 3.12',
+            )
+    def test_contains_tf(self):
+        Open = self.Open
+        Color = self.Color
+        self.assertTrue(Color.GREEN in Color)
+        self.assertTrue(Open.RW in Open)
+        self.assertTrue(Color.GREEN in Open)
+        self.assertTrue(Open.RW in Color)
+        self.assertFalse('GREEN' in Color)
+        self.assertFalse('RW' in Open)
+        self.assertTrue(2 in Color)
+        self.assertTrue(2 in Open)
 
     def test_member_contains(self):
         Perm = self.Perm
@@ -3685,7 +3771,7 @@ class TestIntEnumConvert(unittest.TestCase):
                           if name[0:2] not in ('CO', '__')],
                          [], msg='Names other than CONVERT_TEST_* found.')
 
-    @unittest.skipUnless(sys.version_info[:2] == (3, 8),
+    @unittest.skipUnless(python_version == (3, 8),
                          '_convert was deprecated in 3.8')
     def test_convert_warn(self):
         with self.assertWarns(DeprecationWarning):
@@ -3694,7 +3780,7 @@ class TestIntEnumConvert(unittest.TestCase):
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
-    @unittest.skipUnless(sys.version_info >= (3, 9),
+    @unittest.skipUnless(python_version >= (3, 9),
                          '_convert was removed in 3.9')
     def test_convert_raise(self):
         with self.assertRaises(AttributeError):
@@ -3703,6 +3789,10 @@ class TestIntEnumConvert(unittest.TestCase):
                 ('test.test_enum', '__main__')[__name__=='__main__'],
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
+    @unittest.skipUnless(
+            python_version < (3, 12),
+            'mixin-format now uses member instead of member.value',
+            )
     def test_convert_repr_and_str(self):
         module = ('test.test_enum', '__main__')[__name__=='__main__']
         test_type = enum.IntEnum._convert_(
@@ -3711,7 +3801,8 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_STRING_TEST_'))
         self.assertEqual(repr(test_type.CONVERT_STRING_TEST_NAME_A), '%s.CONVERT_STRING_TEST_NAME_A' % module)
         self.assertEqual(str(test_type.CONVERT_STRING_TEST_NAME_A), 'CONVERT_STRING_TEST_NAME_A')
-        self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(format(test_type.CONVERT_STRING_TEST_NAME_A), '5')
 
 # global names for StrEnum._convert_ test
 CONVERT_STR_TEST_2 = 'goodbye'

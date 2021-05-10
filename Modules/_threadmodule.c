@@ -312,7 +312,8 @@ static PyType_Slot lock_type_slots[] = {
 static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = lock_type_slots,
 };
 
@@ -683,7 +684,7 @@ static PyType_Slot local_dummy_type_slots[] = {
 static PyType_Spec local_dummy_type_spec = {
     .name = "_thread._localdummy",
     .basicsize = sizeof(localdummyobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = local_dummy_type_slots,
 };
 

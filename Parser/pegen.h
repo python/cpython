@@ -87,6 +87,11 @@ typedef struct {
 } KeyValuePair;
 
 typedef struct {
+    expr_ty key;
+    pattern_ty pattern;
+} KeyPatternPair;
+
+typedef struct {
     arg_ty arg;
     expr_ty value;
 } NameDefaultPair;
@@ -148,7 +153,7 @@ void * _PyPegen_seq_last_item(asdl_seq *seq);
 Py_LOCAL_INLINE(void *)
 RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
                            Py_ssize_t lineno, Py_ssize_t col_offset,
-                           Py_ssize_t end_lineno, Py_ssize_t end_col_offset, 
+                           Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                            const char *errmsg, ...)
 {
     va_list va;
@@ -259,6 +264,9 @@ expr_ty _PyPegen_set_expr_context(Parser *, expr_ty, expr_context_ty);
 KeyValuePair *_PyPegen_key_value_pair(Parser *, expr_ty, expr_ty);
 asdl_expr_seq *_PyPegen_get_keys(Parser *, asdl_seq *);
 asdl_expr_seq *_PyPegen_get_values(Parser *, asdl_seq *);
+KeyPatternPair *_PyPegen_key_pattern_pair(Parser *, expr_ty, pattern_ty);
+asdl_expr_seq *_PyPegen_get_pattern_keys(Parser *, asdl_seq *);
+asdl_pattern_seq *_PyPegen_get_patterns(Parser *, asdl_seq *);
 NameDefaultPair *_PyPegen_name_default_pair(Parser *, arg_ty, expr_ty, Token *);
 SlashWithDefault *_PyPegen_slash_with_default(Parser *, asdl_arg_seq *, asdl_seq *);
 StarEtc *_PyPegen_star_etc(Parser *, arg_ty, asdl_seq *, arg_ty);
@@ -275,6 +283,8 @@ expr_ty _PyPegen_collect_call_seqs(Parser *, asdl_expr_seq *, asdl_seq *,
                      int lineno, int col_offset, int end_lineno,
                      int end_col_offset, PyArena *arena);
 expr_ty _PyPegen_concatenate_strings(Parser *p, asdl_seq *);
+expr_ty _PyPegen_ensure_imaginary(Parser *p, expr_ty);
+expr_ty _PyPegen_ensure_real(Parser *p, expr_ty);
 asdl_seq *_PyPegen_join_sequences(Parser *, asdl_seq *, asdl_seq *);
 int _PyPegen_check_barry_as_flufl(Parser *, Token *);
 mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);

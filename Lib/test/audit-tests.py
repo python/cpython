@@ -367,13 +367,14 @@ def test_sqlite3():
             print(event, *args)
 
     sys.addaudithook(hook)
-    cx = sqlite3.connect(":memory:")
+    cx1 = sqlite3.connect(":memory:")
+    cx2 = sqlite3.Connection(":memory:")
 
     # Configured without --enable-loadable-sqlite-extensions
     if hasattr(sqlite3.Connection, "enable_load_extension"):
-        cx.enable_load_extension(False)
+        cx1.enable_load_extension(False)
         try:
-            cx.load_extension("test")
+            cx1.load_extension("test")
         except sqlite3.OperationalError:
             pass
         else:

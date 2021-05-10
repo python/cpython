@@ -10,7 +10,7 @@ from test import support
 from test.support import warnings_helper
 
 with warnings_helper.check_warnings(
-    ("The distutils package is deprecated", DeprecationWarning)):
+    ("The distutils package is deprecated", DeprecationWarning), quiet=True):
 
     import distutils.tests
 
