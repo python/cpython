@@ -4794,8 +4794,10 @@ scan_back_to_entry_start(unsigned char *p) {
 }
 
 static inline unsigned char *
-skip_to_next_entry(unsigned char *p) {
-    for (; (p[0]&128) == 0; p++);
+skip_to_next_entry(unsigned char *p, unsigned char *end) {
+    while (p < end && ((p[0] & 128) == 0)) {
+        p++;
+    }
     return p;
 }
 
@@ -4863,7 +4865,7 @@ get_exception_handler(PyCodeObject *code, int index)
             parse_block(scan, &res);
             return res;
         }
-        scan = skip_to_next_entry(scan);
+        scan = skip_to_next_entry(scan, end);
     }
     res.b_handler = -1;
     return res;
