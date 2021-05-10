@@ -447,10 +447,11 @@ class ColorDelegatorTest(unittest.TestCase):
         """
         text = self.text
 
-        text.delete('1.0', 'end-1c')
-        text.insert('insert', source)
-        text.tag_add('TODO', '1.0', 'end-1c')
-        self.color.recolorize_main()
+        with mock.patch.object(colorizer.ColorDelegator, 'notify_range'):
+            text.delete('1.0', 'end-1c')
+            text.insert('insert', source)
+            text.tag_add('TODO', '1.0', 'end-1c')
+            self.color.recolorize_main()
 
         # Make a dict with highlighting tag ranges in the Text widget.
         text_tag_ranges = {}
@@ -461,10 +462,10 @@ class ColorDelegatorTest(unittest.TestCase):
 
         self.assertEqual(text_tag_ranges, tag_ranges)
 
-        text.delete('1.0', 'end-1c')
+        with mock.patch.object(colorizer.ColorDelegator, 'notify_range'):
+            text.delete('1.0', 'end-1c')
 
-    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
-    def test_def_statement(self, mock_notify):
+    def test_def_statement(self):
         # empty def
         self._assert_highlighting('def', {'KEYWORD': [('1.0', '1.3')]})
 
@@ -479,8 +480,7 @@ class ColorDelegatorTest(unittest.TestCase):
         # def followed by non-keyword
         self._assert_highlighting('def ++', {'KEYWORD': [('1.0', '1.3')]})
 
-    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
-    def test_match_soft_keyword(self, mock_notify):
+    def test_match_soft_keyword(self):
         # empty match
         self._assert_highlighting('match', {'KEYWORD': [('1.0', '1.5')]})
 
@@ -510,8 +510,7 @@ class ColorDelegatorTest(unittest.TestCase):
         # match followed by a lone underscore
         self._assert_highlighting('match _:', {'KEYWORD': [('1.0', '1.5')]})
 
-    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
-    def test_case_soft_keyword(self, mock_notify):
+    def test_case_soft_keyword(self):
         # empty case
         self._assert_highlighting('case', {'KEYWORD': [('1.0', '1.4')]})
 
