@@ -50,7 +50,8 @@ def get_git_branch():
     try:
         return subprocess.check_output(cmd,
                                        stderr=subprocess.DEVNULL,
-                                       cwd=SRCDIR)
+                                       cwd=SRCDIR,
+                                       encoding='UTF-8')
     except subprocess.CalledProcessError:
         return None
 
@@ -64,10 +65,31 @@ def get_git_upstream_remote():
     try:
         subprocess.check_output(cmd,
                                 stderr=subprocess.DEVNULL,
-                                cwd=SRCDIR)
+                                cwd=SRCDIR,
+                                encoding='UTF-8')
     except subprocess.CalledProcessError:
         return "origin"
     return "upstream"
+
+
+def get_git_remote_default_branch(remote_name):
+    """Get the name of the default branch for the given remote
+
+    It is typically called 'main', but may differ
+    """
+    cmd = "git remote show {}".format(remote_name).split()
+    try:
+        remote_info = subprocess.check_output(cmd,
+                                              stderr=subprocess.DEVNULL,
+                                              cwd=SRCDIR,
+                                              encoding='UTF-8')
+    except subprocess.CalledProcessError:
+        return None
+    for line in remote_info.splitlines():
+        if "HEAD branch:" in line:
+            base_branch = line.split(":")[1].strip()
+            return base_branch
+    return None
 
 
 @status("Getting base branch for PR",
@@ -76,16 +98,16 @@ def get_base_branch():
     if not os.path.exists(os.path.join(SRCDIR, '.git')):
         # Not a git checkout, so there's no base branch
         return None
+    upstream_remote = get_git_upstream_remote()
     version = sys.version_info
     if version.releaselevel == 'alpha':
-        base_branch = "master"
+        base_branch = get_git_remote_default_branch(upstream_remote)
     else:
         base_branch = "{0.major}.{0.minor}".format(version)
     this_branch = get_git_branch()
     if this_branch is None or this_branch == base_branch:
         # Not on a git PR branch, so there's no base branch
         return None
-    upstream_remote = get_git_upstream_remote()
     return upstream_remote + "/" + base_branch
 
 
