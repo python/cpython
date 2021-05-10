@@ -1,0 +1,2 @@
+No longer eagerly makes import filenames absolute, except for extension
+modules, which was introduced in 3.8.10.
