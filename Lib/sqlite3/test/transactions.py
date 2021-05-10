@@ -129,10 +129,7 @@ class TransactionTests(unittest.TestCase):
         self.con1.commit()
 
     def test_rollback_cursor_consistency(self):
-        """
-        Checks if cursors on the connection are set into a "reset" state
-        when a rollback is done on the connection.
-        """
+        """Checks if that cursors behave correctly after rollback."""
         con = sqlite.connect(":memory:")
         cur = con.cursor()
         cur.execute("create table test(x)")
@@ -140,8 +137,51 @@ class TransactionTests(unittest.TestCase):
         cur.execute("select 1 union select 2 union select 3")
 
         con.rollback()
-        with self.assertRaises(sqlite.InterfaceError):
-            cur.fetchall()
+        self.assertEqual(cur.fetchall(), [(1,), (2,), (3,)])
+
+class RollbackTests(unittest.TestCase):
+    """bpo-33376: Duplicate rows can be returned after rollback.
+
+    Similar to test_commit_cursor_reset in regression.py,
+    Connection::rollback() used to reset statements and cursors, which could
+    cause statements to be reset again when they shouldn't be.
+    """
+    def setUp(self):
+        self.con = sqlite.connect(":memory:")
+        self.assertEqual(self.con.isolation_level, "")
+        self.cur1 = self.con.cursor()
+        self.cur2 = self.con.cursor()
+        self.assertIsNot(self.cur1, self.cur2)
+        self.cur1.executescript("""
+            create table t(c);
+            insert into t values(0);
+            insert into t values(1);
+            insert into t values(2);
+        """)
+        self.cur1.execute("begin transaction")
+        select = "select c from t"
+        self.cur1.execute(select)
+        self.con.rollback()
+        self.res = self.cur2.execute(select)  # Reusing stmt from cache
+
+    def tearDown(self):
+        self.con.close()
+
+    def _check_rows(self):
+        for i, row in enumerate(self.res):
+            self.assertEqual(row[0], i)
+
+    def test_no_duplicate_rows_after_rollback_del_cursor(self):
+        del self.cur1
+        self._check_rows()
+
+    def test_no_duplicate_rows_after_rollback_close_cursor(self):
+        self.cur1.close()
+        self._check_rows()
+
+    def test_no_duplicate_rows_after_rollback_new_query(self):
+        self.cur1.execute("select c from t where c = 1")
+        self._check_rows()
 
 class SpecialCommandTests(unittest.TestCase):
     def setUp(self):
@@ -197,6 +237,7 @@ class TransactionalDDL(unittest.TestCase):
 
 def suite():
     tests = [
+        RollbackTests,
         SpecialCommandTests,
         TransactionTests,
         TransactionalDDL,
