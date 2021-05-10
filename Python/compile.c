@@ -7468,8 +7468,10 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
 }
 
 static void
-offset_derefs(basicblock *entryblock, int nlocals)
+fix_cell_offsets(struct compiler *c, basicblock *entryblock)
 {
+    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
@@ -7541,8 +7543,7 @@ assemble(struct compiler *c, int addNone)
     a.a_entry = entryblock;
     a.a_nblocks = nblocks;
 
-    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
-    offset_derefs(entryblock, (int)PyDict_GET_SIZE(c->u->u_varnames));
+    fix_cell_offsets(c, entryblock);
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
