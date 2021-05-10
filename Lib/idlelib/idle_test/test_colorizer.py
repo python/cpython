@@ -435,22 +435,31 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
         eq(text.tag_nextrange('SYNC', '30.0'), ('30.10', '32.0'))
 
-    def _assert_highlighting(self, source, tags):
+    def _assert_highlighting(self, source, tag_ranges):
+        """Check highlighting of a given piece of code.
+
+        This inserts just this code into the Text widget. It will then
+        check that the resulting highlighting tag ranges exactly match
+        those described in the given `tag_ranges` dict.
+
+        Note that the irrelevant tags 'sel', 'TODO' and 'SYNC' are
+        ignored.
+        """
         text = self.text
-        color = self.color
-        eq = self.assertEqual
 
         text.delete('1.0', 'end-1c')
         text.insert('insert', source)
         text.tag_add('TODO', '1.0', 'end-1c')
-        color.recolorize_main()
+        self.color.recolorize_main()
 
-        text_tags = {}
+        # Make a dict with highlighting tag ranges in the Text widget.
+        text_tag_ranges = {}
         for tag in set(text.tag_names()) - {'sel', 'TODO', 'SYNC'}:
-            tag_ranges = [rng.string for rng in text.tag_ranges(tag)]
-            for pair in zip(tag_ranges[::2], tag_ranges[1::2]):
-                text_tags.setdefault(tag, []).append(pair)
-        eq(text_tags, tags)
+            indexes = [rng.string for rng in text.tag_ranges(tag)]
+            for index_pair in zip(indexes[::2], indexes[1::2]):
+                text_tag_ranges.setdefault(tag, []).append(index_pair)
+
+        self.assertEqual(text_tag_ranges, tag_ranges)
 
         text.delete('1.0', 'end-1c')
 
