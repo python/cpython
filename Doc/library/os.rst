@@ -4212,7 +4212,7 @@ written in Python, such as a mail server's external command delivery program.
    Changes to :data:`sys.stdin`, etc. are not reflected in the environment of
    the executed command. If *command* generates any output, it will be sent to
    the interpreter standard output stream. The C standard does not
-   specify the meaning of the return value of C function, so the return
+   specify the meaning of the return value of the C function, so the return
    value of the Python function is system-dependent.
 
    On Unix, the return value is the exit status of the process encoded in the
