@@ -2053,7 +2053,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
         qualname = co->co_name;
 
     if (co->co_nfreevars) {
-        int i = co->co_nlocals + co->co_ncellvars;
+        int i = co->co_nlocals + co->co_nplaincellvars;
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
@@ -7188,11 +7188,10 @@ extern void _Py_set_localsplus_info(int, PyObject *, _PyLocalsPlusKind,
                                    PyObject *, _PyLocalsPlusKinds);
 
 static void
-compute_localsplus_info(struct compiler *c,
+compute_localsplus_info(struct compiler *c, int nlocalsplus,
                         PyObject *names, _PyLocalsPlusKinds kinds)
 {
-    int nlocalsplus = (int)PyTuple_GET_SIZE(names);
-    (void)nlocalsplus; // Avoid compiler errors for unused variable
+    assert(PyTuple_GET_SIZE(names) == nlocalsplus);
 
     PyObject *k, *v;
     Py_ssize_t pos = 0;
@@ -7201,15 +7200,26 @@ compute_localsplus_info(struct compiler *c,
         assert(offset >= 0);
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
-        _Py_set_localsplus_info(offset, k, CO_FAST_LOCAL, names, kinds);
+        _PyLocalsPlusKind kind = CO_FAST_LOCAL;
+        if (PyDict_GetItem(c->u->u_cellvars, k) != NULL) {
+            kind |= CO_FAST_CELL;
+        }
+        _Py_set_localsplus_info(offset, k, kind, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
 
+    // This counter mirrors the fix done in fix_cell_offsets().
+    int numdropped = 0;
     pos = 0;
     while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
+        if (PyDict_GetItem(c->u->u_varnames, k) != NULL) {
+            // Skip cells that are already covered by locals.
+            numdropped += 1;
+            continue;
+        }
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
-        offset += nlocals;
+        offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
     }
@@ -7218,7 +7228,7 @@ compute_localsplus_info(struct compiler *c,
     while (PyDict_Next(c->u->u_freevars, &pos, &k, &v)) {
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
-        offset += nlocals;
+        offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
@@ -7226,7 +7236,7 @@ compute_localsplus_info(struct compiler *c,
 
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
-         int maxdepth)
+         int maxdepth, int nlocalsplus)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
@@ -7264,15 +7274,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
     int kwonlyargcount = (int)c->u->u_kwonlyargcount;
 
-    Py_ssize_t nlocals = PyDict_GET_SIZE(c->u->u_varnames);
-    Py_ssize_t ncellvars = PyDict_GET_SIZE(c->u->u_cellvars);
-    Py_ssize_t nfreevars = PyDict_GET_SIZE(c->u->u_freevars);
-    assert(nlocals < INT_MAX);
-    assert(ncellvars < INT_MAX);
-    assert(nfreevars < INT_MAX);
-    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
-    int nlocalsplus = (int)nlocals + (int)ncellvars + (int)nfreevars;
-
     localsplusnames = PyTuple_New(nlocalsplus);
     if (localsplusnames == NULL) {
         goto error;
@@ -7280,7 +7281,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (_PyCode_InitLocalsPlusKinds(nlocalsplus, &localspluskinds) < 0) {
         goto error;
     }
-    compute_localsplus_info(c, localsplusnames, localspluskinds);
+    compute_localsplus_info(c, nlocalsplus, localsplusnames, localspluskinds);
 
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
@@ -7469,14 +7470,59 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
     }
 }
 
-static void
+static int
 fix_cell_offsets(struct compiler *c, basicblock *entryblock)
 {
     assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(c->u->u_freevars);
+    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
+    int nlocalsplus = nlocals + ncellvars + nfreevars;
+
+    int maxoldoffset = ncellvars + nfreevars;
+    int *fixedmap = PyMem_New(int, maxoldoffset + 1);
+    if (fixedmap == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    for (int i = 0; i < maxoldoffset; i++) {
+        fixedmap[i] = nlocals + i;
+    }
+
+    // First map cell vars to args.
+    PyObject *varname, *cellindex;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(c->u->u_cellvars, &pos, &varname, &cellindex)) {
+        PyObject *varindex = PyDict_GetItem(c->u->u_varnames, varname);
+        if (varindex != NULL) {
+            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
+            assert(PyLong_AS_LONG(varindex) < INT_MAX);
+            int oldindex = (int)PyLong_AS_LONG(cellindex);
+            int argoffset = (int)PyLong_AS_LONG(varindex);
+            fixedmap[oldindex] = argoffset;
+        }
+    }
+    int numdropped = 0;
+    for (int i = 0; i < maxoldoffset; i++) {
+        if (fixedmap[i] == i + nlocals) {
+            fixedmap[i] -= numdropped;
+        }
+        else {
+            // It was a duplicate (cell/arg).
+            numdropped += 1;
+        }
+    }
+
+    // Then update offsets, either relative to locals or by cell2var.
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
+            // This is called before extended args are generated.
+            assert(inst->i_opcode != EXTENDED_ARG);
+            int oldoffset = inst->i_oparg;
             switch(inst->i_opcode) {
                 case MAKE_CELL:
                 case LOAD_CLOSURE:
@@ -7484,10 +7530,13 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock)
                 case STORE_DEREF:
                 case DELETE_DEREF:
                 case LOAD_CLASSDEREF:
-                    inst->i_oparg += nlocals;
+                    inst->i_oparg = fixedmap[oldoffset];
             }
         }
     }
+
+    PyMem_Free(fixedmap);
+    return nlocalsplus - numdropped;
 }
 
 static PyCodeObject *
@@ -7528,6 +7577,7 @@ assemble(struct compiler *c, int addNone)
     }
     assert(entryblock != NULL);
 
+    // This must be called before fix_cell_offsets().
     if (insert_prefix_instructions(c, entryblock)) {
         goto error;
     }
@@ -7545,7 +7595,10 @@ assemble(struct compiler *c, int addNone)
     a.a_entry = entryblock;
     a.a_nblocks = nblocks;
 
-    fix_cell_offsets(c, entryblock);
+    int nlocalsplus = fix_cell_offsets(c, entryblock);
+    if (nlocalsplus < 0) {
+        goto error;
+    }
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
@@ -7610,7 +7663,7 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
 
-    co = makecode(c, &a, consts, maxdepth);
+    co = makecode(c, &a, consts, maxdepth, nlocalsplus);
  error:
     Py_XDECREF(consts);
     assemble_free(&a);

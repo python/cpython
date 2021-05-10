@@ -87,7 +87,8 @@ struct PyCodeObject {
     // redundant values (derived from co_localsplusnames and co_localspluskinds)
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
-    int co_ncellvars;           /* number of cell variables */
+    int co_nplaincellvars;      /* number of non-arg cell variables */
+    int co_ncellvars;           /* total number of cell variables */
     int co_nfreevars;           /* number of free variables */
     // lazily-computed values
     PyObject *co_varnames;      /* tuple of strings (local variable names) */

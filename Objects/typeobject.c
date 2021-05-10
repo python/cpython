@@ -11,7 +11,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
-#include "pycore_frame.h"         // _PyFrame_OpAlreadyRan
+#include "pycore_frame.h"         // _PyFrame_OpAlreadyRan()
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
@@ -8879,19 +8879,10 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     PyObject *obj = f->f_localsptr[0];
-    int i;
-    if (obj == NULL && co->co_cell2arg) {
-        /* The first argument might be a cell. */
-        for (i = 0; i < co->co_ncellvars; i++) {
-            if (co->co_cell2arg[i] == 0) {
-                int celloffset = co->co_nlocals + i;
-                PyObject *cell = f->f_localsptr[celloffset];
-                if (PyCell_Check(cell) &&
-                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, celloffset)) {
-                    obj = PyCell_GET(cell);
-                }
-                break;
-            }
+    // The first argument might be a cell.
+    if (obj != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
+        if (PyCell_Check(obj) && _PyFrame_OpAlreadyRan(f, MAKE_CELL, 0)) {
+            obj = PyCell_GET(obj);
         }
     }
     if (obj == NULL) {
@@ -8902,9 +8893,10 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 
     // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    i = co->co_nlocals + co->co_ncellvars;
-    for (; i < co->co_nlocalsplus; i++) {
-        assert(co->co_localspluskinds[i] & CO_FAST_FREE);
+    for (int i = co->co_nlocals; i < co->co_nlocalsplus; i++) {
+        if ((co->co_localspluskinds[i] & CO_FAST_FREE) == 0) {
+            continue;
+        }
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
