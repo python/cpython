@@ -299,8 +299,8 @@ Return the value for key if present, otherwise default.
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
-                  Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=34851b5dc1c664dc input=66b993b8349fa8c1]*/
+                  Py_ssize_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=b4e55f8b6d482bc4 input=66b993b8349fa8c1]*/
 {
     datum dbm_key, val;
     _dbm_state *state = PyType_GetModuleState(cls);
@@ -331,9 +331,8 @@ If key is not in the database, it is inserted with default as the value.
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
-                         Py_ssize_clean_t key_length,
-                         PyObject *default_value)
-/*[clinic end generated code: output=d5c68fe673886767 input=126a3ff15c5f8232]*/
+                         Py_ssize_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=126a3ff15c5f8232]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;

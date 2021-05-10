@@ -1,2 +1,0 @@
-Constant tuple folding in bytecode optimizer now reuses tuple in constant
-table.

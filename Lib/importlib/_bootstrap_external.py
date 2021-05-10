@@ -352,6 +352,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.10b1 3437 (Undo making 'annotations' future by default - We like to dance among core devs!)
 #     Python 3.10b1 3438 Safer line number table handling.
 #     Python 3.10b1 3439 (Add ROT_N)
+#     Python 3.11a1 3450 Use exception table for unwinding ("zero cost" exception handling)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -361,7 +362,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3439).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3450).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
