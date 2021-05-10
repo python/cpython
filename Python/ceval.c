@@ -4233,8 +4233,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
 
             PUSH(res);
-            if (res == NULL)
+            Py_DECREF(names);
+            if (res == NULL) {
                 goto error;
+            }
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
