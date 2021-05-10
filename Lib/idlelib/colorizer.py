@@ -21,15 +21,16 @@ def make_pats():
         r"(?P<MATCH_SOFTKW>match)\b" +
         r"(?!(?:[ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
         )
+    case_default = (
+        r"^[ \t]*" +  # at beginning of line + possible indentation
+        r"(?P<CASE_SOFTKW>case)" +
+        r"[ \t]+(?P<CASE_DEFAULT_UNDERSCORE>_)[ \t]*:"
+    )
     case_softkw_and_pattern = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
-        r"(?P<CASE_SOFTKW>case)\b" +
-        r"(?!(?:[ \t]|\\\n)*[=,)\]}])" +  # not followed by any of =,)]}
-        r"(?P<CASE_PATTERN>.*?)" +  # case pattern
-        r"(?P<CASE_IF>\bif\b.*?)?" +  # possible guard
-        r"(?P<CASE_AS>\bas\b.*?)?" +  # possible capture
-        r":"
-        )
+        r"(?P<CASE_SOFTKW2>case)\b" +
+        r"(?![ \t]*[=,)\]}])"  # not followed by any of =,)]}
+    )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and
                    name not in keyword.kwlist]
@@ -43,7 +44,8 @@ def make_pats():
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     prog = re.compile("|".join([
                                 builtin, comment, string, kw,
-                                match_softkw, case_softkw_and_pattern,
+                                match_softkw, case_default,
+                                case_softkw_and_pattern,
                                 any("SYNC", [r"\n"]),
                                ]),
                       re.DOTALL | re.MULTILINE)
@@ -59,9 +61,10 @@ idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
     "MATCH_SOFTKW": "KEYWORD",
     "CASE_SOFTKW": "KEYWORD",
+    "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
+    "CASE_SOFTKW2": "KEYWORD",
     "CASE_AS": "KEYWORD",
     "CASE_IF": "KEYWORD",
-    "UNDERSCORE_SOFTKW": "KEYWORD",
 }
 
 
