@@ -541,22 +541,15 @@ class ColorDelegatorTest(unittest.TestCase):
         self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
                                                           ('1.5', '1.6')]})
 
-    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
-    def test_long_multiline_string(self, notify_range):
-        text = self.text
-        color = self.color
-        eq = self.assertEqual
-
-        text.insert('insert', textwrap.dedent('''\
+    def test_long_multiline_string(self):
+        source = textwrap.dedent('''\
             """a
             b
             c
             d
             e"""
-            '''))
-        text.tag_add('TODO', '1.0', 'end-1c')
-        color.recolorize_main()
-        eq(text.tag_nextrange('STRING', '1.0'), ('1.0', '5.4'))
+            ''')
+        self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
 
     @run_in_tk_mainloop
     def test_incremental_editing(self):
