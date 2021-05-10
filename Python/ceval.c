@@ -4212,7 +4212,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
         case TARGET(CALL_METHOD_KW): {
-            /* Designed to work in tamdem with LOAD_METHOD. Same as CALL_METHOD
+            /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
             PyObject **sp, *res, *meth;
             PyObject *names = NULL;
