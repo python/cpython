@@ -4284,7 +4284,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl >= STACK_USE_GUIDELINE) {
+    if (argsl + 1 >= STACK_USE_GUIDELINE) {
         return -1;
     }
     /* Check that there are no * or **varargs types of arguments. */
@@ -4321,7 +4321,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
             PyTuple_SET_ITEM(names, i, kw->arg);
         }
         ADDOP_LOAD_CONST_NEW(c, names);
-        ADDOP_I(c, CALL_METHOD_KW, argsl);
+        ADDOP_I(c, CALL_METHOD_KW, argsl + kwdsl);
     }
     else {
         ADDOP_I(c, CALL_METHOD, argsl);    
@@ -4357,6 +4357,9 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
+    if (validate_keywords(c, e->v.Call.keywords) == -1) {
+        return 0;
+    }
     int ret = maybe_optimize_method_call(c, e);
     if (ret >= 0) {
         return ret;
@@ -4496,11 +4499,6 @@ compiler_call_helper(struct compiler *c,
                      asdl_keyword_seq *keywords)
 {
     Py_ssize_t i, nseen, nelts, nkwelts;
-
-    if (validate_keywords(c, keywords) == -1) {
-        return 0;
-    }
-
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
