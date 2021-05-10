@@ -1,7 +1,7 @@
 import sqlite3
 
 con = sqlite3.connect(":memory:")
-con.execute("create table person (id integer primary key, firstname varchar unique)")
+con.execute("create table lang (id integer primary key, firstname varchar unique)")
 
 # Successful, con.commit() is called automatically afterwards
 with con:

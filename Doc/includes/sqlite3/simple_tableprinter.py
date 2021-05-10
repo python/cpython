@@ -1,8 +1,8 @@
 import sqlite3
 
 FIELD_MAX_WIDTH = 20
-TABLE_NAME = 'people'
-SELECT = 'select * from %s order by age, name_last' % TABLE_NAME
+TABLE_NAME = 'lang'
+SELECT = f'select * from {TABLE_NAME} order by name, first_appeared'
 
 con = sqlite3.connect("mydb")
 
