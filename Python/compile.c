@@ -4278,9 +4278,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load) {
         return -1;
     }
-    if (validate_keywords(c, kwds) == -1) {
-        return -1;
-    }
+
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
@@ -4505,6 +4503,11 @@ compiler_call_helper(struct compiler *c,
     if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
          goto ex_call;
     }
+
+    if (validate_keywords(c, keywords) == -1) {
+        return 0;
+    }
+
     for (i = 0; i < nelts; i++) {
         expr_ty elt = asdl_seq_GET(args, i);
         if (elt->kind == Starred_kind) {
