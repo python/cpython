@@ -83,7 +83,6 @@ struct PyCodeObject {
 
     /* These fields are set with computed values on new code objects. */
 
-    int *co_cell2arg;           /* Maps cell vars which are arguments. */
     // redundant values (derived from co_localsplusnames and co_localspluskinds)
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
@@ -142,10 +141,6 @@ struct PyCodeObject {
 #define CO_FUTURE_BARRY_AS_BDFL  0x400000
 #define CO_FUTURE_GENERATOR_STOP  0x800000
 #define CO_FUTURE_ANNOTATIONS    0x1000000
-
-/* This value is found in the co_cell2arg array when the associated cell
-   variable does not correspond to an argument. */
-#define CO_CELL_NOT_AN_ARG (-1)
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.

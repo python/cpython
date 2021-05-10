@@ -322,7 +322,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_exceptiontable = con->exceptiontable;
 
     /* derived values */
-    co->co_cell2arg = NULL;  // This will be set soon.
     co->co_nlocalsplus = nlocalsplus;
     co->co_nlocals = nlocals;
     co->co_nplaincellvars = nplaincellvars;
@@ -375,45 +374,6 @@ _PyCode_New(struct _PyCodeConstructor *con)
         co->co_flags |= CO_NOFREE;
     } else {
         co->co_flags &= ~CO_NOFREE;
-    }
-
-    /* Create mapping between cells and arguments if needed. */
-    if (co->co_ncellvars) {
-        int totalargs = co->co_argcount +
-                        co->co_kwonlyargcount +
-                        ((co->co_flags & CO_VARARGS) != 0) +
-                        ((co->co_flags & CO_VARKEYWORDS) != 0);
-        assert(totalargs <= co->co_nlocals);
-        /* Find cells which are also arguments. */
-        for (int i = 0; i < co->co_ncellvars; i++) {
-            continue;
-            PyObject *cellname = PyTuple_GET_ITEM(co->co_localsplusnames,
-                                                  i + co->co_nlocals);
-            for (int j = 0; j < totalargs; j++) {
-                PyObject *argname = PyTuple_GET_ITEM(co->co_localsplusnames, j);
-                int cmp = PyUnicode_Compare(cellname, argname);
-                if (cmp == -1 && PyErr_Occurred()) {
-                    Py_DECREF(co);
-                    return NULL;
-                }
-                if (cmp == 0) {
-                    if (co->co_cell2arg == NULL) {
-                        co->co_cell2arg = PyMem_NEW(int, co->co_ncellvars);
-                        if (co->co_cell2arg == NULL) {
-                            Py_DECREF(co);
-                            PyErr_NoMemory();
-                            return NULL;
-                        }
-                        for (int k = 0; k < co->co_ncellvars; k++) {
-                            co->co_cell2arg[k] = CO_CELL_NOT_AN_ARG;
-                        }
-                    }
-                    co->co_cell2arg[i] = j;
-                    // Go to the next cell name.
-                    break;
-                }
-            }
-        }
     }
 
     return co;
@@ -1190,8 +1150,6 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
-    if (co->co_cell2arg != NULL)
-        PyMem_Free(co->co_cell2arg);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
     if (co->co_quickened) {
@@ -1383,10 +1341,6 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +
                (co_extra->ce_size-1) * sizeof(co_extra->ce_extras[0]);
-    }
-
-    if (co->co_cell2arg != NULL && co->co_cellvars != NULL) {
-        res += co->co_ncellvars * sizeof(Py_ssize_t);
     }
 
     if (co->co_quickened != NULL) {
