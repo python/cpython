@@ -328,7 +328,7 @@ provides three different variants:
       The *directory* parameter.
 
    .. versionchanged:: 3.9
-      The *directory* parameter Accepts a :term:`path-like object`.
+      The *directory* parameter accepts a :term:`path-like object`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
