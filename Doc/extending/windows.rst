@@ -14,7 +14,7 @@ Windows programmer learning to build Python extensions and the Unix programmer
 interested in producing software which can be successfully built on both Unix
 and Windows.
 
-Module authors are encouraged to use the distutils approach for building
+Module authors are encouraged to use the setuptools approach for building
 extension modules, instead of the one described in this section. You will still
 need the C compiler that was used to build Python; typically Microsoft Visual
 C++.
@@ -34,12 +34,11 @@ A Cookbook Approach
 ===================
 
 There are two approaches to building extension modules on Windows, just as there
-are on Unix: use the :mod:`distutils` package to control the build process, or
-do things manually.  The distutils approach works well for most extensions;
-documentation on using :mod:`distutils` to build and package extension modules
-is available in :ref:`distutils-index`.  If you find you really need to do
-things manually, it may be instructive to study the project file for the
-:source:`winsound <PCbuild/winsound.vcxproj>` standard library module.
+are on Unix: use the ``setuptools`` package to control the build process, or
+do things manually.  The ``setuptools`` approach works well for most extensions.
+If you find you really need to do things manually, it may be instructive to study
+the project file for the :source:`winsound <PCbuild/winsound.vcxproj>` standard
+library module.
 
 
 .. _dynamic-linking:
@@ -106,15 +105,14 @@ Using DLLs in Practice
 
 
 Windows Python is built in Microsoft Visual C++; using other compilers may or
-may not work (though Borland seems to).  The rest of this section is MSVC++
-specific.
+may not work.  The rest of this section is MSVC specific.
 
 When creating DLLs in Windows, you must pass :file:`pythonXY.lib` to the linker.
 To build two DLLs, spam and ni (which uses C functions found in spam), you could
 use these commands::
 
-   cl /LD /I/python/include spam.c ../libs/pythonXY.lib
-   cl /LD /I/python/include ni.c spam.lib ../libs/pythonXY.lib
+   cl /LD -I/pathtopython/include spam.c pathtopython/libs/pythonXY.lib
+   cl /LD -I/pathtopython/include ni.c spam.lib pathtopython/libs/pythonXY.lib
 
 The first command created three files: :file:`spam.obj`, :file:`spam.dll` and
 :file:`spam.lib`.  :file:`Spam.dll` does not contain any Python functions (such
@@ -130,8 +128,9 @@ modules (including Python) to be able to see your identifiers, you have to say
 ``_declspec(dllexport)``, as in ``void _declspec(dllexport) initspam(void)`` or
 ``PyObject _declspec(dllexport) *NiGetSpamData(void)``.
 
-Developer Studio will throw in a lot of import libraries that you do not really
-need, adding about 100K to your executable.  To get rid of them, use the Project
-Settings dialog, Link tab, to specify *ignore default libraries*.  Add the
-correct :file:`msvcrtxx.lib` to the list of libraries.
+Create Python Extensions in Visual Studio
+=========================================
+
+For creating Python extensions in Visual Studio, please refer to
+https://docs.microsoft.com/en-us/visualstudio/python/working-with-c-cpp-python-in-visual-studio.
 
