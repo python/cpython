@@ -19,8 +19,13 @@ def make_pats():
     match_softkw = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<MATCH_SOFTKW>match)\b" +
-        r"(?!(?:[ \t]|\\\n)*[=,)\]}])"  # not followed by any of =,)]}
-        )
+        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
+            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                 # pattern-matching statement
+            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
+        ]) +
+        r"))"
+    )
     case_default = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW>case)" +
@@ -29,7 +34,13 @@ def make_pats():
     case_softkw_and_pattern = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
         r"(?P<CASE_SOFTKW2>case)\b" +
-        r"(?![ \t]*(?:[=,)\]}]|_\b))"  # not followed by any of =,)]}
+        r"(?![ \t]*(?:" + "|".join([  # not followed by ...
+            r"_\b",  # a lone underscore
+            r"[:,;=^&|@~)\]}]",  # a character which means it can't be a
+                                 # pattern-matching case
+            r"\b(?:" + r"|".join(keyword.kwlist) + r")\b",  # a keyword
+        ]) +
+        r"))"
     )
     builtinlist = [str(name) for name in dir(builtins)
                    if not name.startswith('_') and

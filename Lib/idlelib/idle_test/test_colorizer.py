@@ -435,42 +435,103 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
         eq(text.tag_nextrange('SYNC', '30.0'), ('30.10', '32.0'))
 
-    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
-    def test_def_statement(self, mock_notify):
+    def _assert_highlighting(self, source, tags):
         text = self.text
         color = self.color
         eq = self.assertEqual
 
-        # empty def
-        text.insert('insert', 'def')
+        text.delete('1.0', 'end-1c')
+        text.insert('insert', source)
         text.tag_add('TODO', '1.0', 'end-1c')
         color.recolorize_main()
-        eq(text.tag_names('1.0'), ('KEYWORD',))
+
+        text_tags = {}
+        for tag in set(text.tag_names()) - {'sel', 'TODO', 'SYNC'}:
+            tag_ranges = [rng.string for rng in text.tag_ranges(tag)]
+            for pair in zip(tag_ranges[::2], tag_ranges[1::2]):
+                text_tags.setdefault(tag, []).append(pair)
+        eq(text_tags, tags)
+
         text.delete('1.0', 'end-1c')
+
+    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
+    def test_def_statement(self, mock_notify):
+        # empty def
+        self._assert_highlighting('def', {'KEYWORD': [('1.0', '1.3')]})
 
         # def followed by identifier
-        text.insert('1.0', 'def foo:')
-        text.tag_add('TODO', '1.0', 'end-1c')
-        color.recolorize_main()
-        eq(text.tag_names('1.0'), ('KEYWORD',))
-        eq(text.tag_names('1.4'), ('DEFINITION',))
-        text.delete('1.0', 'end-1c')
+        self._assert_highlighting('def foo:', {'KEYWORD': [('1.0', '1.3')],
+                                               'DEFINITION': [('1.4', '1.7')]})
 
         # def followed by partial identifier
-        text.insert('1.0', 'def fo')
-        text.tag_add('TODO', '1.0', 'end-1c')
-        color.recolorize_main()
-        eq(text.tag_names('1.0'), ('KEYWORD',))
-        eq(text.tag_names('1.4'), ('DEFINITION',))
-        text.delete('1.0', 'end-1c')
+        self._assert_highlighting('def fo', {'KEYWORD': [('1.0', '1.3')],
+                                             'DEFINITION': [('1.4', '1.6')]})
 
         # def followed by non-keyword
-        text.insert('1.0', 'def ++')
-        text.tag_add('TODO', '1.0', 'end-1c')
-        color.recolorize_main()
-        eq(text.tag_names('1.0'), ('KEYWORD',))
-        eq(text.tag_names('1.4'), ())
-        text.delete('1.0', 'end-1c')
+        self._assert_highlighting('def ++', {'KEYWORD': [('1.0', '1.3')]})
+
+    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
+    def test_match_soft_keyword(self, mock_notify):
+        # empty match
+        self._assert_highlighting('match', {'KEYWORD': [('1.0', '1.5')]})
+
+        # match followed by partial identifier
+        self._assert_highlighting('match fo', {'KEYWORD': [('1.0', '1.5')]})
+
+        # match followed by identifier and colon
+        self._assert_highlighting('match foo:', {'KEYWORD': [('1.0', '1.5')]})
+
+        # match followed by keyword
+        self._assert_highlighting('match and', {'KEYWORD': [('1.6', '1.9')]})
+
+        # match followed by builtin with keyword prefix
+        self._assert_highlighting('match int:', {'KEYWORD': [('1.0', '1.5')],
+                                                 'BUILTIN': [('1.6', '1.9')]})
+
+        # match followed by non-text operator
+        self._assert_highlighting('match^', {})
+        self._assert_highlighting('match @', {})
+
+        # match followed by colon
+        self._assert_highlighting('match :', {})
+
+        # match followed by comma
+        self._assert_highlighting('match\t,', {})
+
+        # match followed by a lone underscore
+        self._assert_highlighting('match _:', {'KEYWORD': [('1.0', '1.5')]})
+
+    @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
+    def test_case_soft_keyword(self, mock_notify):
+        # empty case
+        self._assert_highlighting('case', {'KEYWORD': [('1.0', '1.4')]})
+
+        # case followed by partial identifier
+        self._assert_highlighting('case fo', {'KEYWORD': [('1.0', '1.4')]})
+
+        # case followed by identifier and colon
+        self._assert_highlighting('case foo:', {'KEYWORD': [('1.0', '1.4')]})
+
+        # case followed by keyword
+        self._assert_highlighting('case and', {'KEYWORD': [('1.5', '1.8')]})
+
+        # case followed by builtin with keyword prefix
+        self._assert_highlighting('case int:', {'KEYWORD': [('1.0', '1.4')],
+                                                'BUILTIN': [('1.5', '1.8')]})
+
+        # case followed by non-text operator
+        self._assert_highlighting('case^', {})
+        self._assert_highlighting('case @', {})
+
+        # case followed by colon
+        self._assert_highlighting('case :', {})
+
+        # case followed by comma
+        self._assert_highlighting('case\t,', {})
+
+        # case followed by a lone underscore
+        self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
+                                                          ('1.5', '1.6')]})
 
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
     def test_long_multiline_string(self, notify_range):
