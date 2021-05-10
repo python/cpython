@@ -1,2 +1,2 @@
 Add ``CALL_METHOD_KW`` opcode to speed up method calls with keyword
-arguments.
+arguments.  Idea originated from PyPy.
