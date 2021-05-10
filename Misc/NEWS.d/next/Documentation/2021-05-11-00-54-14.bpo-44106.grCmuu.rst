@@ -1,0 +1,2 @@
+In the :mod:`sqlite3` docs, use programming languages instead of politicians
+as example database content.
