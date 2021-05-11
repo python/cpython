@@ -1,7 +1,7 @@
 .. _tut-intro:
 
 **********************
-Whetting Your Appetite
+课前甜点
 **********************
 
 If you do much work on computers, eventually you find that there's some task
