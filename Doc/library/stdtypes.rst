@@ -2173,15 +2173,20 @@ expression support in the :mod:`re` module).
       False
 
 
-
-.. _meth-str-join:
-
 .. method:: str.join(iterable, /)
 
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
    elements is the string providing this method.
+
+   For example:
+
+   .. doctest::
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
 
 
 .. method:: str.ljust(width, fillchar=' ', /)
