@@ -70,7 +70,7 @@ class FunctionTest(unittest.TestCase):
 
     def test_make_pat(self):
         # Tested in more detail by testing prog.
-        self.assertTrue(colorizer.make_pats())
+        self.assertTrue(colorizer.make_pat())
 
     def test_prog(self):
         prog = colorizer.prog

@@ -14,7 +14,7 @@ def any(name, alternates):
     return "(?P<%s>" % name + "|".join(alternates) + ")"
 
 
-def make_pats():
+def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     match_softkw = (
         r"^[ \t]*" +  # at beginning of line + possible indentation
@@ -60,22 +60,16 @@ def make_pats():
                                 any("SYNC", [r"\n"]),
                                ]),
                       re.DOTALL | re.MULTILINE)
-    guard_prog = re.compile("|".join([builtin, comment, string, kw]))
-    pattern_prog = re.compile("|".join([
-        builtin, comment, string, kw, any("UNDERSCORE_SOFTKW", [r"\b_\b"])
-    ]), re.DOTALL)
-    return prog, guard_prog, pattern_prog
+    return prog
 
 
-prog, guard_prog, pattern_prog = make_pats()
+prog = make_pat()
 idprog = re.compile(r"\s+(\w+)")
 prog_group_name_to_tag = {
     "MATCH_SOFTKW": "KEYWORD",
     "CASE_SOFTKW": "KEYWORD",
     "CASE_DEFAULT_UNDERSCORE": "KEYWORD",
     "CASE_SOFTKW2": "KEYWORD",
-    "CASE_AS": "KEYWORD",
-    "CASE_IF": "KEYWORD",
 }
 
 
@@ -349,22 +343,11 @@ class ColorDelegator(Delegator):
         for m in self.prog.finditer(chars):
             for name, matched_text in matched_named_groups(m):
                 a, b = m.span(name)
-                if name in {"CASE_PATTERN", "CASE_AS"}:
-                    for m1 in pattern_prog.finditer(matched_text):
-                        for name, matched_text in matched_named_groups(m1):
-                            a1, b1 = m1.span()
-                            self._add_tag(a + a1, a + b1, head, name)
-                elif name == "CASE_IF":
-                    for m1 in guard_prog.finditer(matched_text):
-                        for name, matched_text in matched_named_groups(m1):
-                            a1, b1 = m1.span()
-                            self._add_tag(a + a1, a + b1, head, name)
-                else:
-                    self._add_tag(a, b, head, name)
-                    if matched_text in ("def", "class"):
-                        if m1 := self.idprog.match(chars, b):
-                            a, b = m1.span(1)
-                            self._add_tag(a, b, head, "DEFINITION")
+                self._add_tag(a, b, head, name)
+                if matched_text in ("def", "class"):
+                    if m1 := self.idprog.match(chars, b):
+                        a, b = m1.span(1)
+                        self._add_tag(a, b, head, "DEFINITION")
 
     def removecolors(self):
         "Remove all colorizing tags."
