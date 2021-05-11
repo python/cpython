@@ -1588,9 +1588,9 @@ class _ActionsContainer(object):
         message = ngettext('conflicting option string: %s',
                            'conflicting option strings: %s',
                            len(conflicting_actions))
-        conflict_string = ', '.join([option_string
-                                     for option_string, action
-                                     in conflicting_actions])
+        conflict_string = ", ".join(
+            option_string for option_string, action in conflicting_actions
+        )
         raise ArgumentError(action, message % conflict_string)
 
     def _handle_conflict_resolve(self, action, conflicting_actions):
