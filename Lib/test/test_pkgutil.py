@@ -111,9 +111,9 @@ class PkgutilTests(unittest.TestCase):
         z.writestr(pkg + '/res.txt', RESOURCE_DATA)
         z.close()
 
+        # Check we can read the resources
+        sys.path.insert(0, zip_file)
         try:
-            # Check we can read the resources
-            sys.path.insert(0, zip_file)
             res = pkgutil.get_data(pkg, 'res.txt')
             self.assertEqual(res, RESOURCE_DATA)
 
