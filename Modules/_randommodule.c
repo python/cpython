@@ -597,7 +597,7 @@ _random_exec(PyObject *module)
     }
 
     /* Look up and save int.__abs__, which is needed in random_seed(). */
-    PyObject *longval = longval = PyLong_FromLong(0);
+    PyObject *longval = PyLong_FromLong(0);
     if (longval == NULL) {
         return -1;
     }

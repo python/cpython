@@ -2587,8 +2587,8 @@ class ThreadedEchoServer(threading.Thread):
         threading.Thread.start(self)
 
     def run(self):
-        self.sock.settimeout(0.05)
-        self.sock.listen()
+        self.sock.settimeout(1.0)
+        self.sock.listen(5)
         self.active = True
         if self.flag:
             # signal an event
@@ -2602,8 +2602,9 @@ class ThreadedEchoServer(threading.Thread):
                 handler = self.ConnectionHandler(self, newconn, connaddr)
                 handler.start()
                 handler.join()
-            except TimeoutError:
-                pass
+            except TimeoutError as e:
+                if support.verbose:
+                    sys.stdout.write(f' connection timeout {e!r}\n')
             except KeyboardInterrupt:
                 self.stop()
             except BaseException as e:
@@ -2611,7 +2612,12 @@ class ThreadedEchoServer(threading.Thread):
                     sys.stdout.write(
                         ' connection handling failed: ' + repr(e) + '\n')
 
-        self.sock.close()
+        self.close()
+
+    def close(self):
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
 
     def stop(self):
         self.active = False

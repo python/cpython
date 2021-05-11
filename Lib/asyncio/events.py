@@ -304,7 +304,6 @@ class AbstractEventLoop:
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None,
             happy_eyeballs_delay=None, interleave=None):
         raise NotImplementedError
 
@@ -314,7 +313,6 @@ class AbstractEventLoop:
             flags=socket.AI_PASSIVE, sock=None, backlog=100,
             ssl=None, reuse_address=None, reuse_port=None,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None,
             start_serving=True):
         """A coroutine which creates a TCP server bound to host and port.
 
@@ -355,10 +353,6 @@ class AbstractEventLoop:
         will wait for completion of the SSL handshake before aborting the
         connection. Default is 60s.
 
-        ssl_shutdown_timeout is the time in seconds that an SSL server
-        will wait for completion of the SSL shutdown procedure
-        before aborting the connection. Default is 30s.
-
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
@@ -377,8 +371,7 @@ class AbstractEventLoop:
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,
                         server_hostname=None,
-                        ssl_handshake_timeout=None,
-                        ssl_shutdown_timeout=None):
+                        ssl_handshake_timeout=None):
         """Upgrade a transport to TLS.
 
         Return a new transport that *protocol* should start using
@@ -390,15 +383,13 @@ class AbstractEventLoop:
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_handshake_timeout=None):
         raise NotImplementedError
 
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None,
             start_serving=True):
         """A coroutine which creates a UNIX Domain Socket server.
 
@@ -420,9 +411,6 @@ class AbstractEventLoop:
         ssl_handshake_timeout is the time in seconds that an SSL server
         will wait for the SSL handshake to complete (defaults to 60s).
 
-        ssl_shutdown_timeout is the time in seconds that an SSL server
-        will wait for the SSL shutdown to finish (defaults to 30s).
-
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
@@ -433,8 +421,7 @@ class AbstractEventLoop:
     async def connect_accepted_socket(
             self, protocol_factory, sock,
             *, ssl=None,
-            ssl_handshake_timeout=None,
-            ssl_shutdown_timeout=None):
+            ssl_handshake_timeout=None):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of

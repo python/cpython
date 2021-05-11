@@ -3,6 +3,7 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyASTOptimizeState
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_format.h"        // F_LJUST
 
 
 static int
@@ -224,17 +225,235 @@ safe_mod(PyObject *v, PyObject *w)
     return PyNumber_Remainder(v, w);
 }
 
+
+static expr_ty
+parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
+{
+    const void *data = PyUnicode_DATA(fmt);
+    int kind = PyUnicode_KIND(fmt);
+    Py_ssize_t size = PyUnicode_GET_LENGTH(fmt);
+    Py_ssize_t start, pos;
+    int has_percents = 0;
+    start = pos = *ppos;
+    while (pos < size) {
+        if (PyUnicode_READ(kind, data, pos) != '%') {
+            pos++;
+        }
+        else if (pos+1 < size && PyUnicode_READ(kind, data, pos+1) == '%') {
+            has_percents = 1;
+            pos += 2;
+        }
+        else {
+            break;
+        }
+    }
+    *ppos = pos;
+    if (pos == start) {
+        return NULL;
+    }
+    PyObject *str = PyUnicode_Substring(fmt, start, pos);
+    /* str = str.replace('%%', '%') */
+    if (str && has_percents) {
+        _Py_static_string(PyId_double_percent, "%%");
+        _Py_static_string(PyId_percent, "%");
+        PyObject *double_percent = _PyUnicode_FromId(&PyId_double_percent);
+        PyObject *percent = _PyUnicode_FromId(&PyId_percent);
+        if (!double_percent || !percent) {
+            Py_DECREF(str);
+            return NULL;
+        }
+        Py_SETREF(str, PyUnicode_Replace(str, double_percent, percent, -1));
+    }
+    if (!str) {
+        return NULL;
+    }
+
+    if (_PyArena_AddPyObject(arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, -1, -1, -1, -1, arena);
+}
+
+#define MAXDIGITS 3
+
+static int
+simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
+                        int *spec, int *flags, int *width, int *prec)
+{
+    Py_ssize_t pos = *ppos, len = PyUnicode_GET_LENGTH(fmt);
+    Py_UCS4 ch;
+
+#define NEXTC do {                      \
+    if (pos >= len) {                   \
+        return 0;                       \
+    }                                   \
+    ch = PyUnicode_READ_CHAR(fmt, pos); \
+    pos++;                              \
+} while (0)
+
+    *flags = 0;
+    while (1) {
+        NEXTC;
+        switch (ch) {
+            case '-': *flags |= F_LJUST; continue;
+            case '+': *flags |= F_SIGN; continue;
+            case ' ': *flags |= F_BLANK; continue;
+            case '#': *flags |= F_ALT; continue;
+            case '0': *flags |= F_ZERO; continue;
+        }
+        break;
+    }
+    if ('0' <= ch && ch <= '9') {
+        *width = 0;
+        int digits = 0;
+        while ('0' <= ch && ch <= '9') {
+            *width = *width * 10 + (ch - '0');
+            NEXTC;
+            if (++digits >= MAXDIGITS) {
+                return 0;
+            }
+        }
+    }
+
+    if (ch == '.') {
+        NEXTC;
+        if ('0' <= ch && ch <= '9') {
+            *prec = 0;
+            int digits = 0;
+            while ('0' <= ch && ch <= '9') {
+                *prec = *prec * 10 + (ch - '0');
+                NEXTC;
+                if (++digits >= MAXDIGITS) {
+                    return 0;
+                }
+            }
+        }
+    }
+    *spec = ch;
+    *ppos = pos;
+    return 1;
+
+#undef NEXTC
+}
+
+static expr_ty
+parse_format(PyObject *fmt, Py_ssize_t *ppos, expr_ty arg, PyArena *arena)
+{
+    int spec, flags, width = -1, prec = -1;
+    if (!simple_format_arg_parse(fmt, ppos, &spec, &flags, &width, &prec)) {
+        // Unsupported format.
+        return NULL;
+    }
+    if (spec == 's' || spec == 'r' || spec == 'a') {
+        char buf[1 + MAXDIGITS + 1 + MAXDIGITS + 1], *p = buf;
+        if (!(flags & F_LJUST) && width > 0) {
+            *p++ = '>';
+        }
+        if (width >= 0) {
+            p += snprintf(p, MAXDIGITS + 1, "%d", width);
+        }
+        if (prec >= 0) {
+            p += snprintf(p, MAXDIGITS + 2, ".%d", prec);
+        }
+        expr_ty format_spec = NULL;
+        if (p != buf) {
+            PyObject *str = PyUnicode_FromString(buf);
+            if (str == NULL) {
+                return NULL;
+            }
+            if (_PyArena_AddPyObject(arena, str) < 0) {
+                Py_DECREF(str);
+                return NULL;
+            }
+            format_spec = _PyAST_Constant(str, NULL, -1, -1, -1, -1, arena);
+            if (format_spec == NULL) {
+                return NULL;
+            }
+        }
+        return _PyAST_FormattedValue(arg, spec, format_spec,
+                                     arg->lineno, arg->col_offset,
+                                     arg->end_lineno, arg->end_col_offset,
+                                     arena);
+    }
+    // Unsupported format.
+    return NULL;
+}
+
+static int
+optimize_format(expr_ty node, PyObject *fmt, asdl_expr_seq *elts, PyArena *arena)
+{
+    Py_ssize_t pos = 0;
+    Py_ssize_t cnt = 0;
+    asdl_expr_seq *seq = _Py_asdl_expr_seq_new(asdl_seq_LEN(elts) * 2 + 1, arena);
+    if (!seq) {
+        return 0;
+    }
+    seq->size = 0;
+
+    while (1) {
+        expr_ty lit = parse_literal(fmt, &pos, arena);
+        if (lit) {
+            asdl_seq_SET(seq, seq->size++, lit);
+        }
+        else if (PyErr_Occurred()) {
+            return 0;
+        }
+
+        if (pos >= PyUnicode_GET_LENGTH(fmt)) {
+            break;
+        }
+        if (cnt >= asdl_seq_LEN(elts)) {
+            // More format units than items.
+            return 1;
+        }
+        assert(PyUnicode_READ_CHAR(fmt, pos) == '%');
+        pos++;
+        expr_ty expr = parse_format(fmt, &pos, asdl_seq_GET(elts, cnt), arena);
+        cnt++;
+        if (!expr) {
+            return !PyErr_Occurred();
+        }
+        asdl_seq_SET(seq, seq->size++, expr);
+    }
+    if (cnt < asdl_seq_LEN(elts)) {
+        // More items than format units.
+        return 1;
+    }
+    expr_ty res = _PyAST_JoinedStr(seq,
+                                   node->lineno, node->col_offset,
+                                   node->end_lineno, node->end_col_offset,
+                                   arena);
+    if (!res) {
+        return 0;
+    }
+    COPY_NODE(node, res);
+//     PySys_FormatStderr("format = %R\n", fmt);
+    return 1;
+}
+
 static int
 fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
     rhs = node->v.BinOp.right;
-    if (lhs->kind != Constant_kind || rhs->kind != Constant_kind) {
+    if (lhs->kind != Constant_kind) {
+        return 1;
+    }
+    PyObject *lv = lhs->v.Constant.value;
+
+    if (node->v.BinOp.op == Mod &&
+        rhs->kind == Tuple_kind &&
+        PyUnicode_Check(lv))
+    {
+        return optimize_format(node, lv, rhs->v.Tuple.elts, arena);
+    }
+
+    if (rhs->kind != Constant_kind) {
         return 1;
     }
 
-    PyObject *lv = lhs->v.Constant.value;
     PyObject *rv = rhs->v.Constant.value;
     PyObject *newval = NULL;
 

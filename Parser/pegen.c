@@ -1283,6 +1283,9 @@ _PyPegen_run_parser(Parser *p)
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+                _PyPegen_check_tokenizer_errors(p);
+            }
             return NULL;
         }
         if (p->fill == 0) {

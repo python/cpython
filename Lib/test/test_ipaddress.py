@@ -97,7 +97,7 @@ class CommonTestMixin_v4(CommonTestMixin):
 
     def test_leading_zeros(self):
         # bpo-36384: no leading zeros to avoid ambiguity with octal notation
-        msg = "Leading zeros are not permitted in '\d+'"
+        msg = "Leading zeros are not permitted in '\\d+'"
         addresses = [
             "000.000.000.000",
             "192.168.000.001",
