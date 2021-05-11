@@ -94,7 +94,7 @@ objects:
 .. method:: list.copy()
    :noindex:
 
-   Return a shallow copy of the list.  Equivalent to ``a[:]``.
+   Return a deep copy of the list.  Equivalent to ``a[:]``.
 
 
 An example that uses most of the list methods::
