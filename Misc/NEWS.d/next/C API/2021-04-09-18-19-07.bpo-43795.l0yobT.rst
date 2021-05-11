@@ -1,2 +1,0 @@
-Stable ABI and limited API definitions are generated from a central manifest
-(:pep:`652`).

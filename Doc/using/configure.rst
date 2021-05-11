@@ -441,12 +441,16 @@ Security Options
 
    * ``python`` (default): use Python's preferred selection;
    * ``openssl``: leave OpenSSL's defaults untouched;
-   * *STRING*: use a custom string, PROTOCOL_SSLv2 ignores the setting.
+   * *STRING*: use a custom string
 
    See the :mod:`ssl` module.
 
    .. versionadded:: 3.7
 
+   .. versionchanged:: 3.10
+
+      The settings ``python`` and *STRING* also set TLS 1.2 as minimum
+      protocol version.
 
 macOS Options
 -------------

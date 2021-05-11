@@ -108,7 +108,7 @@ Module Contents
       :class:`Enum` class decorator to apply the appropriate global `__repr__`,
       and export its members into the global name space.
 
-   :func:`property`
+   :func:`.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       other members' names.

@@ -1,5 +1,0 @@
-_PyInterpreterState_IDIncref() now calls _PyInterpreterState_IDInitref() and
-always increments id_refcount. Previously, calling
-_xxsubinterpreters.get_current() could create an id_refcount inconsistency
-when a _xxsubinterpreters.InterpreterID object was deallocated. Patch by
-Victor Stinner.

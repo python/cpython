@@ -797,7 +797,7 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). And is instead treated as a :token:`wildcard_pattern`.
+expresses). It is instead treated as a :token:`wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -820,7 +820,9 @@ and binds no name.  Syntax:
 .. productionlist:: python-grammar
    wildcard_pattern: '_'
 
-``_`` is a :ref:`soft keyword <soft-keywords>`.
+``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
+but only within patterns.  It is an identifier, as usual, even within
+``match`` headers, ``guards``, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
 

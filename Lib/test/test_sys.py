@@ -1273,13 +1273,12 @@ class SizeofTest(unittest.TestCase):
         check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
         import inspect
-        CO_MAXBLOCKS = 20
         x = inspect.currentframe()
         ncells = len(x.f_code.co_cellvars)
         nfrees = len(x.f_code.co_freevars)
-        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
-                  ncells + nfrees - 1
-        check(x, vsize('4Pi2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        localsplus = x.f_code.co_stacksize + x.f_code.co_nlocals +\
+                  ncells + nfrees
+        check(x, vsize('8P3i3c' + localsplus*'P'))
         # function
         def func(): pass
         check(func, size('14P'))
