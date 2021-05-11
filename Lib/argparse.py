@@ -621,7 +621,7 @@ class HelpFormatter(object):
             if hasattr(params[name], '__name__'):
                 params[name] = params[name].__name__
         if params.get('choices') is not None:
-            choices_str = ', '.join([str(c) for c in params['choices']])
+            choices_str = ", ".join(str(c) for c in params['choices'])
             params['choices'] = choices_str
         return self._get_help_string(action) % params
 
