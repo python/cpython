@@ -238,7 +238,7 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`43822`)
 
-* Exception groups without parentheses:
+* Multiple Exception types without parentheses:
 
     .. code-block:: python
 
