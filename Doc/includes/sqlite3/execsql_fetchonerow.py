@@ -8,7 +8,7 @@ SELECT = "select name, first_appeared from people order by first_appeared, name"
 # 1. Iterate over the rows available from the cursor, unpacking the
 # resulting sequences to yield their elements (name, first_appeared):
 cur.execute(SELECT)
-for (name, first_appeared) in cur:
+for name, first_appeared in cur:
     print(f"The {name} programming language appeared in {first_appeared}.")
 
 # 2. Equivalently:
