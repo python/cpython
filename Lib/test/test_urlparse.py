@@ -1050,6 +1050,11 @@ class UrlParseTestCase(unittest.TestCase):
     def test_clear_cache_for_code_coverage(self):
         urllib.parse.clear_cache()
 
+    def test_urllib_parse_getattr_failure(self):
+        """Test that urllib.parse.__getattr__() fails correctly."""
+        with self.assertRaises(AttributeError):
+            unused = urllib.parse.this_does_not_exist
+
     def test_all(self):
         expected = []
         undocumented = {
