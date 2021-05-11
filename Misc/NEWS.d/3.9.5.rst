@@ -160,7 +160,7 @@ version.
 .. nonce: pedB1E
 .. section: Library
 
-[Enum] ensure exceptions raised in ``_missing__`` are released
+[Enum] ensure exceptions raised in ``_missing_`` are released.
 
 ..
 
