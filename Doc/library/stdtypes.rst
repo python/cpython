@@ -2004,6 +2004,13 @@ expression support in the :mod:`re` module).
    *iterable*, including :class:`bytes` objects.  The separator between
    elements is the string providing this method.
 
+   For example::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
 
 .. method:: str.ljust(width[, fillchar])
 
