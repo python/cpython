@@ -287,9 +287,9 @@ class HelpFormatter(object):
         return help
 
     def _join_parts(self, part_strings):
-        return ''.join([part
-                        for part in part_strings
-                        if part and part is not SUPPRESS])
+        return "".join(
+            part for part in part_strings if part and part is not SUPPRESS
+        )
 
     def _format_usage(self, usage, actions, groups, prefix):
         if prefix is None:
