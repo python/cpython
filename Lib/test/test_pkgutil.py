@@ -111,20 +111,21 @@ class PkgutilTests(unittest.TestCase):
         z.writestr(pkg + '/res.txt', RESOURCE_DATA)
         z.close()
 
-        # Check we can read the resources
-        sys.path.insert(0, zip_file)
-        res = pkgutil.get_data(pkg, 'res.txt')
-        self.assertEqual(res, RESOURCE_DATA)
+        try:
+            # Check we can read the resources
+            sys.path.insert(0, zip_file)
+            res = pkgutil.get_data(pkg, 'res.txt')
+            self.assertEqual(res, RESOURCE_DATA)
 
-        # make sure iter_modules accepts Path objects
-        names = []
-        for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
-            self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
-            names.append(moduleinfo.name)
-        self.assertEqual(names, [pkg])
-
-        del sys.path[0]
-        del sys.modules[pkg]
+            # make sure iter_modules accepts Path objects
+            names = []
+            for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+                self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
+                names.append(moduleinfo.name)
+            self.assertEqual(names, [pkg])
+        finally:
+            del sys.path[0]
+            del sys.modules[pkg]
 
         # assert path must be None or list of paths
         expected_msg = "path must be None or list of paths to look for modules in"
