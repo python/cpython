@@ -1033,8 +1033,8 @@ release.
 Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
 :keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
 pattern-matching statements. However, this highlighting is not perfect
-and may be incorrect in some rare cases.  (Contributed by Tal Einat
-in bpo-44010.)
+and will be incorrect in some rare cases, including some ``_``-s in
+``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
 
 importlib.metadata
 ------------------
