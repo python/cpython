@@ -125,7 +125,7 @@ class PkgutilTests(unittest.TestCase):
             self.assertEqual(names, [pkg])
         finally:
             del sys.path[0]
-            del sys.modules[pkg]
+            sys.modules.pop(pkg, None)
 
         # assert path must be None or list of paths
         expected_msg = "path must be None or list of paths to look for modules in"
