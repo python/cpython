@@ -1,4 +1,4 @@
-"Test colorizer, coverage 93%."
+"Test colorizer, coverage 99%."
 from idlelib import colorizer
 from test.support import requires
 import unittest
