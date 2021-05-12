@@ -1680,6 +1680,7 @@ expression support in the :mod:`re` module).
       >>> 'spam, spam, spam'.find('sp', 5)
       6
 
+   See also :meth:`rfind`.
 
    .. note::
 
@@ -2148,6 +2149,14 @@ expression support in the :mod:`re` module).
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
 
+   For example::
+
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+   See also :meth:`find`.
 
 .. method:: str.rindex(sub[, start[, end]])
 
