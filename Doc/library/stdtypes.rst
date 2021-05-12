@@ -2135,6 +2135,12 @@ expression support in the :mod:`re` module).
    *new*.  If the optional argument *count* is given, only the first *count*
    occurrences are replaced.
 
+   For example::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
 
 .. method:: str.rfind(sub[, start[, end]])
 
