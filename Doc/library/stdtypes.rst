@@ -2213,6 +2213,10 @@ expression support in the :mod:`re` module).
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
    :meth:`split` which is described in detail below.
 
+   For example::
+
+      >>> '1,2,3'.rsplit(',', maxsplit=1)
+      ['1,2', '3']
 
 .. method:: str.rstrip([chars])
 
@@ -2275,6 +2279,7 @@ expression support in the :mod:`re` module).
       >>> '   1   2   3   '.split()
       ['1', '2', '3']
 
+   See also :meth:`rsplit`.
 
 .. index::
    single: universal newlines; str.splitlines method
