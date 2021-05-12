@@ -1530,31 +1530,13 @@ csv_field_size_limit(PyObject *module, PyObject *args)
     return PyLong_FromLong(old_limit);
 }
 
-static void
-error_dealloc(PyObject *self)
-{
-    PyObject_GC_UnTrack(self);
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
-    Py_DECREF(tp);
-}
-
-static int
-error_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyType_Slot error_slots[] = {
-    {Py_tp_traverse, error_traverse},
-    {Py_tp_dealloc, error_dealloc},
     {0, NULL},
 };
 
 PyType_Spec error_spec = {
     .name = "_csv.Error",
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = error_slots,
 };
 
