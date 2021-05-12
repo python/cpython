@@ -1647,6 +1647,7 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         async for i in asynciter([1, 2]):
             output.append(3)
+        pass
 
     @jump_test(3, 2, [2, 2], (ValueError, 'into'))
     def test_no_jump_backwards_into_for_block(output):
