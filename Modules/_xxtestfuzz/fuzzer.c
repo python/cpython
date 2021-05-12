@@ -425,7 +425,9 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
         goto fail;
     }
     PyConfig_Clear(&config);
+
     return 0;
+
 fail:
     PyConfig_Clear(&config);
     Py_ExitStatusException(status);
