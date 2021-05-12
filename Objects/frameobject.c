@@ -850,7 +850,7 @@ frame_alloc(PyCodeObject *code, PyObject **localsarray)
 }
 
 int
-_PyFrame_StealLocals(PyFrameObject *f)
+_PyFrame_TakeLocals(PyFrameObject *f)
 {
     assert(f->f_own_locals_memory == 0);
     assert(f->f_stackdepth == 0);

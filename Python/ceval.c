@@ -5183,7 +5183,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
         _PyObject_GC_TRACK(f);
-        if (_PyFrame_StealLocals(f)) {
+        if (_PyFrame_TakeLocals(f)) {
             Py_CLEAR(retval);
         }
     }

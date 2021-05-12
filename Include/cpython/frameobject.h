@@ -83,7 +83,7 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
 
-int _PyFrame_StealLocals(PyFrameObject *f);
-
+/** Internal -- Not to be used outside of the interpreter core */
+int _PyFrame_TakeLocals(PyFrameObject *f);
 PyObject *_PyFrame_GetGlobals(PyFrameObject *f);
 PyObject *_PyFrame_GetBuiltins(PyFrameObject *f);
