@@ -7290,8 +7290,6 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
         }
         struct instr *last = &b->b_instr[b->b_iused-1];
         if (last->i_lineno < 0) {
-            /* A return in a block by itself can't have a linenumber, or
-             * we can mess up frame.setlineno */
             if (last->i_opcode == RETURN_VALUE)
             {
                 for (int i = 0; i < b->b_iused; i++) {
