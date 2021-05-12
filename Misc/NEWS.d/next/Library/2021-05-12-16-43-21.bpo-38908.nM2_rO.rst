@@ -1,0 +1,2 @@
+Fix issue when non runtime_protocol does not raise TypeError and return
+False instead. Patch provided by Yurii Karabas.

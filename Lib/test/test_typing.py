@@ -1422,6 +1422,17 @@ class ProtocolTests(BaseTestCase):
         class CustomContextManager(typing.ContextManager, Protocol):
             pass
 
+    def test_non_runtime_protocol_isinstance_check(self):
+        class P(Protocol):
+            pass
+
+        class A:
+            pass
+
+        with self.assertRaises(TypeError):
+            isinstance(A(), P)
+
+
 class GenericTests(BaseTestCase):
 
     def test_basics(self):
