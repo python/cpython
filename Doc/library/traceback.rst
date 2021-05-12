@@ -304,7 +304,7 @@ capture data for later printing in a lightweight fashion.
       Print to *file* the exception information as returned by
       ``self.format(chain=chain)``.
 
-      .. versionadded:: 3.10
+      .. versionadded:: 3.11
 
    .. versionchanged:: 3.10
       Added the *compact* parameter.
