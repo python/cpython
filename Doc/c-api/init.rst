@@ -323,6 +323,11 @@ Process-wide parameters
       single: main()
       triple: stdin; stdout; sdterr
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.stdio_encoding` and :c:member:`PyConfig.stdio_errors`
+   should be used instead, see :ref:`Python Initialization Configuration
+   <init-config>`.
+
    This function should be called before :c:func:`Py_Initialize`, if it is
    called at all. It specifies which encoding and error handling to use
    with standard IO, with the same meanings as in :func:`str.encode`.
@@ -345,6 +350,8 @@ Process-wide parameters
 
    .. versionadded:: 3.4
 
+   .. deprecated:: 3.11
+
 
 .. c:function:: void Py_SetProgramName(const wchar_t *name)
 
@@ -352,6 +359,10 @@ Process-wide parameters
       single: Py_Initialize()
       single: main()
       single: Py_GetPath()
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.program_name` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    This function should be called before :c:func:`Py_Initialize` is called for
    the first time, if it is called at all.  It tells the interpreter the value
@@ -366,6 +377,8 @@ Process-wide parameters
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: wchar* Py_GetProgramName()
@@ -495,6 +508,11 @@ Process-wide parameters
       single: path (in module sys)
       single: Py_GetPath()
 
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.module_search_paths` and
+   :c:member:`PyConfig.module_search_paths_set` should be used instead, see
+   :ref:`Python Initialization Configuration <init-config>`.
+
    Set the default module search path.  If this function is called before
    :c:func:`Py_Initialize`, then :c:func:`Py_GetPath` won't attempt to compute a
    default search path but uses the one provided instead.  This is useful if
@@ -517,6 +535,8 @@ Process-wide parameters
    .. versionchanged:: 3.8
       The program full path is now used for :data:`sys.executable`, instead
       of the program name.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -617,6 +637,9 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
+   members of the :ref:`Python Initialization Configuration <init-config>`.
+
    .. note::
       It is recommended that applications embedding the Python interpreter
       for purposes other than executing a single script pass ``0`` as *updatepath*,
@@ -644,10 +667,17 @@ Process-wide parameters
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
 
+   See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
+   members of the :ref:`Python Initialization Configuration <init-config>`.
+
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
 
 .. c:function:: void Py_SetPythonHome(const wchar_t *home)
+
+   This API is kept for backward compatibility: setting
+   :c:member:`PyConfig.home` should be used instead, see :ref:`Python
+   Initialization Configuration <init-config>`.
 
    Set the default "home" directory, that is, the location of the standard
    Python libraries.  See :envvar:`PYTHONHOME` for the meaning of the
@@ -660,6 +690,8 @@ Process-wide parameters
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
    :c:type:`wchar_*` string.
+
+   .. deprecated:: 3.11
 
 
 .. c:function:: w_char* Py_GetPythonHome()
