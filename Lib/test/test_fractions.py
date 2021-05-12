@@ -157,6 +157,13 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(OverflowError, F, Decimal('inf'))
         self.assertRaises(OverflowError, F, Decimal('-inf'))
 
+    def testInitFromGeneric(self):
+        class TwoThirds:
+            def as_integer_ratio(self):
+                return 2, 3
+
+        self.assertEqual(F(TwoThirds()), F(2, 3))
+
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
         self.assertEqual((3, 2), _components(F("3/2")))
