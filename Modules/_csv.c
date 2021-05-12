@@ -315,6 +315,7 @@ static PyGetSetDef Dialect_getsetlist[] = {
 static void
 Dialect_dealloc(DialectObj *self)
 {
+    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     Py_CLEAR(self->lineterminator);
     tp->tp_free((PyObject *)self);
@@ -512,6 +513,13 @@ PyDoc_STRVAR(Dialect_Type_doc,
 "\n"
 "The Dialect type records CSV parsing and generation options.\n");
 
+static int
+Dialect_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_doc, (char*)Dialect_Type_doc},
     {Py_tp_members, Dialect_memberlist},
@@ -520,13 +528,14 @@ static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_methods, dialect_methods},
     {Py_tp_finalize, Dialect_finalize},
     {Py_tp_dealloc, Dialect_dealloc},
+    {Py_tp_traverse, Dialect_traverse},
     {0, NULL}
 };
 
 PyType_Spec Dialect_Type_spec = {
     .name = "_csv.Dialect",
     .basicsize = sizeof(DialectObj),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = Dialect_Type_slots,
 };
 
@@ -914,6 +923,7 @@ Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
     Py_VISIT(self->dialect);
     Py_VISIT(self->input_iter);
     Py_VISIT(self->fields);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -1339,6 +1349,7 @@ Writer_traverse(WriterObj *self, visitproc visit, void *arg)
     Py_VISIT(self->dialect);
     Py_VISIT(self->write);
     Py_VISIT(self->error_obj);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -1349,6 +1360,15 @@ Writer_clear(WriterObj *self)
     Py_CLEAR(self->write);
     Py_CLEAR(self->error_obj);
     return 0;
+}
+
+static void
+Writer_dealloc(WriterObj *self)
+{
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_clear((PyObject *)self);
+    Py_DECREF(tp);
 }
 
 static void
@@ -1372,6 +1392,7 @@ static PyType_Slot Writer_Type_slots[] = {
     {Py_tp_doc, (char*)Writer_Type_doc},
     {Py_tp_traverse, Writer_traverse},
     {Py_tp_clear, Writer_clear},
+    {Py_tp_dealloc, Writer_dealloc},
     {Py_tp_methods, Writer_methods},
     {Py_tp_members, Writer_memberlist},
     {0, NULL}
@@ -1509,13 +1530,31 @@ csv_field_size_limit(PyObject *module, PyObject *args)
     return PyLong_FromLong(old_limit);
 }
 
+static void
+error_dealloc(PyObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free((PyObject *)self);
+    Py_DECREF(tp);
+}
+
+static int
+error_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyType_Slot error_slots[] = {
+    {Py_tp_traverse, error_traverse},
+    {Py_tp_dealloc, error_dealloc},
     {0, NULL},
 };
 
 PyType_Spec error_spec = {
     .name = "_csv.Error",
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = error_slots,
 };
 
