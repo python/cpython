@@ -2109,6 +2109,7 @@ hashlib_init_constructors(PyObject *module)
     if (PyModule_AddObjectRef(module, "_constructors", proxy) < 0) {
         return -1;
     }
+    Py_DECREF(proxy);
     return 0;
 }
 
