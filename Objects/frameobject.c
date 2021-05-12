@@ -846,7 +846,6 @@ frame_alloc(PyCodeObject *code, PyObject **localsarray)
     }
     f->f_localsptr = localsarray;
     f->f_own_locals_memory = owns;
-    f->f_valuestack = f->f_localsptr + code->co_nlocalsplus + FRAME_SPECIALS_SIZE;
     return f;
 }
 
@@ -883,18 +882,20 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     assert(con->fc_builtins != NULL);
     assert(con->fc_code != NULL);
     assert(locals == NULL || PyMapping_Check(locals));
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
 
-    PyFrameObject *f = frame_alloc((PyCodeObject *)con->fc_code, localsarray);
+    PyFrameObject *f = frame_alloc(code, localsarray);
     if (f == NULL) {
         return NULL;
     }
 
+    PyObject **specials = f->f_localsptr + code->co_nlocalsplus;
+    f->f_valuestack = specials + FRAME_SPECIALS_SIZE;
     f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
     f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
-    _PyFrame_Specials(f)[FRAME_SPECIALS_BUILTINS_OFFSET] = Py_NewRef(con->fc_builtins);
-    _PyFrame_Specials(f)[FRAME_SPECIALS_GLOBALS_OFFSET] = Py_NewRef(con->fc_globals);
-    _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET] = Py_XNewRef(locals);
-    // f_valuestack initialized by frame_alloc()
+    specials[FRAME_SPECIALS_BUILTINS_OFFSET] = Py_NewRef(con->fc_builtins);
+    specials[FRAME_SPECIALS_GLOBALS_OFFSET] = Py_NewRef(con->fc_globals);
+    specials[FRAME_SPECIALS_LOCALS_OFFSET] = Py_XNewRef(locals);
     f->f_trace = NULL;
     f->f_stackdepth = 0;
     f->f_trace_lines = 1;
@@ -903,7 +904,6 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     f->f_lasti = -1;
     f->f_lineno = 0;
     f->f_state = FRAME_CREATED;
-    // f_blockstack and f_localsplus initialized by frame_alloc()
     return f;
 }
 
