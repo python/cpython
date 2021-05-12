@@ -2316,10 +2316,24 @@ expression support in the :mod:`re` module).
    strings (of arbitrary lengths) or ``None``.  Character keys will then be
    converted to ordinals.
 
+   For example:
+
+   .. doctest::
+
+      >>> str.maketrans({'a': 'A', 'b': 'Boo', 'c': None})
+      {97: 'A', 98: 'Boo', 99: None}
+
    If there are two arguments, they must be strings of equal length, and in the
    resulting dictionary, each character in *from* will be mapped to the character at
    the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
+
+   For example:
+
+   .. doctest::
+
+      >>> str.maketrans('ab', 'AB', 'c')
+      {97: 65, 98: 66, 99: None}
 
 
 .. method:: str.partition(sep, /)
