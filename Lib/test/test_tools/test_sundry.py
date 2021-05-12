@@ -10,6 +10,11 @@ import sys
 import unittest
 from test.support import import_helper
 
+# Work around bpo-44116: the csv and urllib.request modules leak
+# references when unloaded using modules_cleanup
+import csv
+import urllib.request
+
 from test.test_tools import scriptsdir, import_tool, skip_if_missing
 
 skip_if_missing()
