@@ -3,7 +3,6 @@
 
 """Fraction, infinite-precision, real numbers."""
 
-from decimal import Decimal
 import math
 import numbers
 import operator
@@ -103,11 +102,6 @@ class Fraction(numbers.Rational):
                 self._denominator = numerator.denominator
                 return self
 
-            elif isinstance(numerator, (float, Decimal)):
-                # Exact conversion
-                self._numerator, self._denominator = numerator.as_integer_ratio()
-                return self
-
             elif isinstance(numerator, str):
                 # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
@@ -136,8 +130,13 @@ class Fraction(numbers.Rational):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string "
-                                "or a Rational instance")
+                as_integer_ratio = getattr(numerator, "as_integer_ratio", None)
+                if as_integer_ratio is not None:
+                     self._numerator, self._denominator = as_integer_ratio()
+                     return self
+                else:
+                    raise TypeError("argument should be a string "
+                                    "or a Rational instance")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
