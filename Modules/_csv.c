@@ -315,17 +315,11 @@ static PyGetSetDef Dialect_getsetlist[] = {
 static void
 Dialect_dealloc(DialectObj *self)
 {
-    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
-    Py_CLEAR(self->lineterminator);
-    tp->tp_free((PyObject *)self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear((PyObject *)self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
-}
-
-static void
-Dialect_finalize(DialectObj *self)
-{
-    Py_CLEAR(self->lineterminator);
 }
 
 static char *dialect_kws[] = {
@@ -514,8 +508,16 @@ PyDoc_STRVAR(Dialect_Type_doc,
 "The Dialect type records CSV parsing and generation options.\n");
 
 static int
-Dialect_traverse(PyObject *self, visitproc visit, void *arg)
+Dialect_clear(DialectObj *self)
 {
+    Py_CLEAR(self->lineterminator);
+    return 0;
+}
+
+static int
+Dialect_traverse(DialectObj *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->lineterminator);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
@@ -526,8 +528,8 @@ static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_getset, Dialect_getsetlist},
     {Py_tp_new, dialect_new},
     {Py_tp_methods, dialect_methods},
-    {Py_tp_finalize, Dialect_finalize},
     {Py_tp_dealloc, Dialect_dealloc},
+    {Py_tp_clear, Dialect_clear},
     {Py_tp_traverse, Dialect_traverse},
     {0, NULL}
 };
@@ -894,27 +896,9 @@ Reader_dealloc(ReaderObj *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->dialect);
-    Py_CLEAR(self->input_iter);
-    Py_CLEAR(self->fields);
-    if (self->field != NULL) {
-        PyMem_Free(self->field);
-        self->field = NULL;
-    }
+    tp->tp_clear((PyObject *)self);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
-}
-
-static void
-Reader_finalize(ReaderObj *self)
-{
-    Py_CLEAR(self->dialect);
-    Py_CLEAR(self->input_iter);
-    Py_CLEAR(self->fields);
-    if (self->field != NULL) {
-        PyMem_Free(self->field);
-        self->field = NULL;
-    }
 }
 
 static int
@@ -933,6 +917,10 @@ Reader_clear(ReaderObj *self)
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->input_iter);
     Py_CLEAR(self->fields);
+    if (self->field != NULL) {
+        PyMem_Free(self->field);
+        self->field = NULL;
+    }
     return 0;
 }
 
@@ -958,12 +946,11 @@ static struct PyMemberDef Reader_memberlist[] = {
 static PyType_Slot Reader_Type_slots[] = {
     {Py_tp_doc, (char*)Reader_Type_doc},
     {Py_tp_traverse, Reader_traverse},
-    {Py_tp_clear, Reader_clear},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, Reader_iternext},
     {Py_tp_methods, Reader_methods},
     {Py_tp_members, Reader_memberlist},
-    {Py_tp_finalize, Reader_finalize},
+    {Py_tp_clear, Reader_clear},
     {Py_tp_dealloc, Reader_dealloc},
     {0, NULL}
 };
@@ -1359,25 +1346,20 @@ Writer_clear(WriterObj *self)
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->write);
     Py_CLEAR(self->error_obj);
+    if (self->rec != NULL) {
+        PyMem_Free(self->rec);
+    }
     return 0;
 }
 
 static void
 Writer_dealloc(WriterObj *self)
 {
-    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     tp->tp_clear((PyObject *)self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
-}
-
-static void
-Writer_finalize(WriterObj *self)
-{
-    Writer_clear(self);
-    if (self->rec != NULL) {
-        PyMem_Free(self->rec);
-    }
 }
 
 PyDoc_STRVAR(Writer_Type_doc,
@@ -1388,7 +1370,6 @@ PyDoc_STRVAR(Writer_Type_doc,
 );
 
 static PyType_Slot Writer_Type_slots[] = {
-    {Py_tp_finalize, Writer_finalize},
     {Py_tp_doc, (char*)Writer_Type_doc},
     {Py_tp_traverse, Writer_traverse},
     {Py_tp_clear, Writer_clear},
