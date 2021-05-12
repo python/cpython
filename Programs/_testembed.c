@@ -22,6 +22,11 @@
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
+// Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
+// tested on purpose here.
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static void _testembed_Py_Initialize(void)
 {
     Py_SetProgramName(PROGRAM_NAME);
