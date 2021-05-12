@@ -2203,7 +2203,7 @@ expression support in the :mod:`re` module).
       >>> "Monty Python's Flying Circus".rpartition(' ')
       ("Monty Python's Flying", ' ', 'Circus')
 
-   See also :meth:`partition`.
+   See also :meth:`partition`
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
 
