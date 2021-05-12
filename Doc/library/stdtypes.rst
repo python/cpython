@@ -2398,6 +2398,12 @@ expression support in the :mod:`re` module).
    vice versa. Note that it is not necessarily true that
    ``s.swapcase().swapcase() == s``.
 
+   For example::
+
+      >>> 'Monty Python'.swapcase()
+      'mONTY pYTHON'
+
+   See also :meth:`upper` and :meth:`lower`.
 
 .. method:: str.title()
 
