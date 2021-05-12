@@ -1642,6 +1642,7 @@ expression support in the :mod:`re` module).
       >>> 'Python is amazing'.endswith('is', 0, 9)
       True
 
+   See also :meth:`startswith`.
 
 .. method:: str.expandtabs(tabsize=8)
 
@@ -2354,6 +2355,18 @@ expression support in the :mod:`re` module).
    test string beginning at that position.  With optional *end*, stop comparing
    string at that position.
 
+   For example:
+
+      >>> 'Python'.startswith('Py')
+      True
+      >>> 'a tuple of prefixes'.startswith(('at', 'in'))
+      False
+      >>> 'a tuple of suffixes'.startswith(('at', 'a'))
+      True
+      >>> 'Python is amazing'.startswith('is', 7)
+      True
+
+   See also :meth:`endswith`.
 
 .. method:: str.strip([chars])
 
