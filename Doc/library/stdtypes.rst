@@ -1722,7 +1722,15 @@ expression support in the :mod:`re` module).
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
-   interpreted as in slice notation.  Return ``-1`` if *sub* is not found.
+   interpreted as in slice notation.  Return ``-1`` if *sub* is not found. For
+   example::
+
+      >>> 'spam, spam, spam'.find('sp')
+      0
+      >>> 'spam, spam, spam'.find('sp', 5)
+      6
+
+   See also :meth:`rfind`.
 
    .. note::
 
@@ -2065,6 +2073,14 @@ expression support in the :mod:`re` module).
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
 
+   For example::
+
+      >>> 'spam, spam, spam'.rfind('sp')
+      12
+      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+      6
+
+   See also :meth:`find`.
 
 .. method:: str.rindex(sub[, start[, end]])
 
