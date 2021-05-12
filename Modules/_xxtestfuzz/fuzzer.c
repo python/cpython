@@ -438,6 +438,8 @@ fail:
    (And we bitwise or when running multiple tests to verify that normally we
    only return 0.) */
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    assert(Py_IsInitialized());
+
     int rv = 0;
 
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_builtin_float)
