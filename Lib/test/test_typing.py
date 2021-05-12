@@ -1424,7 +1424,7 @@ class ProtocolTests(BaseTestCase):
 
     def test_non_runtime_protocol_isinstance_check(self):
         class P(Protocol):
-            pass
+            x: int
 
         class A:
             pass
