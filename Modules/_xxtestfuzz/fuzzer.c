@@ -413,6 +413,7 @@ int __lsan_is_turned_off(void) { return 1; }
 int LLVMFuzzerInitialize(int *argc, char ***argv) {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
+    config.install_signal_handlers = 0;
     PyStatus status;
     status = PyConfig_SetBytesString(&config, &config.program_name, *argv[0]);
     if (PyStatus_Exception(status)) {
