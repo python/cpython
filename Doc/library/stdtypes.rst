@@ -2386,6 +2386,13 @@ expression support in the :mod:`re` module).
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
 
+   For example::
+
+      >>> str.maketrans('to', '70')
+      {116: 55, 111: 48}
+      >>> 'Python'.translate({116:55, 111:48})
+      'Py7h0n'
+
    See also the :mod:`codecs` module for a more flexible approach to custom
    character mappings.
 
