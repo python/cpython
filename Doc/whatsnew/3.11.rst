@@ -99,10 +99,10 @@ Optimizations
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
-Build and C API Changes
-=======================
 
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
+Build Changes
+=============
+
 
 Deprecated
 ==========
@@ -119,3 +119,23 @@ Porting to Python 3.11
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+Porting to Python 3.11
+----------------------
+
+Deprecated
+----------
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
