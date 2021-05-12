@@ -1,1 +1,1 @@
-improve conversions to fractions
+objects defining as_integer_ratio can be converted to fractions
