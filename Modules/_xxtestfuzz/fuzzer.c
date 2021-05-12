@@ -411,8 +411,17 @@ int __lsan_is_turned_off(void) { return 1; }
 
 
 int LLVMFuzzerInitialize(int *argc, char ***argv) {
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    PyStatus status;
     wchar_t* wide_program_name = Py_DecodeLocale(*argv[0], NULL);
-    Py_SetProgramName(wide_program_name);
+    status = PyConfig_SetString(&config, &config.program_name,
+                                wide_program_name);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
+    }
+
     return 0;
 }
 
