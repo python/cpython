@@ -2402,6 +2402,12 @@ expression support in the :mod:`re` module).
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
 
+   For example::
+
+      >>> 'spam, spam, spam'.replace('spam', 'eggs')
+      'eggs, eggs, eggs'
+      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+      'eggs, spam, spam'
 
 .. method:: str.rfind(sub[, start[, end]])
 
