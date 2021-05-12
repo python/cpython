@@ -282,26 +282,11 @@ _PyEval_ThreadsInitialized(PyInterpreterState *interp)
 {
     return gil_created(&interp->ceval.gil);
 }
-
-int
-PyEval_ThreadsInitialized(void)
-{
-    // Fatal error if there is no current interpreter
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return _PyEval_ThreadsInitialized(interp);
-}
 #else
 int
 _PyEval_ThreadsInitialized(_PyRuntimeState *runtime)
 {
     return gil_created(&runtime->ceval.gil);
-}
-
-int
-PyEval_ThreadsInitialized(void)
-{
-    _PyRuntimeState *runtime = &_PyRuntime;
-    return _PyEval_ThreadsInitialized(runtime);
 }
 #endif
 
@@ -358,12 +343,6 @@ _PyEval_FiniGIL(PyInterpreterState *interp)
 
     destroy_gil(gil);
     assert(!gil_created(gil));
-}
-
-void
-PyEval_InitThreads(void)
-{
-    /* Do nothing: kept for backward compatibility */
 }
 
 void

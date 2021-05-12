@@ -780,8 +780,6 @@ PyEval_GetFuncDesc:PyObject*:func:0:
 PyEval_GetFuncName:const char*:::
 PyEval_GetFuncName:PyObject*:func:0:
 
-PyEval_InitThreads:void:::
-
 PyEval_ReleaseLock:void:::
 
 PyEval_ReleaseThread:void:::

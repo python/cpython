@@ -601,8 +601,6 @@ function PyEval_GetGlobals
     added 3.2
 function PyEval_GetLocals
     added 3.2
-function PyEval_InitThreads
-    added 3.2
 function PyEval_ReleaseLock
     added 3.2
 function PyEval_ReleaseThread
@@ -610,8 +608,6 @@ function PyEval_ReleaseThread
 function PyEval_RestoreThread
     added 3.2
 function PyEval_SaveThread
-    added 3.2
-function PyEval_ThreadsInitialized
     added 3.2
 data PyExc_ArithmeticError
     added 3.2

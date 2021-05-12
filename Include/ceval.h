@@ -118,8 +118,6 @@ PyAPI_FUNC(PyObject *) PyEval_EvalFrameEx(PyFrameObject *f, int exc);
 PyAPI_FUNC(PyThreadState *) PyEval_SaveThread(void);
 PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 
-Py_DEPRECATED(3.9) PyAPI_FUNC(int) PyEval_ThreadsInitialized(void);
-Py_DEPRECATED(3.9) PyAPI_FUNC(void) PyEval_InitThreads(void);
 /* PyEval_AcquireLock() and PyEval_ReleaseLock() are part of stable ABI.
  * They will be removed from this header file in the future version.
  * But they will be remained in ABI until Python 4.0.

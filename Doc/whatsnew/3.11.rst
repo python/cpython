@@ -96,10 +96,9 @@ Optimizations
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
 
-Build and C API Changes
-=======================
+Build Changes
+=============
 
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
 
 Deprecated
 ==========
@@ -116,3 +115,30 @@ Porting to Python 3.11
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+Porting to Python 3.11
+----------------------
+
+Deprecated
+----------
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
+  functions. The GIL is created by :c:func:`Py_Initialize` since Python 3.7,
+  and so calling explicitly ``PyEval_InitThreads()`` was useless since Python
+  3.7. Deprecated in 3.9, ``PyEval_InitThreads()`` did nothing and
+  ``PyEval_ThreadsInitialized()`` already returned true.
+  (Contributed by Victor Stinner in :issue:`44117`.)

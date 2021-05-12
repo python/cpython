@@ -64,8 +64,8 @@ The following functions can be safely called before Python is initialized:
    The following functions **should not be called** before
    :c:func:`Py_Initialize`: :c:func:`Py_EncodeLocale`, :c:func:`Py_GetPath`,
    :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`,
-   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`,
-   :c:func:`Py_GetProgramName` and :c:func:`PyEval_InitThreads`.
+   :c:func:`Py_GetProgramFullPath`, :c:func:`Py_GetPythonHome`
+   and :c:func:`Py_GetProgramName`.
 
 
 .. _global-conf-vars:
@@ -230,7 +230,6 @@ Initializing and finalizing the interpreter
 
    .. index::
       single: Py_SetProgramName()
-      single: PyEval_InitThreads()
       single: modules (in module sys)
       single: path (in module sys)
       module: builtins
@@ -869,45 +868,6 @@ code, or when embedding the Python interpreter:
    This data structure represents the state of a single thread.  The only public
    data member is :attr:`interp` (:c:type:`PyInterpreterState *`), which points to
    this thread's interpreter state.
-
-
-.. c:function:: void PyEval_InitThreads()
-
-   .. index::
-      single: PyEval_AcquireThread()
-      single: PyEval_ReleaseThread()
-      single: PyEval_SaveThread()
-      single: PyEval_RestoreThread()
-
-   Deprecated function which does nothing.
-
-   In Python 3.6 and older, this function created the GIL if it didn't exist.
-
-   .. versionchanged:: 3.9
-      The function now does nothing.
-
-   .. versionchanged:: 3.7
-      This function is now called by :c:func:`Py_Initialize()`, so you don't
-      have to call it yourself anymore.
-
-   .. versionchanged:: 3.2
-      This function cannot be called before :c:func:`Py_Initialize()` anymore.
-
-   .. deprecated-removed:: 3.9 3.11
-
-   .. index:: module: _thread
-
-
-.. c:function:: int PyEval_ThreadsInitialized()
-
-   Returns a non-zero value if :c:func:`PyEval_InitThreads` has been called.  This
-   function can be called without holding the GIL, and therefore can be used to
-   avoid calls to the locking API when running single-threaded.
-
-   .. versionchanged:: 3.7
-      The :term:`GIL` is now initialized by :c:func:`Py_Initialize()`.
-
-   .. deprecated-removed:: 3.9 3.11
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()

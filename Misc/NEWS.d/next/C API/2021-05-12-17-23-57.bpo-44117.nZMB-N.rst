@@ -1,0 +1,5 @@
+Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
+functions. The GIL is created by :c:func:`Py_Initialize` since Python 3.7,
+and so calling explicitly ``PyEval_InitThreads()`` was useless since Python
+3.7. Deprecated in 3.9, ``PyEval_InitThreads()`` did nothing and
+``PyEval_ThreadsInitialized()`` already returned true.
