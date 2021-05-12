@@ -1130,8 +1130,8 @@ class Thread:
         """Return whether the thread is alive.
 
         This method returns True just before the run() method starts until just
-        after the run() method terminates. The module function enumerate()
-        returns a list of all alive threads.
+        after the run() method terminates. See also the module function
+        enumerate().
 
         """
         assert self._initialized, "Thread.__init__() not called"

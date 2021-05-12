@@ -225,8 +225,9 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
 # Options for extensions
 # ----------------------
 
-# Relative filename of the reference count data file.
+# Relative filename of the data files
 refcount_file = 'data/refcounts.dat'
+stable_abi_file = 'data/stable_abi.dat'
 
 # Sphinx 2 and Sphinx 3 compatibility
 # -----------------------------------
