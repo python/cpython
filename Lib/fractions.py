@@ -132,8 +132,8 @@ class Fraction(numbers.Rational):
             else:
                 as_integer_ratio = getattr(numerator, "as_integer_ratio", None)
                 if as_integer_ratio is not None:
-                     self._numerator, self._denominator = as_integer_ratio()
-                     return self
+                    self._numerator, self._denominator = as_integer_ratio()
+                    return self
                 else:
                     raise TypeError("argument should be a string "
                                     "or a Rational instance")
