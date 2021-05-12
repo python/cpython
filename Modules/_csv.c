@@ -897,6 +897,10 @@ Reader_dealloc(ReaderObj *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tp->tp_clear((PyObject *)self);
+    if (self->field != NULL) {
+        PyMem_Free(self->field);
+        self->field = NULL;
+    }
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -917,10 +921,6 @@ Reader_clear(ReaderObj *self)
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->input_iter);
     Py_CLEAR(self->fields);
-    if (self->field != NULL) {
-        PyMem_Free(self->field);
-        self->field = NULL;
-    }
     return 0;
 }
 
@@ -1346,9 +1346,6 @@ Writer_clear(WriterObj *self)
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->write);
     Py_CLEAR(self->error_obj);
-    if (self->rec != NULL) {
-        PyMem_Free(self->rec);
-    }
     return 0;
 }
 
@@ -1358,6 +1355,9 @@ Writer_dealloc(WriterObj *self)
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tp->tp_clear((PyObject *)self);
+    if (self->rec != NULL) {
+        PyMem_Free(self->rec);
+    }
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
