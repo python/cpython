@@ -1,27 +1,16 @@
 .. _tut-informal:
 
 **********************************
-An Informal Introduction to Python
+Python 速览
 **********************************
 
-In the following examples, input and output are distinguished by the presence or
-absence of prompts (:term:`>>>` and :term:`...`): to repeat the example, you must type
-everything after the prompt, when the prompt appears; lines that do not begin
-with a prompt are output from the interpreter. Note that a secondary prompt on a
-line by itself in an example means you must type a blank line; this is used to
-end a multi-line command.
+在下面的例子中，输入和输出是根据是否存在提示符(:term:`>>>` and :term:`...`)来区分的: 输入例子中的代码时，当提示符出现时，你必须在提示符后面输入所有内容;不以提示符开头的行是解释器的输出。注意，在一个例子中，次要提示符本身就意味着你必须输入一个空行;用于结束多行命令。
 
 .. index:: single: # (hash); comment
 
-Many of the examples in this manual, even those entered at the interactive
-prompt, include comments.  Comments in Python start with the hash character,
-``#``, and extend to the end of the physical line.  A comment may appear at the
-start of a line or following whitespace or code, but not within a string
-literal.  A hash character within a string literal is just a hash character.
-Since comments are to clarify code and are not interpreted by Python, they may
-be omitted when typing in examples.
+本手册中的许多示例，甚至是那些在交互式提示下输入的示例，都包含注释。Python 中的注释以字符``#``开始，并延伸到物理行末尾。注释可以出现在行首或空格或代码之后，但不能出现在字符串文字中。字符串中的井号就是井号。因为注释是用来阐明代码的，不会被Python解释，所以在输入示例时可以省略注释。
 
-Some examples::
+几个例子：
 
    # this is the first comment
    spam = 1  # and this is the second comment
@@ -31,23 +20,21 @@ Some examples::
 
 .. _tut-calculator:
 
-Using Python as a Calculator
+Python 用作计算器
 ============================
 
-Let's try some simple Python commands.  Start the interpreter and wait for the
-primary prompt, ``>>>``.  (It shouldn't take long.)
+现在，尝试一些简单的 Python 命令。启动解释器，等待主提示符（>>> ）出现。
+
+让我们尝试一些简单的Python命令。启动解释器并等待主提示符``>>>``出现。(很快就出现了。)
+
 
 
 .. _tut-numbers:
 
-Numbers
+数字
 -------
 
-The interpreter acts as a simple calculator: you can type an expression at it
-and it will write the value.  Expression syntax is straightforward: the
-operators ``+``, ``-``, ``*`` and ``/`` work just like in most other languages
-(for example, Pascal or C); parentheses (``()``) can be used for grouping.
-For example::
+解释器扮演一个简单的计算器：输入表达式，就会给出答案。表达式的语法很直接：运算符 ``+``, ``-``, ``*`` 和 ``/`` 的用法和其他大多数语言一样（比如，Pascal 或 C）；括号 (``()``) 用来分组。例如：
 
    >>> 2 + 2
    4
@@ -55,7 +42,7 @@ For example::
    20
    >>> (50 - 5*6) / 4
    5.0
-   >>> 8 / 5  # division always returns a floating point number
+   >>> 8 / 5  # 除法总是返回浮点数
    1.6
 
 The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
