@@ -2035,7 +2035,7 @@ _PyThreadState_PopLocals(PyThreadState *tstate, PyObject **locals)
         tstate->datastack_top = &previous->data[previous->top];
         tstate->datastack_chunk = previous;
         _PyObject_VirtualFree(chunk, chunk->size);
-        tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
+        tstate->datastack_limit = (PyObject **)(((char *)previous) + previous->size);
     }
     else {
         assert(tstate->datastack_top >= locals);
