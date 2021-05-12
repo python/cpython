@@ -2261,6 +2261,14 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example::
+
+      >>> 'Python'.ljust(10)
+      'Python    '
+      >>> 'Python'.ljust(10, '.')
+      'Python....'
+
+   See also :meth:`rjust`.
 
 .. method:: str.lower()
 
