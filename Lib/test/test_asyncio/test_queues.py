@@ -298,7 +298,7 @@ class QueueGetTests(_QueueTestBase):
         self.assertEqual(len(queue._getters), 0)
 
     def test_close_get(self):
-        queue = asyncio.Queue(loop=self.loop)
+        queue = asyncio.Queue()
 
         get1 = self.loop.create_task(queue.get())
         get2 = self.loop.create_task(queue.get())
@@ -589,7 +589,7 @@ class QueuePutTests(_QueueTestBase):
             loop.run_until_complete(put_task)
 
     def test_close_put(self):
-        queue = asyncio.Queue(1, loop=self.loop)
+        queue = asyncio.Queue(1)
         queue.put_nowait(1)
 
         putter = self.loop.create_task(queue.put(1))
