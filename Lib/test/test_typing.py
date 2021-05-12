@@ -1426,11 +1426,8 @@ class ProtocolTests(BaseTestCase):
         class P(Protocol):
             x: int
 
-        class A:
-            pass
-
-        with self.assertRaises(TypeError):
-            isinstance(A(), P)
+        with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
+            isinstance(1, P)
 
 
 class GenericTests(BaseTestCase):
