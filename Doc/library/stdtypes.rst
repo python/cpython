@@ -2060,6 +2060,7 @@ expression support in the :mod:`re` module).
       >>> 'Arthur: three!'.removeprefix('Arthur: ')
       'three!'
 
+   See also :meth:`rstrip`.
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
@@ -2183,6 +2184,8 @@ expression support in the :mod:`re` module).
       'M'
       >>> 'Monty Python'.removesuffix(' Python')
       'Monty'
+
+   See also :meth:`lstrip`.
 
 .. method:: str.split(sep=None, maxsplit=-1)
 
