@@ -1343,14 +1343,14 @@ def _no_init(self, *args, **kwargs):
         raise TypeError('Protocols cannot be instantiated')
 
 
-def _allow_reckless_class_checks():
+def _allow_reckless_class_checks(depth=3):
     """Allow instance and class checks for special stdlib modules.
 
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
     try:
-        return sys._getframe(3).f_globals['__name__'] in ['abc', 'functools']
+        return sys._getframe(depth).f_globals['__name__'] in ['abc', 'functools']
     except (AttributeError, ValueError):  # For platforms without _getframe().
         return True
 
@@ -1370,6 +1370,14 @@ class _ProtocolMeta(ABCMeta):
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
         # assigned in __init__.
+        if (
+            getattr(cls, '_is_protocol', False) and
+            not getattr(cls, '_is_runtime_protocol', False) and
+            not _allow_reckless_class_checks(depth=2)
+        ):
+            raise TypeError("Instance and class checks can only be used with"
+                            " @runtime_checkable protocols")
+
         if ((not getattr(cls, '_is_protocol', False) or
                 _is_callable_members_only(cls)) and
                 issubclass(instance.__class__, cls)):
