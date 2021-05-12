@@ -1795,6 +1795,9 @@ expression support in the :mod:`re` module).
    not found.
 
 
+   See also :meth:`rindex`.
+
+
 .. method:: str.isalnum()
 
    Return ``True`` if all characters in the string are alphanumeric and there is at
@@ -2087,6 +2090,14 @@ expression support in the :mod:`re` module).
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
 
+   For example::
+
+      >>> 'spam, spam, spam'.rindex('eggs')
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ValueError: substring not found
+
+   See also :meth:`index`.
 
 .. method:: str.rjust(width[, fillchar])
 
