@@ -4775,6 +4775,10 @@ fail:
 
 }
 
+/* Exception table parsing code.
+ * See Objects/exception_table_notes.txt for details.
+ */
+
 static inline unsigned char *
 parse_varint(unsigned char *p, int *result) {
     int val = p[0] & 63;
