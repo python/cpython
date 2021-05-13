@@ -116,11 +116,11 @@ cursor_clear(pysqlite_Cursor *self)
 }
 
 static void
-cursor_dealloc(pysqlite_Cursor *self)
+cursor_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
