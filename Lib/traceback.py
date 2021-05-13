@@ -668,7 +668,7 @@ class TracebackException:
             yield from exc.format_exception_only()
 
     def print(self, *, file=None, chain=True):
-        """Print the result of self.format(chain=chain) to to 'file'."""
+        """Print the result of self.format(chain=chain) to 'file'."""
         if file is None:
             file = sys.stderr
         for line in self.format(chain=chain):
