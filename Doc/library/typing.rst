@@ -1488,7 +1488,7 @@ Other concrete types
    Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`. These types are also in the ``typing.io`` namespace.
+   :func:`open`.
 
 .. class:: Pattern
            Match
@@ -1498,7 +1498,7 @@ Other concrete types
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
-   ``Match[bytes]``. These types are also in the ``typing.re`` namespace.
+   ``Match[bytes]``.
 
    .. deprecated:: 3.9
       Classes ``Pattern`` and ``Match`` from :mod:`re` now support ``[]``.
