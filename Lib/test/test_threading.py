@@ -19,6 +19,7 @@ import os
 import subprocess
 import signal
 import textwrap
+import traceback
 
 from unittest import mock
 from test import lock_tests
@@ -1343,6 +1344,7 @@ class ThreadingExceptionTests(BaseTestCase):
         def modify_file():
             with open(os_helper.TESTFN, 'w', encoding='utf-8') as fp:
                 fp.write(' ')
+                traceback.format_stack()
             self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
         threads = [
