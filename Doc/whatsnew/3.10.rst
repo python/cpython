@@ -238,7 +238,7 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`43822`)
 
-* Exception groups without parentheses:
+* Multiple Exception types without parentheses:
 
     .. code-block:: python
 
@@ -248,7 +248,7 @@ have been incorporated. Some of the most notable ones:
           File "<stdin>", line 3
             except NotEnoughScienceError, NotEnoughResourcesError:
                    ^
-        SyntaxError: exception group must be parenthesized
+        SyntaxError: multiple exception types must be parenthesized
 
     (Contributed by Pablo Galindo in :issue:`43149`)
 
@@ -811,6 +811,16 @@ Other Language Changes
   with ``__annotations__``; for more information, please see
   :ref:`annotations-howto`.
   (Contributed by Larry Hastings in :issue:`43901`.)
+
+* Annotations consist of ``yield``, ``yield from``, ``await`` or named expressions
+  are now forbidden under ``from __future__ import annotations`` due to their side
+  effects.
+  (Contributed by Batuhan Taskaya in :issue:`42725`.)
+
+* Usage of unbound variables, ``super()`` and other expressions that might
+  alter the processing of symbol table as annotations are now rendered
+  effectless under ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42725`.)
 
 New Modules
 ===========
