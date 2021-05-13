@@ -1231,8 +1231,11 @@ class UnicodeTest(string_tests.CommonTest,
                           0, 1, 2, 3, 4, 5, 6, 7)
 
         # string format spec errors
-        self.assertRaises(ValueError, "{0:-s}".format, '')
-        self.assertRaises(ValueError, format, "", "-")
+        sign_msg = "Sign not allowed in string format specifier"
+        self.assertRaisesRegex(ValueError, sign_msg, "{0:-s}".format, '')
+        self.assertRaisesRegex(ValueError, sign_msg, format, "", "-")
+        space_msg = "Space not allowed in string format specifier"
+        self.assertRaisesRegex(ValueError, space_msg, "{: }".format, '')
         self.assertRaises(ValueError, "{0:=s}".format, '')
 
         # Alternate formatting is not supported
