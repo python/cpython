@@ -1968,6 +1968,13 @@ expression support in the :mod:`re` module).
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
+<<<<<<< HEAD
+=======
+   The lowercasing algorithm used is described in section 3.13 of the Unicode
+   Standard.
+
+   See also :meth:`casefold`, :meth:`swapcase` and :meth:`upper`.
+>>>>>>> 58b11f169d ([Doc] Added snippet code to str.upper method)
 
 .. method:: str.lstrip([chars])
 
@@ -2396,10 +2403,18 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
+   For example::
+
+      >>> 'Monty Python'.upper()
+      'MONTY PYTHON'
+      >>> '𐊠'.upper().isupper() # 'CARIAN LETTER A'
+      False
+
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
 
+   See also :meth:`swapcase` and :meth:`lower`.
 
 .. method:: str.zfill(width)
 
