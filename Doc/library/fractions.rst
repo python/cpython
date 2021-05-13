@@ -25,17 +25,20 @@ another rational number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is :const:`0`, it
-   raises a :exc:`ZeroDivisionError`. The second version requires that
-   *other_fraction* is an instance of :class:`numbers.Rational` and returns a
-   :class:`Fraction` instance with the same value.  The next two versions accept
-   either a :class:`float` or a :class:`decimal.Decimal` instance, and return a
-   :class:`Fraction` instance with exactly the same value.  Note that due to the
-   usual issues with binary floating-point (see :ref:`tut-fp-issues`), the
-   argument to ``Fraction(1.1)`` is not exactly equal to 11/10, and so
-   ``Fraction(1.1)`` does *not* return ``Fraction(11, 10)`` as one might expect.
-   (But see the documentation for the :meth:`limit_denominator` method below.)
-   The last version of the constructor expects a string or unicode instance.
+   with value ``numerator/denominator``.  If *denominator* is :const:`0`, it
+   raises a :exc:`ZeroDivisionError`.  The following versions require
+   that the parameter has an `as_integer_ratio` method which returns a
+   pair (numerator, denominator).  This assures that for instances
+   of :class:`numbers.Rational`, :class:`float`, or :class:`decimal.Decimal`, a
+   :class:`Fraction` instance with exactly the same value is returned.
+
+   Note that due to the usual issues with binary floating-point
+   (see :ref:`tut-fp-issues`), the argument to ``Fraction(1.1)`` is not exactly
+   equal to 11/10, and so ``Fraction(1.1)`` does *not* return
+   ``Fraction(11, 10)`` as one might expect. (But see the documentation for the
+   :meth:`limit_denominator` method below.)
+
+   The last version of the constructor expects a string instance.
    The usual form for this instance is::
 
       [sign] numerator ['/' denominator]
@@ -83,6 +86,10 @@ another rational number, or from a string.
    .. versionchanged:: 3.2
       The :class:`Fraction` constructor now accepts :class:`float` and
       :class:`decimal.Decimal` instances.
+
+   .. versionchanged:: 3.11
+      The :class:`Fraction` constructor now accepts anything that
+      defines `as_integer_ratio`.
 
    .. versionchanged:: 3.9
       The :func:`math.gcd` function is now used to normalize the *numerator*

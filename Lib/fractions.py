@@ -53,6 +53,9 @@ class Fraction(numbers.Rational):
 
       - other Rational instances (including integers)
 
+      - or anything else that has an `as_integer_ratio` method that
+        returns a pair (numerator, denominator)
+
     """
 
     __slots__ = ('_numerator', '_denominator')
