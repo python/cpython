@@ -1257,7 +1257,7 @@ class Generic:
         params = tuple(_type_convert(p) for p in params)
         if cls in (Generic, Protocol):
             # Generic and Protocol can only be subscripted with unique type variables.
-            if not all(isinstance(p, _TypeVarLike) for p in params):
+            if not all(isinstance(p, (TypeVar, ParamSpec)) for p in params):
                 raise TypeError(
                     f"Parameters to {cls.__name__}[...] must all be type variables "
                     f"or parameter specification variables.")
@@ -1283,7 +1283,7 @@ class Generic:
         if error:
             raise TypeError("Cannot inherit from plain Generic")
         if '__orig_bases__' in cls.__dict__:
-            tvars = _collect_type_vars(cls.__orig_bases__, typevar_types=_TypeVarLike)
+            tvars = _collect_type_vars(cls.__orig_bases__, (TypeVar, ParamSpec))
             # Look for Generic[T1, ..., Tn].
             # If found, tvars must be a subset of it.
             # If not found, tvars is it.
