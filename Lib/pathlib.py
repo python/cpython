@@ -349,7 +349,7 @@ class _WildcardSelector(_Selector):
 
     def _select_from(self, parent_path, is_dir, exists):
         try:
-            with parent_path.scandir() as scandir_it:
+            with parent_path._scandir() as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
                 if self.dironly:
@@ -380,7 +380,7 @@ class _RecursiveWildcardSelector(_Selector):
     def _iterate_directories(self, parent_path, is_dir):
         yield parent_path
         try:
-            with parent_path.scandir() as scandir_it:
+            with parent_path._scandir() as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
                 entry_is_dir = False
@@ -929,7 +929,7 @@ class Path(PurePath):
                 continue
             yield self._make_child_relpath(name)
 
-    def scandir(self):
+    def _scandir(self):
         return os.scandir(self)
 
     def glob(self, pattern):
