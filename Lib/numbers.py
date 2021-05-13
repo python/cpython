@@ -269,6 +269,14 @@ class Rational(Real):
 
     __slots__ = ()
 
+    def as_integer_ratio(self):
+        """Return the integer ratio as a tuple.
+
+        Return a tuple of two integers, whose ratio is equal to the
+        Fraction and with a positive denominator.
+        """
+        return (self.numerator, self.denominator)
+
     @property
     @abstractmethod
     def numerator(self):

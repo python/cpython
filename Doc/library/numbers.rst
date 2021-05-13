@@ -61,7 +61,7 @@ The numeric tower
    Subtypes :class:`Real` and adds
    :attr:`~Rational.numerator` and :attr:`~Rational.denominator` properties, which
    should be in lowest terms. With these, it provides a default for
-   :func:`float`.
+   :func:`float` and :meth:`~Rational.as_integer_ratio`.
 
    .. attribute:: numerator
 
@@ -71,6 +71,9 @@ The numeric tower
 
       Abstract.
 
+   .. method:: as_integer_ratio()
+
+      return a pair (numerator, denominator).
 
 .. class:: Integral
 
