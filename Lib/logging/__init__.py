@@ -713,28 +713,45 @@ class BufferingFormatter(object):
         else:
             self.linefmt = _defaultFormatter
 
-    def formatHeader(self, records):
+    def formatHeader(self, records, /, header=""):
         """
-        Return the header string for the specified records.
+        Format the specified records with a given header and return the result as a string.
         """
-        return ""
+        rv = ""
+        for i, record in enumerate(records):
+            if i == 0:
+                rv += header + record.getMessage()
+            else:
+                rv += record.getMessage()
+        return rv
 
-    def formatFooter(self, records):
+    def formatFooter(self, records, /, footer=""):
         """
-        Return the footer string for the specified records.
+        Format the specified records with a given footer and return the result as a string.
         """
-        return ""
+        rv = ""
+        for i, record in enumerate(records):
+            if i == len(records) - 1:
+                rv += record.getMessage() + footer
+            else:
+                rv += record.getMessage()
+        return rv
 
-    def format(self, records):
+    def format(self, records, /, header="", footer=""):
         """
         Format the specified records and return the result as a string.
         """
         rv = ""
+        temp_records = []
         if len(records) > 0:
-            rv = rv + self.formatHeader(records)
-            for record in records:
-                rv = rv + self.linefmt.format(record)
-            rv = rv + self.formatFooter(records)
+            for i, record in enumerate(records):
+                if i == 0:
+                    record.msg = self.linefmt.format(record)
+                    record.msg = self.formatHeader([record], header)
+                else:
+                    record.msg = self.linefmt.format(record)
+                temp_records.append(record)
+            rv = self.formatFooter(temp_records, footer)
         return rv
 
 #---------------------------------------------------------------------------

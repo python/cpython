@@ -4014,14 +4014,6 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f.converter = time.gmtime
         self.assertEqual(f.formatTime(r), '21/04/1993 08:03:00')
 
-
-class TestBufferingFormatter(logging.BufferingFormatter):
-    def formatHeader(self, records):
-        return '[(%d)' % len(records)
-
-    def formatFooter(self, records):
-        return '(%d)]' % len(records)
-
 class BufferingFormatterTest(unittest.TestCase):
     def setUp(self):
         self.records = [
@@ -4031,15 +4023,21 @@ class BufferingFormatterTest(unittest.TestCase):
 
     def test_default(self):
         f = logging.BufferingFormatter()
+        header = 'header\n'
+        footer = '\nfooter'
+        ref = 'header\nonetwo\nfooter'
         self.assertEqual('', f.format([]))
         self.assertEqual('onetwo', f.format(self.records))
+        self.assertEqual(ref, f.format(self.records, header, footer))
 
     def test_custom(self):
-        f = TestBufferingFormatter()
-        self.assertEqual('[(2)onetwo(2)]', f.format(self.records))
+        header = '[(%d)' % len(self.records)
+        footer = '(%d)]' % len(self.records)
+        f = logging.BufferingFormatter()
+        self.assertEqual('[(2)onetwo(2)]', f.format(self.records, header, footer))
         lf = logging.Formatter('<%(message)s>')
-        f = TestBufferingFormatter(lf)
-        self.assertEqual('[(2)<one><two>(2)]', f.format(self.records))
+        f = logging.BufferingFormatter(lf)
+        self.assertEqual('[(2)<one><two>(2)]', f.format(self.records, header, footer))
 
 class ExceptionTest(BaseTest):
     def test_formatting(self):
