@@ -6960,6 +6960,34 @@ insert_generator_prefix(struct compiler *c, basicblock *entryblock) {
     return 0;
 }
 
+/* Make sure that all returns have a line number, even if early passes
+ * have failed to propagate a correct line number.
+ * The resulting line number may not be correct according to PEP 626,
+ * but should be "good enough", and no worse than in older versions. */
+static void
+guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
+    int lineno = firstlineno;
+    assert(lineno > 0);
+    for (basicblock *b = a->a_entry; b != NULL; b = b->b_next) {
+        if (b->b_iused == 0) {
+            continue;
+        }
+        struct instr *last = &b->b_instr[b->b_iused-1];
+        if (last->i_lineno < 0) {
+            if (last->i_opcode == RETURN_VALUE)
+            {
+                for (int i = 0; i < b->b_iused; i++) {
+                    assert(b->b_instr[i].i_lineno < 0);
+                    b->b_instr[i].i_lineno = lineno;
+                }
+            }
+        }
+        else {
+            lineno = last->i_lineno;
+        }
+    }
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -7022,6 +7050,7 @@ assemble(struct compiler *c, int addNone)
     if (optimize_cfg(c, &a, consts)) {
         goto error;
     }
+    guarantee_lineno_for_exits(&a, c->u->u_firstlineno);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
