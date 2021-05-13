@@ -273,8 +273,7 @@ capture data for later printing in a lightweight fashion.
 
    .. method::  print(*, file=None, chain=True)
 
-      Print to *file* the exception information as returned by
-      ``self.format(chain=chain)``.
+      Print to *file* the exception information as returned by :meth:`format`.
 
       .. versionadded:: 3.11
 
