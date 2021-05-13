@@ -630,7 +630,7 @@ frame_dealloc(PyFrameObject *f)
     PyCodeObject *co = f->f_code;
 
     /* Kill all local variables */
-    if (f->f_own_locals_memory) {
+    if (f->f_localsptr) {
         for (int i = 0; i < co->co_nlocalsplus+FRAME_SPECIALS_SIZE; i++) {
             Py_CLEAR(f->f_localsptr[i]);
         }
@@ -638,8 +638,10 @@ frame_dealloc(PyFrameObject *f)
         for (int i = 0; i < f->f_stackdepth; i++) {
             Py_XDECREF(f->f_valuestack[i]);
         }
-        PyMem_Free(f->f_localsptr);
-        f->f_own_locals_memory = 0;
+        if (f->f_own_locals_memory) {
+            PyMem_Free(f->f_localsptr);
+            f->f_own_locals_memory = 0;
+        }
     }
     f->f_stackdepth = 0;
     Py_XDECREF(f->f_back);

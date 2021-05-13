@@ -897,6 +897,13 @@ PyThreadState_Clear(PyThreadState *tstate)
     if (tstate->on_delete != NULL) {
         tstate->on_delete(tstate->on_delete_data);
     }
+    _PyStackChunk *chunk = tstate->datastack_chunk;
+    tstate->datastack_chunk = NULL;
+    while (chunk != NULL) {
+        _PyStackChunk *prev = chunk->previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        chunk = prev;
+    }
 }
 
 
@@ -941,7 +948,6 @@ _PyThreadState_Delete(PyThreadState *tstate, int check_current)
         }
     }
     tstate_delete_common(tstate, gilstate);
-    _PyObject_VirtualFree(tstate->datastack_chunk, tstate->datastack_chunk->size);
     PyMem_RawFree(tstate);
 }
 

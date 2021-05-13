@@ -5179,7 +5179,6 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     */
     assert (!is_coro);
     assert(f->f_own_locals_memory == 0);
-    assert(f->f_stackdepth == 0);
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
         _PyObject_GC_TRACK(f);
@@ -5188,10 +5187,11 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
         }
     }
     else {
+        ++tstate->recursion_depth;
+        f->f_localsptr = NULL;
         for (int i = 0; i < code->co_nlocalsplus + FRAME_SPECIALS_SIZE; i++) {
             Py_XDECREF(localsarray[i]);
         }
-        ++tstate->recursion_depth;
         Py_DECREF(f);
         --tstate->recursion_depth;
     }
