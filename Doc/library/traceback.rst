@@ -271,6 +271,13 @@ capture data for later printing in a lightweight fashion.
 
       Note that when locals are captured, they are also shown in the traceback.
 
+   .. method::  print(*, file=None, chain=True)
+
+      Print to *file* the exception information as returned by
+      ``self.format(chain=chain)``.
+
+      .. versionadded:: 3.11
+
    .. method:: format(*, chain=True)
 
       Format the exception.
@@ -298,13 +305,6 @@ capture data for later printing in a lightweight fashion.
 
       The message indicating which exception occurred is always the last
       string in the output.
-
-   .. method::  print(*, file=None, chain=True)
-
-      Print to *file* the exception information as returned by
-      ``self.format(chain=chain)``.
-
-      .. versionadded:: 3.11
 
    .. versionchanged:: 3.10
       Added the *compact* parameter.
