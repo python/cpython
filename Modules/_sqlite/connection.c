@@ -267,7 +267,6 @@ pysqlite_connection_dealloc(pysqlite_Connection *self)
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {
         sqlite3_close_v2(self->db);
-        self->db = NULL;
     }
 
     tp->tp_free(self);
