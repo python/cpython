@@ -78,8 +78,14 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyInitFrozenExtensions();
 #endif /* MS_WINDOWS */
-    if (argc >= 1)
-        Py_SetProgramName(argv_copy[0]);
+    if (argc >= 1) {
+        status = PyConfig_SetString(&config, &config.program_name,
+                                    argv_copy[0]);
+        if (PyStatus_Exception(status)) {
+            PyConfig_Clear(&config);
+            Py_ExitStatusException(status);
+        }
+    }
 
     status = Py_InitializeFromConfig(&config);
     PyConfig_Clear(&config);
