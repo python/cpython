@@ -1,5 +1,5 @@
 Fix issue where :mod:`typing` protocols without the  ``@runtime_checkable``
-decorator did not raise a ``TypeError`` when used with ``issubclass`` and
+decorator did not raise a ``TypeError`` when used with
 ``isinstance``.  Now, subclassses of ``typing.Protocol`` will raise a
-``TypeError`` when used with with those checks.
+``TypeError`` when checked with ``isinstance``.
 Patch provided by Yurii Karabas.

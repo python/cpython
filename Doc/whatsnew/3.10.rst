@@ -1298,6 +1298,14 @@ Add new function :func:`typing.is_typeddict` to introspect if an annotation
 is a :class:`typing.TypedDict`.
 (Contributed by Patrick Reader in :issue:`41792`)
 
+Subclassses of ``typing.Protocol`` will now raise a ``TypeError`` when used as
+the second argument of :func:`isinstance` checks unless decorated with the
+``@runtime_checkable`` decorator. This conforms more strictly with :pep:`544`.
+Previously this passed silently without any errors. Users should decorate their
+subclasses with the ``@runtime_checkable`` decorator in 3.10 and higher
+if they want runtime protocols.
+(Contributed by Patch provided by Yurii Karabas in :issue:`38908`)
+
 unittest
 --------
 
