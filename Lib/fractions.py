@@ -95,16 +95,10 @@ class Fraction(numbers.Rational):
         self = super(Fraction, cls).__new__(cls)
 
         if denominator is None:
-            if type(numerator) is int:
-                self._numerator = numerator
-                self._denominator = 1
+            as_integer_ratio = getattr(numerator, "as_integer_ratio", None)
+            if as_integer_ratio is not None:
+                self._numerator, self._denominator = as_integer_ratio()
                 return self
-
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
             elif isinstance(numerator, str):
                 # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
@@ -131,15 +125,15 @@ class Fraction(numbers.Rational):
                             denominator *= 10**-exp
                 if m.group('sign') == '-':
                     numerator = -numerator
-
+            elif isinstance(numerator, numbers.Rational):
+                # this is necessary only for classes that register as Rational
+                # but have no as_integer_ratio.
+                self._numerator = numerator.numerator
+                self._denominator = numerator.denominator
+                return self
             else:
-                as_integer_ratio = getattr(numerator, "as_integer_ratio", None)
-                if as_integer_ratio is not None:
-                    self._numerator, self._denominator = as_integer_ratio()
-                    return self
-                else:
-                    raise TypeError("argument should be a string "
-                                    "or a Rational instance")
+                raise TypeError("argument should be a string "
+                                "or a Rational instance")
 
         elif type(numerator) is int is type(denominator):
             pass # *very* normal case
@@ -191,14 +185,6 @@ class Fraction(numbers.Rational):
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
         return cls(*dec.as_integer_ratio())
-
-    def as_integer_ratio(self):
-        """Return the integer ratio as a tuple.
-
-        Return a tuple of two integers, whose ratio is equal to the
-        Fraction and with a positive denominator.
-        """
-        return (self._numerator, self._denominator)
 
     def limit_denominator(self, max_denominator=1000000):
         """Closest Fraction to self with denominator at most max_denominator.
