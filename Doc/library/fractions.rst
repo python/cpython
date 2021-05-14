@@ -27,7 +27,7 @@ another rational number, or from a string.
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
    with value ``numerator/denominator``.  If *denominator* is :const:`0`, it
    raises a :exc:`ZeroDivisionError`.  The following versions require
-   that the parameter has an `as_integer_ratio` method which returns a
+   that the parameter has an :meth:`as_integer_ratio` method which returns a
    pair (numerator, denominator).  This assures that for instances
    of :class:`numbers.Rational`, :class:`float`, or :class:`decimal.Decimal`, a
    :class:`Fraction` instance with exactly the same value is returned.
