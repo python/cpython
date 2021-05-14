@@ -2003,19 +2003,19 @@ _Py_GetConfig(void)
 #define MINIMUM_OVERHEAD 1000
 
 PyObject **
-_PyThreadState_PushLocals(PyThreadState *tstate, size_t size)
+_PyThreadState_PushLocals(PyThreadState *tstate, int size)
 {
+    assert(((unsigned)size) < INT_MAX/sizeof(PyObject*)/2);
     PyObject **res = tstate->datastack_top;
     PyObject **top = res + size;
     if (top >= tstate->datastack_limit) {
-        size_t allocate_size = DATA_STACK_CHUNK_SIZE;
-        while (allocate_size < sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
+        int allocate_size = DATA_STACK_CHUNK_SIZE;
+        while (allocate_size < (int)sizeof(PyObject*)*(size + MINIMUM_OVERHEAD)) {
             allocate_size *= 2;
         }
         _PyStackChunk *new = allocate_chunk(allocate_size, tstate->datastack_chunk);
         if (new == NULL) {
-           _PyErr_SetString(tstate, PyExc_MemoryError, "Out of memory");
-            return NULL;
+            goto error;
         }
         tstate->datastack_chunk->top = tstate->datastack_top - &tstate->datastack_chunk->data[0];
         tstate->datastack_chunk = new;
@@ -2030,6 +2030,9 @@ _PyThreadState_PushLocals(PyThreadState *tstate, size_t size)
         res[i] = NULL;
     }
     return res;
+error:
+    _PyErr_SetString(tstate, PyExc_MemoryError, "Out of memory");
+    return NULL;
 }
 
 void

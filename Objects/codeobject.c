@@ -240,7 +240,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_kwonlyargcount = kwonlyargcount;
     co->co_nlocals = nlocals;
     co->co_nlocalsplus = nlocals +
-        PyTuple_GET_SIZE(freevars) + PyTuple_GET_SIZE(cellvars);
+        (int)PyTuple_GET_SIZE(freevars) + (int)PyTuple_GET_SIZE(cellvars);
     co->co_stacksize = stacksize;
     co->co_flags = flags;
     Py_INCREF(code);

@@ -561,7 +561,7 @@ _PyObject_VirtualAlloc(size_t size)
 void
 _PyObject_VirtualFree(void *obj, size_t size)
 {
-    return _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
+    _PyObject_Arena.free(_PyObject_Arena.ctx, obj, size);
 }
 
 void
