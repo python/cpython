@@ -1076,11 +1076,9 @@ class Path(PurePath):
         """
         Return the path to which the symbolic link points.
         """
-        if hasattr(os, "readlink"):
-            path = os.readlink(self)
-        else:
+        if not hasattr(os, "readlink"):
             raise NotImplementedError("os.readlink() not available on this system")
-        return self._from_parts((path,))
+        return self._from_parts((os.readlink(self),))
 
     def touch(self, mode=0o666, exist_ok=True):
         """
@@ -1189,10 +1187,9 @@ class Path(PurePath):
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
         """
-        if hasattr(os, "symlink"):
-            os.symlink(target, self, target_is_directory)
-        else:
+        if not hasattr(os, "symlink"):
             raise NotImplementedError("os.symlink() not available on this system")
+        os.symlink(target, self, target_is_directory)
 
     def hardlink_to(self, target):
         """
@@ -1200,10 +1197,9 @@ class Path(PurePath):
 
         Note the order of arguments (self, target) is the reverse of os.link's.
         """
-        if hasattr(os, "link"):
-            os.link(target, self)
-        else:
+        if not hasattr(os, "link"):
             raise NotImplementedError("os.link() not available on this system")
+        os.link(target, self)
 
     def link_to(self, target):
         """
