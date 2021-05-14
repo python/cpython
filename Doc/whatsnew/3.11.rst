@@ -103,6 +103,11 @@ Optimizations
 Build Changes
 =============
 
+* The Python binary now builds the libpython static library using
+  ``-Wl,--whole-archive`` linker option to export all symbols exported by
+  object files. Previously, the ``Py_FrozenMain`` symbol was not exported.
+  (Contributed by Victor Stinner in :issue:`44133`.)
+
 
 Deprecated
 ==========
