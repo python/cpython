@@ -882,8 +882,8 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
-    xbar = fmean(x)
-    ybar = fmean(y)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     return sxy / (n - 1)
 
@@ -910,8 +910,8 @@ def correlation(x, y, /):
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    xbar = fmean(x)
-    ybar = fmean(y)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     s2x = fsum((xi - xbar) ** 2.0 for xi in x)
     s2y = fsum((yi - ybar) ** 2.0 for yi in y)
