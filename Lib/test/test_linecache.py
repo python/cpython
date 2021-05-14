@@ -246,19 +246,14 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.deleted_file = os_helper.TESTFN + '.1'
         self.modified_file = os_helper.TESTFN + '.2'
         self.unchanged_file = os_helper.TESTFN + '.3'
-        self.addCleanup(os_helper.unlink, self.deleted_file)
-        self.addCleanup(os_helper.unlink, self.modified_file)
-        self.addCleanup(os_helper.unlink, self.unchanged_file)
-        with open(self.deleted_file, 'w', encoding='utf-8') as source:
-            source.write('print("will be deleted")')
-        with open(self.modified_file, 'w', encoding='utf-8') as source:
-            source.write('print("will be modified")')
-        with open(self.unchanged_file, 'w', encoding='utf-8') as source:
-            source.write('print("unchange")')
 
-        linecache.getlines(self.deleted_file)
-        linecache.getlines(self.modified_file)
-        linecache.getlines(self.unchanged_file)
+        for fname in (self.deleted_file,
+                      self.modified_file,
+                      self.unchanged_file):
+            self.addCleanup(os_helper.unlink, fname)
+            with open(fname, 'w', encoding='utf-8') as source:
+                source.write(f'print("I am {fname}")')
+            linecache.getlines(fname)
 
         os.remove(self.deleted_file)
         with open(self.modified_file, 'w', encoding='utf-8') as source:
