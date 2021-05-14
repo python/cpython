@@ -41,21 +41,21 @@ embedding Python.)
 
 .. c:macro:: Py_LIMITED_API
 
-   Define this macro ``Py_LIMITED_API`` before including ``Python.h`` to
-   opt in to only use the Limited API.
+   Define this macro before including ``Python.h`` to opt in to only use
+   the Limited API, and to select the Limited API version.
 
-   Defining ``Py_LIMITED_API`` to ``3`` will limit the available API so that
-   the extension will work without recompilation with all Python 3.x releases
-   (x>=2) on the particular  :ref:`platform <stable-abi-platform>`.
+   Define ``Py_LIMITED_API`` to the value of :c:data:`PY_VERSION_HEX`
+   corresponding to the lowest Python version your extension supports.
+   The extension will work without recompilation with all Python 3 releases
+   from the specified one onward, and can use Limited API introduced up to that
+   version.
 
-   Defining ``Py_LIMITED_API`` to a value of :c:data:`PY_VERSION_HEX` will
-   limit the available API so that the extension will work without
-   recompilation with all Python 3 releases from the specified one.
-   This will allow using additional API introduced up to this version,
-   but the extension will lose compatibility with earlier Python versions.
    Rather than using the ``PY_VERSION_HEX`` macro directly, hardcode a minimum
    minor version (e.g. ``0x030A0000`` for Python 3.10) for stability when
    compiling with future Python versions.
+
+   You can also define ``Py_LIMITED_API`` to ``3``. This works the same as
+   ``0x03020000`` (Python 3.2, the version that introduced Limited API).
 
 On Windows, extensions that use the Stable ABI should be linked against
 ``python3.dll`` rather than a version-specific library such as
