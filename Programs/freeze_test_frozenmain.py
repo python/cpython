@@ -17,9 +17,12 @@ def writecode(outfp, mod, str):
 
 
 def dump(fp, filename, name):
+    # Strip the directory to get reproducible marshal dump
+    code_filename = os.path.basename(filename)
+
     with tokenize.open(filename) as source_fp:
         source = source_fp.read()
-        code = compile(source, filename, 'exec')
+        code = compile(source, code_filename, 'exec')
 
     data = marshal.dumps(code)
     writecode(fp, name, data)
