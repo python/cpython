@@ -1,7 +1,7 @@
 .. _glossary:
 
 ********
-Glossary
+术语对照表
 ********
 
 .. if you add new entries, keep the alphabetical sorting!

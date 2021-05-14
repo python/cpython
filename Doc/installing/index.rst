@@ -3,7 +3,7 @@
 .. _installing-index:
 
 *************************
-Installing Python Modules
+安装Python模块
 *************************
 
 :Email: distutils-sig@python.org

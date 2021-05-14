@@ -1,7 +1,7 @@
 .. _extending-index:
 
 ##################################################
-  Extending and Embedding the Python Interpreter
+  扩展和嵌入 Python 解释器
 ##################################################
 
 This document describes how to write modules in C or C++ to extend the Python

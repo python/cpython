@@ -1,14 +1,10 @@
 .. _using-index:
 
 ##########################
-  Python Setup and Usage
+  Python 安装和使用 
 ##########################
 
-
-This part of the documentation is devoted to general information on the setup
-of the Python environment on different platforms, the invocation of the
-interpreter and things that make working with Python easier.
-
+该部分文档专门介绍在不同平台上配置 Python 环境的一般方法，解释器的调用以及方便使用 Python 的技巧。å
 
 .. toctree::
    :numbered:

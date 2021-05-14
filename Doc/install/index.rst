@@ -3,7 +3,7 @@
 .. _install-index:
 
 ********************************************
-  Installing Python Modules (Legacy version)
+  安装Python模块（旧版）
 ********************************************
 
 :Author: Greg Ward

@@ -1,7 +1,7 @@
 .. _distributing-index:
 
 ###############################
-  Distributing Python Modules
+ 分发 Python 模块
 ###############################
 
 :Email: distutils-sig@python.org

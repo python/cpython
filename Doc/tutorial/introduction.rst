@@ -45,56 +45,50 @@ Python 用作计算器
    >>> 8 / 5  # 除法总是返回浮点数
    1.6
 
-The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
-the ones with a fractional part (e.g. ``5.0``, ``1.6``) have type
-:class:`float`.  We will see more about numeric types later in the tutorial.
+整数 (如, ``2``, ``4``, ``20``) 的类型为 :class:`int`,
+带小数 (如, ``5.0``, ``1.6``) 的类型为
+:class:`float`.  本教程后面会介绍更多数字类型。
 
-Division (``/``) always returns a float.  To do :term:`floor division` and
-get an integer result (discarding any fractional result) you can use the ``//``
-operator; to calculate the remainder you can use ``%``::
+除法运算 (``/``) 返回浮点数。  用 ``//`` 运算符执行 :term:`floor division` 的结果为整数（忽略小数）; 计算余数用 ``%``:
 
-   >>> 17 / 3  # classic division returns a float
+   >>> 17 / 3  # 除法运算返回浮点数
    5.666666666666667
    >>>
-   >>> 17 // 3  # floor division discards the fractional part
+   >>> 17 // 3  # 整除运算去掉小数点部分
    5
-   >>> 17 % 3  # the % operator returns the remainder of the division
+   >>> 17 % 3  # 取模 % 运算返回除法的余数
    2
-   >>> 5 * 3 + 2  # result * divisor + remainder
+   >>> 5 * 3 + 2  # 结果 * 除数 + 余数
    17
 
-With Python, it is possible to use the ``**`` operator to calculate powers [#]_::
+Python 用 ``**`` 运算符计算乘方 [#]_::
 
-   >>> 5 ** 2  # 5 squared
+   >>> 5 ** 2  # 5的平方
    25
-   >>> 2 ** 7  # 2 to the power of 7
+   >>> 2 ** 7  # 2的7次方
    128
 
-The equal sign (``=``) is used to assign a value to a variable. Afterwards, no
-result is displayed before the next interactive prompt::
+等号 (``=``) 用于给变量赋值。赋值后，下一个交互提示符的位置不显示任何结果::
 
    >>> width = 20
    >>> height = 5 * 9
    >>> width * height
    900
 
-If a variable is not "defined" (assigned a value), trying to use it will
-give you an error::
+如果变量未定义（即未赋值），使用该变量会提示错误：::
 
-   >>> n  # try to access an undefined variable
+   >>> n  # 尝试访问未定义的变量
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    NameError: name 'n' is not defined
 
-There is full support for floating point; operators with mixed type operands
-convert the integer operand to floating point::
+Python 全面支持浮点数；混合类型运算数的运算会把整数转换为浮点数::
 
    >>> 4 * 3.75 - 1
    14.0
 
-In interactive mode, the last printed expression is assigned to the variable
-``_``.  This means that when you are using Python as a desk calculator, it is
-somewhat easier to continue calculations, for example::
+交互模式下，上次输出的表达式会赋给变量
+``_``.  这就意味着 Python 当作计算器时，用该变量实现下一步计算更简单，例如::
 
    >>> tax = 12.5 / 100
    >>> price = 100.50
@@ -105,32 +99,24 @@ somewhat easier to continue calculations, for example::
    >>> round(_, 2)
    113.06
 
-This variable should be treated as read-only by the user.  Don't explicitly
-assign a value to it --- you would create an independent local variable with the
-same name masking the built-in variable with its magic behavior.
+最好将该变量视为只读的。不要为它显式赋值，否则会创建一个同名独立局部变量，该变量会用它的魔法行为屏蔽内置变量。
 
-In addition to :class:`int` and :class:`float`, Python supports other types of
-numbers, such as :class:`~decimal.Decimal` and :class:`~fractions.Fraction`.
-Python also has built-in support for :ref:`complex numbers <typesnumeric>`,
-and uses the ``j`` or ``J`` suffix to indicate the imaginary part
-(e.g. ``3+5j``).
+除了 :class:`int` 和 :class:`float` 之外， Python 还支持其他数字类型， 比如 :class:`~decimal.Decimal` and :class:`~fractions.Fraction`.
+Python 还内置支持 :ref:`complex numbers <typesnumeric>`, 使用后缀 ``j`` 或 ``J`` 表示虚数 (如 ``3+5j``)。
 
 
 .. _tut-strings:
 
-Strings
+字符串
 -------
 
-Besides numbers, Python can also manipulate strings, which can be expressed
-in several ways.  They can be enclosed in single quotes (``'...'``) or
-double quotes (``"..."``) with the same result [#]_.  ``\`` can be used
-to escape quotes::
+除了数字，Python 还可以操作字符串。字符串有多种表现形式，用单引号（``'...'``）或双引号（``"..."``）标注的结果相同 [#]_。 ``\`` 可用于转义：
 
-   >>> 'spam eggs'  # single quotes
+   >>> 'spam eggs'  # 单引号
    'spam eggs'
-   >>> 'doesn\'t'  # use \' to escape the single quote...
+   >>> 'doesn\'t'  # 使用 \' 转义单引号...
    "doesn't"
-   >>> "doesn't"  # ...or use double quotes instead
+   >>> "doesn't"  # ...或使用双引号代替
    "doesn't"
    >>> '"Yes," they said.'
    '"Yes," they said.'
@@ -139,40 +125,28 @@ to escape quotes::
    >>> '"Isn\'t," they said.'
    '"Isn\'t," they said.'
 
-In the interactive interpreter, the output string is enclosed in quotes and
-special characters are escaped with backslashes.  While this might sometimes
-look different from the input (the enclosing quotes could change), the two
-strings are equivalent.  The string is enclosed in double quotes if
-the string contains a single quote and no double quotes, otherwise it is
-enclosed in single quotes.  The :func:`print` function produces a more
-readable output, by omitting the enclosing quotes and by printing escaped
-and special characters::
+交互式解释器会为输出的字符串加注引号，特殊字符使用反斜杠转义。虽然，有时输出的字符串看起来与输入的字符串不一样（外加的引号可能会改变），但两个字符串是相同的。如果字符串中有单引号而没有双引号，该字符串外将加注双引号，反之，则加注单引号。print() 函数输出的内容更简洁易读，它会省略两边的引号，并输出转义后的特殊字符：
 
    >>> '"Isn\'t," they said.'
    '"Isn\'t," they said.'
    >>> print('"Isn\'t," they said.')
    "Isn't," they said.
-   >>> s = 'First line.\nSecond line.'  # \n means newline
-   >>> s  # without print(), \n is included in the output
+   >>> s = 'First line.\nSecond line.'  # \n 意味着换行
+   >>> s  # 没有 print() 时, \n 包含在输出行
    'First line.\nSecond line.'
-   >>> print(s)  # with print(), \n produces a new line
+   >>> print(s)  # 有 print() 时, \n 换行
    First line.
    Second line.
 
-If you don't want characters prefaced by ``\`` to be interpreted as
-special characters, you can use *raw strings* by adding an ``r`` before
-the first quote::
+如果你不希望前 ``\`` 的字符转义成特殊字符, 可以使用 *原始字符串* ，在引号前添加 ``r`` 即可::
 
-   >>> print('C:\some\name')  # here \n means newline!
+   >>> print('C:\some\name')  # 这儿 \n 意味着换行!
    C:\some
    ame
-   >>> print(r'C:\some\name')  # note the r before the quote
+   >>> print(r'C:\some\name')  # 注意引号前的 r
    C:\some\name
 
-String literals can span multiple lines.  One way is using triple-quotes:
-``"""..."""`` or ``'''...'''``.  End of lines are automatically
-included in the string, but it's possible to prevent this by adding a ``\`` at
-the end of the line.  The following example::
+字符串字面值可以实现跨行连续输入。实现方式是用三引号："""...""" 或 '''...'''，字符串行尾会自动加上回车换行，如果不需要回车换行，在行尾添加 ``\`` 即可。示例如下：
 
    print("""\
    Usage: thingy [OPTIONS]
@@ -180,7 +154,7 @@ the end of the line.  The following example::
         -H hostname               Hostname to connect to
    """)
 
-produces the following output (note that the initial newline is not included):
+输出如下 (注意，第一行没有换行):
 
 .. code-block:: text
 
@@ -188,30 +162,28 @@ produces the following output (note that the initial newline is not included):
         -h                        Display this usage message
         -H hostname               Hostname to connect to
 
-Strings can be concatenated (glued together) with the ``+`` operator, and
-repeated with ``*``::
+字符串可以使用 ``+`` 进行合并（串连在一起)，也可以用  ``*``  进行重复：
 
-   >>> # 3 times 'un', followed by 'ium'
+   >>> # 重复3次 'un', 然后合并 'ium'
    >>> 3 * 'un' + 'ium'
    'unununium'
 
-Two or more *string literals* (i.e. the ones enclosed between quotes) next
-to each other are automatically concatenated. ::
+相邻的两个或多个 *字符串字面量* (如 引号标注的字符) 会自动合并 ::
 
    >>> 'Py' 'thon'
    'Python'
 
-This feature is particularly useful when you want to break long strings::
+拆分长字符串时，这个功能特别实用::
 
    >>> text = ('Put several strings within parentheses '
    ...         'to have them joined together.')
    >>> text
    'Put several strings within parentheses to have them joined together.'
 
-This only works with two literals though, not with variables or expressions::
+这项功能只能用于两个字面值，不能用于变量或表达式::
 
    >>> prefix = 'Py'
-   >>> prefix 'thon'  # can't concatenate a variable and a string literal
+   >>> prefix 'thon'  # 不能连接变量和字符串字面量
      File "<stdin>", line 1
        prefix 'thon'
                    ^
@@ -222,62 +194,55 @@ This only works with two literals though, not with variables or expressions::
                       ^
    SyntaxError: invalid syntax
 
-If you want to concatenate variables or a variable and a literal, use ``+``::
+如果你想合并多个变量，或合并变量与字面值，使用  ``+`` 即可::
 
    >>> prefix + 'thon'
    'Python'
 
-Strings can be *indexed* (subscripted), with the first character having index 0.
-There is no separate character type; a character is simply a string of size
-one::
+字符串支持 *索引* (下标访问), 第一个字符的索引是 0。单字符没有专用的类型，就是长度为一的字符串::
 
    >>> word = 'Python'
-   >>> word[0]  # character in position 0
+   >>> word[0]  # 位置为0的字符
    'P'
-   >>> word[5]  # character in position 5
+   >>> word[5]  # 位置为5的字符
    'n'
 
-Indices may also be negative numbers, to start counting from the right::
+索引还支持负数，用负数索引时，从右边开始计数::
 
-   >>> word[-1]  # last character
+   >>> word[-1]  # 最后一个字符
    'n'
-   >>> word[-2]  # second-last character
+   >>> word[-2]  # 倒数第二个字符
    'o'
    >>> word[-6]
    'P'
 
-Note that since -0 is the same as 0, negative indices start from -1.
+注意，-0 和 0 一样，因此，负数索引从 -1 开始。
 
-In addition to indexing, *slicing* is also supported.  While indexing is used
-to obtain individual characters, *slicing* allows you to obtain substring::
+除了索引, 字符串还支持 *切片*。  索引可以提取单个字符，切片* 则提取子字符串::
 
-   >>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
+   >>> word[0:2]  # 从位置0(包括)到位置2(不包括)的字符
    'Py'
-   >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
+   >>> word[2:5]  # 从位置2(包括)到位置5(不包括)的字符
    'tho'
 
-Note how the start is always included, and the end always excluded.  This
-makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
+注意，输出结果包含切片开始，但不包含切片结束。  这样
+确保 ``s[:i] + s[i:]`` 一直等于 ``s``::
 
    >>> word[:2] + word[2:]
    'Python'
    >>> word[:4] + word[4:]
    'Python'
 
-Slice indices have useful defaults; an omitted first index defaults to zero, an
-omitted second index defaults to the size of the string being sliced. ::
+切片索引的默认值很有用；省略开始索引时，默认值为 0，省略结束索引时，默认为到字符串的结尾::
 
-   >>> word[:2]   # character from the beginning to position 2 (excluded)
+   >>> word[:2]   # 从开始到位置2(不包括)的字符
    'Py'
-   >>> word[4:]   # characters from position 4 (included) to the end
+   >>> word[4:]   # 从位置4(包括)到结束的字符
    'on'
-   >>> word[-2:]  # characters from the second-last (included) to the end
+   >>> word[-2:]  # 从倒数第二个(包括)到结束的字符
    'on'
 
-One way to remember how slices work is to think of the indices as pointing
-*between* characters, with the left edge of the first character numbered 0.
-Then the right edge of the last character of a string of *n* characters has
-index *n*, for example::
+还可以这样理解切片，索引指向的是*字符之间* ，第一个字符的左侧标为 0，最后一个字符的右侧标为 n ，n 是字符串长度。例如::
 
     +---+---+---+---+---+---+
     | P | y | t | h | o | n |
@@ -285,32 +250,26 @@ index *n*, for example::
     0   1   2   3   4   5   6
    -6  -5  -4  -3  -2  -1
 
-The first row of numbers gives the position of the indices 0...6 in the string;
-the second row gives the corresponding negative indices. The slice from *i* to
-*j* consists of all characters between the edges labeled *i* and *j*,
-respectively.
+第一行数字是字符串中索引 0...6 的位置，第二行数字是对应的负数索引位置。*i* 到 *j* 的切片由 *i* 和 *j* 之间所有对应的字符组成。
 
-For non-negative indices, the length of a slice is the difference of the
-indices, if both are within bounds.  For example, the length of ``word[1:3]`` is
-2.
+对于使用非负索引的切片，如果两个索引都不越界，切片长度就是起止索引之差。例如，  ``word[1:3]`` 的长度是 2。
 
-Attempting to use an index that is too large will result in an error::
+索引越界会报错::
 
-   >>> word[42]  # the word only has 6 characters
+   >>> word[42]  # 该单词仅有6个字符
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    IndexError: string index out of range
 
-However, out of range slice indexes are handled gracefully when used for
-slicing::
+然而, 切片会自动处理越界索引::
 
    >>> word[4:42]
    'on'
    >>> word[42:]
    ''
 
-Python strings cannot be changed --- they are :term:`immutable`.
-Therefore, assigning to an indexed position in the string results in an error::
+Python 字符串不能修改 --- 它们 :term:`immutable`的。
+因此，为字符串中某个索引位置赋值会报错::
 
    >>> word[0] = 'J'
    Traceback (most recent call last):
@@ -321,14 +280,14 @@ Therefore, assigning to an indexed position in the string results in an error::
      File "<stdin>", line 1, in <module>
    TypeError: 'str' object does not support item assignment
 
-If you need a different string, you should create a new one::
+要生成不同的字符串，应新建一个字符串::
 
    >>> 'J' + word[1:]
    'Jython'
    >>> word[:2] + 'py'
    'Pypy'
 
-The built-in function :func:`len` returns the length of a string::
+内置函数 :func:`len` 返回字符串的长度::
 
    >>> s = 'supercalifragilisticexpialidocious'
    >>> len(s)
@@ -338,67 +297,60 @@ The built-in function :func:`len` returns the length of a string::
 .. seealso::
 
    :ref:`textseq`
-      Strings are examples of *sequence types*, and support the common
-      operations supported by such types.
+      字符串是 *序列类型*, 支持序列类型的各种操作。
 
    :ref:`string-methods`
-      Strings support a large number of methods for
-      basic transformations and searching.
+      字符串支持很多变形与查找方法。
 
    :ref:`f-strings`
-      String literals that have embedded expressions.
+      内嵌表达式的字符串字面值。
 
    :ref:`formatstrings`
-      Information about string formatting with :meth:`str.format`.
+      使用 :meth:`str.format` 格式化字符串。
 
    :ref:`old-string-formatting`
-      The old formatting operations invoked when strings are
-      the left operand of the ``%`` operator are described in more detail here.
+      这里详述了用 ``%`` 运算符格式化字符串的操作。
 
 
 .. _tut-lists:
 
-Lists
+列表
 -----
 
-Python knows a number of *compound* data types, used to group together other
-values.  The most versatile is the *list*, which can be written as a list of
-comma-separated values (items) between square brackets.  Lists might contain
-items of different types, but usually the items all have the same type. ::
+Python 支持多种 *复合* 数据类型，可将不同值组合在一起。最通用的是 *列表*，是用方括号标注，逗号分隔的一组值。列表可以包含不同类型的元素，但通常下各个元素的类型相同：
+列表可能包含不同类型的项，但这些项通常具有相同的类型。::
 
    >>> squares = [1, 4, 9, 16, 25]
    >>> squares
    [1, 4, 9, 16, 25]
 
-Like strings (and all other built-in :term:`sequence` types), lists can be
-indexed and sliced::
+和字符串（以及其他内置 :term:`sequence` 类型）一样，列表支持索引和切片::
 
-   >>> squares[0]  # indexing returns the item
+   >>> squares[0]  # 索引返回项
    1
    >>> squares[-1]
    25
-   >>> squares[-3:]  # slicing returns a new list
+   >>> squares[-3:]  # 切片返回一个新列表
    [9, 16, 25]
 
-All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a
-:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
+所有的切片操作返回包含请求元素的新列表。以下切片操作会返回列表的
+:ref:`shallow copy <shallow_vs_deep_copy>`::
 
    >>> squares[:]
    [1, 4, 9, 16, 25]
 
-Lists also support operations like concatenation::
+列表还支持合并操作::
 
    >>> squares + [36, 49, 64, 81, 100]
    [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 
-Unlike strings, which are :term:`immutable`, lists are a :term:`mutable`
-type, i.e. it is possible to change their content::
+跟 :term:`immutable` 字符串不同, 列表是 :term:`mutable`
+类型, 比如它的内容是可以改变的::
 
-    >>> cubes = [1, 8, 27, 65, 125]  # something's wrong here
-    >>> 4 ** 3  # the cube of 4 is 64, not 65!
+    >>> cubes = [1, 8, 27, 65, 125]  # 某个字符是错误的
+    >>> 4 ** 3  # 4的3次方是64, 而不是65!
     64
-    >>> cubes[3] = 64  # replace the wrong value
+    >>> cubes[3] = 64  # 替换错误的值
     >>> cubes
     [1, 8, 27, 64, 125]
 

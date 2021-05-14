@@ -1,14 +1,10 @@
 ***************
- Python HOWTOs
+ Python 操作指南
 ***************
 
-Python HOWTOs are documents that cover a single, specific topic,
-and attempt to cover it fairly completely. Modelled on the Linux
-Documentation Project's HOWTO collection, this collection is an
-effort to foster documentation that's more detailed than the
-Python Library Reference.
+Python操作指南是覆盖单一、特定主题的文档，并试图相当完整地覆盖它。该集合以Linux文档项目的HOWTO集合为模型，旨在提供比Python库参考资料更为详细的文档。
 
-Currently, the HOWTOs are:
+目前，指南提供了如下内容:
 
 .. toctree::
    :maxdepth: 1

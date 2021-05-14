@@ -1,7 +1,7 @@
 .. _reporting-bugs:
 
 *****************
-Dealing with Bugs
+解决 Bug
 *****************
 
 Python is a mature programming language which has established a reputation for

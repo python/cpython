@@ -62,7 +62,7 @@ TYPE_COMMENT
 SOFT_KEYWORD
 ERRORTOKEN
 
-# These aren't used by the C tokenizer but are needed for tokenize.py
+# C 标记器不使用它们，但tokenize.py需要它们
 COMMENT
 NL
 ENCODING

@@ -3,7 +3,7 @@
 .. _history-and-license:
 
 *******************
-History and License
+历史和许可证
 *******************
 
 

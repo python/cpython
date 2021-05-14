@@ -1,7 +1,7 @@
 .. _faq-index:
 
 ###################################
-  Python Frequently Asked Questions
+  Python 常见问题
 ###################################
 
 .. toctree::

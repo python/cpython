@@ -1,7 +1,7 @@
 .. _distutils-index:
 
 ##############################################
-  Distributing Python Modules (Legacy version)
+  分发 Python 模块（旧版）
 ##############################################
 
 :Authors: Greg Ward, Anthony Baxter
