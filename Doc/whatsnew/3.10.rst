@@ -589,7 +589,7 @@ Several other key features:
 
 - Like unpacking assignments, tuple and list patterns have exactly the
   same meaning and actually match arbitrary sequences. Technically,
-  the subject must be an instance of ``collections.abc.Sequence``.
+  the subject must be a sequence.
   Therefore, an important exception is that patterns don't match iterators.
   Also, to prevent a common mistake, sequence patterns don't match strings.
 
