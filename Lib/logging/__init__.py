@@ -742,16 +742,14 @@ class BufferingFormatter(object):
         Format the specified records and return the result as a string.
         """
         rv = ""
-        temp_records = []
+        temp_records = ""
         if len(records) > 0:
-            for i, record in enumerate(records):
-                if i == 0:
-                    record.msg = self.linefmt.format(record)
-                    record.msg = self.formatHeader([record], header)
-                else:
-                    record.msg = self.linefmt.format(record)
-                temp_records.append(record)
-            rv = self.formatFooter(temp_records, footer)
+            formated_header = self.formatHeader(records, header)
+            for record in records:
+                temp_records += self.linefmt.format(record)
+            formated_footer = self.formatFooter(records, footer)
+            rv = formated_header[:len(header)] + temp_records + \
+                formated_footer[len(formated_header) - len(footer) - 1:]
         return rv
 
 #---------------------------------------------------------------------------
