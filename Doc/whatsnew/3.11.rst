@@ -95,11 +95,14 @@ Optimizations
   fast as corresponding f-string expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
 
+* "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
+  almost eliminated when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
-Build and C API Changes
-=======================
 
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been removed.
+Build Changes
+=============
+
 
 Deprecated
 ==========
@@ -116,3 +119,39 @@ Porting to Python 3.11
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+C API Changes
+=============
+
+New Features
+------------
+
+Porting to Python 3.11
+----------------------
+
+Deprecated
+----------
+
+Removed
+-------
+
+* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+  removed.
+  (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Deprecate the following functions to configure the Python initialization:
+
+  * :c:func:`PySys_AddWarnOptionUnicode`
+  * :c:func:`PySys_AddWarnOption`
+  * :c:func:`PySys_AddXOption`
+  * :c:func:`PySys_HasWarnOptions`
+  * :c:func:`Py_SetPath`
+  * :c:func:`Py_SetProgramName`
+  * :c:func:`Py_SetPythonHome`
+  * :c:func:`Py_SetStandardStreamEncoding`
+  * :c:func:`_Py_SetProgramFullPath`
+
+  Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
+  <init-config>` instead (:pep:`587`).
+  (Contributed by Victor Stinner in :issue:`44113`.)

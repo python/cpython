@@ -19,12 +19,6 @@ enum _framestate {
 
 typedef signed char PyFrameState;
 
-typedef struct {
-    int b_type;                 /* what kind of block this is */
-    int b_handler;              /* where to jump to find handler */
-    int b_level;                /* value stack level to pop to */
-} PyTryBlock;
-
 struct _frame {
     PyObject_VAR_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */

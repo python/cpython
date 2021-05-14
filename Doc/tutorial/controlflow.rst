@@ -214,6 +214,7 @@ iteration of the loop::
     ...         print("Found an even number", num)
     ...         continue
     ...     print("Found an odd number", num)
+    ...
     Found an even number 2
     Found an odd number 3
     Found an even number 4
