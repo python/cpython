@@ -749,7 +749,7 @@ class BufferingFormatter(object):
                 temp_records += self.linefmt.format(record)
             formated_footer = self.formatFooter(records, footer)
             rv = formated_header[:len(header)] + temp_records + \
-                formated_footer[len(formated_header) - len(footer) - 1:]
+                formated_footer[len(formated_footer) - len(footer) - 1:]
         return rv
 
 #---------------------------------------------------------------------------
