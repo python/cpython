@@ -5713,12 +5713,6 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
     if (PyType_HasFeature(base, _Py_TPFLAGS_MATCH_SELF)) {
         type->tp_flags |= _Py_TPFLAGS_MATCH_SELF;
     }
-    if (PyType_HasFeature(base, Py_TPFLAGS_SEQUENCE)) {
-        type->tp_flags |= Py_TPFLAGS_SEQUENCE;
-    }
-    if (PyType_HasFeature(base, Py_TPFLAGS_MAPPING)) {
-        type->tp_flags |= Py_TPFLAGS_MAPPING;
-    }
 }
 
 static int
@@ -5936,6 +5930,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 static int add_operators(PyTypeObject *);
 static int add_tp_new_wrapper(PyTypeObject *type);
 
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 static int
 type_ready_checks(PyTypeObject *type)
@@ -5961,6 +5956,10 @@ type_ready_checks(PyTypeObject *type)
         _PyObject_ASSERT((PyObject *)type, type->tp_as_async != NULL);
         _PyObject_ASSERT((PyObject *)type, type->tp_as_async->am_send != NULL);
     }
+
+    /* Consistency checks for pattern matching
+     * Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING are mutually exclusive */
+    _PyObject_ASSERT((PyObject *)type, (type->tp_flags & COLLECTION_FLAGS) != COLLECTION_FLAGS);
 
     if (type->tp_name == NULL) {
         PyErr_Format(PyExc_SystemError,
@@ -6156,6 +6155,12 @@ type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
     }
 }
 
+static void
+inherit_patma_flags(PyTypeObject *type, PyTypeObject *base) {
+    if ((type->tp_flags & COLLECTION_FLAGS) == 0) {
+        type->tp_flags |= base->tp_flags & COLLECTION_FLAGS;
+    }
+}
 
 static int
 type_ready_inherit(PyTypeObject *type)
@@ -6175,6 +6180,7 @@ type_ready_inherit(PyTypeObject *type)
             if (inherit_slots(type, (PyTypeObject *)b) < 0) {
                 return -1;
             }
+            inherit_patma_flags(type, (PyTypeObject *)b);
         }
     }
 

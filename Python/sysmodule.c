@@ -24,6 +24,7 @@ Data members:
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_structseq.h"     // PyStructSequence_InitType()
 
 #include "code.h"
 #include "frameobject.h"          // PyFrame_GetBack()
@@ -2292,7 +2293,10 @@ PySys_AddWarnOption(const wchar_t *s)
     unicode = PyUnicode_FromWideChar(s, -1);
     if (unicode == NULL)
         return;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PySys_AddWarnOptionUnicode(unicode);
+_Py_COMP_DIAG_POP
     Py_DECREF(unicode);
 }
 

@@ -1068,7 +1068,7 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
-Check that an exception group with missing parentheses
+Check that an multiple exception types with missing parentheses
 raise a custom exception
 
    >>> try:
@@ -1076,21 +1076,21 @@ raise a custom exception
    ... except A, B:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
@@ -1099,7 +1099,7 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
 
 >>> f(a=23, a=234)
@@ -1422,6 +1422,13 @@ def case(x):
 case(34)
 """
         compile(code, "<string>", "exec")
+    
+    def test_multiline_compiler_error_points_to_the_end(self):
+        self._check_error(
+            "call(\na=1,\na=1\n)",
+            "keyword argument repeated",
+            lineno=3
+        )
 
 
 def test_main():

@@ -1389,8 +1389,8 @@ corresponding character.  If not found, KeyError is raised.
 
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
-                            Py_ssize_clean_t name_length)
-/*[clinic end generated code: output=765cb8186788e6be input=a557be0f8607a0d6]*/
+                            Py_ssize_t name_length)
+/*[clinic end generated code: output=7f03fc4959b242f6 input=a557be0f8607a0d6]*/
 {
     Py_UCS4 code;
     unsigned int index;

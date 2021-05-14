@@ -1180,6 +1180,14 @@ class BasicTest(TestCase):
         resp = client.HTTPResponse(FakeSocket(body))
         self.assertRaises(client.LineTooLong, resp.begin)
 
+    def test_overflowing_header_limit_after_100(self):
+        body = (
+            'HTTP/1.1 100 OK\r\n'
+            'r\n' * 32768
+        )
+        resp = client.HTTPResponse(FakeSocket(body))
+        self.assertRaises(client.HTTPException, resp.begin)
+
     def test_overflowing_chunked_line(self):
         body = (
             'HTTP/1.1 200 OK\r\n'
@@ -1581,7 +1589,7 @@ class Readliner:
 class OfflineTest(TestCase):
     def test_all(self):
         # Documented objects defined in the module should be in __all__
-        expected = {"responses"}  # White-list documented dict() object
+        expected = {"responses"}  # Allowlist documented dict() object
         # HTTPMessage, parse_headers(), and the HTTP status code constants are
         # intentionally omitted for simplicity
         denylist = {"HTTPMessage", "parse_headers"}

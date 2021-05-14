@@ -57,6 +57,8 @@ Glossary
 
       See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -455,6 +457,8 @@ Glossary
 
       See :term:`variable annotation` and :pep:`484`,
       which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -1211,6 +1215,8 @@ Glossary
 
       See :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

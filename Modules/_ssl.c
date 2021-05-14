@@ -437,7 +437,7 @@ static PyType_Spec sslerror_type_spec = {
     "ssl.SSLError",
     sizeof(PyOSErrorObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE,
     sslerror_type_slots
 };
 
@@ -2906,7 +2906,7 @@ static PyType_Spec PySSLSocket_spec = {
     "_ssl._SSLSocket",
     sizeof(PySSLSocket),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT  | Py_TPFLAGS_IMMUTABLETYPE,
     PySSLSocket_slots,
 };
 
@@ -4644,7 +4644,7 @@ static PyType_Spec PySSLContext_spec = {
     "_ssl._SSLContext",
     sizeof(PySSLContext),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     PySSLContext_slots,
 };
 
@@ -4850,7 +4850,7 @@ static PyType_Spec PySSLMemoryBIO_spec = {
     "_ssl.MemoryBIO",
     sizeof(PySSLMemoryBIO),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     PySSLMemoryBIO_slots,
 };
 
@@ -5025,7 +5025,7 @@ static PyType_Spec PySSLSession_spec = {
     "_ssl.SSLSession",
     sizeof(PySSLSession),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
     PySSLSession_slots,
 };
 

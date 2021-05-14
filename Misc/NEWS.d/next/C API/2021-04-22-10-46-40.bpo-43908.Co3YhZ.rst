@@ -1,3 +1,0 @@
-Introduce :const:`Py_TPFLAGS_IMMUTABLETYPE` flag for immutable type objects, and
-modify :c:func:`PyType_Ready` to set it for static types. Patch by
-Erlend E. Aasland.

@@ -149,8 +149,8 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,:db8,'2001:db8::1000'
 library/ipaddress,,::,'2001:db8::1000'
-library/ipaddress,231,:db8,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
-library/ipaddress,231,::,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
+library/ipaddress,,:db8,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
+library/ipaddress,,::,">>> f'{ipaddress.IPv6Address(""2001:db8::1000""):s}'"
 library/ipaddress,,::,IPv6Address('ff02::5678%1')
 library/ipaddress,,::,fe80::1234
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"

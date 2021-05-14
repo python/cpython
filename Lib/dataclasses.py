@@ -930,6 +930,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # we can.
     cls_fields = []
     # Get a reference to this module for the _is_kw_only() test.
+    KW_ONLY_seen = False
     dataclasses = sys.modules[__name__]
     for name, type in cls_annotations.items():
         # See if this is a marker to change the value of kw_only.
@@ -939,6 +940,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                              _is_kw_only))):
             # Switch the default to kw_only=True, and ignore this
             # annotation: it's not a real field.
+            if KW_ONLY_seen:
+                raise TypeError(f'{name!r} is KW_ONLY, but KW_ONLY '
+                                'has already been specified')
+            KW_ONLY_seen = True
             kw_only = True
         else:
             # Otherwise it's a field of some type.
