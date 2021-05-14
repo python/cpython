@@ -4198,7 +4198,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = call_function(tstate, &trace_info, &sp, oparg + meth_found, NULL);
             stack_pointer = sp;
 
-            STACK_SHRINK(1 - meth_found);
+            STACK_SHRINK((1 - meth_found));
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -4220,7 +4220,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = call_function(tstate, &trace_info, &sp, oparg + meth_found, names);
             stack_pointer = sp;
 
-            STACK_SHRINK(1 - meth_found);
+            STACK_SHRINK((1 - meth_found));
             PUSH(res);
             Py_DECREF(names);
             if (res == NULL) {
