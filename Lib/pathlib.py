@@ -187,18 +187,6 @@ class _WindowsFlavour(_Flavour):
                 s = '\\' + s[3:]
         return prefix, s
 
-    def make_uri(self, path):
-        # Under Windows, file URIs use the UTF-8 encoding.
-        drive = path.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            rest = path.as_posix()[2:].lstrip('/')
-            return 'file:///%s/%s' % (
-                drive, urlquote_from_bytes(rest.encode('utf-8')))
-        else:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
-
 
 class _PosixFlavour(_Flavour):
     sep = '/'
@@ -231,12 +219,6 @@ class _PosixFlavour(_Flavour):
 
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern)).fullmatch
-
-    def make_uri(self, path):
-        # We represent the path using the local filesystem encoding,
-        # for portability to other applications.
-        bpath = bytes(path)
-        return 'file://' + urlquote_from_bytes(bpath)
 
 
 _windows_flavour = _WindowsFlavour()
@@ -614,9 +596,7 @@ class PurePath(object):
 
     def as_uri(self):
         """Return the path as a 'file' URI."""
-        if not self.is_absolute():
-            raise ValueError("relative path can't be expressed as a file URI")
-        return self._flavour.make_uri(self)
+        raise NotImplementedError
 
     @property
     def _cparts(self):
@@ -898,6 +878,14 @@ class PurePosixPath(PurePath):
     def is_reserved(self):
         return False
 
+    def as_uri(self):
+        # We represent the path using the local filesystem encoding,
+        # for portability to other applications.
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+        bpath = bytes(self)
+        return 'file://' + urlquote_from_bytes(bpath)
+
 
 class PureWindowsPath(PurePath):
     """PurePath subclass for Windows systems.
@@ -925,6 +913,19 @@ class PureWindowsPath(PurePath):
             return False
         return self._parts[-1].partition('.')[0].upper() in self._reserved_names
 
+    def as_uri(self):
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+        # Under Windows, file URIs use the UTF-8 encoding.
+        drive = self.drive
+        if len(drive) == 2 and drive[1] == ':':
+            # It's a path on a local drive => 'file:///c:/a/b'
+            rest = self.as_posix()[2:].lstrip('/')
+            return 'file:///%s/%s' % (
+                drive, urlquote_from_bytes(rest.encode('utf-8')))
+        else:
+            # It's a path on a network drive => 'file://host/share/a/b'
+            return 'file:' + urlquote_from_bytes(self.as_posix().encode('utf-8'))
 
 # Filesystem-accessing classes
 
