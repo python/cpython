@@ -3113,6 +3113,23 @@ class TestPath(unittest.TestCase):
         assert d.suffix == ""
 
     @pass_alpharep
+    def test_stem(self, alpharep):
+        """
+        The final path component, without its suffix
+        """
+        root = zipfile.Path(alpharep)
+        assert root.stem == 'alpharep' == root.filename.stem
+
+        b = root / "b.txt"
+        assert b.stem == "b"
+
+        c = root / "c" / "filename.tar.gz"
+        assert c.stem == "filename.tar"
+
+        d = root / "d"
+        assert d.stem == "d"
+
+    @pass_alpharep
     def test_root_parent(self, alpharep):
         root = zipfile.Path(alpharep)
         assert root.parent == pathlib.Path('.')

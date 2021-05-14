@@ -2347,6 +2347,10 @@ class Path:
         return pathlib.Path(self.at).suffix or self.filename.suffix
 
     @property
+    def stem(self):
+        return pathlib.Path(self.at).stem or self.filename.stem
+
+    @property
     def filename(self):
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
