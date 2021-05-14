@@ -4214,24 +4214,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(CALL_METHOD_KW): {
             /* Designed to work in tandem with LOAD_METHOD. Same as CALL_METHOD
             but pops TOS to get a tuple of keyword names. */
-            PyObject **sp, *res, *meth;
+            PyObject **sp, *res;
             PyObject *names = NULL;
+            int meth_found;
 
             names = POP();
 
             sp = stack_pointer;
+            meth_found = (PEEK(oparg + 2) != NULL);
+            res = call_function(tstate, &trace_info, &sp, oparg + meth_found, names);
+            stack_pointer = sp;
 
-            meth = PEEK(oparg + 2);
-            if (meth == NULL) {
-                res = call_function(tstate, &trace_info, &sp, oparg, names);
-                stack_pointer = sp;
-                (void)POP(); /* POP the NULL. */
-            }
-            else {
-                res = call_function(tstate, &trace_info, &sp, oparg + 1, names);
-                stack_pointer = sp;
-            }
-
+            STACK_SHRINK(1 - meth_found);
             PUSH(res);
             Py_DECREF(names);
             if (res == NULL) {
