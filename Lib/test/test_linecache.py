@@ -245,20 +245,20 @@ class LineCacheInvalidationTests(unittest.TestCase):
         linecache.clearcache()
         self.deleted_file = os_helper.TESTFN + '.1'
         self.modified_file = os_helper.TESTFN + '.2'
-        self.unchange_file = os_helper.TESTFN + '.3'
+        self.unchanged_file = os_helper.TESTFN + '.3'
         self.addCleanup(os_helper.unlink, self.deleted_file)
         self.addCleanup(os_helper.unlink, self.modified_file)
-        self.addCleanup(os_helper.unlink, self.unchange_file)
+        self.addCleanup(os_helper.unlink, self.unchanged_file)
         with open(self.deleted_file, 'w', encoding='utf-8') as source:
             source.write('print("will be deleted")')
         with open(self.modified_file, 'w', encoding='utf-8') as source:
             source.write('print("will be modified")')
-        with open(self.unchange_file, 'w', encoding='utf-8') as source:
+        with open(self.unchanged_file, 'w', encoding='utf-8') as source:
             source.write('print("unchange")')
 
         linecache.getlines(self.deleted_file)
         linecache.getlines(self.modified_file)
-        linecache.getlines(self.unchange_file)
+        linecache.getlines(self.unchanged_file)
 
         os.remove(self.deleted_file)
         with open(self.modified_file, 'w', encoding='utf-8') as source:
@@ -279,7 +279,7 @@ class LineCacheInvalidationTests(unittest.TestCase):
     def test_checkcache_with_no_parameter(self):
         self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache()
-        self.assertEqual([self.unchange_file], list(linecache.cache.keys()))
+        self.assertEqual([self.unchanged_file], list(linecache.cache.keys()))
 
 
 if __name__ == "__main__":
