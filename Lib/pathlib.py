@@ -88,23 +88,6 @@ class _Flavour(object):
         parsed.reverse()
         return drv, root, parsed
 
-    def join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
-        """
-        Join the two paths represented by the respective
-        (drive, root, parts) tuples.  Return a new (drive, root, parts) tuple.
-        """
-        if root2:
-            if not drv2 and drv:
-                return drv, root2, [drv + root2] + parts2[1:]
-        elif drv2:
-            if drv2 == drv or self.casefold(drv2) == self.casefold(drv):
-                # Same drive => second path is relative to the first
-                return drv, root, parts + parts2[1:]
-        else:
-            # Second path is non-anchored (common case)
-            return drv, root, parts + parts2
-        return drv2, root2, parts2
-
 
 class _WindowsFlavour(_Flavour):
     # Reference for Windows paths can be found at
@@ -558,9 +541,26 @@ class PurePath(object):
 
     def _make_child(self, args):
         drv, root, parts = self._parse_args(args)
-        drv, root, parts = self._flavour.join_parsed_parts(
+        drv, root, parts = self._join_parsed_parts(
             self._drv, self._root, self._parts, drv, root, parts)
         return self._from_parsed_parts(drv, root, parts)
+
+    def _join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
+        """
+        Join the two paths represented by the respective
+        (drive, root, parts) tuples.  Return a new (drive, root, parts) tuple.
+        """
+        if root2:
+            if not drv2 and drv:
+                return drv, root2, [drv + root2] + parts2[1:]
+        elif drv2:
+            if drv2 == drv or self._flavour.casefold(drv2) == self._flavour.casefold(drv):
+                # Same drive => second path is relative to the first
+                return drv, root, parts + parts2[1:]
+        else:
+            # Second path is non-anchored (common case)
+            return drv, root, parts + parts2
+        return drv2, root2, parts2
 
     def __str__(self):
         """Return the string representation of the path, suitable for
