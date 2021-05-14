@@ -1,1 +1,1 @@
-PEP-8 violation in Python standard library corrected.
+PEP-8 violation in Python standard library tutorial corrected.
