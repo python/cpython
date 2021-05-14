@@ -77,7 +77,7 @@ The numeric tower
    Subtypes :class:`Rational` and adds a conversion to :class:`int`.  Provides
    defaults for :func:`float`, :attr:`~Rational.numerator`, and
    :attr:`~Rational.denominator`.  Adds abstract methods for :func:`pow` with
-   modulus, and bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``,
+   modulus and bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``,
    ``~``.
 
 
