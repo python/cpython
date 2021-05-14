@@ -123,12 +123,6 @@ class _WindowsFlavour(_Flavour):
     drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     ext_namespace_prefix = '\\\\?\\'
 
-    reserved_names = (
-        {'CON', 'PRN', 'AUX', 'NUL'} |
-        {'COM%d' % i for i in range(1, 10)} |
-        {'LPT%d' % i for i in range(1, 10)}
-        )
-
     # Interesting findings about extended paths:
     # - '\\?\c:\a', '//?/c:\a' and '//?/c:/a' are all supported
     #   but '\\?\c:/a' is not
@@ -193,18 +187,6 @@ class _WindowsFlavour(_Flavour):
                 s = '\\' + s[3:]
         return prefix, s
 
-    def is_reserved(self, parts):
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL").
-        # We err on the side of caution and return True for paths which are
-        # not considered reserved by Windows.
-        if not parts:
-            return False
-        if parts[0].startswith('\\\\'):
-            # UNC paths are never reserved
-            return False
-        return parts[-1].partition('.')[0].upper() in self.reserved_names
-
     def make_uri(self, path):
         # Under Windows, file URIs use the UTF-8 encoding.
         drive = path.drive
@@ -249,9 +231,6 @@ class _PosixFlavour(_Flavour):
 
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern)).fullmatch
-
-    def is_reserved(self, parts):
-        return False
 
     def make_uri(self, path):
         # We represent the path using the local filesystem encoding,
@@ -875,7 +854,7 @@ class PurePath(object):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        return self._flavour.is_reserved(self._parts)
+        raise NotImplementedError
 
     def match(self, path_pattern):
         """
@@ -916,6 +895,9 @@ class PurePosixPath(PurePath):
     _flavour = _posix_flavour
     __slots__ = ()
 
+    def is_reserved(self):
+        return False
+
 
 class PureWindowsPath(PurePath):
     """PurePath subclass for Windows systems.
@@ -924,7 +906,24 @@ class PureWindowsPath(PurePath):
     However, you can also instantiate it directly on any system.
     """
     _flavour = _windows_flavour
+    _reserved_names = (
+        {'CON', 'PRN', 'AUX', 'NUL'} |
+        {'COM%d' % i for i in range(1, 10)} |
+        {'LPT%d' % i for i in range(1, 10)}
+    )
     __slots__ = ()
+
+    def is_reserved(self):
+        # NOTE: the rules for reserved names seem somewhat complicated
+        # (e.g. r"..\NUL" is reserved but not r"foo\NUL").
+        # We err on the side of caution and return True for paths which are
+        # not considered reserved by Windows.
+        if not self._parts:
+            return False
+        if self._parts[0].startswith('\\\\'):
+            # UNC paths are never reserved
+            return False
+        return self._parts[-1].partition('.')[0].upper() in self._reserved_names
 
 
 # Filesystem-accessing classes
