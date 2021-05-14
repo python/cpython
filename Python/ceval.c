@@ -1648,11 +1648,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     consts = co->co_consts;
     fastlocals = f->f_localsptr;
     freevars = f->f_localsptr + co->co_nlocals;
-    assert(PyBytes_Check(co->co_code));
-    assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
-    assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), sizeof(_Py_CODEUNIT)));
-    first_instr = (_Py_CODEUNIT *) PyBytes_AS_STRING(co->co_code);
+    assert(_PyCode_CODE_IS_VALID(co));
+    first_instr = _PyCode_GET_INSTRUCTIONS(co);
     /*
        f->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -1688,7 +1685,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
 #if OPCACHE_STATS
             opcache_code_objects_extra_mem +=
-                PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT) +
+                _PyCode_NUM_INSTRUCTIONS(co) +
                 sizeof(_PyOpcache) * co->co_opcache_size;
             opcache_code_objects++;
 #endif

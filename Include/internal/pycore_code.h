@@ -103,6 +103,16 @@ PyAPI_FUNC(Py_ssize_t)  _PyCode_GetFastlocalOffsetId(PyCodeObject *,
 #define _PyCode_GET_FREEVAR(co, offset) \
     (PyTuple_GetItem((co)->co_freevars, offset))
 
+#define _PyCode_CODE_IS_VALID(co)                                           \
+    (PyBytes_Check((co)->co_code) &&                                          \
+     PyBytes_GET_SIZE((co)->co_code) <= INT_MAX &&                            \
+     PyBytes_GET_SIZE((co)->co_code) % sizeof(_Py_CODEUNIT) == 0 &&           \
+     _Py_IS_ALIGNED(PyBytes_AS_STRING((co)->co_code), sizeof(_Py_CODEUNIT)))
+#define _PyCode_GET_INSTRUCTIONS(co) \
+    ((_Py_CODEUNIT *) PyBytes_AS_STRING((co)->co_code))
+#define _PyCode_NUM_INSTRUCTIONS(co) \
+    (PyBytes_Size((co)->co_code) / sizeof(_Py_CODEUNIT))
+
 
 #ifdef __cplusplus
 }
