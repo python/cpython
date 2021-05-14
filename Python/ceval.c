@@ -4164,16 +4164,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(CALL_METHOD): {
             /* Designed to work in tamdem with LOAD_METHOD. */
-            PyObject **sp, *res, *meth;
+            PyObject **sp, *res;
+            PyObject *names = NULL;
+            int meth_found;
 
             sp = stack_pointer;
+            /* `meth` is NULL when LOAD_METHOD thinks that it's not
+                a method call.
 
-            meth = PEEK(oparg + 2);
-            if (meth == NULL) {
-                /* `meth` is NULL when LOAD_METHOD thinks that it's not
-                   a method call.
-
-                   Stack layout:
+                Stack layout:
 
                        ... | NULL | callable | arg1 | ... | argN
                                                             ^- TOP()
@@ -4181,15 +4180,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                                     ^- (-oparg-1)
                              ^- (-oparg-2)
 
-                   `callable` will be POPed by call_function.
-                   NULL will will be POPed manually later.
-                */
-                res = call_function(tstate, &trace_info, &sp, oparg, NULL);
-                stack_pointer = sp;
-                (void)POP(); /* POP the NULL. */
-            }
-            else {
-                /* This is a method call.  Stack layout:
+                `callable` will be POPed by call_function.
+                NULL will will be POPed manually later.
+                If `meth` isn't NULL, it's a method call.  Stack layout:
 
                      ... | method | self | arg1 | ... | argN
                                                         ^- TOP()
@@ -4197,17 +4190,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                                     ^- (-oparg-1)
                            ^- (-oparg-2)
 
-                  `self` and `method` will be POPed by call_function.
-                  We'll be passing `oparg + 1` to call_function, to
-                  make it accept the `self` as a first argument.
-                */
-                res = call_function(tstate, &trace_info, &sp, oparg + 1, NULL);
-                stack_pointer = sp;
-            }
+               `self` and `method` will be POPed by call_function.
+               We'll be passing `oparg + 1` to call_function, to
+               make it accept the `self` as a first argument.
+            */
+            meth_found = (PEEK(oparg + 2) != NULL);
+            res = call_function(tstate, &trace_info, &sp, oparg + meth_found, NULL);
+            stack_pointer = sp;
 
+            STACK_SHRINK(1 - meth_found);
             PUSH(res);
-            if (res == NULL)
+            if (res == NULL) {
                 goto error;
+            }
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
