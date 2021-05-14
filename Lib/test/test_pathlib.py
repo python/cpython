@@ -25,8 +25,8 @@ class _BaseFlavourTest(object):
 
     def _check_parse_parts(self, arg, expected):
         f = self.flavour.parse_parts
-        sep = self.flavour.sep
-        altsep = self.flavour.altsep
+        sep = self.flavour.pathmod.sep
+        altsep = self.flavour.pathmod.altsep
         actual = f([x.replace('/', sep) for x in arg])
         self.assertEqual(actual, expected)
         if altsep:
@@ -35,7 +35,7 @@ class _BaseFlavourTest(object):
 
     def test_parse_parts_common(self):
         check = self._check_parse_parts
-        sep = self.flavour.sep
+        sep = self.flavour.pathmod.sep
         # Unanchored parts.
         check([],                   ('', '', []))
         check(['a'],                ('', '', ['a']))
@@ -186,8 +186,8 @@ class _BasePurePathTest(object):
     def setUp(self):
         p = self.cls('a')
         self.flavour = p._flavour
-        self.sep = self.flavour.sep
-        self.altsep = self.flavour.altsep
+        self.sep = self.flavour.pathmod.sep
+        self.altsep = self.flavour.pathmod.altsep
 
     def test_constructor_common(self):
         P = self.cls
@@ -615,7 +615,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
         self.assertRaises(ValueError, P('a/b').with_suffix,
-                          (self.flavour.sep, 'd'))
+                          (self.sep, 'd'))
 
     def test_relative_to_common(self):
         P = self.cls

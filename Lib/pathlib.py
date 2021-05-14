@@ -50,13 +50,10 @@ class _Flavour(object):
     """A flavour implements a particular (platform-specific) set of path
     semantics."""
 
-    def __init__(self):
-        self.join = self.sep.join
-
     def parse_parts(self, parts):
         parsed = []
-        sep = self.sep
-        altsep = self.altsep
+        sep = self.pathmod.sep
+        altsep = self.pathmod.altsep
         drv = root = ''
         it = reversed(parts)
         for part in it:
@@ -113,8 +110,6 @@ class _WindowsFlavour(_Flavour):
     # Reference for Windows paths can be found at
     # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
 
-    sep = '\\'
-    altsep = '/'
     has_drv = True
     pathmod = ntpath
 
@@ -129,7 +124,8 @@ class _WindowsFlavour(_Flavour):
     # - extended paths are always absolute; "relative" extended paths will
     #   fail.
 
-    def splitroot(self, part, sep=sep):
+    def splitroot(self, part):
+        sep = self.pathmod.sep
         first = part[0:1]
         second = part[1:2]
         if (second == sep and first == sep):
@@ -189,14 +185,13 @@ class _WindowsFlavour(_Flavour):
 
 
 class _PosixFlavour(_Flavour):
-    sep = '/'
-    altsep = ''
     has_drv = False
     pathmod = posixpath
 
     is_supported = (os.name != 'nt')
 
-    def splitroot(self, part, sep=sep):
+    def splitroot(self, part):
+        sep = self.pathmod.sep
         if part and part[0] == sep:
             stripped_part = part.lstrip(sep)
             # According to POSIX path resolution:
@@ -557,9 +552,9 @@ class PurePath(object):
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
-            return drv + root + cls._flavour.join(parts[1:])
+            return drv + root + cls._flavour.pathmod.sep.join(parts[1:])
         else:
-            return cls._flavour.join(parts)
+            return cls._flavour.pathmod.sep.join(parts)
 
     def _make_child(self, args):
         drv, root, parts = self._parse_args(args)
@@ -584,7 +579,7 @@ class PurePath(object):
         """Return the string representation of the path with forward (/)
         slashes."""
         f = self._flavour
-        return str(self).replace(f.sep, '/')
+        return str(self).replace(f.pathmod.sep, '/')
 
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
@@ -704,7 +699,8 @@ class PurePath(object):
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
         drv, root, parts = self._flavour.parse_parts((name,))
-        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
+        m = self._flavour.pathmod
+        if (not name or name[-1] in [m.sep, m.altsep]
             or drv or root or len(parts) != 1):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
@@ -719,8 +715,8 @@ class PurePath(object):
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
-        f = self._flavour
-        if f.sep in suffix or f.altsep and f.altsep in suffix:
+        m = self._flavour.pathmod
+        if m.sep in suffix or m.altsep and m.altsep in suffix:
             raise ValueError("Invalid suffix %r" % (suffix,))
         if suffix and not suffix.startswith('.') or suffix == '.':
             raise ValueError("Invalid suffix %r" % (suffix))
