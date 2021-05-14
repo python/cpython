@@ -3113,6 +3113,28 @@ class TestPath(unittest.TestCase):
         assert d.suffix == ""
 
     @pass_alpharep
+    def test_suffixes(self, alpharep):
+        """
+        The suffix of the root should be the suffix of the zipfile.
+        The suffix of each nested file is the final component's last suffix, if any.
+        Includes the leading period, just like pathlib.Path.
+        """
+        root = zipfile.Path(alpharep)
+        assert root.suffixes == ['.zip'] == root.filename.suffixes
+
+        b = root / 'b.txt'
+        assert b.suffixes == ['.txt']
+
+        c = root / 'c' / 'filename.tar.gz'
+        assert c.suffixes == ['.tar', '.gz']
+
+        d = root / 'd'
+        assert d.suffixes == []
+
+        e = root / '.hgrc'
+        assert e.suffixes == []
+
+    @pass_alpharep
     def test_stem(self, alpharep):
         """
         The final path component, without its suffix
