@@ -7,13 +7,15 @@ PROGRAM_DIR = os.path.dirname(__file__)
 SRC_DIR = os.path.dirname(PROGRAM_DIR)
 
 
-def writecode(outfp, mod, str):
-    outfp.write('unsigned char M_%s[] = {' % mod)
-    for i in range(0, len(str), 16):
-        outfp.write('\n\t')
-        for c in bytes(str[i:i+16]):
-            outfp.write('%d,' % c)
-    outfp.write('\n};\n')
+def writecode(fp, mod, data):
+    print('unsigned char M_%s[] = {' % mod, file=fp)
+    indent = ' ' * 4
+    for i in range(0, len(data), 16):
+        print(indent, file=fp, end='')
+        for c in bytes(data[i:i+16]):
+            print('%d,' % c, file=fp, end='')
+        print('', file=fp)
+    print('};', file=fp)
 
 
 def dump(fp, filename, name):
