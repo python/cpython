@@ -86,6 +86,15 @@ New Modules
 Improved Modules
 ================
 
+sqlite3
+-------
+
+:mod:`sqlite3` now utilizes :meth:`functools.lru_cache` to implement the
+connection statement cache. The statement cache can be accessed via the new
+method :meth:`sqlite3.Connection.statement_cache`. As a small optimisation, the
+default statement cache size has been increased from 100 to 128.
+(Contributed by Erlend E. Aasland in :issue:`42862`.)
+
 
 Optimizations
 =============
