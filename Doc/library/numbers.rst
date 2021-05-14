@@ -27,8 +27,8 @@ The numeric tower
    Subclasses of this type describe complex numbers and include the operations
    that work on the built-in :class:`complex` type. These are: conversions to
    :class:`complex` and :class:`bool`, :attr:`.real`, :attr:`.imag`, ``+``,
-   ``-``, ``*``, ``/``, :func:`abs`, :meth:`conjugate`, ``==``, and ``!=``. All
-   except ``-`` and ``!=`` are abstract.
+   ``-``, ``*``, ``/``, ``**``, :func:`abs`, :meth:`conjugate`, ``==``, and
+   ``!=``. All except ``-`` and ``!=`` are abstract.
 
    .. attribute:: real
 
@@ -76,8 +76,9 @@ The numeric tower
 
    Subtypes :class:`Rational` and adds a conversion to :class:`int`.  Provides
    defaults for :func:`float`, :attr:`~Rational.numerator`, and
-   :attr:`~Rational.denominator`.  Adds abstract methods for ``**`` and
-   bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``, ``~``.
+   :attr:`~Rational.denominator`.  Adds abstract methods for :func:`pow` with
+   modulus and bit-string operations: ``<<``, ``>>``, ``&``, ``^``, ``|``,
+   ``~``.
 
 
 Notes for type implementors
