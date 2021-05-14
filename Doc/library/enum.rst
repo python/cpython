@@ -575,6 +575,8 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          KeepFlag.BLUE|0x10
 
+.. versionadded:: 3.10  ``FlagBoundary``
+
 
 Utilites and Decorators
 -----------------------
@@ -598,6 +600,7 @@ Utilites and Decorators
    also injects the members, and their aliases, into the the global namespace
    they were defined in.
 
+.. versionadded:: 3.10
 
 .. decorator:: property
 
@@ -609,6 +612,8 @@ Utilites and Decorators
              for example, the *value* and *name* attributes are defined in the
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
+
+.. versionadded:: 3.10
 
 .. decorator:: unique
 
