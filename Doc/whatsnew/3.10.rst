@@ -589,7 +589,7 @@ Several other key features:
 
 - Like unpacking assignments, tuple and list patterns have exactly the
   same meaning and actually match arbitrary sequences. Technically,
-  the subject must be an instance of ``collections.abc.Sequence``.
+  the subject must be a sequence.
   Therefore, an important exception is that patterns don't match iterators.
   Also, to prevent a common mistake, sequence patterns don't match strings.
 
@@ -1089,6 +1089,14 @@ Add :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
 and :data:`~os.O_NOFOLLOW_ANY` for macOS.
 (Contributed by Dong-hee Na in :issue:`43106`.)
 
+os.path
+-------
+
+:func:`os.path.realpath` now accepts a *strict* keyword-only argument. When set
+to ``True``, :exc:`OSError` is raised if a path doesn't exist or a symlink loop
+is encountered.
+(Contributed by Barney Gale in :issue:`43757`.)
+
 pathlib
 -------
 
@@ -1103,6 +1111,11 @@ Add :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
 supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
 order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
+
+:meth:`pathlib.Path.stat` and :meth:`~pathlib.Path.chmod` now accept a
+*follow_symlinks* keyword-only argument for consistency with corresponding
+functions in the :mod:`os` module.
+(Contributed by Barney Gale in :issue:`39906`.)
 
 platform
 --------
@@ -1833,6 +1846,10 @@ New Features
   creating type instances.
   (Contributed by Victor Stinner in :issue:`43916`.)
 
+* Add a new :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
+  type objects: type attributes cannot be set nor deleted.
+  (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
+
 Porting to Python 3.10
 ----------------------
 
@@ -1889,6 +1906,12 @@ Porting to Python 3.10
   included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`)
+
+* Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
+  objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
+  object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
+  instead.
+  (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 
 Deprecated
 ----------
