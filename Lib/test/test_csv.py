@@ -1237,6 +1237,9 @@ class MiscTestCase(unittest.TestCase):
         extra = {'__doc__', '__version__'}
         support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
 
+    def test_subclassable(self):
+        # issue 44089
+        class Foo(csv.Error): ...
 
 if __name__ == '__main__':
     unittest.main()
