@@ -65,9 +65,6 @@ class _WindowsFlavour(_Flavour):
     def casefold_parts(self, parts):
         return [p.lower() for p in parts]
 
-    def compile_pattern(self, pattern):
-        return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
-
 
 class _PosixFlavour(_Flavour):
     has_drv = False
@@ -79,9 +76,6 @@ class _PosixFlavour(_Flavour):
 
     def casefold_parts(self, parts):
         return parts
-
-    def compile_pattern(self, pattern):
-        return re.compile(fnmatch.translate(pattern)).fullmatch
 
 
 _windows_flavour = _WindowsFlavour()
@@ -179,7 +173,7 @@ _normal_accessor = _NormalAccessor()
 # Globbing helpers
 #
 
-def _make_selector(pattern_parts, flavour):
+def _make_selector(pattern_parts, case_insensitive):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
     if pat == '**':
@@ -190,7 +184,7 @@ def _make_selector(pattern_parts, flavour):
         cls = _WildcardSelector
     else:
         cls = _PreciseSelector
-    return cls(pat, child_parts, flavour)
+    return cls(pat, child_parts, case_insensitive)
 
 if hasattr(functools, "lru_cache"):
     _make_selector = functools.lru_cache()(_make_selector)
@@ -200,10 +194,10 @@ class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
 
-    def __init__(self, child_parts, flavour):
+    def __init__(self, child_parts, case_insensitive):
         self.child_parts = child_parts
         if child_parts:
-            self.successor = _make_selector(child_parts, flavour)
+            self.successor = _make_selector(child_parts, case_insensitive)
             self.dironly = True
         else:
             self.successor = _TerminatingSelector()
@@ -229,9 +223,9 @@ class _TerminatingSelector:
 
 class _PreciseSelector(_Selector):
 
-    def __init__(self, name, child_parts, flavour):
+    def __init__(self, name, child_parts, case_insensitive):
         self.name = name
-        _Selector.__init__(self, child_parts, flavour)
+        _Selector.__init__(self, child_parts, case_insensitive)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
@@ -245,9 +239,10 @@ class _PreciseSelector(_Selector):
 
 class _WildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts, flavour):
-        self.match = flavour.compile_pattern(pat)
-        _Selector.__init__(self, child_parts, flavour)
+    def __init__(self, pat, child_parts, case_insensitive):
+        flags = re.IGNORECASE if case_insensitive else 0
+        self.match = re.compile(fnmatch.translate(pat), flags=flags).fullmatch
+        _Selector.__init__(self, child_parts, case_insensitive)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
@@ -276,8 +271,8 @@ class _WildcardSelector(_Selector):
 
 class _RecursiveWildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts, flavour):
-        _Selector.__init__(self, child_parts, flavour)
+    def __init__(self, pat, child_parts, case_insensitive):
+        _Selector.__init__(self, child_parts, case_insensitive)
 
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
@@ -793,6 +788,7 @@ class PurePosixPath(PurePath):
     """
     _flavour = _posix_flavour
     _pathmod = posixpath
+    _case_insensitive = False
     __slots__ = ()
 
     @classmethod
@@ -832,6 +828,7 @@ class PureWindowsPath(PurePath):
     """
     _flavour = _windows_flavour
     _pathmod = ntpath
+    _case_insensitive = True
     _drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     _ext_namespace_prefix = '\\\\?\\'
     _reserved_names = (
@@ -1016,7 +1013,7 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        selector = _make_selector(tuple(pattern_parts), self._flavour)
+        selector = _make_selector(tuple(pattern_parts), self._case_insensitive)
         for p in selector.select_from(self):
             yield p
 
@@ -1029,7 +1026,8 @@ class Path(PurePath):
         drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
+        selector = _make_selector(("**",) + tuple(pattern_parts),
+                                  self._case_insensitive)
         for p in selector.select_from(self):
             yield p
 
