@@ -565,8 +565,8 @@ Pure paths provide the following methods and properties:
 
    If the path doesn't start with *other* and *strict* is ``True``, :exc:`ValueError` is raised.  If *strict* is ``False`` and one path is relative and the other is absolute or if they reference different drives :exc:`ValueError` is raised.
 
-   NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
-
+   .. versionadded:: 3.11
+      The *strict* argument (pre-3.11 behavior is strict).
    .. versionadded:: 3.10
       The *strict* argument (pre-3.10 behavior is strict).
 
