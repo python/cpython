@@ -335,7 +335,7 @@ class PurePath(object):
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
-        return (self.__class__, tuple(self._parts))
+        return (type(self), tuple(self._parts))
 
     @classmethod
     def _parse_args(cls, args):
@@ -398,10 +398,8 @@ class PurePath(object):
 
     @classmethod
     def _from_parts(cls, args):
-        # We need to call _parse_args on the instance, so as to get the
-        # right flavour.
+        drv, root, parts = cls._parse_args(args)
         self = object.__new__(cls)
-        drv, root, parts = self._parse_args(args)
         self._drv = drv
         self._root = root
         self._parts = parts
@@ -428,7 +426,8 @@ class PurePath(object):
             self._drv, self._root, self._parts, drv, root, parts)
         return self._from_parsed_parts(drv, root, parts)
 
-    def _join_parsed_parts(self, drv, root, parts, drv2, root2, parts2):
+    @classmethod
+    def _join_parsed_parts(cls, drv, root, parts, drv2, root2, parts2):
         """
         Join the two paths represented by the respective
         (drive, root, parts) tuples.  Return a new (drive, root, parts) tuple.
@@ -437,7 +436,7 @@ class PurePath(object):
             if not drv2 and drv:
                 return drv, root2, [drv + root2] + parts2[1:]
         elif drv2:
-            if drv2 == drv or self._casefold(drv2) == self._casefold(drv):
+            if drv2 == drv or cls._casefold(drv2) == cls._casefold(drv):
                 # Same drive => second path is relative to the first
                 return drv, root, parts + parts2[1:]
         else:
@@ -481,7 +480,7 @@ class PurePath(object):
         return os.fsencode(self)
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
+        return "{}({!r})".format(type(self).__name__, self.as_posix())
 
     def as_uri(self):
         """Return the path as a 'file' URI."""
@@ -1114,7 +1113,7 @@ class Path(PurePath):
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
-                            data.__class__.__name__)
+                            type(data).__name__)
         encoding = io.text_encoding(encoding)
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
@@ -1197,7 +1196,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         self._accessor.rename(self, target)
-        return self.__class__(target)
+        return self._from_parts((target,))
 
     def replace(self, target):
         """
@@ -1210,7 +1209,7 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         self._accessor.replace(self, target)
-        return self.__class__(target)
+        return self._from_parts((target,))
 
     def symlink_to(self, target, target_is_directory=False):
         """
