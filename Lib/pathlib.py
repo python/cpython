@@ -54,20 +54,11 @@ class _Flavour(object):
 class _WindowsFlavour(_Flavour):
     # Reference for Windows paths can be found at
     # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
-
-    def casefold(self, s):
-        return s.lower()
-
-    def casefold_parts(self, parts):
-        return [p.lower() for p in parts]
+    pass
 
 
 class _PosixFlavour(_Flavour):
-    def casefold(self, s):
-        return s
-
-    def casefold_parts(self, parts):
-        return parts
+    pass
 
 
 _windows_flavour = _WindowsFlavour()
@@ -465,13 +456,25 @@ class PurePath(object):
             if not drv2 and drv:
                 return drv, root2, [drv + root2] + parts2[1:]
         elif drv2:
-            if drv2 == drv or self._flavour.casefold(drv2) == self._flavour.casefold(drv):
+            if drv2 == drv or self._casefold(drv2) == self._casefold(drv):
                 # Same drive => second path is relative to the first
                 return drv, root, parts + parts2[1:]
         else:
             # Second path is non-anchored (common case)
             return drv, root, parts + parts2
         return drv2, root2, parts2
+
+    @classmethod
+    def _casefold(cls, s):
+        if cls._case_insensitive:
+            return s.lower()
+        return s
+
+    @classmethod
+    def _casefold_parts(cls, parts):
+        if cls._case_insensitive:
+            return [p.lower() for p in parts]
+        return parts
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -509,7 +512,7 @@ class PurePath(object):
         try:
             return self._cached_cparts
         except AttributeError:
-            self._cached_cparts = self._flavour.casefold_parts(self._parts)
+            self._cached_cparts = self._casefold_parts(self._parts)
             return self._cached_cparts
 
     def __eq__(self, other):
@@ -665,7 +668,7 @@ class PurePath(object):
         else:
             to_abs_parts = to_parts
         n = len(to_abs_parts)
-        cf = self._flavour.casefold_parts
+        cf = self._casefold_parts
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError("{!r} is not in the subpath of {!r}"
@@ -744,7 +747,7 @@ class PurePath(object):
         """
         Return True if this path matches the given pattern.
         """
-        cf = self._flavour.casefold
+        cf = self._casefold
         path_pattern = cf(path_pattern)
         drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
