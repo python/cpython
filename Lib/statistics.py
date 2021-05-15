@@ -107,9 +107,12 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [
     'NormalDist',
     'StatisticsError',
+    'correlation',
+    'covariance',
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'linear_regression',
     'mean',
     'median',
     'median_grouped',
@@ -122,9 +125,6 @@ __all__ = [
     'quantiles',
     'stdev',
     'variance',
-    'correlation',
-    'covariance',
-    'linear_regression',
 ]
 
 import math
