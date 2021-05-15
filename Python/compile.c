@@ -309,6 +309,10 @@ static int are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
 static int compiler_async_for(struct compiler *, stmt_ty);
+static int validate_keywords(struct compiler *c, asdl_keyword_seq *keywords);
+static int compiler_call_simple_kw_helper(struct compiler *c,
+                                          asdl_keyword_seq *keywords,
+                                          Py_ssize_t nkwelts);
 static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_expr_seq *args,
                                 asdl_keyword_seq *keywords);
@@ -1176,6 +1180,8 @@ stack_effect(int opcode, int oparg, int jump)
             return -oparg;
         case CALL_METHOD:
             return -oparg-1;
+        case CALL_METHOD_KW:
+            return -oparg-2;
         case CALL_FUNCTION_KW:
             return -oparg-1;
         case CALL_FUNCTION_EX:
@@ -4266,19 +4272,19 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
 {
-    Py_ssize_t argsl, i;
+    Py_ssize_t argsl, i, kwdsl;
     expr_ty meth = e->v.Call.func;
     asdl_expr_seq *args = e->v.Call.args;
+    asdl_keyword_seq *kwds = e->v.Call.keywords;
 
-    /* Check that the call node is an attribute access, and that
-       the call doesn't have keyword parameters. */
-    if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load ||
-            asdl_seq_LEN(e->v.Call.keywords)) {
+    /* Check that the call node is an attribute access */
+    if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load) {
         return -1;
     }
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
-    if (argsl >= STACK_USE_GUIDELINE) {
+    kwdsl = asdl_seq_LEN(kwds);
+    if (argsl + kwdsl + (kwdsl != 0) >= STACK_USE_GUIDELINE) {
         return -1;
     }
     /* Check that there are no *varargs types of arguments. */
@@ -4289,13 +4295,28 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         }
     }
 
+    for (i = 0; i < kwdsl; i++) {
+        keyword_ty kw = asdl_seq_GET(kwds, i);
+        if (kw->arg == NULL) {
+            return -1;
+        }
+    }
     /* Alright, we can optimize the code. */
     VISIT(c, expr, meth->v.Attribute.value);
     int old_lineno = c->u->u_lineno;
     c->u->u_lineno = meth->end_lineno;
     ADDOP_NAME(c, LOAD_METHOD, meth->v.Attribute.attr, names);
     VISIT_SEQ(c, expr, e->v.Call.args);
-    ADDOP_I(c, CALL_METHOD, asdl_seq_LEN(e->v.Call.args));
+
+    if (kwdsl) {
+        if (!compiler_call_simple_kw_helper(c, kwds, kwdsl)) {
+            return 0;
+        };
+        ADDOP_I(c, CALL_METHOD_KW, argsl + kwdsl);
+    }
+    else {
+        ADDOP_I(c, CALL_METHOD, argsl);    
+    }
     c->u->u_lineno = old_lineno;
     return 1;
 }
@@ -4327,6 +4348,9 @@ validate_keywords(struct compiler *c, asdl_keyword_seq *keywords)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
+    if (validate_keywords(c, e->v.Call.keywords) == -1) {
+        return 0;
+    }
     int ret = maybe_optimize_method_call(c, e);
     if (ret >= 0) {
         return ret;
@@ -4458,6 +4482,36 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
     return 1;
 }
 
+/* Used by compiler_call_helper and maybe_optimize_method_call to emit 
+LOAD_CONST kw1
+LOAD_CONST kw2
+...
+LOAD_CONST <tuple of kwnames>
+before a CALL_(FUNCTION|METHOD)_KW.
+
+Returns 1 on success, 0 on error.
+*/
+static int
+compiler_call_simple_kw_helper(struct compiler *c,
+                               asdl_keyword_seq *keywords, 
+                               Py_ssize_t nkwelts)
+{
+    PyObject *names;
+    VISIT_SEQ(c, keyword, keywords);
+    names = PyTuple_New(nkwelts);
+    if (names == NULL) {
+        return 0;
+    }
+    for (int i = 0; i < nkwelts; i++) {
+        keyword_ty kw = asdl_seq_GET(keywords, i);
+        Py_INCREF(kw->arg);
+        PyTuple_SET_ITEM(names, i, kw->arg);
+    }
+    ADDOP_LOAD_CONST_NEW(c, names);
+    return 1;
+}
+
+
 /* shared code between compiler_call and compiler_class */
 static int
 compiler_call_helper(struct compiler *c,
@@ -4497,18 +4551,9 @@ compiler_call_helper(struct compiler *c,
         VISIT(c, expr, elt);
     }
     if (nkwelts) {
-        PyObject *names;
-        VISIT_SEQ(c, keyword, keywords);
-        names = PyTuple_New(nkwelts);
-        if (names == NULL) {
+        if (!compiler_call_simple_kw_helper(c, keywords, nkwelts)) {
             return 0;
-        }
-        for (i = 0; i < nkwelts; i++) {
-            keyword_ty kw = asdl_seq_GET(keywords, i);
-            Py_INCREF(kw->arg);
-            PyTuple_SET_ITEM(names, i, kw->arg);
-        }
-        ADDOP_LOAD_CONST_NEW(c, names);
+        };
         ADDOP_I(c, CALL_FUNCTION_KW, n + nelts + nkwelts);
         return 1;
     }
