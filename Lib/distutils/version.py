@@ -301,10 +301,6 @@ class LooseVersion (Version):
 
     component_re = re.compile(r'(\d+ | [a-z]+ | \.)', re.VERBOSE)
 
-    def __init__ (self, vstring=None):
-        if vstring:
-            self.parse(vstring)
-
 
     def parse (self, vstring):
         # I've given up on thinking I can reconstruct the version string
@@ -324,10 +320,6 @@ class LooseVersion (Version):
 
     def __str__ (self):
         return self.vstring
-
-
-    def __repr__ (self):
-        return "LooseVersion ('%s')" % str(self)
 
 
     def _cmp (self, other):
