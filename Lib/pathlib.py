@@ -50,102 +50,14 @@ class _Flavour(object):
     """A flavour implements a particular (platform-specific) set of path
     semantics."""
 
-    def parse_parts(self, parts):
-        parsed = []
-        sep = self.pathmod.sep
-        altsep = self.pathmod.altsep
-        drv = root = ''
-        it = reversed(parts)
-        for part in it:
-            if not part:
-                continue
-            if altsep:
-                part = part.replace(altsep, sep)
-            drv, root, rel = self.splitroot(part)
-            if sep in rel:
-                for x in reversed(rel.split(sep)):
-                    if x and x != '.':
-                        parsed.append(sys.intern(x))
-            else:
-                if rel and rel != '.':
-                    parsed.append(sys.intern(rel))
-            if drv or root:
-                if not drv:
-                    # If no drive is present, try to find one in the previous
-                    # parts. This makes the result of parsing e.g.
-                    # ("C:", "/", "a") reasonably intuitive.
-                    for part in it:
-                        if not part:
-                            continue
-                        if altsep:
-                            part = part.replace(altsep, sep)
-                        drv = self.splitroot(part)[0]
-                        if drv:
-                            break
-                break
-        if drv or root:
-            parsed.append(drv + root)
-        parsed.reverse()
-        return drv, root, parsed
-
 
 class _WindowsFlavour(_Flavour):
     # Reference for Windows paths can be found at
     # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
 
     has_drv = True
-    pathmod = ntpath
 
     is_supported = (os.name == 'nt')
-
-    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    ext_namespace_prefix = '\\\\?\\'
-
-    # Interesting findings about extended paths:
-    # - '\\?\c:\a', '//?/c:\a' and '//?/c:/a' are all supported
-    #   but '\\?\c:/a' is not
-    # - extended paths are always absolute; "relative" extended paths will
-    #   fail.
-
-    def splitroot(self, part):
-        sep = self.pathmod.sep
-        first = part[0:1]
-        second = part[1:2]
-        if (second == sep and first == sep):
-            # XXX extended paths should also disable the collapsing of "."
-            # components (according to MSDN docs).
-            prefix, part = self._split_extended_path(part)
-            first = part[0:1]
-            second = part[1:2]
-        else:
-            prefix = ''
-        third = part[2:3]
-        if (second == sep and first == sep and third != sep):
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvvv root
-            # \\machine\mountpoint\directory\etc\...
-            #            directory ^^^^^^^^^^^^^^
-            index = part.find(sep, 2)
-            if index != -1:
-                index2 = part.find(sep, index + 1)
-                # a UNC path can't have two slashes in a row
-                # (after the initial two)
-                if index2 != index + 1:
-                    if index2 == -1:
-                        index2 = len(part)
-                    if prefix:
-                        return prefix + part[1:index2], sep, part[index2+1:]
-                    else:
-                        return part[:index2], sep, part[index2+1:]
-        drv = root = ''
-        if second == ':' and first in self.drive_letters:
-            drv = part[:2]
-            part = part[2:]
-            first = third
-        if first == sep:
-            root = first
-            part = part.lstrip(sep)
-        return prefix + drv, root, part
 
     def casefold(self, s):
         return s.lower()
@@ -156,38 +68,11 @@ class _WindowsFlavour(_Flavour):
     def compile_pattern(self, pattern):
         return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
 
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
-        prefix = ''
-        if s.startswith(ext_prefix):
-            prefix = s[:4]
-            s = s[4:]
-            if s.startswith('UNC\\'):
-                prefix += s[:3]
-                s = '\\' + s[3:]
-        return prefix, s
-
 
 class _PosixFlavour(_Flavour):
     has_drv = False
-    pathmod = posixpath
 
     is_supported = (os.name != 'nt')
-
-    def splitroot(self, part):
-        sep = self.pathmod.sep
-        if part and part[0] == sep:
-            stripped_part = part.lstrip(sep)
-            # According to POSIX path resolution:
-            # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
-            # "A pathname that begins with two successive slashes may be
-            # interpreted in an implementation-defined manner, although more
-            # than two leading slashes shall be treated as a single slash".
-            if len(part) - len(stripped_part) == 2:
-                return '', sep * 2, stripped_part
-            else:
-                return '', sep, stripped_part
-        else:
-            return '', '', part
 
     def casefold(self, s):
         return s
@@ -511,7 +396,46 @@ class PurePath(object):
                         "argument should be a str object or an os.PathLike "
                         "object returning str, not %r"
                         % type(a))
-        return cls._flavour.parse_parts(parts)
+        return cls._parse_parts(parts)
+
+    @classmethod
+    def _parse_parts(cls, parts):
+        parsed = []
+        sep = cls._pathmod.sep
+        altsep = cls._pathmod.altsep
+        drv = root = ''
+        it = reversed(parts)
+        for part in it:
+            if not part:
+                continue
+            if altsep:
+                part = part.replace(altsep, sep)
+            drv, root, rel = cls._splitroot(part)
+            if sep in rel:
+                for x in reversed(rel.split(sep)):
+                    if x and x != '.':
+                        parsed.append(sys.intern(x))
+            else:
+                if rel and rel != '.':
+                    parsed.append(sys.intern(rel))
+            if drv or root:
+                if not drv:
+                    # If no drive is present, try to find one in the previous
+                    # parts. This makes the result of parsing e.g.
+                    # ("C:", "/", "a") reasonably intuitive.
+                    for part in it:
+                        if not part:
+                            continue
+                        if altsep:
+                            part = part.replace(altsep, sep)
+                        drv = cls._splitroot(part)[0]
+                        if drv:
+                            break
+                break
+        if drv or root:
+            parsed.append(drv + root)
+        parsed.reverse()
+        return drv, root, parsed
 
     @classmethod
     def _from_parts(cls, args):
@@ -535,9 +459,9 @@ class PurePath(object):
     @classmethod
     def _format_parsed_parts(cls, drv, root, parts):
         if drv or root:
-            return drv + root + cls._flavour.pathmod.sep.join(parts[1:])
+            return drv + root + cls._pathmod.sep.join(parts[1:])
         else:
-            return cls._flavour.pathmod.sep.join(parts)
+            return cls._pathmod.sep.join(parts)
 
     def _make_child(self, args):
         drv, root, parts = self._parse_args(args)
@@ -578,8 +502,7 @@ class PurePath(object):
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
-        f = self._flavour
-        return str(self).replace(f.pathmod.sep, '/')
+        return str(self).replace(self._pathmod.sep, '/')
 
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
@@ -698,8 +621,8 @@ class PurePath(object):
         """Return a new path with the file name changed."""
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
-        drv, root, parts = self._flavour.parse_parts((name,))
-        m = self._flavour.pathmod
+        drv, root, parts = self._parse_parts((name,))
+        m = self._pathmod
         if (not name or name[-1] in [m.sep, m.altsep]
             or drv or root or len(parts) != 1):
             raise ValueError("Invalid name %r" % (name))
@@ -715,7 +638,7 @@ class PurePath(object):
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
-        m = self._flavour.pathmod
+        m = self._pathmod
         if m.sep in suffix or m.altsep and m.altsep in suffix:
             raise ValueError("Invalid suffix %r" % (suffix,))
         if suffix and not suffix.startswith('.') or suffix == '.':
@@ -838,7 +761,7 @@ class PurePath(object):
         """
         cf = self._flavour.casefold
         path_pattern = cf(path_pattern)
-        drv, root, pat_parts = self._flavour.parse_parts((path_pattern,))
+        drv, root, pat_parts = self._parse_parts((path_pattern,))
         if not pat_parts:
             raise ValueError("empty pattern")
         if drv and drv != cf(self._drv):
@@ -869,7 +792,25 @@ class PurePosixPath(PurePath):
     However, you can also instantiate it directly on any system.
     """
     _flavour = _posix_flavour
+    _pathmod = posixpath
     __slots__ = ()
+
+    @classmethod
+    def _splitroot(cls, part):
+        sep = cls._pathmod.sep
+        if part and part[0] == sep:
+            stripped_part = part.lstrip(sep)
+            # According to POSIX path resolution:
+            # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
+            # "A pathname that begins with two successive slashes may be
+            # interpreted in an implementation-defined manner, although more
+            # than two leading slashes shall be treated as a single slash".
+            if len(part) - len(stripped_part) == 2:
+                return '', sep * 2, stripped_part
+            else:
+                return '', sep, stripped_part
+        else:
+            return '', '', part
 
     def is_reserved(self):
         return False
@@ -890,12 +831,73 @@ class PureWindowsPath(PurePath):
     However, you can also instantiate it directly on any system.
     """
     _flavour = _windows_flavour
+    _pathmod = ntpath
+    _drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    _ext_namespace_prefix = '\\\\?\\'
     _reserved_names = (
         {'CON', 'PRN', 'AUX', 'NUL'} |
         {'COM%d' % i for i in range(1, 10)} |
         {'LPT%d' % i for i in range(1, 10)}
     )
     __slots__ = ()
+
+    # Interesting findings about extended paths:
+    # - '\\?\c:\a', '//?/c:\a' and '//?/c:/a' are all supported
+    #   but '\\?\c:/a' is not
+    # - extended paths are always absolute; "relative" extended paths will
+    #   fail.
+
+    @classmethod
+    def _splitroot(cls, part):
+        sep = cls._pathmod.sep
+        first = part[0:1]
+        second = part[1:2]
+        if (second == sep and first == sep):
+            # XXX extended paths should also disable the collapsing of "."
+            # components (according to MSDN docs).
+            prefix, part = cls._split_extended_path(part)
+            first = part[0:1]
+            second = part[1:2]
+        else:
+            prefix = ''
+        third = part[2:3]
+        if (second == sep and first == sep and third != sep):
+            # is a UNC path:
+            # vvvvvvvvvvvvvvvvvvvvv root
+            # \\machine\mountpoint\directory\etc\...
+            #            directory ^^^^^^^^^^^^^^
+            index = part.find(sep, 2)
+            if index != -1:
+                index2 = part.find(sep, index + 1)
+                # a UNC path can't have two slashes in a row
+                # (after the initial two)
+                if index2 != index + 1:
+                    if index2 == -1:
+                        index2 = len(part)
+                    if prefix:
+                        return prefix + part[1:index2], sep, part[index2+1:]
+                    else:
+                        return part[:index2], sep, part[index2+1:]
+        drv = root = ''
+        if second == ':' and first in cls._drive_letters:
+            drv = part[:2]
+            part = part[2:]
+            first = third
+        if first == sep:
+            root = first
+            part = part.lstrip(sep)
+        return prefix + drv, root, part
+
+    @classmethod
+    def _split_extended_path(cls, s, ext_prefix=_ext_namespace_prefix):
+        prefix = ''
+        if s.startswith(ext_prefix):
+            prefix = s[:4]
+            s = s[4:]
+            if s.startswith('UNC\\'):
+                prefix += s[:3]
+                s = '\\' + s[3:]
+        return prefix, s
 
     def is_reserved(self):
         # NOTE: the rules for reserved names seem somewhat complicated
@@ -1011,7 +1013,7 @@ class Path(PurePath):
         sys.audit("pathlib.Path.glob", self, pattern)
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
+        drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
         selector = _make_selector(tuple(pattern_parts), self._flavour)
@@ -1024,7 +1026,7 @@ class Path(PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
+        drv, root, pattern_parts = self._parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
         selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
