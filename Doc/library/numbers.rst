@@ -10,7 +10,7 @@
 
 The :mod:`numbers` module (:pep:`3141`) defines a hierarchy of numeric
 :term:`abstract base classes <abstract base class>` which progressively define
-more operations.  None of the types defined in this module can be instantiated.
+more operations.  None of the types defined in this module are intended to be instantiated.
 
 
 .. class:: Number
