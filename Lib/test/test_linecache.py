@@ -245,41 +245,40 @@ class LineCacheInvalidationTests(unittest.TestCase):
         linecache.clearcache()
         self.deleted_file = os_helper.TESTFN + '.1'
         self.modified_file = os_helper.TESTFN + '.2'
-        self.unchange_file = os_helper.TESTFN + '.3'
-        self.addCleanup(os_helper.unlink, self.deleted_file)
-        self.addCleanup(os_helper.unlink, self.modified_file)
-        self.addCleanup(os_helper.unlink, self.unchange_file)
-        with open(self.deleted_file, 'w', encoding='utf-8') as source:
-            source.write('print("will be deleted")')
-        with open(self.modified_file, 'w', encoding='utf-8') as source:
-            source.write('print("will be modified")')
-        with open(self.unchange_file, 'w', encoding='utf-8') as source:
-            source.write('print("unchange")')
+        self.unchanged_file = os_helper.TESTFN + '.3'
 
-        linecache.getlines(self.deleted_file)
-        linecache.getlines(self.modified_file)
-        linecache.getlines(self.unchange_file)
+        for fname in (self.deleted_file,
+                      self.modified_file,
+                      self.unchanged_file):
+            self.addCleanup(os_helper.unlink, fname)
+            with open(fname, 'w', encoding='utf-8') as source:
+                source.write(f'print("I am {fname}")')
+
+            self.assertNotIn(fname, linecache.cache)
+            linecache.getlines(fname)
+            self.assertIn(fname, linecache.cache)
 
         os.remove(self.deleted_file)
         with open(self.modified_file, 'w', encoding='utf-8') as source:
             source.write('print("was modified")')
 
     def test_checkcache_for_deleted_file(self):
-        self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache(self.deleted_file)
-        self.assertEqual(2, len(linecache.cache.keys()))
-        self.assertNotIn(self.deleted_file, linecache.cache.keys())
+        self.assertNotIn(self.deleted_file, linecache.cache)
+        self.assertIn(self.modified_file, linecache.cache)
+        self.assertIn(self.unchanged_file, linecache.cache)
 
     def test_checkcache_for_modified_file(self):
-        self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache(self.modified_file)
-        self.assertEqual(2, len(linecache.cache.keys()))
-        self.assertNotIn(self.modified_file, linecache.cache.keys())
+        self.assertIn(self.deleted_file, linecache.cache)
+        self.assertNotIn(self.modified_file, linecache.cache)
+        self.assertIn(self.unchanged_file, linecache.cache)
 
     def test_checkcache_with_no_parameter(self):
-        self.assertEqual(3, len(linecache.cache.keys()))
         linecache.checkcache()
-        self.assertEqual([self.unchange_file], list(linecache.cache.keys()))
+        self.assertNotIn(self.deleted_file, linecache.cache)
+        self.assertNotIn(self.modified_file, linecache.cache)
+        self.assertIn(self.unchanged_file, linecache.cache)
 
 
 if __name__ == "__main__":
