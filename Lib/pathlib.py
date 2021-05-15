@@ -55,8 +55,6 @@ class _WindowsFlavour(_Flavour):
     # Reference for Windows paths can be found at
     # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
 
-    has_drv = True
-
     def casefold(self, s):
         return s.lower()
 
@@ -65,8 +63,6 @@ class _WindowsFlavour(_Flavour):
 
 
 class _PosixFlavour(_Flavour):
-    has_drv = False
-
     def casefold(self, s):
         return s
 
@@ -737,9 +733,7 @@ class PurePath(object):
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        if not self._root:
-            return False
-        return not self._flavour.has_drv or bool(self._drv)
+        raise NotImplementedError
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
@@ -804,6 +798,9 @@ class PurePosixPath(PurePath):
                 return '', sep, stripped_part
         else:
             return '', '', part
+
+    def is_absolute(self):
+        return bool(self._root)
 
     def is_reserved(self):
         return False
@@ -893,6 +890,9 @@ class PureWindowsPath(PurePath):
                 prefix += s[:3]
                 s = '\\' + s[3:]
         return prefix, s
+
+    def is_absolute(self):
+        return bool(self._root) and bool(self._drv)
 
     def is_reserved(self):
         # NOTE: the rules for reserved names seem somewhat complicated
