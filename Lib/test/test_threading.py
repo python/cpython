@@ -1345,8 +1345,8 @@ class ThreadingExceptionTests(BaseTestCase):
             with open(os_helper.TESTFN, 'w', encoding='utf-8') as fp:
                 fp.write(' ')
                 traceback.format_stack()
-            self.addCleanup(os_helper.unlink, os_helper.TESTFN)
 
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         threads = [
             threading.Thread(target=modify_file)
             for i in range(100)
