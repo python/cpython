@@ -1421,7 +1421,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define STACK_SHRINK(n) do { \
                             assert(n >= 0); \
                             (void)(lltrace && prtrace(tstate, TOP(), "stackadj")); \
-                            (void)(BASIC_STACKADJ(-n)); \
+                            (void)(BASIC_STACKADJ(-(n))); \
                             assert(STACK_LEVEL() <= co->co_stacksize); \
                         } while (0)
 #define EXT_POP(STACK_POINTER) ((void)(lltrace && \
@@ -1431,7 +1431,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define PUSH(v)                BASIC_PUSH(v)
 #define POP()                  BASIC_POP()
 #define STACK_GROW(n)          BASIC_STACKADJ(n)
-#define STACK_SHRINK(n)        BASIC_STACKADJ(-n)
+#define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
@@ -4165,7 +4165,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(CALL_METHOD): {
             /* Designed to work in tamdem with LOAD_METHOD. */
             PyObject **sp, *res;
-            PyObject *names = NULL;
             int meth_found;
 
             sp = stack_pointer;
@@ -4198,7 +4197,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = call_function(tstate, &trace_info, &sp, oparg + meth_found, NULL);
             stack_pointer = sp;
 
-            STACK_SHRINK((1 - meth_found));
+            STACK_SHRINK(1 - meth_found);
             PUSH(res);
             if (res == NULL) {
                 goto error;
@@ -4220,7 +4219,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             res = call_function(tstate, &trace_info, &sp, oparg + meth_found, names);
             stack_pointer = sp;
 
-            STACK_SHRINK((1 - meth_found));
+            STACK_SHRINK(1 - meth_found);
             PUSH(res);
             Py_DECREF(names);
             if (res == NULL) {
