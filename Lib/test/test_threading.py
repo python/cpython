@@ -805,6 +805,14 @@ class ThreadTests(BaseTestCase):
         """)
         self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'value'")
 
+    def test_leak_without_join(self):
+        # bpo-37788: Test that a thread which is not joined explicitly
+        # does not leak. Test written for reference leak checks.
+        def noop(): pass
+        with support.wait_threads_exit():
+            threading.Thread(target=noop).start()
+            # Thread.join() is not called
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
