@@ -35,6 +35,14 @@ _IGNORED_WINERRORS = (
     _WINERROR_INVALID_NAME,
     _WINERROR_CANT_RESOLVE_FILENAME)
 
+_win_drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+_win_ext_namespace_prefix = '\\\\?\\'
+_win_reserved_names = (
+    {'CON', 'PRN', 'AUX', 'NUL'} |
+    {'COM%d' % i for i in range(1, 10)} |
+    {'LPT%d' % i for i in range(1, 10)}
+)
+
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
@@ -807,13 +815,6 @@ class PureWindowsPath(PurePath):
     _pathmod = ntpath
     _supported = (os.name == 'nt')
     _case_insensitive = True
-    _drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    _ext_namespace_prefix = '\\\\?\\'
-    _reserved_names = (
-        {'CON', 'PRN', 'AUX', 'NUL'} |
-        {'COM%d' % i for i in range(1, 10)} |
-        {'LPT%d' % i for i in range(1, 10)}
-    )
     __slots__ = ()
 
     # Interesting findings about extended paths:
@@ -854,7 +855,7 @@ class PureWindowsPath(PurePath):
                     else:
                         return part[:index2], sep, part[index2+1:]
         drv = root = ''
-        if second == ':' and first in cls._drive_letters:
+        if second == ':' and first in _win_drive_letters:
             drv = part[:2]
             part = part[2:]
             first = third
@@ -864,7 +865,7 @@ class PureWindowsPath(PurePath):
         return prefix + drv, root, part
 
     @classmethod
-    def _split_extended_path(cls, s, ext_prefix=_ext_namespace_prefix):
+    def _split_extended_path(cls, s, ext_prefix=_win_ext_namespace_prefix):
         prefix = ''
         if s.startswith(ext_prefix):
             prefix = s[:4]
@@ -887,7 +888,7 @@ class PureWindowsPath(PurePath):
         if self._parts[0].startswith('\\\\'):
             # UNC paths are never reserved
             return False
-        return self._parts[-1].partition('.')[0].upper() in self._reserved_names
+        return self._parts[-1].partition('.')[0].upper() in _win_reserved_names
 
     def as_uri(self):
         if not self.is_absolute():
