@@ -1052,6 +1052,20 @@ call fails (for example because the path doesn't exist).
       Added return value, return the new Path instance.
 
 
+.. method:: Path.absolute()
+
+   Make the path absolute, without resolving symlinks, and return a new path
+   object.  This is equivalent to prepending the current directory::
+
+      >>> p = Path('..')
+      >>> p
+      PosixPath('..')
+      >>> p.absolute()
+      PosixPath('/home/antoine/pathlib/..')
+      >>> Path.cwd() / p
+      PosixPath('/home/antoine/pathlib/..')
+
+
 .. method:: Path.resolve(strict=False)
 
    Make the path absolute, resolving any symlinks.  A new path object is
@@ -1239,13 +1253,14 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
    Not all pairs of functions/methods below are equivalent. Some of them,
    despite having some overlapping use-cases, have different semantics. They
-   include :func:`os.path.abspath` and :meth:`Path.resolve`,
+   include :func:`os.path.abspath` and :meth:`Path.absolute`,
    :func:`os.path.relpath` and :meth:`PurePath.relative_to`.
 
 ====================================   ==============================
 :mod:`os` and :mod:`os.path`           :mod:`pathlib`
 ====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.resolve` [#]_
+:func:`os.path.abspath`                :meth:`Path.absolute` [#]_
+:func:`os.path.realpath`               :meth:`Path.resolve`
 :func:`os.chmod`                       :meth:`Path.chmod`
 :func:`os.mkdir`                       :meth:`Path.mkdir`
 :func:`os.makedirs`                    :meth:`Path.mkdir`
@@ -1278,5 +1293,5 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 
 .. rubric:: Footnotes
 
-.. [#] :func:`os.path.abspath` does not resolve symbolic links while :meth:`Path.resolve` does.
+.. [#] :func:`os.path.abspath` normalizes the resulting path, which may change its meaning in the presence of symlinks.
 .. [#] :meth:`Path.relative_to` requires ``self`` to be the subpath of the argument, but :func:`os.path.relpath` does not.

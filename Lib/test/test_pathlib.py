@@ -1456,6 +1456,39 @@ class _BasePathTest(object):
         p = self.cls.cwd()
         self._test_cwd(p)
 
+    def _test_absolute(self):
+        P = self.cls
+
+        # Simple absolute paths
+        self.assertEqualNormCase(str(P('/').absolute()), '/')
+        self.assertEqualNormCase(str(P('/a').absolute()), '/a')
+        self.assertEqualNormCase(str(P('/a/b').absolute()), '/a/b')
+        self.assertEqualNormCase(str(P('//a/b').absolute()), '//a/b')
+
+        # Simple relative paths
+        self.assertEqualNormCase(str(P().absolute()), BASE)
+        self.assertEqualNormCase(str(P('.').absolute()), BASE)
+        self.assertEqualNormCase(str(P('a').absolute()), os.path.join(BASE, 'a'))
+        self.assertEqualNormCase(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
+
+        # Symlinks should not be resolved
+        self.assertEqualNormCase(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
+        self.assertEqualNormCase(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
+        self.assertEqualNormCase(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
+
+        # '..' entries should be preserved and not normalised
+        self.assertEqualNormCase(str(P('..').absolute()), os.path.join(BASE, '..'))
+        self.assertEqualNormCase(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
+        self.assertEqualNormCase(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
+
+    def test_absolute(self):
+        old_path = os.getcwd()
+        os.chdir(BASE)
+        try:
+            self._test_absolute()
+        finally:
+            os.chdir(old_path)
+
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
         self.assertEqual(p, q)
