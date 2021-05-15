@@ -56,6 +56,9 @@ def compile_c_extension(
     source_file_path = pathlib.Path(generated_source_path)
     extension_name = source_file_path.stem
     extra_compile_args = get_extra_flags("CFLAGS", "PY_CFLAGS_NODIST")
+    extra_compile_args.append("-DPy_BUILD_CORE_MODULE")
+    # Define _Py_TEST_PEGEN to not call PyAST_Validate() in Parser/pegen.c
+    extra_compile_args.append('-D_Py_TEST_PEGEN')
     extra_link_args = get_extra_flags("LDFLAGS", "PY_LDFLAGS_NODIST")
     if keep_asserts:
         extra_compile_args.append("-UNDEBUG")
@@ -66,15 +69,14 @@ def compile_c_extension(
                 str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
                 str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
                 str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "pegen.c"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen" / "parse_string.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
+                str(MOD_DIR.parent.parent.parent / "Parser" / "string_parser.c"),
                 str(MOD_DIR.parent / "peg_extension" / "peg_extension.c"),
                 generated_source_path,
             ],
             include_dirs=[
                 str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
                 str(MOD_DIR.parent.parent.parent / "Parser"),
-                str(MOD_DIR.parent.parent.parent / "Parser" / "pegen"),
             ],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args,

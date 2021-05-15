@@ -413,7 +413,7 @@ class Grail(BaseBrowser):
         tempdir = os.path.join(tempfile.gettempdir(),
                                ".grail-unix")
         user = pwd.getpwuid(os.getuid())[0]
-        filename = os.path.join(tempdir, user + "-*")
+        filename = os.path.join(glob.escape(tempdir), glob.escape(user) + "-*")
         maybes = glob.glob(filename)
         if not maybes:
             return None
@@ -532,6 +532,10 @@ def register_standard_browsers():
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
 
+    if sys.platform == "serenityos":
+        # SerenityOS webbrowser, simply called "Browser".
+        register("Browser", None, BackgroundBrowser("Browser"))
+
     if sys.platform[:3] == "win":
         # First try to use the default Windows browser
         register("windows-default", WindowsDefault)
@@ -545,12 +549,12 @@ def register_standard_browsers():
                 register(browser, None, BackgroundBrowser(browser))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY"):
+        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
                 result = raw_result.decode().strip()
-            except (FileNotFoundError, subprocess.CalledProcessError):
+            except (FileNotFoundError, subprocess.CalledProcessError, PermissionError, NotADirectoryError) :
                 pass
             else:
                 global _os_preferred_browser

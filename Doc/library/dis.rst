@@ -346,7 +346,7 @@ The Python compiler currently generates the following bytecode instructions.
 
 .. opcode:: ROT_FOUR
 
-   Lifts second, third and forth stack items one position up, moves top down
+   Lifts second, third and fourth stack items one position up, moves top down
    to position four.
 
    .. versionadded:: 3.8
@@ -616,13 +616,6 @@ the original TOS1.
    .. versionadded:: 3.5
 
 
-.. opcode:: SETUP_ASYNC_WITH
-
-   Creates a new frame object.
-
-   .. versionadded:: 3.5
-
-
 
 **Miscellaneous opcodes**
 
@@ -640,7 +633,7 @@ the original TOS1.
 
 .. opcode:: LIST_APPEND (i)
 
-   Calls ``list.append(TOS[-i], TOS)``.  Used to implement list comprehensions.
+   Calls ``list.append(TOS1[-i], TOS)``.  Used to implement list comprehensions.
 
 
 .. opcode:: MAP_ADD (i)
@@ -692,25 +685,27 @@ iterations of the loop.
    opcode implements ``from module import *``.
 
 
-.. opcode:: POP_BLOCK
-
-   Removes one block from the block stack.  Per frame, there is a stack of
-   blocks, denoting :keyword:`try` statements, and such.
-
-
 .. opcode:: POP_EXCEPT
 
-   Removes one block from the block stack. The popped block must be an exception
-   handler block, as implicitly created when entering an except handler.  In
-   addition to popping extraneous values from the frame stack, the last three
-   popped values are used to restore the exception state.
+   Pops three values from the stack, which are used to restore the exception state.
 
 
 .. opcode:: RERAISE
 
-    Re-raises the exception currently on top of the stack.
+    Re-raises the exception currently on top of the stack. If oparg is non-zero,
+    pops an additional value from the stack which is used to set ``f_lasti``
+    of the current frame.
 
     .. versionadded:: 3.9
+
+
+.. opcode:: PUSH_EXC_INFO
+
+    Pops the three values from the stack. Pushes the current exception to the top of the stack.
+    Pushes the three values originally popped back to the stack.
+    Used in exception handlers.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: WITH_EXCEPT_START
@@ -721,6 +716,17 @@ iterations of the loop.
     has occurred in a :keyword:`with` statement.
 
     .. versionadded:: 3.9
+
+
+.. opcode:: POP_EXCEPT_AND_RERAISE
+
+    Pops the exception currently on top of the stack. Pops the integer value on top
+    of the stack and sets the ``f_lasti`` attribute of the frame with that value.
+    Then pops the next exception from the stack uses it to restore the current exception.
+    Finally it re-raises the originally popped exception.
+    Used in excpetion handler cleanup.
+
+    .. versionadded:: 3.11
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -737,18 +743,58 @@ iterations of the loop.
    by :opcode:`CALL_FUNCTION` to construct a class.
 
 
-.. opcode:: SETUP_WITH (delta)
+.. opcode:: BEFORE_WITH (delta)
 
    This opcode performs several operations before a with block starts.  First,
    it loads :meth:`~object.__exit__` from the context manager and pushes it onto
-   the stack for later use by :opcode:`WITH_CLEANUP_START`.  Then,
-   :meth:`~object.__enter__` is called, and a finally block pointing to *delta*
-   is pushed.  Finally, the result of calling the ``__enter__()`` method is pushed onto
-   the stack.  The next opcode will either ignore it (:opcode:`POP_TOP`), or
-   store it in (a) variable(s) (:opcode:`STORE_FAST`, :opcode:`STORE_NAME`, or
-   :opcode:`UNPACK_SEQUENCE`).
+   the stack for later use by :opcode:`WITH_EXCEPT_START`.  Then,
+   :meth:`~object.__enter__` is called. Finally, the result of calling the
+   ``__enter__()`` method is pushed onto the stack.
 
-   .. versionadded:: 3.2
+   .. versionadded:: 3.11
+
+
+.. opcode:: COPY_DICT_WITHOUT_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  Replace TOS
+   with a :class:`dict` formed from the items of TOS1, but without any of the
+   keys in TOS.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: GET_LEN
+
+   Push ``len(TOS)`` onto the stack.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_MAPPING
+
+   If TOS is an instance of :class:`collections.abc.Mapping`, push ``True`` onto
+   the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_SEQUENCE
+
+   If TOS is an instance of :class:`collections.abc.Sequence` and is *not* an
+   instance of :class:`str`/:class:`bytes`/:class:`bytearray`, push ``True``
+   onto the stack.  Otherwise, push ``False``.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: MATCH_KEYS
+
+   TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
+   contains all of the keys in TOS, push a :class:`tuple` containing the
+   corresponding values, followed by ``True``. Otherwise, push ``None``,
+   followed by ``False``.
+
+   .. versionadded:: 3.10
 
 
 All of the following opcodes use their arguments.
@@ -861,7 +907,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LIST_TO_TUPLE
 
-    Pops a list from the stack and pushes a tuple containing the same values.
+   Pops a list from the stack and pushes a tuple containing the same values.
 
    .. versionadded:: 3.9
 
@@ -889,7 +935,7 @@ All of the following opcodes use their arguments.
 
 .. opcode:: DICT_MERGE
 
-    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
+   Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 
    .. versionadded:: 3.9
 
@@ -907,14 +953,14 @@ All of the following opcodes use their arguments.
 
 .. opcode:: IS_OP (invert)
 
-    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+   Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: CONTAINS_OP (invert)
 
-    Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+   Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
 
    .. versionadded:: 3.9
 
@@ -955,8 +1001,8 @@ All of the following opcodes use their arguments.
 
 .. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
 
-    Tests whether the second value on the stack is an exception matching TOS,
-    and jumps if it is not. Pops two values from the stack.
+   Tests whether the second value on the stack is an exception matching TOS,
+   and jumps if it is not. Pops two values from the stack.
 
    .. versionadded:: 3.9
 
@@ -993,12 +1039,6 @@ All of the following opcodes use their arguments.
 .. opcode:: LOAD_GLOBAL (namei)
 
    Loads the global named ``co_names[namei]`` onto the stack.
-
-
-.. opcode:: SETUP_FINALLY (delta)
-
-   Pushes a try block from a try-finally or try-except clause onto the block
-   stack.  *delta* points to the finally block or the first except block.
 
 
 .. opcode:: LOAD_FAST (var_num)
@@ -1144,11 +1184,13 @@ All of the following opcodes use their arguments.
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
-   * ``0x04`` an annotation dictionary
+   * ``0x04`` a tuple of strings containing parameters' annotations
    * ``0x08`` a tuple containing cells for free variables, making a closure
    * the code associated with the function (at TOS1)
    * the :term:`qualified name` of the function (at TOS)
 
+   .. versionchanged:: 3.10
+      Flag value ``0x04`` is a tuple of strings instead of dictionary
 
 .. opcode:: BUILD_SLICE (argc)
 
@@ -1187,6 +1229,36 @@ All of the following opcodes use their arguments.
    result is pushed on the stack.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: MATCH_CLASS (count)
+
+   TOS is a tuple of keyword attribute names, TOS1 is the class being matched
+   against, and TOS2 is the match subject.  *count* is the number of positional
+   sub-patterns.
+
+   Pop TOS.  If TOS2 is an instance of TOS1 and has the positional and keyword
+   attributes required by *count* and TOS, set TOS to ``True`` and TOS1 to a
+   tuple of extracted attributes.  Otherwise, set TOS to ``False``.
+
+   .. versionadded:: 3.10
+
+.. opcode:: GEN_START (kind)
+
+    Pops TOS. If TOS was not ``None``, raises an exception. The ``kind``
+    operand corresponds to the type of generator or coroutine and determines
+    the error message. The legal kinds are 0 for generator, 1 for coroutine,
+    and 2 for async generator.
+
+   .. versionadded:: 3.10
+
+
+.. opcode:: ROT_N (count)
+
+   Lift the top *count* stack items one position up, and move TOS down to
+   position *count*.
+
+   .. versionadded:: 3.10
 
 
 .. opcode:: HAVE_ARGUMENT

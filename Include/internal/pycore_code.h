@@ -10,9 +10,16 @@ typedef struct {
     uint64_t builtins_ver; /* ma_version of builtin dict */
 } _PyOpcache_LoadGlobal;
 
+typedef struct {
+    PyTypeObject *type;
+    Py_ssize_t hint;
+    unsigned int tp_version_tag;
+} _PyOpCodeOpt_LoadAttr;
+
 struct _PyOpcache {
     union {
         _PyOpcache_LoadGlobal lg;
+        _PyOpCodeOpt_LoadAttr la;
     } u;
     char optimized;
 };

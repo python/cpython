@@ -2,7 +2,7 @@
 /* New getargs implementation */
 
 #include "Python.h"
-#include "pycore_tupleobject.h"
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include <ctype.h>
 #include <float.h>
@@ -202,7 +202,7 @@ static int
 cleanup_ptr(PyObject *self, void *ptr)
 {
     if (ptr) {
-        PyMem_FREE(ptr);
+        PyMem_Free(ptr);
     }
     return 0;
 }
@@ -246,7 +246,7 @@ cleanreturn(int retval, freelist_t *freelist)
       }
     }
     if (freelist->entries_malloced)
-        PyMem_FREE(freelist->entries);
+        PyMem_Free(freelist->entries);
     return retval;
 }
 
@@ -452,7 +452,7 @@ seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
         }
         if (iarg != 0) {
             PyOS_snprintf(p, sizeof(buf) - (p - buf),
-                          "argument %" PY_FORMAT_SIZE_T "d", iarg);
+                          "argument %zd", iarg);
             i = 0;
             p += strlen(p);
             while (i < 32 && levels[i] > 0 && (int)(p-buf) < 220) {
@@ -540,15 +540,14 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         levels[0] = 0;
         if (toplevel) {
             PyOS_snprintf(msgbuf, bufsize,
-                          "expected %d argument%s, not %" PY_FORMAT_SIZE_T "d",
+                          "expected %d argument%s, not %zd",
                           n,
                           n == 1 ? "" : "s",
                           len);
         }
         else {
             PyOS_snprintf(msgbuf, bufsize,
-                          "must be sequence of length %d, "
-                          "not %" PY_FORMAT_SIZE_T "d",
+                          "must be sequence of length %d, not %zd",
                           n, len);
         }
         return msgbuf;
@@ -656,29 +655,14 @@ static const char *
 convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
               char *msgbuf, size_t bufsize, freelist_t *freelist)
 {
-    /* For # codes */
-#define FETCH_SIZE      int *q=NULL;Py_ssize_t *q2=NULL;\
-    if (flags & FLAG_SIZE_T) q2=va_arg(*p_va, Py_ssize_t*); \
-    else { \
-        if (PyErr_WarnEx(PyExc_DeprecationWarning, \
-                    "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) { \
-            return NULL; \
-        } \
-        q=va_arg(*p_va, int*); \
-    }
-#define STORE_SIZE(s)   \
-    if (flags & FLAG_SIZE_T) \
-        *q2=s; \
-    else { \
-        if (INT_MAX < s) { \
-            PyErr_SetString(PyExc_OverflowError, \
-                "size does not fit in an int"); \
-            return converterr("", arg, msgbuf, bufsize); \
-        } \
-        *q = (int)s; \
-    }
-#define BUFFER_LEN      ((flags & FLAG_SIZE_T) ? *q2:*q)
 #define RETURN_ERR_OCCURRED return msgbuf
+    /* For # codes */
+#define REQUIRE_PY_SSIZE_T_CLEAN \
+    if (!(flags & FLAG_SIZE_T)) { \
+        PyErr_SetString(PyExc_SystemError, \
+                        "PY_SSIZE_T_CLEAN macro must be defined for '#' formats"); \
+        RETURN_ERR_OCCURRED; \
+    }
 
     const char *format = *p_format;
     char c = *format++;
@@ -932,8 +916,9 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         if (count < 0)
             return converterr(buf, arg, msgbuf, bufsize);
         if (*format == '#') {
-            FETCH_SIZE;
-            STORE_SIZE(count);
+            REQUIRE_PY_SSIZE_T_CLEAN;
+            Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
+            *psize = count;
             format++;
         } else {
             if (strlen(*p) != (size_t)count) {
@@ -975,11 +960,12 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         } else if (*format == '#') { /* a string or read-only bytes-like object */
             /* "s#" or "z#" */
             const void **p = (const void **)va_arg(*p_va, const char **);
-            FETCH_SIZE;
+            REQUIRE_PY_SSIZE_T_CLEAN;
+            Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
 
             if (c == 'z' && arg == Py_None) {
                 *p = NULL;
-                STORE_SIZE(0);
+                *psize = 0;
             }
             else if (PyUnicode_Check(arg)) {
                 Py_ssize_t len;
@@ -988,7 +974,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                     return converterr(CONV_UNICODE,
                                       arg, msgbuf, bufsize);
                 *p = sarg;
-                STORE_SIZE(len);
+                *psize = len;
             }
             else { /* read-only bytes-like object */
                 /* XXX Really? */
@@ -996,7 +982,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 Py_ssize_t count = convertbuffer(arg, p, &buf);
                 if (count < 0)
                     return converterr(buf, arg, msgbuf, bufsize);
-                STORE_SIZE(count);
+                *psize = count;
             }
             format++;
         } else {
@@ -1028,22 +1014,29 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     case 'u': /* raw unicode buffer (Py_UNICODE *) */
     case 'Z': /* raw unicode buffer or None */
     {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "getargs: The '%c' format is deprecated. Use 'U' instead.", c)) {
+            return NULL;
+        }
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
         Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
 
         if (*format == '#') {
             /* "u#" or "Z#" */
-            FETCH_SIZE;
+            REQUIRE_PY_SSIZE_T_CLEAN;
+            Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
 
             if (c == 'Z' && arg == Py_None) {
                 *p = NULL;
-                STORE_SIZE(0);
+                *psize = 0;
             }
             else if (PyUnicode_Check(arg)) {
                 Py_ssize_t len;
                 *p = PyUnicode_AsUnicodeAndSize(arg, &len);
                 if (*p == NULL)
                     RETURN_ERR_OCCURRED;
-                STORE_SIZE(len);
+                *psize = len;
             }
             else
                 return converterr(c == 'Z' ? "str or None" : "str",
@@ -1067,6 +1060,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                                   arg, msgbuf, bufsize);
         }
         break;
+_Py_COMP_DIAG_POP
     }
 
     case 'e': {/* encoded string */
@@ -1157,22 +1151,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                trailing 0-byte
 
             */
-            int *q = NULL; Py_ssize_t *q2 = NULL;
-            if (flags & FLAG_SIZE_T) {
-                q2 = va_arg(*p_va, Py_ssize_t*);
-            }
-            else {
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                            "PY_SSIZE_T_CLEAN will be required for '#' formats", 1))
-                {
-                    Py_DECREF(s);
-                    return NULL;
-                }
-                q = va_arg(*p_va, int*);
-            }
+            REQUIRE_PY_SSIZE_T_CLEAN;
+            Py_ssize_t *psize = va_arg(*p_va, Py_ssize_t*);
 
             format++;
-            if (q == NULL && q2 == NULL) {
+            if (psize == NULL) {
                 Py_DECREF(s);
                 return converterr(
                     "(buffer_len is NULL)",
@@ -1192,30 +1175,20 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                         arg, msgbuf, bufsize);
                 }
             } else {
-                if (size + 1 > BUFFER_LEN) {
+                if (size + 1 > *psize) {
                     Py_DECREF(s);
                     PyErr_Format(PyExc_ValueError,
                                  "encoded string too long "
                                  "(%zd, maximum length %zd)",
-                                 (Py_ssize_t)size, (Py_ssize_t)(BUFFER_LEN-1));
+                                 (Py_ssize_t)size, (Py_ssize_t)(*psize - 1));
                     RETURN_ERR_OCCURRED;
                 }
             }
             memcpy(*buffer, ptr, size+1);
 
-            if (flags & FLAG_SIZE_T) {
-                *q2 = size;
-            }
-            else {
-                if (INT_MAX < size) {
-                    Py_DECREF(s);
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "size does not fit in an int");
-                    return converterr("", arg, msgbuf, bufsize);
-                }
-                *q = (int)size;
-            }
-        } else {
+            *psize = size;
+        }
+        else {
             /* Using a 0-terminated buffer:
 
                - the encoded string has to be 0-terminated
@@ -1353,9 +1326,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     *p_format = format;
     return NULL;
 
-#undef FETCH_SIZE
-#undef STORE_SIZE
-#undef BUFFER_LEN
+#undef REQUIRE_PY_SSIZE_T_CLEAN
 #undef RETURN_ERR_OCCURRED
 }
 
@@ -2561,15 +2532,12 @@ skipitem(const char **p_format, va_list *p_va, int flags)
             }
             if (*format == '#') {
                 if (p_va != NULL) {
-                    if (flags & FLAG_SIZE_T)
-                        (void) va_arg(*p_va, Py_ssize_t *);
-                    else {
-                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                    "PY_SSIZE_T_CLEAN will be required for '#' formats", 1)) {
-                            return NULL;
-                        }
-                        (void) va_arg(*p_va, int *);
+                    if (!(flags & FLAG_SIZE_T)) {
+                        PyErr_SetString(PyExc_SystemError,
+                                "PY_SSIZE_T_CLEAN macro must be defined for '#' formats");
+                        return NULL;
                     }
+                    (void) va_arg(*p_va, Py_ssize_t *);
                 }
                 format++;
             } else if ((c == 's' || c == 'z' || c == 'y' || c == 'w')

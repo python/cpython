@@ -1483,6 +1483,15 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len)
     }
     n = PyNumber_AsSsize_t(res, PyExc_ValueError);
     Py_DECREF(res);
+
+    if (n == -1 && PyErr_Occurred()) {
+        _PyErr_FormatFromCause(
+            PyExc_OSError,
+            "raw readinto() failed"
+        );
+        return -1;
+    }
+
     if (n < 0 || n > len) {
         PyErr_Format(PyExc_OSError,
                      "raw readinto() returned invalid length %zd "

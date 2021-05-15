@@ -20,7 +20,7 @@ class FLUFLTests(unittest.TestCase):
         self.assertTrue(cm.exception.lineno, 2)
         # The old parser reports the end of the token and the new
         # parser reports the start of the token
-        self.assertEqual(cm.exception.offset, 4 if support.use_old_parser() else 3)
+        self.assertEqual(cm.exception.offset, 3)
 
     def test_guido_as_bdfl(self):
         code = '2 {0} 3'
@@ -33,7 +33,7 @@ class FLUFLTests(unittest.TestCase):
         self.assertEqual(cm.exception.lineno, 1)
         # The old parser reports the end of the token and the new
         # parser reports the start of the token
-        self.assertEqual(cm.exception.offset, 4 if support.use_old_parser() else 3)
+        self.assertEqual(cm.exception.offset, 3)
 
 
 if __name__ == '__main__':

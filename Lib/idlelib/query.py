@@ -19,7 +19,7 @@ Subclass HelpSource gets menu item and path for additions to Help menu.
 # HelpSource was extracted from configHelpSourceEdit.py (temporarily
 # config_help.py), with darwin code moved from ok to path_ok.
 
-import importlib
+import importlib.util, importlib.abc
 import os
 import shlex
 from sys import executable, platform  # Platform is set for one test.
@@ -28,6 +28,7 @@ from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
+from tkinter.simpledialog import _setup_dialog
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -57,15 +58,11 @@ class Query(Toplevel):
         self.withdraw()  # Hide while configuring, especially geometry.
         self.title(title)
         self.transient(parent)
-        self.grab_set()
+        if not _utest:  # Otherwise fail when directly run unittest.
+            self.grab_set()
 
-        windowingsystem = self.tk.call('tk', 'windowingsystem')
-        if windowingsystem == 'aqua':
-            try:
-                self.tk.call('::tk::unsupported::MacWindowStyle', 'style',
-                             self._w, 'moveableModal', '')
-            except:
-                pass
+        _setup_dialog(self)
+        if self._windowingsystem == 'aqua':
             self.bind("<Command-.>", self.cancel)
         self.bind('<Key-Escape>', self.cancel)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -209,17 +206,23 @@ class ModuleName(Query):
             self.showerror(str(msg))
             return None
         if spec is None:
-            self.showerror("module not found")
+            self.showerror("module not found.")
             return None
         if not isinstance(spec.loader, importlib.abc.SourceLoader):
-            self.showerror("not a source-based module")
+            self.showerror("not a source-based module.")
             return None
         try:
             file_path = spec.loader.get_filename(name)
         except AttributeError:
-            self.showerror("loader does not support get_filename",
-                      parent=self)
+            self.showerror("loader does not support get_filename.")
             return None
+        except ImportError:
+            # Some special modules require this (e.g. os.path)
+            try:
+                file_path = spec.loader.get_filename()
+            except TypeError:
+                self.showerror("loader failed to get filename.")
+                return None
         return file_path
 
 
@@ -375,7 +378,7 @@ class CustomRun(Query):
         return cli_args
 
     def entry_ok(self):
-        "Return apparently valid (cli_args, restart) or None"
+        "Return apparently valid (cli_args, restart) or None."
         cli_args = self.cli_args_ok()
         restart = self.restartvar.get()
         return None if cli_args is None else (cli_args, restart)

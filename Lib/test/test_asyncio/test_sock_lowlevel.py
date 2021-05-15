@@ -166,6 +166,7 @@ class BaseSockTestsMixin:
         listener.listen(1)
 
         # make connection
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024)
         sock.setblocking(False)
         task = asyncio.create_task(
             self.loop.sock_connect(sock, listener.getsockname()))
@@ -176,10 +177,13 @@ class BaseSockTestsMixin:
         with server:
             await task
 
-            # fill the buffer
-            with self.assertRaises(BlockingIOError):
-                while True:
-                    sock.send(b' ' * 5)
+            # fill the buffer until sending 5 chars would block
+            size = 8192
+            while size >= 4:
+                with self.assertRaises(BlockingIOError):
+                    while True:
+                        sock.send(b' ' * size)
+                size = int(size / 2)
 
             # cancel a blocked sock_sendall
             task = asyncio.create_task(
@@ -187,21 +191,31 @@ class BaseSockTestsMixin:
             await asyncio.sleep(0)
             task.cancel()
 
-            # clear the buffer
-            async def recv_until():
-                data = b''
-                while not data:
-                    data = await self.loop.sock_recv(server, 1024)
-                    data = data.strip()
-                return data
-            task = asyncio.create_task(recv_until())
+            # receive everything that is not a space
+            async def recv_all():
+                rv = b''
+                while True:
+                    buf = await self.loop.sock_recv(server, 8192)
+                    if not buf:
+                        return rv
+                    rv += buf.strip()
+            task = asyncio.create_task(recv_all())
 
-            # immediately register another sock_sendall
+            # immediately make another sock_sendall call
             await self.loop.sock_sendall(sock, b'world')
+            sock.shutdown(socket.SHUT_WR)
             data = await task
-            # ProactorEventLoop could deliver hello
+            # ProactorEventLoop could deliver hello, so endswith is necessary
             self.assertTrue(data.endswith(b'world'))
 
+    # After the first connect attempt before the listener is ready,
+    # the socket needs time to "recover" to make the next connect call.
+    # On Linux, a second retry will do. On Windows, the waiting time is
+    # unpredictable; and on FreeBSD the socket may never come back
+    # because it's a loopback address. Here we'll just retry for a few
+    # times, and have to skip the test if it's not working. See also:
+    # https://stackoverflow.com/a/54437602/3316267
+    # https://lists.freebsd.org/pipermail/freebsd-current/2005-May/049876.html
     async def _basetest_sock_connect_racing(self, listener, sock):
         listener.bind(('127.0.0.1', 0))
         addr = listener.getsockname()
@@ -212,30 +226,26 @@ class BaseSockTestsMixin:
         task.cancel()
 
         listener.listen(1)
-        i = 0
-        while True:
+
+        skip_reason = "Max retries reached"
+        for i in range(128):
             try:
                 await self.loop.sock_connect(sock, addr)
-                break
-            except ConnectionRefusedError:  # on Linux we need another retry
-                await self.loop.sock_connect(sock, addr)
-                break
-            except OSError as e:  # on Windows we need more retries
-                # A connect request was made on an already connected socket
-                if getattr(e, 'winerror', 0) == 10056:
-                    break
+            except ConnectionRefusedError as e:
+                skip_reason = e
+            except OSError as e:
+                skip_reason = e
 
-                # https://stackoverflow.com/a/54437602/3316267
+                # Retry only for this error:
+                # [WinError 10022] An invalid argument was supplied
                 if getattr(e, 'winerror', 0) != 10022:
-                    raise
-                i += 1
-                if i >= 128:
-                    raise  # too many retries
-                # avoid touching event loop to maintain race condition
-                time.sleep(0.01)
+                    break
+            else:
+                # success
+                return
 
-    # FIXME: https://bugs.python.org/issue30064#msg370143
-    @unittest.skipIf(True, "unstable test")
+        self.skipTest(skip_reason)
+
     def test_sock_client_racing(self):
         with test_utils.run_test_server() as httpd:
             sock = socket.socket()
@@ -251,6 +261,8 @@ class BaseSockTestsMixin:
         with listener, sock:
             self.loop.run_until_complete(asyncio.wait_for(
                 self._basetest_sock_send_racing(listener, sock), 10))
+
+    def test_sock_client_connect_racing(self):
         listener = socket.socket()
         sock = socket.socket()
         with listener, sock:
@@ -402,6 +414,25 @@ class BaseSockTestsMixin:
         client.close()
         conn.close()
         listener.close()
+
+    def test_cancel_sock_accept(self):
+        listener = socket.socket()
+        listener.setblocking(False)
+        listener.bind(('127.0.0.1', 0))
+        listener.listen(1)
+        sockaddr = listener.getsockname()
+        f = asyncio.wait_for(self.loop.sock_accept(listener), 0.1)
+        with self.assertRaises(asyncio.TimeoutError):
+            self.loop.run_until_complete(f)
+
+        listener.close()
+        client = socket.socket()
+        client.setblocking(False)
+        f = self.loop.sock_connect(client, sockaddr)
+        with self.assertRaises(ConnectionRefusedError):
+            self.loop.run_until_complete(f)
+
+        client.close()
 
     def test_create_connection_sock(self):
         with test_utils.run_test_server() as httpd:

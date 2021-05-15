@@ -12,7 +12,8 @@ def reset_tzpath(to=None):
                 f"tzpaths must be a list or tuple, "
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
-        elif not all(map(os.path.isabs, tzpaths)):
+
+        if not all(map(os.path.isabs, tzpaths)):
             raise ValueError(_get_invalid_paths_message(tzpaths))
         base_tzpath = tzpaths
     else:
@@ -41,7 +42,7 @@ def _parse_python_tzpath(env_var):
         msg = _get_invalid_paths_message(raw_tzpath)
 
         warnings.warn(
-            "Invalid paths specified in PYTHONTZPATH environment variable."
+            "Invalid paths specified in PYTHONTZPATH environment variable. "
             + msg,
             InvalidTZPathWarning,
         )

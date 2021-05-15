@@ -8,7 +8,7 @@ from pickle import PickleBuffer
 import weakref
 import unittest
 
-from test import support
+from test.support import import_helper
 
 
 class B(bytes):
@@ -75,7 +75,7 @@ class PickleBufferTest(unittest.TestCase):
 
     def test_ndarray_2d(self):
         # C-contiguous
-        ndarray = support.import_module("_testbuffer").ndarray
+        ndarray = import_helper.import_module("_testbuffer").ndarray
         arr = ndarray(list(range(12)), shape=(4, 3), format='<i')
         self.assertTrue(arr.c_contiguous)
         self.assertFalse(arr.f_contiguous)
@@ -109,7 +109,7 @@ class PickleBufferTest(unittest.TestCase):
 
     def test_raw_ndarray(self):
         # 1-D, contiguous
-        ndarray = support.import_module("_testbuffer").ndarray
+        ndarray = import_helper.import_module("_testbuffer").ndarray
         arr = ndarray(list(range(3)), shape=(3,), format='<h')
         equiv = b"\x00\x00\x01\x00\x02\x00"
         self.check_raw(arr, equiv)
@@ -135,7 +135,7 @@ class PickleBufferTest(unittest.TestCase):
 
     def test_raw_non_contiguous(self):
         # 1-D
-        ndarray = support.import_module("_testbuffer").ndarray
+        ndarray = import_helper.import_module("_testbuffer").ndarray
         arr = ndarray(list(range(6)), shape=(6,), format='<i')[::2]
         self.check_raw_non_contiguous(arr)
         # 2-D

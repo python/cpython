@@ -1,26 +1,33 @@
 /* Frame object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_gc.h"       // _PyObject_GC_IS_TRACKED()
+#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
-#include "code.h"
-#include "frameobject.h"
-#include "opcode.h"
+#include "frameobject.h"          // PyFrameObject
+#include "opcode.h"               // EXTENDED_ARG
 #include "structmember.h"         // PyMemberDef
 
 #define OFF(x) offsetof(PyFrameObject, x)
 
 static PyMemberDef frame_memberlist[] = {
     {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
-    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY},
+    {"f_code",          T_OBJECT,       OFF(f_code),      READONLY|PY_AUDIT_READ},
     {"f_builtins",      T_OBJECT,       OFF(f_builtins),  READONLY},
     {"f_globals",       T_OBJECT,       OFF(f_globals),   READONLY},
-    {"f_lasti",         T_INT,          OFF(f_lasti),     READONLY},
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
     {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
 };
+
+static struct _Py_frame_state *
+get_frame_state(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return &interp->frame;
+}
+
 
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
@@ -35,18 +42,33 @@ int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
     assert(f != NULL);
-    if (f->f_trace) {
+    if (f->f_lineno != 0) {
         return f->f_lineno;
     }
     else {
-        return PyCode_Addr2Line(f->f_code, f->f_lasti);
+        return PyCode_Addr2Line(f->f_code, f->f_lasti*2);
     }
 }
 
 static PyObject *
 frame_getlineno(PyFrameObject *f, void *closure)
 {
-    return PyLong_FromLong(PyFrame_GetLineNumber(f));
+    int lineno = PyFrame_GetLineNumber(f);
+    if (lineno < 0) {
+        Py_RETURN_NONE;
+    }
+    else {
+        return PyLong_FromLong(lineno);
+    }
+}
+
+static PyObject *
+frame_getlasti(PyFrameObject *f, void *closure)
+{
+    if (f->f_lasti < 0) {
+        return PyLong_FromLong(-1);
+    }
+    return PyLong_FromLong(f->f_lasti*2);
 }
 
 
@@ -69,56 +91,71 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
     return oparg;
 }
 
+/* Model the evaluation stack, to determine which jumps
+ * are safe and how many values needs to be popped.
+ * The stack is modelled by a 64 integer, treating any
+ * stack that can't fit into 64 bits as "overflowed".
+ */
+
 typedef enum kind {
-    With = 1,
-    Loop = 2,
-    Try = 3,
-    Except = 4,
+    Iterator = 1,
+    Except = 2,
+    Object = 3,
 } Kind;
 
-#define BITS_PER_BLOCK 3
+#define BITS_PER_BLOCK 2
+
+#define UNINITIALIZED -2
+#define OVERFLOWED -1
+
+#define MAX_STACK_ENTRIES (63/BITS_PER_BLOCK)
+#define WILL_OVERFLOW (1ULL<<((MAX_STACK_ENTRIES-1)*BITS_PER_BLOCK))
 
 static inline int64_t
-push_block(int64_t stack, Kind kind)
+push_value(int64_t stack, Kind kind)
 {
-    assert(stack < ((int64_t)1)<<(BITS_PER_BLOCK*CO_MAXBLOCKS));
-    return (stack << BITS_PER_BLOCK) | kind;
+    if (((uint64_t)stack) >= WILL_OVERFLOW) {
+        return OVERFLOWED;
+    }
+    else {
+        return (stack << BITS_PER_BLOCK) | kind;
+    }
 }
 
 static inline int64_t
-pop_block(int64_t stack)
+pop_value(int64_t stack)
 {
-    assert(stack > 0);
-    return stack >> BITS_PER_BLOCK;
+    return Py_ARITHMETIC_RIGHT_SHIFT(int64_t, stack, BITS_PER_BLOCK);
 }
 
 static inline Kind
-top_block(int64_t stack)
+top_of_stack(int64_t stack)
 {
     return stack & ((1<<BITS_PER_BLOCK)-1);
 }
 
 static int64_t *
-markblocks(PyCodeObject *code_obj, int len)
+mark_stacks(PyCodeObject *code_obj, int len)
 {
     const _Py_CODEUNIT *code =
         (const _Py_CODEUNIT *)PyBytes_AS_STRING(code_obj->co_code);
-    int64_t *blocks = PyMem_New(int64_t, len+1);
+    int64_t *stacks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
-    if (blocks == NULL) {
+    if (stacks == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(blocks, -1, (len+1)*sizeof(int64_t));
-    blocks[0] = 0;
+    for (int i = 1; i <= len; i++) {
+        stacks[i] = UNINITIALIZED;
+    }
+    stacks[0] = 0;
     int todo = 1;
     while (todo) {
         todo = 0;
         for (i = 0; i < len; i++) {
-            int64_t block_stack = blocks[i];
-            int64_t except_stack;
-            if (block_stack == -1) {
+            int64_t next_stack = stacks[i];
+            if (next_stack == UNINITIALIZED) {
                 continue;
             }
             opcode = _Py_OPCODE(code[i]);
@@ -128,109 +165,153 @@ markblocks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case JUMP_IF_NOT_EXC_MATCH:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                {
+                    int64_t target_stack;
+                    int j = get_arg(code, i);
                     assert(j < len);
-                    if (blocks[j] == -1 && j < i) {
+                    if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
-                    blocks[j] = block_stack;
-                    blocks[i+1] = block_stack;
+                    if (opcode == JUMP_IF_NOT_EXC_MATCH) {
+                        next_stack = pop_value(pop_value(next_stack));
+                        target_stack = next_stack;
+                    }
+                    else if (opcode == JUMP_IF_FALSE_OR_POP ||
+                             opcode == JUMP_IF_TRUE_OR_POP)
+                    {
+                        target_stack = next_stack;
+                        next_stack = pop_value(next_stack);
+                    }
+                    else {
+                        next_stack = pop_value(next_stack);
+                        target_stack = next_stack;
+                    }
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
+                    stacks[j] = target_stack;
+                    stacks[i+1] = next_stack;
                     break;
+                }
                 case JUMP_ABSOLUTE:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT);
+                    j = get_arg(code, i);
                     assert(j < len);
-                    if (blocks[j] == -1 && j < i) {
+                    if (stacks[j] == UNINITIALIZED && j < i) {
                         todo = 1;
                     }
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
-                    blocks[j] = block_stack;
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
                     break;
-                case SETUP_FINALLY:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
-                    assert(j < len);
-                    except_stack = push_block(block_stack, Except);
-                    assert(blocks[j] == -1 || blocks[j] == except_stack);
-                    blocks[j] = except_stack;
-                    block_stack = push_block(block_stack, Try);
-                    blocks[i+1] = block_stack;
+                case POP_EXCEPT:
+                    next_stack = pop_value(pop_value(pop_value(next_stack)));
+                    stacks[i+1] = next_stack;
                     break;
-                case SETUP_WITH:
-                case SETUP_ASYNC_WITH:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
-                    assert(j < len);
-                    except_stack = push_block(block_stack, Except);
-                    assert(blocks[j] == -1 || blocks[j] == except_stack);
-                    blocks[j] = except_stack;
-                    block_stack = push_block(block_stack, With);
-                    blocks[i+1] = block_stack;
-                    break;
+
                 case JUMP_FORWARD:
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
-                    blocks[j] = block_stack;
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
+                    stacks[j] = next_stack;
                     break;
                 case GET_ITER:
                 case GET_AITER:
-                    block_stack = push_block(block_stack, Loop);
-                    blocks[i+1] = block_stack;
+                    next_stack = push_value(pop_value(next_stack), Iterator);
+                    stacks[i+1] = next_stack;
                     break;
                 case FOR_ITER:
-                    blocks[i+1] = block_stack;
-                    block_stack = pop_block(block_stack);
-                    j = get_arg(code, i) / sizeof(_Py_CODEUNIT) + i + 1;
+                {
+                    int64_t target_stack = pop_value(next_stack);
+                    stacks[i+1] = push_value(next_stack, Object);
+                    j = get_arg(code, i) + i + 1;
                     assert(j < len);
-                    assert(blocks[j] == -1 || blocks[j] == block_stack);
-                    blocks[j] = block_stack;
+                    assert(stacks[j] == UNINITIALIZED || stacks[j] == target_stack);
+                    stacks[j] = target_stack;
                     break;
-                case POP_BLOCK:
-                case POP_EXCEPT:
-                    block_stack = pop_block(block_stack);
-                    blocks[i+1] = block_stack;
-                    break;
+                }
                 case END_ASYNC_FOR:
-                    block_stack = pop_block(pop_block(block_stack));
-                    blocks[i+1] = block_stack;
+                    next_stack = pop_value(pop_value(pop_value(next_stack)));
+                    stacks[i+1] = next_stack;
                     break;
+                case PUSH_EXC_INFO:
+                    next_stack = push_value(next_stack, Except);
+                    next_stack = push_value(next_stack, Except);
+                    next_stack = push_value(next_stack, Except);
+                    stacks[i+1] = next_stack;
                 case RETURN_VALUE:
                 case RAISE_VARARGS:
                 case RERAISE:
+                case POP_EXCEPT_AND_RERAISE:
                     /* End of block */
                     break;
+                case GEN_START:
+                    stacks[i+1] = next_stack;
+                    break;
                 default:
-                    blocks[i+1] = block_stack;
-
+                {
+                    int delta = PyCompile_OpcodeStackEffect(opcode, _Py_OPARG(code[i]));
+                    while (delta < 0) {
+                        next_stack = pop_value(next_stack);
+                        delta++;
+                    }
+                    while (delta > 0) {
+                        next_stack = push_value(next_stack, Object);
+                        delta--;
+                    }
+                    stacks[i+1] = next_stack;
+                }
             }
         }
     }
-    return blocks;
+    return stacks;
 }
 
 static int
-compatible_block_stack(int64_t from_stack, int64_t to_stack)
+compatible_kind(Kind from, Kind to) {
+    if (to == 0) {
+        return 0;
+    }
+    if (to == Object) {
+        return 1;
+    }
+    return from == to;
+}
+
+static int
+compatible_stack(int64_t from_stack, int64_t to_stack)
 {
-    if (to_stack < 0) {
+    if (from_stack < 0 || to_stack < 0) {
         return 0;
     }
     while(from_stack > to_stack) {
-        from_stack = pop_block(from_stack);
+        from_stack = pop_value(from_stack);
     }
-    return from_stack == to_stack;
+    while(from_stack) {
+        Kind from_top = top_of_stack(from_stack);
+        Kind to_top = top_of_stack(to_stack);
+        if (!compatible_kind(from_top, to_top)) {
+            return 0;
+        }
+        from_stack = pop_value(from_stack);
+        to_stack = pop_value(to_stack);
+    }
+    return to_stack == 0;
 }
 
 static const char *
-explain_incompatible_block_stack(int64_t to_stack)
+explain_incompatible_stack(int64_t to_stack)
 {
-    Kind target_kind = top_block(to_stack);
+    assert(to_stack != 0);
+    if (to_stack == OVERFLOWED) {
+        return "stack is too deep to analyze";
+    }
+    if (to_stack == UNINITIALIZED) {
+        return "can't jump into an exception handler, or code may be unreachable";
+    }
+    Kind target_kind = top_of_stack(to_stack);
     switch(target_kind) {
         case Except:
             return "can't jump into an 'except' block as there's no exception";
-        case Try:
-            return "can't jump into the body of a try statement";
-        case With:
-            return "can't jump into the body of a with statement";
-        case Loop:
+        case Object:
+            return "differing stack depth";
+        case Iterator:
             return "can't jump into the body of a for loop";
         default:
             Py_UNREACHABLE();
@@ -240,36 +321,22 @@ explain_incompatible_block_stack(int64_t to_stack)
 static int *
 marklines(PyCodeObject *code, int len)
 {
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(code, &bounds);
+    assert (bounds.ar_end == 0);
+
     int *linestarts = PyMem_New(int, len);
     if (linestarts == NULL) {
         return NULL;
     }
-    Py_ssize_t size = PyBytes_GET_SIZE(code->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AS_STRING(code->co_lnotab);
-    int line = code->co_firstlineno;
-    int addr = 0;
-    int index = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (index*2 < addr) {
-            linestarts[index++] = line;
-        }
-        while (index*2 < addr) {
-            linestarts[index++] = -1;
-            if (index >= len) {
-                break;
-            }
-        }
-        line += (signed char)*p;
-        p++;
+    for (int i = 0; i < len; i++) {
+        linestarts[i] = -1;
     }
-    if (index < len) {
-        linestarts[index++] = line;
+
+    while (PyLineTable_NextAddressRange(&bounds)) {
+        assert(bounds.ar_start/2 < len);
+        linestarts[bounds.ar_start/2] = bounds.ar_line;
     }
-    while (index < len) {
-        linestarts[index++] = -1;
-    }
-    assert(index == len);
     return linestarts;
 }
 
@@ -291,23 +358,11 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
-    PyObject *v = (*--f->f_stacktop);
+    assert(f->f_stackdepth > 0);
+    f->f_stackdepth--;
+    PyObject *v = f->f_valuestack[f->f_stackdepth];
     Py_DECREF(v);
 }
-
-static void
-frame_block_unwind(PyFrameObject *f)
-{
-    assert(f->f_iblock > 0);
-    f->f_iblock--;
-    PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    intptr_t delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
-    while (delta > 0) {
-        frame_stack_pop(f);
-        delta--;
-    }
-}
-
 
 /* Setter for f_lineno - you can set f_lineno from within a trace function in
  * order to jump to a given line of code, subject to some restrictions.  Most
@@ -316,13 +371,7 @@ frame_block_unwind(PyFrameObject *f)
  * would still work without any stack errors), but there are some constructs
  * that limit jumping:
  *
- *  o Lines with an 'except' statement on them can't be jumped to, because
- *    they expect an exception to be on the top of the stack.
- *  o Lines that live in a 'finally' block can't be jumped from or to, since
- *    we cannot be sure which state the interpreter was in or would be in
- *    during execution of the finally block.
- *  o 'try', 'with' and 'async with' blocks can't be jumped into because
- *    the blockstack needs to be set up before their code runs.
+ *  o Any excpetion handlers.
  *  o 'for' and 'async for' loops can't be jumped into because the
  *    iterator needs to be on the stack.
  *  o Jumps cannot be made from within a trace function invoked with a
@@ -343,33 +392,36 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    /* Upon the 'call' trace event of a new frame, f->f_lasti is -1 and
-     * f->f_trace is NULL, check first on the first condition.
-     * Forbidding jumps from the 'call' event of a new frame is a side effect
-     * of allowing to set f_lineno only from trace functions. */
-    if (f->f_lasti == -1) {
-        PyErr_Format(PyExc_ValueError,
+    /*
+     * This code preserves the historical restrictions on
+     * setting the line number of a frame.
+     * Jumps are forbidden on a 'return' trace event (except after a yield).
+     * Jumps from 'call' trace events are also forbidden.
+     * In addition, jumps are forbidden when not tracing,
+     * as this is a debugging feature.
+     */
+    switch(f->f_state) {
+        case FRAME_CREATED:
+            PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
-        return -1;
-    }
-
-    /* You can only do this from within a trace function, not via
-     * _getframe or similar hackery. */
-    if (!f->f_trace) {
-        PyErr_Format(PyExc_ValueError,
-                     "f_lineno can only be set by a trace function");
-        return -1;
-    }
-
-    /* Forbid jumps upon a 'return' trace event (except after executing a
-     * YIELD_VALUE or YIELD_FROM opcode, f_stacktop is not NULL in that case)
-     * and upon an 'exception' trace event.
-     * Jumps from 'call' trace events have already been forbidden above for new
-     * frames, so this check does not change anything for 'call' events. */
-    if (f->f_stacktop == NULL) {
-        PyErr_SetString(PyExc_ValueError,
+            return -1;
+        case FRAME_RETURNED:
+        case FRAME_UNWINDING:
+        case FRAME_RAISED:
+        case FRAME_CLEARED:
+            PyErr_SetString(PyExc_ValueError,
                 "can only jump from a 'line' trace event");
-        return -1;
+            return -1;
+        case FRAME_EXECUTING:
+        case FRAME_SUSPENDED:
+            /* You can only do this from within a trace function, not via
+            * _getframe or similar hackery. */
+            if (!f->f_trace) {
+                PyErr_Format(PyExc_ValueError,
+                            "f_lineno can only be set by a trace function");
+                return -1;
+            }
+            break;
     }
 
     int new_lineno;
@@ -397,7 +449,9 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int len = PyBytes_GET_SIZE(f->f_code->co_code)/sizeof(_Py_CODEUNIT);
+    /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
+     * should never overflow. */
+    int len = (int)(PyBytes_GET_SIZE(f->f_code->co_code) / sizeof(_Py_CODEUNIT));
     int *lines = marklines(f->f_code, len);
     if (lines == NULL) {
         return -1;
@@ -412,69 +466,58 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
 
-    int64_t *blocks = markblocks(f->f_code, len);
-    if (blocks == NULL) {
+    int64_t *stacks = mark_stacks(f->f_code, len);
+    if (stacks == NULL) {
         PyMem_Free(lines);
         return -1;
     }
 
-    int64_t target_block_stack = -1;
-    int64_t best_block_stack = -1;
+    int64_t best_stack = OVERFLOWED;
     int best_addr = -1;
-    int64_t start_block_stack = blocks[f->f_lasti/sizeof(_Py_CODEUNIT)];
+    int64_t start_stack = stacks[f->f_lasti];
+    int err = -1;
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
         if (lines[i] == new_lineno) {
-            target_block_stack = blocks[i];
-            if (compatible_block_stack(start_block_stack, target_block_stack)) {
-                msg = NULL;
-                if (target_block_stack > best_block_stack) {
-                    best_block_stack = target_block_stack;
-                    best_addr = i*sizeof(_Py_CODEUNIT);
+            int64_t target_stack = stacks[i];
+            if (compatible_stack(start_stack, target_stack)) {
+                err = 0;
+                if (target_stack > best_stack) {
+                    best_stack = target_stack;
+                    best_addr = i;
                 }
             }
-            else if (msg) {
-                if (target_block_stack >= 0) {
-                    msg = explain_incompatible_block_stack(target_block_stack);
+            else if (err < 0) {
+                if (start_stack == OVERFLOWED) {
+                    msg = "stack to deep to analyze";
+                }
+                else if (start_stack == UNINITIALIZED) {
+                    msg = "can't jump from within an exception handler";
                 }
                 else {
-                    msg = "code may be unreachable.";
+                    msg = explain_incompatible_stack(target_stack);
+                    err = 1;
                 }
             }
         }
     }
-    PyMem_Free(blocks);
+    PyMem_Free(stacks);
     PyMem_Free(lines);
-    if (msg != NULL) {
+    if (err) {
         PyErr_SetString(PyExc_ValueError, msg);
         return -1;
     }
-
     /* Unwind block stack. */
-    while (start_block_stack > best_block_stack) {
-        Kind kind = top_block(start_block_stack);
-        switch(kind) {
-        case Loop:
-            frame_stack_pop(f);
-            break;
-        case Try:
-            frame_block_unwind(f);
-            break;
-        case With:
-            frame_block_unwind(f);
-            // Pop the exit function
-            frame_stack_pop(f);
-            break;
-        case Except:
-            PyErr_SetString(PyExc_ValueError,
-                "can't jump out of an 'except' block");
-            return -1;
-        }
-        start_block_stack = pop_block(start_block_stack);
+    if (f->f_state == FRAME_SUSPENDED) {
+        /* Account for value popped by yield */
+        start_stack = pop_value(start_stack);
     }
-
-    /* Finally set the new f_lineno and f_lasti and return OK. */
-    f->f_lineno = new_lineno;
+    while (start_stack > best_stack) {
+        frame_stack_pop(f);
+        start_stack = pop_value(start_stack);
+    }
+    /* Finally set the new f_lasti and return OK. */
+    f->f_lineno = 0;
     f->f_lasti = best_addr;
     return 0;
 }
@@ -495,11 +538,9 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    /* We rely on f_lineno being accurate when f_trace is set. */
-    f->f_lineno = PyFrame_GetLineNumber(f);
-
-    if (v == Py_None)
+    if (v == Py_None) {
         v = NULL;
+    }
     Py_XINCREF(v);
     Py_XSETREF(f->f_trace, v);
 
@@ -512,6 +553,7 @@ static PyGetSetDef frame_getsetlist[] = {
     {"f_lineno",        (getter)frame_getlineno,
                     (setter)frame_setlineno, NULL},
     {"f_trace",         (getter)frame_gettrace, (setter)frame_settrace, NULL},
+    {"f_lasti",         (getter)frame_getlasti, NULL, NULL},
     {0}
 };
 
@@ -559,37 +601,25 @@ static PyGetSetDef frame_getsetlist[] = {
 /* max value for numfree */
 #define PyFrame_MAXFREELIST 200
 
-/* bpo-40521: frame free lists are shared by all interpreters. */
-#ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
-#  undef PyFrame_MAXFREELIST
-#  define PyFrame_MAXFREELIST 0
-#endif
-
-#if PyFrame_MAXFREELIST > 0
-static PyFrameObject *free_list = NULL;
-static int numfree = 0;         /* number of frames currently in free_list */
-#endif
-
 static void _Py_HOT_FUNCTION
 frame_dealloc(PyFrameObject *f)
 {
-    PyObject **p, **valuestack;
-    PyCodeObject *co;
-
-    if (_PyObject_GC_IS_TRACKED(f))
+    if (_PyObject_GC_IS_TRACKED(f)) {
         _PyObject_GC_UNTRACK(f);
+    }
 
     Py_TRASHCAN_SAFE_BEGIN(f)
     /* Kill all local variables */
-    valuestack = f->f_valuestack;
-    for (p = f->f_localsplus; p < valuestack; p++)
+    PyObject **valuestack = f->f_valuestack;
+    for (PyObject **p = f->f_localsplus; p < valuestack; p++) {
         Py_CLEAR(*p);
+    }
 
     /* Free stack */
-    if (f->f_stacktop != NULL) {
-        for (p = valuestack; p < f->f_stacktop; p++)
-            Py_XDECREF(*p);
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_XDECREF(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
 
     Py_XDECREF(f->f_back);
     Py_DECREF(f->f_builtins);
@@ -597,19 +627,24 @@ frame_dealloc(PyFrameObject *f)
     Py_CLEAR(f->f_locals);
     Py_CLEAR(f->f_trace);
 
-    co = f->f_code;
+    PyCodeObject *co = f->f_code;
     if (co->co_zombieframe == NULL) {
         co->co_zombieframe = f;
     }
-#if PyFrame_MAXFREELIST > 0
-    else if (numfree < PyFrame_MAXFREELIST) {
-        ++numfree;
-        f->f_back = free_list;
-        free_list = f;
-    }
-#endif
     else {
-        PyObject_GC_Del(f);
+        struct _Py_frame_state *state = get_frame_state();
+#ifdef Py_DEBUG
+        // frame_dealloc() must not be called after _PyFrame_Fini()
+        assert(state->numfree != -1);
+#endif
+        if (state->numfree < PyFrame_MAXFREELIST) {
+            ++state->numfree;
+            f->f_back = state->free_list;
+            state->free_list = f;
+        }
+        else {
+            PyObject_GC_Del(f);
+        }
     }
 
     Py_DECREF(co);
@@ -642,10 +677,8 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     }
 
     /* stack */
-    if (f->f_stacktop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < f->f_stacktop; p++) {
-            Py_VISIT(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_VISIT(f->f_valuestack[i]);
     }
     return 0;
 }
@@ -658,9 +691,7 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    PyObject **oldtop = f->f_stacktop;
-    f->f_stacktop = NULL;
-    f->f_executing = 0;
+    f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
 
@@ -671,18 +702,17 @@ frame_tp_clear(PyFrameObject *f)
     }
 
     /* stack */
-    if (oldtop != NULL) {
-        for (PyObject **p = f->f_valuestack; p < oldtop; p++) {
-            Py_CLEAR(*p);
-        }
+    for (int i = 0; i < f->f_stackdepth; i++) {
+        Py_CLEAR(f->f_valuestack[i]);
     }
+    f->f_stackdepth = 0;
     return 0;
 }
 
 static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    if (f->f_executing) {
+    if (_PyFrame_IsExecuting(f)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;
@@ -774,9 +804,7 @@ _Py_IDENTIFIER(__builtins__);
 static inline PyFrameObject*
 frame_alloc(PyCodeObject *code)
 {
-    PyFrameObject *f;
-
-    f = code->co_zombieframe;
+    PyFrameObject *f = code->co_zombieframe;
     if (f != NULL) {
         code->co_zombieframe = NULL;
         _Py_NewReference((PyObject *)f);
@@ -787,21 +815,23 @@ frame_alloc(PyCodeObject *code)
     Py_ssize_t ncells = PyTuple_GET_SIZE(code->co_cellvars);
     Py_ssize_t nfrees = PyTuple_GET_SIZE(code->co_freevars);
     Py_ssize_t extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
-#if PyFrame_MAXFREELIST > 0
-    if (free_list == NULL)
-#endif
+    struct _Py_frame_state *state = get_frame_state();
+    if (state->free_list == NULL)
     {
         f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
         if (f == NULL) {
             return NULL;
         }
     }
-#if PyFrame_MAXFREELIST > 0
     else {
-        assert(numfree > 0);
-        --numfree;
-        f = free_list;
-        free_list = free_list->f_back;
+#ifdef Py_DEBUG
+        // frame_alloc() must not be called after _PyFrame_Fini()
+        assert(state->numfree != -1);
+#endif
+        assert(state->numfree > 0);
+        --state->numfree;
+        f = state->free_list;
+        state->free_list = state->free_list->f_back;
         if (Py_SIZE(f) < extras) {
             PyFrameObject *new_f = PyObject_GC_Resize(PyFrameObject, f, extras);
             if (new_f == NULL) {
@@ -812,160 +842,72 @@ frame_alloc(PyCodeObject *code)
         }
         _Py_NewReference((PyObject *)f);
     }
-#endif
 
-    f->f_code = code;
     extras = code->co_nlocals + ncells + nfrees;
     f->f_valuestack = f->f_localsplus + extras;
-    for (Py_ssize_t i=0; i<extras; i++) {
+    for (Py_ssize_t i=0; i < extras; i++) {
         f->f_localsplus[i] = NULL;
     }
-    f->f_locals = NULL;
-    f->f_trace = NULL;
     return f;
-}
-
-
-static inline PyObject *
-frame_get_builtins(PyFrameObject *back, PyObject *globals)
-{
-    PyObject *builtins;
-
-    if (back != NULL && back->f_globals == globals) {
-        /* If we share the globals, we share the builtins.
-           Save a lookup and a call. */
-        builtins = back->f_builtins;
-        assert(builtins != NULL);
-        Py_INCREF(builtins);
-        return builtins;
-    }
-
-    builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
-    if (builtins != NULL && PyModule_Check(builtins)) {
-        builtins = PyModule_GetDict(builtins);
-        assert(builtins != NULL);
-    }
-    if (builtins != NULL) {
-        Py_INCREF(builtins);
-        return builtins;
-    }
-
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
-
-    /* No builtins! Make up a minimal one.
-       Give them 'None', at least. */
-    builtins = PyDict_New();
-    if (builtins == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(builtins, "None", Py_None) < 0) {
-        Py_DECREF(builtins);
-        return NULL;
-    }
-    return builtins;
 }
 
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, PyCodeObject *code,
-                     PyObject *globals, PyObject *locals)
+_PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals)
 {
-#ifdef Py_DEBUG
-    if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
-        (locals != NULL && !PyMapping_Check(locals))) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-#endif
+    assert(con != NULL);
+    assert(con->fc_globals != NULL);
+    assert(con->fc_builtins != NULL);
+    assert(con->fc_code != NULL);
+    assert(locals == NULL || PyMapping_Check(locals));
 
-    PyFrameObject *back = tstate->frame;
-    PyObject *builtins = frame_get_builtins(back, globals);
-    if (builtins == NULL) {
-        return NULL;
-    }
-
-    PyFrameObject *f = frame_alloc(code);
+    PyFrameObject *f = frame_alloc((PyCodeObject *)con->fc_code);
     if (f == NULL) {
-        Py_DECREF(builtins);
         return NULL;
     }
 
-    f->f_stacktop = f->f_valuestack;
-    f->f_builtins = builtins;
-    Py_XINCREF(back);
-    f->f_back = back;
-    Py_INCREF(code);
-    Py_INCREF(globals);
-    f->f_globals = globals;
-    /* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
-    if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) ==
-        (CO_NEWLOCALS | CO_OPTIMIZED))
-        ; /* f_locals = NULL; will be set by PyFrame_FastToLocals() */
-    else if (code->co_flags & CO_NEWLOCALS) {
-        locals = PyDict_New();
-        if (locals == NULL) {
-            Py_DECREF(f);
-            return NULL;
-        }
-        f->f_locals = locals;
-    }
-    else {
-        if (locals == NULL)
-            locals = globals;
-        Py_INCREF(locals);
-        f->f_locals = locals;
-    }
-
-    f->f_lasti = -1;
-    f->f_lineno = code->co_firstlineno;
-    f->f_iblock = 0;
-    f->f_executing = 0;
-    f->f_gen = NULL;
-    f->f_trace_opcodes = 0;
+    f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
+    f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
+    f->f_builtins = Py_NewRef(con->fc_builtins);
+    f->f_globals = Py_NewRef(con->fc_globals);
+    f->f_locals = Py_XNewRef(locals);
+    // f_valuestack initialized by frame_alloc()
+    f->f_trace = NULL;
+    f->f_stackdepth = 0;
     f->f_trace_lines = 1;
-
-    assert(f->f_code != NULL);
-
+    f->f_trace_opcodes = 0;
+    f->f_gen = NULL;
+    f->f_lasti = -1;
+    f->f_lineno = 0;
+    f->f_state = FRAME_CREATED;
+    // f_blockstack and f_localsplus initialized by frame_alloc()
     return f;
 }
 
+/* Legacy API */
 PyFrameObject*
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
             PyObject *globals, PyObject *locals)
 {
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, code, globals, locals);
-    if (f)
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    if (builtins == NULL) {
+        return NULL;
+    }
+    PyFrameConstructor desc = {
+        .fc_globals = globals,
+        .fc_builtins = builtins,
+        .fc_name = code->co_name,
+        .fc_qualname = code->co_name,
+        .fc_code = (PyObject *)code,
+        .fc_defaults = NULL,
+        .fc_kwdefaults = NULL,
+        .fc_closure = NULL
+    };
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc, locals);
+    if (f) {
         _PyObject_GC_TRACK(f);
+    }
     return f;
-}
-
-
-/* Block management */
-
-void
-PyFrame_BlockSetup(PyFrameObject *f, int type, int handler, int level)
-{
-    PyTryBlock *b;
-    if (f->f_iblock >= CO_MAXBLOCKS) {
-        Py_FatalError("block stack overflow");
-    }
-    b = &f->f_blockstack[f->f_iblock++];
-    b->b_type = type;
-    b->b_level = level;
-    b->b_handler = handler;
-}
-
-PyTryBlock *
-PyFrame_BlockPop(PyFrameObject *f)
-{
-    PyTryBlock *b;
-    if (f->f_iblock <= 0) {
-        Py_FatalError("block stack underflow");
-    }
-    b = &f->f_blockstack[--f->f_iblock];
-    return b;
 }
 
 /* Convert between "fast" version of locals and dictionary version.
@@ -1181,34 +1123,36 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
 /* Clear out the free list */
 void
-_PyFrame_ClearFreeList(void)
+_PyFrame_ClearFreeList(PyInterpreterState *interp)
 {
-#if PyFrame_MAXFREELIST > 0
-    while (free_list != NULL) {
-        PyFrameObject *f = free_list;
-        free_list = free_list->f_back;
+    struct _Py_frame_state *state = &interp->frame;
+    while (state->free_list != NULL) {
+        PyFrameObject *f = state->free_list;
+        state->free_list = state->free_list->f_back;
         PyObject_GC_Del(f);
-        --numfree;
+        --state->numfree;
     }
-    assert(numfree == 0);
-#endif
+    assert(state->numfree == 0);
 }
 
 void
-_PyFrame_Fini(void)
+_PyFrame_Fini(PyInterpreterState *interp)
 {
-    _PyFrame_ClearFreeList();
+    _PyFrame_ClearFreeList(interp);
+#ifdef Py_DEBUG
+    struct _Py_frame_state *state = &interp->frame;
+    state->numfree = -1;
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
 void
 _PyFrame_DebugMallocStats(FILE *out)
 {
-#if PyFrame_MAXFREELIST > 0
+    struct _Py_frame_state *state = get_frame_state();
     _PyDebugAllocatorStats(out,
                            "free PyFrameObject",
-                           numfree, sizeof(PyFrameObject));
-#endif
+                           state->numfree, sizeof(PyFrameObject));
 }
 
 
@@ -1230,4 +1174,22 @@ PyFrame_GetBack(PyFrameObject *frame)
     PyFrameObject *back = frame->f_back;
     Py_XINCREF(back);
     return back;
+}
+
+PyObject*
+_PyEval_BuiltinsFromGlobals(PyThreadState *tstate, PyObject *globals)
+{
+    PyObject *builtins = _PyDict_GetItemIdWithError(globals, &PyId___builtins__);
+    if (builtins) {
+        if (PyModule_Check(builtins)) {
+            builtins = _PyModule_GetDict(builtins);
+            assert(builtins != NULL);
+        }
+        return builtins;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
+    return _PyEval_GetBuiltins(tstate);
 }

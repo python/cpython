@@ -1,2 +1,0 @@
-Add multiset comparison methods to collections.Counter(): isequal(),
-issubset(), issuperset(), and isdisjoint().

@@ -459,7 +459,7 @@ later:
 - implement a fuller MutableMapping API in C?
 - move the MutableMapping implementation to abstract.c?
 - optimize mutablemapping_update
-- use PyObject_MALLOC (small object allocator) for odict nodes?
+- use PyObject_Malloc (small object allocator) for odict nodes?
 - support subclasses better (e.g. in odict_richcompare)
 
 */
@@ -567,14 +567,14 @@ _odict_resize(PyODictObject *od)
         i = _odict_get_index_raw(od, _odictnode_KEY(node),
                                  _odictnode_HASH(node));
         if (i < 0) {
-            PyMem_FREE(fast_nodes);
+            PyMem_Free(fast_nodes);
             return -1;
         }
         fast_nodes[i] = node;
     }
 
     /* Replace the old fast nodes table. */
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = fast_nodes;
     od->od_fast_nodes_size = size;
     od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
@@ -683,7 +683,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
     }
 
     /* must not be added yet */
-    node = (_ODictNode *)PyMem_MALLOC(sizeof(_ODictNode));
+    node = (_ODictNode *)PyMem_Malloc(sizeof(_ODictNode));
     if (node == NULL) {
         Py_DECREF(key);
         PyErr_NoMemory();
@@ -701,7 +701,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 #define _odictnode_DEALLOC(node) \
     do { \
         Py_DECREF(_odictnode_KEY(node)); \
-        PyMem_FREE((void *)node); \
+        PyMem_Free((void *)node); \
     } while (0)
 
 /* Repeated calls on the same node are no-ops. */
@@ -776,7 +776,7 @@ _odict_clear_nodes(PyODictObject *od)
 {
     _ODictNode *node, *next;
 
-    PyMem_FREE(od->od_fast_nodes);
+    PyMem_Free(od->od_fast_nodes);
     od->od_fast_nodes = NULL;
     od->od_fast_nodes_size = 0;
     od->od_resize_sentinel = NULL;
@@ -1045,30 +1045,28 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
 
 /* pop() */
 
-PyDoc_STRVAR(odict_pop__doc__,
-"od.pop(k[,d]) -> v, remove specified key and return the corresponding\n\
-        value.  If key is not found, d is returned if given, otherwise KeyError\n\
-        is raised.\n\
-\n\
-        ");
-
 /* forward */
 static PyObject * _odict_popkey(PyObject *, PyObject *, PyObject *);
 
 /* Skips __missing__() calls. */
+/*[clinic input]
+OrderedDict.pop
+
+    key: object
+    default: object = NULL
+
+od.pop(key[,default]) -> v, remove specified key and return the corresponding value.
+
+If the key is not found, return the default if given; otherwise,
+raise a KeyError.
+[clinic start generated code]*/
+
 static PyObject *
-odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
+OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
+                     PyObject *default_value)
+/*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
 {
-    static char *kwlist[] = {"key", "default", 0};
-    PyObject *key, *failobj = NULL;
-
-    /* borrowed */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
-                                     &key, &failobj)) {
-        return NULL;
-    }
-
-    return _odict_popkey(od, key, failobj);
+    return _odict_popkey((PyObject *)self, key, default_value);
 }
 
 static PyObject *
@@ -1362,8 +1360,7 @@ static PyMethodDef odict_methods[] = {
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      odict_reduce__doc__},
     ORDEREDDICT_SETDEFAULT_METHODDEF
-    {"pop",             (PyCFunction)(void(*)(void))odict_pop,
-     METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
+    ORDEREDDICT_POP_METHODDEF
     ORDEREDDICT_POPITEM_METHODDEF
     {"keys",            odictkeys_new,                  METH_NOARGS,
      odict_keys__doc__},
@@ -1817,6 +1814,11 @@ odictiter_iternext(odictiterobject *di)
         Py_INCREF(result);
         Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
         Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
+        // bpo-42536: The GC may have untracked this result tuple. Since we're
+        // recycling it, make sure it's tracked again:
+        if (!_PyObject_GC_IS_TRACKED(result)) {
+            _PyObject_GC_TRACK(result);
+        }
     }
     else {
         result = PyTuple_New(2);

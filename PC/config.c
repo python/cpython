@@ -45,7 +45,6 @@ extern PyObject* PyInit__symtable(void);
 extern PyObject* PyInit_mmap(void);
 extern PyObject* PyInit__csv(void);
 extern PyObject* PyInit__sre(void);
-extern PyObject* PyInit_parser(void);
 extern PyObject* PyInit_winreg(void);
 extern PyObject* PyInit__struct(void);
 extern PyObject* PyInit__datetime(void);
@@ -75,7 +74,6 @@ extern PyObject* PyInit__opcode(void);
 
 extern PyObject* PyInit__contextvars(void);
 
-extern PyObject* PyInit__peg_parser(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -127,7 +125,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"mmap", PyInit_mmap},
     {"_csv", PyInit__csv},
     {"_sre", PyInit__sre},
-    {"parser", PyInit_parser},
     {"winreg", PyInit_winreg},
     {"_struct", PyInit__struct},
     {"_datetime", PyInit__datetime},
@@ -171,7 +168,6 @@ struct _inittab _PyImport_Inittab[] = {
     {"_opcode", PyInit__opcode},
 
     {"_contextvars", PyInit__contextvars},
-    {"_peg_parser", PyInit__peg_parser},
 
     /* Sentinel */
     {0, 0}

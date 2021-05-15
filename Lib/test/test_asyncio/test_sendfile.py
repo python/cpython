@@ -10,6 +10,7 @@ from asyncio import base_events
 from asyncio import constants
 from unittest import mock
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 
@@ -98,17 +99,17 @@ class SendfileBase:
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         self.loop = self.create_event_loop()
         self.set_event_loop(self.loop)
@@ -445,6 +446,12 @@ class SendfileMixin(SendfileBase):
         self.assertEqual(srv_proto.data, self.DATA)
         self.assertEqual(self.file.tell(), len(self.DATA))
 
+    # On Solaris, lowering SO_RCVBUF on a TCP connection after it has been
+    # established has no effect. Due to its age, this bug affects both Oracle
+    # Solaris as well as all other OpenSolaris forks (unless they fixed it
+    # themselves).
+    @unittest.skipIf(sys.platform.startswith('sunos'),
+                     "Doesn't work on Solaris")
     def test_sendfile_close_peer_in_the_middle_of_receiving(self):
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):

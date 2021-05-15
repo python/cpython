@@ -56,8 +56,12 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
    If the result of the reduction is infinity (this is impossible for
    integers, floats and Decimals) then use the predefined hash value
    _PyHASH_INF for x >= 0, or -_PyHASH_INF for x < 0, instead.
-   _PyHASH_INF, -_PyHASH_INF and _PyHASH_NAN are also used for the
-   hashes of float and Decimal infinities and nans.
+   _PyHASH_INF and -_PyHASH_INF are also used for the
+   hashes of float and Decimal infinities.
+
+   NaNs hash with a pointer hash.  Having distinct hash values prevents
+   catastrophic pileups from distinct NaN instances which used to always
+   have the same hash value but would compare unequal.
 
    A selling point for the above strategy is that it makes it possible
    to compute hashes of decimal and binary floating-point numbers
@@ -82,8 +86,10 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 
    */
 
+Py_hash_t _Py_HashPointer(const void *);
+
 Py_hash_t
-_Py_HashDouble(double v)
+_Py_HashDouble(PyObject *inst, double v)
 {
     int e, sign;
     double m;
@@ -93,7 +99,7 @@ _Py_HashDouble(double v)
         if (Py_IS_INFINITY(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return _PyHASH_NAN;
+            return _Py_HashPointer(inst);
     }
 
     m = frexp(v, &e);
@@ -200,18 +206,14 @@ void
 _PyHash_Fini(void)
 {
 #ifdef Py_HASH_STATS
-    int i;
-    Py_ssize_t total = 0;
-    const char *fmt = "%2i %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n";
-
     fprintf(stderr, "len   calls    total\n");
-    for (i = 1; i <= Py_HASH_STATS_MAX; i++) {
+    Py_ssize_t total = 0;
+    for (int i = 1; i <= Py_HASH_STATS_MAX; i++) {
         total += hashstats[i];
-        fprintf(stderr, fmt, i, hashstats[i], total);
+        fprintf(stderr, "%2i %8zd %8zd\n", i, hashstats[i], total);
     }
     total += hashstats[0];
-    fprintf(stderr, ">  %8" PY_FORMAT_SIZE_T "d %8" PY_FORMAT_SIZE_T "d\n",
-            hashstats[0], total);
+    fprintf(stderr, ">  %8zd %8zd\n", hashstats[0], total);
 #endif
 }
 

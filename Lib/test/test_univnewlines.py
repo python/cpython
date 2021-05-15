@@ -5,6 +5,8 @@ import unittest
 import os
 import sys
 from test import support
+from test.support import os_helper
+
 
 if not hasattr(sys.stdin, 'newlines'):
     raise unittest.SkipTest(
@@ -46,29 +48,29 @@ class TestGenericUnivNewlines:
         data = self.DATA
         if "b" in self.WRITEMODE:
             data = data.encode("ascii")
-        with self.open(support.TESTFN, self.WRITEMODE) as fp:
+        with self.open(os_helper.TESTFN, self.WRITEMODE) as fp:
             fp.write(data)
 
     def tearDown(self):
         try:
-            os.unlink(support.TESTFN)
+            os.unlink(os_helper.TESTFN)
         except:
             pass
 
     def test_read(self):
-        with self.open(support.TESTFN, self.READMODE) as fp:
+        with self.open(os_helper.TESTFN, self.READMODE) as fp:
             data = fp.read()
         self.assertEqual(data, DATA_LF)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_readlines(self):
-        with self.open(support.TESTFN, self.READMODE) as fp:
+        with self.open(os_helper.TESTFN, self.READMODE) as fp:
             data = fp.readlines()
         self.assertEqual(data, DATA_SPLIT)
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_readline(self):
-        with self.open(support.TESTFN, self.READMODE) as fp:
+        with self.open(os_helper.TESTFN, self.READMODE) as fp:
             data = []
             d = fp.readline()
             while d:
@@ -78,7 +80,7 @@ class TestGenericUnivNewlines:
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
 
     def test_seek(self):
-        with self.open(support.TESTFN, self.READMODE) as fp:
+        with self.open(os_helper.TESTFN, self.READMODE) as fp:
             fp.readline()
             pos = fp.tell()
             data = fp.readlines()
@@ -105,7 +107,7 @@ class TestCRLFNewlines(TestGenericUnivNewlines):
     DATA = DATA_CRLF
 
     def test_tell(self):
-        with self.open(support.TESTFN, self.READMODE) as fp:
+        with self.open(os_helper.TESTFN, self.READMODE) as fp:
             self.assertEqual(repr(fp.newlines), repr(None))
             data = fp.readline()
             pos = fp.tell()

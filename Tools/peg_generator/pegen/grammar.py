@@ -259,9 +259,10 @@ class Alt:
 
 
 class NamedItem:
-    def __init__(self, name: Optional[str], item: Item):
+    def __init__(self, name: Optional[str], item: Item, type: Optional[str] = None):
         self.name = name
         self.item = item
+        self.type = type
         self.nullable = False
 
     def __str__(self) -> str:
@@ -285,6 +286,23 @@ class NamedItem:
 
     def collect_todo(self, gen: ParserGenerator) -> None:
         gen.callmakervisitor.visit(self.item)
+
+
+class Forced:
+    def __init__(self, node: Plain):
+        self.node = node
+
+    def __str__(self) -> str:
+        return f"&&{self.node}"
+
+    def __iter__(self) -> Iterator[Plain]:
+        yield self.node
+
+    def nullable_visit(self, rules: Dict[str, Rule]) -> bool:
+        return True
+
+    def initial_names(self) -> AbstractSet[str]:
+        return set()
 
 
 class Lookahead:
@@ -458,7 +476,7 @@ class Cut:
 
 
 Plain = Union[Leaf, Group]
-Item = Union[Plain, Opt, Repeat, Lookahead, Rhs, Cut]
+Item = Union[Plain, Opt, Repeat, Forced, Lookahead, Rhs, Cut]
 RuleName = Tuple[str, str]
 MetaTuple = Tuple[str, Optional[str]]
 MetaList = List[MetaTuple]

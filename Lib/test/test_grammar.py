@@ -1,7 +1,9 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error, check_syntax_warning, use_old_parser
+from test.support import check_syntax_error
+from test.support import import_helper
+from test.support.warnings_helper import check_syntax_warning
 import inspect
 import unittest
 import sys
@@ -259,7 +261,7 @@ the \'lazy\' dog.\n\
         for s in samples:
             with self.assertRaises(SyntaxError) as cm:
                 compile(s, "<test>", "exec")
-            self.assertIn("unexpected EOF", str(cm.exception))
+            self.assertIn("was never closed", str(cm.exception))
 
 var_annot_global: int # a global annotated is necessary for test_var_annot
 
@@ -276,7 +278,9 @@ class CNS:
 
 class GrammarTests(unittest.TestCase):
 
-    from test.support import check_syntax_error, check_syntax_warning
+    from test.support import check_syntax_error
+    from test.support.warnings_helper import check_syntax_warning
+    from test.support.warnings_helper import check_no_warnings
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
@@ -379,8 +383,7 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(CC.__annotations__['xx'], 'ANNOT')
 
     def test_var_annot_module_semantics(self):
-        with self.assertRaises(AttributeError):
-            print(test.__annotations__)
+        self.assertEqual(test.__annotations__, {})
         self.assertEqual(ann_module.__annotations__,
                      {1: 2, 'x': int, 'y': str, 'f': typing.Tuple[int, int]})
         self.assertEqual(ann_module.M.__annotations__,
@@ -390,13 +393,13 @@ class GrammarTests(unittest.TestCase):
     def test_var_annot_in_module(self):
         # check that functions fail the same way when executed
         # outside of module where they were defined
-        from test.ann_module3 import f_bad_ann, g_bad_ann, D_bad_ann
+        ann_module3 = import_helper.import_fresh_module("test.ann_module3")
         with self.assertRaises(NameError):
-            f_bad_ann()
+            ann_module3.f_bad_ann()
         with self.assertRaises(NameError):
-            g_bad_ann()
+            ann_module3.g_bad_ann()
         with self.assertRaises(NameError):
-            D_bad_ann(5)
+            ann_module3.D_bad_ann(5)
 
     def test_var_annot_simple_exec(self):
         gns = {}; lns= {}
@@ -582,12 +585,14 @@ class GrammarTests(unittest.TestCase):
         d22v(1, *(2, 3), **{'d': 4})
 
         # keyword argument type tests
-        try:
-            str('x', **{b'foo':1 })
-        except TypeError:
-            pass
-        else:
-            self.fail('Bytes should not work as keyword argument names')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+            try:
+                str('x', **{b'foo':1 })
+            except TypeError:
+                pass
+            else:
+                self.fail('Bytes should not work as keyword argument names')
         # keyword only argument tests
         def pos0key1(*, key): return key
         pos0key1(key=100)
@@ -1196,7 +1201,7 @@ class GrammarTests(unittest.TestCase):
 
     # these tests fail if python is run with -O, so check __debug__
     @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
-    def testAssert2(self):
+    def test_assert_failures(self):
         try:
             assert 0, "msg"
         except AssertionError as e:
@@ -1211,11 +1216,36 @@ class GrammarTests(unittest.TestCase):
         else:
             self.fail("AssertionError not raised by 'assert False'")
 
+    def test_assert_syntax_warnings(self):
+        # Ensure that we warn users if they provide a non-zero length tuple as
+        # the assertion test.
         self.check_syntax_warning('assert(x, "msg")',
                                   'assertion is always true')
+        self.check_syntax_warning('assert(False, "msg")',
+                                  'assertion is always true')
+        self.check_syntax_warning('assert(False,)',
+                                  'assertion is always true')
+
+        with self.check_no_warnings(category=SyntaxWarning):
+            compile('assert x, "msg"', '<testcase>', 'exec')
+            compile('assert False, "msg"', '<testcase>', 'exec')
+
+    def test_assert_warning_promotes_to_syntax_error(self):
+        # If SyntaxWarning is configured to be an error, it actually raises a
+        # SyntaxError.
+        # https://bugs.python.org/issue35029
         with warnings.catch_warnings():
             warnings.simplefilter('error', SyntaxWarning)
-            compile('assert x, "msg"', '<testcase>', 'exec')
+            try:
+                compile('assert x, "msg" ', '<testcase>', 'exec')
+            except SyntaxError:
+                self.fail('SyntaxError incorrectly raised for \'assert x, "msg"\'')
+            with self.assertRaises(SyntaxError):
+                compile('assert(x, "msg")', '<testcase>', 'exec')
+            with self.assertRaises(SyntaxError):
+                compile('assert(False, "msg")', '<testcase>', 'exec')
+            with self.assertRaises(SyntaxError):
+                compile('assert(False,)', '<testcase>', 'exec')
 
 
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
@@ -1714,69 +1744,53 @@ class GrammarTests(unittest.TestCase):
         with manager() as x, manager():
             pass
 
-        if not use_old_parser():
-            test_cases = [
-                """if 1:
-                    with (
-                        manager()
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as (x, y),
-                        manager() as z,
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager(),
-                        manager()
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager() as y
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager()
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager() as y,
-                        manager() as z,
-                    ):
-                        pass
-                """,
-                """if 1:
-                    with (
-                        manager() as x,
-                        manager() as y,
-                        manager(),
-                    ):
-                        pass
-                """,
-            ]
-            for case in test_cases:
-                with self.subTest(case=case):
-                    compile(case, "<string>", "exec")
+        with (
+            manager()
+        ):
+            pass
 
+        with (
+            manager() as x
+        ):
+            pass
+
+        with (
+            manager() as (x, y),
+            manager() as z,
+        ):
+            pass
+
+        with (
+            manager(),
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager()
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y,
+            manager() as z,
+        ):
+            pass
+
+        with (
+            manager() as x,
+            manager() as y,
+            manager(),
+        ):
+            pass
 
     def test_if_else_expr(self):
         # Test ifelse expressions in various cases

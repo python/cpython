@@ -1,7 +1,9 @@
 # -*- coding: koi8-r -*-
 
 import unittest
-from test.support import TESTFN, unlink, unload, rmtree, script_helper, captured_stdout
+from test.support import script_helper, captured_stdout
+from test.support.os_helper import TESTFN, unlink, rmtree
+from test.support.import_helper import unload
 import importlib
 import os
 import sys
@@ -202,6 +204,23 @@ class AbstractSourceEncodingTest:
         src = (b'\xef\xbb\xbf#coding:utf-8\n'
                b'print(ascii("\xc3\xa4"))\n')
         self.check_script_output(src, br"'\xe4'")
+
+    def test_crlf(self):
+        src = (b'print(ascii("""\r\n"""))\n')
+        out = self.check_script_output(src, br"'\n'")
+
+    def test_crcrlf(self):
+        src = (b'print(ascii("""\r\r\n"""))\n')
+        out = self.check_script_output(src, br"'\n\n'")
+
+    def test_crcrcrlf(self):
+        src = (b'print(ascii("""\r\r\r\n"""))\n')
+        out = self.check_script_output(src, br"'\n\n\n'")
+
+    def test_crcrcrlf2(self):
+        src = (b'#coding:iso-8859-1\n'
+               b'print(ascii("""\r\r\r\n"""))\n')
+        out = self.check_script_output(src, br"'\n\n\n'")
 
 
 class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):

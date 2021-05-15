@@ -32,16 +32,6 @@ try:
 except ImportError:
     _LZMA_SUPPORTED = False
 
-try:
-    from pwd import getpwnam
-except ImportError:
-    getpwnam = None
-
-try:
-    from grp import getgrnam
-except ImportError:
-    getgrnam = None
-
 _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
@@ -50,8 +40,13 @@ elif _WINDOWS:
     import nt
 
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
+# This should never be removed, see rationale in:
+# https://bugs.python.org/issue43743#msg393429
 _USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
+
+# CMD defaults in Windows 10
+_WIN_DEFAULT_PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
@@ -708,7 +703,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
         try:
             fd = os.open(path, os.O_RDONLY)
         except Exception:
-            onerror(os.lstat, path, sys.exc_info())
+            onerror(os.open, path, sys.exc_info())
             return
         try:
             if os.path.samestat(orig_st, os.fstat(fd)):
@@ -810,6 +805,12 @@ def move(src, dst, copy_function=copy2):
             if _destinsrc(src, dst):
                 raise Error("Cannot move a directory '%s' into itself"
                             " '%s'." % (src, dst))
+            if (_is_immutable(src)
+                    or (not os.access(src, os.W_OK) and os.listdir(src)
+                        and sys.platform == 'darwin')):
+                raise PermissionError("Cannot move the non-empty directory "
+                                      "'%s': Lacking write permission to '%s'."
+                                      % (src, src))
             copytree(src, real_dst, copy_function=copy_function,
                      symlinks=True)
             rmtree(src)
@@ -827,10 +828,21 @@ def _destinsrc(src, dst):
         dst += os.path.sep
     return dst.startswith(src)
 
+def _is_immutable(src):
+    st = _stat(src)
+    immutable_states = [stat.UF_IMMUTABLE, stat.SF_IMMUTABLE]
+    return hasattr(st, 'st_flags') and st.st_flags in immutable_states
+
 def _get_gid(name):
     """Returns a gid, given a group name."""
-    if getgrnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from grp import getgrnam
+    except ImportError:
+        return None
+
     try:
         result = getgrnam(name)
     except KeyError:
@@ -841,8 +853,14 @@ def _get_gid(name):
 
 def _get_uid(name):
     """Returns an uid, given a user name."""
-    if getpwnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from pwd import getpwnam
+    except ImportError:
+        return None
+
     try:
         result = getpwnam(name)
     except KeyError:
@@ -1415,7 +1433,9 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
             path.insert(0, curdir)
 
         # PATHEXT is necessary to check on Windows.
-        pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
+        pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
+        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
         # See if the given file matches any of the expected path extensions.

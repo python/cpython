@@ -38,8 +38,9 @@ struct PyCodeObject {
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
-    PyObject *co_lnotab;        /* string (encoding addr<->lineno mapping) See
+    PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
+    PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
     void *co_zombieframe;       /* for optimization only (see frameobject.c) */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
     /* Scratch space for extra data relating to the code object.
@@ -117,12 +118,12 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *);
+        PyObject *, PyObject *, int, PyObject *, PyObject *);
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *);
+        PyObject *, PyObject *, int, PyObject *, PyObject *);
         /* same as struct above */
 
 /* Creates a new empty code object with the specified source location. */
@@ -135,16 +136,23 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
-typedef struct _addr_pair {
-        int ap_lower;
-        int ap_upper;
-} PyAddrPair;
+struct _opaque {
+    int computed_line;
+    char *lo_next;
+    char *limit;
+};
+
+typedef struct _line_offsets {
+    int ar_start;
+    int ar_end;
+    int ar_line;
+    struct _opaque opaque;
+} PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
    same line as lasti.  Return the number of that line.
 */
-PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
-                                        int lasti, PyAddrPair *bounds);
+PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
 
 /* Create a comparable key used to compare constants taking in account the
  * object type. It is used to make sure types are not coerced (e.g., float and
@@ -163,3 +171,15 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
+
+/** API for initializing the line number table. */
+int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+
+/** Out of process API for initializing the line number table. */
+void PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
+
+/** API for traversing the line number table. */
+int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
+

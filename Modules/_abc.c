@@ -1,6 +1,7 @@
 /* ABCMeta implementation */
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -14,6 +15,7 @@ PyDoc_STRVAR(_abc__doc__,
 _Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
 _Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__abc_tpflags__);
 _Py_IDENTIFIER(__bases__);
 _Py_IDENTIFIER(_abc_impl);
 _Py_IDENTIFIER(__subclasscheck__);
@@ -27,7 +29,7 @@ typedef struct {
 static inline _abcmodule_state*
 get_abc_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_abcmodule_state *)state;
 }
@@ -416,6 +418,8 @@ error:
     return ret;
 }
 
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
+
 /*[clinic input]
 _abc._abc_init
 
@@ -445,6 +449,35 @@ _abc__abc_init(PyObject *module, PyObject *self)
         return NULL;
     }
     Py_DECREF(data);
+    /* If __abc_tpflags__ & COLLECTION_FLAGS is set, then set the corresponding bit(s)
+     * in the new class.
+     * Used by collections.abc.Sequence and collections.abc.Mapping to indicate
+     * their special status w.r.t. pattern matching. */
+    if (PyType_Check(self)) {
+        PyTypeObject *cls = (PyTypeObject *)self;
+        PyObject *flags = _PyDict_GetItemIdWithError(cls->tp_dict, &PyId___abc_tpflags__);
+        if (flags == NULL) {
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
+        }
+        else {
+            if (PyLong_CheckExact(flags)) {
+                long val = PyLong_AsLong(flags);
+                if (val == -1 && PyErr_Occurred()) {
+                    return NULL;
+                }
+                if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
+                    PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
+                    return NULL;
+                }
+                ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
+            }
+            if (_PyDict_DelItemId(cls->tp_dict, &PyId___abc_tpflags__) < 0) {
+                return NULL;
+            }
+        }
+    }
     Py_RETURN_NONE;
 }
 
@@ -498,6 +531,14 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     /* Invalidate negative cache */
     get_abc_state(module)->abc_invalidation_counter++;
 
+    /* Set Py_TPFLAGS_SEQUENCE  or Py_TPFLAGS_MAPPING flag */
+    if (PyType_Check(self) &&
+        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE) &&
+        ((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS)
+    {
+        ((PyTypeObject *)subclass)->tp_flags &= ~COLLECTION_FLAGS;
+        ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
+    }
     Py_INCREF(subclass);
     return subclass;
 }
@@ -891,14 +932,14 @@ static PyModuleDef_Slot _abcmodule_slots[] = {
 
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
-    "_abc",
-    _abc__doc__,
-    sizeof(_abcmodule_state),
-    _abcmodule_methods,
-    _abcmodule_slots,
-    _abcmodule_traverse,
-    _abcmodule_clear,
-    _abcmodule_free,
+    .m_name = "_abc",
+    .m_doc = _abc__doc__,
+    .m_size = sizeof(_abcmodule_state),
+    .m_methods = _abcmodule_methods,
+    .m_slots = _abcmodule_slots,
+    .m_traverse = _abcmodule_traverse,
+    .m_clear = _abcmodule_clear,
+    .m_free = _abcmodule_free,
 };
 
 PyMODINIT_FUNC

@@ -155,7 +155,12 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.  (Enum used this between Python
+    versions 3.4 - 3.9 .)
+
+    Subclass from this to use a different method of accessing virtual atributes
+    and still be treated properly by the inspect module. (Enum uses this since
+    Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -294,6 +299,10 @@ def coroutine(func):
 
 
 GenericAlias = type(list[int])
+Union = type(int | str)
 
+EllipsisType = type(Ellipsis)
+NoneType = type(None)
+NotImplementedType = type(NotImplemented)
 
 __all__ = [n for n in globals() if n[:1] != '_']

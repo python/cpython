@@ -6,13 +6,13 @@ import sys
 import os
 from time import time
 
-import _peg_parser
-
 try:
     import memory_profiler
 except ModuleNotFoundError:
-    print("Please run `make venv` to create a virtual environment and install"
-          " all the dependencies, before running this script.")
+    print(
+        "Please run `make venv` to create a virtual environment and install"
+        " all the dependencies, before running this script."
+    )
     sys.exit(1)
 
 sys.path.insert(0, os.getcwd())
@@ -20,13 +20,6 @@ from scripts.test_parse_directory import parse_directory
 
 argparser = argparse.ArgumentParser(
     prog="benchmark", description="Reproduce the various pegen benchmarks"
-)
-argparser.add_argument(
-    "--parser",
-    action="store",
-    choices=["pegen", "cpython"],
-    default="pegen",
-    help="Which parser to benchmark (default is pegen)",
 )
 argparser.add_argument(
     "--target",
@@ -61,51 +54,37 @@ def benchmark(func):
 
 
 @benchmark
-def time_compile(source, parser):
-    if parser == "cpython":
-        return _peg_parser.compile_string(
-            source,
-            oldparser=True,
-        )
-    else:
-        return _peg_parser.compile_string(source)
+def time_compile(source):
+    return compile(source, "<string>", "exec")
 
 
 @benchmark
-def time_parse(source, parser):
-    if parser == "cpython":
-        return _peg_parser.parse_string(source, oldparser=True)
-    else:
-        return _peg_parser.parse_string(source)
+def time_parse(source):
+    return ast.parse(source)
 
 
-def run_benchmark_xxl(subcommand, parser, source):
+def run_benchmark_xxl(subcommand, source):
     if subcommand == "compile":
-        time_compile(source, parser)
+        time_compile(source)
     elif subcommand == "parse":
-        time_parse(source, parser)
+        time_parse(source)
 
 
-def run_benchmark_stdlib(subcommand, parser):
+def run_benchmark_stdlib(subcommand):
+    modes = {"compile": 2, "parse": 1}
     for _ in range(3):
         parse_directory(
             "../../Lib",
-            "../../Grammar/python.gram",
-            "../../Grammar/Tokens",
             verbose=False,
             excluded_files=["*/bad*", "*/lib2to3/tests/data/*",],
-            skip_actions=False,
-            tree_arg=0,
             short=True,
-            mode=2 if subcommand == "compile" else 1,
-            parser=parser,
+            mode=modes[subcommand],
         )
 
 
 def main():
     args = argparser.parse_args()
     subcommand = args.subcommand
-    parser = args.parser
     target = args.target
 
     if subcommand is None:
@@ -114,9 +93,9 @@ def main():
     if target == "xxl":
         with open(os.path.join("data", "xxl.py"), "r") as f:
             source = f.read()
-            run_benchmark_xxl(subcommand, parser, source)
+            run_benchmark_xxl(subcommand, source)
     elif target == "stdlib":
-        run_benchmark_stdlib(subcommand, parser)
+        run_benchmark_stdlib(subcommand)
 
 
 if __name__ == "__main__":
