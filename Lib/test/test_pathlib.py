@@ -2400,7 +2400,7 @@ class PathTest(_BasePathTest, unittest.TestCase):
         self.assertIs(type(p),
             pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath)
 
-    def test_unsupported_flavour(self):
+    def test_unsupported_type(self):
         if os.name == 'nt':
             self.assertRaises(NotImplementedError, pathlib.PosixPath)
         else:

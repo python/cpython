@@ -57,8 +57,6 @@ class _WindowsFlavour(_Flavour):
 
     has_drv = True
 
-    is_supported = (os.name == 'nt')
-
     def casefold(self, s):
         return s.lower()
 
@@ -68,8 +66,6 @@ class _WindowsFlavour(_Flavour):
 
 class _PosixFlavour(_Flavour):
     has_drv = False
-
-    is_supported = (os.name != 'nt')
 
     def casefold(self, s):
         return s
@@ -788,6 +784,7 @@ class PurePosixPath(PurePath):
     """
     _flavour = _posix_flavour
     _pathmod = posixpath
+    _supported = (os.name != 'nt')
     _case_insensitive = False
     __slots__ = ()
 
@@ -828,6 +825,7 @@ class PureWindowsPath(PurePath):
     """
     _flavour = _windows_flavour
     _pathmod = ntpath
+    _supported = (os.name == 'nt')
     _case_insensitive = True
     _drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     _ext_namespace_prefix = '\\\\?\\'
@@ -940,11 +938,10 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args)
-        if not self._flavour.is_supported:
+        elif not cls._supported:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
-        return self
+        return cls._from_parts(args)
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
