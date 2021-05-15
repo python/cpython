@@ -2390,6 +2390,19 @@ class TunnelTests(TestCase):
         lines = output.getvalue().splitlines()
         self.assertIn('header: {}'.format(expected_header), lines)
 
+    def test_proxy_response_headers(self):
+        expected_header = ('X-Dummy', '1')
+        response_text = 'HTTP/1.0 200 OK\r\n{}: {}\r\n\r\n'.format(
+            *expected_header
+        )
+
+        self.conn._create_connection = self._create_connection(response_text)
+        self.conn.set_tunnel('destination.com')
+
+        self.conn.request('PUT', '/', '')
+        headers = self.conn._proxy_response_headers
+        self.assertIn(expected_header, headers.items())
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
