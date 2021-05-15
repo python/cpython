@@ -329,6 +329,7 @@ class PurePath(object):
         '_drv', '_root', '_parts',
         '_str', '_hash', '_pparts', '_cached_cparts',
     )
+    _case_insensitive = False
 
     def __new__(cls, *args):
         """Construct a PurePath from one or several strings and or existing
@@ -344,6 +345,23 @@ class PurePath(object):
         # Using the parts tuple helps share interned path parts
         # when pickling related paths.
         return (type(self), tuple(self._parts))
+
+    @classmethod
+    def _splitroot(cls, part):
+        sep = cls._pathmod.sep
+        if part and part[0] == sep:
+            stripped_part = part.lstrip(sep)
+            # According to POSIX path resolution:
+            # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
+            # "A pathname that begins with two successive slashes may be
+            # interpreted in an implementation-defined manner, although more
+            # than two leading slashes shall be treated as a single slash".
+            if len(part) - len(stripped_part) == 2:
+                return '', sep * 2, stripped_part
+            else:
+                return '', sep, stripped_part
+        else:
+            return '', '', part
 
     @classmethod
     def _parse_args(cls, args):
@@ -724,12 +742,12 @@ class PurePath(object):
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        raise NotImplementedError
+        return bool(self._root)
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        raise NotImplementedError
+        return False
 
     def match(self, path_pattern):
         """
@@ -768,31 +786,7 @@ class PurePosixPath(PurePath):
     However, you can also instantiate it directly on any system.
     """
     _pathmod = posixpath
-    _case_insensitive = False
     __slots__ = ()
-
-    @classmethod
-    def _splitroot(cls, part):
-        sep = cls._pathmod.sep
-        if part and part[0] == sep:
-            stripped_part = part.lstrip(sep)
-            # According to POSIX path resolution:
-            # http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap04.html#tag_04_11
-            # "A pathname that begins with two successive slashes may be
-            # interpreted in an implementation-defined manner, although more
-            # than two leading slashes shall be treated as a single slash".
-            if len(part) - len(stripped_part) == 2:
-                return '', sep * 2, stripped_part
-            else:
-                return '', sep, stripped_part
-        else:
-            return '', '', part
-
-    def is_absolute(self):
-        return bool(self._root)
-
-    def is_reserved(self):
-        return False
 
     def as_uri(self):
         # We represent the path using the local filesystem encoding,
