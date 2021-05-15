@@ -23,6 +23,7 @@
 import threading
 import unittest
 import sqlite3 as sqlite
+import subprocess
 import sys
 
 from test.support.os_helper import TESTFN, unlink
@@ -933,6 +934,68 @@ class SqliteOnConflictTests(unittest.TestCase):
         self.assertEqual(self.cu.fetchall(), [('Very different data!', 'foo')])
 
 
+class MultiprocessTests(unittest.TestCase):
+    def setUp(self):
+        with sqlite.connect(TESTFN) as cx:
+            cx.execute("create table t(t)")
+
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def test_rollback_if_db_is_locked(self):
+        TIMEOUT = 0.01
+        SCRIPT = f"""
+import sqlite3
+input()  # wait for parent process to start
+cx = sqlite3.connect("{TESTFN}", timeout={TIMEOUT})
+try:
+    with cx:
+        cx.execute("insert into t values('test')")
+except Exception as exc:
+    print(exc)
+else:
+    print("no error in sub")
+input()   # keep proc open till parent calls
+        """
+
+        # spawn child process
+        proc = subprocess.Popen(
+            [sys.executable, "-c", SCRIPT],
+            encoding="utf-8",
+            bufsize=0,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        self.addCleanup(proc.communicate)
+
+        # connect to db, and create a UDF that waits for child
+        cx = sqlite.connect(TESTFN, timeout=TIMEOUT)
+        def wait():
+            proc.stdin.write("\n")  # tell child to connect
+            self.assertIn("database is locked", proc.stdout.readline())
+        cx.create_function("wait", 0, wait)
+
+        # execute two transactions; both will try to lock the db
+        cx.executescript("""
+            begin transaction;
+            select * from t;
+            select wait();
+            rollback;
+            begin transaction;
+            select * from t;
+            rollback;
+        """)
+
+        # terminate child process
+        self.assertIsNone(proc.returncode)
+        try:
+            proc.communicate(input="\n", timeout=0.1)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+
+
 def suite():
     tests = [
         ClosedConTests,
@@ -942,6 +1005,7 @@ def suite():
         CursorTests,
         ExtensionTests,
         ModuleTests,
+        MultiprocessTests,
         SqliteOnConflictTests,
         ThreadTests,
     ]

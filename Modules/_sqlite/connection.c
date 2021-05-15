@@ -1839,17 +1839,22 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *exc_tb)
 /*[clinic end generated code: output=0705200e9321202a input=bd66f1532c9c54a7]*/
 {
-    const char* method_name;
+    int commit = 0;
     PyObject* result;
 
     if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
-        method_name = "commit";
+        commit = 1;
+        result = pysqlite_connection_commit_impl(self);
     } else {
-        method_name = "rollback";
+        result = pysqlite_connection_rollback_impl(self);
     }
 
-    result = PyObject_CallMethod((PyObject*)self, method_name, NULL);
     if (!result) {
+        /* If commit failed, rollback */
+        if (commit) {
+            result = pysqlite_connection_rollback_impl(self);
+            Py_XDECREF(result);
+        }
         return NULL;
     }
     Py_DECREF(result);
