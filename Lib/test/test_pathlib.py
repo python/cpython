@@ -45,7 +45,6 @@ class _BasePurePathTest(object):
 
     def setUp(self):
         p = self.cls('a')
-        self.flavour = p._flavour
         self.sep = p._pathmod.sep
         self.altsep = p._pathmod.altsep
 
@@ -1290,12 +1289,12 @@ class PurePathTest(_BasePurePathTest, unittest.TestCase):
         self.assertIs(type(p),
             pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath)
 
-    def test_different_flavours_unequal(self):
+    def test_different_types_unequal(self):
         p = pathlib.PurePosixPath('a')
         q = pathlib.PureWindowsPath('a')
         self.assertNotEqual(p, q)
 
-    def test_different_flavours_unordered(self):
+    def test_different_types_unordered(self):
         p = pathlib.PurePosixPath('a')
         q = pathlib.PureWindowsPath('a')
         with self.assertRaises(TypeError):

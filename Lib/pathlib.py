@@ -46,25 +46,6 @@ def _is_wildcard_pattern(pat):
     return "*" in pat or "?" in pat or "[" in pat
 
 
-class _Flavour(object):
-    """A flavour implements a particular (platform-specific) set of path
-    semantics."""
-
-
-class _WindowsFlavour(_Flavour):
-    # Reference for Windows paths can be found at
-    # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
-    pass
-
-
-class _PosixFlavour(_Flavour):
-    pass
-
-
-_windows_flavour = _WindowsFlavour()
-_posix_flavour = _PosixFlavour()
-
-
 class _Accessor:
     """An accessor implements a particular (system-specific or not) way of
     accessing paths on the filesystem."""
@@ -516,9 +497,9 @@ class PurePath(object):
             return self._cached_cparts
 
     def __eq__(self, other):
-        if not isinstance(other, PurePath):
+        if not isinstance(other, type(self)):
             return NotImplemented
-        return self._cparts == other._cparts and self._flavour is other._flavour
+        return self._cparts == other._cparts
 
     def __hash__(self):
         try:
@@ -528,22 +509,22 @@ class PurePath(object):
             return self._hash
 
     def __lt__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, type(self)):
             return NotImplemented
         return self._cparts < other._cparts
 
     def __le__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, type(self)):
             return NotImplemented
         return self._cparts <= other._cparts
 
     def __gt__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, type(self)):
             return NotImplemented
         return self._cparts > other._cparts
 
     def __ge__(self, other):
-        if not isinstance(other, PurePath) or self._flavour is not other._flavour:
+        if not isinstance(other, type(self)):
             return NotImplemented
         return self._cparts >= other._cparts
 
@@ -779,7 +760,6 @@ class PurePosixPath(PurePath):
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    _flavour = _posix_flavour
     _pathmod = posixpath
     _supported = (os.name != 'nt')
     _case_insensitive = False
@@ -823,7 +803,8 @@ class PureWindowsPath(PurePath):
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    _flavour = _windows_flavour
+    # Reference for Windows paths can be found at
+    # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
     _pathmod = ntpath
     _supported = (os.name == 'nt')
     _case_insensitive = True
