@@ -531,6 +531,17 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("a[1, 2]")
         self.check_src_roundtrip("a[(1, *a)]")
 
+    def test_lambda_parameters(self):
+        self.check_src_roundtrip("lambda: something")
+        self.check_src_roundtrip("four = lambda: 2 + 2")
+        self.check_src_roundtrip("lambda x: x * 2")
+        self.check_src_roundtrip("square = lambda n: n ** 2")
+        self.check_src_roundtrip("lambda x, y: x + y")
+        self.check_src_roundtrip("add = lambda x, y: x + y")
+        self.check_src_roundtrip("lambda x, y, /, z, q, *, u: None")
+        self.check_src_roundtrip("lambda x, *y, **z: None")
+
+
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
 
