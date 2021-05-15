@@ -768,7 +768,6 @@ class PurePosixPath(PurePath):
     However, you can also instantiate it directly on any system.
     """
     _pathmod = posixpath
-    _supported = (os.name != 'nt')
     _case_insensitive = False
     __slots__ = ()
 
@@ -813,7 +812,6 @@ class PureWindowsPath(PurePath):
     # Reference for Windows paths can be found at
     # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
     _pathmod = ntpath
-    _supported = (os.name == 'nt')
     _case_insensitive = True
     __slots__ = ()
 
@@ -922,7 +920,8 @@ class Path(PurePath):
     def __new__(cls, *args, **kwargs):
         if cls is Path:
             cls = WindowsPath if os.name == 'nt' else PosixPath
-        elif not cls._supported:
+        elif (issubclass(cls, PosixPath) and os.name == 'nt') or \
+             (issubclass(cls, WindowsPath) and os.name != 'nt'):
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
         return cls._from_parts(args)
