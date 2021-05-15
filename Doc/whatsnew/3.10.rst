@@ -1219,9 +1219,6 @@ The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 Add option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
 
-Add ``IP_RECVTOS`` option to receive the type of service (ToS) or DSCP/ECN fields
-(Contributed by Georg Sauthoff in :issue:`44077`.)
-
 ssl
 ---
 
