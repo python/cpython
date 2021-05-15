@@ -716,9 +716,9 @@ class _Unparser(NodeVisitor):
         self.maybe_newline()
         self.write("    " * self._indent + text)
 
-    def write(self, text):
-        """Append a piece of text"""
-        self._source.append(text)
+    def write(self, *text):
+        """Add new source parts"""
+        self._source.extend(text)
 
     @contextmanager
     def buffered(self, buffer = None):
@@ -1566,8 +1566,11 @@ class _Unparser(NodeVisitor):
 
     def visit_Lambda(self, node):
         with self.require_parens(_Precedence.TEST, node):
-            self.write("lambda ")
-            self.traverse(node.args)
+            self.write("lambda")
+            with self.buffered() as buffer:
+                self.traverse(node.args)
+            if buffer:
+                self.write(" ", *buffer)
             self.write(": ")
             self.set_precedence(_Precedence.TEST, node.body)
             self.traverse(node.body)
