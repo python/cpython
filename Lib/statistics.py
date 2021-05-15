@@ -960,7 +960,7 @@ def linear_regression(regressor, dependent_variable, /):
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     s2x = fsum((xi - xbar) ** 2.0 for xi in x)
     try:
-        slope = sxy / s2x
+        slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('regressor is constant')
     intercept = ybar - slope * xbar
