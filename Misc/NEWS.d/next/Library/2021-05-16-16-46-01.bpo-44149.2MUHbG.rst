@@ -1,0 +1,1 @@
+Add a ``key`` argument to :func:`difflib.get_close_matches`.
