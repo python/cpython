@@ -3275,6 +3275,24 @@ _tkinter_getbusywaitinterval_impl(PyObject *module)
     return Tkinter_busywaitinterval;
 }
 
+/*[clinic input]
+_tkinter.finalize_tcl
+
+Finalize the Tcl interpreter.
+
+This should be called just before an app exits, to allow Tcl to
+execute its own finalization logic. After this, tkinter can no
+longer be used, and attempts to do so will result in errors.
+[clinic start generated code]*/
+
+static PyObject *
+_tkinter_finalize_tcl_impl(PyObject *module)
+/*[clinic end generated code: output=aae15057169190f2 input=23f70c6ef17beaf6]*/
+{
+    Tcl_FinalizeThread();
+    Py_RETURN_NONE;
+}
+
 #include "clinic/_tkinter.c.h"
 
 static PyMethodDef Tktt_methods[] =
@@ -3359,6 +3377,7 @@ static PyMethodDef moduleMethods[] =
     _TKINTER_CREATE_METHODDEF
     _TKINTER_SETBUSYWAITINTERVAL_METHODDEF
     _TKINTER_GETBUSYWAITINTERVAL_METHODDEF
+    _TKINTER_FINALIZE_TCL_METHODDEF
     {NULL,                 NULL}
 };
 
