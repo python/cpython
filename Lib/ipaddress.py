@@ -669,6 +669,19 @@ class _BaseAddress(_IPAddressBase):
 
         return format(int(self), f'{alternate}0{padlen}{grouping}{fmt_base}')
 
+    @property
+    @functools.lru_cache()
+    def is_private(self):
+        """Test if this address is allocated for private networks.
+
+        Returns:
+            A boolean, True if the address is reserved per
+            iana-ipv6-special-registry for ipv6
+            and iana-ipv6-special-registry for ipv4
+
+        """
+        return any(self in net for net in self._constants._private_networks)
+
 
 @functools.total_ordering
 class _BaseNetwork(_IPAddressBase):
@@ -749,13 +762,6 @@ class _BaseNetwork(_IPAddressBase):
         else:
             # address
             return other._ip & self.netmask._ip == self.network_address._ip
-
-    def overlaps(self, other):
-        """Tell if self is partly contained in other."""
-        return self.network_address in other or (
-            self.broadcast_address in other or (
-                other.network_address in self or (
-                    other.broadcast_address in self)))
 
     @functools.cached_property
     def broadcast_address(self):
@@ -1046,6 +1052,13 @@ class _BaseNetwork(_IPAddressBase):
             raise TypeError(f"Unable to test subnet containment "
                             f"between {a} and {b}")
 
+    def overlaps(self, other):
+        """Tell if self is partly contained in other."""
+        if not isinstance(other, _BaseNetwork) or (
+            self.version != other.version):
+            return False
+        return self.subnet_of(other) or self.supernet_of(other)
+
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
         return self._is_subnet_of(self, other)
@@ -1324,18 +1337,6 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
     @property
     @functools.lru_cache()
-    def is_private(self):
-        """Test if this address is allocated for private networks.
-
-        Returns:
-            A boolean, True if the address is reserved per
-            iana-ipv4-special-registry.
-
-        """
-        return any(self in net for net in self._constants._private_networks)
-
-    @property
-    @functools.lru_cache()
     def is_global(self):
         return self not in self._constants._public_network and not self.is_private
 
@@ -1517,7 +1518,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             self.hosts = lambda: [IPv4Address(addr)]
 
     @property
-    @functools.lru_cache()
     def is_global(self):
         """Test if this address is allocated for public networks.
 
@@ -1526,10 +1526,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
             iana-ipv4-special-registry.
 
         """
-        return (not (self.network_address in IPv4Network('100.64.0.0/10') and
-                    self.broadcast_address in IPv4Network('100.64.0.0/10')) and
-                not self.is_private)
-
+        return self.network_address.is_global
 
 class _IPv4Constants:
     _linklocal_network = IPv4Network('169.254.0.0/16')
@@ -1994,18 +1991,6 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         """
         return self in self._constants._sitelocal_network
-
-    @property
-    @functools.lru_cache()
-    def is_private(self):
-        """Test if this address is allocated for private networks.
-
-        Returns:
-            A boolean, True if the address is reserved per
-            iana-ipv6-special-registry.
-
-        """
-        return any(self in net for net in self._constants._private_networks)
 
     @property
     def is_global(self):
