@@ -4400,15 +4400,18 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     /* Our oparg encodes 2 pieces of information: the conversion
        character, and whether or not a format_spec was provided.
 
-       Convert the conversion char to 3 bits:
-           : 000  0x0  FVC_NONE   The default if nothing specified.
-       !s  : 001  0x1  FVC_STR
-       !r  : 010  0x2  FVC_REPR
-       !a  : 011  0x3  FVC_ASCII
+       Convert the conversion char to 4 bits:
+           : 0000  0x0  FVC_NONE   The default if nothing specified.
+       !s  : 0001  0x1  FVC_STR
+       !r  : 0010  0x2  FVC_REPR
+       !a  : 0011  0x3  FVC_ASCII
+       !d  : 0100  0x4  FVC_INT
+       !i  : 0101  0x5  FVC_INDEX
+       !f  : 0110  0x6  FVC_FLOAT
 
        next bit is whether or not we have a format spec:
-       yes : 100  0x4
-       no  : 000  0x0
+       yes : 1000  0x8
+       no  : 0000  0x0
     */
 
     int conversion = e->v.FormattedValue.conversion;
@@ -4421,6 +4424,9 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     case 's': oparg = FVC_STR;   break;
     case 'r': oparg = FVC_REPR;  break;
     case 'a': oparg = FVC_ASCII; break;
+    case 'd': oparg = FVC_INT; break;
+    case 'i': oparg = FVC_INDEX; break;
+    case 'f': oparg = FVC_FLOAT; break;
     case -1:  oparg = FVC_NONE;  break;
     default:
         PyErr_Format(PyExc_SystemError,

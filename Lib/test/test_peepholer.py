@@ -1,4 +1,5 @@
 import dis
+from itertools import combinations, product
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
@@ -493,6 +494,29 @@ class TestTranforms(BytecodeTestCase):
         def genexpr():
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
+
+    def test_format(self):
+        flags = '-+ #0'
+        testcases = [
+            *product(('', '1234',), 'sra'),
+            *product((1234, -1234), 'duioxX'),
+            *product((1234.5678901, -1234.5678901), 'duifegFEG'),
+            *product((float('inf'), -float('inf')), 'fegFEG'),
+        ]
+        width_precs = [
+            *product(('', '1', '30'), ('', '.', '.0', '.2')),
+            ('', '.40'),
+            ('30', '.40'),
+        ]
+        for value, suffix in testcases:
+            for width, prec in width_precs:
+                for r in range(len(flags) + 1):
+                    for spec in combinations(flags, r):
+                        fmt = '%' + ''.join(spec) + width + prec + suffix
+                        with self.subTest(fmt=fmt, value=value):
+                            s1 = fmt % value
+                            s2 = eval(f'{fmt!r} % (x,)', {'x': value})
+                            self.assertEqual(s2, s1, f'{fmt = }')
 
 
 class TestBuglets(unittest.TestCase):

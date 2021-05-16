@@ -4,6 +4,7 @@ import sys
 import types
 import collections
 import io
+import operator
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
@@ -22,6 +23,9 @@ FORMAT_VALUE_CONVERTERS = (
     (str, 'str'),
     (repr, 'repr'),
     (ascii, 'ascii'),
+    (int, 'int'),
+    (operator.index, 'index'),
+    (float, 'float'),
 )
 MAKE_FUNCTION = opmap['MAKE_FUNCTION']
 MAKE_FUNCTION_FLAGS = ('defaults', 'kwdefaults', 'annotations', 'closure')
@@ -383,8 +387,8 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
             elif op in hasfree:
                 argval, argrepr = _get_name_info(arg, cells)
             elif op == FORMAT_VALUE:
-                argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
-                argval = (argval, bool(arg & 0x4))
+                argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x7]
+                argval = (argval, bool(arg & 0x8))
                 if argval[1]:
                     if argrepr:
                         argrepr += ', '

@@ -1215,20 +1215,30 @@ All of the following opcodes use their arguments.
    an optional *fmt_spec* from the stack, then a required *value*.
    *flags* is interpreted as follows:
 
-   * ``(flags & 0x03) == 0x00``: *value* is formatted as-is.
-   * ``(flags & 0x03) == 0x01``: call :func:`str` on *value* before
+   * ``(flags & 0x07) == 0x00``: *value* is formatted as-is.
+   * ``(flags & 0x07) == 0x01``: call :func:`str` on *value* before
      formatting it.
-   * ``(flags & 0x03) == 0x02``: call :func:`repr` on *value* before
+   * ``(flags & 0x07) == 0x02``: call :func:`repr` on *value* before
      formatting it.
-   * ``(flags & 0x03) == 0x03``: call :func:`ascii` on *value* before
+   * ``(flags & 0x07) == 0x03``: call :func:`ascii` on *value* before
      formatting it.
-   * ``(flags & 0x04) == 0x04``: pop *fmt_spec* from the stack and use
+   * ``(flags & 0x07) == 0x04``: convert *value* to :class:`int` with
+     truncating before formatting it.
+   * ``(flags & 0x07) == 0x05``: call :func:`operator.index` on *value* before
+     formatting it.
+   * ``(flags & 0x07) == 0x06``: convert *value* to :class:`float` before
+     formatting it.
+   * ``(flags & 0x08) == 0x08``: pop *fmt_spec* from the stack and use
      it, else use an empty *fmt_spec*.
 
    Formatting is performed using :c:func:`PyObject_Format`.  The
    result is pushed on the stack.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.11
+      Added support of lossy and lossless convertions to :class:`int`
+      and :class:`float`.
 
 
 .. opcode:: MATCH_CLASS (count)

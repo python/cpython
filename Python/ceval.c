@@ -4378,6 +4378,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
             case FVC_ASCII: conv_fn = PyObject_ASCII; break;
+            case FVC_INT: conv_fn = PyNumber_Long; break;
+            case FVC_INDEX: conv_fn = PyNumber_Index; break;
+            case FVC_FLOAT: conv_fn = PyNumber_Float; break;
             default:
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "unexpected conversion flag %d",
