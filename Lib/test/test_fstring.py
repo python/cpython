@@ -664,6 +664,9 @@ x = (
         self.assertAllRaise(SyntaxError, 'unterminated string literal',
                             ["f'{\n}'",
                              ])
+    def test_newlines_before_syntax_error(self):
+        self.assertAllRaise(SyntaxError, "invalid syntax",
+                ["f'{.}'", "\nf'{.}'", "\n\nf'{.}'"])
 
     def test_backslashes_in_string_part(self):
         self.assertEqual(f'\t', '\t')
@@ -987,7 +990,7 @@ x = (
                              ])
 
     def test_assignment(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, r'invalid syntax',
                             ["f'' = 3",
                              "f'{0}' = x",
                              "f'{x}' = x",
@@ -1107,7 +1110,7 @@ x = (
         # see issue 38964
         with temp_cwd() as cwd:
             file_path = os.path.join(cwd, 't.py')
-            with open(file_path, 'w') as f:
+            with open(file_path, 'w', encoding="utf-8") as f:
                 f.write('f"{a b}"') # This generates a SyntaxError
             _, _, stderr = assert_python_failure(file_path,
                                                  PYTHONIOENCODING='ascii')
@@ -1271,6 +1274,15 @@ x = (
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             f'{1:_,}'
+
+    def test_syntax_error_for_starred_expressions(self):
+        error_msg = re.escape("cannot use starred expression here")
+        with self.assertRaisesRegex(SyntaxError, error_msg):
+            compile("f'{*a}'", "?", "exec")
+
+        error_msg = re.escape("cannot use double starred expression here")
+        with self.assertRaisesRegex(SyntaxError, error_msg):
+            compile("f'{**a}'", "?", "exec")
 
 if __name__ == '__main__':
     unittest.main()

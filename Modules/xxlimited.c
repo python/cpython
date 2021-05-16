@@ -55,6 +55,8 @@
           pass
    */
 
+#define Py_LIMITED_API 0x030a0000
+
 #include "Python.h"
 
 // Module state

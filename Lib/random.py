@@ -154,16 +154,11 @@ class Random(_random.Random):
         elif version == 2 and isinstance(a, (str, bytes, bytearray)):
             if isinstance(a, str):
                 a = a.encode()
-            a += _sha512(a).digest()
-            a = int.from_bytes(a, 'big')
+            a = int.from_bytes(a + _sha512(a).digest(), 'big')
 
         elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
-            _warn('Seeding based on hashing is deprecated\n'
-                  'since Python 3.9 and will be removed in a subsequent '
-                  'version. The only \n'
-                  'supported seed types are: None, '
-                  'int, float, str, bytes, and bytearray.',
-                  DeprecationWarning, 2)
+            raise TypeError('The only supported seed types are: None,\n'
+                            'int, float, str, bytes, and bytearray.')
 
         super().seed(a)
         self.gauss_next = None
@@ -303,17 +298,15 @@ class Random(_random.Random):
         try:
             istart = _index(start)
         except TypeError:
-            if int(start) == start:
-                istart = int(start)
-                _warn('Float arguments to randrange() have been deprecated\n'
-                      'since Python 3.10 and will be removed in a subsequent '
-                      'version.',
-                      DeprecationWarning, 2)
-            else:
+            istart = int(start)
+            if istart != start:
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer arg 1 for randrange()")
-
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
+                  DeprecationWarning, 2)
         if stop is None:
             # We don't check for "step != 1" because it hasn't been
             # type checked and converted to an integer yet.
@@ -327,31 +320,29 @@ class Random(_random.Random):
         try:
             istop = _index(stop)
         except TypeError:
-            if int(stop) == stop:
-                istop = int(stop)
-                _warn('Float arguments to randrange() have been deprecated\n'
-                      'since Python 3.10 and will be removed in a subsequent '
-                      'version.',
-                      DeprecationWarning, 2)
-            else:
+            istop = int(stop)
+            if istop != stop:
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer stop for randrange()")
-
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
+                  DeprecationWarning, 2)
+        width = istop - istart
         try:
             istep = _index(step)
         except TypeError:
-            if int(step) == step:
-                istep = int(step)
-                _warn('Float arguments to randrange() have been deprecated\n'
-                      'since Python 3.10 and will be removed in a subsequent '
-                      'version.',
-                      DeprecationWarning, 2)
-            else:
+            istep = int(step)
+            if istep != step:
                 _warn('randrange() will raise TypeError in the future',
                       DeprecationWarning, 2)
                 raise ValueError("non-integer step for randrange()")
-        width = istop - istart
+            _warn('non-integer arguments to randrange() have been deprecated '
+                  'since Python 3.10 and will be removed in a subsequent '
+                  'version',
+                  DeprecationWarning, 2)
+        # Fast path.
         if istep == 1:
             if width > 0:
                 return istart + self._randbelow(width)
@@ -382,34 +373,17 @@ class Random(_random.Random):
         # raises IndexError if seq is empty
         return seq[self._randbelow(len(seq))]
 
-    def shuffle(self, x, random=None):
-        """Shuffle list x in place, and return None.
+    def shuffle(self, x):
+        """Shuffle list x in place, and return None."""
 
-        Optional argument random is a 0-argument function returning a
-        random float in [0.0, 1.0); if it is the default None, the
-        standard random.random will be used.
-
-        """
-
-        if random is None:
-            randbelow = self._randbelow
-            for i in reversed(range(1, len(x))):
-                # pick an element in x[:i+1] with which to exchange x[i]
-                j = randbelow(i + 1)
-                x[i], x[j] = x[j], x[i]
-        else:
-            _warn('The *random* parameter to shuffle() has been deprecated\n'
-                  'since Python 3.9 and will be removed in a subsequent '
-                  'version.',
-                  DeprecationWarning, 2)
-            floor = _floor
-            for i in reversed(range(1, len(x))):
-                # pick an element in x[:i+1] with which to exchange x[i]
-                j = floor(random() * (i + 1))
-                x[i], x[j] = x[j], x[i]
+        randbelow = self._randbelow
+        for i in reversed(range(1, len(x))):
+            # pick an element in x[:i+1] with which to exchange x[i]
+            j = randbelow(i + 1)
+            x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k, *, counts=None):
-        """Chooses k unique random elements from a population sequence or set.
+        """Chooses k unique random elements from a population sequence.
 
         Returns a new list containing elements from the population while
         leaving the original population unchanged.  The resulting list is
@@ -462,13 +436,8 @@ class Random(_random.Random):
         # causing them to eat more entropy than necessary.
 
         if not isinstance(population, _Sequence):
-            if isinstance(population, _Set):
-                _warn('Sampling from a set deprecated\n'
-                      'since Python 3.9 and will be removed in a subsequent version.',
-                      DeprecationWarning, 2)
-                population = tuple(population)
-            else:
-                raise TypeError("Population must be a sequence.  For dicts or sets, use sorted(d).")
+            raise TypeError("Population must be a sequence.  "
+                            "For dicts or sets, use sorted(d).")
         n = len(population)
         if counts is not None:
             cum_counts = list(_accumulate(counts))
@@ -522,7 +491,15 @@ class Random(_random.Random):
                 floor = _floor
                 n += 0.0    # convert to float for a small speed improvement
                 return [population[floor(random() * n)] for i in _repeat(None, k)]
-            cum_weights = list(_accumulate(weights))
+            try:
+                cum_weights = list(_accumulate(weights))
+            except TypeError:
+                if not isinstance(weights, int):
+                    raise
+                k = weights
+                raise TypeError(
+                    f'The number of choices must be a keyword argument: {k=}'
+                ) from None
         elif weights is not None:
             raise TypeError('Cannot specify both weights and cumulative weights')
         if len(cum_weights) != n:
@@ -885,7 +862,7 @@ def _test_generator(n, func, args):
     from time import perf_counter
 
     t0 = perf_counter()
-    data = [func(*args) for i in range(n)]
+    data = [func(*args) for i in _repeat(None, n)]
     t1 = perf_counter()
 
     xbar = mean(data)

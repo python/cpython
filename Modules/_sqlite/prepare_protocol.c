@@ -23,12 +23,15 @@
 
 #include "prepare_protocol.h"
 
-int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* args, PyObject* kwargs)
+static int
+pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol *self, PyObject *args,
+                               PyObject *kwargs)
 {
     return 0;
 }
 
-void pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol* self)
+static void
+pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -52,7 +55,8 @@ static PyType_Spec type_spec = {
 
 PyTypeObject *pysqlite_PrepareProtocolType = NULL;
 
-extern int pysqlite_prepare_protocol_setup_types(PyObject *module)
+int
+pysqlite_prepare_protocol_setup_types(PyObject *module)
 {
     pysqlite_PrepareProtocolType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &type_spec, NULL);
     if (pysqlite_PrepareProtocolType == NULL) {

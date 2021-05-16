@@ -17,7 +17,7 @@
 /* SHA objects */
 
 #include "Python.h"
-#include "pycore_bitutils.h"      // _Py_bswap32()
+#include "pycore_bitutils.h"      // _Py_bswap64()
 #include "structmember.h"         // PyMemberDef
 #include "hashlib.h"
 #include "pystrhex.h"
@@ -94,7 +94,7 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://libtom.org
+ * Tom St Denis, tomstdenis@iahu.ca, https://www.libtom.net
  */
 
 
@@ -602,7 +602,7 @@ static PyType_Slot sha512_sha384_type_slots[] = {
 static PyType_Spec sha512_sha384_type_spec = {
     .name = "_sha512.sha384",
     .basicsize =  sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = sha512_sha384_type_slots
 };
 
@@ -619,7 +619,7 @@ static PyType_Slot sha512_sha512_type_slots[] = {
 static PyType_Spec sha512_sha512_type_spec = {
     .name = "_sha512.sha512",
     .basicsize =  sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = sha512_sha512_type_slots
 };
 

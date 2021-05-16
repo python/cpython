@@ -67,6 +67,7 @@
 /* ---------------------------------------------------------------*/
 
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif
@@ -86,7 +87,7 @@ typedef struct {
 static inline _randomstate*
 get_random_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_randomstate *)state;
 }
@@ -538,7 +539,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (PyTuple_GET_SIZE(args) == 1)
         arg = PyTuple_GET_ITEM(args, 0);
-    
+
     tmp = random_seed(self, arg);
     if (tmp == NULL) {
         Py_DECREF(self);
@@ -596,7 +597,7 @@ _random_exec(PyObject *module)
     }
 
     /* Look up and save int.__abs__, which is needed in random_seed(). */
-    PyObject *longval = longval = PyLong_FromLong(0);
+    PyObject *longval = PyLong_FromLong(0);
     if (longval == NULL) {
         return -1;
     }

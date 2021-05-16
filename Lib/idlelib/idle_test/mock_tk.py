@@ -59,27 +59,26 @@ class Mbox_func:
 class Mbox:
     """Mock for tkinter.messagebox with an Mbox_func for each function.
 
-    This module was 'tkMessageBox' in 2.x; hence the 'import as' in  3.x.
     Example usage in test_module.py for testing functions in module.py:
     ---
 from idlelib.idle_test.mock_tk import Mbox
 import module
 
-orig_mbox = module.tkMessageBox
+orig_mbox = module.messagebox
 showerror = Mbox.showerror  # example, for attribute access in test methods
 
 class Test(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        module.tkMessageBox = Mbox
+        module.messagebox = Mbox
 
     @classmethod
     def tearDownClass(cls):
-        module.tkMessageBox = orig_mbox
+        module.messagebox = orig_mbox
     ---
     For 'ask' functions, set func.result return value before calling the method
-    that uses the message function. When tkMessageBox functions are the
+    that uses the message function. When messagebox functions are the
     only gui alls in a method, this replacement makes the method gui-free,
     """
     askokcancel = Mbox_func()     # True or False

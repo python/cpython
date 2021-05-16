@@ -4,7 +4,7 @@ Contributing to Python
 Build Status
 ------------
 
-- master
+- main
 
   + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
 

@@ -753,7 +753,7 @@ even further by means of a small helper class::
 
    class Callback(ExitStack):
        def __init__(self, callback, /, *args, **kwds):
-           super(Callback, self).__init__()
+           super().__init__()
            self.callback(callback, *args, **kwds)
 
        def cancel(self):

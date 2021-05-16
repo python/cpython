@@ -74,7 +74,7 @@ typedef struct {
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, https://www.libtom.net
  */
 
 /* rotate the hard way (platform optimizations could be done) */
@@ -462,7 +462,7 @@ static PyType_Slot sha1_type_slots[] = {
 static PyType_Spec sha1_type_spec = {
     .name = "_sha1.sha1",
     .basicsize =  sizeof(SHA1object),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = sha1_type_slots
 };
 
@@ -554,7 +554,7 @@ _sha1_exec(PyObject *module)
     }
 
     Py_INCREF(st->sha1_type);
-    if (PyModule_AddObject(module, 
+    if (PyModule_AddObject(module,
                            "SHA1Type",
                            (PyObject *)st->sha1_type) < 0) {
         Py_DECREF(st->sha1_type);

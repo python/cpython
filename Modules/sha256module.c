@@ -106,7 +106,7 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://libtom.org
+ * Tom St Denis, tomstdenis@iahu.ca, https://www.libtom.net
  */
 
 
@@ -544,14 +544,14 @@ static PyType_Slot sha256_types_slots[] = {
 static PyType_Spec sha224_type_spec = {
     .name = "_sha256.sha224",
     .basicsize = sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = sha256_types_slots
 };
 
 static PyType_Spec sha256_type_spec = {
     .name = "_sha256.sha256",
     .basicsize = sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = sha256_types_slots
 };
 

@@ -1,1 +1,0 @@
-Require SQLite 3.7.15 or newer. Patch by Erlend E. Aasland.

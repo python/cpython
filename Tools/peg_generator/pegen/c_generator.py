@@ -8,6 +8,7 @@ from pegen import grammar
 from pegen.grammar import (
     Alt,
     Cut,
+    Forced,
     Gather,
     GrammarVisitor,
     Group,
@@ -30,10 +31,9 @@ EXTENSION_PREFIX = """\
 #include "pegen.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
-extern int Py_DebugFlag;
-#define D(x) if (Py_DebugFlag) x;
+#  define D(x) if (Py_DebugFlag) x;
 #else
-#define D(x)
+#  define D(x)
 #endif
 
 """
@@ -46,6 +46,7 @@ _PyPegen_parse(Parser *p)
     // Initialize keywords
     p->keywords = reserved_keywords;
     p->n_keyword_lists = n_keyword_lists;
+    p->soft_keywords = soft_keywords;
 
     return start_rule(p);
 }
@@ -66,6 +67,7 @@ BASE_NODETYPES = {
     "NAME": NodeTypes.NAME_TOKEN,
     "NUMBER": NodeTypes.NUMBER_TOKEN,
     "STRING": NodeTypes.STRING_TOKEN,
+    "SOFT_KEYWORD": NodeTypes.SOFT_KEYWORD,
 }
 
 
@@ -252,6 +254,24 @@ class CCallMakerVisitor(GrammarVisitor):
     def visit_NegativeLookahead(self, node: NegativeLookahead) -> FunctionCall:
         return self.lookahead_call_helper(node, 0)
 
+    def visit_Forced(self, node: Forced) -> FunctionCall:
+        call = self.generate_call(node.node)
+        if call.nodetype == NodeTypes.GENERIC_TOKEN:
+            val = ast.literal_eval(node.node.value)
+            assert val in self.exact_tokens, f"{node.value} is not a known literal"
+            type = self.exact_tokens[val]
+            return FunctionCall(
+                assigned_variable="_literal",
+                function=f"_PyPegen_expect_forced_token",
+                arguments=["p", type, f'"{val}"'],
+                nodetype=NodeTypes.GENERIC_TOKEN,
+                return_type="Token *",
+                comment=f"forced_token='{val}'",
+            )
+        else:
+            raise NotImplementedError(
+                    f"Forced tokens don't work with {call.nodetype} tokens")
+
     def visit_Opt(self, node: Opt) -> FunctionCall:
         call = self.generate_call(node.node)
         return FunctionCall(
@@ -393,6 +413,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         if subheader:
             self.print(subheader)
         self._setup_keywords()
+        self._setup_soft_keywords()
         for i, (rulename, rule) in enumerate(self.todo.items(), 1000):
             comment = "  // Left-recursive" if rule.left_recursive else ""
             self.print(f"#define {rulename}_type {i}{comment}")
@@ -454,6 +475,15 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                             self.print(f'{{"{keyword_str}", {keyword_type}}},')
                         self.print("{NULL, -1},")
                     self.print("},")
+        self.print("};")
+
+    def _setup_soft_keywords(self) -> None:
+        soft_keywords = sorted(self.callmakervisitor.soft_keywords)
+        self.print("static char *soft_keywords[] = {")
+        with self.indent():
+            for keyword in soft_keywords:
+                self.print(f'"{keyword}",')
+            self.print("NULL,")
         self.print("};")
 
     def _set_up_token_start_metadata_extraction(self) -> None:
@@ -564,8 +594,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!_children")
-            self.print("ssize_t _children_capacity = 1;")
-            self.print("ssize_t _n = 0;")
+            self.print("Py_ssize_t _children_capacity = 1;")
+            self.print("Py_ssize_t _n = 0;")
             if any(alt.action and "EXTRA" in alt.action for alt in rhs.alts):
                 self._set_up_token_start_metadata_extraction()
             self.visit(

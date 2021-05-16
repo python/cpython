@@ -316,15 +316,10 @@ static void
 Dialect_dealloc(DialectObj *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    Py_CLEAR(self->lineterminator);
-    tp->tp_free((PyObject *)self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear((PyObject *)self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
-}
-
-static void
-Dialect_finalize(DialectObj *self)
-{
-    Py_CLEAR(self->lineterminator);
 }
 
 static char *dialect_kws[] = {
@@ -512,21 +507,37 @@ PyDoc_STRVAR(Dialect_Type_doc,
 "\n"
 "The Dialect type records CSV parsing and generation options.\n");
 
+static int
+Dialect_clear(DialectObj *self)
+{
+    Py_CLEAR(self->lineterminator);
+    return 0;
+}
+
+static int
+Dialect_traverse(DialectObj *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->lineterminator);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_doc, (char*)Dialect_Type_doc},
     {Py_tp_members, Dialect_memberlist},
     {Py_tp_getset, Dialect_getsetlist},
     {Py_tp_new, dialect_new},
     {Py_tp_methods, dialect_methods},
-    {Py_tp_finalize, Dialect_finalize},
     {Py_tp_dealloc, Dialect_dealloc},
+    {Py_tp_clear, Dialect_clear},
+    {Py_tp_traverse, Dialect_traverse},
     {0, NULL}
 };
 
 PyType_Spec Dialect_Type_spec = {
     .name = "_csv.Dialect",
     .basicsize = sizeof(DialectObj),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = Dialect_Type_slots,
 };
 
@@ -885,9 +896,7 @@ Reader_dealloc(ReaderObj *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->dialect);
-    Py_CLEAR(self->input_iter);
-    Py_CLEAR(self->fields);
+    tp->tp_clear((PyObject *)self);
     if (self->field != NULL) {
         PyMem_Free(self->field);
         self->field = NULL;
@@ -896,24 +905,13 @@ Reader_dealloc(ReaderObj *self)
     Py_DECREF(tp);
 }
 
-static void
-Reader_finalize(ReaderObj *self)
-{
-    Py_CLEAR(self->dialect);
-    Py_CLEAR(self->input_iter);
-    Py_CLEAR(self->fields);
-    if (self->field != NULL) {
-        PyMem_Free(self->field);
-        self->field = NULL;
-    }
-}
-
 static int
 Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->dialect);
     Py_VISIT(self->input_iter);
     Py_VISIT(self->fields);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -948,12 +946,11 @@ static struct PyMemberDef Reader_memberlist[] = {
 static PyType_Slot Reader_Type_slots[] = {
     {Py_tp_doc, (char*)Reader_Type_doc},
     {Py_tp_traverse, Reader_traverse},
-    {Py_tp_clear, Reader_clear},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, Reader_iternext},
     {Py_tp_methods, Reader_methods},
     {Py_tp_members, Reader_memberlist},
-    {Py_tp_finalize, Reader_finalize},
+    {Py_tp_clear, Reader_clear},
     {Py_tp_dealloc, Reader_dealloc},
     {0, NULL}
 };
@@ -1339,6 +1336,7 @@ Writer_traverse(WriterObj *self, visitproc visit, void *arg)
     Py_VISIT(self->dialect);
     Py_VISIT(self->write);
     Py_VISIT(self->error_obj);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -1352,12 +1350,16 @@ Writer_clear(WriterObj *self)
 }
 
 static void
-Writer_finalize(WriterObj *self)
+Writer_dealloc(WriterObj *self)
 {
-    Writer_clear(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear((PyObject *)self);
     if (self->rec != NULL) {
         PyMem_Free(self->rec);
     }
+    PyObject_GC_Del(self);
+    Py_DECREF(tp);
 }
 
 PyDoc_STRVAR(Writer_Type_doc,
@@ -1368,10 +1370,10 @@ PyDoc_STRVAR(Writer_Type_doc,
 );
 
 static PyType_Slot Writer_Type_slots[] = {
-    {Py_tp_finalize, Writer_finalize},
     {Py_tp_doc, (char*)Writer_Type_doc},
     {Py_tp_traverse, Writer_traverse},
     {Py_tp_clear, Writer_clear},
+    {Py_tp_dealloc, Writer_dealloc},
     {Py_tp_methods, Writer_methods},
     {Py_tp_members, Writer_memberlist},
     {0, NULL}
@@ -1515,7 +1517,7 @@ static PyType_Slot error_slots[] = {
 
 PyType_Spec error_spec = {
     .name = "_csv.Error",
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = error_slots,
 };
 

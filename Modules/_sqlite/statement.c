@@ -368,7 +368,8 @@ void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
     self->in_use = 1;
 }
 
-void pysqlite_statement_dealloc(pysqlite_Statement* self)
+static void
+pysqlite_statement_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
@@ -479,7 +480,8 @@ static PyType_Spec stmt_spec = {
 };
 PyTypeObject *pysqlite_StatementType = NULL;
 
-extern int pysqlite_statement_setup_types(PyObject *module)
+int
+pysqlite_statement_setup_types(PyObject *module)
 {
     pysqlite_StatementType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
     if (pysqlite_StatementType == NULL) {

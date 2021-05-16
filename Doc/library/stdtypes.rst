@@ -692,10 +692,9 @@ Here are the rules in detail:
   as ``-hash(-x)``.  If the resulting hash is ``-1``, replace it with
   ``-2``.
 
-- The particular values ``sys.hash_info.inf``, ``-sys.hash_info.inf``
-  and ``sys.hash_info.nan`` are used as hash values for positive
-  infinity, negative infinity, or nans (respectively).  (All hashable
-  nans have the same hash value.)
+- The particular values ``sys.hash_info.inf`` and ``-sys.hash_info.inf``
+  are used as hash values for positive
+  infinity or negative infinity (respectively).
 
 - For a :class:`complex` number ``z``, the hash values of the real
   and imaginary parts are combined by computing ``hash(z.real) +
@@ -740,7 +739,7 @@ number, :class:`float`, or :class:`complex`::
        """Compute the hash of a float x."""
 
        if math.isnan(x):
-           return sys.hash_info.nan
+           return super().__hash__()
        elif math.isinf(x):
            return sys.hash_info.inf if x > 0 else -sys.hash_info.inf
        else:
@@ -1581,13 +1580,15 @@ expression support in the :mod:`re` module).
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first encoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check
+   *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: str.endswith(suffix[, start[, end]])
@@ -2710,7 +2711,7 @@ arbitrary binary data.
 
    By default, the *errors* argument is not checked for best performances, but
    only used at the first decoding error. Enable the :ref:`Python Development
-   Mode <devmode>`, or use a debug build to check *errors*.
+   Mode <devmode>`, or use a :ref:`debug build <debug-build>` to check *errors*.
 
    .. note::
 
@@ -2722,7 +2723,8 @@ arbitrary binary data.
       Added support for keyword arguments.
 
    .. versionchanged:: 3.9
-      The *errors* is now checked in development mode and in debug mode.
+      The *errors* is now checked in development mode and
+      in :ref:`debug mode <debug-build>`.
 
 
 .. method:: bytes.endswith(suffix[, start[, end]])
@@ -5022,8 +5024,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       str | None == typing.Optional[str]
 
 .. describe:: isinstance(obj, union_object)
+.. describe:: issubclass(obj, union_object)
 
-   Calls to :func:`isinstance` are also supported with a union object::
+   Calls to :func:`isinstance` and :func:`issubclass` are also supported with a
+   union object::
 
       >>> isinstance("", int | str)
       True
@@ -5035,21 +5039,6 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
       TypeError: isinstance() argument 2 cannot contain a parameterized generic
-
-.. describe:: issubclass(obj, union_object)
-
-   Calls to :func:`issubclass` are also supported with a union object::
-
-      >>> issubclass(bool, int | str)
-      True
-
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
-
-      >>> issubclass(bool, bool | list[str])
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: issubclass() argument 2 cannot contain a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.Union` and used for :func:`isinstance` checks.  An object cannot be
@@ -5205,6 +5194,9 @@ objects because they don't contain a reference to their global execution
 environment.  Code objects are returned by the built-in :func:`compile` function
 and can be extracted from function objects through their :attr:`__code__`
 attribute. See also the :mod:`code` module.
+
+Accessing ``__code__`` raises an :ref:`auditing event <auditing>`
+``object.__getattr__`` with arguments ``obj`` and ``"__code__"``.
 
 .. index::
    builtin: exec

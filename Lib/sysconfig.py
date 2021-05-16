@@ -18,6 +18,11 @@ __all__ = [
     'parse_config_h',
 ]
 
+# Keys for get_config_var() that are never converted to Python integers.
+_ALWAYS_STR = {
+    'MACOSX_DEPLOYMENT_TARGET',
+}
+
 _INSTALL_SCHEMES = {
     'posix_prefix': {
         'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
@@ -74,7 +79,7 @@ def _getuserbase():
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
-                        "%d.%d" % sys.version_info[:2])
+                        f"{sys.version_info[0]}.{sys.version_info[1]}")
 
     return joinuser("~", ".local")
 
@@ -116,14 +121,20 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
 
 _PY_VERSION = sys.version.split()[0]
-_PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
-_PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
+_PY_VERSION_SHORT = f'{sys.version_info[0]}.{sys.version_info[1]}'
+_PY_VERSION_SHORT_NO_DOT = f'{sys.version_info[0]}{sys.version_info[1]}'
 _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 _BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 _CONFIG_VARS = None
 _USER_BASE = None
+
+# Regexes needed for parsing Makefile (and similar syntaxes,
+# like old-style Setup files).
+_variable_rx = r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)"
+_findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+_findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
 
 def _safe_realpath(path):
@@ -171,12 +182,6 @@ def is_python_build(check_home=False):
 
 _PYTHON_BUILD = is_python_build(True)
 
-if _PYTHON_BUILD:
-    for scheme in ('posix_prefix', 'posix_home'):
-        _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
-        _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
-
-
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)
@@ -184,7 +189,7 @@ def _subst_vars(s, local_vars):
         try:
             return s.format(**os.environ)
         except KeyError:
-            raise AttributeError('{%s}' % var) from None
+            raise AttributeError(f'{var}') from None
 
 def _extend_dict(target_dict, other_dict):
     target_keys = target_dict.keys()
@@ -207,41 +212,62 @@ def _expand_vars(scheme, vars):
     return res
 
 
-def _get_default_scheme():
-    if os.name == 'posix':
-        # the default scheme for posix is posix_prefix
-        return 'posix_prefix'
-    return os.name
+def _get_preferred_schemes():
+    if os.name == 'nt':
+        return {
+            'prefix': 'nt',
+            'home': 'posix_home',
+            'user': 'nt_user',
+        }
+    if sys.platform == 'darwin' and sys._framework:
+        return {
+            'prefix': 'posix_prefix',
+            'home': 'posix_home',
+            'user': 'osx_framework_user',
+        }
+    return {
+        'prefix': 'posix_prefix',
+        'home': 'posix_home',
+        'user': 'posix_user',
+    }
 
 
+def get_preferred_scheme(key):
+    scheme = _get_preferred_schemes()[key]
+    if scheme not in _INSTALL_SCHEMES:
+        raise ValueError(
+            f"{key!r} returned {scheme!r}, which is not a valid scheme "
+            f"on this platform"
+        )
+    return scheme
 
 
-def _parse_makefile(filename, vars=None):
+def get_default_scheme():
+    return get_preferred_scheme('prefix')
+
+
+def _parse_makefile(filename, vars=None, keep_unresolved=True):
     """Parse a Makefile-style file.
 
     A dictionary containing name/value pairs is returned.  If an
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
     """
-    # Regexes needed for parsing Makefile (and similar syntaxes,
-    # like old-style Setup files).
     import re
-    _variable_rx = re.compile(r"([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
-    _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
 
     if vars is None:
         vars = {}
     done = {}
     notdone = {}
 
-    with open(filename, errors="surrogateescape") as f:
+    with open(filename, encoding=sys.getfilesystemencoding(),
+              errors="surrogateescape") as f:
         lines = f.readlines()
 
     for line in lines:
         if line.startswith('#') or line.strip() == '':
             continue
-        m = _variable_rx.match(line)
+        m = re.match(_variable_rx, line)
         if m:
             n, v = m.group(1, 2)
             v = v.strip()
@@ -252,6 +278,9 @@ def _parse_makefile(filename, vars=None):
                 notdone[n] = v
             else:
                 try:
+                    if n in _ALWAYS_STR:
+                        raise ValueError
+
                     v = int(v)
                 except ValueError:
                     # insert literal `$'
@@ -271,8 +300,8 @@ def _parse_makefile(filename, vars=None):
     while len(variables) > 0:
         for name in tuple(variables):
             value = notdone[name]
-            m1 = _findvar1_rx.search(value)
-            m2 = _findvar2_rx.search(value)
+            m1 = re.search(_findvar1_rx, value)
+            m2 = re.search(_findvar2_rx, value)
             if m1 and m2:
                 m = m1 if m1.start() < m2.start() else m2
             else:
@@ -310,6 +339,8 @@ def _parse_makefile(filename, vars=None):
                         notdone[name] = value
                     else:
                         try:
+                            if name in _ALWAYS_STR:
+                                raise ValueError
                             value = int(value)
                         except ValueError:
                             done[name] = value.strip()
@@ -325,9 +356,12 @@ def _parse_makefile(filename, vars=None):
                                 done[name] = value
 
             else:
+                # Adds unresolved variables to the done dict.
+                # This is disabled when called from distutils.sysconfig
+                if keep_unresolved:
+                    done[name] = value
                 # bogus variable reference (e.g. "prefix=$/opt/python");
                 # just drop it since we can't deal
-                done[name] = value
                 variables.remove(name)
 
     # strip spurious spaces
@@ -345,21 +379,20 @@ def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
     if hasattr(sys, 'abiflags'):
-        config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
+        config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
     if hasattr(sys.implementation, '_multiarch'):
-        config_dir_name += '-%s' % sys.implementation._multiarch
+        config_dir_name += f'-{sys.implementation._multiarch}'
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 
 def _get_sysconfigdata_name():
-    return os.environ.get('_PYTHON_SYSCONFIGDATA_NAME',
-        '_sysconfigdata_{abi}_{platform}_{multiarch}'.format(
-        abi=sys.abiflags,
-        platform=sys.platform,
-        multiarch=getattr(sys.implementation, '_multiarch', ''),
-    ))
+    multiarch = getattr(sys.implementation, '_multiarch', '')
+    return os.environ.get(
+        '_PYTHON_SYSCONFIGDATA_NAME',
+        f'_sysconfigdata_{sys.abiflags}_{sys.platform}_{multiarch}',
+    )
 
 
 def _generate_posix_vars():
@@ -371,19 +404,19 @@ def _generate_posix_vars():
     try:
         _parse_makefile(makefile, vars)
     except OSError as e:
-        msg = "invalid Python installation: unable to open %s" % makefile
+        msg = f"invalid Python installation: unable to open {makefile}"
         if hasattr(e, "strerror"):
-            msg = msg + " (%s)" % e.strerror
+            msg = f"{msg} ({e.strerror})"
         raise OSError(msg)
     # load the installed pyconfig.h:
     config_h = get_config_h_filename()
     try:
-        with open(config_h) as f:
+        with open(config_h, encoding="utf-8") as f:
             parse_config_h(f, vars)
     except OSError as e:
-        msg = "invalid Python installation: unable to open %s" % config_h
+        msg = f"invalid Python installation: unable to open {config_h}"
         if hasattr(e, "strerror"):
-            msg = msg + " (%s)" % e.strerror
+            msg = f"{msg} ({e.strerror})"
         raise OSError(msg)
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
@@ -409,7 +442,7 @@ def _generate_posix_vars():
         module.build_time_vars = vars
         sys.modules[name] = module
 
-    pybuilddir = 'build/lib.%s-%s' % (get_platform(), _PY_VERSION_SHORT)
+    pybuilddir = f'build/lib.{get_platform()}-{_PY_VERSION_SHORT}'
     if hasattr(sys, "gettotalrefcount"):
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
@@ -472,6 +505,8 @@ def parse_config_h(fp, vars=None):
         if m:
             n, v = m.group(1, 2)
             try:
+                if n in _ALWAYS_STR:
+                    raise ValueError
                 v = int(v)
             except ValueError:
                 pass
@@ -505,7 +540,7 @@ def get_path_names():
     return _SCHEME_KEYS
 
 
-def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
+def get_paths(scheme=get_default_scheme(), vars=None, expand=True):
     """Return a mapping containing an install scheme.
 
     ``scheme`` is the install scheme name. If not provided, it will
@@ -517,7 +552,7 @@ def get_paths(scheme=_get_default_scheme(), vars=None, expand=True):
         return _INSTALL_SCHEMES[scheme]
 
 
-def get_path(name, scheme=_get_default_scheme(), vars=None, expand=True):
+def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
     """Return a path corresponding to the scheme.
 
     ``scheme`` is the install scheme name.
@@ -671,16 +706,16 @@ def get_platform():
         # At least on Linux/Intel, 'machine' is the processor --
         # i386, etc.
         # XXX what about Alpha, SPARC, etc?
-        return  "%s-%s" % (osname, machine)
+        return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
-            release = "%d.%s" % (int(release[0]) - 3, release[2:])
+            release = f"{int(release[0]) - 3}.{release[2:]}"
             # We can't use "platform.architecture()[0]" because a
             # bootstrap problem. We use a dict to get an error
             # if some suspicious happens.
             bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
-            machine += ".%s" % bitness[sys.maxsize]
+            machine += f".{bitness[sys.maxsize]}"
         # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
         from _aix_support import aix_platform
@@ -698,18 +733,44 @@ def get_platform():
                                             get_config_vars(),
                                             osname, release, machine)
 
-    return "%s-%s-%s" % (osname, release, machine)
+    return f"{osname}-{release}-{machine}"
 
 
 def get_python_version():
     return _PY_VERSION_SHORT
 
 
+def expand_makefile_vars(s, vars):
+    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
+    'string' according to 'vars' (a dictionary mapping variable names to
+    values).  Variables not present in 'vars' are silently expanded to the
+    empty string.  The variable values in 'vars' should not contain further
+    variable expansions; if 'vars' is the output of 'parse_makefile()',
+    you're fine.  Returns a variable-expanded version of 's'.
+    """
+    import re
+
+    # This algorithm does multiple expansion, so if vars['foo'] contains
+    # "${bar}", it will expand ${foo} to ${bar}, and then expand
+    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
+    # 'parse_makefile()', which takes care of such expansions eagerly,
+    # according to make's variable expansion semantics.
+
+    while True:
+        m = re.search(_findvar1_rx, s) or re.search(_findvar2_rx, s)
+        if m:
+            (beg, end) = m.span()
+            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
+        else:
+            break
+    return s
+
+
 def _print_dict(title, data):
     for index, (key, value) in enumerate(sorted(data.items())):
         if index == 0:
-            print('%s: ' % (title))
-        print('\t%s = "%s"' % (key, value))
+            print(f'{title}: ')
+        print(f'\t{key} = "{value}"')
 
 
 def _main():
@@ -717,9 +778,9 @@ def _main():
     if '--generate-posix-vars' in sys.argv:
         _generate_posix_vars()
         return
-    print('Platform: "%s"' % get_platform())
-    print('Python version: "%s"' % get_python_version())
-    print('Current installation scheme: "%s"' % _get_default_scheme())
+    print(f'Platform: "{get_platform()}"')
+    print(f'Python version: "{get_python_version()}"')
+    print(f'Current installation scheme: "{get_default_scheme()}"')
     print()
     _print_dict('Paths', get_paths())
     print()

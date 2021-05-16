@@ -15,6 +15,7 @@ import importlib.util
 import unittest
 import tempfile
 import shutil
+import types
 import contextlib
 
 # NOTE: There are some additional tests relating to interaction with
@@ -443,7 +444,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:27 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -697,6 +698,18 @@ and 'int' is a type.
 
 
 class TestDocTestFinder(unittest.TestCase):
+
+    def test_issue35753(self):
+        # This import of `call` should trigger issue35753 when
+        # `support.run_doctest` is called due to unwrap failing,
+        # however with a patched doctest this should succeed.
+        from unittest.mock import call
+        dummy_module = types.ModuleType("dummy")
+        dummy_module.__dict__['inject_call'] = call
+        try:
+            support.run_doctest(dummy_module, verbosity=True)
+        except ValueError as e:
+            raise support.TestFailed("Doctest unwrap failed") from e
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'
@@ -2846,7 +2859,7 @@ the verbose version, and then check the output:
     >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w') as f:
+    ...     with open(fn, 'w', encoding='utf-8') as f:
     ...         _ = f.write('This is a very simple test file.\n')
     ...         _ = f.write('   >>> 1 + 1\n')
     ...         _ = f.write('   2\n')
@@ -2898,7 +2911,7 @@ text files).
     >>> from test.support.os_helper import temp_dir
     >>> with temp_dir() as tmpdir:
     ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w') as f:
+    ...     with open(fn, 'w', encoding="utf-8") as f:
     ...         _ = f.write('This is another simple test file.\n')
     ...         _ = f.write('   >>> 1 + 1\n')
     ...         _ = f.write('   2\n')
@@ -2909,7 +2922,7 @@ text files).
     ...         _ = f.write('\n')
     ...         _ = f.write('And that is it.\n')
     ...     fn2 = os.path.join(tmpdir, 'myfile2.py')
-    ...     with open(fn2, 'w') as f:
+    ...     with open(fn2, 'w', encoding='utf-8') as f:
     ...         _ = f.write('def test_func():\n')
     ...         _ = f.write('   \"\"\"\n')
     ...         _ = f.write('   This is simple python test function.\n')

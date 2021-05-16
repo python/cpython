@@ -22,6 +22,11 @@
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
+// Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
+// tested on purpose here.
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
 static void _testembed_Py_Initialize(void)
 {
     Py_SetProgramName(PROGRAM_NAME);
@@ -1721,6 +1726,20 @@ static int test_unicode_id_init(void)
 }
 
 
+// List frozen modules.
+// Command used by Tools/scripts/generate_stdlib_module_names.py script.
+static int list_frozen(void)
+{
+    const struct _frozen *p;
+    for (p = PyImport_FrozenModules; ; p++) {
+        if (p->name == NULL)
+            break;
+        printf("%s\n", p->name);
+    }
+    return 0;
+}
+
+
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -1792,6 +1811,8 @@ static struct TestCase TestCases[] = {
     {"test_audit_run_stdin", test_audit_run_stdin},
 
     {"test_unicode_id_init", test_unicode_id_init},
+
+    {"list_frozen", list_frozen},
     {NULL, NULL}
 };
 

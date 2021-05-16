@@ -1875,7 +1875,7 @@ math_isqrt(PyObject *module, PyObject *n)
  *        (1) *
  *        (1) *
  *        (1 * 3 * 5) *
- *        (1 * 3 * 5 * 7 * 9)
+ *        (1 * 3 * 5 * 7 * 9) *
  *        (1 * 3 * 5 * 7 * 9 * 11 * 13 * 15 * 17 * 19)
  *
  * Here i goes from large to small: the first term corresponds to i=4 (any
@@ -3474,10 +3474,10 @@ math_nextafter_impl(PyObject *module, double x, double y)
         return PyFloat_FromDouble(y);
     }
     if (Py_IS_NAN(x)) {
-        return x;
+        return PyFloat_FromDouble(x);
     }
     if (Py_IS_NAN(y)) {
-        return y;
+        return PyFloat_FromDouble(y);
     }
 #endif
     return PyFloat_FromDouble(nextafter(x, y));

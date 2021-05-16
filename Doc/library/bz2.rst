@@ -25,8 +25,6 @@ The :mod:`bz2` module contains:
 * The :func:`compress` and :func:`decompress` functions for one-shot
   (de)compression.
 
-All of the classes in this module may safely be accessed from multiple threads.
-
 
 (De)compression of files
 ------------------------
@@ -139,6 +137,11 @@ All of the classes in this module may safely be accessed from multiple threads.
       opened.
 
       The *compresslevel* parameter became keyword-only.
+
+   .. versionchanged:: 3.10
+      This class is thread unsafe in the face of multiple simultaneous
+      readers or writers, just like its equivalent classes in :mod:`gzip` and
+      :mod:`lzma` have always been.
 
 
 Incremental (de)compression

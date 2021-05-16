@@ -140,11 +140,9 @@ offender.
 How do I make an executable from a Python script?
 -------------------------------------------------
 
-See `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for a distutils extension
-that allows you to create console and GUI executables from Python code.
-`py2exe <http://www.py2exe.org/>`_, the most popular extension for building
-Python 2.x-based executables, does not yet support Python 3 but a version that
-does is in development.
+See `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ and
+`py2exe <http://www.py2exe.org/>`_, both are distutils extensions
+that allow you to create console and GUI executables from Python code.
 
 
 Is a ``*.pyd`` file the same as a DLL?
