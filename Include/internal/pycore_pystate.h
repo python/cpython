@@ -22,11 +22,11 @@ _Py_IsMainThread(void)
 
 
 static inline int
-_Py_IsMainInterpreter(PyThreadState* tstate)
+_Py_IsMainInterpreter(PyInterpreterState *interp)
 {
     /* Use directly _PyRuntime rather than tstate->interp->runtime, since
        this function is used in performance critical code path (ceval) */
-    return (tstate->interp == _PyRuntime.interpreters.main);
+    return (interp == _PyRuntime.interpreters.main);
 }
 
 

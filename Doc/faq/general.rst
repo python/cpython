@@ -142,9 +142,9 @@ to fix critical bugs.
 Alpha, beta and release candidate versions have an additional suffix.  The
 suffix for an alpha version is "aN" for some small number N, the suffix for a
 beta version is "bN" for some small number N, and the suffix for a release
-candidate version is "cN" for some small number N.  In other words, all versions
+candidate version is "rcN" for some small number N.  In other words, all versions
 labeled 2.0aN precede the versions labeled 2.0bN, which precede versions labeled
-2.0cN, and *those* precede 2.0.
+2.0rcN, and *those* precede 2.0.
 
 You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
 unreleased versions, built directly from the CPython development repository.  In
@@ -309,8 +309,8 @@ releases.
 The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready versions
 of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
-most widely used libraries.  Although 2.x is still widely used, `it will not
-be maintained after January 1, 2020 <https://www.python.org/dev/peps/pep-0373/>`_.
+most widely used libraries.  Although 2.x is still widely used, `it is not
+maintained anymore <https://www.python.org/dev/peps/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------

@@ -104,8 +104,7 @@ write code that handles both IP versions correctly.  Address objects are
    1. A string in decimal-dot notation, consisting of four decimal integers in
       the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less than 8 (as there is no ambiguity
-      between the decimal and octal interpretations of such strings).
+      not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
       significant octet first).
@@ -116,6 +115,22 @@ write code that handles both IP versions correctly.  Address objects are
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
+
+   .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.10
+
+      Leading zeros are no longer tolerated and are treated as an error.
+      IPv4 address strings are now parsed as strict as glibc
+      :func:`~socket.inet_pton`.
+
+   .. versionchanged:: 3.9.5
+
+      The above change was also included in Python 3.9 starting with
+      version 3.9.5.
 
    .. attribute:: version
 
@@ -202,6 +217,32 @@ write code that handles both IP versions correctly.  Address objects are
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
+.. method:: IPv4Address.__format__(fmt)
+
+   Returns a string representation of the IP address, controlled by
+   an explicit format string.
+   *fmt* can be one of the following: ``'s'``, the default option,
+   equivalent to :func:`str`, ``'b'`` for a zero-padded binary string,
+   ``'X'`` or ``'x'`` for an uppercase or lowercase hexadecimal
+   representation, or ``'n'``, which is equivalent to ``'b'`` for IPv4
+   addresses and ``'x'`` for IPv6. For binary and hexadecimal
+   representations, the form specifier ``'#'`` and the grouping option
+   ``'_'`` are available. ``__format__`` is used by ``format``, ``str.format``
+   and f-strings.
+
+      >>> format(ipaddress.IPv4Address('192.168.0.1'))
+      '192.168.0.1'
+      >>> '{:#b}'.format(ipaddress.IPv4Address('192.168.0.1'))
+      '0b11000000101010000000000000000001'
+      >>> f'{ipaddress.IPv6Address("2001:db8::1000"):s}'
+      '2001:db8::1000'
+      >>> format(ipaddress.IPv6Address('2001:db8::1000'), '_X')
+      '2001_0DB8_0000_0000_0000_0000_0000_1000'
+      >>> '{:#_n}'.format(ipaddress.IPv6Address('2001:db8::1000'))
+      '0x2001_0db8_0000_0000_0000_0000_0000_1000'
+
+   .. versionadded:: 3.9
+
 
 .. class:: IPv6Address(address)
 
@@ -246,8 +287,8 @@ write code that handles both IP versions correctly.  Address objects are
    groups consisting entirely of zeroes included.
 
 
-   For the following attributes, see the corresponding documentation of the
-   :class:`IPv4Address` class:
+   For the following attributes and methods, see the corresponding
+   documentation of the :class:`IPv4Address` class:
 
    .. attribute:: packed
    .. attribute:: reverse_pointer
@@ -297,6 +338,12 @@ write code that handles both IP versions correctly.  Address objects are
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
+.. method:: IPv6Address.__format__(fmt)
+
+   Refer to the corresponding method documentation in
+   :class:`IPv4Address`.
+
+   .. versionadded:: 3.9
 
 Conversion to Strings and Integers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

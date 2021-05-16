@@ -1,2 +1,0 @@
-Fix use of ``support.require_{linux|mac|freebsd}_version()`` decorators as
-class decorator.

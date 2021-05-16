@@ -1,5 +1,7 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
+from test.support import import_helper
+from test.support import os_helper
 import unittest
 
 from collections import namedtuple
@@ -27,6 +29,8 @@ API_COMPAT = 1
 API_PYTHON = 2
 # _PyCoreConfig_InitIsolatedConfig()
 API_ISOLATED = 3
+
+MAX_HASH_SEED = 4294967295
 
 
 def debug_build(program):
@@ -380,10 +384,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'exec_prefix': GET_DEFAULT_CONFIG,
         'base_exec_prefix': GET_DEFAULT_CONFIG,
         'module_search_paths': GET_DEFAULT_CONFIG,
+        'module_search_paths_set': 1,
         'platlibdir': sys.platlibdir,
 
         'site_import': 1,
         'bytes_warning': 0,
+        'warn_default_encoding': 0,
         'inspect': 0,
         'interactive': 0,
         'optimization_level': 0,
@@ -417,7 +423,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,
         configure_c_stdio=1,
-        parse_argv=1,
+        parse_argv=2,
     )
     CONFIG_ISOLATED = dict(CONFIG_COMPAT,
         _config_init=API_ISOLATED,
@@ -795,7 +801,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           '-X', 'cmdline_xoption',
                           '-c', 'pass',
                           'arg2'],
-            'parse_argv': 1,
+            'parse_argv': 2,
             'xoptions': [
                 'config_xoption1=3',
                 'config_xoption2=',
@@ -1040,7 +1046,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'orig_argv': ['python3', '-c', code, 'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
-            'parse_argv': 1,
+            'parse_argv': 2,
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1054,7 +1060,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                           'arg2'],
             'program_name': './python3',
             'run_command': code + '\n',
-            'parse_argv': 1,
+            'parse_argv': 2,
             '_init_main': 0,
         }
         self.check_all_configs("test_init_main", config,
@@ -1063,7 +1069,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_init_parse_argv(self):
         config = {
-            'parse_argv': 1,
+            'parse_argv': 2,
             'argv': ['-c', 'arg1', '-v', 'arg3'],
             'orig_argv': ['./argv0', '-E', '-c', 'pass', 'arg1', '-v', 'arg3'],
             'program_name': './argv0',
@@ -1339,8 +1345,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         #
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
-        ctypes = support.import_module('ctypes')
-        _testinternalcapi = support.import_module('_testinternalcapi')
+        ctypes = import_helper.import_module('ctypes')
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
 
         def get_func(name):
             func = getattr(ctypes.pythonapi, name)
@@ -1392,9 +1398,29 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
 
+    def test_init_set_config(self):
+        config = {
+            '_init_main': 0,
+            'bytes_warning': 2,
+            'warnoptions': ['error::BytesWarning'],
+        }
+        self.check_all_configs("test_init_set_config", config,
+                               api=API_ISOLATED)
+
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")
         # ignore output
+
+
+class SetConfigTests(unittest.TestCase):
+    def test_set_config(self):
+        # bpo-42260: Test _PyInterpreterState_SetConfig()
+        cmd = [sys.executable, '-I', '-m', 'test._test_embed_set_config']
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        self.assertEqual(proc.returncode, 0,
+                         (proc.returncode, proc.stdout, proc.stderr))
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
@@ -1418,7 +1444,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       returncode=1)
 
     def test_audit_run_interactivehook(self):
-        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
+        startup = os.path.join(self.oldcwd, os_helper.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("import sys", file=f)
             print("sys.__interactivehook__ = lambda: None", file=f)
@@ -1431,7 +1457,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             os.unlink(startup)
 
     def test_audit_run_startup(self):
-        startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
+        startup = os.path.join(self.oldcwd, os_helper.TESTFN) + ".py"
         with open(startup, "w", encoding="utf-8") as f:
             print("pass", file=f)
         try:
@@ -1446,6 +1472,68 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_audit_run_stdin",
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
+
+
+class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
+    def test_unicode_id_init(self):
+        # bpo-42882: Test that _PyUnicode_FromId() works
+        # when Python is initialized multiples times.
+        self.run_embedded_interpreter("test_unicode_id_init")
+
+
+class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
+    # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
+    #   "Set up a preliminary stderr printer until we have enough
+    #    infrastructure for the io module in place."
+
+    def get_stdout_fd(self):
+        return sys.__stdout__.fileno()
+
+    def create_printer(self, fd):
+        ctypes = import_helper.import_module('ctypes')
+        PyFile_NewStdPrinter = ctypes.pythonapi.PyFile_NewStdPrinter
+        PyFile_NewStdPrinter.argtypes = (ctypes.c_int,)
+        PyFile_NewStdPrinter.restype = ctypes.py_object
+        return PyFile_NewStdPrinter(fd)
+
+    def test_write(self):
+        message = "unicode:\xe9-\u20ac-\udc80!\n"
+
+        stdout_fd = self.get_stdout_fd()
+        stdout_fd_copy = os.dup(stdout_fd)
+        self.addCleanup(os.close, stdout_fd_copy)
+
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        try:
+            # PyFile_NewStdPrinter() only accepts fileno(stdout)
+            # or fileno(stderr) file descriptor.
+            os.dup2(wfd, stdout_fd)
+
+            printer = self.create_printer(stdout_fd)
+            printer.write(message)
+        finally:
+            os.dup2(stdout_fd_copy, stdout_fd)
+
+        data = os.read(rfd, 100)
+        self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
+
+    def test_methods(self):
+        fd = self.get_stdout_fd()
+        printer = self.create_printer(fd)
+        self.assertEqual(printer.fileno(), fd)
+        self.assertEqual(printer.isatty(), os.isatty(fd))
+        printer.flush()  # noop
+        printer.close()  # noop
+
+    def test_disallow_instantiation(self):
+        fd = self.get_stdout_fd()
+        printer = self.create_printer(fd)
+        PyStdPrinter_Type = type(printer)
+        with self.assertRaises(TypeError):
+            PyStdPrinter_Type(fd)
+
 
 if __name__ == "__main__":
     unittest.main()

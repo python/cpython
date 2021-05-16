@@ -26,8 +26,6 @@ extern "C" {
 #define E_TOODEEP       20      /* Too many indentation levels */
 #define E_DEDENT        21      /* No matching outer block for dedent */
 #define E_DECODE        22      /* Error in decoding into Unicode */
-#define E_EOFS          23      /* EOF in triple-quoted string */
-#define E_EOLS          24      /* EOL in single-quoted string */
 #define E_LINECONT      25      /* Unexpected characters after a line continuation */
 #define E_BADSINGLE     27      /* Ill-formed single statement input */
 

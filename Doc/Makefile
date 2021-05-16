@@ -143,7 +143,7 @@ clean:
 venv:
 	$(PYTHON) -m venv $(VENVDIR)
 	$(VENVDIR)/bin/python3 -m pip install -U pip setuptools
-	$(VENVDIR)/bin/python3 -m pip install -U Sphinx==2.3.1 blurb python-docs-theme
+	$(VENVDIR)/bin/python3 -m pip install -r requirements.txt
 	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
@@ -202,6 +202,7 @@ dist:
 
 check:
 	$(PYTHON) tools/rstlint.py -i tools -i $(VENVDIR) -i README.rst
+	$(PYTHON) tools/rstlint.py ../Misc/NEWS.d/next/
 
 serve:
 	$(PYTHON) ../Tools/scripts/serve.py build/html
@@ -215,12 +216,11 @@ serve:
 
 # for development releases: always build
 autobuild-dev:
-	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
-	-make suspicious
+	make dist SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for quick rebuilds (HTML only)
 autobuild-dev-html:
-	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1 -A switchers=1'
+	make html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1'
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage

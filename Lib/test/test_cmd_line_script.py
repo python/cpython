@@ -145,7 +145,7 @@ class CmdLineTest(unittest.TestCase):
             *run_args, __isolated=False, __cwd=cwd, **env_vars
         )
         if verbose > 1:
-            print('Output from test script %r:' % script_exec_args)
+            print(f'Output from test script {script_exec_args!r:}')
             print(repr(err))
             print('Expected output: %r' % expected_msg)
         self.assertIn(expected_msg.encode('utf-8'), err)
@@ -400,7 +400,7 @@ class CmdLineTest(unittest.TestCase):
         # does not alter the value of sys.path[0]
         with os_helper.temp_dir() as script_dir:
             with os_helper.change_cwd(path=script_dir):
-                with open("-c", "w") as f:
+                with open("-c", "w", encoding="utf-8") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-c',
                         'import sys; print("sys.path[0]==%r" % sys.path[0])',
@@ -416,7 +416,7 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'other')
             with os_helper.change_cwd(path=script_dir):
-                with open("-m", "w") as f:
+                with open("-m", "w", encoding="utf-8") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-m', 'other', *example_args,
                                                     __isolated=False)
@@ -429,7 +429,7 @@ class CmdLineTest(unittest.TestCase):
         # will be failed.
         with os_helper.temp_dir() as script_dir:
             script_name = os.path.join(script_dir, "issue20884.py")
-            with open(script_name, "w", newline='\n') as f:
+            with open(script_name, "w", encoding="latin1", newline='\n') as f:
                 f.write("#coding: iso-8859-1\n")
                 f.write('"""\n')
                 for _ in range(30):
@@ -600,8 +600,8 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
-            # Confirm that the caret is located under the first 1 character
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            # Confirm that the caret is located under the '=' sign
+            self.assertIn("\n    ^^^^^\n", text)
 
     def test_syntaxerror_indented_caret_position(self):
         script = textwrap.dedent("""\
@@ -612,8 +612,8 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
-            # Confirm that the caret is located under the first 1 character
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            # Confirm that the caret starts under the first 1 character
+            self.assertIn("\n    1 + 1 = 2\n    ^^^^^\n", text)
 
             # Try the same with a form feed at the start of the indented line
             script = (
@@ -624,7 +624,7 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), "ascii").read()
             self.assertNotIn("\f", text)
-            self.assertIn("\n    1 + 1 = 2\n    ^", text)
+            self.assertIn("\n    1 + 1 = 2\n    ^^^^^\n", text)
 
     def test_syntaxerror_multi_line_fstring(self):
         script = 'foo = f"""{}\nfoo"""\n'
@@ -650,7 +650,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^',
+                    b'          ^^^^^^^^',
                     b'SyntaxError: invalid escape sequence \\q'
                 ],
             )

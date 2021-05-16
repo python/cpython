@@ -67,7 +67,7 @@ The :mod:`poplib` module provides two classes:
 
    .. audit-event:: poplib.connect self,host,port poplib.POP3_SSL
 
-   .. audit-event:: poplib.putline self,line popplib.POP3_SSL
+   .. audit-event:: poplib.putline self,line poplib.POP3_SSL
 
       All commands will raise an :ref:`auditing event <auditing>`
       ``poplib.putline`` with arguments ``self`` and ``line``,

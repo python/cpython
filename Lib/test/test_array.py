@@ -40,6 +40,18 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(TypeError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        tp = type(iter(array.array('I')))
+        self.assertRaises(TypeError, tp)
+
+    @support.cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that array.array is immutable
+        with self.assertRaises(TypeError):
+            array.array.foo = 1
+
     def test_empty(self):
         # Exercise code for handling zero-length arrays
         a = array.array('B')
@@ -393,7 +405,7 @@ class BaseTest:
         a.insert(0, self.outside)
         self.assertEqual(list(exhit), [])
         # The iterator index points past the 0th position so inserting
-        # an element in the beggining does not make it appear.
+        # an element in the beginning does not make it appear.
         self.assertEqual(list(empit), [])
         self.assertEqual(list(a), [self.outside] + list(self.example))
 
@@ -917,6 +929,17 @@ class BaseTest:
             self.assertEqual(a.index(x), example.index(x))
         self.assertRaises(ValueError, a.index, None)
         self.assertRaises(ValueError, a.index, self.outside)
+
+        a = array.array('i', [-2, -1, 0, 0, 1, 2])
+        self.assertEqual(a.index(0), 2)
+        self.assertEqual(a.index(0, 2), 2)
+        self.assertEqual(a.index(0, -4), 2)
+        self.assertEqual(a.index(-2, -10), 0)
+        self.assertEqual(a.index(0, 3), 3)
+        self.assertEqual(a.index(0, -3), 3)
+        self.assertEqual(a.index(0, 3, 4), 3)
+        self.assertEqual(a.index(0, -3, -2), 3)
+        self.assertRaises(ValueError, a.index, 2, 0, -10)
 
     def test_count(self):
         example = 2*self.example

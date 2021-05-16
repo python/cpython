@@ -56,8 +56,12 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
    If the result of the reduction is infinity (this is impossible for
    integers, floats and Decimals) then use the predefined hash value
    _PyHASH_INF for x >= 0, or -_PyHASH_INF for x < 0, instead.
-   _PyHASH_INF, -_PyHASH_INF and _PyHASH_NAN are also used for the
-   hashes of float and Decimal infinities and nans.
+   _PyHASH_INF and -_PyHASH_INF are also used for the
+   hashes of float and Decimal infinities.
+
+   NaNs hash with a pointer hash.  Having distinct hash values prevents
+   catastrophic pileups from distinct NaN instances which used to always
+   have the same hash value but would compare unequal.
 
    A selling point for the above strategy is that it makes it possible
    to compute hashes of decimal and binary floating-point numbers
@@ -82,8 +86,10 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 
    */
 
+Py_hash_t _Py_HashPointer(const void *);
+
 Py_hash_t
-_Py_HashDouble(double v)
+_Py_HashDouble(PyObject *inst, double v)
 {
     int e, sign;
     double m;
@@ -93,7 +99,7 @@ _Py_HashDouble(double v)
         if (Py_IS_INFINITY(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return _PyHASH_NAN;
+            return _Py_HashPointer(inst);
     }
 
     m = frexp(v, &e);

@@ -227,6 +227,7 @@ class CodeTest(unittest.TestCase):
                         co.co_name,
                         co.co_firstlineno,
                         co.co_lnotab,
+                        co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
 
@@ -258,11 +259,17 @@ class CodeTest(unittest.TestCase):
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
-            ("co_lnotab", code2.co_lnotab),
+            ("co_linetable", code2.co_linetable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+
+    def test_empty_linetable(self):
+        def func():
+            pass
+        new_code = code = func.__code__.replace(co_linetable=b'')
+        self.assertEqual(list(new_code.co_lines()), [])
 
 
 def isinterned(s):

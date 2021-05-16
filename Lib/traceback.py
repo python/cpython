@@ -84,7 +84,22 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-def print_exception(etype, value, tb, limit=None, file=None, chain=True):
+_sentinel = object()
+
+
+def _parse_value_tb(exc, value, tb):
+    if (value is _sentinel) != (tb is _sentinel):
+        raise ValueError("Both or neither of value and tb must be given")
+    if value is tb is _sentinel:
+        if exc is not None:
+            return exc, exc.__traceback__
+        else:
+            return None, None
+    return value, tb
+
+
+def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                    file=None, chain=True):
     """Print exception up to 'limit' stack trace entries from 'tb' to 'file'.
 
     This differs from print_tb() in the following ways: (1) if
@@ -95,17 +110,16 @@ def print_exception(etype, value, tb, limit=None, file=None, chain=True):
     occurred with a caret on the next line indicating the approximate
     position of the error.
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
+    value, tb = _parse_value_tb(exc, value, tb)
     if file is None:
         file = sys.stderr
-    for line in TracebackException(
-            type(value), value, tb, limit=limit).format(chain=chain):
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    for line in te.format(chain=chain):
         print(line, file=file, end="")
 
 
-def format_exception(etype, value, tb, limit=None, chain=True):
+def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
+                     chain=True):
     """Format a stack trace and the exception information.
 
     The arguments have the same meaning as the corresponding arguments
@@ -114,19 +128,15 @@ def format_exception(etype, value, tb, limit=None, chain=True):
     these lines are concatenated and printed, exactly the same text is
     printed as does print_exception().
     """
-    # format_exception has ignored etype for some time, and code such as cgitb
-    # passes in bogus values as a result. For compatibility with such code we
-    # ignore it here (rather than in the new TracebackException API).
-    return list(TracebackException(
-        type(value), value, tb, limit=limit).format(chain=chain))
+    value, tb = _parse_value_tb(exc, value, tb)
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+    return list(te.format(chain=chain))
 
 
-def format_exception_only(etype, value):
+def format_exception_only(exc, /, value=_sentinel):
     """Format the exception part of a traceback.
 
-    The arguments are the exception type and value such as given by
-    sys.last_type and sys.last_value. The return value is a list of
-    strings, each ending in a newline.
+    The return value is a list of strings, each ending in a newline.
 
     Normally, the list contains a single string; however, for
     SyntaxError exceptions, it contains several lines that (when
@@ -137,7 +147,10 @@ def format_exception_only(etype, value):
     string in the list.
 
     """
-    return list(TracebackException(etype, value, None).format_exception_only())
+    if value is _sentinel:
+        value = exc
+    te = TracebackException(type(value), value, None, compact=True)
+    return list(te.format_exception_only())
 
 
 # -- not official API but folk probably use these two functions.
@@ -466,45 +479,17 @@ class TracebackException:
     """
 
     def __init__(self, exc_type, exc_value, exc_traceback, *, limit=None,
-            lookup_lines=True, capture_locals=False, _seen=None):
+            lookup_lines=True, capture_locals=False, compact=False,
+            _seen=None):
         # NB: we need to accept exc_traceback, exc_value, exc_traceback to
         # permit backwards compat with the existing API, otherwise we
         # need stub thunk objects just to glue it together.
         # Handle loops in __cause__ or __context__.
+        is_recursive_call = _seen is not None
         if _seen is None:
             _seen = set()
         _seen.add(id(exc_value))
-        # Gracefully handle (the way Python 2.4 and earlier did) the case of
-        # being called with no type or value (None, None, None).
-        if (exc_value and exc_value.__cause__ is not None
-            and id(exc_value.__cause__) not in _seen):
-            cause = TracebackException(
-                type(exc_value.__cause__),
-                exc_value.__cause__,
-                exc_value.__cause__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            cause = None
-        if (exc_value and exc_value.__context__ is not None
-            and id(exc_value.__context__) not in _seen):
-            context = TracebackException(
-                type(exc_value.__context__),
-                exc_value.__context__,
-                exc_value.__context__.__traceback__,
-                limit=limit,
-                lookup_lines=False,
-                capture_locals=capture_locals,
-                _seen=_seen)
-        else:
-            context = None
-        self.exc_traceback = exc_traceback
-        self.__cause__ = cause
-        self.__context__ = context
-        self.__suppress_context__ = \
-            exc_value.__suppress_context__ if exc_value else False
+
         # TODO: locals.
         self.stack = StackSummary.extract(
             walk_tb(exc_traceback), limit=limit, lookup_lines=lookup_lines,
@@ -516,12 +501,59 @@ class TracebackException:
         if exc_type and issubclass(exc_type, SyntaxError):
             # Handle SyntaxError's specially
             self.filename = exc_value.filename
-            self.lineno = str(exc_value.lineno)
+            lno = exc_value.lineno
+            self.lineno = str(lno) if lno is not None else None
             self.text = exc_value.text
             self.offset = exc_value.offset
             self.msg = exc_value.msg
         if lookup_lines:
             self._load_lines()
+        self.__suppress_context__ = \
+            exc_value.__suppress_context__ if exc_value is not None else False
+
+        # Convert __cause__ and __context__ to `TracebackExceptions`s, use a
+        # queue to avoid recursion (only the top-level call gets _seen == None)
+        if not is_recursive_call:
+            queue = [(self, exc_value)]
+            while queue:
+                te, e = queue.pop()
+                if (e and e.__cause__ is not None
+                    and id(e.__cause__) not in _seen):
+                    cause = TracebackException(
+                        type(e.__cause__),
+                        e.__cause__,
+                        e.__cause__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        _seen=_seen)
+                else:
+                    cause = None
+
+                if compact:
+                    need_context = (cause is None and
+                                    e is not None and
+                                    not e.__suppress_context__)
+                else:
+                    need_context = True
+                if (e and e.__context__ is not None
+                    and need_context and id(e.__context__) not in _seen):
+                    context = TracebackException(
+                        type(e.__context__),
+                        e.__context__,
+                        e.__context__.__traceback__,
+                        limit=limit,
+                        lookup_lines=lookup_lines,
+                        capture_locals=capture_locals,
+                        _seen=_seen)
+                else:
+                    context = None
+                te.__cause__ = cause
+                te.__context__ = context
+                if cause:
+                    queue.append((te.__cause__, e.__cause__))
+                if context:
+                    queue.append((te.__context__, e.__context__))
 
     @classmethod
     def from_exception(cls, exc, *args, **kwargs):
@@ -532,10 +564,6 @@ class TracebackException:
         """Private API. force all lines in the stack to be loaded."""
         for frame in self.stack:
             frame.line
-        if self.__context__:
-            self.__context__._load_lines()
-        if self.__cause__:
-            self.__cause__._load_lines()
 
     def __eq__(self, other):
         if isinstance(other, TracebackException):
@@ -575,9 +603,12 @@ class TracebackException:
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
-        filename = self.filename or "<string>"
-        lineno = str(self.lineno) or '?'
-        yield '  File "{}", line {}\n'.format(filename, lineno)
+        filename_suffix = ''
+        if self.lineno is not None:
+            yield '  File "{}", line {}\n'.format(
+                self.filename or "<string>", self.lineno)
+        elif self.filename is not None:
+            filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
         if text is not None:
@@ -595,7 +626,7 @@ class TracebackException:
                 caretspace = ((c if c.isspace() else ' ') for c in ltext[:caret])
                 yield '    {}^\n'.format(''.join(caretspace))
         msg = self.msg or "<no detail available>"
-        yield "{}: {}\n".format(stype, msg)
+        yield "{}: {}{}\n".format(stype, msg, filename_suffix)
 
     def format(self, *, chain=True):
         """Format the exception.
@@ -609,15 +640,32 @@ class TracebackException:
         The message indicating which exception occurred is always the last
         string in the output.
         """
-        if chain:
-            if self.__cause__ is not None:
-                yield from self.__cause__.format(chain=chain)
-                yield _cause_message
-            elif (self.__context__ is not None and
-                not self.__suppress_context__):
-                yield from self.__context__.format(chain=chain)
-                yield _context_message
-        if self.exc_traceback is not None:
-            yield 'Traceback (most recent call last):\n'
-        yield from self.stack.format()
-        yield from self.format_exception_only()
+
+        output = []
+        exc = self
+        while exc:
+            if chain:
+                if exc.__cause__ is not None:
+                    chained_msg = _cause_message
+                    chained_exc = exc.__cause__
+                elif (exc.__context__  is not None and
+                      not exc.__suppress_context__):
+                    chained_msg = _context_message
+                    chained_exc = exc.__context__
+                else:
+                    chained_msg = None
+                    chained_exc = None
+
+                output.append((chained_msg, exc))
+                exc = chained_exc
+            else:
+                output.append((None, exc))
+                exc = None
+
+        for msg, exc in reversed(output):
+            if msg is not None:
+                yield msg
+            if exc.stack:
+                yield 'Traceback (most recent call last):\n'
+                yield from exc.stack.format()
+            yield from exc.format_exception_only()

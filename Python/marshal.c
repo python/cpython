@@ -524,7 +524,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
-        w_object(co->co_lnotab, p);
+        w_object(co->co_linetable, p);
+        w_object(co->co_exceptiontable, p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -638,7 +639,7 @@ r_string(Py_ssize_t n, RFILE *p)
         return res;
     }
     if (p->buf == NULL) {
-        p->buf = PyMem_MALLOC(n);
+        p->buf = PyMem_Malloc(n);
         if (p->buf == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -646,7 +647,7 @@ r_string(Py_ssize_t n, RFILE *p)
         p->buf_size = n;
     }
     else if (p->buf_size < n) {
-        char *tmp = PyMem_REALLOC(p->buf, n);
+        char *tmp = PyMem_Realloc(p->buf, n);
         if (tmp == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -1312,7 +1313,8 @@ r_object(RFILE *p)
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
-            PyObject *lnotab = NULL;
+            PyObject *linetable = NULL;
+            PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
             if (idx < 0)
@@ -1367,9 +1369,13 @@ r_object(RFILE *p)
             firstlineno = (int)r_long(p);
             if (firstlineno == -1 && PyErr_Occurred())
                 break;
-            lnotab = r_object(p);
-            if (lnotab == NULL)
+            linetable = r_object(p);
+            if (linetable == NULL)
                 goto code_error;
+            exceptiontable = r_object(p);
+            if (exceptiontable == NULL)
+                goto code_error;
+
 
             if (PySys_Audit("code.__new__", "OOOiiiiii",
                             code, filename, name, argcount, posonlyargcount,
@@ -1382,7 +1388,7 @@ r_object(RFILE *p)
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
                             freevars, cellvars, filename, name,
-                            firstlineno, lnotab);
+                            firstlineno, linetable, exceptiontable);
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
@@ -1394,7 +1400,8 @@ r_object(RFILE *p)
             Py_XDECREF(cellvars);
             Py_XDECREF(filename);
             Py_XDECREF(name);
-            Py_XDECREF(lnotab);
+            Py_XDECREF(linetable);
+            Py_XDECREF(exceptiontable);
         }
         retval = v;
         break;
@@ -1453,7 +1460,7 @@ PyMarshal_ReadShortFromFile(FILE *fp)
     rf.buf = NULL;
     res = r_short(&rf);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return res;
 }
 
@@ -1468,7 +1475,7 @@ PyMarshal_ReadLongFromFile(FILE *fp)
     rf.buf = NULL;
     res = r_long(&rf);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return res;
 }
 
@@ -1501,11 +1508,11 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
     off_t filesize;
     filesize = getfilesize(fp);
     if (filesize > 0 && filesize <= REASONABLE_FILE_LIMIT) {
-        char* pBuf = (char *)PyMem_MALLOC(filesize);
+        char* pBuf = (char *)PyMem_Malloc(filesize);
         if (pBuf != NULL) {
             size_t n = fread(pBuf, 1, (size_t)filesize, fp);
             PyObject* v = PyMarshal_ReadObjectFromString(pBuf, n);
-            PyMem_FREE(pBuf);
+            PyMem_Free(pBuf);
             return v;
         }
 
@@ -1534,7 +1541,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     result = r_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return result;
 }
 
@@ -1555,7 +1562,7 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     result = r_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
-        PyMem_FREE(rf.buf);
+        PyMem_Free(rf.buf);
     return result;
 }
 
@@ -1684,7 +1691,7 @@ marshal_load(PyObject *module, PyObject *file)
             result = read_object(&rf);
             Py_DECREF(rf.refs);
             if (rf.buf != NULL)
-                PyMem_FREE(rf.buf);
+                PyMem_Free(rf.buf);
         } else
             result = NULL;
     }
@@ -1785,28 +1792,30 @@ dumps() -- marshal value as a bytes object\n\
 loads() -- read value from a bytes-like object");
 
 
+static int
+marshal_module_exec(PyObject *mod)
+{
+    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot marshalmodule_slots[] = {
+    {Py_mod_exec, marshal_module_exec},
+    {0, NULL}
+};
 
 static struct PyModuleDef marshalmodule = {
     PyModuleDef_HEAD_INIT,
-    "marshal",
-    module_doc,
-    0,
-    marshal_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "marshal",
+    .m_doc = module_doc,
+    .m_methods = marshal_methods,
+    .m_slots = marshalmodule_slots,
 };
 
 PyMODINIT_FUNC
 PyMarshal_Init(void)
 {
-    PyObject *mod = PyModule_Create(&marshalmodule);
-    if (mod == NULL)
-        return NULL;
-    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
-        Py_DECREF(mod);
-        return NULL;
-    }
-    return mod;
+    return PyModuleDef_Init(&marshalmodule);
 }

@@ -1,1 +1,0 @@
-Audit hooks are now cleared later during finalization to avoid missing events.

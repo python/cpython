@@ -5,8 +5,9 @@
 /* Only used by applications that embed the interpreter and need to
  * override the standard encoding determination mechanism
  */
-PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
-                                             const char *errors);
+Py_DEPRECATED(3.11) PyAPI_FUNC(int) Py_SetStandardStreamEncoding(
+    const char *encoding,
+    const char *errors);
 
 /* PEP 432 Multi-phase initialization API (Private while provisional!) */
 
@@ -35,17 +36,13 @@ PyAPI_FUNC(int) Py_RunMain(void);
 
 PyAPI_FUNC(void) _Py_NO_RETURN Py_ExitStatusException(PyStatus err);
 
-/* Py_PyAtExit is for the atexit module, Py_AtExit is for low-level
- * exit functions.
- */
-PyAPI_FUNC(void) _Py_PyAtExit(void (*func)(PyObject *), PyObject *);
-
 /* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
 PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 PyAPI_FUNC(int) Py_FdIsInteractive(FILE *, const char *);
+PyAPI_FUNC(int) _Py_FdIsInteractive(FILE *fp, PyObject *filename);
 
-PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
+Py_DEPRECATED(3.11) PyAPI_FUNC(void) _Py_SetProgramFullPath(const wchar_t *);
 
 PyAPI_FUNC(const char *) _Py_gitidentifier(void);
 PyAPI_FUNC(const char *) _Py_gitversion(void);

@@ -27,8 +27,7 @@ import functools
 
 py_functools = import_helper.import_fresh_module('functools',
                                                  blocked=['_functools'])
-c_functools = import_helper.import_fresh_module('functools',
-                                                fresh=['_functools'])
+c_functools = import_helper.import_fresh_module('functools')
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
@@ -948,6 +947,12 @@ class TestCmpToKey:
 class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
     if c_functools:
         cmp_to_key = c_functools.cmp_to_key
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        tp = type(c_functools.cmp_to_key(None))
+        self.assertRaises(TypeError, tp)
 
 
 class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):

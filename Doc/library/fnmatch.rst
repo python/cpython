@@ -75,7 +75,7 @@ patterns.
 
 .. function:: filter(names, pattern)
 
-   Return the subset of the list of *names* that match *pattern*. It is the same as
+   Construct a list from those elements of the iterable *names* that match *pattern*. It is the same as
    ``[n for n in names if fnmatch(n, pattern)]``, but implemented more efficiently.
 
 
