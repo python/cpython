@@ -4635,7 +4635,7 @@ operating system.
 
 .. function:: sched_setparam(pid, param)
 
-   Set a scheduling parameters for the process with PID *pid*. A *pid* of 0 means
+   Set the scheduling parameters for the process with PID *pid*. A *pid* of 0 means
    the calling process. *param* is a :class:`sched_param` instance.
 
 
