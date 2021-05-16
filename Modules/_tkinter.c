@@ -3276,7 +3276,7 @@ _tkinter_getbusywaitinterval_impl(PyObject *module)
 }
 
 /*[clinic input]
-_tkinter.finalize_tcl
+_tkinter._finalize_tcl
 
 Finalize the Tcl interpreter.
 
@@ -3286,8 +3286,8 @@ longer be used, and attempts to do so will result in errors.
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_finalize_tcl_impl(PyObject *module)
-/*[clinic end generated code: output=aae15057169190f2 input=23f70c6ef17beaf6]*/
+_tkinter__finalize_tcl_impl(PyObject *module)
+/*[clinic end generated code: output=a7a2a4c67f43bd28 input=e1082c1b262a40aa]*/
 {
     Tcl_FinalizeThread();
     Py_RETURN_NONE;
@@ -3377,7 +3377,7 @@ static PyMethodDef moduleMethods[] =
     _TKINTER_CREATE_METHODDEF
     _TKINTER_SETBUSYWAITINTERVAL_METHODDEF
     _TKINTER_GETBUSYWAITINTERVAL_METHODDEF
-    _TKINTER_FINALIZE_TCL_METHODDEF
+    _TKINTER__FINALIZE_TCL_METHODDEF
     {NULL,                 NULL}
 };
 

@@ -1699,7 +1699,7 @@ def main():
     root.destroy()
     capture_warnings(False)
     import _tkinter
-    _tkinter.finalize_tcl()
+    _tkinter._finalize_tcl()
 
 if __name__ == "__main__":
     main()
