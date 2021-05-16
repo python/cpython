@@ -218,7 +218,20 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
-static PyObject *indexerr = NULL;
+static inline void
+print_error(const char *msg, Py_ssize_t len, Py_ssize_t i)
+{
+    if (len == 0) {
+        PyErr_Format(PyExc_IndexError, "%s index out of range, got index %zd but the list is empty", msg, i);
+        return;
+    }
+    if (i < 0)
+        i -= len;
+    PyErr_Format(PyExc_IndexError,
+                 "%s index out of range, the len is %zd so index must be in -%zd..%zd, got %zd",
+                 msg, len, len, len-1, i);
+}
+
 
 PyObject *
 PyList_GetItem(PyObject *op, Py_ssize_t i)
@@ -228,13 +241,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     if (!valid_index(i, Py_SIZE(op))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
-        }
-        PyErr_SetObject(PyExc_IndexError, indexerr);
+        print_error("list", Py_SIZE(op), i);
         return NULL;
     }
     return ((PyListObject *)op) -> ob_item[i];
@@ -252,8 +259,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     }
     if (!valid_index(i, Py_SIZE(op))) {
         Py_XDECREF(newitem);
-        PyErr_SetString(PyExc_IndexError,
-                        "list assignment index out of range");
+        print_error("list assignment", Py_SIZE(op), i);
         return -1;
     }
     p = ((PyListObject *)op) -> ob_item + i;
@@ -439,13 +445,7 @@ static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        if (indexerr == NULL) {
-            indexerr = PyUnicode_FromString(
-                "list index out of range");
-            if (indexerr == NULL)
-                return NULL;
-        }
-        PyErr_SetObject(PyExc_IndexError, indexerr);
+        print_error("list", Py_SIZE(a), i);
         return NULL;
     }
     Py_INCREF(a->ob_item[i]);
@@ -765,8 +765,7 @@ static int
 list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        PyErr_SetString(PyExc_IndexError,
-                        "list assignment index out of range");
+        print_error("list assignment", Py_SIZE(a), i);
         return -1;
     }
     if (v == NULL)
@@ -1012,7 +1011,7 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     if (index < 0)
         index += Py_SIZE(self);
     if (!valid_index(index, Py_SIZE(self))) {
-        PyErr_SetString(PyExc_IndexError, "pop index out of range");
+        print_error("pop index", Py_SIZE(self), index);
         return NULL;
     }
     v = self->ob_item[index];
