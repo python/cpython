@@ -5838,6 +5838,7 @@ PyEval_GetGlobals(void)
     PyThreadState *tstate = _PyThreadState_GET();
     PyFrameObject *current_frame = tstate->frame;
     if (current_frame == NULL) {
+        _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
     }
 
