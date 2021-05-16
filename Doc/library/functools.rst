@@ -137,7 +137,7 @@ The :mod:`functools` module defines the following functions:
                lru_cache(maxsize=128, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
-   *maxsize* most recent calls.  It can save time when an expensive or I/O bound
+   *maxsize* most recent calls.  It can save time when an expensive or I/O-bound
    function is periodically called with the same arguments.
 
    Since a dictionary is used to cache results, the positional and keyword

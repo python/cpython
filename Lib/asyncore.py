@@ -34,7 +34,7 @@ that lets you have nearly all the advantages of multi-threading, without
 actually using multiple threads. it's really only practical if your program
 is largely I/O bound. If your program is CPU bound, then pre-emptive
 scheduled threads are probably what you really need. Network servers are
-rarely CPU-bound, however.
+rarely CPU bound, however.
 
 If your operating system supports the select() system call in its I/O
 library (and nearly all do), then you can use it to juggle multiple
