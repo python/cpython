@@ -1456,38 +1456,27 @@ class _BasePathTest(object):
         p = self.cls.cwd()
         self._test_cwd(p)
 
-    def _test_absolute(self):
+    def test_absolute_common(self):
         P = self.cls
 
-        # Simple absolute paths
-        self.assertEqualNormCase(str(P('/').absolute()), '/')
-        self.assertEqualNormCase(str(P('/a').absolute()), '/a')
-        self.assertEqualNormCase(str(P('/a/b').absolute()), '/a/b')
-        self.assertEqualNormCase(str(P('//a/b').absolute()), '//a/b')
+        with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
+            getcwd.return_value = BASE
 
-        # Simple relative paths
-        self.assertEqualNormCase(str(P().absolute()), BASE)
-        self.assertEqualNormCase(str(P('.').absolute()), BASE)
-        self.assertEqualNormCase(str(P('a').absolute()), os.path.join(BASE, 'a'))
-        self.assertEqualNormCase(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
+            # Simple relative paths
+            self.assertEqualNormCase(str(P().absolute()), BASE)
+            self.assertEqualNormCase(str(P('.').absolute()), BASE)
+            self.assertEqualNormCase(str(P('a').absolute()), os.path.join(BASE, 'a'))
+            self.assertEqualNormCase(str(P('a', 'b', 'c').absolute()), os.path.join(BASE, 'a', 'b', 'c'))
 
-        # Symlinks should not be resolved
-        self.assertEqualNormCase(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
-        self.assertEqualNormCase(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
-        self.assertEqualNormCase(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
+            # Symlinks should not be resolved
+            self.assertEqualNormCase(str(P('linkB', 'fileB').absolute()), os.path.join(BASE, 'linkB', 'fileB'))
+            self.assertEqualNormCase(str(P('brokenLink').absolute()), os.path.join(BASE, 'brokenLink'))
+            self.assertEqualNormCase(str(P('brokenLinkLoop').absolute()), os.path.join(BASE, 'brokenLinkLoop'))
 
-        # '..' entries should be preserved and not normalised
-        self.assertEqualNormCase(str(P('..').absolute()), os.path.join(BASE, '..'))
-        self.assertEqualNormCase(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
-        self.assertEqualNormCase(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
-
-    def test_absolute(self):
-        old_path = os.getcwd()
-        os.chdir(BASE)
-        try:
-            self._test_absolute()
-        finally:
-            os.chdir(old_path)
+            # '..' entries should be preserved and not normalised
+            self.assertEqualNormCase(str(P('..').absolute()), os.path.join(BASE, '..'))
+            self.assertEqualNormCase(str(P('a', '..').absolute()), os.path.join(BASE, 'a', '..'))
+            self.assertEqualNormCase(str(P('..', 'b').absolute()), os.path.join(BASE, '..', 'b'))
 
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
@@ -2490,6 +2479,17 @@ class PathTest(_BasePathTest, unittest.TestCase):
 class PosixPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.PosixPath
 
+    def test_absolute(self):
+        P = self.cls
+        self.assertEqualNormCase(str(P('/').absolute()), '/')
+        self.assertEqualNormCase(str(P('/a').absolute()), '/a')
+        self.assertEqualNormCase(str(P('/a/b').absolute()), '/a/b')
+
+        # '//'-prefixed absolute path (supported by POSIX)
+        self.assertEqualNormCase(str(P('//').absolute()), '//')
+        self.assertEqualNormCase(str(P('//a').absolute()), '//a')
+        self.assertEqualNormCase(str(P('//a/b').absolute()), '//a/b')
+
     def _check_symlink_loop(self, *args, strict=True):
         path = self.cls(*args)
         with self.assertRaises(RuntimeError):
@@ -2654,6 +2654,34 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
 @only_nt
 class WindowsPathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.WindowsPath
+
+    def test_absolute(self):
+        P = self.cls
+
+        # Simple absolute paths
+        self.assertEqualNormCase(str(P('c:\\').absolute()), 'c:\\')
+        self.assertEqualNormCase(str(P('c:\\a').absolute()), 'c:\\a')
+        self.assertEqualNormCase(str(P('c:\\a\\b').absolute()), 'c:\\a\\b')
+
+        # UNC absolute paths
+        share = '\\\\server\\share'
+        self.assertEqualNormCase(str(P(share).absolute()), share)
+        self.assertEqualNormCase(str(P(share + '\\a').absolute()),
+                                 share + '\\a')
+        self.assertEqualNormCase(str(P(share + '\\a\\b').absolute()),
+                                 share + '\\a\\b')
+
+        # UNC relative paths
+        with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
+            getcwd.return_value = share
+
+            self.assertEqualNormCase(str(P().absolute()), BASE)
+            self.assertEqualNormCase(str(P('.').absolute()), BASE)
+            self.assertEqualNormCase(str(P('a').absolute()),
+                                     os.path.join(BASE, 'a'))
+            self.assertEqualNormCase(str(P('a', 'b', 'c').absolute()),
+                                     os.path.join(BASE, 'a', 'b', 'c'))
+
 
     def test_glob(self):
         P = self.cls
