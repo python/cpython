@@ -1389,8 +1389,8 @@ corresponding character.  If not found, KeyError is raised.
 
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
-                            Py_ssize_clean_t name_length)
-/*[clinic end generated code: output=765cb8186788e6be input=a557be0f8607a0d6]*/
+                            Py_ssize_t name_length)
+/*[clinic end generated code: output=7f03fc4959b242f6 input=a557be0f8607a0d6]*/
 {
     Py_UCS4 code;
     unsigned int index;
@@ -1454,7 +1454,7 @@ static PyType_Slot ucd_type_slots[] = {
 static PyType_Spec ucd_type_spec = {
     .name = "unicodedata.UCD",
     .basicsize = sizeof(PreviousDBVersion),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = ucd_type_slots
 };
 

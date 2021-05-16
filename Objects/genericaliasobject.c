@@ -156,25 +156,13 @@ error:
     return NULL;
 }
 
-/* Checks if a variable number of names are from typing.py.
-*  If any one of the names are found, return 1, else 0.
-**/
-static inline int
-is_typing_name(PyObject *obj, int num, ...)
+// isinstance(obj, TypeVar) without importing typing.py.
+// Returns -1 for errors.
+static int
+is_typevar(PyObject *obj)
 {
-    va_list names;
-    va_start(names, num);
-
     PyTypeObject *type = Py_TYPE(obj);
-    int hit = 0;
-    for (int i = 0; i < num; ++i) {
-        if (!strcmp(type->tp_name, va_arg(names, const char *))) {
-            hit = 1;
-            break;
-        }
-    }
-    va_end(names);
-    if (!hit) {
+    if (strcmp(type->tp_name, "TypeVar") != 0) {
         return 0;
     }
     PyObject *module = PyObject_GetAttrString((PyObject *)type, "__module__");
@@ -184,22 +172,7 @@ is_typing_name(PyObject *obj, int num, ...)
     int res = PyUnicode_Check(module)
         && _PyUnicode_EqualToASCIIString(module, "typing");
     Py_DECREF(module);
-    
     return res;
-}
-
-// isinstance(obj, (TypeVar, ParamSpec)) without importing typing.py.
-// Returns -1 for errors.
-static inline int
-is_typevarlike(PyObject *obj)
-{
-    return is_typing_name(obj, 2, "TypeVar", "ParamSpec");
-}
-
-static inline int
-is_paramspec(PyObject *obj)
-{
-    return is_typing_name(obj, 1, "ParamSpec");
 }
 
 // Index of item in self[:len], or -1 if not found (self is a tuple)
@@ -236,7 +209,7 @@ make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        int typevar = is_typevarlike(t);
+        int typevar = is_typevar(t);
         if (typevar < 0) {
             Py_DECREF(parameters);
             return NULL;
@@ -306,14 +279,7 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
             if (iparam >= 0) {
                 arg = argitems[iparam];
             }
-            // convert all the lists inside args to tuples to help
-            // with caching in other libaries
-            if (PyList_CheckExact(arg)) {
-                arg = PyList_AsTuple(arg);
-            }
-            else {
-                Py_INCREF(arg);
-            }
+            Py_INCREF(arg);
             PyTuple_SET_ITEM(subargs, i, arg);
         }
 
@@ -348,19 +314,11 @@ ga_getitem(PyObject *self, PyObject *item)
     int is_tuple = PyTuple_Check(item);
     Py_ssize_t nitems = is_tuple ? PyTuple_GET_SIZE(item) : 1;
     PyObject **argitems = is_tuple ? &PyTuple_GET_ITEM(item, 0) : &item;
-    // A special case in PEP 612 where if X = Callable[P, int], 
-    // then X[int, str] == X[[int, str]].
-    if (nparams == 1 && nitems > 1 && is_tuple &&
-        is_paramspec(PyTuple_GET_ITEM(alias->parameters, 0))) {
-        argitems = &item;
-    }
-    else {
-        if (nitems != nparams) {
-            return PyErr_Format(PyExc_TypeError,
-                "Too %s arguments for %R",
-                nitems > nparams ? "many" : "few",
-                self);
-        }
+    if (nitems != nparams) {
+        return PyErr_Format(PyExc_TypeError,
+                            "Too %s arguments for %R",
+                            nitems > nparams ? "many" : "few",
+                            self);
     }
     /* Replace all type variables (specified by alias->parameters)
        with corresponding values specified by argitems.
@@ -375,7 +333,7 @@ ga_getitem(PyObject *self, PyObject *item)
     }
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
-        int typevar = is_typevarlike(arg);
+        int typevar = is_typevar(arg);
         if (typevar < 0) {
             Py_DECREF(newargs);
             return NULL;
@@ -384,13 +342,7 @@ ga_getitem(PyObject *self, PyObject *item)
             Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
             arg = argitems[iparam];
-            // convert lists to tuples to help with caching in other libaries.
-            if (PyList_CheckExact(arg)) {
-                arg = PyList_AsTuple(arg);
-            }
-            else {
-                Py_INCREF(arg);
-            }
+            Py_INCREF(arg);
         }
         else {
             arg = subs_tvars(arg, alias->parameters, argitems);

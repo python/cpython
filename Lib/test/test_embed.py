@@ -1473,11 +1473,67 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
                                       timeout=support.SHORT_TIMEOUT,
                                       returncode=1)
 
+
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_unicode_id_init(self):
         # bpo-42882: Test that _PyUnicode_FromId() works
         # when Python is initialized multiples times.
         self.run_embedded_interpreter("test_unicode_id_init")
+
+
+class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
+    # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
+    #   "Set up a preliminary stderr printer until we have enough
+    #    infrastructure for the io module in place."
+
+    def get_stdout_fd(self):
+        return sys.__stdout__.fileno()
+
+    def create_printer(self, fd):
+        ctypes = import_helper.import_module('ctypes')
+        PyFile_NewStdPrinter = ctypes.pythonapi.PyFile_NewStdPrinter
+        PyFile_NewStdPrinter.argtypes = (ctypes.c_int,)
+        PyFile_NewStdPrinter.restype = ctypes.py_object
+        return PyFile_NewStdPrinter(fd)
+
+    def test_write(self):
+        message = "unicode:\xe9-\u20ac-\udc80!\n"
+
+        stdout_fd = self.get_stdout_fd()
+        stdout_fd_copy = os.dup(stdout_fd)
+        self.addCleanup(os.close, stdout_fd_copy)
+
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        try:
+            # PyFile_NewStdPrinter() only accepts fileno(stdout)
+            # or fileno(stderr) file descriptor.
+            os.dup2(wfd, stdout_fd)
+
+            printer = self.create_printer(stdout_fd)
+            printer.write(message)
+        finally:
+            os.dup2(stdout_fd_copy, stdout_fd)
+
+        data = os.read(rfd, 100)
+        self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
+
+    def test_methods(self):
+        fd = self.get_stdout_fd()
+        printer = self.create_printer(fd)
+        self.assertEqual(printer.fileno(), fd)
+        self.assertEqual(printer.isatty(), os.isatty(fd))
+        printer.flush()  # noop
+        printer.close()  # noop
+
+    def test_disallow_instantiation(self):
+        fd = self.get_stdout_fd()
+        printer = self.create_printer(fd)
+        PyStdPrinter_Type = type(printer)
+        with self.assertRaises(TypeError):
+            PyStdPrinter_Type(fd)
+
 
 if __name__ == "__main__":
     unittest.main()

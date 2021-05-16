@@ -1,0 +1,2 @@
+Add test to check that ``PyStructSequence_NewType`` accepts a
+``PyStructSequence_Desc`` with ``doc`` field set to ``NULL``.

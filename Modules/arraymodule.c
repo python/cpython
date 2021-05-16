@@ -5,6 +5,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -63,7 +64,7 @@ typedef struct {
 static array_state *
 get_array_state(PyObject *module)
 {
-    return (array_state *)PyModule_GetState(module);
+    return (array_state *)_PyModule_GetState(module);
 }
 
 #define find_array_state_by_type(tp) \
@@ -2846,7 +2847,9 @@ static PyType_Slot array_slots[] = {
 static PyType_Spec array_spec = {
     .name = "array.array",
     .basicsize = sizeof(arrayobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_SEQUENCE),
     .slots = array_slots,
 };
 
@@ -2984,7 +2987,8 @@ static PyType_Slot arrayiter_slots[] = {
 static PyType_Spec arrayiter_spec = {
     .name = "array.arrayiterator",
     .basicsize = sizeof(arrayiterobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = arrayiter_slots,
 };
 

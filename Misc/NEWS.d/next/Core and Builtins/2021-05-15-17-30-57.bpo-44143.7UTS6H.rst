@@ -1,0 +1,2 @@
+Fixed a crash in the parser that manifest when raising tokenizer errors when
+an existing exception was present. Patch by Pablo Galindo.

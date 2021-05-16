@@ -40,6 +40,18 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(TypeError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        tp = type(iter(array.array('I')))
+        self.assertRaises(TypeError, tp)
+
+    @support.cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that array.array is immutable
+        with self.assertRaises(TypeError):
+            array.array.foo = 1
+
     def test_empty(self):
         # Exercise code for handling zero-length arrays
         a = array.array('B')

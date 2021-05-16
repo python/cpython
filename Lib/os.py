@@ -983,16 +983,16 @@ if sys.platform != 'vxworks':
         import subprocess, io
         if mode == "r":
             proc = subprocess.Popen(cmd,
-                                    shell=True,
+                                    shell=True, text=True,
                                     stdout=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdout), proc)
+            return _wrap_close(proc.stdout, proc)
         else:
             proc = subprocess.Popen(cmd,
-                                    shell=True,
+                                    shell=True, text=True,
                                     stdin=subprocess.PIPE,
                                     bufsize=buffering)
-            return _wrap_close(io.TextIOWrapper(proc.stdin), proc)
+            return _wrap_close(proc.stdin, proc)
 
     # Helper for popen() -- a proxy for a file whose close waits for the process
     class _wrap_close:
