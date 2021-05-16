@@ -90,7 +90,7 @@ Improved Modules
 Optimizations
 =============
 
-* Compiler optimizes now simple C-style formatting with literal format
+* Compiler now optimizes simple C-style formatting with literal format
   containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
   fast as corresponding f-string expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
@@ -99,6 +99,17 @@ Optimizations
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
+* Method calls with keywords are now up to 20% faster due to bytecode
+  changes which avoid creating bound method instances. Previously, this
+  optimization was applied only to method calls with purely positional
+  arguments.
+  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
+  implemented in PyPy.)
+
+CPython bytecode changes
+========================
+
+* Added a new :opcode:`CALL_METHOD_KW` opcode.
 
 Build Changes
 =============
