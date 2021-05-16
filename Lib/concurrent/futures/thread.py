@@ -127,8 +127,8 @@ class ThreadPoolExecutor(_base.Executor):
         """
         if max_workers is None:
             # ThreadPoolExecutor is often used to:
-            # * CPU bound task which releases GIL
-            # * I/O bound task (which releases GIL, of course)
+            # * CPU-bound task which releases GIL
+            # * I/O-bound task (which releases GIL, of course)
             #
             # We use cpu_count + 4 for both types of tasks.
             # But we limit it to 32 to avoid consuming surprisingly large resource
