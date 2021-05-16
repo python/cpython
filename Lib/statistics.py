@@ -345,7 +345,7 @@ def mean(data):
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -354,6 +354,13 @@ def fmean(data):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
     """
+    if weights is not None:
+        weights = list(weights)
+        num = fsum(x_i * w_i for x_i, w_i in zip(data, weights, strict=True))
+        den = fsum(weights)
+        if den:
+            return num / den
+        raise StatisticsError('sum of weights must be non-zero')
     try:
         n = len(data)
     except TypeError:
