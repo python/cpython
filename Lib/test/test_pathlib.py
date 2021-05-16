@@ -2664,23 +2664,21 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         self.assertEqualNormCase(str(P('c:\\a\\b').absolute()), 'c:\\a\\b')
 
         # UNC absolute paths
-        share = '\\\\server\\share'
+        share = '\\\\server\\share\\'
         self.assertEqualNormCase(str(P(share).absolute()), share)
-        self.assertEqualNormCase(str(P(share + '\\a').absolute()),
-                                 share + '\\a')
-        self.assertEqualNormCase(str(P(share + '\\a\\b').absolute()),
-                                 share + '\\a\\b')
+        self.assertEqualNormCase(str(P(share + 'a').absolute()), share + 'a')
+        self.assertEqualNormCase(str(P(share + 'a\\b').absolute()), share + 'a\\b')
 
         # UNC relative paths
         with mock.patch("pathlib._normal_accessor.getcwd") as getcwd:
             getcwd.return_value = share
 
-            self.assertEqualNormCase(str(P().absolute()), BASE)
-            self.assertEqualNormCase(str(P('.').absolute()), BASE)
+            self.assertEqualNormCase(str(P().absolute()), share)
+            self.assertEqualNormCase(str(P('.').absolute()), share)
             self.assertEqualNormCase(str(P('a').absolute()),
-                                     os.path.join(BASE, 'a'))
+                                     os.path.join(share, 'a'))
             self.assertEqualNormCase(str(P('a', 'b', 'c').absolute()),
-                                     os.path.join(BASE, 'a', 'b', 'c'))
+                                     os.path.join(share, 'a', 'b', 'c'))
 
 
     def test_glob(self):
