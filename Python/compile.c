@@ -3412,7 +3412,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n = asdl_seq_LEN(s->v.ImportFrom.names);
     PyObject *names;
-    _Py_IDENTIFIER(empty_string);
+    _Py_static_string(PyId_empty_string, "");
     PyObject *empty_string = _PyUnicode_FromId(&PyId_empty_string); /* borrowed ref */
 
     if (empty_string == NULL) {
