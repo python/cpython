@@ -1,0 +1,1 @@
+PyEval_GetGlobals will now raise a SystemError and return NULL if frame is NULL.
