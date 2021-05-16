@@ -188,9 +188,9 @@ Literals
      of the value, or ``None`` if no format was specified. Both
      ``conversion`` and ``format_spec`` can be set at the same time.
 
-   ... versionchanged:: 3.11
-       Added support for lossy and lossless convertions to :class:`int`
-       and :class:`float`.
+   .. versionchanged:: 3.11
+      Added support for lossy and lossless convertions to :class:`int`
+      and :class:`float`.
 
 
 .. class:: JoinedStr(values)
