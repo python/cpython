@@ -56,9 +56,17 @@ STRINGLIB(split_whitespace)(PyObject* str_obj,
                            Py_ssize_t maxcount, int prune)
 {
     Py_ssize_t i, j, k, count=0;
-    PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
+    PyObject *list;
     PyObject *sub;
 
+    if ((str_len == 0) && prune) {
+        list = PyList_New(0);
+        if (list == NULL)
+            return NULL;
+        return list;
+    }
+
+    list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
@@ -111,10 +119,18 @@ STRINGLIB(split_char)(PyObject* str_obj,
                      Py_ssize_t maxcount, int prune)
 {
     Py_ssize_t i, j, count=0;
-    PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
+    PyObject *list;
     PyObject *sub;
     int pruned = 0;
 
+    if ((str_len == 0) && prune) {
+        list = PyList_New(0);
+        if (list == NULL)
+            return NULL;
+        return list;
+    }
+
+    list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
@@ -169,6 +185,13 @@ STRINGLIB(split)(PyObject* str_obj,
     else if (sep_len == 1)
         return STRINGLIB(split_char)(str_obj, str, str_len, sep[0], maxcount, prune);
 
+    if ((str_len == 0) && prune) {
+        list = PyList_New(0);
+        if (list == NULL)
+            return NULL;
+        return list;
+    }
+
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
@@ -214,9 +237,17 @@ STRINGLIB(rsplit_whitespace)(PyObject* str_obj,
                             Py_ssize_t maxcount, int prune)
 {
     Py_ssize_t i, j, k, count=0;
-    PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
+    PyObject *list;
     PyObject *sub;
 
+    if ((str_len == 0) && prune) {
+        list = PyList_New(0);
+        if (list == NULL)
+            return NULL;
+        return list;
+    }
+
+    list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
@@ -271,10 +302,18 @@ STRINGLIB(rsplit_char)(PyObject* str_obj,
                       Py_ssize_t maxcount, int prune)
 {
     Py_ssize_t i, j, count=0;
-    PyObject *list = PyList_New(PREALLOC_SIZE(maxcount));
+    PyObject *list;
     PyObject *sub;
     int pruned = 0;
 
+    if ((str_len == 0) && prune) {
+        list = PyList_New(0);
+        if (list == NULL)
+            return NULL;
+        return list;
+    }
+
+    list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
@@ -329,6 +368,13 @@ STRINGLIB(rsplit)(PyObject* str_obj,
     }
     else if (sep_len == 1)
         return STRINGLIB(rsplit_char)(str_obj, str, str_len, sep[0], maxcount, prune);
+
+    if ((str_len == 0) && prune) {
+        list = PyList_New(0);
+        if (list == NULL)
+            return NULL;
+        return list;
+    }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
