@@ -626,15 +626,15 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(regressor, dependent_variable)
+.. function:: linear_regression(independent_variable, dependent_variable)
 
    Return the intercept and slope of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
    parameters estimated using ordinary least squares. Simple linear
-   regression describes the relationship between *regressor* and
+   regression describes the relationship between *independent_variable* and
    *dependent variable* in terms of this linear function:
 
-      *dependent_variable = intercept + slope \* regressor + noise*
+      *dependent_variable = intercept + slope \* independent_variable + noise*
 
    where ``intercept`` and ``slope`` are the regression parameters that are
    estimated, and noise represents the
@@ -642,7 +642,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    (it is equal to the difference between predicted and actual values
    of dependent variable).
 
-   Both inputs must be of the same length (no less than two), and regressor
+   Both inputs must be of the same length (no less than two), and independent_variable
    needs not to be constant; otherwise :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
