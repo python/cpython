@@ -25,6 +25,7 @@ import errno
 import os
 import select
 import socket
+from test.support import socket_helper
 import time
 import unittest
 
@@ -41,7 +42,8 @@ except OSError as e:
 class TestEPoll(unittest.TestCase):
 
     def setUp(self):
-        self.serverSocket = socket.create_server(('127.0.0.1', 0))
+        self.serverSocket, _ = socket_helper.get_bound_ip_socket_and_port()
+        self.serverSocket.listen()
         self.connections = [self.serverSocket]
 
     def tearDown(self):
@@ -49,10 +51,10 @@ class TestEPoll(unittest.TestCase):
             skt.close()
 
     def _connected_pair(self):
-        client = socket.socket()
+        client = socket.socket(self.serverSocket.family)
         client.setblocking(False)
         try:
-            client.connect(('127.0.0.1', self.serverSocket.getsockname()[1]))
+            client.connect((socket_helper.HOST, self.serverSocket.getsockname()[1]))
         except OSError as e:
             self.assertEqual(e.args[0], errno.EINPROGRESS)
         else:

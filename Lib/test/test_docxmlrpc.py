@@ -1,7 +1,9 @@
 from xmlrpc.server import DocXMLRPCServer
 import http.client
 import re
+import socket
 import sys
+from test.support import socket_helper
 import threading
 import unittest
 
@@ -20,7 +22,14 @@ def make_request_and_skipIf(condition, reason):
 
 
 def make_server():
-    serv = DocXMLRPCServer(("localhost", 0), logRequests=False)
+    try:
+        serv = DocXMLRPCServer((socket_helper.HOST, 0), logRequests=False)
+    except OSError:
+        if not socket_helper.IPV6_ENABLED:
+            raise
+        class IPv6DocXMLRPCServer(DocXMLRPCServer):
+            address_family = socket.AF_INET6
+        serv = IPv6DocXMLRPCServer((socket_helper.HOST, 0), logRequests=False)
 
     try:
         # Add some documentation
@@ -74,7 +83,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.thread.start()
 
         PORT = self.serv.server_address[1]
-        self.client = http.client.HTTPConnection("localhost:%d" % PORT)
+        self.client = http.client.HTTPConnection(f"{socket_helper.HOST}:{PORT}")
 
     def tearDown(self):
         self.client.close()

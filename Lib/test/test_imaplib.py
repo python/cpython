@@ -13,6 +13,7 @@ import socket
 from test.support import (verbose,
                           run_with_tz, run_with_locale, cpython_only)
 from test.support import hashlib_helper
+from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 import unittest
@@ -25,6 +26,15 @@ except ImportError:
 
 CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
 CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+
+
+if socket_helper.IPV4_ENABLED:
+    TCPServer = socketserver.TCPServer
+elif socket_helper.IPV6_ENABLED:
+    class TCPServer(socketserver.TCPServer):
+        address_family = socket.AF_INET6
+else:
+    raise unittest.SkipTest('IPv4 or IPv6 required.')
 
 
 class TestImaplib(unittest.TestCase):
@@ -92,7 +102,7 @@ class TestImaplib(unittest.TestCase):
 
 
 if ssl:
-    class SecureTCPServer(socketserver.TCPServer):
+    class SecureTCPServer(TCPServer):
 
         def get_request(self):
             newsocket, fromaddr = self.socket.accept()
@@ -238,7 +248,7 @@ class NewIMAPTestsMixin():
         self.thread.start()
 
         if connect:
-            self.client = self.imap_class(*self.server.server_address)
+            self.client = self.imap_class(*self.server.server_address[:2])
 
         return self.client, self.server
 
@@ -265,7 +275,7 @@ class NewIMAPTestsMixin():
                 self.wfile.write(b'* OK')
         _, server = self._setup(EOFHandler, connect=False)
         self.assertRaises(imaplib.IMAP4.abort, self.imap_class,
-                          *server.server_address)
+                *server.server_address[:2])
 
     def test_line_termination(self):
         class BadNewlineHandler(SimpleIMAPHandler):
@@ -274,7 +284,7 @@ class NewIMAPTestsMixin():
                 self._send_tagged(tag, 'OK', 'CAPABILITY completed')
         _, server = self._setup(BadNewlineHandler, connect=False)
         self.assertRaises(imaplib.IMAP4.abort, self.imap_class,
-                          *server.server_address)
+                *server.server_address[:2])
 
     def test_enable_raises_error_if_not_AUTH(self):
         class EnableHandler(SimpleIMAPHandler):
@@ -449,11 +459,11 @@ class NewIMAPTestsMixin():
         _, server = self._setup(TooLongHandler, connect=False)
         with self.assertRaisesRegex(imaplib.IMAP4.error,
                 'got more than 10 bytes'):
-            self.imap_class(*server.server_address)
+            self.imap_class(*server.server_address[:2])
 
     def test_simple_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)
-        with self.imap_class(*server.server_address):
+        with self.imap_class(*server.server_address[:2]):
             pass
 
     def test_imaplib_timeout_test(self):
@@ -481,7 +491,7 @@ class NewIMAPTestsMixin():
 
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)
-        with self.imap_class(*server.server_address) as imap:
+        with self.imap_class(*server.server_address[:2]) as imap:
             imap.login('user', 'pass')
             self.assertEqual(server.logged, 'user')
         self.assertIsNone(server.logged)
@@ -489,7 +499,7 @@ class NewIMAPTestsMixin():
     def test_with_statement_logout(self):
         # It is legal to log out explicitly inside the with block
         _, server = self._setup(SimpleIMAPHandler, connect=False)
-        with self.imap_class(*server.server_address) as imap:
+        with self.imap_class(*server.server_address[:2]) as imap:
             imap.login('user', 'pass')
             self.assertEqual(server.logged, 'user')
             imap.logout()
@@ -541,7 +551,7 @@ class NewIMAPTestsMixin():
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
     imap_class = imaplib.IMAP4
-    server_class = socketserver.TCPServer
+    server_class = TCPServer
 
 
 @unittest.skipUnless(ssl, "SSL not available")
@@ -557,9 +567,9 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
 
         with self.assertRaisesRegex(ssl.CertificateError,
                 "IP address mismatch, certificate is not valid for "
-                "'127.0.0.1'"):
+                f"'({socket_helper.HOSTv4}|{socket_helper.HOSTv6})'"):
             _, server = self._setup(SimpleIMAPHandler)
-            client = self.imap_class(*server.server_address,
+            client = self.imap_class(*server.server_address[:2],
                                      ssl_context=ssl_context)
             client.shutdown()
 
@@ -582,7 +592,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
                     self.imap_class('localhost', 143, certfile=CERTFILE)
 
 class ThreadedNetworkedTests(unittest.TestCase):
-    server_class = socketserver.TCPServer
+    server_class = TCPServer
     imap_class = imaplib.IMAP4
 
     def make_server(self, addr, hdlr):
@@ -637,7 +647,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @contextmanager
     def reaped_pair(self, hdlr):
         with self.reaped_server(hdlr) as server:
-            client = self.imap_class(*server.server_address)
+            client = self.imap_class(*server.server_address[:2])
             try:
                 yield server, client
             finally:
@@ -646,7 +656,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_connect(self):
         with self.reaped_server(SimpleIMAPHandler) as server:
-            client = self.imap_class(*server.server_address)
+            client = self.imap_class(*server.server_address[:2])
             client.shutdown()
 
     @threading_helper.reap_threads
@@ -708,7 +718,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         with self.reaped_server(EOFHandler) as server:
             self.assertRaises(imaplib.IMAP4.abort,
-                              self.imap_class, *server.server_address)
+                    self.imap_class, *server.server_address[:2])
 
     @threading_helper.reap_threads
     def test_line_termination(self):
@@ -721,7 +731,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         with self.reaped_server(BadNewlineHandler) as server:
             self.assertRaises(imaplib.IMAP4.abort,
-                              self.imap_class, *server.server_address)
+                    self.imap_class, *server.server_address[:2])
 
     class UTF8Server(SimpleIMAPHandler):
         capabilities = 'AUTH ENABLE UTF8=ACCEPT'
@@ -906,19 +916,19 @@ class ThreadedNetworkedTests(unittest.TestCase):
 
         with self.reaped_server(TooLongHandler) as server:
             self.assertRaises(imaplib.IMAP4.error,
-                              self.imap_class, *server.server_address)
+                    self.imap_class, *server.server_address[:2])
 
     @threading_helper.reap_threads
     def test_simple_with_statement(self):
         # simplest call
         with self.reaped_server(SimpleIMAPHandler) as server:
-            with self.imap_class(*server.server_address):
+            with self.imap_class(*server.server_address[:2]):
                 pass
 
     @threading_helper.reap_threads
     def test_with_statement(self):
         with self.reaped_server(SimpleIMAPHandler) as server:
-            with self.imap_class(*server.server_address) as imap:
+            with self.imap_class(*server.server_address[:2]) as imap:
                 imap.login('user', 'pass')
                 self.assertEqual(server.logged, 'user')
             self.assertIsNone(server.logged)
@@ -927,7 +937,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
     def test_with_statement_logout(self):
         # what happens if already logout in the block?
         with self.reaped_server(SimpleIMAPHandler) as server:
-            with self.imap_class(*server.server_address) as imap:
+            with self.imap_class(*server.server_address[:2]) as imap:
                 imap.login('user', 'pass')
                 self.assertEqual(server.logged, 'user')
                 imap.logout()
@@ -941,7 +951,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
         untagged_resp_dict = {'READ-WRITE': [b'']}
 
         with self.reaped_server(SimpleIMAPHandler) as server:
-            with self.imap_class(*server.server_address) as imap:
+            with self.imap_class(*server.server_address[:2]) as imap:
                 with mock.patch.object(imap, '_mesg') as mock_mesg:
                     imap._dump_ur(untagged_resp_dict)
                     mock_mesg.assert_called_with(
@@ -962,9 +972,9 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
         with self.assertRaisesRegex(
                 ssl.CertificateError,
                 "IP address mismatch, certificate is not valid for "
-                "'127.0.0.1'"):
+                f"'({socket_helper.HOSTv4}|{socket_helper.HOSTv6})'"):
             with self.reaped_server(SimpleIMAPHandler) as server:
-                client = self.imap_class(*server.server_address,
+                client = self.imap_class(*server.server_address[:2],
                                          ssl_context=ssl_context)
                 client.shutdown()
 

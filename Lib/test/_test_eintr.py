@@ -285,28 +285,28 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_send(lambda sock, data: sock.sendmsg([data]))
 
     def test_accept(self):
-        sock = socket.create_server((socket_helper.HOST, 0))
-        self.addCleanup(sock.close)
-        port = sock.getsockname()[1]
+        with socket_helper.bind_ip_socket_and_port() as sock_port:
+            sock, port = sock_port
+            sock.listen()
 
-        code = '\n'.join((
-            'import socket, time',
-            '',
-            'host = %r' % socket_helper.HOST,
-            'port = %s' % port,
-            'sleep_time = %r' % self.sleep_time,
-            '',
-            '# let parent block on accept()',
-            'time.sleep(sleep_time)',
-            'with socket.create_connection((host, port)):',
-            '    time.sleep(sleep_time)',
-        ))
+            code = '\n'.join((
+                'import socket, time',
+                '',
+                'host = %r' % socket_helper.HOST,
+                'port = %s' % port,
+                'sleep_time = %r' % self.sleep_time,
+                '',
+                '# let parent block on accept()',
+                'time.sleep(sleep_time)',
+                'with socket.create_connection((host, port)):',
+                '    time.sleep(sleep_time)',
+            ))
 
-        proc = self.subprocess(code)
-        with kill_on_error(proc):
-            client_sock, _ = sock.accept()
-            client_sock.close()
-            self.assertEqual(proc.wait(), 0)
+            proc = self.subprocess(code)
+            with kill_on_error(proc):
+                client_sock, _ = sock.accept()
+                client_sock.close()
+                self.assertEqual(proc.wait(), 0)
 
     # Issue #25122: There is a race condition in the FreeBSD kernel on
     # handling signals in the FIFO device. Skip the test until the bug is

@@ -265,9 +265,15 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
 
     handler = DummyFTPHandler
 
-    def __init__(self, address, af=socket.AF_INET, encoding=DEFAULT_ENCODING):
+    def __init__(self, address, af=None, encoding=DEFAULT_ENCODING):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
+        if af is None and address[0] == socket_helper.HOST:
+            if socket_helper.IPV4_ENABLED:
+                af = socket.AF_INET
+            else:
+                assert socket_helper.IPV6_ENABLED, 'no IPv4 or IPv6?'
+                af = socket.AF_INET6
         self.daemon = True
         self.create_socket(af, socket.SOCK_STREAM)
         self.bind(address)
@@ -699,19 +705,22 @@ class TestFTPClass(TestCase):
         for x in self.client.mlsd():
             self.fail("unexpected data %s" % x)
 
-    def test_makeport(self):
+    @skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
+    def test_makeport_ipv4(self):
         with self.client.makeport():
             # IPv4 is in use, just make sure send_eprt has not been used
             self.assertEqual(self.server.handler_instance.last_received_cmd,
-                                'port')
+                                 'port')
 
-    def test_makepasv(self):
+    @skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
+    def test_makepasv_ipv4(self):
         host, port = self.client.makepasv()
         conn = socket.create_connection((host, port), timeout=TIMEOUT)
         conn.close()
         # IPv4 is in use, just make sure send_epsv has not been used
         self.assertEqual(self.server.handler_instance.last_received_cmd, 'pasv')
 
+    @skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
     def test_makepasv_issue43285_security_disabled(self):
         """Test the opt-in to the old vulnerable behavior."""
         self.client.trust_server_pasv_ipv4_address = True
@@ -779,7 +788,7 @@ class TestFTPClass(TestCase):
 
     def test_source_address(self):
         self.client.quit()
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=None)
         try:
             self.client.connect(self.server.host, self.server.port,
                                 source_address=(HOST, port))
@@ -791,7 +800,7 @@ class TestFTPClass(TestCase):
             raise
 
     def test_source_address_passive_connection(self):
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=None)
         self.client.source_address = (HOST, port)
         try:
             with self.client.transfercmd('list') as sock:
@@ -1033,9 +1042,8 @@ class TestTimeouts(TestCase):
 
     def setUp(self):
         self.evt = threading.Event()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock, self.port = socket_helper.get_bound_ip_socket_and_port()
         self.sock.settimeout(20)
-        self.port = socket_helper.bind_port(self.sock)
         self.server_thread = threading.Thread(target=self.server)
         self.server_thread.daemon = True
         self.server_thread.start()
