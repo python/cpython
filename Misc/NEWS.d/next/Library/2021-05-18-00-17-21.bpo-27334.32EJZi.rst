@@ -1,0 +1,2 @@
+The :mod:`sqlite3` context manager now releases the database lock if the
+implicit ``COMMIT`` fails. Patch by Luca Citi and Erlend E. Aasland.
