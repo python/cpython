@@ -1169,7 +1169,7 @@ def _unpack_zipfile(filename, extract_dir):
             if not name.endswith('/'):
                 # file
                 with zip.open(name, 'r') as source, \
-                        open(targetpath, "wb") as target:
+                        open(targetpath, 'wb') as target:
                     copyfileobj(source, target)
     finally:
         zip.close()
