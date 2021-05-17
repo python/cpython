@@ -563,12 +563,17 @@ Pure paths provide the following methods and properties:
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
 
-   If the path doesn't start with *other* and *strict* is ``True``, :exc:`ValueError` is raised.  If *strict* is ``False`` and one path is relative and the other is absolute or if they reference different drives :exc:`ValueError` is raised.
+   In strict mode (the default), the path must start with *other*. In non-strict
+   mode, ``..`` entries may be added to form the relative path. In all other
+   cases, such as the paths referencing different drives, :exe:`ValueError` is
+   raised.
+
+   .. warning::
+      Non-strict mode assumes that no symlinks are present in the path; you
+      should call :meth:`~Path.resolve` first to ensure this.
 
    .. versionadded:: 3.11
       The *strict* argument (pre-3.11 behavior is strict).
-   .. versionadded:: 3.10
-      The *strict* argument (pre-3.10 behavior is strict).
 
 
 .. method:: PurePath.with_name(name)

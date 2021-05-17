@@ -86,6 +86,13 @@ New Modules
 Improved Modules
 ================
 
+pathlib
+-------
+
+:meth:`pathlib.PurePath.relative_to` now supports generating relative paths
+containing ``..`` entries if its new *strict* keyword-only argument is set to
+``False``. The new behavior is more consistent with :func:`os.path.relpath`.
+(Contributed by Domenico Ragusa in :issue:`40358`.)
 
 Optimizations
 =============
