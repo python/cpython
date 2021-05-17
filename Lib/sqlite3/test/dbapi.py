@@ -956,7 +956,7 @@ except Exception as exc:
     print(exc)
 else:
     print("no error in sub")
-input()   # keep proc open till parent calls
+input()  # keep proc open till parent calls
         """
 
         # spawn child process
