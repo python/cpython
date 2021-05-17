@@ -39,6 +39,26 @@ class F(E):
 class G(A):
     pass
 
+class P:
+    @property
+    def x(self):
+        return self._x
+    @x.setter
+    def x(self, value):
+        self._x = value
+    @x.deleter
+    def x(self):
+        del self._x
+
+class Q(P):
+    pass
+
+class R(P):
+    x = None
+
+class S(Q, R):
+    pass
+
 
 class TestSuper(unittest.TestCase):
 
@@ -316,6 +336,60 @@ class TestSuper(unittest.TestCase):
         sp = super(float, 1.0)
         for i in range(1000):
             super.__init__(sp, int, i)
+
+    def test_super_setattr(self):
+        # See issue14965
+        val = object()
+        p = P()
+        with self.assertRaises(AttributeError):
+            super(P, p).x = val
+        with self.assertRaises(AttributeError):
+            del super(P, p).x
+
+        q = Q()
+        super(Q, q).x = val
+        self.assertIs(q.__dict__['_x'], val)
+        self.assertIs(super(Q, q).x, val)
+        del super(Q, q).x
+        self.assertNotIn('_x', q.__dict__)
+
+        r = R()
+        super(R, r).x = val
+        self.assertIs(r.__dict__['_x'], val)
+        self.assertIs(super(R, r).x, val)
+        del super(R, r).x
+        self.assertNotIn('_x', r.__dict__)
+
+        s = S()
+        with self.assertRaises(AttributeError):
+            super(S, s).x = val
+        with self.assertRaises(AttributeError):
+            del super(S, s).x
+        self.assertIs(super(S, s).x, None)
+
+    def test_super_property(self):
+        # See issue14965
+        class T(P):
+            def __init__(self, x):
+                self.x = x
+            @property
+            def x(self):
+                return super().x / 2
+            @x.setter
+            def x(self, value):
+                super().x = value * 2
+            @x.deleter
+            def x(self):
+                del super().x
+        t = T(1)
+        self.assertEqual(t.x, 1)
+        self.assertEqual(t._x, 2)
+        t.x = 10
+        self.assertEqual(t.x, 10)
+        self.assertEqual(t._x, 20)
+        del t.x
+        self.assertFalse(hasattr(t, 'x'))
+        self.assertFalse(hasattr(t, '_x'))
 
 
 if __name__ == "__main__":

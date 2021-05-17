@@ -8738,6 +8738,71 @@ super_getattro(PyObject *self, PyObject *name)
     return PyObject_GenericGetAttr(self, name);
 }
 
+static int
+super_setattro(PyObject *self, PyObject *name, PyObject *value)
+{
+    superobject *su = (superobject *)self;
+    int skip = (su->obj_type == NULL);
+
+    if (!skip) {
+        /* We don't allow overwriting __class__. */
+        skip = (PyUnicode_Check(name) &&
+            PyUnicode_GET_LENGTH(name) == 9 &&
+            PyUnicode_CompareWithASCIIString(name, "__class__") == 0);
+    }
+
+    if (!skip) {
+        PyObject *mro, *descr, *tmp, *dict;
+        PyTypeObject *starttype;
+        descrsetfunc f;
+        Py_ssize_t i, n;
+        int done = 0, result = 0;
+
+        starttype = su->obj_type;
+        mro = starttype->tp_mro;
+
+        if (mro == NULL)
+            n = 0;
+        else {
+            assert(PyTuple_Check(mro));
+            n = PyTuple_GET_SIZE(mro);
+        }
+        for (i = 0; i < n; i++) {
+            if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
+                break;
+        }
+        i++;
+        descr = NULL;
+        /* keep a strong reference to mro because starttype->tp_mro can be
+           replaced during PyDict_GetItem(dict, name)  */
+        Py_INCREF(mro);
+        for (; i < n; i++) {
+            tmp = PyTuple_GET_ITEM(mro, i);
+            if (PyType_Check(tmp))
+                dict = ((PyTypeObject *)tmp)->tp_dict;
+            else
+                continue;
+            descr = PyDict_GetItem(dict, name);
+            if (descr != NULL) {
+                Py_INCREF(descr);
+                f = Py_TYPE(descr)->tp_descr_set;
+                if ((f != NULL) && PyDescr_IsData(descr)) {
+                    /* We found a data descriptor: */
+                    result = f(descr, su->obj, value);
+                    done = 1;
+                }
+                Py_DECREF(descr);
+                break;
+            }
+        }
+        Py_DECREF(mro);
+        if (done) {
+            return result;
+        }
+    }
+    return PyObject_GenericSetAttr(self, name, value);
+}
+
 static PyTypeObject *
 supercheck(PyTypeObject *type, PyObject *obj)
 {
@@ -8998,7 +9063,7 @@ PyTypeObject PySuper_Type = {
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     super_getattro,                             /* tp_getattro */
-    0,                                          /* tp_setattro */
+    super_setattro,                             /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
