@@ -1161,20 +1161,16 @@ def _unpack_zipfile(filename, extract_dir):
             if name.startswith('/') or '..' in name:
                 continue
 
-            target = os.path.join(extract_dir, *name.split('/'))
-            if not target:
+            targetpath = os.path.join(extract_dir, *name.split('/'))
+            if not targetpath:
                 continue
 
-            _ensure_directory(target)
+            _ensure_directory(targetpath)
             if not name.endswith('/'):
                 # file
-                data = zip.read(info.filename)
-                f = open(target, 'wb')
-                try:
-                    f.write(data)
-                finally:
-                    f.close()
-                    del data
+                with zip.open(name, 'r') as source, \
+                        open(targetpath, 'wb') as target:
+                    copyfileobj(source, target)
     finally:
         zip.close()
 
