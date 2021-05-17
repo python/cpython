@@ -1,1 +1,1 @@
-fix IDLE clearing the clipboard upon exit
+Fix new clipboard content copied from IDLE being gone after exiting IDLE.
