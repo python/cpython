@@ -851,7 +851,8 @@ PyAPI_FUNC(void) PyUnicode_AppendAndDel(
 PyAPI_FUNC(PyObject*) PyUnicode_Split(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
-    Py_ssize_t maxsplit         /* Maxsplit count */
+    Py_ssize_t maxsplit,        /* Maxsplit count */
+    int prune                   /* Whether to remove empty strings */
     );
 
 /* Dito, but split at line breaks.
@@ -895,7 +896,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_RPartition(
 PyAPI_FUNC(PyObject*) PyUnicode_RSplit(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
-    Py_ssize_t maxsplit         /* Maxsplit count */
+    Py_ssize_t maxsplit,        /* Maxsplit count */
+    int prune                   /* Whether to remove empty strings */
     );
 
 /* Translate a string by applying a character mapping table to it and

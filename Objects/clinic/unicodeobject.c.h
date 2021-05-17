@@ -855,7 +855,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_split__doc__,
-"split($self, /, sep=None, maxsplit=-1)\n"
+"split($self, /, sep=None, maxsplit=-1, prune=None)\n"
 "--\n"
 "\n"
 "Return a list of the words in the string, using sep as the delimiter string.\n"
@@ -866,26 +866,36 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    and discard empty strings from the result.\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
-"    -1 (the default value) means no limit.");
+"    -1 (the default value) means no limit.\n"
+"  prune\n"
+"    Determines whether or not to keep empty strings in the final list.\n"
+"\n"
+"If maxsplit is given, at most maxsplit splits are done.\n"
+"If sep is not specified or is None, any whitespace string is a separator.\n"
+"If prune is given and True, empty strings are removed from the result.\n"
+"If it is not given or None, the default behaviour is used: it is set to True if\n"
+"sep is None, False otherwise.");
 
 #define UNICODE_SPLIT_METHODDEF    \
     {"split", (PyCFunction)(void(*)(void))unicode_split, METH_FASTCALL|METH_KEYWORDS, unicode_split__doc__},
 
 static PyObject *
-unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
+unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                   PyObject *prune);
 
 static PyObject *
 unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
+    PyObject *prune = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -898,20 +908,26 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
+    if (args[1]) {
+        {
+            Py_ssize_t ival = -1;
+            PyObject *iobj = _PyNumber_Index(args[1]);
+            if (iobj != NULL) {
+                ival = PyLong_AsSsize_t(iobj);
+                Py_DECREF(iobj);
+            }
+            if (ival == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
+            maxsplit = ival;
         }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
+        if (!--noptargs) {
+            goto skip_optional_pos;
         }
-        maxsplit = ival;
     }
+    prune = args[2];
 skip_optional_pos:
-    return_value = unicode_split_impl(self, sep, maxsplit);
+    return_value = unicode_split_impl(self, sep, maxsplit, prune);
 
 exit:
     return return_value;
@@ -950,7 +966,7 @@ PyDoc_STRVAR(unicode_rpartition__doc__,
     {"rpartition", (PyCFunction)unicode_rpartition, METH_O, unicode_rpartition__doc__},
 
 PyDoc_STRVAR(unicode_rsplit__doc__,
-"rsplit($self, /, sep=None, maxsplit=-1)\n"
+"rsplit($self, /, sep=None, maxsplit=-1, prune=None)\n"
 "--\n"
 "\n"
 "Return a list of the words in the string, using sep as the delimiter string.\n"
@@ -962,6 +978,8 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
+"  prune\n"
+"    Determines whether or not to keep empty strings in the final list.\n"
 "\n"
 "Splits are done starting at the end of the string and working to the front.");
 
@@ -969,20 +987,22 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
     {"rsplit", (PyCFunction)(void(*)(void))unicode_rsplit, METH_FASTCALL|METH_KEYWORDS, unicode_rsplit__doc__},
 
 static PyObject *
-unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit);
+unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                    PyObject *prune);
 
 static PyObject *
 unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
+    PyObject *prune = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -995,20 +1015,26 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
+    if (args[1]) {
+        {
+            Py_ssize_t ival = -1;
+            PyObject *iobj = _PyNumber_Index(args[1]);
+            if (iobj != NULL) {
+                ival = PyLong_AsSsize_t(iobj);
+                Py_DECREF(iobj);
+            }
+            if (ival == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
+            maxsplit = ival;
         }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
+        if (!--noptargs) {
+            goto skip_optional_pos;
         }
-        maxsplit = ival;
     }
+    prune = args[2];
 skip_optional_pos:
-    return_value = unicode_rsplit_impl(self, sep, maxsplit);
+    return_value = unicode_rsplit_impl(self, sep, maxsplit, prune);
 
 exit:
     return return_value;
@@ -1327,4 +1353,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f10cf85d3935b3b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ebd449cc09bcc9b input=a9049054013a1b77]*/

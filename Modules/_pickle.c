@@ -1810,7 +1810,7 @@ get_dotted_path(PyObject *obj, PyObject *name)
     PyObject *dotted_path;
     Py_ssize_t i, n;
 
-    dotted_path = PyUnicode_Split(name, _PyUnicode_FromId(&PyId_dot), -1);
+    dotted_path = PyUnicode_Split(name, _PyUnicode_FromId(&PyId_dot), -1, 0);
     if (dotted_path == NULL)
         return NULL;
     n = PyList_GET_SIZE(dotted_path);

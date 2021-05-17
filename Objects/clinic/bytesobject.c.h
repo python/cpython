@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(bytes_split__doc__,
-"split($self, /, sep=None, maxsplit=-1)\n"
+"split($self, /, sep=None, maxsplit=-1, prune=None)\n"
 "--\n"
 "\n"
 "Return a list of the sections in the bytes, using sep as the delimiter.\n"
@@ -14,26 +14,30 @@ PyDoc_STRVAR(bytes_split__doc__,
 "    (space, tab, return, newline, formfeed, vertical tab).\n"
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
-"    -1 (the default value) means no limit.");
+"    -1 (the default value) means no limit.\n"
+"  prune\n"
+"    Determines whether or not to keep empty strings in the final list");
 
 #define BYTES_SPLIT_METHODDEF    \
     {"split", (PyCFunction)(void(*)(void))bytes_split, METH_FASTCALL|METH_KEYWORDS, bytes_split__doc__},
 
 static PyObject *
-bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
+bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                 PyObject *prune);
 
 static PyObject *
 bytes_split(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
+    PyObject *prune = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -46,20 +50,26 @@ bytes_split(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
+    if (args[1]) {
+        {
+            Py_ssize_t ival = -1;
+            PyObject *iobj = _PyNumber_Index(args[1]);
+            if (iobj != NULL) {
+                ival = PyLong_AsSsize_t(iobj);
+                Py_DECREF(iobj);
+            }
+            if (ival == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
+            maxsplit = ival;
         }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
+        if (!--noptargs) {
+            goto skip_optional_pos;
         }
-        maxsplit = ival;
     }
+    prune = args[2];
 skip_optional_pos:
-    return_value = bytes_split_impl(self, sep, maxsplit);
+    return_value = bytes_split_impl(self, sep, maxsplit, prune);
 
 exit:
     return return_value;
@@ -152,7 +162,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_rsplit__doc__,
-"rsplit($self, /, sep=None, maxsplit=-1)\n"
+"rsplit($self, /, sep=None, maxsplit=-1, prune=None)\n"
 "--\n"
 "\n"
 "Return a list of the sections in the bytes, using sep as the delimiter.\n"
@@ -164,6 +174,8 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
+"  prune\n"
+"    Determines whether or not to keep empty strings in the final list\n"
 "\n"
 "Splitting is done starting at the end of the bytes and working to the front.");
 
@@ -171,20 +183,22 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
     {"rsplit", (PyCFunction)(void(*)(void))bytes_rsplit, METH_FASTCALL|METH_KEYWORDS, bytes_rsplit__doc__},
 
 static PyObject *
-bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
+bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
+                  PyObject *prune);
 
 static PyObject *
 bytes_rsplit(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
+    PyObject *prune = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -197,20 +211,26 @@ bytes_rsplit(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[1]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
+    if (args[1]) {
+        {
+            Py_ssize_t ival = -1;
+            PyObject *iobj = _PyNumber_Index(args[1]);
+            if (iobj != NULL) {
+                ival = PyLong_AsSsize_t(iobj);
+                Py_DECREF(iobj);
+            }
+            if (ival == -1 && PyErr_Occurred()) {
+                goto exit;
+            }
+            maxsplit = ival;
         }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
+        if (!--noptargs) {
+            goto skip_optional_pos;
         }
-        maxsplit = ival;
     }
+    prune = args[2];
 skip_optional_pos:
-    return_value = bytes_rsplit_impl(self, sep, maxsplit);
+    return_value = bytes_rsplit_impl(self, sep, maxsplit, prune);
 
 exit:
     return return_value;
@@ -878,4 +898,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3f0ec2753246b9c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=71549ea5861cef16 input=a9049054013a1b77]*/
