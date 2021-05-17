@@ -241,8 +241,12 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_nlocals = nlocals;
     co->co_stacksize = stacksize;
     co->co_flags = flags;
+    assert(PyBytes_GET_SIZE(code) <= INT_MAX);
+    assert(PyBytes_GET_SIZE(code) % sizeof(_Py_CODEUNIT) == 0);
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(code), sizeof(_Py_CODEUNIT)));
     Py_INCREF(code);
     co->co_code = code;
+    co->co_firstinstr = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
     Py_INCREF(consts);
     co->co_consts = consts;
     Py_INCREF(names);

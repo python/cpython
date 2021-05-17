@@ -24,6 +24,7 @@ struct PyCodeObject {
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_flags;               /* CO_..., see below */
     int co_firstlineno;         /* first source line number */
+    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening */
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
