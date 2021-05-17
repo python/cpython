@@ -13141,7 +13141,7 @@ sep is None, False otherwise.
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
                    PyObject *keepempty)
-/*[clinic end generated code: output=c182ae533ca1ef53 input=bcd1a211e53ae5a9]*/
+/*[clinic end generated code: output=c182ae533ca1ef53 input=2fe5525dbaaf44ee]*/
 {
     int prune;
 

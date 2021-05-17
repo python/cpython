@@ -872,8 +872,9 @@ PyDoc_STRVAR(unicode_split__doc__,
 "\n"
 "If maxsplit is given, at most maxsplit splits are done.\n"
 "If sep is not specified or is None, any whitespace string is a separator.\n"
-"If prune is given and True, empty strings are removed from the result.\n"
-"If it is not given or None, the default behaviour is used: it is set to True if\n"
+"If keepempty is False, empty strings are removed from the result.\n"
+"If keepempty is True, empty strings are retained in the result.\n"
+"If keepempty is not given or None, the default behaviour is used: it is set to True if\n"
 "sep is None, False otherwise.");
 
 #define UNICODE_SPLIT_METHODDEF    \
@@ -1353,4 +1354,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d5919c82872bf04d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5700a0f2fa3f723 input=a9049054013a1b77]*/
