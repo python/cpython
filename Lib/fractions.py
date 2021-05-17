@@ -735,7 +735,7 @@ class Fraction(numbers.Rational):
     # support for pickling, copy, and deepcopy
 
     def __reduce__(self):
-        return (self.__class__, (str(self),))
+        return (self.__class__, (self._numerator, self._denominator))
 
     def __copy__(self):
         if type(self) == Fraction:
