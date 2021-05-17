@@ -35,6 +35,7 @@ struct PyCodeObject {
        for tracebacks and debuggers; otherwise, constant de-duplication
        would collapse identical functions/lambdas defined on different lines.
     */
+    PyObject *co_kwarg2index;   /* Maps keyword arg names to index in locals */
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
@@ -171,6 +172,8 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
                                  void **extra);
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
+
+int _PyCode_InitKwarg2Index(PyCodeObject *co);
 
 /** API for initializing the line number table. */
 int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);

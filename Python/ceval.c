@@ -1,10 +1,5 @@
 /* Execute compiled code */
 
-/* XXX TO DO:
-   XXX speed up searching for keywords by using a dictionary
-   XXX document it!
-   */
-
 /* enable more aggressive intra-module optimizations, where available */
 /* affects both release and debug builds - see bpo-43271 */
 #define PY_LOCAL_AGGRESSIVE
@@ -262,9 +257,6 @@ UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
 }
 
 
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
 #include "ceval_gil.h"
 
 void _Py_NO_RETURN
@@ -4941,8 +4933,12 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
     /* Handle keyword arguments */
     if (kwnames != NULL) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+        if (kwcount > 0 && co->co_kwarg2index == NULL) {
+            if (_PyCode_InitKwarg2Index(co) < 0) {
+                goto fail;
+            }
+        }
         for (i = 0; i < kwcount; i++) {
-            PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
             PyObject *value = args[i+argcount];
             Py_ssize_t j;
@@ -4954,42 +4950,29 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
                 goto fail;
             }
 
-            /* Speed hack: do raw pointer compares. As names are
-            normally interned this should almost always hit. */
-            co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
-            for (j = co->co_posonlyargcount; j < total_args; j++) {
-                PyObject *varname = co_varnames[j];
-                if (varname == keyword) {
-                    goto kw_found;
-                }
-            }
-
-            /* Slow fallback, just in case */
-            for (j = co->co_posonlyargcount; j < total_args; j++) {
-                PyObject *varname = co_varnames[j];
-                int cmp = PyObject_RichCompareBool( keyword, varname, Py_EQ);
-                if (cmp > 0) {
-                    goto kw_found;
-                }
-                else if (cmp < 0) {
+            PyObject *index = PyDict_GetItemWithError(co->co_kwarg2index, keyword);
+            if (index != NULL) {
+                j = PyLong_AsSsize_t(index);
+                if (j == -1 && PyErr_Occurred()) {
                     goto fail;
                 }
+                goto kw_found;
+            }
+            else if (PyErr_Occurred()) {
+                goto fail;
             }
 
-            assert(j >= total_args);
             if (kwdict == NULL) {
-
                 if (co->co_posonlyargcount
                     && positional_only_passed_as_keyword(tstate, co,
                                                         kwcount, kwnames,
-                                                     con->fc_qualname))
+                                                        con->fc_qualname))
                 {
                     goto fail;
                 }
-
                 _PyErr_Format(tstate, PyExc_TypeError,
-                            "%U() got an unexpected keyword argument '%S'",
-                          con->fc_qualname, keyword);
+                              "%U() got an unexpected keyword argument '%S'",
+                              con->fc_qualname, keyword);
                 goto fail;
             }
 

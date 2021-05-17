@@ -253,6 +253,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_freevars = freevars;
     Py_INCREF(cellvars);
     co->co_cellvars = cellvars;
+    co->co_kwarg2index = NULL; // Lazily initialized
     co->co_cell2arg = cell2arg;
     Py_INCREF(filename);
     co->co_filename = filename;
@@ -272,6 +273,37 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
     return co;
+}
+
+int
+_PyCode_InitKwarg2Index(PyCodeObject *co)
+{
+    assert(co->co_kwarg2index == NULL);
+    Py_ssize_t total_args =
+        (Py_ssize_t)co->co_argcount + (Py_ssize_t)co->co_kwonlyargcount;
+    PyObject *d = PyDict_New();
+    if (d == NULL) {
+        return -1;
+    }
+
+    for (Py_ssize_t j = co->co_posonlyargcount; j < total_args; j++) {
+        PyObject *index = PyLong_FromSsize_t(j);
+        if (index == NULL) {
+            Py_DECREF(d);
+            return -1;
+        }
+        PyObject *kw = PyTuple_GET_ITEM(co->co_varnames, j);
+        Py_INCREF(kw);
+        if (PyDict_SetItem(d, kw, index) < 0) {
+            Py_DECREF(index);
+            Py_DECREF(kw);
+            Py_DECREF(d);
+            return -1;
+        }
+    }
+
+    co->co_kwarg2index = d;
+    return 0;
 }
 
 PyCodeObject *
@@ -672,6 +704,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_name);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
+    Py_XDECREF(co->co_kwarg2index);
     if (co->co_cell2arg != NULL)
         PyMem_Free(co->co_cell2arg);
     if (co->co_zombieframe != NULL)
