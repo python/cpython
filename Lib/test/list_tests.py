@@ -124,6 +124,27 @@ class CommonTest(seq_tests.CommonTest):
         with self.assertRaisesRegex(TypeError, msg):
             a['a'] = "python"
 
+        # assert error message when non-empty list positive index
+        idx = 7
+        msg = ("list assignment index out of range, the len is %d"
+               " so index must be in -%d..%d, got %d") % (len(a), len(a), len(a)-1, idx)
+        with self.assertRaisesRegex(IndexError, msg):
+            a[idx] = 9
+
+        # assert error message when non-empty list negative index
+        idx = -7
+        msg = ("list assignment index out of range, the len is %d"
+               " so index must be in -%d..%d, got %d") % (len(a), len(a), len(a)-1, idx)
+        with self.assertRaisesRegex(IndexError, msg):
+            a[idx] = 9
+
+        # assert error message when list is empty
+        idx = 7
+        a = []
+        msg = ("list assignment index out of range, got index %d but the list is empty" % idx)
+        with self.assertRaisesRegex(IndexError, msg):
+            a[idx] = 9
+
     def test_delitem(self):
         a = self.type2test([0, 1])
         del a[1]
@@ -302,6 +323,27 @@ class CommonTest(seq_tests.CommonTest):
         self.assertRaises(IndexError, a.pop)
         self.assertRaises(TypeError, a.pop, 42, 42)
         a = self.type2test([0, 10, 20, 30, 40])
+
+        # assert error message when non-empty list
+        idx = 7
+        msg = ("pop index out of range, the len is %d"
+               " so index must be in -%d..%d, got %d") % (len(a), len(a), len(a)-1, idx)
+        with self.assertRaisesRegex(IndexError, msg):
+            a.pop(idx)
+
+        # assert error message when non-empty list
+        idx = -17
+        msg = ("pop index out of range, the len is %d"
+               " so index must be in -%d..%d, got %d") % (len(a), len(a), len(a)-1, idx)
+        with self.assertRaisesRegex(IndexError, msg):
+            a.pop(idx)
+
+        # assert error message when list is empty
+        idx = 7
+        a = []
+        msg = "pop index out of range, got index %d but the list is empty" % idx
+        with self.assertRaisesRegex(IndexError, msg):
+            a.pop(idx)
 
     def test_remove(self):
         a = self.type2test([0, 0, 1])
