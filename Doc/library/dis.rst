@@ -1178,13 +1178,13 @@ All of the following opcodes use their arguments.
 
 .. opcode:: CALL_METHOD_KW (argc)
 
-   Similar to :opcode:`CALL_METHOD` but also supports keyword arguments.
-   Calls a method.  *argc* is the number of positional and keyword arguments.
+   Calls a method in a similar fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.
+   *argc* is the number of positional and keyword arguments.
    This opcode is designed to be used with :opcode:`LOAD_METHOD`.  TOS is a
    tuple of keyword argument names.  Argument values are below that.
    Below them, the two items described in :opcode:`LOAD_METHOD` are on the
    stack (either ``self`` and an unbound method object or ``NULL`` and an
-   arbitrary callable).  All of them are popped and the return value is pushed.
+   arbitrary callable).  All of them are popped from the stack and the return value is pushed.
 
    .. versionadded:: 3.11
 
