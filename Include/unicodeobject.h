@@ -845,14 +845,13 @@ PyAPI_FUNC(void) PyUnicode_AppendAndDel(
    At most maxsplit splits will be done. If negative, no limit is set.
 
    Separators are not included in the resulting list.
-
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_Split(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
     Py_ssize_t maxsplit,        /* Maxsplit count */
-    PyObject *keepempty         /* Whether to remove empty strings */
+    int keepempty               /* Whether to remove empty strings */
     );
 
 /* Dito, but split at line breaks.
@@ -890,14 +889,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_RPartition(
    no limit is set.
 
    Separators are not included in the resulting list.
-
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_RSplit(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
     Py_ssize_t maxsplit,        /* Maxsplit count */
-    PyObject *keepempty         /* Whether to remove empty strings */
+    int keepempty               /* Whether to remove empty strings */
     );
 
 /* Translate a string by applying a character mapping table to it and

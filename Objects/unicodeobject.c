@@ -13115,12 +13115,12 @@ unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
 }
 
 PyObject *
-PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, PyObject *keepempty)
+PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
 {
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
 
-    return split(s, sep, maxsplit, keepempty);
+    return split(s, sep, maxsplit, ! keepempty);
 }
 
 /*[clinic input]
@@ -13321,12 +13321,12 @@ unicode_rpartition(PyObject *self, PyObject *sep)
 }
 
 PyObject *
-PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, PyObject *keepempty)
+PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
 {
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
 
-    return rsplit(s, sep, maxsplit, keepempty);
+    return rsplit(s, sep, maxsplit, ! keepempty);
 }
 
 /*[clinic input]
