@@ -930,15 +930,15 @@ def linear_regression(regressor, dependent_variable, /):
     Return the intercept and slope of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
     regression describes relationship between *regressor* and
-    *dependent variable* in terms of linear function::
+    *dependent variable* in terms of linear function:
 
         dependent_variable = intercept + slope * regressor + noise
 
-    where ``intercept`` and ``slope`` are the regression parameters that are
-    estimated, and noise term is an unobserved random variable, for the
-    variability of the data that was not explained by the linear regression
-    (it is equal to the difference between prediction and the actual values
-    of dependent variable).
+    where *intercept* and *slope* are the regression parameters that are
+    estimated, and noise represents the variability of the data that was
+    not explained by the linear regression (it is equal to the
+    difference between predicted and actual values of dependent
+    variable).
 
     The parameters are returned as a named tuple.
 
