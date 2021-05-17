@@ -1009,7 +1009,7 @@ class RawConfigParser(MutableMapping):
         Configuration files may include comments, prefixed by specific
         characters (`#' and `;' by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
-        section names. Please note that comments gets stripped off on reading.
+        section names. Please note that comments get stripped off on reading.
         """
         elements_added = set()
         cursect = None                        # None, or a dictionary
