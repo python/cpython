@@ -1734,6 +1734,7 @@ static int test_unicode_id_init(void)
 }
 
 
+#ifndef MS_WINDOWS
 #include "test_frozenmain.h"      // M_test_frozenmain
 
 static int test_frozenmain(void)
@@ -1772,6 +1773,7 @@ static int test_frozenmain(void)
     PyImport_FrozenModules = frozen_modules;
     return Py_FrozenMain(Py_ARRAY_LENGTH(argv), argv);
 }
+#endif  // !MS_WINDOWS
 
 
 // List frozen modules.
@@ -1859,7 +1861,9 @@ static struct TestCase TestCases[] = {
     {"test_audit_run_stdin", test_audit_run_stdin},
 
     {"test_unicode_id_init", test_unicode_id_init},
+#ifndef MS_WINDOWS
     {"test_frozenmain", test_frozenmain},
+#endif
 
     {"list_frozen", list_frozen},
     {NULL, NULL}

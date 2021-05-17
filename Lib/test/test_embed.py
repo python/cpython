@@ -1480,6 +1480,9 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         # when Python is initialized multiples times.
         self.run_embedded_interpreter("test_unicode_id_init")
 
+    # See bpo-44133
+    @unittest.skipIf(os.name == 'nt',
+                     'Py_FrozenMain is not exported on Windows')
     def test_frozenmain(self):
         out, err = self.run_embedded_interpreter("test_frozenmain")
         exe = os.path.realpath('./argv0')
