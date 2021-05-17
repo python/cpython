@@ -631,25 +631,25 @@ However, for reading convenience, most of the examples show sorted sequences.
    Return the intercept and slope of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
    parameters estimated using ordinary least squares. Simple linear
-   regression describes relationship between *regressor* and
-   *dependent variable* in terms of linear function:
+   regression describes the relationship between *regressor* and
+   *dependent variable* in terms of this linear function:
 
       *dependent_variable = intercept + slope \* regressor + noise*
 
    where ``intercept`` and ``slope`` are the regression parameters that are
-   estimated, and noise term is an unobserved random variable, for the
+   estimated, and noise represents the
    variability of the data that was not explained by the linear regression
-   (it is equal to the difference between prediction and the actual values
+   (it is equal to the difference between predicted and actual values
    of dependent variable).
 
    Both inputs must be of the same length (no less than two), and regressor
-   needs not to be constant, otherwise :exc:`StatisticsError` is raised.
+   needs not to be constant; otherwise :exc:`StatisticsError` is raised.
 
-   For example, if we took the data on the data on `release dates of the Monty
+   For example, we can use the `release dates of the Monty
    Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
-   it to predict the cumulative number of Monty Python films produced, we could
-   predict what would be the number of films they could have made till year
-   2019, assuming that they kept the pace.
+   it to predict the cumulative number of Monty Python films
+   that would have been produced by 2019
+   assuming that they kept the pace.
 
    .. doctest::
 
@@ -658,14 +658,6 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> intercept, slope = linear_regression(year, films_total)
       >>> round(intercept + slope * 2019)
       16
-
-   We could also use it to "predict" how many Monty Python films existed when
-   Brian Cohen was born.
-
-   .. doctest::
-
-      >>> round(intercept + slope * 1)
-      -610
 
    .. versionadded:: 3.10
 
