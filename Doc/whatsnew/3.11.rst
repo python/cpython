@@ -110,7 +110,8 @@ CPython bytecode changes
 ========================
 
 * Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
-fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.
+fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
+in tandem with :opcode:`LOAD_METHOD`.
 
 Build Changes
 =============
