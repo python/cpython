@@ -1162,7 +1162,7 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
     """
 
-    def __init__(self, name, path):
+    def __init__(self, fullname, path, name=None):
         self.name = name
         self.path = path
 
