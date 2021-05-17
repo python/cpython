@@ -10383,7 +10383,7 @@ split(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
-    if (kind1 < kind2 || len1 < len2) {
+    if (kind1 < kind2 || (len1 > 0 && len1 < len2)) {
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
@@ -10472,7 +10472,7 @@ rsplit(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
-    if (kind1 < kind2 || len1 < len2) {
+    if (kind1 < kind2 || (len1 > 0 && len1 < len2)) {
         out = PyList_New(1);
         if (out == NULL)
             return NULL;
