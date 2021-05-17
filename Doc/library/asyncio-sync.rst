@@ -346,7 +346,6 @@ Barrier
 
    Example::
 
-
        import asyncio
        import os
        import random
@@ -394,7 +393,6 @@ Barrier
           await asyncio.gather(*tasks)
 
        asyncio.run(main("Datas", [f"file{i+1:02d}.txt" for i in range(10)], 10))
-
 
 .. class:: Barrier(parties, action=None)
 
