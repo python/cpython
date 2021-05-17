@@ -12,13 +12,16 @@ HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
 
 
-def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
+def find_unused_port(family=None, socktype=socket.SOCK_STREAM):
     """Returns an unused port that should be suitable for binding.  This is
     achieved by creating a temporary socket with the same family and type as
     the 'sock' parameter (default is AF_INET, SOCK_STREAM), and binding it to
     the specified host address (defaults to 0.0.0.0) with the port set to 0,
     eliciting an unused ephemeral port from the OS.  The temporary socket is
     then closed and deleted, and the ephemeral port is returned.
+
+    When family is None it will use whichever of socket.AF_INET or
+    socket.AF_INET6 makes sense, finding a port available on both if possible.
 
     Either this method or bind_port() should be used for any tests where a
     server socket needs to be bound to a particular port for the duration of
@@ -66,11 +69,43 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     other process when we close and delete our temporary socket but before our
     calling code has a chance to bind the returned port.  We can deal with this
     issue if/when we come across it.
+
+    TODO(gpshead): We should support a https://pypi.org/project/portpicker/
+    portserver or equivalent process running on our buildbot hosts and use that
+    that portpicker library...
     """
 
-    with socket.socket(family, socktype) as tempsock:
-        port = bind_port(tempsock)
-    del tempsock
+    if isinstance(family, int):
+        with socket.socket(family, socktype) as tempsock:
+            port = bind_port(tempsock)
+        del tempsock
+    else:
+        if family is not None:  # Assume it's a sequence, it wasn't int|None.
+            families = family
+        else:
+            families = []
+            if IPV4_ENABLED:
+                families.append(socket.AF_INET)
+            if IPV6_ENABLED:
+                families.append(socket.AF_INET6)
+            assert families, "At least one of IPv4 or IPv6 must be enabled."
+        port = 0
+        errors = {}
+        for family in families:
+            try:
+                with socket.socket(family, socktype) as tempsock:
+                    if not port:
+                        port = bind_port(tempsock)
+                    else:
+                        sock.bind((host, 0))
+                        port = sock.getsockname()[1]
+            except OSError as err:
+                errors[family] = err
+                port = 0
+            del tempsock
+        if not port:
+            raise support.TestFailed(
+                    f"Could not bind to a port: {errors}")
     return port
 
 def bind_port(sock, host=HOST):
@@ -78,7 +113,7 @@ def bind_port(sock, host=HOST):
     ephemeral ports in order to ensure we are using an unbound port.  This is
     important as many tests may be running simultaneously, especially in a
     buildbot environment.  This method raises an exception if the sock.family
-    is AF_INET and sock.type is SOCK_STREAM, *and* the socket has SO_REUSEADDR
+    is AF_INET* and sock.type is SOCK_STREAM, *and* the socket has SO_REUSEADDR
     or SO_REUSEPORT set on it.  Tests should *never* set these socket options
     for TCP/IP sockets.  The only case for setting these options is testing
     multicasting via multiple UDP sockets.
@@ -88,7 +123,8 @@ def bind_port(sock, host=HOST):
     from bind()'ing to our host/port for the duration of the test.
     """
 
-    if sock.family == socket.AF_INET and sock.type == socket.SOCK_STREAM:
+    if (sock.family in {socket.AF_INET, socket.AF_INET6} and
+        sock.type == socket.SOCK_STREAM):
         if hasattr(socket, 'SO_REUSEADDR'):
             if sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR) == 1:
                 raise support.TestFailed("tests should never set the "
@@ -111,6 +147,48 @@ def bind_port(sock, host=HOST):
     sock.bind((host, 0))
     port = sock.getsockname()[1]
     return port
+
+
+def get_bound_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
+    """Get an IP socket bound to a port as a sock, port tuple.
+
+    Creates a socket of socktype bound to hostname using whichever of IPv6 or
+    IPv4 is available.  Context is a (socket, port) tuple.  Exiting the context
+    closes the socket.
+
+    Prefer the bind_ip_socket_and_port context manager when possible.
+    """
+    if IPV6_ENABLED:
+        family = socket.AF_INET6
+        sock = socket.socket(socket.AF_INET6, socktype)
+    elif IPV4_ENABLED:
+        family = socket.AF_INET
+    else:
+        raise support.TestFailed(
+                "At least one of IPv4 or IPv6 must be enabled.")
+    sock = socket.socket(family, socktype)
+    try:
+        port = bind_port(sock)
+    except support.TestFailed:
+        sock.close()
+        raise
+    return sock, port
+
+
+@contextlib.contextmanager
+def bind_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
+    """
+    A context manager that creates a socket of socktype bound to hostname
+    using whichever of IPv6 or IPv4 is available.  Context is a (socket, port)
+    tuple.  Exiting the context closes the socket.
+    """
+    sock, port = get_bound_ip_socket_and_port(
+            hostname=hostname, socktype=socktype)
+    try:
+        yield sock, port
+    finally:
+        sock.close()
+
 
 def bind_unix_socket(sock, addr):
     """Bind a unix socket, raising SkipTest if PermissionError is raised."""
@@ -137,6 +215,22 @@ def _is_ipv6_enabled():
     return False
 
 IPV6_ENABLED = _is_ipv6_enabled()
+
+
+def _is_ipv4_enabled():
+    """Check whether IPv4 is enabled on this host."""
+    sock = None
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((HOSTv4, 0))
+        return True
+    except OSError:
+        return False
+    finally:
+        if sock:
+            sock.close()
+
+IPV4_ENABLED = _is_ipv4_enabled()
 
 
 _bind_nix_socket_error = None
