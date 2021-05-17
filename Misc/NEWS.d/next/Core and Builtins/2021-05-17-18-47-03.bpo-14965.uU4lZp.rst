@@ -1,0 +1,3 @@
+Proxying data descriptor setters with `super().x = y` and deleters with `del super().x` will now follow getter use with `super().x`. Previously, these would unconditionally fail.
+
+Patch written by Daniel Urban.
