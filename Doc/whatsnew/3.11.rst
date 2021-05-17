@@ -99,7 +99,7 @@ Optimizations
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
-* Method calls with keywords are now up to 20% faster due to bytecode
+* Method calls with keywords are now faster due to bytecode
   changes which avoid creating bound method instances. Previously, this
   optimization was applied only to method calls with purely positional
   arguments.
@@ -109,7 +109,8 @@ Optimizations
 CPython bytecode changes
 ========================
 
-* Added a new :opcode:`CALL_METHOD_KW` opcode.
+* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
+fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.
 
 Build Changes
 =============
