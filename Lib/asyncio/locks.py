@@ -1,6 +1,7 @@
 """Synchronization primitives."""
 
-__all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore', 'Barrier', 'BrokenBarrierError')
+__all__ = ('Lock', 'Event', 'Condition', 'Semaphore',
+           'BoundedSemaphore', 'Barrier', 'BrokenBarrierError')
 
 import collections
 
@@ -431,9 +432,10 @@ class BoundedSemaphore(Semaphore):
 # since the previous cycle.  In addition, a 'resetting' state exists which is
 # similar to 'draining' except that tasks leave with a BrokenBarrierError,
 # and a 'broken' state in which all tasks get the exception.
-
+#
+# Asyncio equivalent to threading.Barrier
 class Barrier(mixins._LoopBoundMixin):
-    """Asynchronous equivalent to threading.Barrier
+    """Asyncio equivalent to threading.Barrier
 
     Implements a Barrier.
     Useful for synchronizing a fixed number of tasks at known synchronization
@@ -495,10 +497,9 @@ class Barrier(mixins._LoopBoundMixin):
             # It is draining or resetting, wait until done
             await self._blocking.wait()
 
-        #see if the barrier is in a broken state
+        # see if the barrier is in a broken state
         if self._state < 0:
             raise BrokenBarrierError
-        assert self._state == 0, repr(self)
 
     # Optionally run the 'action' and release the tasks waiting
     # in the barrier.
@@ -512,9 +513,7 @@ class Barrier(mixins._LoopBoundMixin):
             self._waiting.set()
         except:
             #an exception during the _action handler.  Break and reraise
-            self._state = -2
-            self._blocking.clear()
-            self._waiting.set()
+            self.abort()
             raise
 
     # Wait in the barrier until we are released.  Raise an exception
@@ -524,7 +523,6 @@ class Barrier(mixins._LoopBoundMixin):
         # no timeout so
         if self._state < 0: # resetting or broken
             raise BrokenBarrierError
-        assert self._state == 1, repr(self)
 
     # If we are the last tasks to exit the barrier, signal any tasks
     # waiting for the barrier to drain.
