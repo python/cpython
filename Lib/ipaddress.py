@@ -2003,7 +2003,8 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         Returns:
             A boolean, True if the address is reserved per
-            iana-ipv6-special-registry.
+            iana-ipv6-special-registry, or is ipv4_mapped and is
+            reserved in the iana-ipv4-special-registry.
 
         """
         ipv4_mapped = self.ipv4_mapped
