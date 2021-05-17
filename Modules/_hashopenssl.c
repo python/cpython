@@ -1496,9 +1496,11 @@ _hmac_update(HMACobject *self, PyObject *obj)
     }
 
     if (self->lock != NULL) {
-        ENTER_HASHLIB(self);
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
-        LEAVE_HASHLIB(self);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
     } else {
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
     }
@@ -2093,20 +2095,25 @@ hashlib_init_constructors(PyObject *module)
         }
         func  = PyObject_GetAttrString(module, fdef->ml_name);
         if (func == NULL) {
+            Py_DECREF(name_obj);
             return -1;
         }
-        if (PyDict_SetItem(state->constructs, func, name_obj) < 0) {
-            return -1;
-        }
+        int rc = PyDict_SetItem(state->constructs, func, name_obj);
         Py_DECREF(func);
         Py_DECREF(name_obj);
+        if (rc < 0) {
+            return -1;
+        }
     }
 
     proxy = PyDictProxy_New(state->constructs);
     if (proxy == NULL) {
         return -1;
     }
-    if (PyModule_AddObjectRef(module, "_constructors", proxy) < 0) {
+
+    int rc = PyModule_AddObjectRef(module, "_constructors", proxy);
+    Py_DECREF(proxy);
+    if (rc < 0) {
         return -1;
     }
     return 0;

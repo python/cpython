@@ -1,1 +1,0 @@
-Fixed a bug where ``anext(ait, default)`` would erroneously return None.

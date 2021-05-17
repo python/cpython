@@ -19978,7 +19978,7 @@ invalid_except_stmt_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_except_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression ',' expressions ['as' NAME] ':'"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "exception group must be parenthesized" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "multiple exception types must be parenthesized" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 D(p->level--);

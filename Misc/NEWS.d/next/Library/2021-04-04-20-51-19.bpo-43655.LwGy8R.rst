@@ -1,2 +1,0 @@
-:mod:`tkinter` dialog windows are now recognized as dialogs by window
-managers on macOS and X Window.
