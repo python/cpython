@@ -366,7 +366,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytearray_split__doc__,
-"split($self, /, sep=None, maxsplit=-1, prune=None)\n"
+"split($self, /, sep=None, maxsplit=-1, keepempty=None)\n"
 "--\n"
 "\n"
 "Return a list of the sections in the bytearray, using sep as the delimiter.\n"
@@ -378,7 +378,7 @@ PyDoc_STRVAR(bytearray_split__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
-"  prune\n"
+"  keepempty\n"
 "    Determines whether or not to keep empty strings in the final list.");
 
 #define BYTEARRAY_SPLIT_METHODDEF    \
@@ -386,19 +386,19 @@ PyDoc_STRVAR(bytearray_split__doc__,
 
 static PyObject *
 bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
-                     Py_ssize_t maxsplit, PyObject *prune);
+                     Py_ssize_t maxsplit, PyObject *keepempty);
 
 static PyObject *
 bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "keepempty", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
-    PyObject *prune = Py_None;
+    PyObject *keepempty = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -430,9 +430,9 @@ bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs
             goto skip_optional_pos;
         }
     }
-    prune = args[2];
+    keepempty = args[2];
 skip_optional_pos:
-    return_value = bytearray_split_impl(self, sep, maxsplit, prune);
+    return_value = bytearray_split_impl(self, sep, maxsplit, keepempty);
 
 exit:
     return return_value;
@@ -472,7 +472,7 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
     {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
 
 PyDoc_STRVAR(bytearray_rsplit__doc__,
-"rsplit($self, /, sep=None, maxsplit=-1, prune=None)\n"
+"rsplit($self, /, sep=None, maxsplit=-1, keepempty=None)\n"
 "--\n"
 "\n"
 "Return a list of the sections in the bytearray, using sep as the delimiter.\n"
@@ -484,7 +484,7 @@ PyDoc_STRVAR(bytearray_rsplit__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
-"  prune\n"
+"  keepempty\n"
 "    Determines whether or not to keep empty strings in the final list.\n"
 "\n"
 "Splitting is done starting at the end of the bytearray and working to the front.");
@@ -494,19 +494,19 @@ PyDoc_STRVAR(bytearray_rsplit__doc__,
 
 static PyObject *
 bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
-                      Py_ssize_t maxsplit, PyObject *prune);
+                      Py_ssize_t maxsplit, PyObject *keepempty);
 
 static PyObject *
 bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "keepempty", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
-    PyObject *prune = Py_None;
+    PyObject *keepempty = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -538,9 +538,9 @@ bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t narg
             goto skip_optional_pos;
         }
     }
-    prune = args[2];
+    keepempty = args[2];
 skip_optional_pos:
-    return_value = bytearray_rsplit_impl(self, sep, maxsplit, prune);
+    return_value = bytearray_rsplit_impl(self, sep, maxsplit, keepempty);
 
 exit:
     return return_value;
@@ -1138,4 +1138,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=426d72f7a29be2a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef8c01f3ce59b58e input=a9049054013a1b77]*/

@@ -855,7 +855,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_split__doc__,
-"split($self, /, sep=None, maxsplit=-1, prune=None)\n"
+"split($self, /, sep=None, maxsplit=-1, keepempty=None)\n"
 "--\n"
 "\n"
 "Return a list of the words in the string, using sep as the delimiter string.\n"
@@ -867,7 +867,7 @@ PyDoc_STRVAR(unicode_split__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
-"  prune\n"
+"  keepempty\n"
 "    Determines whether or not to keep empty strings in the final list.\n"
 "\n"
 "If maxsplit is given, at most maxsplit splits are done.\n"
@@ -881,19 +881,19 @@ PyDoc_STRVAR(unicode_split__doc__,
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
-                   PyObject *prune);
+                   PyObject *keepempty);
 
 static PyObject *
 unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "keepempty", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
-    PyObject *prune = Py_None;
+    PyObject *keepempty = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -925,9 +925,9 @@ unicode_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto skip_optional_pos;
         }
     }
-    prune = args[2];
+    keepempty = args[2];
 skip_optional_pos:
-    return_value = unicode_split_impl(self, sep, maxsplit, prune);
+    return_value = unicode_split_impl(self, sep, maxsplit, keepempty);
 
 exit:
     return return_value;
@@ -966,7 +966,7 @@ PyDoc_STRVAR(unicode_rpartition__doc__,
     {"rpartition", (PyCFunction)unicode_rpartition, METH_O, unicode_rpartition__doc__},
 
 PyDoc_STRVAR(unicode_rsplit__doc__,
-"rsplit($self, /, sep=None, maxsplit=-1, prune=None)\n"
+"rsplit($self, /, sep=None, maxsplit=-1, keepempty=None)\n"
 "--\n"
 "\n"
 "Return a list of the words in the string, using sep as the delimiter string.\n"
@@ -978,7 +978,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
-"  prune\n"
+"  keepempty\n"
 "    Determines whether or not to keep empty strings in the final list.\n"
 "\n"
 "Splits are done starting at the end of the string and working to the front.");
@@ -988,19 +988,19 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
-                    PyObject *prune);
+                    PyObject *keepempty);
 
 static PyObject *
 unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "keepempty", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
-    PyObject *prune = Py_None;
+    PyObject *keepempty = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -1032,9 +1032,9 @@ unicode_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    prune = args[2];
+    keepempty = args[2];
 skip_optional_pos:
-    return_value = unicode_rsplit_impl(self, sep, maxsplit, prune);
+    return_value = unicode_rsplit_impl(self, sep, maxsplit, keepempty);
 
 exit:
     return return_value;
@@ -1353,4 +1353,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7ebd449cc09bcc9b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d5919c82872bf04d input=a9049054013a1b77]*/

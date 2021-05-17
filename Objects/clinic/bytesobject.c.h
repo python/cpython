@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(bytes_split__doc__,
-"split($self, /, sep=None, maxsplit=-1, prune=None)\n"
+"split($self, /, sep=None, maxsplit=-1, keepempty=None)\n"
 "--\n"
 "\n"
 "Return a list of the sections in the bytes, using sep as the delimiter.\n"
@@ -15,7 +15,7 @@ PyDoc_STRVAR(bytes_split__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
-"  prune\n"
+"  keepempty\n"
 "    Determines whether or not to keep empty strings in the final list");
 
 #define BYTES_SPLIT_METHODDEF    \
@@ -23,19 +23,19 @@ PyDoc_STRVAR(bytes_split__doc__,
 
 static PyObject *
 bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
-                 PyObject *prune);
+                 PyObject *keepempty);
 
 static PyObject *
 bytes_split(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "keepempty", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
-    PyObject *prune = Py_None;
+    PyObject *keepempty = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -67,9 +67,9 @@ bytes_split(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    prune = args[2];
+    keepempty = args[2];
 skip_optional_pos:
-    return_value = bytes_split_impl(self, sep, maxsplit, prune);
+    return_value = bytes_split_impl(self, sep, maxsplit, keepempty);
 
 exit:
     return return_value;
@@ -162,7 +162,7 @@ exit:
 }
 
 PyDoc_STRVAR(bytes_rsplit__doc__,
-"rsplit($self, /, sep=None, maxsplit=-1, prune=None)\n"
+"rsplit($self, /, sep=None, maxsplit=-1, keepempty=None)\n"
 "--\n"
 "\n"
 "Return a list of the sections in the bytes, using sep as the delimiter.\n"
@@ -174,7 +174,7 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 "  maxsplit\n"
 "    Maximum number of splits to do.\n"
 "    -1 (the default value) means no limit.\n"
-"  prune\n"
+"  keepempty\n"
 "    Determines whether or not to keep empty strings in the final list\n"
 "\n"
 "Splitting is done starting at the end of the bytes and working to the front.");
@@ -184,19 +184,19 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
 
 static PyObject *
 bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
-                  PyObject *prune);
+                  PyObject *keepempty);
 
 static PyObject *
 bytes_rsplit(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"sep", "maxsplit", "prune", NULL};
+    static const char * const _keywords[] = {"sep", "maxsplit", "keepempty", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
-    PyObject *prune = Py_None;
+    PyObject *keepempty = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 3, 0, argsbuf);
     if (!args) {
@@ -228,9 +228,9 @@ bytes_rsplit(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
             goto skip_optional_pos;
         }
     }
-    prune = args[2];
+    keepempty = args[2];
 skip_optional_pos:
-    return_value = bytes_rsplit_impl(self, sep, maxsplit, prune);
+    return_value = bytes_rsplit_impl(self, sep, maxsplit, keepempty);
 
 exit:
     return return_value;
@@ -898,4 +898,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71549ea5861cef16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d2edeb989e189d9 input=a9049054013a1b77]*/

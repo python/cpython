@@ -13115,12 +13115,12 @@ unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
 }
 
 PyObject *
-PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int prune)
+PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, PyObject *keepempty)
 {
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
 
-    return split(s, sep, maxsplit, prune);
+    return split(s, sep, maxsplit, keepempty);
 }
 
 /*[clinic input]
@@ -13133,7 +13133,7 @@ str.split as unicode_split
     maxsplit: Py_ssize_t = -1
         Maximum number of splits to do.
         -1 (the default value) means no limit.
-    prune: object = None
+    keepempty: object = None
         Determines whether or not to keep empty strings in the final list.
 
 Return a list of the words in the string, using sep as the delimiter string.
@@ -13147,26 +13147,26 @@ sep is None, False otherwise.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
-                   PyObject *prune)
-/*[clinic end generated code: output=bd1017c441cc3c85 input=e5dc515c226ad88f]*/
+                   PyObject *keepempty)
+/*[clinic end generated code: output=c182ae533ca1ef53 input=bcd1a211e53ae5a9]*/
 {
-    int prune_value;
+    int prune;
 
-    if (prune == Py_None) {
+    if (keepempty == Py_None) {
         if (sep == Py_None)
-            prune_value = 1;
+            prune = 1;
         else
-            prune_value = 0;
+            prune = 0;
     } else {
-        prune_value = PyObject_IsTrue(prune);
-        if (prune_value < 0)
+        prune = ! PyObject_IsTrue(keepempty);
+        if (prune < 0)
             return NULL;
     }
 
     if (sep == Py_None)
-        return split(self, NULL, maxsplit, prune_value);
+        return split(self, NULL, maxsplit, prune);
     if (PyUnicode_Check(sep))
-        return split(self, sep, maxsplit, prune_value);
+        return split(self, sep, maxsplit, prune);
 
     PyErr_Format(PyExc_TypeError,
                  "must be str or None, not %.100s",
@@ -13321,12 +13321,12 @@ unicode_rpartition(PyObject *self, PyObject *sep)
 }
 
 PyObject *
-PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int prune)
+PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, PyObject *keepempty)
 {
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
 
-    return rsplit(s, sep, maxsplit, prune);
+    return rsplit(s, sep, maxsplit, keepempty);
 }
 
 /*[clinic input]
@@ -13339,26 +13339,26 @@ Splits are done starting at the end of the string and working to the front.
 
 static PyObject *
 unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
-                    PyObject *prune)
-/*[clinic end generated code: output=bc79058595de0bf6 input=12ad4bf57dd35f15]*/
+                    PyObject *keepempty)
+/*[clinic end generated code: output=27ba2177eb6cdfcf input=12ad4bf57dd35f15]*/
 {
-    int prune_value;
+    int prune;
 
-    if (prune == Py_None) {
+    if (keepempty == Py_None) {
         if (sep == Py_None)
-            prune_value = 1;
+            prune = 1;
         else
-            prune_value = 0;
+            prune = 0;
     } else {
-        prune_value = PyObject_IsTrue(prune);
-        if (prune_value < 0)
+        prune = ! PyObject_IsTrue(keepempty);
+        if (prune < 0)
             return NULL;
     }
 
     if (sep == Py_None)
-        return rsplit(self, NULL, maxsplit, prune_value);
+        return rsplit(self, NULL, maxsplit, prune);
     if (PyUnicode_Check(sep))
-        return rsplit(self, sep, maxsplit, prune_value);
+        return rsplit(self, sep, maxsplit, prune);
 
     PyErr_Format(PyExc_TypeError,
                  "must be str or None, not %.100s",
