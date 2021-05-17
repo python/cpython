@@ -943,6 +943,7 @@ class MultiprocessTests(unittest.TestCase):
         unlink(TESTFN)
 
     def test_rollback_if_db_is_locked(self):
+        # bpo-27334: ctx manager does not rollback if commit fails
         TIMEOUT = 0.01
         SCRIPT = f"""
 import sqlite3
@@ -978,10 +979,13 @@ input()   # keep proc open till parent calls
 
         # execute two transactions; both will try to lock the db
         cx.executescript("""
+            -- execute a transaction and wait for child
             begin transaction;
             select * from t;
             select wait();
             rollback;
+
+            -- start a new transaction; will fail if child holds lock
             begin transaction;
             select * from t;
             rollback;
