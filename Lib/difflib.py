@@ -710,8 +710,8 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6, key=None):
     Optional arg cutoff (default 0.6) is a float in [0, 1].  Possibilities
     that don't score at least that similar to word are ignored.
 
-    Optional arg key specifies a function of one argument that is used to 
-    extract a comparison key from each element in iterable (for example, 
+    Optional arg key specifies a function of one argument that is used to
+    extract a comparison key from each element in iterable (for example,
     key=str.lower). The default value is None (compare the elements directly).
 
     The best (no more than n) matches among the possibilities are returned
