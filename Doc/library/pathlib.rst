@@ -541,7 +541,7 @@ Pure paths provide the following methods and properties:
 .. method:: PurePath.relative_to(*other, strict=True)
 
    Compute a version of this path relative to the path represented by
-   *other*.  If it's impossible, ValueError is raised::
+   *other*.  If it's impossible, :exc:`ValueError` is raised::
 
       >>> p = PurePosixPath('/etc/passwd')
       >>> p.relative_to('/')
@@ -565,7 +565,7 @@ Pure paths provide the following methods and properties:
 
    In strict mode (the default), the path must start with *other*. In non-strict
    mode, ``..`` entries may be added to form the relative path. In all other
-   cases, such as the paths referencing different drives, :exe:`ValueError` is
+   cases, such as the paths referencing different drives, :exc:`ValueError` is
    raised.
 
    .. warning::
