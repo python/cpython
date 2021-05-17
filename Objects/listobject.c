@@ -219,7 +219,7 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 }
 
 static inline void
-print_error(const char *msg, Py_ssize_t len, Py_ssize_t i)
+index_error(const char *msg, Py_ssize_t len, Py_ssize_t i)
 {
     if (len == 0) {
         PyErr_Format(PyExc_IndexError, "%s index out of range, got index %zd but the list is empty", msg, i);
@@ -241,7 +241,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     if (!valid_index(i, Py_SIZE(op))) {
-        print_error("list", Py_SIZE(op), i);
+        index_error("list", Py_SIZE(op), i);
         return NULL;
     }
     return ((PyListObject *)op) -> ob_item[i];
@@ -259,7 +259,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
     }
     if (!valid_index(i, Py_SIZE(op))) {
         Py_XDECREF(newitem);
-        print_error("list assignment", Py_SIZE(op), i);
+        index_error("list assignment", Py_SIZE(op), i);
         return -1;
     }
     p = ((PyListObject *)op) -> ob_item + i;
@@ -445,7 +445,7 @@ static PyObject *
 list_item(PyListObject *a, Py_ssize_t i)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        print_error("list", Py_SIZE(a), i);
+        index_error("list", Py_SIZE(a), i);
         return NULL;
     }
     Py_INCREF(a->ob_item[i]);
@@ -765,7 +765,7 @@ static int
 list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
     if (!valid_index(i, Py_SIZE(a))) {
-        print_error("list assignment", Py_SIZE(a), i);
+        index_error("list assignment", Py_SIZE(a), i);
         return -1;
     }
     if (v == NULL)
@@ -1005,13 +1005,13 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
 
     if (Py_SIZE(self) == 0) {
         /* Special-case most common failure cause */
-        PyErr_SetString(PyExc_IndexError, "pop from empty list");
+        index_error("pop", Py_SIZE(self), index);
         return NULL;
     }
     if (index < 0)
         index += Py_SIZE(self);
     if (!valid_index(index, Py_SIZE(self))) {
-        print_error("pop index", Py_SIZE(self), index);
+        index_error("pop", Py_SIZE(self), index);
         return NULL;
     }
     v = self->ob_item[index];
