@@ -214,7 +214,7 @@ class Test(unittest.TestCase):
         for nested, data in (
             (BigEndianStructure, b'\0\0\0\1\0\0\0\2'),
             (LittleEndianStructure, b'\1\0\0\0\2\0\0\0'),
-        ): 
+        ):
             for parent in (
                 BigEndianStructure,
                 LittleEndianStructure,
@@ -319,7 +319,7 @@ class Test(unittest.TestCase):
 
         class T(base):
             pass
-        
+
         fields = [
             ("a", c_ubyte),
             ("b", c_byte),
@@ -339,7 +339,7 @@ class Test(unittest.TestCase):
             ("b3", c_byte, 2),
             ("a", c_int * 3 * 3 * 3)
         ]
-        
+
         # these fields do not support different byte order:
         for typ in c_wchar, c_void_p, POINTER(c_int):
             with self.assertRaises(TypeError):
