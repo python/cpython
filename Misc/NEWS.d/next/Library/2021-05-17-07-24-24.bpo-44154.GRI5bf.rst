@@ -1,0 +1,1 @@
+Optimize :class:`fractions.Fraction` pickling for large components.
