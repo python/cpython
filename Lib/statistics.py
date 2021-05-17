@@ -924,15 +924,15 @@ def correlation(x, y, /):
 LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
 
 
-def linear_regression(regressor, dependent_variable, /):
+def linear_regression(independent_variable, dependent_variable, /):
     """Intercept and slope for simple linear regression
 
     Return the intercept and slope of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between *regressor* and
+    regression describes relationship between *independent_variable* and
     *dependent variable* in terms of linear function:
 
-        dependent_variable = intercept + slope * regressor + noise
+        dependent_variable = intercept + slope * independent_variable + noise
 
     where *intercept* and *slope* are the regression parameters that are
     estimated, and noise represents the variability of the data that was
@@ -942,19 +942,19 @@ def linear_regression(regressor, dependent_variable, /):
 
     The parameters are returned as a named tuple.
 
-    >>> regressor = [1, 2, 3, 4, 5]
+    >>> independent_variable = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
-    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
+    >>> dependent_variable = [2 + 3 * independent_variable[i] + noise[i] for i in range(5)]
+    >>> linear_regression(independent_variable, dependent_variable)  #doctest: +ELLIPSIS
     LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
 
     """
-    n = len(regressor)
+    n = len(independent_variable)
     if len(dependent_variable) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    x, y = regressor, dependent_variable
+    x, y = independent_variable, dependent_variable
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
@@ -962,7 +962,7 @@ def linear_regression(regressor, dependent_variable, /):
     try:
         slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
-        raise StatisticsError('regressor is constant')
+        raise StatisticsError('independent_variable is constant')
     intercept = ybar - slope * xbar
     return LinearRegression(intercept=intercept, slope=slope)
 
