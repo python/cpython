@@ -2221,6 +2221,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True,
                          ipaddress.ip_network('192.0.2.128/25').is_private)
         self.assertEqual(True,
+                         ipaddress.ip_network('192.0.0.8/32').is_private)
+        self.assertEqual(True,
+                         ipaddress.ip_address('192.0.0.8').is_private)
+        self.assertEqual(True,
                          ipaddress.ip_network('192.0.3.0/24').is_global)
 
         # test addresses
