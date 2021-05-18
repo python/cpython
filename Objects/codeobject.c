@@ -196,6 +196,21 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
 }
 
 Py_ssize_t
+_PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
+{
+    if (co->co_cell2arg == 0) {
+        return -1;
+    }
+    Py_ssize_t ncellvars = PyTuple_GET_SIZE(co->co_cellvars);
+    for (Py_ssize_t i = 0; i < ncellvars; i++) {
+        if (co->co_cell2arg[i] == offset) {
+            return co->co_nlocals + i;
+        }
+    }
+    return -1;
+}
+
+Py_ssize_t
 _PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
                              _PyFastLocalKind kind)
 {

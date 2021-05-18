@@ -41,6 +41,7 @@ typedef unsigned char _PyFastLocalKind;
 #define CO_FAST_LOCAL (CO_FAST_POSONLY | CO_FAST_POSORKW | CO_FAST_VARARGS | \
                        CO_FAST_KWONLY | CO_FAST_VARKWARGS |                  \
                        CO_FAST_LOCALONLY)
+#define CO_FAST_ANY (CO_FAST_LOCAL | CO_FAST_CELL | CO_FAST_FREE)
 
 
 struct _PyCodeConstructor {
@@ -83,6 +84,7 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 int _PyCode_InitOpcache(PyCodeObject *co);
 
 PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
+PyAPI_FUNC(Py_ssize_t) _PyCode_CellForLocal(PyCodeObject *, Py_ssize_t);
 
 /* This does not fail.  A genative result means "no match". */
 PyAPI_FUNC(Py_ssize_t)  _PyCode_GetFastlocalOffsetId(PyCodeObject *,
