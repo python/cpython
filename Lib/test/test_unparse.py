@@ -531,6 +531,54 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("a[1, 2]")
         self.check_src_roundtrip("a[(1, *a)]")
 
+    def test_lambda_parameters(self):
+        self.check_src_roundtrip("lambda: something")
+        self.check_src_roundtrip("four = lambda: 2 + 2")
+        self.check_src_roundtrip("lambda x: x * 2")
+        self.check_src_roundtrip("square = lambda n: n ** 2")
+        self.check_src_roundtrip("lambda x, y: x + y")
+        self.check_src_roundtrip("add = lambda x, y: x + y")
+        self.check_src_roundtrip("lambda x, y, /, z, q, *, u: None")
+        self.check_src_roundtrip("lambda x, *y, **z: None")
+
+    def test_star_expr_assign_target(self):
+        for source_type, source in [
+            ("single assignment", "{target} = foo"),
+            ("multiple assignment", "{target} = {target} = bar"),
+            ("for loop", "for {target} in foo:\n    pass"),
+            ("async for loop", "async for {target} in foo:\n    pass")
+        ]:
+            for target in [
+                "a",
+                "a,",
+                "a, b",
+                "a, *b, c",
+                "a, (b, c), d",
+                "a, (b, c, d), *e",
+                "a, (b, *c, d), e",
+                "a, (b, *c, (d, e), f), g",
+                "[a]",
+                "[a, b]",
+                "[a, *b, c]",
+                "[a, [b, c], d]",
+                "[a, [b, c, d], *e]",
+                "[a, [b, *c, d], e]",
+                "[a, [b, *c, [d, e], f], g]",
+                "a, [b, c], d",
+                "[a, b, (c, d), (e, f)]",
+                "a, b, [*c], d, e"
+            ]:
+                with self.subTest(source_type=source_type, target=target):
+                    self.check_src_roundtrip(source.format(target=target))
+
+    def test_star_expr_assign_target_multiple(self):
+        self.check_src_roundtrip("a = b = c = d")
+        self.check_src_roundtrip("a, b = c, d = e, f = g")
+        self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
+        self.check_src_roundtrip("a, b = [c, d] = e, f = g")
+
+
+
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
 

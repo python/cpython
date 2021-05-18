@@ -1934,7 +1934,8 @@ class _BasePathTest(object):
         self.assertTrue(p.stat)
         # Linking to a str of a relative path.
         r = rel_join('fileAAA')
-        q.link_to(r)
+        with self.assertWarns(DeprecationWarning):
+            q.link_to(r)
         self.assertEqual(os.stat(r).st_size, size)
         self.assertTrue(q.stat)
 
