@@ -1,1 +1,1 @@
-Add a "Security Considerations" index linking to standard library modules that have explicitly documented security considerations.
+Add a "Security Considerations" index which links to standard library modules that have explicitly documented security considerations.
