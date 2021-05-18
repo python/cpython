@@ -1,3 +1,6 @@
+# Script used to test Py_FrozenMain(): see test_embed.test_frozenmain().
+# Run "make regen-test-frozenmain" if you modify this test.
+
 import sys
 import _testinternalcapi
 

@@ -720,14 +720,12 @@ Makefile Modules/config.c: Makefile.pre \
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
+.PHONY: regen-test-frozenmain
 regen-test-frozenmain: $(BUILDPYTHON)
 	# Regenerate Programs/test_frozenmain.h
 	# from Programs/test_frozenmain.py
 	# using Programs/freeze_test_frozenmain.py
 	$(RUNSHARED) ./$(BUILDPYTHON) Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
-
-Programs/test_frozenmain.h: Programs/freeze_test_frozenmain.py Programs/test_frozenmain.py
-	$(MAKE) regen-test-frozenmain
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
