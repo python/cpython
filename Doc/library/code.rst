@@ -65,6 +65,32 @@ build applications which provide an interactive interpreter prompt.
    raises :exc:`OverflowError` or :exc:`ValueError` if the command contains an
    invalid literal.
 
+Overriding Console Output
+-------------------------
+
+The output for :class:`InteractiveConsole` and :class:`InteractiveInterpreter`
+is written using one of :data:`sys.stderr`, :func:`sys.displayhook`
+or :func:`sys.excepthook`. Which output mechanism is used depends on the
+reason for producing output:
+
+* The return value from successfully interpreted Python statements are printed
+  by calling :func:`sys.displayhook`. This is a side effect of
+  :func:`compile_command` passing ``'single'`` for *symbol*.
+* If the default :func:`sys.excepthook` has not been replaced, syntax errors
+  and exception tracebacks are printed by calling the
+  :meth:`write <io.TextIOBase.write>` method on :data:`sys.stderr`.
+* If :func:`sys.excepthook` has been replaced with a user defined function
+  :func:`sys.excepthook` is called to handle printing of exception tracebacks
+  and syntax errors.
+
+Additionally, :class:`InteractiveConsole` will print banner information to
+:data:`sys.stderr` if *banner* was passed to the constructor.
+
+To customize the console output a user should replace :func:`sys.displayhook`
+and :func:`sys.excepthook` with custom implementations. Alternatively, users
+can replace the :meth:`InteractiveConsole.write` method on a subclass
+instead of replacing :func:`sys.excepthook` to control the printing of errors.
+
 
 .. _interpreter-objects:
 
