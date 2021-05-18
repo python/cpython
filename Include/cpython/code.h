@@ -17,51 +17,72 @@ typedef struct _PyOpcache _PyOpcache;
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
+
+    /* Note that not all fields are used in either hash or comparisons. */
+
+	/* metadata */
+    PyObject *co_filename;      /* unicode (where it was loaded from) */
+    /* co_name is used in for both the hash and comparisions.  This is
+     * done to preserve the name and line number for tracebacks and
+     * debuggers; otherwise, constant de-duplication would collapse
+     * identical functions/lambdas defined on different lines.
+    */
+    PyObject *co_name;          /* unicode (name, for reference) */
+    int co_flags;               /* CO_..., see below */
+
+	/* the code */
+    PyObject *co_code;          /* instruction opcodes */
+    int co_firstlineno;         /* first source line number */
+    PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
+                                   Objects/lnotab_notes.txt for details. */
+
+    /* used by the code */
+    PyObject *co_consts;        /* list (constants used) */
+    PyObject *co_names;         /* list of strings (names used) */
+
+	/* mapping frame offsets to information */
+    PyObject *co_varnames;      /* tuple of strings (local variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+    PyObject *co_freevars;      /* tuple of strings (free variable names) */
+
+    /* args (within co_varnames) */
+    // XXX Make these convenience fields, reflecting co_fastlocalkinds.
     int co_argcount;            /* #arguments, except *args */
     int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
-    int co_nlocals;             /* #local variables */
+
+    /* needed to create the frame */
     int co_stacksize;           /* #entries needed for evaluation stack */
-    int co_flags;               /* CO_..., see below */
-    int co_firstlineno;         /* first source line number */
-    PyObject *co_code;          /* instruction opcodes */
-    PyObject *co_consts;        /* list (constants used) */
-    PyObject *co_names;         /* list of strings (names used) */
-    PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest aren't used in either hash or comparisons, except for co_name,
-       used in both. This is done to preserve the name and line number
-       for tracebacks and debuggers; otherwise, constant de-duplication
-       would collapse identical functions/lambdas defined on different lines.
-    */
-    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
-    PyObject *co_filename;      /* unicode (where it was loaded from) */
-    PyObject *co_name;          /* unicode (name, for reference) */
-    PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
-                                   Objects/lnotab_notes.txt for details. */
-    int co_nlocalsplus;         /* Number of locals + free + cell variables */
+
+	/* used by the eval loop */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
+
+    /* other */
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
     /* Scratch space for extra data relating to the code object.
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
 
+    /* internal */
+    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     /* Per opcodes just-in-time cache
      *
      * To reduce cache size, we use indirect mapping from opcode index to
      * cache object:
      *   cache = co_opcache[co_opcache_map[next_instr - first_instr] - 1]
      */
-
-    // co_opcache_map is indexed by (next_instr - first_instr).
-    //  * 0 means there is no cache for this opcode.
-    //  * n > 0 means there is cache in co_opcache[n-1].
-    unsigned char *co_opcache_map;
     _PyOpcache *co_opcache;
+    // co_opcache.map is indexed by (next_instr - first_instr).
+    //  * 0 means there is no cache for this opcode.
+    //  * n > 0 means there is cache in co_opcache.cache[n-1].
+    unsigned char *co_opcache_map;
     int co_opcache_flag;  // used to determine when create a cache.
     unsigned char co_opcache_size;  // length of co_opcache.
+
+    /* redundant data */
+    int co_nlocalsplus;         /* Number of locals + free + cell variables */
+    int co_nlocals;             /* #local variables */
 };
 
 /* Masks for co_flags above */
