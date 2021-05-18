@@ -1,0 +1,1 @@
+Dropped redundant network definitions from the IPv6 private networks list, which were subsets of another larger private network entry.
