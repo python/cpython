@@ -8831,7 +8831,7 @@ static int
 super_init_without_args(PyFrameObject *f, PyCodeObject *co,
                         PyTypeObject **type_p, PyObject **obj_p)
 {
-    if (co->co_argcount == 0) {
+    if (!_PyCode_HasFastlocals(co, CO_FAST_POSONLY | CO_FAST_POSORKW)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): no arguments");
         return -1;

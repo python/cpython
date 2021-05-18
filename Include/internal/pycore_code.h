@@ -4,6 +4,9 @@
 extern "C" {
 #endif
  
+#include <stdbool.h>
+
+
 typedef struct {
     PyObject *ptr;  /* Cached pointer (borrowed reference) */
     uint64_t globals_ver;  /* ma_version of global dict */
@@ -27,9 +30,17 @@ struct _PyOpcache {
 
 // XXX Can we do this with an enum instead?
 typedef unsigned char _PyFastLocalKind;
-#define CO_FAST_LOCAL 0x1
-#define CO_FAST_CELL 0x20
-#define CO_FAST_FREE 0x40
+#define CO_FAST_POSONLY     0x01
+#define CO_FAST_POSORKW     0x02
+#define CO_FAST_VARARGS     0x04
+#define CO_FAST_KWONLY      0x09
+#define CO_FAST_VARKWARGS   0x10
+#define CO_FAST_LOCALONLY   0x20
+#define CO_FAST_CELL        0x40
+#define CO_FAST_FREE        0x80
+#define CO_FAST_LOCAL (CO_FAST_POSONLY | CO_FAST_POSORKW | CO_FAST_VARARGS | \
+                       CO_FAST_KWONLY | CO_FAST_VARKWARGS |                  \
+                       CO_FAST_LOCALONLY)
 
 
 struct _PyCodeConstructor {
@@ -70,6 +81,8 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 /* Private API */
 
 int _PyCode_InitOpcache(PyCodeObject *co);
+
+PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
 
 /* This does not fail.  A genative result means "no match". */
 PyAPI_FUNC(Py_ssize_t)  _PyCode_GetFastlocalOffsetId(PyCodeObject *,

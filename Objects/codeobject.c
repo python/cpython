@@ -154,6 +154,47 @@ validate_and_copy_tuple(PyObject *tup)
  * fast locals
  ******************/
 
+bool
+_PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
+{
+    if (kind & CO_FAST_POSONLY && co->co_posonlyargcount > 0) {
+        return true;
+    }
+    if (kind & CO_FAST_POSORKW &&
+            co->co_argcount - co->co_posonlyargcount > 0) {
+        return true;
+    }
+    if (kind & CO_FAST_VARARGS && co->co_flags & CO_VARARGS) {
+        return true;
+    }
+    if (kind & CO_FAST_KWONLY && co->co_kwonlyargcount > 0) {
+        return true;
+    }
+    if (kind & CO_FAST_VARKWARGS && co->co_flags & CO_VARKEYWORDS) {
+        return true;
+    }
+
+    if (kind & CO_FAST_LOCALONLY) {
+        Py_ssize_t totalargs = (Py_ssize_t)co->co_argcount +
+                               (Py_ssize_t)co->co_kwonlyargcount +
+                               ((co->co_flags & CO_VARARGS) != 0) +
+                               ((co->co_flags & CO_VARKEYWORDS) != 0);
+        if (co->co_nlocals - totalargs) {
+            return true;
+        }
+    }
+
+    if (kind & CO_FAST_CELL && PyTuple_GET_SIZE(co->co_cellvars)) {
+        return true;
+    }
+
+    if (kind & CO_FAST_FREE && PyTuple_GET_SIZE(co->co_freevars)) {
+        return true;
+    }
+
+    return false;
+}
+
 Py_ssize_t
 _PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
                              _PyFastLocalKind kind)
@@ -173,6 +214,8 @@ _PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
             names = co->co_freevars;
             baseoffset = co->co_nlocals + PyTuple_GET_SIZE(co->co_cellvars);
             break;
+        default:
+            return -1;
     }
     if (names == NULL) {
         return -1;
