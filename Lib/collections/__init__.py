@@ -1521,11 +1521,11 @@ class UserString(_collections_abc.Sequence):
     def rstrip(self, chars=None):
         return self.__class__(self.data.rstrip(chars))
 
-    def split(self, sep=None, maxsplit=-1):
-        return self.data.split(sep, maxsplit)
+    def split(self, sep=None, maxsplit=-1, keepempty=None):
+        return self.data.split(sep, maxsplit, keepempty)
 
-    def rsplit(self, sep=None, maxsplit=-1):
-        return self.data.rsplit(sep, maxsplit)
+    def rsplit(self, sep=None, maxsplit=-1, keepempty=None):
+        return self.data.rsplit(sep, maxsplit, keepempty)
 
     def splitlines(self, keepends=False):
         return self.data.splitlines(keepends)
