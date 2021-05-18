@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import verbose, import_module, cpython_only
+from test.support import verbose, import_module, cpython_only, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random
@@ -17,6 +17,7 @@ import os
 import subprocess
 import signal
 import textwrap
+import traceback
 
 from test import lock_tests
 from test import support
@@ -1242,6 +1243,22 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertIsInstance(thread.exc, RuntimeError)
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
+
+    def test_multithread_modify_file_noerror(self):
+        # See issue25872
+        def modify_file():
+            with open(test.support.TESTFN, 'w', encoding='utf-8') as fp:
+                fp.write(' ')
+                traceback.format_stack()
+
+        self.addCleanup(unlink, test.support.TESTFN)
+        threads = [
+            threading.Thread(target=modify_file)
+            for i in range(100)
+        ]
+        for t in threads:
+            t.start()
+            t.join()
 
 
 class ThreadRunFail(threading.Thread):
