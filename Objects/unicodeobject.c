@@ -10383,13 +10383,15 @@ split(PyObject *self,
     kind2 = PyUnicode_KIND(substring);
     len1 = PyUnicode_GET_LENGTH(self);
     len2 = PyUnicode_GET_LENGTH(substring);
-    if (kind1 < kind2 || (len1 > 0 && len1 < len2)) {
-        out = PyList_New(1);
-        if (out == NULL)
-            return NULL;
-        Py_INCREF(self);
-        PyList_SET_ITEM(out, 0, self);
-        return out;
+    if (kind1 < kind2 || len1 < len2) {
+        if (len1 > 0 ) {
+            out = PyList_New(1);
+            if (out == NULL)
+                return NULL;
+            Py_INCREF(self);
+            PyList_SET_ITEM(out, 0, self);
+            return out;
+        }
     }
     buf1 = PyUnicode_DATA(self);
     buf2 = PyUnicode_DATA(substring);
