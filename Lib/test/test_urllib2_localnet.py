@@ -9,6 +9,7 @@ import unittest
 import hashlib
 
 from test.support import hashlib_helper
+from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 
@@ -30,6 +31,7 @@ class LoopbackHttpServer(http.server.HTTPServer):
     """HTTP server w/ a few modifications that make it useful for
     loopback testing purposes.
     """
+    address_family = socket_helper.get_family()
 
     def __init__(self, server_address, RequestHandlerClass):
         http.server.HTTPServer.__init__(self,
@@ -60,7 +62,7 @@ class LoopbackHttpServerThread(threading.Thread):
         self._stop_server = False
         self.ready = threading.Event()
         request_handler.protocol_version = "HTTP/1.0"
-        self.httpd = LoopbackHttpServer(("127.0.0.1", 0),
+        self.httpd = LoopbackHttpServer((socket_helper.HOST, 0),
                                         request_handler)
         self.port = self.httpd.server_port
 
@@ -290,7 +292,7 @@ class BasicAuthTests(unittest.TestCase):
             return BasicAuthHandler(*args, **kwargs)
         self.server = LoopbackHttpServerThread(http_server_with_basic_auth_handler)
         self.addCleanup(self.stop_server)
-        self.server_url = 'http://127.0.0.1:%s' % self.server.port
+        self.server_url = f'http://{socket_helper.HOST}:{self.server.port}'
         self.server.start()
         self.server.ready.wait()
 
@@ -346,7 +348,7 @@ class ProxyAuthTests(unittest.TestCase):
         self.addCleanup(self.stop_server)
         self.server.start()
         self.server.ready.wait()
-        proxy_url = "http://127.0.0.1:%d" % self.server.port
+        proxy_url = f"http://{socket_helper.HOST}:{self.server.port}"
         handler = urllib.request.ProxyHandler({"http" : proxy_url})
         self.proxy_digest_handler = urllib.request.ProxyDigestAuthHandler()
         self.opener = urllib.request.build_opener(

@@ -20,6 +20,8 @@ CERTFILE = os.path.join(here, 'keycert.pem')
 
 class HTTPSServer(_HTTPServer):
 
+    address_family = socket_helper.get_family()
+
     def __init__(self, server_address, handler_class, context):
         _HTTPServer.__init__(self, server_address, handler_class)
         self.context = context
