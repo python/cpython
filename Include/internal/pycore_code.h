@@ -24,7 +24,44 @@ struct _PyOpcache {
     char optimized;
 };
 
+
+struct _PyCodeConstructor {
+    /* metadata */
+    PyObject *filename;
+    PyObject *name;
+    int flags;
+
+    /* the code */
+    PyObject *code;
+    int firstlineno;
+    PyObject *linetable;
+
+	/* used by the code */
+    PyObject *consts;
+    PyObject *names;
+
+	/* mapping frame offsets to information */
+    PyObject *varnames;
+    PyObject *cellvars;
+    PyObject *freevars;
+
+    /* args (within varnames) */
+    int argcount;
+    int posonlyargcount;
+    int kwonlyargcount;
+
+    /* needed to create the frame */
+    int stacksize;
+
+	/* used by the eval loop */
+    PyObject *exceptiontable;
+};
+
+PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
+
+
 /* Private API */
+
 int _PyCode_InitOpcache(PyCodeObject *co);
 
 

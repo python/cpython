@@ -13,6 +13,7 @@
 #include "code.h"
 #include "marshal.h"
 #include "pycore_hashtable.h"
+#include "pycore_code.h"          // _PyCode_New()
 
 /*[clinic input]
 module marshal
@@ -1333,6 +1334,7 @@ r_object(RFILE *p)
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
+            // XXX We no longer use nlocals.
             nlocals = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
@@ -1383,12 +1385,31 @@ r_object(RFILE *p)
                 goto code_error;
             }
 
-            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
-                            argcount, posonlyargcount, kwonlyargcount,
-                            nlocals, stacksize, flags,
-                            code, consts, names, varnames,
-                            freevars, cellvars, filename, name,
-                            firstlineno, linetable, exceptiontable);
+            struct _PyCodeConstructor con = {
+                .filename = filename,
+                .name = name,
+                .flags = flags,
+
+                .code = code,
+                .firstlineno = firstlineno,
+                .linetable = linetable,
+
+                .consts = consts,
+                .names = names,
+
+                .varnames = varnames,
+                .cellvars = cellvars,
+                .freevars = freevars,
+
+                .argcount = argcount,
+                .posonlyargcount = posonlyargcount,
+                .kwonlyargcount = kwonlyargcount,
+
+                .stacksize = stacksize,
+
+                .exceptiontable = exceptiontable,
+            };
+            v = (PyObject *)_PyCode_New(&con);
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
