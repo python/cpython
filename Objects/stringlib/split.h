@@ -59,11 +59,20 @@ STRINGLIB(split_whitespace)(PyObject* str_obj,
     PyObject *list;
     PyObject *sub;
 
-    if ((str_len == 0) && prune) {
-        list = PyList_New(0);
-        if (list == NULL)
-            return NULL;
-        return list;
+    if (str_len == 0) {
+        if (prune) {
+            list = PyList_New(0);
+            if (list == NULL)
+                return NULL;
+            return list;
+        } else {
+            list = PyList_New(1);
+            if (list == NULL)
+                return NULL;
+            Py_INCREF(str_obj);
+            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+            return list;
+        }
     }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
@@ -123,11 +132,20 @@ STRINGLIB(split_char)(PyObject* str_obj,
     PyObject *sub;
     int pruned = 0;
 
-    if ((str_len == 0) && prune) {
-        list = PyList_New(0);
-        if (list == NULL)
-            return NULL;
-        return list;
+    if (str_len == 0) {
+        if (prune) {
+            list = PyList_New(0);
+            if (list == NULL)
+                return NULL;
+            return list;
+        } else {
+            list = PyList_New(1);
+            if (list == NULL)
+                return NULL;
+            Py_INCREF(str_obj);
+            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+            return list;
+        }
     }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
@@ -185,11 +203,20 @@ STRINGLIB(split)(PyObject* str_obj,
     else if (sep_len == 1)
         return STRINGLIB(split_char)(str_obj, str, str_len, sep[0], maxcount, prune);
 
-    if ((str_len == 0) && prune) {
-        list = PyList_New(0);
-        if (list == NULL)
-            return NULL;
-        return list;
+    if (str_len == 0) {
+        if (prune) {
+            list = PyList_New(0);
+            if (list == NULL)
+                return NULL;
+            return list;
+        } else {
+            list = PyList_New(1);
+            if (list == NULL)
+                return NULL;
+            Py_INCREF(str_obj);
+            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+            return list;
+        }
     }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
@@ -240,11 +267,20 @@ STRINGLIB(rsplit_whitespace)(PyObject* str_obj,
     PyObject *list;
     PyObject *sub;
 
-    if ((str_len == 0) && prune) {
-        list = PyList_New(0);
-        if (list == NULL)
-            return NULL;
-        return list;
+    if (str_len == 0) {
+        if (prune) {
+            list = PyList_New(0);
+            if (list == NULL)
+                return NULL;
+            return list;
+        } else {
+            list = PyList_New(1);
+            if (list == NULL)
+                return NULL;
+            Py_INCREF(str_obj);
+            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+            return list;
+        }
     }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
@@ -306,11 +342,20 @@ STRINGLIB(rsplit_char)(PyObject* str_obj,
     PyObject *sub;
     int pruned = 0;
 
-    if ((str_len == 0) && prune) {
-        list = PyList_New(0);
-        if (list == NULL)
-            return NULL;
-        return list;
+    if (str_len == 0) {
+        if (prune) {
+            list = PyList_New(0);
+            if (list == NULL)
+                return NULL;
+            return list;
+        } else {
+            list = PyList_New(1);
+            if (list == NULL)
+                return NULL;
+            Py_INCREF(str_obj);
+            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+            return list;
+        }
     }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
@@ -369,11 +414,20 @@ STRINGLIB(rsplit)(PyObject* str_obj,
     else if (sep_len == 1)
         return STRINGLIB(rsplit_char)(str_obj, str, str_len, sep[0], maxcount, prune);
 
-    if ((str_len == 0) && prune) {
-        list = PyList_New(0);
-        if (list == NULL)
-            return NULL;
-        return list;
+    if (str_len == 0) {
+        if (prune) {
+            list = PyList_New(0);
+            if (list == NULL)
+                return NULL;
+            return list;
+        } else {
+            list = PyList_New(1);
+            if (list == NULL)
+                return NULL;
+            Py_INCREF(str_obj);
+            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+            return list;
+        }
     }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
