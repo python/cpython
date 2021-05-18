@@ -151,24 +151,16 @@ def bind_port(sock, host=HOST):
 
 def get_family():
     """Get a host appropriate socket AF_INET or AF_INET6 family."""
+    if IPV4_ENABLED:
+        return socket.AF_INET
     if IPV6_ENABLED:
         return socket.AF_INET6
-    elif IPV4_ENABLED:
-        return socket.AF_INET
-    else:
-        raise support.TestFailed(
-                "At least one of IPv4 or IPv6 must be enabled.")
+    raise support.TestFailed("At least one of IPv4 or IPv6 must be enabled.")
 
 
 def tcp_socket():
     """Get a new host appropriate IPv4 or IPv6 TCP STREAM socket.socket()."""
-    if IPV4_ENABLED:
-        return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    elif IPV6_ENABLED:
-        return socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    else:
-        raise support.TestFailed(
-                "At least one of IPv4 or IPv6 must be enabled.")
+    return socket.socket(get_family(), socket.SOCK_STREAM)
 
 
 def get_bound_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
