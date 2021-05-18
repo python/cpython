@@ -718,11 +718,12 @@ class BufferingFormatter(object):
         Format the specified records with a given header and return the result as a string.
         """
         rv = ""
-        for i, record in enumerate(records):
-            if i == 0:
-                rv += header + record.getMessage()
-            else:
-                rv += record.getMessage()
+        if len(header):
+            for i, record in enumerate(records):
+                if i == 0:
+                    rv += header + record.getMessage()
+                else:
+                    rv += record.getMessage()
         return rv
 
     def formatFooter(self, records, /, footer=""):
@@ -730,11 +731,12 @@ class BufferingFormatter(object):
         Format the specified records with a given footer and return the result as a string.
         """
         rv = ""
-        for i, record in enumerate(records):
-            if i == len(records) - 1:
-                rv += record.getMessage() + footer
-            else:
-                rv += record.getMessage()
+        if len(footer):
+            for i, record in enumerate(records):
+                if i == len(records) - 1:
+                    rv += record.getMessage() + footer
+                else:
+                    rv += record.getMessage()
         return rv
 
     def format(self, records, /, header="", footer=""):
@@ -743,13 +745,19 @@ class BufferingFormatter(object):
         """
         rv = ""
         temp_records = ""
-        if len(records) > 0:
-            formated_header = self.formatHeader(records, header)
-            for record in records:
-                temp_records += self.linefmt.format(record)
-            formated_footer = self.formatFooter(records, footer)
-            rv = formated_header[:len(header)] + temp_records + \
-                formated_footer[len(formated_footer) - len(footer):]
+        if len(records):
+            if len(header) or len(footer):
+                formated_header = self.formatHeader(records, header)
+                for record in records:
+                    temp_records += self.linefmt.format(record)
+                formated_footer = self.formatFooter(records, footer)
+                rv = formated_header[:len(header)] + temp_records + \
+                    formated_footer[len(formated_footer) - len(footer):]
+            else:
+                rv = rv + self.formatHeader(records)
+                for record in records:
+                    rv = rv + self.linefmt.format(record)
+                rv = rv + self.formatFooter(records)
         return rv
 
 #---------------------------------------------------------------------------
