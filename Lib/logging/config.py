@@ -25,6 +25,7 @@ To use, simply 'import logging' and log away!
 """
 
 import errno
+import importlib
 import io
 import logging
 import logging.handlers
@@ -85,17 +86,9 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
 
 def _resolve(name):
     """Resolve a dotted name to a global object."""
-    name = name.split('.')
-    used = name.pop(0)
-    found = __import__(used)
-    for n in name:
-        used = used + '.' + n
-        try:
-            found = getattr(found, n)
-        except AttributeError:
-            __import__(used)
-            found = getattr(found, n)
-    return found
+    [path, cls] = name.rsplit(sep='.', maxsplit=1)
+    mod = importlib.import_module(path)
+    return getattr(mod, cls)
 
 def _strip_spaces(alist):
     return map(str.strip, alist)
@@ -368,8 +361,7 @@ class BaseConfigurator(object):
         'cfg' : 'cfg_convert',
     }
 
-    # We might want to use a different one, e.g. importlib
-    importer = staticmethod(__import__)
+    importer = staticmethod(importlib.import_module)
 
     def __init__(self, config):
         self.config = ConvertingDict(config)
@@ -380,18 +372,10 @@ class BaseConfigurator(object):
         Resolve strings to objects using standard import and attribute
         syntax.
         """
-        name = s.split('.')
-        used = name.pop(0)
+        name = s.rsplit('.', 1)
         try:
-            found = self.importer(used)
-            for frag in name:
-                used += '.' + frag
-                try:
-                    found = getattr(found, frag)
-                except AttributeError:
-                    self.importer(used)
-                    found = getattr(found, frag)
-            return found
+            found = self.importer(name[0])
+            return getattr(found, name[1])
         except ImportError:
             e, tb = sys.exc_info()[1:]
             v = ValueError('Cannot resolve %r: %s' % (s, e))

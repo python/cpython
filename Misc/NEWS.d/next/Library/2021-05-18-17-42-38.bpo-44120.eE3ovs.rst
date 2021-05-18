@@ -1,0 +1,2 @@
+The BaseConfigurator of :mod:`logging.config` module no longer use the
+built-in :func:`__import__`, use :func:`importlib.import_module`

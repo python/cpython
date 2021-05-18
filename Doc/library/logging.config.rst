@@ -617,7 +617,7 @@ fails.
 Import resolution and custom importers
 """"""""""""""""""""""""""""""""""""""
 
-Import resolution, by default, uses the builtin :func:`__import__` function
+Import resolution, by default, uses the :func:`importlib.import_module` function
 to do its importing. You may want to replace this with your own importing
 mechanism: if so, you can replace the :attr:`importer` attribute of the
 :class:`DictConfigurator` or its superclass, the
