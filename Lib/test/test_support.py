@@ -94,20 +94,36 @@ class TestSupport(unittest.TestCase):
             os_helper.unlink(mod_filename)
             os_helper.rmtree('__pycache__')
 
-    def test_HOST(self):
-        s = socket.create_server((socket_helper.HOST, 0))
-        s.close()
+    def test_bind_ip_socket_and_port_HOST(self):
+        """This also tests get_bound_ip_socket_and_port() indirectly."""
+        with socket_helper.bind_ip_socket_and_port(
+                hostname=socket_helper.HOST):
+            pass
 
-    def test_find_unused_port(self):
+    @unittest.skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
+    def test_find_unused_port_ipv4(self):
         port = socket_helper.find_unused_port()
         s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
-    def test_bind_port(self):
-        s = socket.socket()
-        socket_helper.bind_port(s)
-        s.listen()
-        s.close()
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, "IPv6 required")
+    def test_find_unused_port_ipv6(self):
+        port = socket_helper.find_unused_port()
+        with socket.socket(socket.AF_INET6) as s:
+            s.bind((socket_helper.HOST, port))
+            s.listen()
+
+    @unittest.skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
+    def test_bind_port_ipv4(self):
+        with socket.socket(socket.AF_INET) as s:
+            socket_helper.bind_port(s)
+            s.listen()
+
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, "IPv6 required")
+    def test_bind_port_ipv6(self):
+        with socket.socket(socket.AF_INET6) as s:
+            socket_helper.bind_port(s)
+            s.listen()
 
     # Tests for temp_dir()
 
