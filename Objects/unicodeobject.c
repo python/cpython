@@ -13153,7 +13153,7 @@ unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
         else
             prune = 0;
     } else {
-        prune = ! PyObject_IsTrue(keepempty);
+        prune = PyObject_Not(keepempty);
         if (prune < 0)
             return NULL;
     }
@@ -13345,7 +13345,7 @@ unicode_rsplit_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit,
         else
             prune = 0;
     } else {
-        prune = ! PyObject_IsTrue(keepempty);
+        prune = PyObject_Not(keepempty);
         if (prune < 0)
             return NULL;
     }

@@ -1724,7 +1724,7 @@ bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
         else
             prune = 0;
     } else {
-        prune = ! PyObject_IsTrue(keepempty);
+        prune = PyObject_Not(keepempty);
         if (prune < 0)
             return NULL;
     }
@@ -1822,7 +1822,7 @@ bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit,
         else
             prune = 0;
     } else {
-        prune = ! PyObject_IsTrue(keepempty);
+        prune = PyObject_Not(keepempty);
         if (prune < 0)
             return NULL;
     }

@@ -1427,7 +1427,7 @@ bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
         else
             prune = 0;
     } else {
-        prune = ! PyObject_IsTrue(keepempty);
+        prune = PyObject_Not(keepempty);
         if (prune < 0)
             return NULL;
     }
@@ -1548,7 +1548,7 @@ bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
         else
             prune = 0;
     } else {
-        prune = ! PyObject_IsTrue(keepempty);
+        prune = PyObject_Not(keepempty);
         if (prune < 0)
             return NULL;
     }
