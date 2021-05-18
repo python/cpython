@@ -155,12 +155,17 @@ def get_family():
         return socket.AF_INET
     if IPV6_ENABLED:
         return socket.AF_INET6
-    raise support.TestFailed("At least one of IPv4 or IPv6 must be enabled.")
+    raise unittest.SkipTest('Neither IPv4 or IPv6 is enabled.')
 
 
 def tcp_socket():
     """Get a new host appropriate IPv4 or IPv6 TCP STREAM socket.socket()."""
     return socket.socket(get_family(), socket.SOCK_STREAM)
+
+
+def udp_socket(proto=-1):
+    """Get a new host appropriate IPv4 or IPv6 UDP DGRAM socket.socket()."""
+    return socket.socket(get_family(), socket.SOCK_DGRAM, proto)
 
 
 def get_bound_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
@@ -170,7 +175,7 @@ def get_bound_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
     IPv4 is available.  Context is a (socket, port) tuple.  Exiting the context
     closes the socket.
 
-    Prefer the bind_ip_socket_and_port context manager when possible.
+    Prefer the bind_ip_socket_and_port context manager within a test method.
     """
     family = get_family()
     sock = socket.socket(family, socktype)
