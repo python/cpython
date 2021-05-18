@@ -545,7 +545,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if isinstance(code, HTTPStatus):
             code = code.value
         self.log_message('"%s" %s %s',
-                         self.requestline, str(code), str(size))
+                         self.get_method(self.requestline), str(code), str(size))
 
     def log_error(self, format, *args):
         """Log an error.
