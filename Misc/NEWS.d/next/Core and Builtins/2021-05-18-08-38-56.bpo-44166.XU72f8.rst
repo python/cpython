@@ -1,0 +1,3 @@
+:exc:`IndexError` messages for :class:`list` are now more informative. They
+provide hints about the current length, the provided index number and the
+allowed range.
