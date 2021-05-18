@@ -2,6 +2,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+// XXX Much of the code here should move to pycore_code.h.
+
 typedef uint16_t _Py_CODEUNIT;
 
 #ifdef WORDS_BIGENDIAN
