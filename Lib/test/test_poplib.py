@@ -204,7 +204,7 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
 
     handler = DummyPOP3Handler
 
-    def __init__(self, address, af=socket.AF_INET):
+    def __init__(self, address, af=socket_helper.get_family()):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
         self.daemon = True
@@ -481,9 +481,8 @@ class TestTimeouts(TestCase):
 
     def setUp(self):
         self.evt = threading.Event()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock, self.port = socket_helper.get_bound_ip_socket_and_port()
         self.sock.settimeout(60)  # Safety net. Look issue 11812
-        self.port = socket_helper.bind_port(self.sock)
         self.thread = threading.Thread(target=self.server, args=(self.evt, self.sock))
         self.thread.daemon = True
         self.thread.start()
