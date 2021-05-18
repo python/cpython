@@ -177,12 +177,9 @@ Literals
      * ``ord('s')``: convert to :class:`str` before formatting (``!s``)
      * ``ord('r')``: call :func:`repr` before formatting (``!r``)
      * ``ord('a')``: call :func:`ascii` before formatting (``!a``)
-     * ``ord('d')``: convert to :class:`int` with truncating
-       (for internal use only)
+     * ``ord('d')``: convert to :class:`int` with truncating before formatting
      * ``ord('i')``: call :func:`operator.index` before formatting
-       (for internal use only)
      * ``ord('f')``: convert to :class:`float` before formatting
-       (for internal use only)
 
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both

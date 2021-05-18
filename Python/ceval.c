@@ -4378,13 +4378,30 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
             case FVC_ASCII: conv_fn = PyObject_ASCII; break;
-            case FVC_INT: conv_fn = PyNumber_Long; break;
             case FVC_INDEX: conv_fn = PyNumber_Index; break;
-            case FVC_FLOAT: conv_fn = PyNumber_Float; break;
+            case FVC_INT:
+            case FVC_FLOAT:
+                if (!PyNumber_Check(value)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "a number is required, not %.200s",
+                                  Py_TYPE(value)->tp_name);
+                    Py_DECREF(value);
+                    Py_XDECREF(fmt_spec);
+                    goto error;
+                }
+                if (which_conversion == FVC_INT) {
+                    conv_fn = PyNumber_Long;
+                }
+                else {
+                    conv_fn = PyNumber_Float;
+                }
+                break;
             default:
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "unexpected conversion flag %d",
                               which_conversion);
+                Py_DECREF(value);
+                Py_XDECREF(fmt_spec);
                 goto error;
             }
 
