@@ -378,7 +378,7 @@ Barrier
           return -1
 
        async def main(folder, files, nb_files):
-          # Create a Barrier object with parties equal to ``nb_files+1``
+          # Create a Barrier object with parties equal to nb_files+1
           # corresponding to the number of all removing items,
           # and an action as a print message.
           barrier = asyncio.Barrier(nb_files+1, action=job_done)
