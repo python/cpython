@@ -55,64 +55,33 @@ STRINGLIB(split_whitespace)(PyObject* str_obj,
                            const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                            Py_ssize_t maxcount, int prune)
 {
-    Py_ssize_t i, j, k, count=0;
+    Py_ssize_t i, j, count=0;
     PyObject *list;
     PyObject *sub;
-
-    if (str_len == 0) {
-        if (prune) {
-            list = PyList_New(0);
-            if (list == NULL)
-                return NULL;
-            return list;
-        } else {
-            list = PyList_New(1);
-            if (list == NULL)
-                return NULL;
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            return list;
-        }
-    }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
     i = j = 0;
-    while (maxcount-- > 0) {
-        k = i;
-        while (i < str_len && STRINGLIB_ISSPACE(str[i]))
-            i++;
-        for (; prune == 0 && k < i-1; k++) {
-            SPLIT_ADD(str, k, k);
+    while (j < str_len && !STRINGLIB_ISSPACE(str[j]))
+        j++;
+
+    while (j < str_len) {
+        if (j > i || ! prune) {
+            if (count >= maxcount)
+                break;
+            SPLIT_ADD(str, i, j);
         }
-        if (i == str_len)
-            break;
-        j = i;
-        i++;
-        while (i < str_len && !STRINGLIB_ISSPACE(str[i]))
-            i++;
-#ifndef STRINGLIB_MUTABLE
-        if (j == 0 && i == str_len && STRINGLIB_CHECK_EXACT(str_obj)) {
-            /* No whitespace in str_obj, so just use it as list[0] */
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            count++;
-            break;
-        }
-#endif
-        SPLIT_ADD(str, j, i);
+        j++;
+        i = j;
+        while (j < str_len && !STRINGLIB_ISSPACE(str[j]))
+            j++;
     }
 
-    if (i < str_len) {
-        /* Only occurs when maxcount was reached */
-        /* Skip any remaining whitespace and copy to end of string */
-        while (i < str_len && STRINGLIB_ISSPACE(str[i]))
-            i++;
-        if (i != str_len)
-            SPLIT_ADD(str, i, str_len);
-    }
+    if (i < str_len || ! prune)
+        SPLIT_ADD(str, i, str_len);
+
     FIX_PREALLOC_SIZE(list);
     return list;
 
@@ -132,52 +101,29 @@ STRINGLIB(split_char)(PyObject* str_obj,
     PyObject *sub;
     int pruned = 0;
 
-    if (str_len == 0) {
-        if (prune) {
-            list = PyList_New(0);
-            if (list == NULL)
-                return NULL;
-            return list;
-        } else {
-            list = PyList_New(1);
-            if (list == NULL)
-                return NULL;
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            return list;
-        }
-    }
-
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
     i = j = 0;
-    while ((j < str_len) && (maxcount-- > 0)) {
-        for(; j < str_len; j++) {
-            /* I found that using memchr makes no difference */
-            if (str[j] == ch) {
-                if (prune == 0 || i < j) {
-                    SPLIT_ADD(str, i, j);
-                } else {
-                    pruned = 1;
-                }
-                i = j = j + 1;
+    while (j < str_len && str[j] != ch)
+        j++;
+
+    while (j < str_len) {
+        if (j > i || ! prune) {
+            if (count >= maxcount)
                 break;
-            }
+            SPLIT_ADD(str, i, j);
         }
+        j++;
+        i = j;
+        while (j < str_len && str[j] != ch)
+            j++;
     }
-#ifndef STRINGLIB_MUTABLE
-    if (count == 0 && pruned == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
-        /* ch not in str_obj, so just use str_obj as list[0] */
-        Py_INCREF(str_obj);
-        PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-        count++;
-    } else
-#endif
-    if (i < str_len || (prune == 0 && i == str_len)) {
+
+    if (i < str_len || ! prune)
         SPLIT_ADD(str, i, str_len);
-    }
+
     FIX_PREALLOC_SIZE(list);
     return list;
 
@@ -263,64 +209,33 @@ STRINGLIB(rsplit_whitespace)(PyObject* str_obj,
                             const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                             Py_ssize_t maxcount, int prune)
 {
-    Py_ssize_t i, j, k, count=0;
+    Py_ssize_t i, j, count=0;
     PyObject *list;
     PyObject *sub;
-
-    if (str_len == 0) {
-        if (prune) {
-            list = PyList_New(0);
-            if (list == NULL)
-                return NULL;
-            return list;
-        } else {
-            list = PyList_New(1);
-            if (list == NULL)
-                return NULL;
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            return list;
-        }
-    }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
-    i = j = str_len - 1;
-    while (maxcount-- > 0) {
-        k = i;
-        while (i >= 0 && STRINGLIB_ISSPACE(str[i]))
-            i--;
-        for (; prune == 0 && k > i+1; k--) {
-            SPLIT_ADD(str, k+1, k+1);
+    i = j = str_len;
+    while (j > 0 && !STRINGLIB_ISSPACE(str[j-1]))
+        j--;
+
+    while (j > 0) {
+        if (j < i || ! prune) {
+            if (count >= maxcount)
+                break;
+            SPLIT_ADD(str, j, i);
         }
-        if (i < 0)
-            break;
-        j = i;
-        i--;
-        while (i >= 0 && !STRINGLIB_ISSPACE(str[i]))
-            i--;
-#ifndef STRINGLIB_MUTABLE
-        if (j == str_len - 1 && i < 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
-            /* No whitespace in str_obj, so just use it as list[0] */
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            count++;
-            break;
-        }
-#endif
-        SPLIT_ADD(str, i + 1, j + 1);
+        j--;
+        i = j;
+        while (j > 0 && !STRINGLIB_ISSPACE(str[j-1]))
+            j--;
     }
 
-    if (i >= 0) {
-        /* Only occurs when maxcount was reached */
-        /* Skip any remaining whitespace and copy to beginning of string */
-        while (i >= 0 && STRINGLIB_ISSPACE(str[i]))
-            i--;
-        if (i >= 0)
-            SPLIT_ADD(str, 0, i + 1);
-    }
+    if (i > 0 || ! prune)
+        SPLIT_ADD(str, 0, i);
+
     FIX_PREALLOC_SIZE(list);
     if (PyList_Reverse(list) < 0)
         goto onError;
