@@ -135,17 +135,47 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
 #define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
+
 /* Public interface */
+
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
-        int, int, int, int, int, PyObject *, PyObject *,
-        PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *, PyObject *);
+        int argcount,
+        int kwonlyargcount,
+        int nlocals,
+        int stacksize,
+        int flags,
+        PyObject *code,
+        PyObject *consts,
+        PyObject *names,
+        PyObject *varnames,
+        PyObject *freevars,
+        PyObject *cellvars,
+        PyObject *filename,
+        PyObject *name,
+        int firstlineno,
+        PyObject *linetable,
+        PyObject *exceptiontable
+        );
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
-        int, int, int, int, int, int, PyObject *, PyObject *,
-        PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *, PyObject *);
-        /* same as struct above */
+        int argcount,
+        int posonlyargcount,
+        int kwonlyargcount,
+        int nlocals,
+        int stacksize,
+        int flags,
+        PyObject *code,
+        PyObject *consts,
+        PyObject *names,
+        PyObject *varnames,
+        PyObject *freevars,
+        PyObject *cellvars,
+        PyObject *filename,
+        PyObject *name,
+        int firstlineno,
+        PyObject *linetable,
+        PyObject *exceptiontable
+        );
 
 /* Creates a new empty code object with the specified source location. */
 PyAPI_FUNC(PyCodeObject *)
