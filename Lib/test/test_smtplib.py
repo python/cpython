@@ -721,9 +721,8 @@ class TooLongLineTests(unittest.TestCase):
         sys.stdout = self.output
 
         self.evt = threading.Event()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock, self.port = socket_helper.get_bound_ip_socket_and_port()
         self.sock.settimeout(15)
-        self.port = socket_helper.bind_port(self.sock)
         servargs = (self.evt, self.respdata, self.sock)
         self.thread = threading.Thread(target=server, args=servargs)
         self.thread.start()
@@ -739,8 +738,8 @@ class TooLongLineTests(unittest.TestCase):
         threading_helper.threading_cleanup(*self.thread_key)
 
     def testLineTooLong(self):
-        self.assertRaises(smtplib.SMTPResponseException, smtplib.SMTP,
-                          HOST, self.port, 'localhost', 3)
+        with self.assertRaises(smtplib.SMTPResponseException):
+            smtplib.SMTP(HOST, self.port, 'localhost', 3)
 
 
 sim_users = {'Mr.A@somewhere.com':'John A',
