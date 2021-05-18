@@ -354,41 +354,39 @@ Python 支持多种 *复合* 数据类型，可将不同值组合在一起。最
     >>> cubes
     [1, 8, 27, 64, 125]
 
-You can also add new items at the end of the list, by using
-the :meth:`~list.append` *method* (we will see more about methods later)::
 
-   >>> cubes.append(216)  # add the cube of 6
-   >>> cubes.append(7 ** 3)  # and the cube of 7
+通过使用 :meth:`~list.append` *method* (详见后文), 你也可以在列表末尾添加新元素::
+
+   >>> cubes.append(216)  # 把6的立方加起来
+   >>> cubes.append(7 ** 3)  # 添加7的立方
    >>> cubes
    [1, 8, 27, 64, 125, 216, 343]
 
-Assignment to slices is also possible, and this can even change the size of the
-list or clear it entirely::
+为切片赋值可以改变列表大小，甚至清空整个列表::
 
    >>> letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
    >>> letters
    ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-   >>> # replace some values
+   >>> # 替换一些值
    >>> letters[2:5] = ['C', 'D', 'E']
    >>> letters
    ['a', 'b', 'C', 'D', 'E', 'f', 'g']
-   >>> # now remove them
+   >>> # 移除它们
    >>> letters[2:5] = []
    >>> letters
    ['a', 'b', 'f', 'g']
-   >>> # clear the list by replacing all the elements with an empty list
+   >>> # 通过将所有元素替换为空列表来清除列表
    >>> letters[:] = []
    >>> letters
    []
 
-The built-in function :func:`len` also applies to lists::
+内置函数 :func:`len` 也适用列表::
 
    >>> letters = ['a', 'b', 'c', 'd']
    >>> len(letters)
    4
 
-It is possible to nest lists (create lists containing other lists), for
-example::
+还可以嵌套列表（创建包含其他列表的列表），例如::
 
    >>> a = ['a', 'b', 'c']
    >>> n = [1, 2, 3]
@@ -402,16 +400,13 @@ example::
 
 .. _tut-firststeps:
 
-First Steps Towards Programming
+走向编程的第一步
 ===============================
 
-Of course, we can use Python for more complicated tasks than adding two and two
-together.  For instance, we can write an initial sub-sequence of the
-`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
-as follows::
+当然，我可以使用 Python 完成比二加二更复杂的任务。 例如，可以编写 `Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_ 的初始子序列，如下所示::
 
-   >>> # Fibonacci series:
-   ... # the sum of two elements defines the next
+   >>> #  斐波那契数列 :
+   ... # 两个元素的和定义下一个元素
    ... a, b = 0, 1
    >>> while a < 10:
    ...     print(a)
@@ -425,45 +420,21 @@ as follows::
    5
    8
 
-This example introduces several new features.
+该例引入了几个新功能。
 
-* The first line contains a *multiple assignment*: the variables ``a`` and ``b``
-  simultaneously get the new values 0 and 1.  On the last line this is used again,
-  demonstrating that the expressions on the right-hand side are all evaluated
-  first before any of the assignments take place.  The right-hand side expressions
-  are evaluated  from the left to the right.
+* 首行 *多重赋值* : 变量 ``a` 和 ``b`` 同时获得新值 0 和 1。 最后一行又用了一次多重赋值，这体现在右表达式在赋值前就已经求值了。右表达式求值顺序为从左到右。
 
-* The :keyword:`while` loop executes as long as the condition (here: ``a < 10``)
-  remains true.  In Python, like in C, any non-zero integer value is true; zero is
-  false.  The condition may also be a string or list value, in fact any sequence;
-  anything with a non-zero length is true, empty sequences are false.  The test
-  used in the example is a simple comparison.  The standard comparison operators
-  are written the same as in C: ``<`` (less than), ``>`` (greater than), ``==``
-  (equal to), ``<=`` (less than or equal to), ``>=`` (greater than or equal to)
-  and ``!=`` (not equal to).
+* :keyword:`while` 循环只要条件（这里指：``a < 10``）为真就会一直执行。Python 和 C 一样，任何非零整数都为真，零为假。这个条件也可以是字符串或列表的值，事实上，任何序列都可以；长度非零就为真，空序列则为假。示例中的判断只是最简单的比较。比较操作符的标准写法和 C 语言一样： ``<`` （小于）、 ``>``  （大于）、 ``==``（等于）、 ``<=``（小于等于)、 ``>=``（大于等于）及 ``!=`` （不等于）。
 
-* The *body* of the loop is *indented*: indentation is Python's way of grouping
-  statements.  At the interactive prompt, you have to type a tab or space(s) for
-  each indented line.  In practice you will prepare more complicated input
-  for Python with a text editor; all decent text editors have an auto-indent
-  facility.  When a compound statement is entered interactively, it must be
-  followed by a blank line to indicate completion (since the parser cannot
-  guess when you have typed the last line).  Note that each line within a basic
-  block must be indented by the same amount.
+* *循环体* 是 *缩进的* ：缩进是 Python组织语句的方式。在交互式命令行里，得为每个缩输入制表符或空格。使用文本编辑器可以实现更复杂的输入方式；所有像样的文本编辑器都支持自动缩进。交互式输入复合语句时, 要在最后输入空白行表示结束（因为解析器不知道哪一行代码是最后一行）。注意，同一块语句的每一行的缩进相同。
 
-* The :func:`print` function writes the value of the argument(s) it is given.
-  It differs from just writing the expression you want to write (as we did
-  earlier in the calculator examples) in the way it handles multiple arguments,
-  floating point quantities, and strings.  Strings are printed without quotes,
-  and a space is inserted between items, so you can format things nicely, like
-  this::
+* :func:`print` 函数输出给定参数的值。与表达式不同（比如，之前计算器的例子），它能处理多个参数，包括浮点数与字符串。它输出的字符串不带引号，且各参数项之间会插入一个空格，这样可以实现更好的格式化操作。比如这样::
 
      >>> i = 256*256
      >>> print('The value of i is', i)
      The value of i is 65536
 
-  The keyword argument *end* can be used to avoid the newline after the output,
-  or end the output with a different string::
+  关键字参数 *end* 可以取消输出后面的换行, 或用另一个字符串结尾：
 
      >>> a, b = 0, 1
      >>> while a < 1000:
@@ -475,11 +446,6 @@ This example introduces several new features.
 
 .. rubric:: Footnotes
 
-.. [#] Since ``**`` has higher precedence than ``-``, ``-3**2`` will be
-   interpreted as ``-(3**2)`` and thus result in ``-9``.  To avoid this
-   and get ``9``, you can use ``(-3)**2``.
+.. [#] 由于 ``**``  比 ``-`` 的优先级更高, 所以 ``-3**2`` 会被解释成 ``-(3**2)`` 得到 ``-9``.  要避免这个问题，并且得到 ``9``, 可以用 ``(-3)**2``。
 
-.. [#] Unlike other languages, special characters such as ``\n`` have the
-   same meaning with both single (``'...'``) and double (``"..."``) quotes.
-   The only difference between the two is that within single quotes you don't
-   need to escape ``"`` (but you have to escape ``\'``) and vice versa.
+.. [#] 和其他语言不一样，特殊字符如 ``\n`` 在单引号（``'...'``）和双引号（``"..."``）里的意义一样。这两种引号唯一的区别是，不需要在单引号里转义双引号 ``"``，但必须把单引号转义成 ``\'``，反之亦然。

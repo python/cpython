@@ -1,20 +1,18 @@
 .. _tut-morecontrol:
 
 ***********************
-More Control Flow Tools
+更多流程控制工具
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python uses the usual
-flow control statements known from other languages, with some twists.
+除了上一章介绍的 :keyword:`while` 语句外, Python 还支持其他语言中常见的流程控制语句，只是稍有不同。
 
 
 .. _tut-if:
 
-:keyword:`!if` Statements
+:keyword:`!if` 语句
 =========================
 
-Perhaps the most well-known statement type is the :keyword:`if` statement.  For
-example::
+最让人耳熟能详的应该是 :keyword:`if` 语句。例如::
 
    >>> x = int(input("Please enter an integer: "))
    Please enter an integer: 42
@@ -30,37 +28,37 @@ example::
    ...
    More
 
-There can be zero or more :keyword:`elif` parts, and the :keyword:`else` part is
-optional.  The keyword ':keyword:`!elif`' is short for 'else if', and is useful
-to avoid excessive indentation.  An  :keyword:`!if` ... :keyword:`!elif` ...
-:keyword:`!elif` ... sequence is a substitute for the ``switch`` or
-``case`` statements found in other languages.
+if 语句包含零个或多个 :keyword:`elif` 子句,  以及可选 :keyword:`else` 子句。  关键字 ':keyword:`!elif`' 是 'else if' 的缩写, 适用于避免过多的缩进。可以把 An  :keyword:`!if` ... :keyword:`!elif` ...
+:keyword:`!elif` ...  序列看作是其他语言中 ``switch`` 或 ``case`` 语句的替代品。
 
-If you're comparing the same value to several constants, or checking for specific types or
-attributes, you may also find the :keyword:`!match` statement useful. For more
-details see :ref:`tut-match`.
+如果你将相同的值与几个常量进行比较，或者检查特定的类型或属性，你可能还会发现 :keyword:`!match` 语句的用处。更多细节请参见 :ref:`tut-match`。例如::
+   >>> def http_error(status):
+   ...    match status:
+   ...        case 400:
+   ...            return "Bad request"
+   ...        case 404:
+   ...            return "Not found"
+   ...        case 418:
+   ...            return "I'm a teapot"
+   ...        case _:
+   ...            return "Something's wrong with the Internet"     
 
 .. _tut-for:
 
-:keyword:`!for` Statements
+:keyword:`!for` 语句
 ==========================
 
 .. index::
    statement: for
 
-The :keyword:`for` statement in Python differs a bit from what you may be used
-to in C or Pascal.  Rather than always iterating over an arithmetic progression
-of numbers (like in Pascal), or giving the user the ability to define both the
-iteration step and halting condition (as C), Python's :keyword:`!for` statement
-iterates over the items of any sequence (a list or a string), in the order that
-they appear in the sequence.  For example (no pun intended):
+Python 的 :keyword:`for` 语句与 C 或 Pascal 中的不同。  Python 的 for 语句不迭代算术递增数值（如 Pascal），或是给予用户定义迭代步骤和暂停条件的能力（如 C），而是迭代列表或字符串等任意序列，元素的迭代顺序与在序列中出现的顺序一致。 例如：
 
 .. One suggestion was to give a real C example here, but that may only serve to
    confuse non-C programmers.
 
 ::
 
-   >>> # Measure some strings:
+   >>> # 测量一些字符串:
    ... words = ['cat', 'window', 'defenestrate']
    >>> for w in words:
    ...     print(w, len(w))
@@ -69,9 +67,7 @@ they appear in the sequence.  For example (no pun intended):
    window 6
    defenestrate 12
 
-Code that modifies a collection while iterating over that same collection can
-be tricky to get right.  Instead, it is usually more straight-forward to loop
-over a copy of the collection or to create a new collection::
+遍历某个集合的同时修改该集合的内容，很难获取想要的结果。要在遍历时修改集合的内容，应该遍历该集合的副本或创建新的集合::
 
     # Create a sample collection
     users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
