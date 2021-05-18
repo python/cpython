@@ -474,12 +474,30 @@ class BaseTest:
         # Without an explicit `sep`, or sep=None, empty strings are pruned from result
         self.checkequal([], '', 'split')
         self.checkequal([], '', 'split', sep=None)
+        self.checkequal([], '   ', 'split')
+        self.checkequal(['xx', 'y', 'z'], 'xx y z ', 'split')
 
         # With an explicit, non-None `sep`, empty strings are not pruned from result
         self.checkequal([''], '', 'split', sep=',')
+        self.checkequal(['', '', '', ''], '   ', 'split', sep=' ')
+        self.checkequal(['xx', 'y', 'z', ''], 'xx y z ', 'split', sep=' ')
+        self.checkequal(['', '', ' y z '], 'xx y z ', 'split', sep='x')
 
         # keepempty=False to remove empty strings from result
+        self.checkequal([], '', 'split', keepempty=False)
+        self.checkequal([], '   ', 'split', keepempty=False)
         self.checkequal([], '', 'split', sep=',', keepempty=False)
+        self.checkequal([], '   ', 'split', sep=' ', keepempty=False)
+        self.checkequal(['xx', 'y', 'z'], 'xx y z ', 'split', sep=' ', keepempty=False)
+        self.checkequal([' y z '], 'xx y z ', 'split', sep='x', keepempty=False)
+
+        # keepempty=True to retain empty strings in result
+        self.checkequal([''], '', 'split', keepempty=True)
+        self.checkequal(['', '', '', ''], '   ', 'split', keepempty=True)
+        self.checkequal([''], '', 'split', sep=',', keepempty=True)
+        self.checkequal(['', '', '', ''], '   ', 'split', sep=' ', keepempty=True)
+        self.checkequal(['xx', 'y', 'z', ''], 'xx y z ', 'split', sep=' ', keepempty=True)
+        self.checkequal(['', '', ' y z '], 'xx y z ', 'split', sep='x', keepempty=True)
 
     def test_rsplit(self):
         # by a char
@@ -550,6 +568,34 @@ class BaseTest:
         # null case
         self.checkraises(ValueError, 'hello', 'rsplit', '')
         self.checkraises(ValueError, 'hello', 'rsplit', '', 0)
+
+        # Without an explicit `sep`, or sep=None, empty strings are pruned from result
+        self.checkequal([], '', 'rsplit')
+        self.checkequal([], '', 'rsplit', sep=None)
+        self.checkequal([], '   ', 'rsplit')
+        self.checkequal(['xx', 'y', 'z'], 'xx y z ', 'rsplit')
+
+        # With an explicit, non-None `sep`, empty strings are not pruned from result
+        self.checkequal([''], '', 'rsplit', sep=',')
+        self.checkequal(['', '', '', ''], '   ', 'rsplit', sep=' ')
+        self.checkequal(['xx', 'y', 'z', ''], 'xx y z ', 'rsplit', sep=' ')
+        self.checkequal(['', '', ' y z '], 'xx y z ', 'rsplit', sep='x')
+
+        # keepempty=False to remove empty strings from result
+        self.checkequal([], '', 'rsplit', keepempty=False)
+        self.checkequal([], '   ', 'rsplit', keepempty=False)
+        self.checkequal([], '', 'rsplit', sep=',', keepempty=False)
+        self.checkequal([], '   ', 'rsplit', sep=' ', keepempty=False)
+        self.checkequal(['xx', 'y', 'z'], 'xx y z ', 'rsplit', sep=' ', keepempty=False)
+        self.checkequal([' y z '], 'xx y z ', 'rsplit', sep='x', keepempty=False)
+
+        # keepempty=True to retain empty strings in result
+        self.checkequal([''], '', 'rsplit', keepempty=True)
+        self.checkequal(['', '', '', ''], '   ', 'rsplit', keepempty=True)
+        self.checkequal([''], '', 'rsplit', sep=',', keepempty=True)
+        self.checkequal(['', '', '', ''], '   ', 'rsplit', sep=' ', keepempty=True)
+        self.checkequal(['xx', 'y', 'z', ''], 'xx y z ', 'rsplit', sep=' ', keepempty=True)
+        self.checkequal(['', '', ' y z '], 'xx y z ', 'rsplit', sep='x', keepempty=True)
 
     def test_replace(self):
         EQ = self.checkequal
