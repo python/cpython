@@ -1,0 +1,2 @@
+Fix error message in the parser involving keyword arguments with invalid
+expressions. Patch by Pablo Galindo
