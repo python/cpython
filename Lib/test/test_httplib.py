@@ -1331,7 +1331,8 @@ class BasicTest(TestCase):
 
     def test_response_fileno(self):
         # Make sure fd returned by fileno is valid.
-        serv = socket.create_server((HOST, 0))
+        serv = socket_helper.get_bound_ip_socket_and_port()[0]
+        serv.listen()
         self.addCleanup(serv.close)
 
         result = None
@@ -1350,7 +1351,7 @@ class BasicTest(TestCase):
         thread = threading.Thread(target=run_server)
         thread.start()
         self.addCleanup(thread.join, float(1))
-        conn = client.HTTPConnection(*serv.getsockname())
+        conn = client.HTTPConnection(*serv.getsockname()[:2])
         conn.request("CONNECT", "dummy:1234")
         response = conn.getresponse()
         try:
@@ -1673,8 +1674,7 @@ class OfflineTest(TestCase):
 
 class SourceAddressTest(TestCase):
     def setUp(self):
-        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.port = socket_helper.bind_port(self.serv)
+        self.serv, self.port = socket_helper.get_bound_ip_socket_and_port()
         self.source_port = socket_helper.find_unused_port()
         self.serv.listen()
         self.conn = None
@@ -1706,8 +1706,8 @@ class TimeoutTest(TestCase):
     PORT = None
 
     def setUp(self):
-        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        TimeoutTest.PORT = socket_helper.bind_port(self.serv)
+        self.serv = socket_helper.tcp_socket()
+        self.PORT = socket_helper.bind_port(self.serv)
         self.serv.listen()
 
     def tearDown(self):
@@ -1722,7 +1722,7 @@ class TimeoutTest(TestCase):
         self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
-            httpConn = client.HTTPConnection(HOST, TimeoutTest.PORT)
+            httpConn = client.HTTPConnection(HOST, self.PORT)
             httpConn.connect()
         finally:
             socket.setdefaulttimeout(None)
@@ -1733,7 +1733,7 @@ class TimeoutTest(TestCase):
         self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
-            httpConn = client.HTTPConnection(HOST, TimeoutTest.PORT,
+            httpConn = client.HTTPConnection(HOST, self.PORT,
                                               timeout=None)
             httpConn.connect()
         finally:
@@ -1742,7 +1742,7 @@ class TimeoutTest(TestCase):
         httpConn.close()
 
         # a value
-        httpConn = client.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
+        httpConn = client.HTTPConnection(HOST, self.PORT, timeout=30)
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
