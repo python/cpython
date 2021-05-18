@@ -26,8 +26,7 @@ class echo_server(threading.Thread):
     def __init__(self, event):
         threading.Thread.__init__(self)
         self.event = event
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.port = socket_helper.bind_port(self.sock)
+        self.sock, self.port = socket_helper.get_bound_ip_socket_and_port()
         # This will be set if the client wants us to wait before echoing
         # data back.
         self.start_resend_event = None
@@ -69,7 +68,7 @@ class echo_client(asynchat.async_chat):
     def __init__(self, terminator, server_port):
         asynchat.async_chat.__init__(self)
         self.contents = []
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.create_socket(socket_helper.get_family(), socket.SOCK_STREAM)
         self.connect((HOST, server_port))
         self.set_terminator(terminator)
         self.buffer = b""
