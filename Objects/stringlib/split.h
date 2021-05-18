@@ -154,9 +154,8 @@ STRINGLIB(split)(PyObject* str_obj,
                 const STRINGLIB_CHAR* sep, Py_ssize_t sep_len,
                 Py_ssize_t maxcount, int prune)
 {
-    Py_ssize_t i, j, pos, count=0;
+    Py_ssize_t i, j, offset, count=0;
     PyObject *list, *sub;
-    int pruned = 0;
 
     if (sep_len == 0) {
         PyErr_SetString(PyExc_ValueError, "empty separator");
@@ -165,53 +164,36 @@ STRINGLIB(split)(PyObject* str_obj,
     else if (sep_len == 1)
         return STRINGLIB(split_char)(str_obj, str, str_len, sep[0], maxcount, prune);
 
-    if (str_len == 0) {
-        if (prune) {
-            list = PyList_New(0);
-            if (list == NULL)
-                return NULL;
-            return list;
-        } else {
-            list = PyList_New(1);
-            if (list == NULL)
-                return NULL;
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            return list;
-        }
-    }
-
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
-    i = j = 0;
-    while (maxcount-- > 0) {
-        pos = FASTSEARCH(str+i, str_len-i, sep, sep_len, -1, FAST_SEARCH);
-        if (pos < 0)
-            break;
-        if (prune && pos == 0) { /* Empty string; ignore */
-            i += sep_len;
-            pruned = 1;
-            maxcount++; /* Don't count pruned strings in the max count */
-            continue;
+    i = 0;
+    offset = FASTSEARCH(str+i, str_len, sep, sep_len, -1, FAST_SEARCH);
+    j = (offset >= 0) ? i + offset : -1;
+
+    while (j >= 0) {
+        if (j > i || ! prune) {
+            if (count >= maxcount)
+                break;
+            SPLIT_ADD(str, i, j);
         }
-        j = i + pos;
-        SPLIT_ADD(str, i, j);
         i = j + sep_len;
+        offset = FASTSEARCH(str+i, str_len, sep, sep_len, -1, FAST_SEARCH);
+        j = (offset >= 0) ? i + offset : -1;
     }
+
 #ifndef STRINGLIB_MUTABLE
-    if (count == 0 && pruned == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
-        /* No match in str_obj, so just use it as list[0] */
+    if (count == 0 && i == 0 && j < 0 && str_len > 0 && ! prune && STRINGLIB_CHECK_EXACT(str_obj)) {
+        /* ch not in str_obj, so just use str_obj as list[0] */
         Py_INCREF(str_obj);
         PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
         count++;
     } else
 #endif
-    {
-        if (prune == 0 || i < str_len)
-            SPLIT_ADD(str, i, str_len);
-    }
+    if (i < str_len || ! prune)
+        SPLIT_ADD(str, i, str_len);
+
     FIX_PREALLOC_SIZE(list);
     return list;
 
