@@ -79,6 +79,14 @@ STRINGLIB(split_whitespace)(PyObject* str_obj,
             j++;
     }
 
+#ifndef STRINGLIB_MUTABLE
+    if (count == 0 && i == 0 && j == str_len && str_len > 0 && ! prune && STRINGLIB_CHECK_EXACT(str_obj)) {
+        /* ch not in str_obj, so just use str_obj as list[0] */
+        Py_INCREF(str_obj);
+        PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+        count++;
+    } else
+#endif
     if (i < str_len || ! prune)
         SPLIT_ADD(str, i, str_len);
 
@@ -121,6 +129,14 @@ STRINGLIB(split_char)(PyObject* str_obj,
             j++;
     }
 
+#ifndef STRINGLIB_MUTABLE
+    if (count == 0 && i == 0 && j == str_len && str_len > 0 && ! prune && STRINGLIB_CHECK_EXACT(str_obj)) {
+        /* ch not in str_obj, so just use str_obj as list[0] */
+        Py_INCREF(str_obj);
+        PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+        count++;
+    } else
+#endif
     if (i < str_len || ! prune)
         SPLIT_ADD(str, i, str_len);
 
@@ -233,6 +249,14 @@ STRINGLIB(rsplit_whitespace)(PyObject* str_obj,
             j--;
     }
 
+#ifndef STRINGLIB_MUTABLE
+    if (count == 0 && j == 0 && i == str_len && str_len > 0 && ! prune && STRINGLIB_CHECK_EXACT(str_obj)) {
+        /* ch not in str_obj, so just use str_obj as list[0] */
+        Py_INCREF(str_obj);
+        PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
+        count++;
+    } else
+#endif
     if (i > 0 || ! prune)
         SPLIT_ADD(str, 0, i);
 
@@ -255,53 +279,38 @@ STRINGLIB(rsplit_char)(PyObject* str_obj,
     Py_ssize_t i, j, count=0;
     PyObject *list;
     PyObject *sub;
-    int pruned = 0;
-
-    if (str_len == 0) {
-        if (prune) {
-            list = PyList_New(0);
-            if (list == NULL)
-                return NULL;
-            return list;
-        } else {
-            list = PyList_New(1);
-            if (list == NULL)
-                return NULL;
-            Py_INCREF(str_obj);
-            PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
-            return list;
-        }
-    }
 
     list = PyList_New(PREALLOC_SIZE(maxcount));
     if (list == NULL)
         return NULL;
 
-    i = j = str_len - 1;
-    while ((i >= 0) && (maxcount-- > 0)) {
-        for(; i >= 0; i--) {
-            if (str[i] == ch) {
-                if (prune == 0 || i < j) {
-                    SPLIT_ADD(str, i + 1, j + 1);
-                } else {
-                    pruned = 1;
-                }
-                j = i = i - 1;
+    i = j = str_len;
+    while (j > 0 && str[j-1] != ch)
+        j--;
+
+    while (j > 0) {
+        if (j < i || ! prune) {
+            if (count >= maxcount)
                 break;
-            }
+            SPLIT_ADD(str, j, i);
         }
+        j--;
+        i = j;
+        while (j > 0 && str[j-1] != ch)
+            j--;
     }
+
 #ifndef STRINGLIB_MUTABLE
-    if (count == 0 && pruned == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
+    if (count == 0 && j == 0 && i == str_len && str_len > 0 && ! prune && STRINGLIB_CHECK_EXACT(str_obj)) {
         /* ch not in str_obj, so just use str_obj as list[0] */
         Py_INCREF(str_obj);
         PyList_SET_ITEM(list, 0, (PyObject *)str_obj);
         count++;
     } else
 #endif
-    if (j > -1 || (prune == 0 && j == -1)) {
-        SPLIT_ADD(str, 0, j + 1);
-    }
+    if (i > 0 || ! prune)
+        SPLIT_ADD(str, 0, i);
+
     FIX_PREALLOC_SIZE(list);
     if (PyList_Reverse(list) < 0)
         goto onError;
