@@ -96,7 +96,7 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare_v2(connection->db,
                             sql_cstr,
-                            -1,
+                            sql_cstr_len + 1,
                             &self->st,
                             &tail);
     Py_END_ALLOW_THREADS
