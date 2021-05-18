@@ -25,6 +25,13 @@ struct _PyOpcache {
 };
 
 
+// XXX Can we do this with an enum instead?
+typedef unsigned char _PyFastLocalKind;
+#define CO_FAST_LOCAL 0x1
+#define CO_FAST_CELL 0x20
+#define CO_FAST_FREE 0x40
+
+
 struct _PyCodeConstructor {
     /* metadata */
     PyObject *filename;
@@ -63,6 +70,11 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 /* Private API */
 
 int _PyCode_InitOpcache(PyCodeObject *co);
+
+/* This does not fail.  A genative result means "no match". */
+PyAPI_FUNC(Py_ssize_t)  _PyCode_GetFastlocalOffsetId(PyCodeObject *,
+                                                     _Py_Identifier *,
+                                                     _PyFastLocalKind);
 
 
 #ifdef __cplusplus

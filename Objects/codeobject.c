@@ -151,6 +151,44 @@ validate_and_copy_tuple(PyObject *tup)
 
 
 /******************
+ * fast locals
+ ******************/
+
+Py_ssize_t
+_PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
+                             _PyFastLocalKind kind)
+{
+    Py_ssize_t baseoffset;
+    PyObject *names = NULL;
+    switch (kind) {
+        case CO_FAST_LOCAL:
+            names = co->co_varnames;
+            baseoffset = 0;
+            break;
+        case CO_FAST_CELL:
+            names = co->co_cellvars;
+            baseoffset = co->co_nlocals;
+            break;
+        case CO_FAST_FREE:
+            names = co->co_freevars;
+            baseoffset = co->co_nlocals + PyTuple_GET_SIZE(co->co_cellvars);
+            break;
+    }
+    if (names == NULL) {
+        return -1;
+    }
+    Py_ssize_t namecount = PyTuple_GET_SIZE(names);
+    for (Py_ssize_t i = 0; i < namecount; i++) {
+        PyObject *name = PyTuple_GET_ITEM(names, i);
+        assert(PyUnicode_Check(name));
+        if (_PyUnicode_EqualToASCIIId(name, id)) {
+            return baseoffset + i;
+        }
+    }
+    return -1;
+}
+
+/******************
  * _PyCode_New()
  ******************/
 

@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_code.h"          // _PyCode_GetFastlocalOffsetId()
 #include "pycore_initconfig.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"
@@ -8856,45 +8857,29 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    if (co->co_freevars == NULL) {
-        n = 0;
-    }
-    else {
-        assert(PyTuple_Check(co->co_freevars));
-        n = PyTuple_GET_SIZE(co->co_freevars);
-    }
-
-    PyTypeObject *type = NULL;
-    for (i = 0; i < n; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
-        assert(PyUnicode_Check(name));
-        if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            Py_ssize_t index = co->co_nlocals +
-                PyTuple_GET_SIZE(co->co_cellvars) + i;
-            PyObject *cell = f->f_localsptr[index];
-            if (cell == NULL || !PyCell_Check(cell)) {
-                PyErr_SetString(PyExc_RuntimeError,
-                  "super(): bad __class__ cell");
-                return -1;
-            }
-            type = (PyTypeObject *) PyCell_GET(cell);
-            if (type == NULL) {
-                PyErr_SetString(PyExc_RuntimeError,
-                  "super(): empty __class__ cell");
-                return -1;
-            }
-            if (!PyType_Check(type)) {
-                PyErr_Format(PyExc_RuntimeError,
-                  "super(): __class__ is not a type (%s)",
-                  Py_TYPE(type)->tp_name);
-                return -1;
-            }
-            break;
-        }
-    }
-    if (type == NULL) {
+    Py_ssize_t offset = _PyCode_GetFastlocalOffsetId(co, &PyId___class__,
+                                                     CO_FAST_FREE);
+    if (offset < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): __class__ cell not found");
+        return -1;
+    }
+    PyObject *cell = f->f_localsptr[offset];
+    if (cell == NULL || !PyCell_Check(cell)) {
+        PyErr_SetString(PyExc_RuntimeError,
+          "super(): bad __class__ cell");
+        return -1;
+    }
+    PyTypeObject *type = (PyTypeObject *) PyCell_GET(cell);
+    if (type == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+          "super(): empty __class__ cell");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_RuntimeError,
+          "super(): __class__ is not a type (%s)",
+          Py_TYPE(type)->tp_name);
         return -1;
     }
 
