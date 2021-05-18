@@ -265,7 +265,12 @@ class IntegrationTests(TestCase):
         class WsgiHandler(NoLogRequestHandler, WSGIRequestHandler):
             pass
 
-        server = make_server(socket_helper.HOST, 0, app, handler_class=WsgiHandler)
+        class IPStackWSGIServer(WSGIServer):
+            address_family = socket_helper.get_family()
+
+        server = make_server(
+                socket_helper.HOST, 0, app,
+                server_class=IPStackWSGIServer, handler_class=WsgiHandler)
         self.addCleanup(server.server_close)
         interrupted = threading.Event()
 
@@ -278,7 +283,7 @@ class IntegrationTests(TestCase):
         main_thread = threading.get_ident()
 
         def run_client():
-            http = HTTPConnection(*server.server_address)
+            http = HTTPConnection(*server.server_address[:2])
             http.request("GET", "/")
             with http.getresponse() as response:
                 response.read(100)
