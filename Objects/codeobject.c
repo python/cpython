@@ -376,6 +376,8 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
                 );
 
 failed:
+    Py_XDECREF(emptystring);
+    Py_XDECREF(nulltuple);
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
     return result;
