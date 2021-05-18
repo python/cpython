@@ -195,8 +195,8 @@ include relevant output from that command to show the issue.
 See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
 for more on running tests.
 
-Installing multiple versions
-----------------------------
+Installing multiple versions of Python
+---------------------------------------
 
 On Unix and Mac systems if you intend to install multiple versions of Python
 using the same installation prefix (``--prefix`` argument to the configure
