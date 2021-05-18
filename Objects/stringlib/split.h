@@ -168,7 +168,7 @@ STRINGLIB(split)(PyObject* str_obj,
         return NULL;
 
     i = 0;
-    offset = FASTSEARCH(str+i, str_len, sep, sep_len, -1, FAST_SEARCH);
+    offset = FASTSEARCH(str+i, str_len-i, sep, sep_len, -1, FAST_SEARCH);
     j = (offset >= 0) ? i + offset : -1;
 
     while (j >= 0) {
@@ -178,7 +178,7 @@ STRINGLIB(split)(PyObject* str_obj,
             SPLIT_ADD(str, i, j);
         }
         i = j + sep_len;
-        offset = FASTSEARCH(str+i, str_len, sep, sep_len, -1, FAST_SEARCH);
+        offset = FASTSEARCH(str+i, str_len-i, sep, sep_len, -1, FAST_SEARCH);
         j = (offset >= 0) ? i + offset : -1;
     }
 
