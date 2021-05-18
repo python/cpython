@@ -160,6 +160,17 @@ def get_family():
                 "At least one of IPv4 or IPv6 must be enabled.")
 
 
+def tcp_socket():
+    """Get a new host appropriate IPv4 or IPv6 TCP STREAM socket.socket()."""
+    if IPV4_ENABLED:
+        return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    elif IPV6_ENABLED:
+        return socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    else:
+        raise support.TestFailed(
+                "At least one of IPv4 or IPv6 must be enabled.")
+
+
 def get_bound_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
     """Get an IP socket bound to a port as a sock, port tuple.
 
