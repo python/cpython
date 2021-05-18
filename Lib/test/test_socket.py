@@ -746,7 +746,7 @@ class UDP4TestBase(InetTestBase):
         return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 @unittest.skipUnless(socket_helper.IPV4_ENABLED, 'Requires IPv4')
-class UDPLITETestBase(InetTestBase):
+class UDPLITE4TestBase(InetTestBase):
     """Base class for UDPLITE-over-IPv4 tests."""
 
     def newSocket(self):
@@ -4228,21 +4228,21 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
 
 # Derive concrete test classes for different socket types.
 
-class SendrecvmsgUDPTestBase(SendrecvmsgDgramFlagsBase,
+class SendrecvmsgUDP4TestBase(SendrecvmsgDgramFlagsBase,
                              SendrecvmsgConnectionlessBase,
-                             ThreadedSocketTestMixin, UDPTestBase):
+                             ThreadedSocketTestMixin, UDP4TestBase):
     pass
 
 @requireAttrs(socket.socket, "sendmsg")
-class SendmsgUDPTest(SendmsgConnectionlessTests, SendrecvmsgUDPTestBase):
+class SendmsgUDP4Test(SendmsgConnectionlessTests, SendrecvmsgUDP4TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg")
-class RecvmsgUDPTest(RecvmsgTests, SendrecvmsgUDPTestBase):
+class RecvmsgUDP4Test(RecvmsgTests, SendrecvmsgUDP4TestBase):
     pass
 
 @requireAttrs(socket.socket, "recvmsg_into")
-class RecvmsgIntoUDPTest(RecvmsgIntoTests, SendrecvmsgUDPTestBase):
+class RecvmsgIntoUDP4Test(RecvmsgIntoTests, SendrecvmsgUDP4TestBase):
     pass
 
 
@@ -4293,27 +4293,27 @@ class RecvmsgIntoRFC3542AncillaryUDP6Test(RecvmsgIntoMixin,
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,
           'UDPLITE sockets required for this test.')
-class SendrecvmsgUDPLITETestBase(SendrecvmsgDgramFlagsBase,
+class SendrecvmsgUDPLITE4TestBase(SendrecvmsgDgramFlagsBase,
                              SendrecvmsgConnectionlessBase,
-                             ThreadedSocketTestMixin, UDPLITETestBase):
+                             ThreadedSocketTestMixin, UDPLITE4TestBase):
     pass
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,
           'UDPLITE sockets required for this test.')
 @requireAttrs(socket.socket, "sendmsg")
-class SendmsgUDPLITETest(SendmsgConnectionlessTests, SendrecvmsgUDPLITETestBase):
+class SendmsgUDPLITE4Test(SendmsgConnectionlessTests, SendrecvmsgUDPLITE4TestBase):
     pass
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,
           'UDPLITE sockets required for this test.')
 @requireAttrs(socket.socket, "recvmsg")
-class RecvmsgUDPLITETest(RecvmsgTests, SendrecvmsgUDPLITETestBase):
+class RecvmsgUDPLITE4Test(RecvmsgTests, SendrecvmsgUDPLITE4TestBase):
     pass
 
 @unittest.skipUnless(HAVE_SOCKET_UDPLITE,
           'UDPLITE sockets required for this test.')
 @requireAttrs(socket.socket, "recvmsg_into")
-class RecvmsgIntoUDPLITETest(RecvmsgIntoTests, SendrecvmsgUDPLITETestBase):
+class RecvmsgIntoUDPLITE4Test(RecvmsgIntoTests, SendrecvmsgUDPLITE4TestBase):
     pass
 
 
@@ -6701,17 +6701,17 @@ def test_main():
     tests.append(BasicBluetoothTest)
     tests.extend([
         CmsgMacroTests,
-        SendmsgUDPTest,
-        RecvmsgUDPTest,
-        RecvmsgIntoUDPTest,
+        SendmsgUDP4Test,
+        RecvmsgUDP4Test,
+        RecvmsgIntoUDP4Test,
         SendmsgUDP6Test,
         RecvmsgUDP6Test,
         RecvmsgRFC3542AncillaryUDP6Test,
         RecvmsgIntoRFC3542AncillaryUDP6Test,
         RecvmsgIntoUDP6Test,
-        SendmsgUDPLITETest,
-        RecvmsgUDPLITETest,
-        RecvmsgIntoUDPLITETest,
+        SendmsgUDPLITE4Test,
+        RecvmsgUDPLITE4Test,
+        RecvmsgIntoUDPLITE4Test,
         SendmsgUDPLITE6Test,
         RecvmsgUDPLITE6Test,
         RecvmsgRFC3542AncillaryUDPLITE6Test,
