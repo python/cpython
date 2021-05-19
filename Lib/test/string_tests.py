@@ -499,6 +499,15 @@ class BaseTest:
         self.checkequal(['xx', 'y', 'z', ''], 'xx y z ', 'split', sep=' ', keepempty=True)
         self.checkequal(['', '', ' y z '], 'xx y z ', 'split', sep='x', keepempty=True)
 
+        # Empty strings kept with keepempty count towards maxsplit
+        self.checkequal(['', ' y z  '], '  y z  ', 'split', keepempty=True, maxsplit=1)
+        self.checkequal(['y', 'z  '], '  y z  ', 'split', keepempty=False, maxsplit=1)
+        self.checkequal(['y', 'z  '], '  y z  ', 'split', maxsplit=1)
+        self.checkequal(['', ' y z  '], '  y z  ', 'split', sep=' ', keepempty=True, maxsplit=1)
+        self.checkequal(['y', 'z  '], '  y z  ', 'split', sep=' ', keepempty=False, maxsplit=1)
+        self.checkequal(['', ' y z  '], '  y z  ', 'split', sep=' ', maxsplit=1)
+
+
     def test_rsplit(self):
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|')
@@ -596,6 +605,14 @@ class BaseTest:
         self.checkequal(['', '', '', ''], '   ', 'rsplit', sep=' ', keepempty=True)
         self.checkequal(['xx', 'y', 'z', ''], 'xx y z ', 'rsplit', sep=' ', keepempty=True)
         self.checkequal(['', '', ' y z '], 'xx y z ', 'rsplit', sep='x', keepempty=True)
+
+        # Empty strings kept with keepempty count towards maxsplit
+        self.checkequal(['  y z ', ''], '  y z  ', 'rsplit', keepempty=True, maxsplit=1)
+        self.checkequal(['  y', 'z'], '  y z  ', 'rsplit', keepempty=False, maxsplit=1)
+        self.checkequal(['  y', 'z'], '  y z  ', 'rsplit', maxsplit=1)
+        self.checkequal(['  y z ', ''], '  y z  ', 'rsplit', sep=' ', keepempty=True, maxsplit=1)
+        self.checkequal(['  y', 'z'], '  y z  ', 'rsplit', sep=' ', keepempty=False, maxsplit=1)
+        self.checkequal(['  y z ', ''], '  y z  ', 'rsplit', sep=' ', maxsplit=1)
 
     def test_replace(self):
         EQ = self.checkequal
