@@ -543,7 +543,7 @@ def as_completed(fs, *, timeout=None):
 
     Note: The futures 'f' are not necessarily members of fs.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
+    if futures.isfuture(fs) or inspect.isawaitable(fs):
         raise TypeError(f"expect an iterable of futures, not {type(fs).__name__}")
 
     from .queues import Queue  # Import here to avoid circular import problem.
