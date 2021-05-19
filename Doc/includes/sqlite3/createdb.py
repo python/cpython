@@ -12,15 +12,15 @@ if os.path.exists(DB_FILE):
 con = sqlite3.connect(DB_FILE)
 cur = con.cursor()
 cur.execute("""
-        create table people
+        create table lang
         (
-          name_last      varchar(20),
-          age            integer
+          name           varchar(20),
+          first_appeared integer
         )
         """)
 
-cur.execute("insert into people (name_last, age) values ('Yeltsin',   72)")
-cur.execute("insert into people (name_last, age) values ('Putin',     51)")
+cur.execute("insert into lang (name, first_appeared) values ('Forth', 1970)")
+cur.execute("insert into lang (name, first_appeared) values ('Ada', 1980)")
 
 con.commit()
 
