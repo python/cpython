@@ -1176,7 +1176,7 @@ Add option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
 
 Add constants for IsoTp CAN protocol.
-(Contributed by Patrick Menschel)
+(Contributed by Patrick Menschel in :issue:`42653`.)
 
 ssl
 ---
