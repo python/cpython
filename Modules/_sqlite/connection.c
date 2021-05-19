@@ -77,8 +77,11 @@ static PyObject *
 new_statement_cache(pysqlite_Connection *self, int maxsize)
 {
     PyObject *args[] = { PyLong_FromLong(maxsize), };
+    if (args[0] == NULL) {
+        return NULL;
+    }
     PyObject *inner = PyObject_Vectorcall(_lru_cache, args, 1, NULL);
-    Py_XDECREF(args[0]);
+    Py_DECREF(args[0]);
     if (inner == NULL) {
         return NULL;
     }
