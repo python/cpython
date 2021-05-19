@@ -23,6 +23,7 @@ _PyFrame_GetGlobals(PyFrameObject *f)
     return _PyFrame_Specials(f)[FRAME_SPECIALS_GLOBALS_OFFSET];
 }
 
+/* Returns a *borrowed* reference. */
 static inline PyObject *
 _PyFrame_GetBuiltins(PyFrameObject *f)
 {
