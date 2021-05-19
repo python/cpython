@@ -2165,7 +2165,7 @@ class ISOTPTest(unittest.TestCase):
         socket.PF_CAN
         socket.CAN_ISOTP
         socket.SOCK_DGRAM
-    
+
     def testIsoTpConstants(self):
         socket.SOL_CAN_ISOTP
 
