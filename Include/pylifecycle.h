@@ -31,10 +31,13 @@ PyAPI_FUNC(void) _Py_NO_RETURN Py_Exit(int);
 
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
-
-PyAPI_FUNC(int) Py_FrozenMain(int argc, char **argv);
-
 PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
+
+/* Py_FrozenMain is kept out of the Limited API until documented and present
+   in all builds of Python */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) Py_FrozenMain(int argc, char **argv);
+#endif
 
 /* In pathconfig.c */
 Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
