@@ -11,7 +11,7 @@ STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'
     r'\[(?P<extras>'
     r'(set|unset|locked|unlocked)(, value:\d)?(, waiters:\d+)?'
-    r'(, count:\d+\/\d+)?(, (set|unset))?(, state:(-2|-1|0|1))?' # new line dedicated to repr barrier
+    r'(, count:\d+\/\d+)?(, (set|unset))?(, state:(-2|-1|0|1))?' # barrier
     r')\]>\Z'
 )
 RGX_REPR = re.compile(STR_RGX_REPR)
@@ -958,6 +958,14 @@ class BarrierTests(test_utils.TestCase):
             task.cancel()
         test_utils.run_briefly(self.loop)
 
+    def test_barrier_doesnt_accept_loop_parameter(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                rf'As of 3.10, the \*loop\* parameter was removed from '
+                rf'Barrier\(\) since it is no longer necessary'
+            ):
+            asyncio.Barrier(1, loop=self.loop)
+
     def test_repr(self):
         async def coro():
             try:
@@ -967,7 +975,7 @@ class BarrierTests(test_utils.TestCase):
             else:
                 return await asyncio.sleep(1, True)
 
-        self.N = 1011001
+        self.N = 999
         barrier = asyncio.Barrier(self.N)
         self.assertTrue("[unset," in repr(barrier))
         self.assertTrue(f"count:0/{str(self.N)}" in repr(barrier))
