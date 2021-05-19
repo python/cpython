@@ -56,7 +56,7 @@ class StreamTests(test_utils.TestCase):
 
     def test_open_connection(self):
         with test_utils.run_test_server() as httpd:
-            conn_fut = asyncio.open_connection(*httpd.address)
+            conn_fut = asyncio.open_connection(*httpd.address[:2])
             self._basetest_open_connection(conn_fut)
 
     @socket_helper.skip_unless_bind_unix_socket
@@ -84,8 +84,8 @@ class StreamTests(test_utils.TestCase):
     def test_open_connection_no_loop_ssl(self):
         with test_utils.run_test_server(use_ssl=True) as httpd:
             conn_fut = asyncio.open_connection(
-                *httpd.address,
-                ssl=test_utils.dummy_ssl_context())
+                    *httpd.address[:2],
+                    ssl=test_utils.dummy_ssl_context())
 
             self._basetest_open_connection_no_loop_ssl(conn_fut)
 
@@ -115,7 +115,7 @@ class StreamTests(test_utils.TestCase):
 
     def test_open_connection_error(self):
         with test_utils.run_test_server() as httpd:
-            conn_fut = asyncio.open_connection(*httpd.address)
+            conn_fut = asyncio.open_connection(*httpd.address[:2])
             self._basetest_open_connection_error(conn_fut)
 
     @socket_helper.skip_unless_bind_unix_socket
@@ -582,19 +582,23 @@ class StreamTests(test_utils.TestCase):
                 await client_writer.wait_closed()
 
             def start(self):
-                sock = socket.create_server(('127.0.0.1', 0))
+                sock = socket.create_server(
+                        (socket_helper.HOST, 0),
+                        family=socket_helper.get_family())
                 self.server = self.loop.run_until_complete(
                     asyncio.start_server(self.handle_client,
                                          sock=sock))
-                return sock.getsockname()
+                return sock.getsockname()[:2]
 
             def handle_client_callback(self, client_reader, client_writer):
                 self.loop.create_task(self.handle_client(client_reader,
                                                          client_writer))
 
             def start_callback(self):
-                sock = socket.create_server(('127.0.0.1', 0))
-                addr = sock.getsockname()
+                sock = socket.create_server(
+                        (socket_helper.HOST, 0),
+                        family=socket_helper.get_family())
+                addr = sock.getsockname()[:2]
                 sock.close()
                 self.server = self.loop.run_until_complete(
                     asyncio.start_server(self.handle_client_callback,
@@ -909,7 +913,7 @@ os.close(fd)
     def test_wait_closed_on_close(self):
         with test_utils.run_test_server() as httpd:
             rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address))
+                    asyncio.open_connection(*httpd.address[:2]))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             f = rd.readline()
@@ -926,7 +930,7 @@ os.close(fd)
     def test_wait_closed_on_close_with_unread_data(self):
         with test_utils.run_test_server() as httpd:
             rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address))
+                    asyncio.open_connection(*httpd.address[:2]))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             f = rd.readline()
@@ -937,7 +941,7 @@ os.close(fd)
 
     def test_async_writer_api(self):
         async def inner(httpd):
-            rd, wr = await asyncio.open_connection(*httpd.address)
+            rd, wr = await asyncio.open_connection(*httpd.address[:2])
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             data = await rd.readline()
@@ -957,7 +961,7 @@ os.close(fd)
 
     def test_async_writer_api_exception_after_close(self):
         async def inner(httpd):
-            rd, wr = await asyncio.open_connection(*httpd.address)
+            rd, wr = await asyncio.open_connection(*httpd.address[:2])
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             data = await rd.readline()
@@ -984,7 +988,7 @@ os.close(fd)
 
         with test_utils.run_test_server() as httpd:
             rd, wr = self.loop.run_until_complete(
-                    asyncio.open_connection(*httpd.address))
+                    asyncio.open_connection(*httpd.address[:2]))
 
             wr.close()
             f = wr.wait_closed()
