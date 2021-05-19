@@ -328,7 +328,6 @@ error:
     return 0;
 }
 
-
 /*[clinic input]
 _sqlite3.Connection.cursor as pysqlite_connection_cursor
 
