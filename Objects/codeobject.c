@@ -815,6 +815,11 @@ _PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
  ******************/
 
 /*[clinic input]
+class code "PyCodeObject *" "&PyCode_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=78aa5d576683bb4b]*/
+
+/*[clinic input]
 @classmethod
 code.__new__ as code_new
 
@@ -1234,11 +1239,6 @@ static struct PyMethodDef code_methods[] = {
     {NULL, NULL}                /* sentinel */
 };
 
-
-/*[clinic input]
-class code "PyCodeObject *" "&PyCode_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=78aa5d576683bb4b]*/
 
 PyTypeObject PyCode_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
