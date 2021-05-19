@@ -337,7 +337,10 @@ class XMLRPCTestCase(unittest.TestCase):
             server.handle_request()  # First request and attempt at second
             server.handle_request()  # Retried second request
 
-        server = http.server.HTTPServer((socket_helper.HOST, 0), RequestHandler)
+        class IPvWhateverHTTPServer(http.server.HTTPServer):
+            address_family = socket_helper.get_family()
+
+        server = IPvWhateverHTTPServer((socket_helper.HOST, 0), RequestHandler)
         self.addCleanup(server.server_close)
         thread = threading.Thread(target=run_server)
         thread.start()
@@ -606,6 +609,9 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
                 return '42'
 
     class MyXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
+
+        address_family = socket_helper.get_family()
+
         def get_request(self):
             # Ensure the socket is always non-blocking.  On Linux, socket
             # attributes are not inherited like they are on *BSD and Windows.
@@ -615,13 +621,13 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
 
     if not requestHandler:
         requestHandler = xmlrpc.server.SimpleXMLRPCRequestHandler
-    serv = MyXMLRPCServer(("localhost", 0), requestHandler,
+    serv = MyXMLRPCServer((socket_helper.HOST, 0), requestHandler,
                           encoding=encoding,
                           logRequests=False, bind_and_activate=False)
     try:
         serv.server_bind()
         global ADDR, PORT, URL
-        ADDR, PORT = serv.socket.getsockname()
+        ADDR, PORT = serv.socket.getsockname()[:2]
         #connect to IP address directly.  This avoids socket.create_connection()
         #trying to connect to "localhost" using all address families, which
         #causes slowdown e.g. on vista which supports AF_INET6.  The server listens
@@ -669,6 +675,9 @@ def http_multi_server(evt, numrequests, requestHandler=None):
         return True
 
     class MyXMLRPCServer(xmlrpc.server.MultiPathXMLRPCServer):
+
+        address_family = socket_helper.get_family()
+
         def get_request(self):
             # Ensure the socket is always non-blocking.  On Linux, socket
             # attributes are not inherited like they are on *BSD and Windows.
@@ -685,13 +694,13 @@ def http_multi_server(evt, numrequests, requestHandler=None):
         def _marshaled_dispatch(self, data, dispatch_method=None, path=None):
             raise RuntimeError("broken dispatcher")
 
-    serv = MyXMLRPCServer(("localhost", 0), MyRequestHandler,
+    serv = MyXMLRPCServer((socket_helper.HOST, 0), MyRequestHandler,
                           logRequests=False, bind_and_activate=False)
     serv.socket.settimeout(3)
     serv.server_bind()
     try:
         global ADDR, PORT, URL
-        ADDR, PORT = serv.socket.getsockname()
+        ADDR, PORT = serv.socket.getsockname()[:2]
         #connect to IP address directly.  This avoids socket.create_connection()
         #trying to connect to "localhost" using all address families, which
         #causes slowdown e.g. on vista which supports AF_INET6.  The server listens
@@ -1498,7 +1507,11 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(handler.use_builtin_types)
 
     def test_xmlrpcserver_has_use_builtin_types_flag(self):
-        server = xmlrpc.server.SimpleXMLRPCServer(("localhost", 0),
+
+        class IPvWhateverSimpleXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
+            address_family = socket_helper.get_family()
+
+        server = IPvWhateverSimpleXMLRPCServer((socket_helper.HOST, 0),
             use_builtin_types=True)
         server.server_close()
         self.assertTrue(server.use_builtin_types)
