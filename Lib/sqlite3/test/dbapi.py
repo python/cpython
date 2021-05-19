@@ -26,6 +26,7 @@ import sqlite3 as sqlite
 import subprocess
 import sys
 
+from test.support import SHORT_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -994,7 +995,7 @@ input()  # keep proc open till parent calls
         # terminate child process
         self.assertIsNone(proc.returncode)
         try:
-            proc.communicate(input="\n", timeout=0.1)
+            proc.communicate(input="\n", timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.communicate()
