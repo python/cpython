@@ -275,6 +275,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_opcache = NULL;
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
+    co->co_warmup = HOTPY_WARMUP;
+    co->co_quickened = NULL;
     return co;
 }
 
@@ -682,6 +684,9 @@ code_dealloc(PyCodeObject *co)
         PyObject_GC_Del(co->co_zombieframe);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
+    if (co->co_quickened) {
+        PyMem_Free(co->co_quickened);
+    }
     PyObject_Free(co);
 }
 

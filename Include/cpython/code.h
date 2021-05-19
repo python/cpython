@@ -7,9 +7,11 @@ typedef uint16_t _Py_CODEUNIT;
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
 #  define _Py_OPARG(word) ((word) & 255)
+#  define _Py_INSTRUCTION(opcode, oparg) (((opcode)<<8)|(oparg))
 #else
 #  define _Py_OPCODE(word) ((word) & 255)
 #  define _Py_OPARG(word) ((word) >> 8)
+#  define _Py_INSTRUCTION(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
 typedef struct _PyOpcache _PyOpcache;
@@ -48,6 +50,7 @@ struct PyCodeObject {
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
+     union _hotpy_quickened *co_quickened;
 
     /* Per opcodes just-in-time cache
      *
@@ -63,6 +66,7 @@ struct PyCodeObject {
     _PyOpcache *co_opcache;
     int co_opcache_flag;  // used to determine when create a cache.
     unsigned char co_opcache_size;  // length of co_opcache.
+    unsigned char co_warmup;
 };
 
 /* Masks for co_flags above */
