@@ -823,6 +823,8 @@ class TestSMTPServer(smtpd.SMTPServer):
                     :mod:`asyncore` module's global state.
     """
 
+    address_family = socket_helper.get_family()
+
     def __init__(self, addr, handler, poll_interval, sockmap):
         smtpd.SMTPServer.__init__(self, addr, None, map=sockmap,
                                   decode_data=True)
@@ -937,6 +939,9 @@ class TestHTTPServer(ControlMixin, HTTPServer):
     :param poll_interval: The polling interval in seconds.
     :param log: Pass ``True`` to enable log messages.
     """
+    
+    address_family = socket_helper.get_family()
+
     def __init__(self, addr, handler, poll_interval=0.5,
                  log=False, sslctx=None):
         class DelegatingHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -3231,9 +3236,9 @@ class ConfigDictTest(BaseTest):
         port = t.port
         t.ready.clear()
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock = socket_helper.tcp_socket()
             sock.settimeout(2.0)
-            sock.connect(('localhost', port))
+            sock.connect((socket_helper.HOST, port))
 
             slen = struct.pack('>L', len(text))
             s = slen + text
