@@ -1592,6 +1592,16 @@ class _BasePathTest(object):
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
                                            errno.ENOENT, errno.EINVAL))
 
+    def test_iterdir(self):
+        P = self.cls
+        p = P(BASE)
+        it = p.iterdir(dirs_only=True)
+        paths = set(it)
+        expected = ['dirA', 'dirB', 'dirC', 'dirE']
+        if os_helper.can_symlink():
+            expected += ['linkB']
+        self.assertEqual(paths, { P(BASE, q) for q in expected })
+
     def test_glob_common(self):
         def _check(glob, expected):
             self.assertEqual(set(glob), { P(BASE, q) for q in expected })

@@ -998,7 +998,7 @@ class Path(PurePath):
             other_st = self._accessor.stat(other_path)
         return os.path.samestat(st, other_st)
 
-    def iterdir(self):
+    def iterdir(self, dirs_only=False):
         """Iterate over the files in this directory.  Does not yield any
         result for the special paths '.' and '..'.
         """
@@ -1006,7 +1006,10 @@ class Path(PurePath):
             if name in {'.', '..'}:
                 # Yielding a path object for these makes little sense
                 continue
-            yield self._make_child_relpath(name)
+            child_path = self._make_child_relpath(name)
+            if dirs_only and not child_path.is_dir():
+                continue
+            yield child_path
 
     def glob(self, pattern):
         """Iterate over this subtree and yield all existing files (of any
