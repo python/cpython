@@ -13109,7 +13109,20 @@ unicode_rjust_impl(PyObject *self, Py_ssize_t width, Py_UCS4 fillchar)
 }
 
 PyObject *
-PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
+PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
+{
+    int prune;
+
+    if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
+        return NULL;
+
+    prune = (sep == Py_None) ? 1 : 0;
+
+    return split(s, sep, maxsplit, prune);
+}
+
+PyObject *
+PyUnicode_SplitWithKeepempty(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
 {
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;
@@ -13316,7 +13329,20 @@ unicode_rpartition(PyObject *self, PyObject *sep)
 }
 
 PyObject *
-PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
+PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
+{
+    int prune;
+
+    if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
+        return NULL;
+
+    prune = (sep == Py_None) ? 1 : 0;
+
+    return rsplit(s, sep, maxsplit, prune);
+}
+
+PyObject *
+PyUnicode_RSplitWithKeepempty(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
 {
     if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
         return NULL;

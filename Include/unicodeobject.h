@@ -845,9 +845,18 @@ PyAPI_FUNC(void) PyUnicode_AppendAndDel(
    At most maxsplit splits will be done. If negative, no limit is set.
 
    Separators are not included in the resulting list.
+
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_Split(
+    PyObject *s,                /* String to split */
+    PyObject *sep,              /* String separator */
+    Py_ssize_t maxsplit         /* Maxsplit count */
+    );
+
+/* Ditto, but also take a flag indicating whether to keep or remove empty strings */
+
+PyAPI_FUNC(PyObject*) PyUnicode_SplitWithKeepempty(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
     Py_ssize_t maxsplit,        /* Maxsplit count */
@@ -889,9 +898,18 @@ PyAPI_FUNC(PyObject*) PyUnicode_RPartition(
    no limit is set.
 
    Separators are not included in the resulting list.
+
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_RSplit(
+    PyObject *s,                /* String to split */
+    PyObject *sep,              /* String separator */
+    Py_ssize_t maxsplit         /* Maxsplit count */
+    );
+
+/* Ditto, but also take a flag indicating whether to keep or remove empty strings */
+
+PyAPI_FUNC(PyObject*) PyUnicode_RSplitWithKeepempty(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
     Py_ssize_t maxsplit,        /* Maxsplit count */

@@ -1,2 +1,0 @@
-Added ``keepempty`` flag to ``PyUnicode_Split`` and ``PyUnicode_RSplit``.
-Patch added my Mark Bell.

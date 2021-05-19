@@ -1,0 +1,5 @@
+Added ``PyUnicode_SplitWithKeepempty`` and ``PyUnicode_RSplitWithKeepempty``
+which act like ``PyUnicode_Split`` and ``PyUnicode_RSplit`` but provides an
+additional flag ``keepempty``. This flag specifies whether empty strings are
+to be retained or dropped, instead of this behaviour depending on the
+whether the separator being split on is None. Patch by Mark Bell
