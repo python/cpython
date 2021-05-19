@@ -445,33 +445,37 @@ class Barrier(mixins._LoopBoundMixin):
 
     def __init__(self, parties, action=None, *, loop=mixins._marker):
         """Create a barrier, initialised to 'parties' tasks.
-        'action' is a callable which, when supplied, will be called by one of
-        the tasks after they have all entered the barrier and just prior to
-        releasing them all.
+        'action' is a callable which, when supplied, will be called by
+        the last task calling the wait() method,
+        just prior to releasing them all.
         """
         super().__init__(loop=loop)
         if parties < 1:
             raise ValueError('parties must be > 0')
 
         self._waiting = Event()     # used notify all waiting tasks
-        self._blocking = Event()    # used block new tasks while waiting tasks are draining or broken
+        self._blocking = Event()    # used block new tasks while waiting
+                                        # tasks are draining or broken
         self._action = action
         self._parties = parties
-        self._state = 0             # 0 filling, 1, draining, -1 resetting, -2 broken
+        self._state = 0             # 0 filling, 1, draining,
+                                        # -1 resetting, -2 broken
         self._count = 0             # count waiting tasks
 
     def __repr__(self):
         res = super().__repr__()
         _wait = 'set' if self._waiting.is_set() else 'unset'
         _block = 'set' if self._blocking.is_set() else 'unset'
-        extra = f'{_wait}, count:{self._count}/{self._parties}, {_block}, state:{self._state}'
+        extra = f'{_wait}, count:{self._count}/{self._parties}'
+        extra += f', {_block}, state:{self._state}'
         return f'<{res[1:-1]} [{extra}]>'
 
     async def wait(self):
         """Wait for the barrier.
         When the specified number of tasks have started waiting, they are all
-        simultaneously awoken. If an 'action' was provided for the barrier, one
-        of the tasks will have executed that callback prior to returning.
+        simultaneously awoken. If an 'action' was provided for the barrier, the
+        last task calling this method will have executed that callback prior to
+        returning.
         Returns an individual index number from 0 to 'parties-1'.
         """
         await self._block() # Block while the barrier drains or resets.
@@ -520,6 +524,7 @@ class Barrier(mixins._LoopBoundMixin):
     # if the barrier is reset or broken.
     async def _wait(self):
         await self._waiting.wait()
+
         # no timeout so
         if self._state < 0: # resetting or broken
             raise BrokenBarrierError
