@@ -261,6 +261,10 @@ static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_PYTHON \
     { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
+        if(tstate == NULL) { \
+          PyGILState_STATE gstate = PyGILState_Ensure(); \
+          tstate = PyThreadState_Get(); \
+          PyGILState_Release(gstate); } \
         if(tcl_lock) \
           PyThread_release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
 
