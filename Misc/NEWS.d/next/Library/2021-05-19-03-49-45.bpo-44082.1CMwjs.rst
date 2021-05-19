@@ -1,0 +1,1 @@
+Add a method in ``ConfigParser`` to verify the loaded config files for any interpolation errors.
