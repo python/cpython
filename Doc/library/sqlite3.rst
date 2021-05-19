@@ -648,7 +648,8 @@ Cursor Objects
 
       This is a nonstandard convenience method for executing multiple SQL statements
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
-      gets as a parameter.
+      gets as a parameter.  This method disregards :attr:`isolation_level`; any
+      transation control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 
@@ -1047,6 +1048,9 @@ setting :attr:`isolation_level` to ``None``.  This will leave the underlying
 ``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
 control the transaction state by explicitly issuing ``BEGIN``, ``ROLLBACK``,
 ``SAVEPOINT``, and ``RELEASE`` statements in your code.
+
+Note that :meth:`~Cursor.executescript` disregards
+:attr:`isolation_level`; any transaction control must be added explicitly.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL
