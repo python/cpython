@@ -1850,10 +1850,17 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
     }
 
     if (!result) {
-        /* If commit failed, rollback */
         if (commit) {
-            result = pysqlite_connection_rollback_impl(self);
-            Py_XDECREF(result);
+            /* If commit failed, rollback and keep the commit exception. If
+             * rollback also fails, overwrite exception text. In any case,
+             * we've got an exception, so we return NULL. We use sqlite3_exec()
+             * in to avoid accidentally clearing the current exception. */
+            char *errmsg = NULL;
+            int rc = sqlite3_exec(self->db, "rollback;", NULL, NULL, &errmsg);
+            if (rc != SQLITE_OK) {
+                assert(errmsg != NULL);
+                PyErr_SetString(pysqlite_OperationalError, errmsg);
+            }
         }
         return NULL;
     }
