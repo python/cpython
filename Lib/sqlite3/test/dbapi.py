@@ -181,6 +181,9 @@ class ConnectionTests(unittest.TestCase):
         path = Path()
         with sqlite.connect(path) as cx:
             cx.execute('create table test(id integer)')
+
+        # bpo-42862: addCleanup fails to unlink TESTFN on Windows unless we
+        # explicitly close the connection and run the GC.
         cx.close()
         gc_collect()
 
@@ -193,6 +196,9 @@ class ConnectionTests(unittest.TestCase):
         with sqlite.connect('file:' + TESTFN + '?mode=ro', uri=True) as cx:
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
+
+        # bpo-42862: addCleanup fails to unlink TESTFN on Windows unless we
+        # explicitly close the connection and run the GC.
         cx.close()
         gc_collect()
 
