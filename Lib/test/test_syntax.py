@@ -405,28 +405,33 @@ SyntaxError: invalid syntax
 ...   290, 291, 292, 293, 294, 295, 296, 297, 298, 299)  # doctest: +ELLIPSIS
 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ..., 297, 298, 299)
 
-# >>> f(lambda x: x[0] = 3)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(lambda x: x[0] = 3)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+
+# Check that this error doesn't trigger for names:
+>>> f(a={x: for x in {}})
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
-# >>> f(x()=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(a or b=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(x.y=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f((x)=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(True=2)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True
+>>> f(x()=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(a or b=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(x.y=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f((x)=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(True=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
