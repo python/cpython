@@ -1,0 +1,18 @@
+I've Implemented the "``formatHeader``" and "``formatFooter``" of the"``BufferingFormatter``" class of the "``Logging``" package. These changes are backward compatible with their previous use cases:
+
+.. code-block:: python
+
+   >>> f = logging.BufferingFormatter()
+   >>> f.format(some_records)
+
+Additionally, the new implementation supports the following:
+
+.. code-block:: python
+
+   >>> f = logging.BufferingFormatter()
+   >>> header = 'A header./n'
+   >>> footer =  '/nA footer'
+   >>> f = logging.BufferingFormatter()
+   >>> f.format(some_records, header, footer)
+
+This would make it easier for the programmer to use these methods without overriding "``formatHeader``" and "``formatFooter``".
