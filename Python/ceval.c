@@ -26,6 +26,7 @@
 #include "code.h"
 #include "dictobject.h"
 #include "frameobject.h"
+#include "pycore_frame.h"
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"

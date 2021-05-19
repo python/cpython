@@ -19,13 +19,6 @@ enum _framestate {
 
 typedef signed char PyFrameState;
 
-enum {
-    FRAME_SPECIALS_GLOBALS_OFFSET = 0,
-    FRAME_SPECIALS_BUILTINS_OFFSET = 1,
-    FRAME_SPECIALS_LOCALS_OFFSET = 2,
-    FRAME_SPECIALS_SIZE = 3
-};
-
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
@@ -82,8 +75,3 @@ PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_GetBack(PyFrameObject *frame);
-
-/** Internal -- Not to be used outside of the interpreter core */
-int _PyFrame_TakeLocals(PyFrameObject *f);
-PyObject *_PyFrame_GetGlobals(PyFrameObject *f);
-PyObject *_PyFrame_GetBuiltins(PyFrameObject *f);

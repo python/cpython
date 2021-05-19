@@ -680,7 +680,7 @@ new_threadstate(PyInterpreterState *interp, int init)
         PyMem_RawFree(tstate);
         return NULL;
     }
-    /* If top points to entry 0, then _PyThreadState_PopLocals willl try to pop this chunk */
+    /* If top points to entry 0, then _PyThreadState_PopLocals will try to pop this chunk */
     tstate->datastack_top = &tstate->datastack_chunk->data[1];
     tstate->datastack_limit = (PyObject **)(((char *)tstate->datastack_chunk) + DATA_STACK_CHUNK_SIZE);
 

@@ -6,6 +6,7 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
 #include "frameobject.h"          // PyFrameObject
+#include "pycore_frame.h"
 #include "opcode.h"               // EXTENDED_ARG
 #include "structmember.h"         // PyMemberDef
 
@@ -23,11 +24,6 @@ get_frame_state(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->frame;
-}
-
-static inline PyObject **
-_PyFrame_Specials(PyFrameObject *f) {
-    return &f->f_valuestack[-FRAME_SPECIALS_SIZE];
 }
 
 
@@ -72,20 +68,6 @@ frame_getlasti(PyFrameObject *f, void *closure)
         return PyLong_FromLong(-1);
     }
     return PyLong_FromLong(f->f_lasti*2);
-}
-
-/* Returns a *borrowed* reference. Not part of the API. */
-PyObject *
-_PyFrame_GetGlobals(PyFrameObject *f)
-{
-    return _PyFrame_Specials(f)[FRAME_SPECIALS_GLOBALS_OFFSET];
-}
-
-/* Returns a *borrowed* reference. Not part of the API. */
-PyObject *
-_PyFrame_GetBuiltins(PyFrameObject *f)
-{
-    return _PyFrame_Specials(f)[FRAME_SPECIALS_BUILTINS_OFFSET];
 }
 
 static PyObject *
