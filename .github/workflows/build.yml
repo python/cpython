@@ -6,16 +6,18 @@ name: Tests
 on:
   push:
     branches:
-    - main
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
   pull_request:
     branches:
-    - main
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
 
 jobs:
   check_source:
