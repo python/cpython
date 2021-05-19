@@ -1,6 +1,6 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2513
+{\rtf1\ansi\ansicpg1252\cocoartf2580
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fswiss\fcharset0 Helvetica-Oblique;
-\f3\fmodern\fcharset0 CourierNewPSMT;}
+\f3\fmodern\fcharset0 CourierNewPSMT;\f4\fmodern\fcharset0 Courier;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
 \margl1440\margr1440\vieww13380\viewh14580\viewkind0
@@ -32,6 +32,16 @@ The bundled
 \f0  has its own default certificate store for verifying download connections.\
 \
 
+\f1\b \ul Install Options\
+
+\f0\b0 \ulnone \
+You can control some aspects of what is installed by this package. To see the options, click on the 
+\f4 Customize
+\f0  button in the 
+\f4 Installation Type
+\f0  step of the macOS installer app.  Click on a package name in the list shown to see more information about that option.\
+  \
+
 \f1\b \ul Using IDLE or other Tk applications 
 \f0\b0 \ulnone \
 \
@@ -50,18 +60,46 @@ Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS ma
 \f0\b0  button to proceed.\
 \
 
-\f1\b \ul macOS 11.0 (Big Sur) and Apple Silicon Mac support [new in 3.9.1]\
+\f1\b \ul macOS 11 (Big Sur) and Apple Silicon Mac support [updated in 3.9.5]\
 
 \f0\b0 \ulnone \
 As of 2020-11, macOS 11.0 (Big Sur) is the latest release of macOS and one of its major features is the support of new Apple Silicon Macs that are based on the ARM64 CPU architecture specification rather than the Intel 64 (x86_64) architecture used previously. There are other changes in Big Sur that affect Python operation regardless of CPU architecture. As of 3.9.1, Python binaries from python.org fully support Big Sur. \
 \
-python.org binaries for macOS have been provided via a downloadable installer that supports the Intel 64 architecture on macOS 10.9 and newer.  This installer variant remains the default download for 3.9.1;  it will install and run on all Macs that run macOS 10.9 or later, including 11.0 (Big Sur). This variant should run transparently on new Apple Silicon Macs using Apple's Rosetta 2 emulation. \
+python.org binaries for macOS have been provided via a downloadable installer that supports the Intel 64 architecture on macOS 10.9 and newer.  This installer variant has been the default download for 3.9.1;  it will install and run on all Macs that run macOS 10.9 or later, including 11.0 (Big Sur). This variant 
+\f2\i should
+\f0\i0  run transparently on new Apple Silicon Macs using Apple's Rosetta 2 emulation. \
 \
-Beginning with 3.9.1, we also provide a new "universal2" installer variant that provides universal binaries for both ARM64 and Intel 64 architectures and is also supported on all Macs that support macOS 10.9 or later.  Some of the advantages of the new installer variant: native ARM64 code on Apple Silicon Macs should run significantly faster than Rosetta2-emulated code; some operating system functions and options introduced in macOS releases since 10.9 are now exposed when available (primarily in the os module); binary wheels built for use with the current 10.9 variant *should* also work with the new variant; the new installer variant includes Tcl/Tk 8.6.10 rather than 8.6.8.\
+Beginning with 3.9.1, we provide a new 
+\f4 universal2
+\f0  installer variant that provides universal binaries for both 
+\f4 ARM64
+\f0  and 
+\f4 Intel 64
+\f0  architectures and is also supported on all Macs that support macOS 10.9 or later.  Some of the advantages of the new installer variant: native ARM64 code on Apple Silicon Macs should run significantly faster than Rosetta 2-emulated code; some operating system functions and options introduced in macOS releases since 10.9 are now exposed when available (primarily in the os module); and the new installer variant includes Tcl/Tk 8.6.11 rather than 8.6.8.\
 \
-Because of the scope of changes needed to fully support 11.0 and Apple Silicon Macs, the new "universal2" variant should be considered 
-\f2\i experimental
-\f0\i0  in the 3.9.1 release. You may need to upgrade third-party components, like pip, to later versions once they are released. You may experience differences in behavior in IDLE and other Tk-based applications due to using the newer version of Tk.  As always, if you encounter problems when using this installer variant, please check {\field{\*\fldinst{HYPERLINK "https://bugs.python.org"}}{\fldrslt https://bugs.python.org}} for existing reports and for opening new issues.\
+On Apple Silicon Macs with the 
+\f4 universal2
+\f0  variant, it is possible to run Python either with native ARM64 code or under Intel 64 emulation using Rosetta 2. This option might be useful for testing or if binary wheels are not yet available with native ARM64 binaries.  To  easily force Python to run in emulation mode, invoke it from a command line shell with the 
+\f4 python3-intel64
+\f0  (or 
+\f4 python3.10-intel64
+\f0 ) command (new with 3.9.5) instead of just 
+\f4 python3
+\f0 . \
+\
+Binary wheels built for use with the legacy 10.9 variant 
+\f2\i should
+\f0\i0  also work with the new variant on Intel-based Macs or when running under Rosetta2 emulation on Apple Silicon Macs.  \
+\
+As of the 3.9.5 release, we encourage you to use the 
+\f4 universal2
+\f0  variant whenever possible.  The legacy 10.9+ Intel-only variant will not be provided for Python 3.10 and the 
+\f4 universal2
+\f0  variant will become the default download for future 3.9.x releases. You may need to upgrade third-party components, like 
+\f4 pip
+\f0 , to later versions once they are released. You may experience differences in behavior in 
+\f4 IDLE
+\f0  and other Tk-based applications due to using the newer version of Tk.  As always, if you encounter problems when using this installer variant, please check {\field{\*\fldinst{HYPERLINK "https://bugs.python.org"}}{\fldrslt https://bugs.python.org}} for existing reports and for opening new issues.\
 
 \f1\b \ul \
 Other changes\

@@ -13,13 +13,13 @@ from . import _bundled
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "49.2.1"
+_SETUPTOOLS_VERSION = "56.0.0"
 
-_PIP_VERSION = "20.2.3"
+_PIP_VERSION = "21.1.1"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION, "py3"),
-    ("pip", _PIP_VERSION, "py2.py3"),
+    ("pip", _PIP_VERSION, "py3"),
 ]
 
 

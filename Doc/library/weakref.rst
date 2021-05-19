@@ -382,7 +382,7 @@ the referent is accessed::
 
    class ExtendedRef(weakref.ref):
        def __init__(self, ob, callback=None, /, **annotations):
-           super(ExtendedRef, self).__init__(ob, callback)
+           super().__init__(ob, callback)
            self.__counter = 0
            for k, v in annotations.items():
                setattr(self, k, v)
@@ -391,7 +391,7 @@ the referent is accessed::
            """Return a pair containing the referent and the number of
            times the reference has been called.
            """
-           ob = super(ExtendedRef, self).__call__()
+           ob = super().__call__()
            if ob is not None:
                self.__counter += 1
                ob = (ob, self.__counter)

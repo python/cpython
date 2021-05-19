@@ -39,6 +39,7 @@ _IGNORED_ERROS = (ENOENT, ENOTDIR, EBADF, ELOOP)
 
 _IGNORED_WINERRORS = (
     21,  # ERROR_NOT_READY - drive exists but is not accessible
+    123, # ERROR_INVALID_NAME - fix for bpo-35306
     1921,  # ERROR_CANT_RESOLVE_FILENAME - fix for broken symlink pointing to itself
 )
 
@@ -1430,7 +1431,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1447,7 +1448,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1498,7 +1499,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1514,7 +1515,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1530,7 +1531,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path
@@ -1546,7 +1547,7 @@ class Path(PurePath):
             if not _ignore_error(e):
                 raise
             # Path doesn't exist or is a broken symlink
-            # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
+            # (see http://web.archive.org/web/20200623061726/https://bitbucket.org/pitrou/pathlib/issues/12/ )
             return False
         except ValueError:
             # Non-encodable path

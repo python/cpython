@@ -1005,6 +1005,9 @@ Internal types
       :attr:`f_lasti` gives the precise instruction (this is an index into the
       bytecode string of the code object).
 
+      Accessing ``f_code`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"f_code"``.
+
       .. index::
          single: f_trace (frame attribute)
          single: f_trace_lines (frame attribute)
@@ -1088,6 +1091,9 @@ Internal types
       line number of its frame object if the exception occurred in a
       :keyword:`try` statement with no matching except clause or with a
       finally clause.
+
+      Accessing ``tb_frame`` raises an :ref:`auditing event <auditing>`
+      ``object.__getattr__`` with arguments ``obj`` and ``"tb_frame"``.
 
       .. index::
          single: tb_next (traceback attribute)
@@ -1773,7 +1779,7 @@ Super Binding
    immediately preceding ``B`` and then invokes the descriptor with the call:
    ``A.__dict__['m'].__get__(obj, obj.__class__)``.
 
-For instance bindings, the precedence of descriptor invocation depends on the
+For instance bindings, the precedence of descriptor invocation depends on
 which descriptor methods are defined.  A descriptor can define any combination
 of :meth:`__get__`, :meth:`__set__` and :meth:`__delete__`.  If it does not
 define :meth:`__get__`, then accessing the attribute will return the descriptor

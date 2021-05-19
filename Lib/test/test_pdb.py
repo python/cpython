@@ -9,6 +9,7 @@ import codecs
 import unittest
 import subprocess
 import textwrap
+import linecache
 
 from contextlib import ExitStack
 from io import StringIO
@@ -16,6 +17,13 @@ from test import support
 # This little helper class is essential for testing pdb under doctest.
 from test.test_doctest import _FakeInput
 from unittest.mock import patch
+
+from bdb import Breakpoint
+
+def reset_Breakpoint():
+    Breakpoint.next = 1
+    Breakpoint.bplist = {}
+    Breakpoint.bpbynumber = [None]
 
 
 class PdbTestInput(object):
@@ -227,10 +235,7 @@ def test_pdb_breakpoint_commands():
     First, need to clear bdb state that might be left over from previous tests.
     Otherwise, the new breakpoints might get assigned different numbers.
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
-    >>> Breakpoint.bplist = {}
-    >>> Breakpoint.bpbynumber = [None]
+    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -699,8 +704,7 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -1127,6 +1131,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
@@ -1137,7 +1142,7 @@ def test_pdb_next_command_in_generator_for_loop():
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[1]>(3)test_function()
     -> for i in test_gen():
     (Pdb) break test_gen
-    Breakpoint 6 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>(2)test_gen()
     -> yield 0
@@ -1739,10 +1744,47 @@ def bœr():
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
 
+class ChecklineTests(unittest.TestCase):
+    def setUp(self):
+        linecache.clearcache()  # Pdb.checkline() uses linecache.getline()
+
+    def tearDown(self):
+        support.unlink(support.TESTFN)
+
+    def test_checkline_before_debugging(self):
+        with open(support.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        self.assertEqual(db.checkline(support.TESTFN, 1), 1)
+
+    def test_checkline_after_reset(self):
+        with open(support.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        db.reset()
+        self.assertEqual(db.checkline(support.TESTFN, 1), 1)
+
+    def test_checkline_is_not_executable(self):
+        with open(support.TESTFN, "w") as f:
+            # Test for comments, docstrings and empty lines
+            s = textwrap.dedent("""
+                # Comment
+                \"\"\" docstring \"\"\"
+                ''' docstring '''
+
+            """)
+            f.write(s)
+        db = pdb.Pdb()
+        num_lines = len(s.splitlines()) + 2  # Test for EOF
+        for lineno in range(num_lines):
+            self.assertFalse(db.checkline(support.TESTFN, lineno))
+
+
 def load_tests(*args):
     from test import test_pdb
     suites = [
         unittest.makeSuite(PdbTestCase),
+        unittest.makeSuite(ChecklineTests),
         doctest.DocTestSuite(test_pdb)
     ]
     return unittest.TestSuite(suites)

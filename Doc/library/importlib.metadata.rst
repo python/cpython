@@ -7,7 +7,7 @@
 .. module:: importlib.metadata
    :synopsis: The implementation of the importlib metadata.
 
-**Source code:** :source:`Lib/importlib/metadata.py`
+.. versionadded:: 3.8
 
 .. note::
    This functionality is provisional and may deviate from the usual
