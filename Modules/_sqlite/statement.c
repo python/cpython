@@ -66,6 +66,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
     }
+    if (sql_cstr_len >= connection->max_length) {
+        PyErr_SetString(PyExc_OverflowError, "query string is too large");
+        return PYSQLITE_TOO_MUCH_SQL;
+    }
     if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
         PyErr_SetString(PyExc_ValueError, "the query contains a null character");
         return PYSQLITE_SQL_WRONG_TYPE;
@@ -93,16 +97,10 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         break;
     }
 
-    if (sql_cstr_len >= INT_MAX) {
-        sql_cstr_len = -1;
-    }
-    else {
-        sql_cstr_len += 1;
-    }
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare_v2(connection->db,
                             sql_cstr,
-                            (int)sql_cstr_len,
+                            (int)sql_cstr_len + 1,
                             &self->st,
                             &tail);
     Py_END_ALLOW_THREADS

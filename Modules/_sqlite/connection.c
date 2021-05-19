@@ -172,6 +172,9 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         return -1;
     }
 
+    // Fetch the maximum length of an SQL string or BLOB
+    self->max_length = sqlite3_limit(self->db, SQLITE_LIMIT_LENGTH, -1);
+
     self->Warning               = pysqlite_Warning;
     self->Error                 = pysqlite_Error;
     self->InterfaceError        = pysqlite_InterfaceError;

@@ -695,6 +695,10 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
         if (!script_cstr) {
             return NULL;
         }
+        if (sql_len >= self->connection->max_length) {
+            PyErr_SetString(PyExc_OverflowError, "query string is too large");
+            return NULL;
+        }
     } else {
         PyErr_SetString(PyExc_ValueError, "script argument must be unicode.");
         return NULL;
@@ -713,7 +717,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare_v2(self->connection->db,
                                 script_cstr,
-                                (sql_len >= INT_MAX) ? -1 : (int)sql_len + 1,
+                                (int)sql_len + 1,
                                 &statement,
                                 &tail);
         Py_END_ALLOW_THREADS

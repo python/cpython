@@ -45,6 +45,9 @@ typedef struct
     /* the timeout value in seconds for database locks */
     double timeout;
 
+    /* the maximum length of an SQL string or BLOB */
+    int max_length;
+
     /* for internal use in the timeout handler: when did the timeout handler
      * first get called with count=0? */
     double timeout_started;
