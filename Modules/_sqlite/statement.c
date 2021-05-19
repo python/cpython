@@ -93,10 +93,16 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         break;
     }
 
+    if (sql_cstr_len >= INT_MAX) {
+        sql_cstr_len = -1;
+    }
+    else {
+        sql_cstr_len += 1;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare_v2(connection->db,
                             sql_cstr,
-                            sql_cstr_len + 1,
+                            (int)sql_cstr_len,
                             &self->st,
                             &tail);
     Py_END_ALLOW_THREADS

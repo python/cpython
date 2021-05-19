@@ -681,7 +681,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
-    Py_ssize_t script_length;
+    Py_ssize_t sql_len;
     PyObject* result;
 
     if (!check_cursor(self)) {
@@ -691,7 +691,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     self->reset = 0;
 
     if (PyUnicode_Check(script_obj)) {
-        script_cstr = PyUnicode_AsUTF8AndSize(script_obj, &script_length);
+        script_cstr = PyUnicode_AsUTF8AndSize(script_obj, &sql_len);
         if (!script_cstr) {
             return NULL;
         }
@@ -707,14 +707,13 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     }
     Py_DECREF(result);
 
-    Py_ssize_t size_incl_null = script_length + 1;
     while (1) {
         const char *tail;
 
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare_v2(self->connection->db,
                                 script_cstr,
-                                size_incl_null,
+                                (sql_len >= INT_MAX) ? -1 : (int)sql_len + 1,
                                 &statement,
                                 &tail);
         Py_END_ALLOW_THREADS
@@ -747,7 +746,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
         if (*tail == (char)0) {
             break;
         }
-        size_incl_null -= (tail - script_cstr);
+        sql_len -= (tail - script_cstr);
         script_cstr = tail;
     }
 
