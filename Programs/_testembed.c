@@ -27,6 +27,14 @@
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
+
+static void error(const char *msg)
+{
+    fprintf(stderr, "ERROR: %s\n", msg);
+    fflush(stderr);
+}
+
+
 static void _testembed_Py_Initialize(void)
 {
     Py_SetProgramName(PROGRAM_NAME);
@@ -239,7 +247,7 @@ static void bpo20891_thread(void *lockp)
 
     PyGILState_STATE state = PyGILState_Ensure();
     if (!PyGILState_Check()) {
-        fprintf(stderr, "PyGILState_Check failed!");
+        error("PyGILState_Check failed!");
         abort();
     }
 
@@ -259,7 +267,7 @@ static int test_bpo20891(void)
        crash. */
     PyThread_type_lock lock = PyThread_allocate_lock();
     if (!lock) {
-        fprintf(stderr, "PyThread_allocate_lock failed!");
+        error("PyThread_allocate_lock failed!");
         return 1;
     }
 
@@ -267,7 +275,7 @@ static int test_bpo20891(void)
 
     unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
     if (thrd == PYTHREAD_INVALID_THREAD_ID) {
-        fprintf(stderr, "PyThread_start_new_thread failed!");
+        error("PyThread_start_new_thread failed!");
         return 1;
     }
     PyThread_acquire_lock(lock, WAIT_LOCK);
@@ -1397,12 +1405,12 @@ static int test_init_setpath(void)
 {
     char *env = getenv("TESTPATH");
     if (!env) {
-        fprintf(stderr, "missing TESTPATH env var\n");
+        error("missing TESTPATH env var");
         return 1;
     }
     wchar_t *path = Py_DecodeLocale(env, NULL);
     if (path == NULL) {
-        fprintf(stderr, "failed to decode TESTPATH\n");
+        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1430,12 +1438,12 @@ static int test_init_setpath_config(void)
 
     char *env = getenv("TESTPATH");
     if (!env) {
-        fprintf(stderr, "missing TESTPATH env var\n");
+        error("missing TESTPATH env var");
         return 1;
     }
     wchar_t *path = Py_DecodeLocale(env, NULL);
     if (path == NULL) {
-        fprintf(stderr, "failed to decode TESTPATH\n");
+        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1459,12 +1467,12 @@ static int test_init_setpythonhome(void)
 {
     char *env = getenv("TESTHOME");
     if (!env) {
-        fprintf(stderr, "missing TESTHOME env var\n");
+        error("missing TESTHOME env var");
         return 1;
     }
     wchar_t *home = Py_DecodeLocale(env, NULL);
     if (home == NULL) {
-        fprintf(stderr, "failed to decode TESTHOME\n");
+        error("failed to decode TESTHOME");
         return 1;
     }
     Py_SetPythonHome(home);
@@ -1726,6 +1734,48 @@ static int test_unicode_id_init(void)
 }
 
 
+#ifndef MS_WINDOWS
+#include "test_frozenmain.h"      // M_test_frozenmain
+
+static int test_frozenmain(void)
+{
+    // Get "_frozen_importlib" and "_frozen_importlib_external"
+    // from PyImport_FrozenModules
+    const struct _frozen *importlib = NULL, *importlib_external = NULL;
+    for (const struct _frozen *mod = PyImport_FrozenModules; mod->name != NULL; mod++) {
+        if (strcmp(mod->name, "_frozen_importlib") == 0) {
+            importlib = mod;
+        }
+        else if (strcmp(mod->name, "_frozen_importlib_external") == 0) {
+            importlib_external = mod;
+        }
+    }
+    if (importlib == NULL || importlib_external == NULL) {
+        error("cannot find frozen importlib and importlib_external");
+        return 1;
+    }
+
+    static struct _frozen frozen_modules[4] = {
+        {0, 0, 0},  // importlib
+        {0, 0, 0},  // importlib_external
+        {"__main__", M_test_frozenmain, sizeof(M_test_frozenmain)},
+        {0, 0, 0}   // sentinel
+    };
+    frozen_modules[0] = *importlib;
+    frozen_modules[1] = *importlib_external;
+
+    char* argv[] = {
+        "./argv0",
+        "-E",
+        "arg1",
+        "arg2",
+    };
+    PyImport_FrozenModules = frozen_modules;
+    return Py_FrozenMain(Py_ARRAY_LENGTH(argv), argv);
+}
+#endif  // !MS_WINDOWS
+
+
 // List frozen modules.
 // Command used by Tools/scripts/generate_stdlib_module_names.py script.
 static int list_frozen(void)
@@ -1811,10 +1861,14 @@ static struct TestCase TestCases[] = {
     {"test_audit_run_stdin", test_audit_run_stdin},
 
     {"test_unicode_id_init", test_unicode_id_init},
+#ifndef MS_WINDOWS
+    {"test_frozenmain", test_frozenmain},
+#endif
 
     {"list_frozen", list_frozen},
     {NULL, NULL}
 };
+
 
 int main(int argc, char *argv[])
 {

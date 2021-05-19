@@ -720,6 +720,12 @@ Makefile Modules/config.c: Makefile.pre \
 	@mv config.c Modules
 	@echo "The Makefile was updated, you may need to re-run make."
 
+.PHONY: regen-test-frozenmain
+regen-test-frozenmain: $(BUILDPYTHON)
+	# Regenerate Programs/test_frozenmain.h
+	# from Programs/test_frozenmain.py
+	# using Programs/freeze_test_frozenmain.py
+	$(RUNSHARED) ./$(BUILDPYTHON) Programs/freeze_test_frozenmain.py Programs/test_frozenmain.h
 
 Programs/_testembed: Programs/_testembed.o $(LIBRARY_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS)
@@ -763,7 +769,7 @@ regen-limited-abi: all
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen
+	regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
@@ -794,7 +800,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 Programs/python.o: $(srcdir)/Programs/python.c
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
 
-Programs/_testembed.o: $(srcdir)/Programs/_testembed.c
+Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h
 	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
 Modules/_sre.o: $(srcdir)/Modules/_sre.c $(srcdir)/Modules/sre.h $(srcdir)/Modules/sre_constants.h $(srcdir)/Modules/sre_lib.h

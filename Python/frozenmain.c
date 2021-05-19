@@ -1,4 +1,3 @@
-
 /* Python interpreter main program for frozen scripts */
 
 #include "Python.h"
@@ -43,10 +42,12 @@ Py_FrozenMain(int argc, char **argv)
     PyConfig_InitPythonConfig(&config);
     config.pathconfig_warnings = 0;   /* Suppress errors from getpath.c */
 
-    if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0')
+    if ((p = Py_GETENV("PYTHONINSPECT")) && *p != '\0') {
         inspect = 1;
-    if ((p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
+    }
+    if ((p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0') {
         unbuffered = 1;
+    }
 
     if (unbuffered) {
         setbuf(stdin, (char *)NULL);
@@ -65,8 +66,9 @@ Py_FrozenMain(int argc, char **argv)
         argv_copy[i] = Py_DecodeLocale(argv[i], NULL);
         argv_copy2[i] = argv_copy[i];
         if (!argv_copy[i]) {
-            fprintf(stderr, "Unable to decode the command line argument #%i\n",
-                            i + 1);
+            fprintf(stderr,
+                    "Unable to decode the command line argument #%i\n",
+                    i + 1);
             argc = i;
             goto error;
         }
@@ -97,24 +99,28 @@ Py_FrozenMain(int argc, char **argv)
     PyWinFreeze_ExeInit();
 #endif
 
-    if (Py_VerboseFlag)
+    if (Py_VerboseFlag) {
         fprintf(stderr, "Python %s\n%s\n",
-            Py_GetVersion(), Py_GetCopyright());
+                Py_GetVersion(), Py_GetCopyright());
+    }
 
     PySys_SetArgv(argc, argv_copy);
 
     n = PyImport_ImportFrozenModule("__main__");
-    if (n == 0)
+    if (n == 0) {
         Py_FatalError("the __main__ module is not frozen");
+    }
     if (n < 0) {
         PyErr_Print();
         sts = 1;
     }
-    else
+    else {
         sts = 0;
+    }
 
-    if (inspect && isatty((int)fileno(stdin)))
+    if (inspect && isatty((int)fileno(stdin))) {
         sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
+    }
 
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeTerm();

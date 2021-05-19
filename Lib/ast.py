@@ -640,7 +640,8 @@ _INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
 class _Precedence:
     """Precedence table that originated from python grammar."""
 
-    TUPLE = auto()
+    NAMED_EXPR = auto()      # <target> := <expr1>
+    TUPLE = auto()           # <expr1>, <expr2>
     YIELD = auto()           # 'yield', 'yield from'
     TEST = auto()            # 'if'-'else', 'lambda'
     OR = auto()              # 'or'
@@ -716,9 +717,9 @@ class _Unparser(NodeVisitor):
         self.maybe_newline()
         self.write("    " * self._indent + text)
 
-    def write(self, text):
-        """Append a piece of text"""
-        self._source.append(text)
+    def write(self, *text):
+        """Add new source parts"""
+        self._source.extend(text)
 
     @contextmanager
     def buffered(self, buffer = None):
@@ -838,7 +839,7 @@ class _Unparser(NodeVisitor):
         self.traverse(node.value)
 
     def visit_NamedExpr(self, node):
-        with self.require_parens(_Precedence.TUPLE, node):
+        with self.require_parens(_Precedence.NAMED_EXPR, node):
             self.set_precedence(_Precedence.ATOM, node.target, node.value)
             self.traverse(node.target)
             self.write(" := ")
@@ -859,6 +860,7 @@ class _Unparser(NodeVisitor):
     def visit_Assign(self, node):
         self.fill()
         for target in node.targets:
+            self.set_precedence(_Precedence.TUPLE, target)
             self.traverse(target)
             self.write(" = ")
         self.traverse(node.value)
@@ -1030,6 +1032,7 @@ class _Unparser(NodeVisitor):
 
     def _for_helper(self, fill, node):
         self.fill(fill)
+        self.set_precedence(_Precedence.TUPLE, node.target)
         self.traverse(node.target)
         self.write(" in ")
         self.traverse(node.iter)
@@ -1315,7 +1318,7 @@ class _Unparser(NodeVisitor):
             )
 
     def visit_Tuple(self, node):
-        with self.delimit("(", ")"):
+        with self.require_parens(_Precedence.TUPLE, node):
             self.items_view(self.traverse, node.elts)
 
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
@@ -1566,8 +1569,11 @@ class _Unparser(NodeVisitor):
 
     def visit_Lambda(self, node):
         with self.require_parens(_Precedence.TEST, node):
-            self.write("lambda ")
-            self.traverse(node.args)
+            self.write("lambda")
+            with self.buffered() as buffer:
+                self.traverse(node.args)
+            if buffer:
+                self.write(" ", *buffer)
             self.write(": ")
             self.set_precedence(_Precedence.TEST, node.body)
             self.traverse(node.body)
