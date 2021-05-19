@@ -4,13 +4,13 @@ con = sqlite3.connect("mydb")
 
 cur = con.cursor()
 
-newPeople = (
-    ('Lebed'       , 53),
-    ('Zhirinovsky' , 57),
-  )
+languages = (
+    ("Smalltalk", 1972),
+    ("Swift", 2014),
+)
 
-for person in newPeople:
-    cur.execute("insert into people (name_last, age) values (?, ?)", person)
+for lang in languages:
+    cur.execute("insert into lang (name, first_appeared) values (?, ?)", lang)
 
 # The changes will not be saved unless the transaction is committed explicitly:
 con.commit()
