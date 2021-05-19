@@ -1,18 +1,30 @@
-I've Implemented the "``formatHeader``" and "``formatFooter``" of the"``BufferingFormatter``" class of the "``Logging``" package. These changes are backward compatible with their previous use cases:
+Implemented the :class:`~Lib.logging.__init__.formatHeader` and :class:`~Lib.logging.__init__.formatFooter` of the :class:`~Lib.logging.__init__.BufferingFormatter` class of the :class:`~Lib.logging` package. These changes are backward compatible with their previous use cases:
 
 .. code-block:: python
-
-   >>> f = logging.BufferingFormatter()
-   >>> f.format(some_records)
+   
+   import logging
+   records = [
+              logging.makeLogRecord({'msg': 'one'}),
+              logging.makeLogRecord({'msg': 'two'}),
+   ]
+   f = logging.BufferingFormatter()
+   formated_records = f.format(records)
+   print(formated_records)
 
 Additionally, the new implementation supports the following:
 
 .. code-block:: python
 
-   >>> f = logging.BufferingFormatter()
-   >>> header = 'A header./n'
-   >>> footer =  '/nA footer'
-   >>> f = logging.BufferingFormatter()
-   >>> f.format(some_records, header, footer)
+   import logging
+   records = [
+              logging.makeLogRecord({'msg': 'one'}),
+              logging.makeLogRecord({'msg': 'two'}),
+   ]
+   f = logging.BufferingFormatter()
+   header = 'A header./n'
+   footer =  '/nA footer'
+   f = logging.BufferingFormatter()
+   formated_records = f.format(records, header, footer)
+   print(formated_records)
 
 This would make it easier for the programmer to use these methods without overriding "``formatHeader``" and "``formatFooter``".
