@@ -1860,6 +1860,7 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
             if (rc != SQLITE_OK) {
                 assert(errmsg != NULL);
                 PyErr_SetString(pysqlite_OperationalError, errmsg);
+                sqlite3_free(errmsg);
             }
         }
         return NULL;
