@@ -31,6 +31,7 @@ from io import BytesIO
 import unittest
 from test import support
 from test.support import os_helper
+from test.support import socket_helper
 from test.support import threading_helper
 
 
@@ -42,6 +43,9 @@ class NoLogRequestHandler:
     def read(self, n=None):
         return ''
 
+class IPvWhateverHTTPServer(HTTPServer):
+    address_family = socket_helper.get_family()
+
 
 class TestServerThread(threading.Thread):
     def __init__(self, test_object, request_handler):
@@ -50,8 +54,8 @@ class TestServerThread(threading.Thread):
         self.test_object = test_object
 
     def run(self):
-        self.server = HTTPServer(('localhost', 0), self.request_handler)
-        self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
+        self.server = IPvWhateverHTTPServer(('localhost', 0), self.request_handler)
+        self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()[:2]
         self.test_object.server_started.set()
         self.test_object = None
         try:
