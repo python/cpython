@@ -1,0 +1,6 @@
+In :mod:`sqlite3`, fetch across rollback no longer raises
+:exc:`~sqlite3.InterfaceError`. Instead, it is up to the SQLite library to
+handle these cases. If SQLite is unable to carry out the operation,
+:exc:`~sqlite3.OperationalError` will be raised with an appropriate error
+message. If SQLite is able to carry out the operation, no exception is
+raised. Patch by Erlend E. Aasland.
