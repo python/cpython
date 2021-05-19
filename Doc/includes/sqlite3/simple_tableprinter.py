@@ -4,7 +4,7 @@ FIELD_MAX_WIDTH = 20
 
 con = sqlite3.connect("mydb")
 cur = con.cursor()
-cur.execute(f"select * from lang order by name, first_appeared")
+cur.execute("select * from lang order by name, first_appeared")
 
 # Print a header.
 for fieldDesc in cur.description:
