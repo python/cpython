@@ -287,8 +287,10 @@ new_code(void)
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
 
-    co->co_nlocalsplus = 0;
+    co->co_nfastlocals = 0;
     co->co_nlocals = 0;
+    co->co_ncellvars= 0;
+    co->co_nfreevars = 0;
 
     return co;
 }
@@ -327,6 +329,7 @@ make_code(struct _PyCodeConstructor *con)
                            ((con->flags & CO_VARKEYWORDS) != 0);
     Py_ssize_t ncellvars = PyTuple_GET_SIZE(con->cellvars);
     Py_ssize_t nfreevars = PyTuple_GET_SIZE(con->freevars);
+    Py_ssize_t nfastlocals = nlocals + ncellvars + nfreevars;
 
     /* Check for any inner or outer closure references */
     if (!ncellvars && !nfreevars) {
@@ -373,10 +376,10 @@ make_code(struct _PyCodeConstructor *con)
     Py_INCREF(con->exceptiontable);
     co->co_exceptiontable = con->exceptiontable;
 
-    co->co_nlocalsplus = nlocals +
-        (int)PyTuple_GET_SIZE(con->freevars) +
-        (int)PyTuple_GET_SIZE(con->cellvars);
+    co->co_nfastlocals = nfastlocals;
     co->co_nlocals = nlocals;
+    co->co_ncellvars = ncellvars;
+    co->co_nfreevars = nfreevars;
 
     /* Create mapping between cells and arguments if needed. */
     if (ncellvars) {
@@ -569,11 +572,11 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
         }
     }
 
-    if (kind & CO_FAST_CELL && PyTuple_GET_SIZE(co->co_cellvars)) {
+    if (kind & CO_FAST_CELL && co->co_ncellvars) {
         return true;
     }
 
-    if (kind & CO_FAST_FREE && PyTuple_GET_SIZE(co->co_freevars)) {
+    if (kind & CO_FAST_FREE && co->co_nfreevars) {
         return true;
     }
 
@@ -586,8 +589,7 @@ _PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
     if (co->co_cell2arg == 0) {
         return -1;
     }
-    Py_ssize_t ncellvars = PyTuple_GET_SIZE(co->co_cellvars);
-    for (Py_ssize_t i = 0; i < ncellvars; i++) {
+    for (Py_ssize_t i = 0; i < co->co_ncellvars; i++) {
         if (co->co_cell2arg[i] == offset) {
             return co->co_nlocals + i;
         }
@@ -612,7 +614,7 @@ _PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
             break;
         case CO_FAST_FREE:
             names = co->co_freevars;
-            baseoffset = co->co_nlocals + PyTuple_GET_SIZE(co->co_cellvars);
+            baseoffset = co->co_nlocals + co->co_ncellvars;
             break;
         default:
             return -1;
@@ -1413,7 +1415,7 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL) {
-        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
+        res += co->co_ncellvars * sizeof(Py_ssize_t);
     }
     if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +

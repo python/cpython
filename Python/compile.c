@@ -2054,7 +2054,7 @@ static int
 compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                       PyObject *qualname)
 {
-    Py_ssize_t i, free = PyCode_GetNumFree(co);
+    Py_ssize_t i, free = co->co_nfreevars;
     if (qualname == NULL)
         qualname = co->co_name;
 

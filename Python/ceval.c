@@ -1647,7 +1647,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     names = co->co_names;
     consts = co->co_consts;
     fastlocals = f->f_localsptr;
-    freevars = f->f_localsptr + _PyCode_NUM_LOCALVARS(co);
+    freevars = f->f_localsptr + co->co_nlocals;
     assert(PyBytes_Check(co->co_code));
     assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
     assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
@@ -3082,9 +3082,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             Py_ssize_t idx;
             assert(locals);
             // XXX Hide the layout away.
-            assert(oparg >= _PyCode_NUM_CELLVARS(co));
-            idx = oparg - _PyCode_NUM_CELLVARS(co);
-            assert(idx >= 0 && idx < _PyCode_NUM_FREEVARS(co));
+            assert(oparg >= co->co_ncellvars);
+            idx = oparg - co->co_ncellvars;
+            assert(idx >= 0 && idx < co->co_nfreevars);
             name = _PyCode_GET_FREEVAR(co, idx);
             if (PyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
@@ -4882,7 +4882,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 {
     PyCodeObject *co = (PyCodeObject*)con->fc_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    PyObject **freevars = fastlocals + _PyCode_NUM_LOCALVARS(co);
+    PyObject **freevars = fastlocals + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
@@ -5063,7 +5063,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     /* Allocate and initialize storage for cell vars, and copy free
        vars into frame. */
-    for (i = 0; i < _PyCode_NUM_CELLVARS(co); ++i) {
+    for (i = 0; i < co->co_ncellvars; ++i) {
         PyObject *c;
         Py_ssize_t arg;
         /* Possibly account for the cell variable being an argument. */
@@ -5078,14 +5078,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
         if (c == NULL)
             goto fail;
-        SETLOCAL(_PyCode_NUM_LOCALVARS(co) + i, c);
+        SETLOCAL(co->co_nlocals + i, c);
     }
 
     /* Copy closure variables to free variables */
-    for (i = 0; i < _PyCode_NUM_FREEVARS(co); ++i) {
+    for (i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
         Py_INCREF(o);
-        freevars[_PyCode_NUM_CELLVARS(co) + i] = o;
+        freevars[co->co_ncellvars + i] = o;
     }
 
     return 0;
@@ -5160,7 +5160,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
         localsarray = NULL;
     }
     else {
-        int size = code->co_nlocalsplus + code->co_stacksize +
+        int size = code->co_nfastlocals + code->co_stacksize +
             FRAME_SPECIALS_SIZE;
         localsarray = _PyThreadState_PushLocals(tstate, size);
         if (localsarray == NULL) {
@@ -5198,7 +5198,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     else {
         ++tstate->recursion_depth;
         f->f_localsptr = NULL;
-        for (int i = 0; i < code->co_nlocalsplus + FRAME_SPECIALS_SIZE; i++) {
+        for (int i = 0; i < code->co_nfastlocals + FRAME_SPECIALS_SIZE; i++) {
             Py_XDECREF(localsarray[i]);
         }
         Py_DECREF(f);
@@ -6418,14 +6418,14 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     /* Don't stomp existing exception */
     if (_PyErr_Occurred(tstate))
         return;
-    if (oparg < _PyCode_NUM_CELLVARS(co)) {
+    if (oparg < co->co_ncellvars) {
         name = _PyCode_GET_CELLVAR(co, oparg);
         format_exc_check_arg(tstate,
             PyExc_UnboundLocalError,
             UNBOUNDLOCAL_ERROR_MSG,
             name);
     } else {
-        name = _PyCode_GET_FREEVAR(co, oparg - _PyCode_NUM_CELLVARS(co));
+        name = _PyCode_GET_FREEVAR(co, oparg - co->co_ncellvars);
         format_exc_check_arg(tstate, PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }
@@ -6474,9 +6474,8 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         }
         case STORE_DEREF:
         {
-            PyObject **freevars = (f->f_localsptr +
-                                   _PyCode_NUM_LOCALVARS(f->f_code));
-            PyObject *c = freevars[oparg];
+            PyObject **cellvars = (f->f_localsptr + f->f_code->co_nlocals);
+            PyObject *c = cellvars[oparg];
             if (PyCell_GET(c) ==  v) {
                 PyCell_SET(c, NULL);
                 Py_DECREF(v);

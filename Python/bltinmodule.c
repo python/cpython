@@ -968,7 +968,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
             return NULL;
         }
 
-        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
+        if (((PyCodeObject *)source)->co_nfreevars > 0) {
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to eval() may not contain free variables");
             return NULL;
@@ -1056,7 +1056,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             return NULL;
         }
 
-        if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
+        if (((PyCodeObject *)source)->co_nfreevars > 0) {
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to exec() may not "
                 "contain free variables");

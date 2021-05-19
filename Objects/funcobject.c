@@ -295,7 +295,7 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    nfree = PyCode_GetNumFree((PyCodeObject *)value);
+    nfree = ((PyCodeObject *)value)->co_nfreevars;
     nclosure = (op->func_closure == NULL ? 0 :
             PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
@@ -551,7 +551,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                         "arg 4 (defaults) must be None or tuple");
         return NULL;
     }
-    nfree = _PyCode_NUM_FREEVARS(code);
+    nfree = code->co_nfreevars;
     if (!PyTuple_Check(closure)) {
         if (nfree && closure == Py_None) {
             PyErr_SetString(PyExc_TypeError,

@@ -83,8 +83,11 @@ struct PyCodeObject {
     unsigned char co_opcache_size;  // length of co_opcache.
 
     /* redundant data */
-    int co_nlocalsplus;         /* Number of locals + free + cell variables */
+    int co_nfastlocals;         /* #entries needed for locals
+                                   (nlocals + ncellvars + nfreevars( */
     int co_nlocals;             /* #local variables */
+    int co_ncellvars;           /* #escaping local variables */
+    int co_nfreevars;           /* #closed variables (escaping or not) */
 };
 
 /* Masks for co_flags above */
@@ -135,7 +138,7 @@ struct PyCodeObject {
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
-#define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
+#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
 
 
 /* Public interface */

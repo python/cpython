@@ -614,7 +614,7 @@ frame_dealloc(PyFrameObject *f)
 
     /* Kill all local variables */
     if (f->f_localsptr) {
-        for (int i = 0; i < co->co_nlocalsplus+FRAME_SPECIALS_SIZE; i++) {
+        for (int i = 0; i < co->co_nfastlocals+FRAME_SPECIALS_SIZE; i++) {
             Py_CLEAR(f->f_localsptr[i]);
         }
         /* Free items on stack */
@@ -650,7 +650,7 @@ frame_dealloc(PyFrameObject *f)
 static inline Py_ssize_t
 frame_nslots(PyFrameObject *frame)
 {
-    //return _PyCode_NUM_FAST_LOCALS(frame->f_code);
+    //return frame->f_code->co_nfastlocals;
     return frame->f_valuestack - frame->f_localsptr;
 }
 
@@ -725,7 +725,7 @@ frame_sizeof(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
     res = sizeof(PyFrameObject);
     if (f->f_own_locals_memory) {
         PyCodeObject *code = f->f_code;
-        res += (code->co_nlocalsplus+code->co_stacksize) * sizeof(PyObject *);
+        res += (code->co_nfastlocals+code->co_stacksize) * sizeof(PyObject *);
     }
     return PyLong_FromSsize_t(res);
 }
@@ -794,13 +794,13 @@ frame_alloc(PyCodeObject *code, PyObject **localsarray)
     int owns;
     PyFrameObject *f;
     if (localsarray == NULL) {
-        int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
+        int size = code->co_nfastlocals+code->co_stacksize + FRAME_SPECIALS_SIZE;
         localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
         if (localsarray == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
-        for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
+        for (Py_ssize_t i=0; i < code->co_nfastlocals; i++) {
             localsarray[i] = NULL;
         }
         owns = 1;
@@ -875,7 +875,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
         return NULL;
     }
 
-    PyObject **specials = f->f_localsptr + code->co_nlocalsplus;
+    PyObject **specials = f->f_localsptr + code->co_nfastlocals;
     f->f_valuestack = specials + FRAME_SPECIALS_SIZE;
     f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
     f->f_code = (PyCodeObject *)Py_NewRef(con->fc_code);
@@ -1048,15 +1048,15 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     }
     fast = f->f_localsptr;
     j = PyTuple_GET_SIZE(map);
-    Py_ssize_t nlocals = _PyCode_NUM_LOCALVARS(co);
+    Py_ssize_t nlocals = co->co_nlocals;
     if (j > nlocals)
         j = nlocals;
     if (nlocals) {
         if (map_to_dict(map, j, locals, fast, 0) < 0)
             return -1;
     }
-    ncells = _PyCode_NUM_CELLVARS(co);
-    nfreevars = _PyCode_NUM_FREEVARS(co);
+    ncells = co->co_ncellvars;
+    nfreevars = co->co_nfreevars;
     if (ncells || nfreevars) {
         if (map_to_dict(co->co_cellvars, ncells,
                         locals, fast + nlocals, 1))
@@ -1114,13 +1114,13 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     fast = f->f_localsptr;
     j = PyTuple_GET_SIZE(map);
-    Py_ssize_t nlocals = _PyCode_NUM_LOCALVARS(co);
+    Py_ssize_t nlocals = co->co_nlocals;
     if (j > nlocals)
         j = nlocals;
     if (nlocals)
         dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
-    ncells = _PyCode_NUM_CELLVARS(co);
-    nfreevars = _PyCode_NUM_FREEVARS(co);
+    ncells = co->co_ncellvars;
+    nfreevars = co->co_nfreevars;
     if (ncells || nfreevars) {
         dict_to_map(co->co_cellvars, ncells,
                     locals, fast + nlocals, 1, clear);
