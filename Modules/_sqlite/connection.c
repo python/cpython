@@ -56,23 +56,6 @@ static const char * const begin_statements[] = {
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
-static PyObject *_lru_cache = NULL;
-
-int
-load_functools_lru_cache(PyObject *Py_UNUSED(module))
-{
-    PyObject *functools = PyImport_ImportModule("functools");
-    if (functools == NULL) {
-        return -1;
-    }
-    _lru_cache = PyObject_GetAttrString(functools, "lru_cache");
-    Py_DECREF(functools);
-    if (_lru_cache == NULL) {
-        return -1;
-    }
-    return 0;
-}
-
 static PyObject *
 new_statement_cache(pysqlite_Connection *self, int maxsize)
 {
@@ -80,7 +63,8 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     if (args[0] == NULL) {
         return NULL;
     }
-    PyObject *inner = PyObject_Vectorcall(_lru_cache, args, 1, NULL);
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    PyObject *inner = PyObject_Vectorcall(state->lru_cache, args, 1, NULL);
     Py_DECREF(args[0]);
     if (inner == NULL) {
         return NULL;
