@@ -695,7 +695,10 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
         if (!script_cstr) {
             return NULL;
         }
-        if (sql_len >= self->connection->max_length) {
+
+        int max_length = sqlite3_limit(self->connection->db,
+                                       SQLITE_LIMIT_LENGTH, -1);
+        if (sql_len >= max_length) {
             PyErr_SetString(pysqlite_DataError, "query string is too large");
             return NULL;
         }

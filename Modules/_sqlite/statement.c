@@ -66,7 +66,9 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
         rc = PYSQLITE_SQL_WRONG_TYPE;
         return rc;
     }
-    if (sql_cstr_len >= connection->max_length) {
+
+    int max_length = sqlite3_limit(connection->db, SQLITE_LIMIT_LENGTH, -1);
+    if (sql_cstr_len >= max_length) {
         PyErr_SetString(pysqlite_DataError, "query string is too large");
         return PYSQLITE_TOO_MUCH_SQL;
     }
