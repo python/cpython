@@ -29,6 +29,7 @@ import io
 import logging
 import logging.handlers
 import re
+import socket
 import struct
 import sys
 import threading
@@ -885,7 +886,11 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
-            ThreadingTCPServer.__init__(self, (host, port), handler)
+            try:
+                ThreadingTCPServer.__init__(self, (host, port), handler)
+            except OSError as err:
+                self.address_family = socket.AF_INET6
+                ThreadingTCPServer.__init__(self, (host, port), handler)
             logging._acquireLock()
             self.abort = 0
             logging._releaseLock()
