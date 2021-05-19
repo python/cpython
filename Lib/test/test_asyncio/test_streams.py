@@ -815,8 +815,10 @@ os.close(fd)
 
         def server():
             # Runs in a separate thread.
-            with socket.create_server(('localhost', 0)) as sock:
-                addr = sock.getsockname()
+            with socket_helper.bind_ip_socket_and_port() as sock_port:
+                sock = sock_port[0]
+                sock.listen()
+                addr = sock.getsockname()[:2]
                 q.put(addr)
                 clt, _ = sock.accept()
                 clt.close()
