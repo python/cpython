@@ -69,16 +69,6 @@ class LockTests(test_utils.TestCase):
             ):
                 cls(loop=self.loop)
 
-        # Barrier object has a positional paramater
-        # so tests alone
-        cls = asyncio.Barrier
-        with self.assertRaisesRegex(
-            TypeError,
-            rf'As of 3.10, the \*loop\* parameter was removed from '
-            rf'{cls.__name__}\(\) since it is no longer necessary'
-        ):
-            cls(1, loop=self.loop)
-
     def test_lock_by_with_statement(self):
         loop = asyncio.new_event_loop()  # don't use TestLoop quirks
         self.set_event_loop(loop)
