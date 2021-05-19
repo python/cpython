@@ -97,8 +97,8 @@ def find_unused_port(family=None, socktype=socket.SOCK_STREAM):
                     if not port:
                         port = bind_port(tempsock)
                     else:
-                        sock.bind((host, 0))
-                        port = sock.getsockname()[1]
+                        tempsock.bind((host, 0))
+                        port = tempsock.getsockname()[1]
             except OSError as err:
                 errors[family] = err
                 port = 0
