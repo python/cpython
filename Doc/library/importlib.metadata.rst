@@ -4,6 +4,9 @@
  Using :mod:`!importlib.metadata`
 =================================
 
+.. module:: importlib.metadata
+   :synopsis: The implementation of the importlib metadata.
+
 .. versionadded:: 3.8
 
 .. note::
