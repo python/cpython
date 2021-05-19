@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_code.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 
@@ -649,6 +650,7 @@ frame_dealloc(PyFrameObject *f)
 static inline Py_ssize_t
 frame_nslots(PyFrameObject *frame)
 {
+    //return _PyCode_NUM_FAST_LOCALS(frame->f_code);
     return frame->f_valuestack - frame->f_localsptr;
 }
 
@@ -1036,6 +1038,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
             return -1;
     }
     co = f->f_code;
+    // XXX Hide the code object details.
     map = co->co_varnames;
     if (!PyTuple_Check(map)) {
         PyErr_Format(PyExc_SystemError,
@@ -1045,17 +1048,18 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     }
     fast = f->f_localsptr;
     j = PyTuple_GET_SIZE(map);
-    if (j > co->co_nlocals)
-        j = co->co_nlocals;
-    if (co->co_nlocals) {
+    Py_ssize_t nlocals = _PyCode_NUM_LOCALVARS(co);
+    if (j > nlocals)
+        j = nlocals;
+    if (nlocals) {
         if (map_to_dict(map, j, locals, fast, 0) < 0)
             return -1;
     }
-    ncells = PyTuple_GET_SIZE(co->co_cellvars);
-    nfreevars = PyTuple_GET_SIZE(co->co_freevars);
+    ncells = _PyCode_NUM_CELLVARS(co);
+    nfreevars = _PyCode_NUM_FREEVARS(co);
     if (ncells || nfreevars) {
         if (map_to_dict(co->co_cellvars, ncells,
-                        locals, fast + co->co_nlocals, 1))
+                        locals, fast + nlocals, 1))
             return -1;
 
         /* If the namespace is unoptimized, then one of the
@@ -1068,7 +1072,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         */
         if (co->co_flags & CO_OPTIMIZED) {
             if (map_to_dict(co->co_freevars, nfreevars,
-                            locals, fast + co->co_nlocals + ncells, 1) < 0)
+                            locals, fast + nlocals + ncells, 1) < 0)
                 return -1;
         }
     }
@@ -1101,6 +1105,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         return;
     locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
     co = f->f_code;
+    // XXX Hide the code object details.
     map = co->co_varnames;
     if (locals == NULL)
         return;
@@ -1109,19 +1114,20 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     fast = f->f_localsptr;
     j = PyTuple_GET_SIZE(map);
-    if (j > co->co_nlocals)
-        j = co->co_nlocals;
-    if (co->co_nlocals)
+    Py_ssize_t nlocals = _PyCode_NUM_LOCALVARS(co);
+    if (j > nlocals)
+        j = nlocals;
+    if (nlocals)
         dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
-    ncells = PyTuple_GET_SIZE(co->co_cellvars);
-    nfreevars = PyTuple_GET_SIZE(co->co_freevars);
+    ncells = _PyCode_NUM_CELLVARS(co);
+    nfreevars = _PyCode_NUM_FREEVARS(co);
     if (ncells || nfreevars) {
         dict_to_map(co->co_cellvars, ncells,
-                    locals, fast + co->co_nlocals, 1, clear);
+                    locals, fast + nlocals, 1, clear);
         /* Same test as in PyFrame_FastToLocals() above. */
         if (co->co_flags & CO_OPTIMIZED) {
             dict_to_map(co->co_freevars, nfreevars,
-                locals, fast + co->co_nlocals + ncells, 1,
+                locals, fast + nlocals + ncells, 1,
                 clear);
         }
     }

@@ -91,6 +91,29 @@ PyAPI_FUNC(Py_ssize_t)  _PyCode_GetFastlocalOffsetId(PyCodeObject *,
                                                      _Py_Identifier *,
                                                      _PyFastLocalKind);
 
+#define _PyCode_NUM_LOCALVARS(co) \
+    ((co)->co_nlocals)
+// This is a speed hack for use in ceval.c.
+#define _PyCode_LOCALVARS_ARRAY(co) \
+    (((PyTupleObject *)((co)->co_varnames))->ob_item)
+#define _PyCode_GET_LOCALVAR(co, offset) \
+    (PyTuple_GetItem((co)->co_varnames, offset))
+
+#define _PyCode_NUM_CELLVARS(co) \
+    (PyTuple_GET_SIZE(co->co_cellvars))
+#define _PyCode_GET_CELLVAR(co, offset) \
+    (PyTuple_GetItem((co)->co_cellvars, offset))
+
+#define _PyCode_NUM_FREEVARS(co) \
+    (PyTuple_GET_SIZE(co->co_freevars))
+#define _PyCode_GET_FREEVAR(co, offset) \
+    (PyTuple_GetItem((co)->co_freevars, offset))
+
+#define _PyCode_NUM_FAST_LOCALS(co) \
+    (_PyCode_NUM_LOCALVARS(co) +    \
+     _PyCode_NUM_CELLVARS(co) +     \
+     _PyCode_NUM_FREEVARS(co))
+
 
 #ifdef __cplusplus
 }

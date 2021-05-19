@@ -1647,7 +1647,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     names = co->co_names;
     consts = co->co_consts;
     fastlocals = f->f_localsptr;
-    freevars = f->f_localsptr + co->co_nlocals;
+    freevars = f->f_localsptr + _PyCode_NUM_LOCALVARS(co);
     assert(PyBytes_Check(co->co_code));
     assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
     assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
@@ -1825,7 +1825,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             if (value == NULL) {
                 format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                                      UNBOUNDLOCAL_ERROR_MSG,
-                                     PyTuple_GetItem(co->co_varnames, oparg));
+                                     _PyCode_GET_LOCALVAR(co, oparg));
                 goto error;
             }
             Py_INCREF(value);
@@ -3053,7 +3053,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             format_exc_check_arg(
                 tstate, PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
-                PyTuple_GetItem(co->co_varnames, oparg)
+                _PyCode_GET_LOCALVAR(co, oparg)
                 );
             goto error;
         }
@@ -3081,10 +3081,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *name, *value, *locals = LOCALS();
             Py_ssize_t idx;
             assert(locals);
-            assert(oparg >= PyTuple_GET_SIZE(co->co_cellvars));
-            idx = oparg - PyTuple_GET_SIZE(co->co_cellvars);
-            assert(idx >= 0 && idx < PyTuple_GET_SIZE(co->co_freevars));
-            name = PyTuple_GET_ITEM(co->co_freevars, idx);
+            // XXX Hide the layout away.
+            assert(oparg >= _PyCode_NUM_CELLVARS(co));
+            idx = oparg - _PyCode_NUM_CELLVARS(co);
+            assert(idx >= 0 && idx < _PyCode_NUM_FREEVARS(co));
+            name = _PyCode_GET_FREEVAR(co, idx);
             if (PyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
                 if (value != NULL) {
@@ -4658,7 +4659,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
     }
     for (i = start; i < end; i++) {
         if (GETLOCAL(i) == NULL) {
-            PyObject *raw = PyTuple_GET_ITEM(co->co_varnames, i);
+            PyObject *raw = _PyCode_GET_LOCALVAR(co, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
                 Py_DECREF(missing_names);
@@ -4739,7 +4740,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
     PyObject* posonly_names = PyList_New(0);
 
     for(int k=0; k < co->co_posonlyargcount; k++){
-        PyObject* posonly_name = PyTuple_GET_ITEM(co->co_varnames, k);
+        PyObject* posonly_name = _PyCode_GET_LOCALVAR(co, k);
 
         for (int k2=0; k2<kwcount; k2++){
             /* Compare the pointers first and fallback to PyObject_RichCompareBool*/
@@ -4881,7 +4882,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 {
     PyCodeObject *co = (PyCodeObject*)con->fc_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-    PyObject **freevars = fastlocals + co->co_nlocals;
+    PyObject **freevars = fastlocals + _PyCode_NUM_LOCALVARS(co);
 
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
@@ -4941,7 +4942,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
             /* Speed hack: do raw pointer compares. As names are
             normally interned this should almost always hit. */
-            co_varnames = ((PyTupleObject *)(co->co_varnames))->ob_item;
+            co_varnames = _PyCode_LOCALVARS_ARRAY(co);
             for (j = co->co_posonlyargcount; j < total_args; j++) {
                 PyObject *varname = co_varnames[j];
                 if (varname == keyword) {
@@ -5039,7 +5040,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         for (i = co->co_argcount; i < total_args; i++) {
             if (GETLOCAL(i) != NULL)
                 continue;
-            PyObject *varname = PyTuple_GET_ITEM(co->co_varnames, i);
+            PyObject *varname = _PyCode_GET_LOCALVAR(co, i);
             if (con->fc_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
                 if (def) {
@@ -5062,7 +5063,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     /* Allocate and initialize storage for cell vars, and copy free
        vars into frame. */
-    for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
+    for (i = 0; i < _PyCode_NUM_CELLVARS(co); ++i) {
         PyObject *c;
         Py_ssize_t arg;
         /* Possibly account for the cell variable being an argument. */
@@ -5077,14 +5078,14 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
         if (c == NULL)
             goto fail;
-        SETLOCAL(co->co_nlocals + i, c);
+        SETLOCAL(_PyCode_NUM_LOCALVARS(co) + i, c);
     }
 
     /* Copy closure variables to free variables */
-    for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
+    for (i = 0; i < _PyCode_NUM_FREEVARS(co); ++i) {
         PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
         Py_INCREF(o);
-        freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
+        freevars[_PyCode_NUM_CELLVARS(co) + i] = o;
     }
 
     return 0;
@@ -6417,16 +6418,14 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     /* Don't stomp existing exception */
     if (_PyErr_Occurred(tstate))
         return;
-    if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
-        name = PyTuple_GET_ITEM(co->co_cellvars,
-                                oparg);
+    if (oparg < _PyCode_NUM_CELLVARS(co)) {
+        name = _PyCode_GET_CELLVAR(co, oparg);
         format_exc_check_arg(tstate,
             PyExc_UnboundLocalError,
             UNBOUNDLOCAL_ERROR_MSG,
             name);
     } else {
-        name = PyTuple_GET_ITEM(co->co_freevars, oparg -
-                                PyTuple_GET_SIZE(co->co_cellvars));
+        name = _PyCode_GET_FREEVAR(co, oparg - _PyCode_NUM_CELLVARS(co));
         format_exc_check_arg(tstate, PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }
@@ -6476,7 +6475,7 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         case STORE_DEREF:
         {
             PyObject **freevars = (f->f_localsptr +
-                                   f->f_code->co_nlocals);
+                                   _PyCode_NUM_LOCALVARS(f->f_code));
             PyObject *c = freevars[oparg];
             if (PyCell_GET(c) ==  v) {
                 PyCell_SET(c, NULL);
