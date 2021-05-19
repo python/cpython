@@ -334,7 +334,7 @@ Barrier
 
    A barrier object.  Not thread-safe.
 
-   This class, a clone of :class:`threading.Barrier`, provides a simple synchronization
+   This class, as a clone of :class:`threading.Barrier`, provides a simple synchronization
    primitive for use by a fixed number of tasks that need to wait for each other.
    Each of the task tries to pass the barrier by calling the :meth:`~Barrier.wait` method
    and will block until all of the tasks have made their :meth:`~Barrier.wait` calls.
@@ -351,29 +351,31 @@ Barrier
        import random
 
        DELAYS = (1.0, 4.0, 2.0, 0.5)
+       NB = 10
 
        def job_done():
-          msg = "ACTION: All files are removed"
+          msg = 'ACTION: All files removed'
           print(f'{os.linesep}{msg:-^80s}{os.linesep}')
 
        async def remove_file(barrier, filename):
-          print(f'Remove "{filename}" ...')
+          print(f'Remove {filename!r} ...')
 
-          # remove filename
-          await asyncio.sleep(random.choice(DELAYS)) # simulate operation
-          print(f'\t"{filename}" is removed')
+          # remove filename (simulation)
+          await asyncio.sleep(random.choice(DELAYS))
+          print(f'\tFile {filename!r} is removed')
 
+          # wait for others files
           return await barrier.wait()
 
        async def remove_folder(barrier, folder):
-          print(f'Waiting for remove all files from folder "{folder}" ...')
+          print(f'Waiting for remove all files from folder {folder!r} ...')
 
           # wait for all removed files
           await barrier.wait()
 
-          # remove folder
-          await asyncio.sleep(1.0) # simulates operation
-          print(f'Folder "{folder}" is now removed ...')
+          # remove folder (simulation)
+          await asyncio.sleep(1.0)
+          print(f'Folder {folder!r} is now removed ...')
 
           return -1
 
@@ -392,12 +394,12 @@ Barrier
           # Wait until folder+filenames are removed.
           await asyncio.gather(*tasks)
 
-       asyncio.run(main("Datas", [f"file{i+1:02d}.txt" for i in range(10)], 10))
+       asyncio.run(main("Datas", [f'file{i+1:02d}.txt' for i in range(NB)], NB))
 
 .. class:: Barrier(parties, action=None)
 
    Create a barrier object for *parties* number of tasks.  A callable *action*, when
-   provided, is called once at the begining of draining.
+   provided, is called once just before the release phasis (draining state).
 
    .. coroutinemethod:: wait()
 
@@ -414,9 +416,9 @@ Barrier
              # Only one tasks needs to print this
              print(f"I have the position #{file_position}")
 
-      If an *action* was provided to the constructor, the last calling task of :meth:`wait` method will
-      have called it prior to being released.  Should this call raise an error,
-      the barrier is put into the broken state.
+      If an *action* was provided to the constructor, the last calling task of
+      :meth:`wait` method will have called it prior to being released.
+      Should this call raise an error, the barrier is put into the broken state.
 
       This method may raise a :class:`BrokenBarrierError` exception if the
       barrier is broken or reset while a task is waiting.
@@ -432,7 +434,8 @@ Barrier
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
-      Use this for example if one of the taks needs to abort, to avoid infinite waiting tasks.
+      Use this for example if one of the taks needs to abort, to avoid infinite
+      waiting tasks.
 
    .. attribute:: parties
 
