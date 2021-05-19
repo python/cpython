@@ -2148,12 +2148,6 @@ function PyGC_Enable
 function PyGC_IsEnabled
     added 3.10
 
-# New unicode split functions which support the keepempty flag (https://bugs.python.org/issue28937)
-
-function PyUnicode_SplitWithKeepempty
-    added 3.10
-function PyUnicode_RSplitWithKeepempty
-    added 3.10
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)

@@ -13121,15 +13121,6 @@ PyUnicode_Split(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
     return split(s, sep, maxsplit, prune);
 }
 
-PyObject *
-PyUnicode_SplitWithKeepempty(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
-{
-    if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
-        return NULL;
-
-    return split(s, sep, maxsplit, ! keepempty);
-}
-
 /*[clinic input]
 str.split as unicode_split
 
@@ -13339,15 +13330,6 @@ PyUnicode_RSplit(PyObject *s, PyObject *sep, Py_ssize_t maxsplit)
     prune = (sep == Py_None) ? 1 : 0;
 
     return rsplit(s, sep, maxsplit, prune);
-}
-
-PyObject *
-PyUnicode_RSplitWithKeepempty(PyObject *s, PyObject *sep, Py_ssize_t maxsplit, int keepempty)
-{
-    if (ensure_unicode(s) < 0 || (sep != NULL && ensure_unicode(sep) < 0))
-        return NULL;
-
-    return rsplit(s, sep, maxsplit, ! keepempty);
 }
 
 /*[clinic input]

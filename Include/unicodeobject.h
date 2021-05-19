@@ -854,15 +854,6 @@ PyAPI_FUNC(PyObject*) PyUnicode_Split(
     Py_ssize_t maxsplit         /* Maxsplit count */
     );
 
-/* Ditto, but also take a flag indicating whether to keep or remove empty strings */
-
-PyAPI_FUNC(PyObject*) PyUnicode_SplitWithKeepempty(
-    PyObject *s,                /* String to split */
-    PyObject *sep,              /* String separator */
-    Py_ssize_t maxsplit,        /* Maxsplit count */
-    int keepempty               /* Whether to remove empty strings */
-    );
-
 /* Dito, but split at line breaks.
 
    CRLF is considered to be one line break. Line breaks are not
@@ -905,15 +896,6 @@ PyAPI_FUNC(PyObject*) PyUnicode_RSplit(
     PyObject *s,                /* String to split */
     PyObject *sep,              /* String separator */
     Py_ssize_t maxsplit         /* Maxsplit count */
-    );
-
-/* Ditto, but also take a flag indicating whether to keep or remove empty strings */
-
-PyAPI_FUNC(PyObject*) PyUnicode_RSplitWithKeepempty(
-    PyObject *s,                /* String to split */
-    PyObject *sep,              /* String separator */
-    Py_ssize_t maxsplit,        /* Maxsplit count */
-    int keepempty               /* Whether to remove empty strings */
     );
 
 /* Translate a string by applying a character mapping table to it and
