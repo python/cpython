@@ -151,102 +151,6 @@ validate_and_copy_tuple(PyObject *tup)
 
 
 /******************
- * fast locals
- ******************/
-
-bool
-_PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
-{
-    if (kind & CO_FAST_POSONLY && co->co_posonlyargcount > 0) {
-        return true;
-    }
-    if (kind & CO_FAST_POSORKW &&
-            co->co_argcount - co->co_posonlyargcount > 0) {
-        return true;
-    }
-    if (kind & CO_FAST_VARARGS && co->co_flags & CO_VARARGS) {
-        return true;
-    }
-    if (kind & CO_FAST_KWONLY && co->co_kwonlyargcount > 0) {
-        return true;
-    }
-    if (kind & CO_FAST_VARKWARGS && co->co_flags & CO_VARKEYWORDS) {
-        return true;
-    }
-
-    if (kind & CO_FAST_LOCALONLY) {
-        Py_ssize_t totalargs = (Py_ssize_t)co->co_argcount +
-                               (Py_ssize_t)co->co_kwonlyargcount +
-                               ((co->co_flags & CO_VARARGS) != 0) +
-                               ((co->co_flags & CO_VARKEYWORDS) != 0);
-        if (co->co_nlocals - totalargs) {
-            return true;
-        }
-    }
-
-    if (kind & CO_FAST_CELL && PyTuple_GET_SIZE(co->co_cellvars)) {
-        return true;
-    }
-
-    if (kind & CO_FAST_FREE && PyTuple_GET_SIZE(co->co_freevars)) {
-        return true;
-    }
-
-    return false;
-}
-
-Py_ssize_t
-_PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
-{
-    if (co->co_cell2arg == 0) {
-        return -1;
-    }
-    Py_ssize_t ncellvars = PyTuple_GET_SIZE(co->co_cellvars);
-    for (Py_ssize_t i = 0; i < ncellvars; i++) {
-        if (co->co_cell2arg[i] == offset) {
-            return co->co_nlocals + i;
-        }
-    }
-    return -1;
-}
-
-Py_ssize_t
-_PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
-                             _PyFastLocalKind kind)
-{
-    Py_ssize_t baseoffset;
-    PyObject *names = NULL;
-    switch (kind) {
-        case CO_FAST_LOCAL:
-            names = co->co_varnames;
-            baseoffset = 0;
-            break;
-        case CO_FAST_CELL:
-            names = co->co_cellvars;
-            baseoffset = co->co_nlocals;
-            break;
-        case CO_FAST_FREE:
-            names = co->co_freevars;
-            baseoffset = co->co_nlocals + PyTuple_GET_SIZE(co->co_cellvars);
-            break;
-        default:
-            return -1;
-    }
-    if (names == NULL) {
-        return -1;
-    }
-    Py_ssize_t namecount = PyTuple_GET_SIZE(names);
-    for (Py_ssize_t i = 0; i < namecount; i++) {
-        PyObject *name = PyTuple_GET_ITEM(names, i);
-        assert(PyUnicode_Check(name));
-        if (_PyUnicode_EqualToASCIIId(name, id)) {
-            return baseoffset + i;
-        }
-    }
-    return -1;
-}
-
-/******************
  * _PyCode_New()
  ******************/
 
@@ -628,6 +532,103 @@ failed:
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
     return result;
+}
+
+
+/******************
+ * fast locals
+ ******************/
+
+bool
+_PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
+{
+    if (kind & CO_FAST_POSONLY && co->co_posonlyargcount > 0) {
+        return true;
+    }
+    if (kind & CO_FAST_POSORKW &&
+            co->co_argcount - co->co_posonlyargcount > 0) {
+        return true;
+    }
+    if (kind & CO_FAST_VARARGS && co->co_flags & CO_VARARGS) {
+        return true;
+    }
+    if (kind & CO_FAST_KWONLY && co->co_kwonlyargcount > 0) {
+        return true;
+    }
+    if (kind & CO_FAST_VARKWARGS && co->co_flags & CO_VARKEYWORDS) {
+        return true;
+    }
+
+    if (kind & CO_FAST_LOCALONLY) {
+        Py_ssize_t totalargs = (Py_ssize_t)co->co_argcount +
+                               (Py_ssize_t)co->co_kwonlyargcount +
+                               ((co->co_flags & CO_VARARGS) != 0) +
+                               ((co->co_flags & CO_VARKEYWORDS) != 0);
+        if (co->co_nlocals - totalargs) {
+            return true;
+        }
+    }
+
+    if (kind & CO_FAST_CELL && PyTuple_GET_SIZE(co->co_cellvars)) {
+        return true;
+    }
+
+    if (kind & CO_FAST_FREE && PyTuple_GET_SIZE(co->co_freevars)) {
+        return true;
+    }
+
+    return false;
+}
+
+Py_ssize_t
+_PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
+{
+    if (co->co_cell2arg == 0) {
+        return -1;
+    }
+    Py_ssize_t ncellvars = PyTuple_GET_SIZE(co->co_cellvars);
+    for (Py_ssize_t i = 0; i < ncellvars; i++) {
+        if (co->co_cell2arg[i] == offset) {
+            return co->co_nlocals + i;
+        }
+    }
+    return -1;
+}
+
+Py_ssize_t
+_PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
+                             _PyFastLocalKind kind)
+{
+    Py_ssize_t baseoffset;
+    PyObject *names = NULL;
+    switch (kind) {
+        case CO_FAST_LOCAL:
+            names = co->co_varnames;
+            baseoffset = 0;
+            break;
+        case CO_FAST_CELL:
+            names = co->co_cellvars;
+            baseoffset = co->co_nlocals;
+            break;
+        case CO_FAST_FREE:
+            names = co->co_freevars;
+            baseoffset = co->co_nlocals + PyTuple_GET_SIZE(co->co_cellvars);
+            break;
+        default:
+            return -1;
+    }
+    if (names == NULL) {
+        return -1;
+    }
+    Py_ssize_t namecount = PyTuple_GET_SIZE(names);
+    for (Py_ssize_t i = 0; i < namecount; i++) {
+        PyObject *name = PyTuple_GET_ITEM(names, i);
+        assert(PyUnicode_Check(name));
+        if (_PyUnicode_EqualToASCIIId(name, id)) {
+            return baseoffset + i;
+        }
+    }
+    return -1;
 }
 
 
