@@ -7,7 +7,7 @@ con = sqlite3.connect("mydb")
 cur = con.cursor()
 
 # Execute the SELECT statement:
-cur.execute("select * from people order by age")
+cur.execute("select * from lang order by first_appeared")
 
 # Retrieve all rows as a sequence and print that sequence:
 print(cur.fetchall())
