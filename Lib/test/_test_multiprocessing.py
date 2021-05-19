@@ -184,6 +184,14 @@ class BaseTestCase(object):
 
     ALLOWED_TYPES = ('processes', 'manager', 'threads')
 
+    def get_families(self):
+        fams = set(self.connection.families)
+        if not socket_helper.IPV6_ENABLED:
+            fams -= {'AF_INET6'}
+        if not socket_helper.IPV4_ENABLED:
+            fams -= {'AF_INET'}
+        return fams
+
     def assertTimingAlmostEqual(self, a, b):
         if CHECK_TIMINGS:
             self.assertAlmostEqual(a, b, 1)
@@ -3284,7 +3292,7 @@ class _TestListener(BaseTestCase):
     ALLOWED_TYPES = ('processes',)
 
     def test_multiple_bind(self):
-        for family in self.connection.families:
+        for family in self.get_families():
             l = self.connection.Listener(family=family)
             self.addCleanup(l.close)
             self.assertRaises(OSError, self.connection.Listener,
@@ -3324,7 +3332,7 @@ class _TestListenerClient(BaseTestCase):
         conn.close()
 
     def test_listener_client(self):
-        for family in self.connection.families:
+        for family in self.get_families():
             l = self.connection.Listener(family=family)
             p = self.Process(target=self._test, args=(l.address,))
             p.daemon = True
@@ -3351,7 +3359,7 @@ class _TestListenerClient(BaseTestCase):
         l.close()
 
     def test_issue16955(self):
-        for fam in self.connection.families:
+        for fam in self.get_families():
             l = self.connection.Listener(family=fam)
             c = self.connection.Client(l.address)
             a = l.accept()
@@ -3464,7 +3472,8 @@ class _TestPicklingConnections(BaseTestCase):
             new_conn.close()
             l.close()
 
-        l = socket.create_server((socket_helper.HOST, 0))
+        l = socket.create_server((socket_helper.HOST, 0),
+                                 family=socket_helper.get_family())
         conn.send(l.getsockname())
         new_conn, addr = l.accept()
         conn.send(new_conn)
@@ -3481,7 +3490,7 @@ class _TestPicklingConnections(BaseTestCase):
             client.close()
 
         address, msg = conn.recv()
-        client = socket.socket()
+        client = socket_helper.tcp_socket()
         client.connect(address)
         client.sendall(msg.upper())
         client.close()
@@ -3489,7 +3498,7 @@ class _TestPicklingConnections(BaseTestCase):
         conn.close()
 
     def test_pickling(self):
-        families = self.connection.families
+        families = self.get_families()
 
         lconn, lconn0 = self.Pipe()
         lp = self.Process(target=self._listener, args=(lconn0, families))
@@ -4638,7 +4647,7 @@ class TestWait(unittest.TestCase):
 
     @classmethod
     def _child_test_wait_socket(cls, address, slow):
-        s = socket.socket()
+        s = socket_helper.tcp_socket()
         s.connect(address)
         for i in range(10):
             if slow:
@@ -4648,7 +4657,8 @@ class TestWait(unittest.TestCase):
 
     def test_wait_socket(self, slow=False):
         from multiprocessing.connection import wait
-        l = socket.create_server((socket_helper.HOST, 0))
+        l = socket.create_server((socket_helper.HOST, 0),
+                                 family=socket_helper.get_family())
         addr = l.getsockname()
         readers = []
         procs = []
@@ -4836,7 +4846,8 @@ class TestTimeouts(unittest.TestCase):
         try:
             socket.setdefaulttimeout(0.1)
             parent, child = multiprocessing.Pipe(duplex=True)
-            l = multiprocessing.connection.Listener(family='AF_INET')
+            l = multiprocessing.connection.Listener(
+                    family=socket_helper.get_family().name)
             p = multiprocessing.Process(target=self._test_timeout,
                                         args=(child, l.address))
             p.start()
@@ -4910,11 +4921,11 @@ class TestCloseFds(unittest.TestCase):
             # The child process will not have any socket handles, so
             # calling socket.fromfd() should produce WSAENOTSOCK even
             # if there is a handle of the same number.
-            return socket.socket().detach()
+            return socket_helper.tcp_socket().detach()
         else:
             # We want to produce a socket with an fd high enough that a
             # freshly created child process will not have any fds as high.
-            fd = socket.socket().detach()
+            fd = socket_helper.tcp_socket().detach()
             to_close = []
             while fd < 50:
                 to_close.append(fd)
@@ -4925,7 +4936,7 @@ class TestCloseFds(unittest.TestCase):
 
     def close(self, fd):
         if WIN32:
-            socket.socket(socket.AF_INET, socket.SOCK_STREAM, fileno=fd).close()
+            socket.socket(socket_helper.get_family(), socket.SOCK_STREAM, fileno=fd).close()
         else:
             os.close(fd)
 
