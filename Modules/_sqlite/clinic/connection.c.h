@@ -2,24 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(pysqlite_connection_statement_cache__doc__,
-"statement_cache($self, /)\n"
-"--\n"
-"\n"
-"Return the connection statement cache.");
-
-#define PYSQLITE_CONNECTION_STATEMENT_CACHE_METHODDEF    \
-    {"statement_cache", (PyCFunction)pysqlite_connection_statement_cache, METH_NOARGS, pysqlite_connection_statement_cache__doc__},
-
-static PyObject *
-pysqlite_connection_statement_cache_impl(pysqlite_Connection *self);
-
-static PyObject *
-pysqlite_connection_statement_cache(pysqlite_Connection *self, PyObject *Py_UNUSED(ignored))
-{
-    return pysqlite_connection_statement_cache_impl(self);
-}
-
 PyDoc_STRVAR(pysqlite_connection_cursor__doc__,
 "cursor($self, /, factory=<unrepresentable>)\n"
 "--\n"
@@ -728,4 +710,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=9620be094a4fea95 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1bf09db3bcd0105 input=a9049054013a1b77]*/

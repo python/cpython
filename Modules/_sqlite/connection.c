@@ -330,20 +330,6 @@ error:
 
 
 /*[clinic input]
-_sqlite3.Connection.statement_cache as pysqlite_connection_statement_cache
-
-Return the connection statement cache.
-[clinic start generated code]*/
-
-static PyObject *
-pysqlite_connection_statement_cache_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=a88b63d0c46650ba input=32465d5ec271ca8c]*/
-{
-    return Py_NewRef(self->statement_cache);
-}
-
-
-/*[clinic input]
 _sqlite3.Connection.cursor as pysqlite_connection_cursor
 
     factory: object = NULL
@@ -1954,7 +1940,6 @@ static PyMethodDef connection_methods[] = {
     PYSQLITE_CONNECTION_SET_AUTHORIZER_METHODDEF
     PYSQLITE_CONNECTION_SET_PROGRESS_HANDLER_METHODDEF
     PYSQLITE_CONNECTION_SET_TRACE_CALLBACK_METHODDEF
-    PYSQLITE_CONNECTION_STATEMENT_CACHE_METHODDEF
     {NULL, NULL}
 };
 

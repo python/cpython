@@ -197,33 +197,6 @@ class ConnectionTests(unittest.TestCase):
         gc_collect()
 
 
-class StatementCacheTests(unittest.TestCase):
-    def test_statement_cache(self):
-        query = 'select * from sqlite_master'
-        cx = sqlite.connect(':memory:')
-        cx.execute(query)  # cache miss
-        cx.execute(query)  # cache hit
-        cache = cx.statement_cache()
-        info = cache.cache_info()
-        self.assertEqual(info.hits, 1)
-        self.assertEqual(info.misses, 1)
-        self.assertEqual(info.maxsize, 128)
-        self.assertEqual(info.currsize, 1)
-
-    def test_statement_cache_maxsize(self):
-        maxsize = 8
-        testsize = maxsize + 1
-        cx = sqlite.connect(':memory:', cached_statements=maxsize)
-        for i in range(testsize):
-            cx.execute(f'select {i}')
-        cache = cx.statement_cache()
-        info = cache.cache_info()
-        self.assertEqual(info.hits, 0)
-        self.assertEqual(info.misses, testsize)
-        self.assertEqual(info.maxsize, maxsize)
-        self.assertEqual(info.currsize, maxsize)
-
-
 class CursorTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
@@ -975,7 +948,6 @@ def suite():
         ExtensionTests,
         ModuleTests,
         SqliteOnConflictTests,
-        StatementCacheTests,
         ThreadTests,
     ]
     return unittest.TestSuite(
