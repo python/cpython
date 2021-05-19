@@ -696,7 +696,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
             return NULL;
         }
         if (sql_len >= self->connection->max_length) {
-            PyErr_SetString(PyExc_OverflowError, "query string is too large");
+            PyErr_SetString(pysqlite_DataError, "query string is too large");
             return NULL;
         }
     } else {
