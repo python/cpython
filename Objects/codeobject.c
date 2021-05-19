@@ -424,7 +424,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
 
 
 /******************
- * the "constructors"
+ * the legacy "constructors"
  ******************/
 
 PyCodeObject *
