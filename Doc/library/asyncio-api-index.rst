@@ -194,6 +194,8 @@ Threading-like synchronization primitives that can be used in Tasks.
 
 * :ref:`Using asyncio.Event <asyncio_example_sync_event>`.
 
+* :ref:`Using asyncio.Barrier <asyncio_example_barrier>`.
+
 * See also the documentation of asyncio
   :ref:`synchronization primitives <asyncio-sync>`.
 
@@ -213,6 +215,9 @@ Exceptions
 
     * - :exc:`asyncio.CancelledError`
       - Raised when a Task is cancelled. See also :meth:`Task.cancel`.
+
+    * - :exc:`asyncio.BrokenBarrierError`
+      - Raised when a Barrier is broken. See also :meth:`Barrier.wait`.
 
 
 .. rubric:: Examples
