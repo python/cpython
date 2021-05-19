@@ -1,1 +1,2 @@
-Add the `keepempty` argument to `string.split`, `bytes.split`, `bytearray.split` and `UserString.split`.
+Add the ``keepempty`` argument to ``string.split``, ``bytes.split``,
+``bytearray.split`` and ``UserString.split``. Patch by Mark Bell.
