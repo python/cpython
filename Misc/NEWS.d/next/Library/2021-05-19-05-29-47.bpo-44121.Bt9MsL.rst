@@ -1,7 +1,7 @@
 Implemented the :class:`~Lib.logging.__init__.formatHeader` and :class:`~Lib.logging.__init__.formatFooter` of the :class:`~Lib.logging.__init__.BufferingFormatter` class of the :class:`~Lib.logging` package. These changes are backward compatible with their previous use cases:
 
 .. code-block:: python
-   
+
    import logging
    records = [
               logging.makeLogRecord({'msg': 'one'}),
