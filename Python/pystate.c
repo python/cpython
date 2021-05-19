@@ -2026,7 +2026,7 @@ _PyThreadState_PushLocals(PyThreadState *tstate, int size)
     else {
         tstate->datastack_top = top;
     }
-    for (size_t i=0; i < size; i++) {
+    for (int i=0; i < size; i++) {
         res[i] = NULL;
     }
     return res;
