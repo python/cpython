@@ -4816,15 +4816,6 @@ skip_to_next_entry(unsigned char *p, unsigned char *end) {
     return p;
 }
 
-static inline unsigned char *
-parse_range(unsigned char *p, int *start, int*end)
-{
-    p = parse_varint(p, start);
-    int size;
-    p = parse_varint(p, &size);
-    *end = *start + size;
-    return p;
-}
 
 #define MAX_LINEAR_SEARCH 40
 

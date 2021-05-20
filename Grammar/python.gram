@@ -843,7 +843,7 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | a=expression b='=' {
+    | !(NAME '=') a=expression b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
 

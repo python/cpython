@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IDLE &#8212; Python 3.10.0a6 documentation</title>
+    <title>IDLE &#8212; Python 3.11.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
@@ -18,7 +18,7 @@
     <script src="../_static/sidebar.js"></script>
 
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.10.0a6 documentation"
+          title="Search within Python 3.11.0a0 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
@@ -71,7 +71,7 @@
 
 
     <li id="cpython-language-and-version">
-      <a href="../index.html">3.10.0a6 Documentation</a> &#187;
+      <a href="../index.html">3.11.0a0 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -102,7 +102,7 @@
 
   <div class="section" id="idle">
 <span id="id1"></span><h1>IDLE<a class="headerlink" href="#idle" title="Permalink to this headline">¶</a></h1>
-<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/master/Lib/idlelib/">Lib/idlelib/</a></p>
+<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/main/Lib/idlelib/">Lib/idlelib/</a></p>
 <hr class="docutils" id="index-0" />
 <p>IDLE is Python’s Integrated Development and Learning Environment.</p>
 <p>IDLE has the following features:</p>
@@ -581,6 +581,11 @@ user error.  For Python code, at the shell prompt or in an editor, these are
 keywords, builtin class and function names, names following <code class="docutils literal notranslate"><span class="pre">class</span></code> and
 <code class="docutils literal notranslate"><span class="pre">def</span></code>, strings, and comments. For any text window, these are the cursor (when
 present), found text (when possible), and selected text.</p>
+<p>IDLE also highlights the <a class="reference internal" href="../reference/lexical_analysis.html#soft-keywords"><span class="std std-ref">soft keywords</span></a> <a class="reference internal" href="../reference/compound_stmts.html#match"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">match</span></code></a>,
+<a class="reference internal" href="../reference/compound_stmts.html#match"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">case</span></code></a>, and <a class="reference internal" href="../reference/compound_stmts.html#wildcard-patterns"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">_</span></code></a> in
+pattern-matching statements. However, this highlighting is not perfect and
+will be incorrect in some rare cases, including some <code class="docutils literal notranslate"><span class="pre">_</span></code>-s in <code class="docutils literal notranslate"><span class="pre">case</span></code>
+patterns.</p>
 <p>Text coloring is done in the background, so uncolorized text is occasionally
 visible.  To change the color scheme, use the Configure IDLE dialog
 Highlighting tab.  The marking of debugger breakpoint lines in the editor and
@@ -685,7 +690,7 @@ intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
 However, the different interface and operation occasionally affect
 visible results.  For instance, <code class="docutils literal notranslate"><span class="pre">sys.modules</span></code> starts with more entries,
-and <code class="docutils literal notranslate"><span class="pre">threading.activeCount()</span></code> returns 2 instead of 1.</p>
+and <code class="docutils literal notranslate"><span class="pre">threading.active_count()</span></code> returns 2 instead of 1.</p>
 <p>By default, IDLE runs user code in a separate OS process rather than in
 the user interface process that runs the shell and editor.  In the execution
 process, it replaces <code class="docutils literal notranslate"><span class="pre">sys.stdin</span></code>, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code>
@@ -939,7 +944,7 @@ also used for testing.</p>
     <ul class="this-page-menu">
       <li><a href="../bugs.html">Report a Bug</a></li>
       <li>
-        <a href="https://github.com/python/cpython/blob/master/Doc/library/idle.rst"
+        <a href="https://github.com/python/cpython/blob/main/Doc/library/idle.rst"
             rel="nofollow">Show Source
         </a>
       </li>
@@ -971,7 +976,7 @@ also used for testing.</p>
 
 
     <li id="cpython-language-and-version">
-      <a href="../index.html">3.10.0a6 Documentation</a> &#187;
+      <a href="../index.html">3.11.0a0 Documentation</a> &#187;
     </li>
 
           <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
@@ -997,13 +1002,19 @@ also used for testing.</p>
     <div class="footer">
     &copy; <a href="../copyright.html">Copyright</a> 2001-2021, Python Software Foundation.
     <br />
+    This page is licensed under the Python Software Foundation License Version 2.
+    <br />
+    Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
+    <br />
+    See <a href="">History and License</a> for more information.
+    <br /><br />
 
     The Python Software Foundation is a non-profit corporation.
 <a href="https://www.python.org/psf/donations/">Please donate.</a>
 <br />
     <br />
 
-    Last updated on Mar 29, 2021.
+    Last updated on May 11, 2021.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
