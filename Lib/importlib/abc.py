@@ -419,15 +419,26 @@ class Traversable(Protocol):
         """
 
 
-class TraversableResources(ResourceReader):
+@runtime_checkable
+class TraversableReader(Protocol):
     """
-    The required interface for providing traversable
-    resources.
+    An abstract base class for resource readers capable of serving
+    the ``files`` interface. Subclasses ResourceReader and provides
+    concrete implementations of the ResourceReader's abstract
+    methods. Therefore, any loader supplying TraversableReader
+    also supplies ResourceReader.
     """
 
     @abc.abstractmethod
     def files(self):
         """Return a Traversable object for the loaded package."""
+
+
+class TraversableResources(ResourceReader, TraversableReader):
+    """
+    The required interface for providing traversable
+    resources.
+    """
 
     def open_resource(self, resource):
         return self.files().joinpath(resource).open('rb')
