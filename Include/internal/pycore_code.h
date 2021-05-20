@@ -36,12 +36,14 @@ typedef struct {
     int32_t _;
 } EntryZero;
 
+/* Add specialized versions of entries to this union.
+ * Do not break this invariant: sizeof(HotPyCacheEntry) == 8 */
 typedef union {
-    void *place_holder; /* To be removed when other fields are added */
     EntryZero zero;
+    PyObject *object;
 } HotPyCacheEntry;
 
-#define INSTRUCTIONS_PER_ENTRY (sizeof(void *)/sizeof(_Py_CODEUNIT))
+#define INSTRUCTIONS_PER_ENTRY (sizeof(HotPyCacheEntry)/sizeof(_Py_CODEUNIT))
 
 /* Maximum size of code to quicken */
 #define MAX_SIZE_TO_QUICKEN 5000
@@ -58,21 +60,15 @@ HotPyCacheEntry *_HotPy_GetCache(HotPyCacheOrInstruction *quickened, Py_ssize_t 
      return &last_plus_one_entry[-1-index];
 }
 
-void _HotPyQuickenedFree(HotPyCacheOrInstruction *quickened);
-
-/* Returns the number of cache entries required by the code */
-int _HotPyCacheEntriesNeeded(_Py_CODEUNIT *code, int len);
-
-
 static inline
-HotPyCacheEntry *_HotPy_GetCacheFromFirstInstr(_Py_CODEUNIT *first_instr, Py_ssize_t index)
+HotPyCacheEntry *_HotPy_GetCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t index)
 {
     HotPyCacheOrInstruction *last_cache_plus_one = (HotPyCacheOrInstruction *)first_instr;
     assert(&last_cache_plus_one->code[0] == first_instr);
     return &last_cache_plus_one[-1-index].entry;
 }
 
-#define HOTPY_WARMUP 8
+#define HOTPY_INITIAL_WARMUP 8
 
 static inline void
 PyCodeObject_IncrementWarmup(PyCodeObject * co)

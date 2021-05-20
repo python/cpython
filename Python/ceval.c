@@ -1758,7 +1758,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
     tracing_dispatch:
         f->f_lasti = INSTR_OFFSET();
-        NEXTOPARG();
+        /* Get opcode and opcode from original instructions, not quickened form. */
+        _Py_CODEUNIT inst = ((_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code))[INSTR_OFFSET()];
+        opcode = _Py_OPCODE(inst);
+        oparg = _Py_OPARG(inst);
+        next_instr++;
 
         if (PyDTrace_LINE_ENABLED())
             maybe_dtrace_line(f, &trace_info);
