@@ -273,7 +273,7 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range [0.0, 1.0).
+   Return the next random floating point number in the range (0.0, 1.0).
 
 
 .. function:: uniform(a, b)
