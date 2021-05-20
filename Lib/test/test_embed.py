@@ -1484,14 +1484,18 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     @unittest.skipIf(os.name == 'nt',
                      'Py_FrozenMain is not exported on Windows')
     def test_frozenmain(self):
-        out, err = self.run_embedded_interpreter("test_frozenmain")
-        exe = os.path.realpath('./argv0')
+        env = dict(os.environ)
+        env['PYTHONUNBUFFERED'] = '1'
+        out, err = self.run_embedded_interpreter("test_frozenmain", env=env)
+        executable = os.path.realpath('./argv0')
         expected = textwrap.dedent(f"""
             Frozen Hello World
             sys.argv ['./argv0', '-E', 'arg1', 'arg2']
             config program_name: ./argv0
-            config executable: {exe}
+            config executable: {executable}
             config use_environment: 1
+            config configure_c_stdio: 1
+            config buffered_stdio: 0
         """).lstrip()
         self.assertEqual(out, expected)
 
