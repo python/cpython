@@ -69,15 +69,15 @@ Python 的 :keyword:`for` 语句与 C 或 Pascal 中的不同。  Python 的 for
 
 遍历某个集合的同时修改该集合的内容，很难获取想要的结果。要在遍历时修改集合的内容，应该遍历该集合的副本或创建新的集合::
 
-    # Create a sample collection
+    # 创建一个示例集合
     users = {'Hans': 'active', 'Éléonore': 'inactive', '景太郎': 'active'}
 
-    # Strategy:  Iterate over a copy
+    # 策略:迭代一个副本
     for user, status in users.copy().items():
         if status == 'inactive':
             del users[user]
 
-    # Strategy:  Create a new collection
+    # 策略:创建一个新的集合
     active_users = {}
     for user, status in users.items():
         if status == 'active':
@@ -86,11 +86,10 @@ Python 的 :keyword:`for` 语句与 C 或 Pascal 中的不同。  Python 的 for
 
 .. _tut-range:
 
-The :func:`range` Function
+The :func:`range` 函数
 ==========================
 
-If you do need to iterate over a sequence of numbers, the built-in function
-:func:`range` comes in handy.  It generates arithmetic progressions::
+内置函数 :func:`range` 常用于遍历数字序列，该函数可以生成算术级数::
 
     >>> for i in range(5):
     ...     print(i)
@@ -101,10 +100,8 @@ If you do need to iterate over a sequence of numbers, the built-in function
     3
     4
 
-The given end point is never part of the generated sequence; ``range(10)`` generates
-10 values, the legal indices for items of a sequence of length 10.  It
-is possible to let the range start at another number, or to specify a different
-increment (even negative; sometimes this is called the 'step')::
+生成的序列不包含给定的终止数值； ``range(10)`` 生成 10 个值，这是一个长度为 10 的序列，
+其中的元素索引都是合法的。range 可以不从 0 开始，还可以按指定幅度递增（递增幅度称为 '步数'，支持负数）::
 
     range(5, 10)
        5, 6, 7, 8, 9
@@ -115,8 +112,7 @@ increment (even negative; sometimes this is called the 'step')::
     range(-10, -100, -30)
       -10, -40, -70
 
-To iterate over the indices of a sequence, you can combine :func:`range` and
-:func:`len` as follows::
+:func:`range` 和 :func:`len` 组合在一起，可以按索引迭代序列::
 
    >>> a = ['Mary', 'had', 'a', 'little', 'lamb']
    >>> for i in range(len(a)):
@@ -128,51 +124,37 @@ To iterate over the indices of a sequence, you can combine :func:`range` and
    3 little
    4 lamb
 
-In most such cases, however, it is convenient to use the :func:`enumerate`
-function, see :ref:`tut-loopidioms`.
+不过，大多数情况下 :func:`enumerate` 函数更为便捷，详见 :ref:`tut-loopidioms`.
 
-A strange thing happens if you just print a range::
+如果只输出 range，会出现意想不到的结果::
 
    >>> print(range(10))
    range(0, 10)
 
-In many ways the object returned by :func:`range` behaves as if it is a list,
-but in fact it isn't. It is an object which returns the successive items of
-the desired sequence when you iterate over it, but it doesn't really make
-the list, thus saving space.
+:func:`range` 返回对象的操作和列表很像，但其实这两种对象不是一回事。迭代时，该对象基于所需序列返回连续项，并没有生成真正的列表，从而节省了空间。
 
-We say such an object is :term:`iterable`, that is, suitable as a target for
-functions and constructs that expect something from which they can
-obtain successive items until the supply is exhausted.  We have seen that
-the :keyword:`for` statement is such a construct, while an example of a function
-that takes an iterable is :func:`sum`::
+这种对象称为可迭代对象 :term:`iterable`, 函数或程序结构可通过该对象获取连续项，直到所有元素全部迭代完毕。 :keyword:`for` 语句就是这样的架构，
+ :func:`sum` 是一种把可迭代对象作为参数的函数::
 
     >>> sum(range(4))  # 0 + 1 + 2 + 3
     6
 
-Later we will see more functions that return iterables and take iterables as
-arguments.  Lastly, maybe you are curious about how to get a list from a range.
-Here is the solution::
+下文介绍更多返回可迭代对象，或把可迭代对象当作参数的函数。 最后，介绍一种用 range 生成列表解决方案::
 
    >>> list(range(4))
    [0, 1, 2, 3]
 
-In chapter :ref:`tut-structures`, we will discuss in more detail about
-:func:`list`.
+在 :ref:`tut-structures` 章节里, 我们会讨论更多有关:func:`list`。
 
 .. _tut-break:
 
-:keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
+循环中的 :keyword:`!break` 、 :keyword:`!continue` 语句以及 :keyword:`!else` 子句
 ============================================================================================
 
-The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
-:keyword:`for` or :keyword:`while` loop.
+:keyword:`break` 语句和C语言中的类似, 用于跳出最近的:keyword:`for` 或 :keyword:`while` 循环。
 
-Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the iterable (with :keyword:`for`) or when the
-condition becomes false (with :keyword:`while`), but not when the loop is
-terminated by a :keyword:`break` statement.  This is exemplified by the
-following loop, which searches for prime numbers::
+循环语句支持 :keyword:`!else` 子句； :keyword:`for` 循环中，
+可迭代对象中的元素全部循环完毕时，或 :keyword:`while` 循环的条件为假时，执行该子句；:keyword:`break` 语句终止循环时，不执行该子句。 请看下面这个查找素数的循环示例::
 
    >>> for n in range(2, 10):
    ...     for x in range(2, n):
@@ -192,18 +174,16 @@ following loop, which searches for prime numbers::
    8 equals 2 * 4
    9 equals 3 * 3
 
-(Yes, this is the correct code.  Look closely: the ``else`` clause belongs to
-the :keyword:`for` loop, **not** the :keyword:`if` statement.)
+(没错，这段代码就是这么写。仔细看： ``else`` 子句属于 :keyword:`for` 循环, **而非** :keyword:`if` 语句。)
 
 When used with a loop, the ``else`` clause has more in common with the
 ``else`` clause of a :keyword:`try` statement than it does with that of
 :keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
 when no exception occurs, and a loop's ``else`` clause runs when no ``break``
-occurs. For more on the :keyword:`!try` statement and exceptions, see
+occurs. 更多有关 :keyword:`!try` 语句和异常, 详见
 :ref:`tut-handling`.
 
-The :keyword:`continue` statement, also borrowed from C, continues with the next
-iteration of the loop::
+:keyword:`continue` 语句也借鉴自 C 语言，表示继续执行循环的下一次迭代::
 
     >>> for num in range(2, 10):
     ...     if num % 2 == 0:
@@ -222,7 +202,7 @@ iteration of the loop::
 
 .. _tut-pass:
 
-:keyword:`!pass` Statements
+:keyword:`!pass` 语句
 ===========================
 
 The :keyword:`pass` statement does nothing. It can be used when a statement is

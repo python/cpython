@@ -1,92 +1,67 @@
 .. _tut-appendix:
 
 ********
-Appendix
+附录
 ********
 
 
 .. _tut-interac:
 
-Interactive Mode
+交互模式
 ================
 
 .. _tut-error:
 
-Error Handling
+错误处理
 --------------
 
-When an error occurs, the interpreter prints an error message and a stack trace.
-In interactive mode, it then returns to the primary prompt; when input came from
-a file, it exits with a nonzero exit status after printing the stack trace.
-(Exceptions handled by an :keyword:`except` clause in a :keyword:`try` statement
-are not errors in this context.)  Some errors are unconditionally fatal and
-cause an exit with a nonzero exit; this applies to internal inconsistencies and
-some cases of running out of memory.  All error messages are written to the
-standard error stream; normal output from executed commands is written to
-standard output.
+当发生错误时，解释器会打印错误信息和错误堆栈。
+在交互模式下，将返回到主命令提示符；如果输入内容来自文件，
+在打印错误堆栈之后，程序会以非零状态退出。（这里所说的错误不包括 :keyword:`try` 语句中由 :keyword:`except` 所捕获的异常。）
+有些错误是绝对致命的，会导致程序以非零状态退出；比如内部逻辑矛盾或内存耗尽。所有错误信息都会被写入标准错误流；而命令的正常输出则被写入标准输出流。
 
-Typing the interrupt character (usually :kbd:`Control-C` or :kbd:`Delete`) to the primary or
-secondary prompt cancels the input and returns to the primary prompt. [#]_
-Typing an interrupt while a command is executing raises the
-:exc:`KeyboardInterrupt` exception, which may be handled by a :keyword:`try`
-statement.
+将中断字符（通常为 :kbd:`Control-C` 或 :kbd:`Delete` ）键入主要或辅助提示会取消输入并返回主提示符。 [#]_
+在执行命令时键入中断引发的 :exc:`KeyboardInterrupt` 异常，可以由 :keyword:`try` 语句处理。
 
 
 .. _tut-scripts:
 
-Executable Python Scripts
+可执行的Python脚本
 -------------------------
 
-On BSD'ish Unix systems, Python scripts can be made directly executable, like
-shell scripts, by putting the line ::
+在BSD等类Unix系统上，Python脚本可以直接执行，就像shell脚本一样，第一行添加 ::
 
    #!/usr/bin/env python3.5
 
-(assuming that the interpreter is on the user's :envvar:`PATH`) at the beginning
-of the script and giving the file an executable mode.  The ``#!`` must be the
-first two characters of the file.  On some platforms, this first line must end
-with a Unix-style line ending (``'\n'``), not a Windows (``'\r\n'``) line
-ending.  Note that the hash, or pound, character, ``'#'``, is used to start a
-comment in Python.
+(假设解释器位于用户的 :envvar:`PATH`) 脚本的开头，并将文件设置为可执行。 ``#!`` 必须是
+文件的前两个字符。在某些平台上，第一行必须以 Unix样式的行结尾（``'\n'``）结束，而不是以Windows（``'\r\n'``）行结尾。请注意，散列或磅字符 ``'#'`` 在Python中代表注释开始。
 
-The script can be given an executable mode, or permission, using the
-:program:`chmod` command.
+可以使用 :program:`chmod` 命令为脚本提供可执行模式或权限。
 
 .. code-block:: shell-session
 
    $ chmod +x myscript.py
 
-On Windows systems, there is no notion of an "executable mode".  The Python
-installer automatically associates ``.py`` files with ``python.exe`` so that
-a double-click on a Python file will run it as a script.  The extension can
-also be ``.pyw``, in that case, the console window that normally appears is
-suppressed.
+在Windows系统上，没有“可执行模式”的概念。 Python安装程序自动将  ``.py`` 文件与 ``python.exe`` 相关联，
+因此双击Python文件就会将其作为脚本运行。扩展也可以是  ``.pyw`` ，在这种情况下，会隐藏通常出现的控制台窗口。
 
 
 .. _tut-startup:
 
-The Interactive Startup File
+交互式启动文件
 ----------------------------
 
-When you use Python interactively, it is frequently handy to have some standard
-commands executed every time the interpreter is started.  You can do this by
-setting an environment variable named :envvar:`PYTHONSTARTUP` to the name of a
-file containing your start-up commands.  This is similar to the :file:`.profile`
-feature of the Unix shells.
+当您以交互方式使用Python时，每次启动解释器时都会执行一些标准命令，这通常很方便。您可以通过
+将名为 :envvar:`PYTHONSTARTUP` 的环境变量设置为包含启动命令的文件名来实现。这类似于Unix shell的 :file:`.profile`
+功能。
 
-This file is only read in interactive sessions, not when Python reads commands
-from a script, and not when :file:`/dev/tty` is given as the explicit source of
-commands (which otherwise behaves like an interactive session).  It is executed
-in the same namespace where interactive commands are executed, so that objects
-that it defines or imports can be used without qualification in the interactive
-session. You can also change the prompts ``sys.ps1`` and ``sys.ps2`` in this
-file.
+此文件只会在交互式会话时读取，而非在 Python 从脚本读取指令或是在给定 :file:`/dev/tty` 
+为指令的明确来源时（后者反而表现得像是一个交互式会话）。 该文件执行时所在的命名空间与交互式指令相同，
+所以它定义或导入的对象可以在交互式会话中直接使用。 你也可以在该文件中更改提示 ``sys.ps1`` 和 ``sys.ps2`` 。
 
-If you want to read an additional start-up file from the current directory, you
-can program this in the global start-up file using code like ``if
-os.path.isfile('.pythonrc.py'): exec(open('.pythonrc.py').read())``.
-If you want to use the startup file in a script, you must do this explicitly
-in the script::
+如果你想从当前目录中读取一个额外的启动文件，你可以使用像 
+``if os.path.isfile('.pythonrc.py'): exec(open('.pythonrc.py').read())`` 这样的
+代码在全局启动文件中对它进行编程。如果要在脚本中使用启动文件，则必须在脚本中显式执行此操作::
 
    import os
    filename = os.environ.get('PYTHONSTARTUP')
@@ -98,27 +73,23 @@ in the script::
 
 .. _tut-customize:
 
-The Customization Modules
+定制模块
 -------------------------
 
-Python provides two hooks to let you customize it: :mod:`sitecustomize` and
-:mod:`usercustomize`.  To see how it works, you need first to find the location
-of your user site-packages directory.  Start Python and run this code::
+Python提供了两个钩子来让你自定义它： :mod:`sitecustomize` 和
+:mod:`usercustomize`。  要查看其工作原理，首先需要找到用户site-packages目录的位置。启动Python并运行此代码::
 
    >>> import site
    >>> site.getusersitepackages()
    '/home/user/.local/lib/python3.5/site-packages'
 
-Now you can create a file named :file:`usercustomize.py` in that directory and
-put anything you want in it.  It will affect every invocation of Python, unless
-it is started with the :option:`-s` option to disable the automatic import.
+现在，您可以在该目录中创建一个名为 :file:`usercustomize.py` 的文件，并将所需内容放入其中。
+它会影响Python的每次启动，除非它以 :option:`-s` 选项启动，以禁用自动导入。
 
-:mod:`sitecustomize` works in the same way, but is typically created by an
-administrator of the computer in the global site-packages directory, and is
-imported before :mod:`usercustomize`.  See the documentation of the :mod:`site`
-module for more details.
+:mod:`sitecustomize`  以相同的方式工作，但通常由计算机管理员在全局 site-packages 目录中创建，并在
+:mod:`usercustomize`之前被导入。有关详情请参阅 :mod:`site` 模块的文档。
 
 
 .. rubric:: Footnotes
 
-.. [#] A problem with the GNU Readline package may prevent this.
+.. [#] GNU Readline 包的问题可能会阻止这种情况。
