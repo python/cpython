@@ -488,22 +488,19 @@ PyCode_New(int argcount, int kwonlyargcount,
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    static PyObject *emptystring = NULL;
-    static PyObject *nulltuple = NULL;
+    PyObject *emptystring = NULL;
+    PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
+
+    emptystring = PyBytes_FromString("");
     if (emptystring == NULL) {
-        emptystring = PyBytes_FromString("");
-        if (emptystring == NULL) {
-            goto failed;
-        }
+        goto failed;
     }
+    nulltuple = PyTuple_New(0);
     if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL) {
-            goto failed;
-        }
+        goto failed;
     }
     funcname_ob = PyUnicode_FromString(funcname);
     if (funcname_ob == NULL) {
