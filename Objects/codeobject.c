@@ -311,7 +311,7 @@ make_code(struct _PyCodeConstructor *con)
     }
     if (intern_string_constants(con->consts, NULL) < 0) {
         return NULL;
-	}
+        }
     if (intern_strings(con->varnames) < 0) {
         return NULL;
     }

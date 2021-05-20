@@ -55,11 +55,11 @@ struct _PyCodeConstructor {
     int firstlineno;
     PyObject *linetable;
 
-	/* used by the code */
+        /* used by the code */
     PyObject *consts;
     PyObject *names;
 
-	/* mapping frame offsets to information */
+        /* mapping frame offsets to information */
     PyObject *varnames;
     PyObject *cellvars;
     PyObject *freevars;
@@ -72,7 +72,7 @@ struct _PyCodeConstructor {
     /* needed to create the frame */
     int stacksize;
 
-	/* used by the eval loop */
+        /* used by the eval loop */
     PyObject *exceptiontable;
 };
 

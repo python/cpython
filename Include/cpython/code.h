@@ -22,7 +22,7 @@ struct PyCodeObject {
 
     /* Note that not all fields are used in either hash or comparisons. */
 
-	/* metadata */
+        /* metadata */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     /* co_name is used in for both the hash and comparisions.  This is
      * done to preserve the name and line number for tracebacks and
@@ -32,7 +32,7 @@ struct PyCodeObject {
     PyObject *co_name;          /* unicode (name, for reference) */
     int co_flags;               /* CO_..., see below */
 
-	/* the code */
+        /* the code */
     PyObject *co_code;          /* instruction opcodes */
     int co_firstlineno;         /* first source line number */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -42,7 +42,7 @@ struct PyCodeObject {
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
 
-	/* mapping frame offsets to information */
+        /* mapping frame offsets to information */
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
     PyObject *co_freevars;      /* tuple of strings (free variable names) */
@@ -56,7 +56,7 @@ struct PyCodeObject {
     /* needed to create the frame */
     int co_stacksize;           /* #entries needed for evaluation stack */
 
-	/* used by the eval loop */
+        /* used by the eval loop */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
 
     /* other */
