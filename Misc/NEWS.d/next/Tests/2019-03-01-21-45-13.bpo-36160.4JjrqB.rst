@@ -1,2 +1,0 @@
-Fix AttributeError on sysconfig._CONFIG_VARS.clear() if test_site is run
-separately
