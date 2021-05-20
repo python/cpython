@@ -578,7 +578,7 @@ Functions and classes provided:
    The :meth:`close` method is not implemented, :meth:`aclose` must be used
    instead.
 
-   .. method:: enter_async_context(cm)
+   .. coroutinemethod:: enter_async_context(cm)
 
       Similar to :meth:`enter_context` but expects an asynchronous context
       manager.
@@ -592,7 +592,7 @@ Functions and classes provided:
 
       Similar to :meth:`callback` but expects a coroutine function.
 
-   .. method:: aclose()
+   .. coroutinemethod:: aclose()
 
       Similar to :meth:`close` but properly handles awaitables.
 
