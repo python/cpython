@@ -979,6 +979,10 @@ class Thread:
                 _active[self._ident] = self
                 del _limbo[self]
 
+            if _trace_hook:
+                _sys.settrace(_trace_hook)
+            if _profile_hook:
+                _sys.setprofile(_profile_hook)
             global _thread_creation_hook
             if _thread_creation_hook:
                 try:
@@ -988,10 +992,6 @@ class Thread:
                     # profile hooks do.
                     _thread_creation_hook = None
                     raise  # This uncaught exception should find stderr.
-            if _trace_hook:
-                _sys.settrace(_trace_hook)
-            if _profile_hook:
-                _sys.setprofile(_profile_hook)
 
             try:
                 self.run()
