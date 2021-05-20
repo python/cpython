@@ -245,7 +245,7 @@ error:
     return -1;
 }
 
-PyCodeObject *
+static PyCodeObject *
 new_code(void)
 {
     PyCodeObject *co = PyObject_New(PyCodeObject, &PyCode_Type);
@@ -295,7 +295,7 @@ new_code(void)
     return co;
 }
 
-PyCodeObject *
+static PyCodeObject *
 make_code(struct _PyCodeConstructor *con)
 {
     /* Ensure that strings are ready Unicode string */
