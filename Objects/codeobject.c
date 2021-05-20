@@ -400,27 +400,28 @@ PyCode_New(int argcount, int kwonlyargcount,
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    static PyObject *emptystring = NULL;
-    static PyObject *nulltuple = NULL;
+    PyObject *emptystring = NULL;
+    PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
+
+    emptystring = PyBytes_FromString("");
     if (emptystring == NULL) {
-        emptystring = PyBytes_FromString("");
-        if (emptystring == NULL)
-            goto failed;
+        goto failed;
     }
+    nulltuple = PyTuple_New(0);
     if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL)
-            goto failed;
+        goto failed;
     }
     funcname_ob = PyUnicode_FromString(funcname);
-    if (funcname_ob == NULL)
+    if (funcname_ob == NULL) {
         goto failed;
+    }
     filename_ob = PyUnicode_DecodeFSDefault(filename);
-    if (filename_ob == NULL)
+    if (filename_ob == NULL) {
         goto failed;
+    }
 
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
@@ -438,6 +439,8 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     result = _PyCode_New(&con);
 
 failed:
+    Py_XDECREF(emptystring);
+    Py_XDECREF(nulltuple);
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
     return result;
