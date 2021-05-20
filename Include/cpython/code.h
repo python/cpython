@@ -3,6 +3,8 @@
 #endif
 
 typedef uint16_t _Py_CODEUNIT;
+// Each oparg must fit in the second half of _Py_CODEUNIT, hence 8 bits.
+#define _Py_MAX_OPARG 255
 
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
@@ -13,6 +15,11 @@ typedef uint16_t _Py_CODEUNIT;
 #endif
 
 typedef struct _PyOpcache _PyOpcache;
+
+
+// These are duplicated from pycore_code.h.
+typedef unsigned char _PyFastLocalKind;
+typedef _PyFastLocalKind _PyFastLocalKinds[_Py_MAX_OPARG + 1];
 
 /* Bytecode object */
 struct PyCodeObject {
@@ -53,9 +60,8 @@ struct PyCodeObject {
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
-    PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
+    PyObject *co_fastlocalnames;  /* tuple mapping fastlocalsplus to names */
+    _PyFastLocalKinds co_fastlocalkinds; /* array mapping to local kinds */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -70,6 +76,10 @@ struct PyCodeObject {
     int co_nlocals;             /* number of local variables */
     int co_ncellvars;           /* number of cell variables */
     int co_nfreevars;           /* number of free variables */
+    // cached values
+    PyObject *co_varnames;      /* tuple of strings (local variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+    PyObject *co_freevars;      /* tuple of strings (free variable names) */
 
     /* The remaining fields are zeroed out on new code objects. */
 

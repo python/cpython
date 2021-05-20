@@ -1065,8 +1065,9 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         */
         if (co->co_flags & CO_OPTIMIZED) {
             if (map_to_dict(co->co_freevars, co->co_nfreevars, locals,
-                            fast + co->co_nlocals + co->co_ncellvars, 1) < 0)
+                            fast + co->co_nlocals + co->co_ncellvars, 1) < 0) {
                 return -1;
+            }
         }
     }
     return 0;
