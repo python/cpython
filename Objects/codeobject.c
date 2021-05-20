@@ -1524,6 +1524,11 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
         .exceptiontable = (PyObject *)co_exceptiontable,
     };
+    if (co_nlocals != PyTuple_GET_SIZE(con.varnames)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "code: co_nlocals must equal len(co_varnames)");
+        return NULL;
+    }
     return (PyObject *)_PyCode_New(&con);
 }
 
