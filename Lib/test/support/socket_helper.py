@@ -20,20 +20,20 @@ def find_unused_port(family=None, socktype=socket.SOCK_STREAM):
     eliciting an unused ephemeral port from the OS.  The temporary socket is
     then closed and deleted, and the ephemeral port is returned.
 
-    When family is None it will use whichever of socket.AF_INET or
-    socket.AF_INET6 makes sense, finding a port available on both if possible.
+    When family is None, we use to the result of get_family() instead.
 
     Either this method or bind_port() should be used for any tests where a
     server socket needs to be bound to a particular port for the duration of
     the test.  Which one to use depends on whether the calling code is creating
     a python socket, or if an unused port needs to be provided in a constructor
     or passed to an external program (i.e. the -accept argument to openssl's
-    s_server mode).  Always prefer bind_port() over find_unused_port() where
-    possible.  Hard coded ports should *NEVER* be used.  As soon as a server
-    socket is bound to a hard coded port, the ability to run multiple instances
-    of the test simultaneously on the same host is compromised, which makes the
-    test a ticking time bomb in a buildbot environment. On Unix buildbots, this
-    may simply manifest as a failed test, which can be recovered from without
+    s_server mode).  Always prefer bind_port(), bind_ip_socket_and_port(),
+    and get_bound_ip_socket_and_port() over find_unused_port() where possible.
+    Hard coded ports should *NEVER* be used.  As soon as a server socket is
+    bound to a hard coded port, the ability to run multiple instances of the
+    test simultaneously on the same host is compromised, which makes the test a
+    ticking time bomb in a buildbot environment. On Unix buildbots, this may
+    simply manifest as a failed test, which can be recovered from without
     intervention in most cases, but on Windows, the entire python process can
     completely and utterly wedge, requiring someone to log in to the buildbot
     and manually kill the affected process.
@@ -71,42 +71,17 @@ def find_unused_port(family=None, socktype=socket.SOCK_STREAM):
     issue if/when we come across it.
 
     TODO(gpshead): We should support a https://pypi.org/project/portpicker/
-    portserver or equivalent process running on our buildbot hosts and use that
-    that portpicker library...
+    portserver or equivalent running on our buildbot workers and use that
+    that for more reliability at avoiding conflicts between parallel tests.
     """
 
-    if isinstance(family, int):
-        with socket.socket(family, socktype) as tempsock:
-            port = bind_port(tempsock)
-        del tempsock
-    else:
-        if family is not None:  # Assume it's a sequence, it wasn't int|None.
-            families = family
-        else:
-            families = []
-            if IPV4_ENABLED:
-                families.append(socket.AF_INET)
-            if IPV6_ENABLED:
-                families.append(socket.AF_INET6)
-            assert families, "At least one of IPv4 or IPv6 must be enabled."
-        port = 0
-        errors = {}
-        for family in families:
-            try:
-                with socket.socket(family, socktype) as tempsock:
-                    if not port:
-                        port = bind_port(tempsock)
-                    else:
-                        tempsock.bind((HOST, 0))
-                        port = tempsock.getsockname()[1]
-            except OSError as err:
-                errors[family] = err
-                port = 0
-            del tempsock
-        if not port:
-            raise support.TestFailed(
-                    f"Could not bind to a port: {errors}")
+    if family is None:
+        family = get_family()
+    with socket.socket(family, socktype) as tempsock:
+        port = bind_port(tempsock)
+    del tempsock
     return port
+
 
 def bind_port(sock, host=HOST):
     """Bind the socket to a free port and return the port number.  Relies on
@@ -189,10 +164,10 @@ def get_bound_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
 
 @contextlib.contextmanager
 def bind_ip_socket_and_port(*, hostname=HOST, socktype=socket.SOCK_STREAM):
-    """
-    A context manager that creates a socket of socktype bound to hostname
-    using whichever of IPv6 or IPv4 is available.  Context is a (socket, port)
-    tuple.  Exiting the context closes the socket.
+    """A context manager that creates a socket of socktype.
+
+    It uses whichever of IPv6 or IPv4 is available based on get_family().
+    Context is a (socket, port) tuple. The socket is closed on context exit.
     """
     sock, port = get_bound_ip_socket_and_port(
             hostname=hostname, socktype=socktype)

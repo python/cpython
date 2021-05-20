@@ -1397,7 +1397,7 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(socket_helper.IPV4_ENABLED, 'IPv4 required')
     def testSockName(self):
         # Testing getsockname()
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=socket.AF_INET)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
         sock.bind(("0.0.0.0", port))
@@ -1464,7 +1464,7 @@ class GeneralModuleTests(unittest.TestCase):
     def test_getsockaddrarg(self):
         sock = socket_helper.tcp_socket()
         self.addCleanup(sock.close)
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=sock.family)
         big_port = port + 65536
         neg_port = port - 65536
         with self.assertRaises(OverflowError):
@@ -1474,7 +1474,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Since find_unused_port() is inherently subject to race conditions, we
         # call it a couple times if necessary.
         for i in itertools.count():
-            port = socket_helper.find_unused_port()
+            port = socket_helper.find_unused_port(family=sock.family)
             try:
                 sock.bind((HOST, port))
             except OSError as e:
@@ -6493,14 +6493,14 @@ class CreateServerTest(unittest.TestCase):
 
     @unittest.skipUnless(socket_helper.IPV4_ENABLED, 'IPv4 required')
     def test_address_ipv4(self):
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=socket.AF_INET)
         with socket.create_server(("127.0.0.1", port)) as sock:
             self.assertEqual(sock.getsockname()[0], "127.0.0.1")
             self.assertEqual(sock.getsockname()[1], port)
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required')
     def test_address_ipv6(self):
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=socket.AF_INET6)
         with socket.create_server(("::1", port),
                                   family=socket.AF_INET6) as sock:
             self.assertEqual(sock.getsockname()[0], "::1")
@@ -6586,14 +6586,14 @@ class CreateServerFunctionalTest(unittest.TestCase):
 
     @unittest.skipUnless(socket_helper.IPV4_ENABLED, 'IPv4 required')
     def test_tcp4(self):
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=socket.AF_INET)
         with socket.create_server(("", port)) as sock:
             self.echo_server(sock)
             self.echo_client(("127.0.0.1", port), socket.AF_INET)
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
     def test_tcp6(self):
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=socket.AF_INET6)
         with socket.create_server(("", port),
                                   family=socket.AF_INET6) as sock:
             self.echo_server(sock)
@@ -6606,9 +6606,9 @@ class CreateServerFunctionalTest(unittest.TestCase):
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
     @unittest.skipUnless(socket_helper.IPV4_ENABLED, 'IPv4 required.')
     def test_dual_stack_client_v4(self):
-        port = socket_helper.find_unused_port()
-        with socket.create_server(("", port), family=socket.AF_INET6,
+        with socket.create_server(("", 0), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
+            port = sock.getsockname()[1]
             self.echo_server(sock)
             self.echo_client(("127.0.0.1", port), socket.AF_INET)
 
@@ -6616,9 +6616,9 @@ class CreateServerFunctionalTest(unittest.TestCase):
                      "dualstack_ipv6 not supported")
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
     def test_dual_stack_client_v6(self):
-        port = socket_helper.find_unused_port()
-        with socket.create_server(("", port), family=socket.AF_INET6,
+        with socket.create_server(("", 0), family=socket.AF_INET6,
                                   dualstack_ipv6=True) as sock:
+            port = sock.getsockname()[1]
             self.echo_server(sock)
             self.echo_client(("::1", port), socket.AF_INET6)
 

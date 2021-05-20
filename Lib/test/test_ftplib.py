@@ -788,7 +788,7 @@ class TestFTPClass(TestCase):
 
     def test_source_address(self):
         self.client.quit()
-        port = socket_helper.find_unused_port(family=None)
+        port = socket_helper.find_unused_port()
         try:
             self.client.connect(self.server.host, self.server.port,
                                 source_address=(HOST, port))
@@ -800,7 +800,7 @@ class TestFTPClass(TestCase):
             raise
 
     def test_source_address_passive_connection(self):
-        port = socket_helper.find_unused_port(family=None)
+        port = socket_helper.find_unused_port()
         self.client.source_address = (HOST, port)
         try:
             with self.client.transfercmd('list') as sock:

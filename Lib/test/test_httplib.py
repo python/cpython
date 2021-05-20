@@ -1675,7 +1675,7 @@ class OfflineTest(TestCase):
 class SourceAddressTest(TestCase):
     def setUp(self):
         self.serv, self.port = socket_helper.get_bound_ip_socket_and_port()
-        self.source_port = socket_helper.find_unused_port()
+        self.source_port = socket_helper.find_unused_port(family=self.serv.family)
         self.serv.listen()
         self.conn = None
 

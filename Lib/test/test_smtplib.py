@@ -283,7 +283,7 @@ class DebuggingServerTests(unittest.TestCase):
 
     def testSourceAddress(self):
         # connect
-        src_port = socket_helper.find_unused_port()
+        src_port = socket_helper.find_unused_port(family=self.serv.socket.family)
         try:
             smtp = smtplib.SMTP(self.host, self.port, local_hostname='localhost',
                                 timeout=support.LOOPBACK_TIMEOUT,

@@ -939,7 +939,7 @@ class TestHTTPServer(ControlMixin, HTTPServer):
     :param poll_interval: The polling interval in seconds.
     :param log: Pass ``True`` to enable log messages.
     """
-    
+
     address_family = socket_helper.get_family()
 
     def __init__(self, addr, handler, poll_interval=0.5,

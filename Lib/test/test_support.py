@@ -102,16 +102,24 @@ class TestSupport(unittest.TestCase):
 
     @unittest.skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
     def test_find_unused_port_ipv4(self):
-        port = socket_helper.find_unused_port()
+        port = socket_helper.find_unused_port(family=socket.AF_INET)
         s = socket.create_server((socket_helper.HOST, port))
         s.close()
 
     @unittest.skipUnless(socket_helper.IPV6_ENABLED, "IPv6 required")
     def test_find_unused_port_ipv6(self):
+        port = socket_helper.find_unused_port(family=socket.AF_INET6)
+        s = socket.create_server(
+                (socket_helper.HOST, port),
+                family=socket.AF_INET6)
+        s.close()
+
+    def test_find_unused_port_noargs(self):
         port = socket_helper.find_unused_port()
-        with socket.socket(socket.AF_INET6) as s:
-            s.bind((socket_helper.HOST, port))
-            s.listen()
+        s = socket.create_server(
+                (socket_helper.HOST, port),
+                family=socket_helper.get_family())
+        s.close()
 
     @unittest.skipUnless(socket_helper.IPV4_ENABLED, "IPv4 required")
     def test_bind_port_ipv4(self):
