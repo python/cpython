@@ -2063,7 +2063,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
-            PyObject *name = _PyCode_GET_FREEVAR(co, i);
+            PyObject *name = _PyCode_GetFreevar(co, i);
 
             /* Special case: If a class contains a method with a
                free variable that has the same name as a method,

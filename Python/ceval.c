@@ -1648,8 +1648,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     consts = co->co_consts;
     fastlocals = f->f_localsptr;
     freevars = f->f_localsptr + co->co_nlocals;
-    assert(_PyCode_CODE_IS_VALID(co));
-    first_instr = _PyCode_GET_INSTRUCTIONS(co);
+    assert(_PyCode_CodeIsValid(co));
+    first_instr = _PyCode_GetInstructions(co);
     /*
        f->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -1685,7 +1685,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
 #if OPCACHE_STATS
             opcache_code_objects_extra_mem +=
-                _PyCode_NUM_INSTRUCTIONS(co) +
+                _PyCode_NumInstructions(co) +
                 sizeof(_PyOpcache) * co->co_opcache_size;
             opcache_code_objects++;
 #endif
@@ -1822,7 +1822,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             if (value == NULL) {
                 format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                                      UNBOUNDLOCAL_ERROR_MSG,
-                                     _PyCode_GET_LOCALVAR(co, oparg));
+                                     _PyCode_GetLocalvar(co, oparg));
                 goto error;
             }
             Py_INCREF(value);
@@ -3050,7 +3050,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             format_exc_check_arg(
                 tstate, PyExc_UnboundLocalError,
                 UNBOUNDLOCAL_ERROR_MSG,
-                _PyCode_GET_LOCALVAR(co, oparg)
+                _PyCode_GetLocalvar(co, oparg)
                 );
             goto error;
         }
@@ -3082,7 +3082,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             assert(oparg >= co->co_ncellvars);
             idx = oparg - co->co_ncellvars;
             assert(idx >= 0 && idx < co->co_nfreevars);
-            name = _PyCode_GET_FREEVAR(co, idx);
+            name = _PyCode_GetFreevar(co, idx);
             if (PyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
                 if (value != NULL) {
@@ -4656,7 +4656,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
     }
     for (i = start; i < end; i++) {
         if (GETLOCAL(i) == NULL) {
-            PyObject *raw = _PyCode_GET_LOCALVAR(co, i);
+            PyObject *raw = _PyCode_GetLocalvar(co, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
                 Py_DECREF(missing_names);
@@ -4737,7 +4737,7 @@ positional_only_passed_as_keyword(PyThreadState *tstate, PyCodeObject *co,
     PyObject* posonly_names = PyList_New(0);
 
     for(int k=0; k < co->co_posonlyargcount; k++){
-        PyObject* posonly_name = _PyCode_GET_LOCALVAR(co, k);
+        PyObject* posonly_name = _PyCode_GetLocalvar(co, k);
 
         for (int k2=0; k2<kwcount; k2++){
             /* Compare the pointers first and fallback to PyObject_RichCompareBool*/
@@ -4939,7 +4939,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
             /* Speed hack: do raw pointer compares. As names are
             normally interned this should almost always hit. */
-            co_varnames = _PyCode_LOCALVARS_ARRAY(co);
+            co_varnames = _PyCode_LocalvarsArray(co);
             for (j = co->co_posonlyargcount; j < total_args; j++) {
                 PyObject *varname = co_varnames[j];
                 if (varname == keyword) {
@@ -5037,7 +5037,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         for (i = co->co_argcount; i < total_args; i++) {
             if (GETLOCAL(i) != NULL)
                 continue;
-            PyObject *varname = _PyCode_GET_LOCALVAR(co, i);
+            PyObject *varname = _PyCode_GetLocalvar(co, i);
             if (con->fc_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults, varname);
                 if (def) {
@@ -6416,13 +6416,13 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate))
         return;
     if (oparg < co->co_ncellvars) {
-        name = _PyCode_GET_CELLVAR(co, oparg);
+        name = _PyCode_GetCellvar(co, oparg);
         format_exc_check_arg(tstate,
             PyExc_UnboundLocalError,
             UNBOUNDLOCAL_ERROR_MSG,
             name);
     } else {
-        name = _PyCode_GET_FREEVAR(co, oparg - co->co_ncellvars);
+        name = _PyCode_GetFreevar(co, oparg - co->co_ncellvars);
         format_exc_check_arg(tstate, PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }

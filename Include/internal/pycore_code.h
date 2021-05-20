@@ -3,7 +3,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
+
 #include <stdbool.h>
 
 
@@ -87,31 +87,56 @@ PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
 PyAPI_FUNC(Py_ssize_t) _PyCode_CellForLocal(PyCodeObject *, Py_ssize_t);
 
 /* This does not fail.  A negative result means "no match". */
-PyAPI_FUNC(Py_ssize_t)  _PyCode_GetFastlocalOffsetId(PyCodeObject *,
-                                                     _Py_Identifier *,
-                                                     _PyFastLocalKind);
+PyAPI_FUNC(Py_ssize_t) _PyCode_GetFastlocalOffsetId(PyCodeObject *,
+                                                    _Py_Identifier *,
+                                                    _PyFastLocalKind);
 
 // This is a speed hack for use in ceval.c.
-#define _PyCode_LOCALVARS_ARRAY(co) \
-    (((PyTupleObject *)((co)->co_varnames))->ob_item)
-#define _PyCode_GET_LOCALVAR(co, offset) \
-    (PyTuple_GetItem((co)->co_varnames, offset))
+static inline PyObject **
+_PyCode_LocalvarsArray(PyCodeObject *co)
+{
+    return ((PyTupleObject *)(co->co_varnames))->ob_item;
+}
 
-#define _PyCode_GET_CELLVAR(co, offset) \
-    (PyTuple_GetItem((co)->co_cellvars, offset))
+static inline PyObject *
+_PyCode_GetLocalvar(PyCodeObject *co, Py_ssize_t offset)
+{
+    return PyTuple_GetItem(co->co_varnames, offset);
+}
 
-#define _PyCode_GET_FREEVAR(co, offset) \
-    (PyTuple_GetItem((co)->co_freevars, offset))
+static inline PyObject *
+_PyCode_GetCellvar(PyCodeObject *co, Py_ssize_t offset)
+{
+    return PyTuple_GetItem(co->co_cellvars, offset);
+}
 
-#define _PyCode_CODE_IS_VALID(co)                                           \
-    (PyBytes_Check((co)->co_code) &&                                          \
-     PyBytes_GET_SIZE((co)->co_code) <= INT_MAX &&                            \
-     PyBytes_GET_SIZE((co)->co_code) % sizeof(_Py_CODEUNIT) == 0 &&           \
-     _Py_IS_ALIGNED(PyBytes_AS_STRING((co)->co_code), sizeof(_Py_CODEUNIT)))
-#define _PyCode_GET_INSTRUCTIONS(co) \
-    ((_Py_CODEUNIT *) PyBytes_AS_STRING((co)->co_code))
-#define _PyCode_NUM_INSTRUCTIONS(co) \
-    (PyBytes_Size((co)->co_code) / sizeof(_Py_CODEUNIT))
+static inline PyObject *
+_PyCode_GetFreevar(PyCodeObject *co, Py_ssize_t offset)
+{
+    return PyTuple_GetItem(co->co_freevars, offset);
+}
+
+static inline bool
+_PyCode_CodeIsValid(PyCodeObject *co)
+{
+    return PyBytes_Check(co->co_code) &&
+           PyBytes_GET_SIZE(co->co_code) <= INT_MAX &&
+           PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0 &&
+           _Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code),
+                          sizeof(_Py_CODEUNIT));
+}
+
+static inline _Py_CODEUNIT *
+_PyCode_GetInstructions(PyCodeObject *co)
+{
+    return (_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code);
+}
+
+static inline Py_ssize_t
+_PyCode_NumInstructions(PyCodeObject *co)
+{
+    return PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT);
+}
 
 
 #ifdef __cplusplus

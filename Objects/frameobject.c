@@ -167,7 +167,7 @@ top_of_stack(int64_t stack)
 static int64_t *
 mark_stacks(PyCodeObject *code_obj, int len)
 {
-    const _Py_CODEUNIT *code = _PyCode_GET_INSTRUCTIONS(code_obj);
+    const _Py_CODEUNIT *code = _PyCode_GetInstructions(code_obj);
     int64_t *stacks = PyMem_New(int64_t, len+1);
     int i, j, opcode;
 
@@ -480,7 +480,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     /* PyCode_NewWithPosOnlyArgs limits co_code to be under INT_MAX so this
      * should never overflow. */
-    int len = (int)_PyCode_NUM_INSTRUCTIONS(f->f_code);
+    int len = (int)_PyCode_NumInstructions(f->f_code);
     int *lines = marklines(f->f_code, len);
     if (lines == NULL) {
         return -1;
