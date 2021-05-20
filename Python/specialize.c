@@ -38,9 +38,9 @@ get_cache_count(HotPyCacheOrInstruction *quickened) {
     return quickened[0].entry.zero.cache_count;
 }
 
-static uint8_t adaptive[256] = {};
+static uint8_t adaptive[256] = { 0 };
 
-static uint8_t cache_requirements[256] = {};
+static uint8_t cache_requirements[256] = { 0 };
 
 static int
 entries_needed(_Py_CODEUNIT *code, int len)
@@ -110,7 +110,7 @@ optimize(HotPyCacheOrInstruction *quickened, int len)
 }
 
 int
-_HotPy_Quicken(PyCodeObject *code) {
+_Py_Quicken(PyCodeObject *code) {
     Py_ssize_t size = PyBytes_Size(code->co_code);
     int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
     if (instr_count > MAX_SIZE_TO_QUICKEN) {

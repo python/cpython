@@ -1642,7 +1642,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     if (!PyCodeObject_IsWarmedUp(co)) {
         PyCodeObject_IncrementWarmup(co);
         if (PyCodeObject_IsWarmedUp(co)) {
-            if (_HotPy_Quicken(co)) {
+            if (_Py_Quicken(co)) {
                 goto exit_eval_frame;
             }
         }

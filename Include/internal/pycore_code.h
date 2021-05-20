@@ -102,7 +102,7 @@ PyCodeObject_IsWarmedUp(PyCodeObject * co)
     return (co->co_warmup == 0);
 }
 
-int _HotPy_Quicken(PyCodeObject *code);
+int _Py_Quicken(PyCodeObject *code);
 
 /* Private API */
 int _PyCode_InitOpcache(PyCodeObject *co);
