@@ -886,8 +886,10 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     def test_saturation(self):
         executor = self.executor_type(4)
+        submissions_done = threading.Semaphore(0)
         def acquire_lock(lock):
             lock.acquire()
+            submissions_done.release()
 
         sem = threading.Semaphore(0)
         for i in range(15 * executor._max_workers):
@@ -895,6 +897,11 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.assertEqual(len(executor._threads), executor._max_workers)
         for i in range(15 * executor._max_workers):
             sem.release()
+        for i in range(15 * executor._max_workers):
+            submissions_done.acquire(blocking=True)
+        executor.submit(acquire_lock, sem)
+        self.assertEqual(executor._idle_semaphore._value, executor._max_workers - 1)
+        sem.release()
         executor.shutdown(wait=True)
 
     def test_idle_thread_reuse(self):

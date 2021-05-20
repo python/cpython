@@ -143,6 +143,7 @@ class ThreadPoolExecutor(_base.Executor):
         self._max_workers = max_workers
         self._work_queue = queue.SimpleQueue()
         self._idle_semaphore = threading.Semaphore(0)
+        self._idle_overcount = 0
         self._threads = set()
         self._broken = False
         self._shutdown = False
@@ -172,6 +173,9 @@ class ThreadPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):
+        # consume overcounts first, issue #44188
+        while self._idle_overcount > 0 and self._idle_semaphore.acquire(timeout=0):
+            self._idle_overcount -= 1
         # if idle threads are available, don't spin new threads
         if self._idle_semaphore.acquire(timeout=0):
             return
@@ -193,6 +197,8 @@ class ThreadPoolExecutor(_base.Executor):
             t.start()
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
+        else:
+            self._idle_overcount += 1
 
     def _initializer_failed(self):
         with self._shutdown_lock:
