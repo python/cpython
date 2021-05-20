@@ -810,10 +810,71 @@ ABC hierarchy::
 
 .. class:: Traversable
 
-    An object with a subset of pathlib.Path methods suitable for
-    traversing directories and opening files.
+   An object with a subset of pathlib.Path methods suitable for
+   traversing directories and opening files.
 
-    .. versionadded:: 3.9
+   .. versionadded:: 3.9
+
+   .. abstractmethod:: name()
+
+      The base name of this object without any parent references.
+
+   .. abstractmethod:: iterdir()
+
+      Yield Traversable objects in self
+
+   .. abstractmethod:: is_dir()
+
+      Return True if self is a dir
+
+      If the directory/file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
+
+   .. abstractmethod:: is_file()
+
+      Return True if self is a file
+
+      If the directory/file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
+
+   .. abstractmethod:: joinpath(child)
+
+      Return Traversable child in self
+
+      If the file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
+
+   .. abstractmethod:: __truediv__(child)
+
+      Return Traversable child in self
+
+      If the file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
+
+   .. abstractmethod:: open(mode='r', *args, **kwargs)
+
+      *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
+      suitable for reading (same as :attr:`pathlib.Path.open`).
+
+      When opening as text, accepts encoding parameters such as those
+      accepted by :attr:`io.TextIOWrapper`.
+
+      If the file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
+
+   .. method:: read_bytes()
+
+      Read contents of self as bytes
+
+      If the file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
+
+   .. method:: read_text(encoding=None)
+
+      Read contents of self as text
+
+      If the file cannot be found, :exc:`FileNotFoundError` should be raised,
+      although this is not guaranteed for compatibility reasons.
 
 
 .. class:: TraversableReader

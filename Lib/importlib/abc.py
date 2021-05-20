@@ -367,6 +367,9 @@ class Traversable(Protocol):
     def read_bytes(self):
         """
         Read contents of self as bytes
+
+        If the file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
         with self.open('rb') as strm:
             return strm.read()
@@ -374,6 +377,9 @@ class Traversable(Protocol):
     def read_text(self, encoding=None):
         """
         Read contents of self as text
+
+        If the file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
         with self.open(encoding=encoding) as strm:
             return strm.read()
@@ -382,23 +388,35 @@ class Traversable(Protocol):
     def is_dir(self) -> bool:
         """
         Return True if self is a dir
+
+        If the directory/file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
 
     @abc.abstractmethod
     def is_file(self) -> bool:
         """
         Return True if self is a file
+
+        If the directory/file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
 
     @abc.abstractmethod
     def joinpath(self, child):
         """
         Return Traversable child in self
+
+        If the file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
 
     def __truediv__(self, child):
         """
         Return Traversable child in self
+
+        If the file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
         return self.joinpath(child)
 
@@ -410,6 +428,9 @@ class Traversable(Protocol):
 
         When opening as text, accepts encoding parameters such as those
         accepted by io.TextIOWrapper.
+
+        If the file cannot be found, FileNotFoundError should be raised,
+        although this is not guaranteed for compatibility reasons.
         """
 
     @abc.abstractproperty

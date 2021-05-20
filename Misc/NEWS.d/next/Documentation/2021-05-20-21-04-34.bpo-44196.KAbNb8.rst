@@ -1,0 +1,2 @@
+Document that importlib.abc.Traversable methods should raise
+FileNotFoundError.
