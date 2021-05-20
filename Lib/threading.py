@@ -88,15 +88,15 @@ def gettrace():
 def setthreadcreationhook(func):
     """Set a thread creation hook.
 
-    The func will be invoked for each newly created thread, before its run()
-    method is called.
-
+    The func will be invoked exactly once within each newly created thread, before
+    its run() method is called.  It will be passed a single argument: the instance
+    of the thread object itself.
     """
     global _thread_creation_hook
     _thread_creation_hook = func
 
 def getthreadcreationhook():
-    """Get the thread creation hook as set by threading.setthreadcreationhook()."""
+    """Get the thread creation hook as set by setthreadcreationhook()."""
     return _thread_creation_hook
 
 # Synchronization classes
@@ -980,7 +980,7 @@ class Thread:
                 del _limbo[self]
 
             if _thread_creation_hook:
-                _thread_creation_hook()
+                _thread_creation_hook(self)
             if _trace_hook:
                 _sys.settrace(_trace_hook)
             if _profile_hook:
