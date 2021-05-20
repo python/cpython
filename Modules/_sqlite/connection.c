@@ -1856,11 +1856,12 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
              * sqlite3_exec() to avoid accidentally clearing the current
              * exception when rolling back. */
             char *errmsg = NULL;
-            int rc = sqlite3_exec(self->db, "rollback;", NULL, NULL, &errmsg);
-            if (rc != SQLITE_OK) {
-                assert(errmsg != NULL);
-                PyErr_SetString(pysqlite_OperationalError, errmsg);
-                sqlite3_free(errmsg);
+            int rc;
+            Py_BEGIN_ALLOW_THREADS
+            rc = sqlite3_exec(self->db, "rollback;", NULL, NULL, NULL);
+            Py_END_ALLOW_THREADS
+            if (rc != SQLITE_OK && !PyErr_Occurred()) {
+                _pysqlite_seterror(self->db);
             }
         }
         return NULL;
