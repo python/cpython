@@ -107,34 +107,46 @@ intern_string_constants(PyObject *tuple, int *modified)
     return 0;
 }
 
+enum check_mode {
+    FAIL,
+    NOFAIL,
+};
+
+static int
+check_names(PyObject *names, const char *field, enum check_mode mode)
+{
+    assert(names && PyTuple_Check(names));
+    for (Py_ssize_t i = PyTuple_GET_SIZE(names); --i >= 0; ) {
+        PyObject *item = PyTuple_GET_ITEM(names, i);
+        if (!PyUnicode_Check(item)) {
+            if (mode == FAIL) {
+                PyErr_Format(PyExc_TypeError,
+                             "code: %s must be a tuple of names, not '%.500s'",
+                             field, Py_TYPE(item)->tp_name);
+            }
+            return -1;
+        }
+        // We could also check if it is empty or not an identifier.
+    }
+    return 0;
+}
+
 /* Return a shallow copy of a tuple that is
    guaranteed to contain exact strings, by converting string subclasses
    to exact strings and complaining if a non-string is found. */
 static PyObject*
-validate_and_copy_tuple(PyObject *tup)
+copy_names(PyObject *tup)
 {
-    PyObject *newtuple;
-    PyObject *item;
-    Py_ssize_t i, len;
-
-    len = PyTuple_GET_SIZE(tup);
-    newtuple = PyTuple_New(len);
-    if (newtuple == NULL)
+    Py_ssize_t len = PyTuple_GET_SIZE(tup);
+    PyObject *newtuple = PyTuple_New(len);
+    if (newtuple == NULL) {
         return NULL;
+    }
 
-    for (i = 0; i < len; i++) {
-        item = PyTuple_GET_ITEM(tup, i);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *item = PyTuple_GET_ITEM(tup, i);
         if (PyUnicode_CheckExact(item)) {
             Py_INCREF(item);
-        }
-        else if (!PyUnicode_Check(item)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "name tuples must contain only "
-                "strings, not '%.500s'",
-                Py_TYPE(item)->tp_name);
-            Py_DECREF(newtuple);
-            return NULL;
         }
         else {
             item = _PyUnicode_Copy(item);
@@ -155,64 +167,62 @@ validate_and_copy_tuple(PyObject *tup)
  ******************/
 
 static int
-check_code(struct _PyCodeConstructor *con) {
-    if (con->name == NULL || !PyUnicode_Check(con->name)) {
-        goto error;
+check_code(struct _PyCodeConstructor *con, enum check_mode mode)
+{
+#define CHECK_TYPE(field, check, type)                          \
+    if (con->field == NULL || !check(con->field)) {             \
+        if (mode == FAIL) {                                     \
+            PyErr_SetString(                                    \
+                    PyExc_TypeError,                            \
+                    "code: co_" #field " must be a " #type);    \
+        }                                                       \
+        return -1;                                              \
     }
-    if (con->filename == NULL || !PyUnicode_Check(con->filename)) {
-        goto error;
-    }
-    if (con->flags < 0) {
-        goto error;
+#define CHECK_NEG(field)                                            \
+    if (con->field < 0) {                                           \
+        if (mode == FAIL) {                                         \
+            PyErr_SetString(                                        \
+                    PyExc_ValueError,                               \
+                    "code: co_" #field " must not be negative");    \
+        }                                                           \
+        return -1;                                                  \
     }
 
-    if (con->code == NULL || !PyBytes_Check(con->code)) {
-        goto error;
-    }
+    CHECK_TYPE(name, PyUnicode_Check, "string");
+    CHECK_TYPE(filename, PyUnicode_Check, "string");
+    CHECK_NEG(flags);
+
+    CHECK_TYPE(code, PyBytes_Check, "bytes");
     /* Make sure that code is indexable with an int, this is
        a long running assumption in ceval.c and many parts of
        the interpreter. */
     if (PyBytes_GET_SIZE(con->code) > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "code: co_code larger than INT_MAX");
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "code: co_code larger than INT_MAX");
+        }
         return -1;
     }
-    if (con->firstlineno< 0) {
-        goto error;
-    }
-    if (con->linetable == NULL || !PyBytes_Check(con->linetable)) {
-        goto error;
+    CHECK_NEG(firstlineno);
+    CHECK_TYPE(linetable, PyBytes_Check, "bytes");
+
+    if (check_names(con->names, "co_names", mode) < 0) {
+        return -1;
     }
 
-    if (con->consts == NULL || !PyTuple_Check(con->consts)) {
-        goto error;
-    }
-    if (con->names == NULL || !PyTuple_Check(con->names)) {
-        goto error;
-    }
+    CHECK_TYPE(consts, PyTuple_Check, "tuple");
+    CHECK_TYPE(names, PyTuple_Check, "tuple");
 
-    if (con->varnames == NULL || !PyTuple_Check(con->varnames)) {
-        goto error;
-    }
-    if (con->cellvars == NULL || !PyTuple_Check(con->cellvars)) {
-        goto error;
-    }
-    if (con->freevars == NULL || !PyTuple_Check(con->freevars)) {
-        goto error;
-    }
-
-    if (con->argcount < 0) {
-        goto error;
-    }
-    if (con->posonlyargcount < 0) {
-        goto error;
-    }
+    CHECK_NEG(argcount);
+    CHECK_NEG(posonlyargcount);
     if (con->argcount < con->posonlyargcount) {
-        goto error;
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "code: co_code larger than INT_MAX");
+        }
+        return -1;
     }
-    if (con->kwonlyargcount < 0) {
-        goto error;
-    }
+    CHECK_NEG(kwonlyargcount);
     Py_ssize_t nlocals = PyTuple_GET_SIZE(con->varnames);
     Py_ssize_t total_args;
     if (con->argcount <= nlocals && con->kwonlyargcount <= nlocals) {
@@ -226,23 +236,31 @@ check_code(struct _PyCodeConstructor *con) {
         total_args = nlocals + 1;
     }
     if (total_args > nlocals) {
-        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_ValueError, "code: co_varnames is too small");
+        }
         return -1;
     }
 
-    if (con->stacksize < 0) {
-        goto error;
+    CHECK_TYPE(varnames, PyTuple_Check, "tuple");
+    if (check_names(con->varnames, "co_varnames", mode) < 0) {
+        return -1;
+    }
+    CHECK_TYPE(cellvars, PyTuple_Check, "tuple");
+    if (check_names(con->cellvars, "co_cellvars", mode) < 0) {
+        return -1;
+    }
+    CHECK_TYPE(freevars, PyTuple_Check, "tuple");
+    if (check_names(con->freevars, "co_freevars", mode) < 0) {
+        return -1;
     }
 
-    if (con->exceptiontable == NULL || !PyBytes_Check(con->exceptiontable)) {
-        goto error;
-    }
+    CHECK_NEG(stacksize);
+
+#undef CHECK_NEG
+#undef CHECK_TYPE
 
     return 0;
-
-error:
-    PyErr_BadInternalCall();
-    return -1;
 }
 
 static PyCodeObject *
@@ -416,7 +434,8 @@ make_code(struct _PyCodeConstructor *con)
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
-    if (check_code(con) < 0) {
+    if (check_code(con, NOFAIL) < 0) {
+        PyErr_BadInternalCall();
         return NULL;
     }
     return make_code(con);
@@ -426,6 +445,23 @@ _PyCode_New(struct _PyCodeConstructor *con)
 /******************
  * the legacy "constructors"
  ******************/
+
+static int
+check_legacy_code(struct _PyCodeConstructor *con, Py_ssize_t nlocals,
+                  enum check_mode mode)
+{
+    if (check_code(con, mode) < 0) {
+        return -1;
+    }
+    if (nlocals != PyTuple_GET_SIZE(con->varnames)) {
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "code: co_nlocals must equal len(co_varnames)");
+        }
+        return -1;
+    }
+    return 0;
+}
 
 PyCodeObject *
 PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
@@ -459,13 +495,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 
         .exceptiontable = exceptiontable,
     };
-
-    if (check_code(&con) < 0) {
-        return NULL;
-    }
-    if (nlocals != PyTuple_GET_SIZE(con.varnames)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: nlocals must equal len(varnames)");
+    if (check_legacy_code(&con, nlocals, NOFAIL) < 0) {
+        PyErr_BadInternalCall();
         return NULL;
     }
     return make_code(&con);
@@ -1104,10 +1135,15 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
               PyObject *freevars, PyObject *cellvars)
 /*[clinic end generated code: output=a3899259c3b4cace input=f823c686da4b3a03]*/
 {
-    // XXX We should validate the args first.
+    // All the logged values here have already been validated well enough.
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     code, filename, name, argcount, posonlyargcount,
                     kwonlyargcount, nlocals, stacksize, flags) < 0) {
+        return NULL;
+    }
+
+    PyObject *nulltuple = PyTuple_New(0);
+    if (nulltuple == NULL) {
         return NULL;
     }
 
@@ -1124,8 +1160,9 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
         .names = names,
 
         .varnames = varnames,
-        .cellvars = cellvars,
-        .freevars = freevars,
+        // cellvars and freevars are optional.
+        .cellvars = cellvars ? cellvars : nulltuple,
+        .freevars = freevars ? freevars : nulltuple,
 
         .argcount = argcount,
         .posonlyargcount = posonlyargcount,
@@ -1135,71 +1172,43 @@ code_new_impl(PyTypeObject *type, int argcount, int posonlyargcount,
 
         .exceptiontable = exceptiontable,
     };
-    if (con.argcount < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: argcount must not be negative");
-        return NULL;
-    }
-    if (con.posonlyargcount < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: posonlyargcount must not be negative");
-        return NULL;
-    }
-    if (con.kwonlyargcount < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: kwonlyargcount must not be negative");
-        return NULL;
-        goto cleanup;
-    }
-    if (check_code(&con) < 0) {
-        return NULL;
-    }
-    if (nlocals != PyTuple_GET_SIZE(con.varnames)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: nlocals must equal len(varnames)");
-        return NULL;
-    }
 
     PyObject *co = NULL;
-    con.names = NULL;
-    con.varnames = NULL;
-    con.cellvars = NULL;
-    con.freevars = NULL;
+    PyObject *owned_names = NULL;
+    PyObject *owned_varnames = NULL;
+    PyObject *owned_cellvars = NULL;
+    PyObject *owned_freevars = NULL;
 
-    con.names = validate_and_copy_tuple(names);
-    if (con.names == NULL) {
+    if (check_legacy_code(&con, nlocals, FAIL) < 0) {
         goto cleanup;
     }
-    con.varnames = validate_and_copy_tuple(varnames);
-    if (con.varnames == NULL) {
+
+    // Make shallow copies of the various name tuples.
+    con.names = owned_names = copy_names(names);
+    if (con.names== NULL) {
         goto cleanup;
     }
-    if (freevars) {
-        con.freevars = validate_and_copy_tuple(freevars);
-    }
-    else {
-        con.freevars = PyTuple_New(0);
-    }
-    if (con.freevars == NULL) {
+    con.varnames = owned_varnames = copy_names(varnames);
+    if (con.varnames== NULL) {
         goto cleanup;
     }
-    if (cellvars) {
-        con.cellvars = validate_and_copy_tuple(cellvars);
+    con.cellvars = owned_cellvars = copy_names(cellvars);
+    if (con.cellvars== NULL) {
+        goto cleanup;
     }
-    else {
-        con.cellvars = PyTuple_New(0);
-    }
-    if (con.cellvars == NULL) {
+    con.freevars = owned_freevars = copy_names(freevars);
+    if (con.freevars== NULL) {
         goto cleanup;
     }
 
     co = (PyObject *)make_code(&con);
 
   cleanup:
-    Py_XDECREF(con.names);
-    Py_XDECREF(con.varnames);
-    Py_XDECREF(con.freevars);
-    Py_XDECREF(con.cellvars);
+    Py_DECREF(nulltuple);
+    Py_XDECREF(owned_names);
+    Py_XDECREF(owned_varnames);
+    Py_XDECREF(owned_cellvars);
+    Py_XDECREF(owned_freevars);
     return co;
 }
 
@@ -1471,24 +1480,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyBytesObject *co_exceptiontable)
 /*[clinic end generated code: output=80957472b7f78ed6 input=38376b1193efbbae]*/
 {
-#define CHECK_INT_ARG(ARG) \
-        if (ARG < 0) { \
-            PyErr_SetString(PyExc_ValueError, \
-                            #ARG " must be a positive integer"); \
-            return NULL; \
-        }
-
-    CHECK_INT_ARG(co_argcount);
-    CHECK_INT_ARG(co_posonlyargcount);
-    CHECK_INT_ARG(co_kwonlyargcount);
-    CHECK_INT_ARG(co_nlocals);
-    CHECK_INT_ARG(co_stacksize);
-    CHECK_INT_ARG(co_flags);
-    CHECK_INT_ARG(co_firstlineno);
-
-#undef CHECK_INT_ARG
-
-    // XXX We should fully validate the args first.
+    // All the logged values here have already been validated well enough.
     // XXX This is the wrong name.
     if (PySys_Audit("code.__new__", "OOOiiiiii",
                     co_code, co_filename, co_name, co_argcount,
@@ -1521,12 +1513,10 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
         .exceptiontable = (PyObject *)co_exceptiontable,
     };
-    if (co_nlocals != PyTuple_GET_SIZE(con.varnames)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: co_nlocals must equal len(co_varnames)");
+    if (check_legacy_code(&con, co_nlocals, FAIL) < 0) {
         return NULL;
     }
-    return (PyObject *)_PyCode_New(&con);
+    return (PyObject *)make_code(&con);
 }
 
 /* XXX code objects need to participate in GC? */
