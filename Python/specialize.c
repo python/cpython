@@ -79,8 +79,9 @@ optimize(HotPyCacheOrInstruction *quickened, int len)
 {
     _Py_CODEUNIT *instructions = first_instruction(quickened);
     int cache_offset = 0;
+    int previous_opcode = -1;
     for(int i = 0; i < len; i++) {
-        uint8_t opcode = _Py_OPCODE(instructions[i]);
+        int opcode = _Py_OPCODE(instructions[i]);
         uint8_t adaptive_opcode = adaptive[opcode];
         if (adaptive_opcode) {
             int oparg = oparg_from_offset_and_index(cache_offset, i);
@@ -88,16 +89,22 @@ optimize(HotPyCacheOrInstruction *quickened, int len)
                 cache_offset = i/2;
                 oparg = 0;
             }
-            else if (oparg > 255) {
-                /* Cannot access required cache_offset */
-                continue;
+            if (oparg < 256) {
+                instructions[i] = _Py_INSTRUCTION(adaptive_opcode, oparg);
+                cache_offset += cache_requirements[opcode];
             }
-            instructions[i] = _Py_INSTRUCTION(adaptive_opcode, oparg);
-            cache_offset += cache_requirements[opcode];
         }
         else {
-            /* Insert superinstructions here */
+            switch (opcode) {
+                /* Insert superinstructions here
+                 E.g.
+                case LOAD_FAST:
+                    if (previous_opcode == LOAD_FAST)
+                        instructions[i-1] = _Py_INSTRUCTION(LOAD_FAST__LOAD_FAST, oparg);
+                 */
+            }
         }
+        previous_opcode = opcode;
     }
     assert(cache_offset+1 == get_cache_count(quickened));
 }
