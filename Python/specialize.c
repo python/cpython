@@ -12,7 +12,7 @@
  * The nth cache is is located at ((HotPyCacheEntry *)first_instr)[-1-n]
  * The first cache [-count] is reserved for the count, to enable finding
  * the first instruction from the base pointer.
- * We need to use theHotPyCacheOrInstruction union to refer to the data
+ * We need to use the HotPyCacheOrInstruction union to refer to the data
  * so as not to break aliasing rules.
  */
 
@@ -53,7 +53,8 @@ entries_needed(_Py_CODEUNIT *code, int len)
             continue;
         }
         assert(adaptive[opcode] != 0);
-        int oparg = cache_offset-i/2;
+        int oparg = oparg_from_offset_and_index(cache_offset, i);
+        assert(cache_offset == offset_from_oparg_and_index(oparg, i));
         if (oparg < 0) {
             cache_offset = i/2;
         }
@@ -82,8 +83,7 @@ optimize(HotPyCacheOrInstruction *quickened, int len)
         uint8_t opcode = _Py_OPCODE(instructions[i]);
         uint8_t adaptive_opcode = adaptive[opcode];
         if (adaptive_opcode) {
-            /* offset = oparg + i/2  => oparg = offset - i/2 */
-            int oparg = cache_offset-i/2;
+            int oparg = oparg_from_offset_and_index(cache_offset, i);
             if (oparg < 0) {
                 cache_offset = i/2;
                 oparg = 0;

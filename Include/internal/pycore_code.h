@@ -53,19 +53,39 @@ typedef union _hotpy_quickened {
     HotPyCacheEntry entry;
 } HotPyCacheOrInstruction;
 
-static inline
-HotPyCacheEntry *_HotPy_GetCache(HotPyCacheOrInstruction *quickened, Py_ssize_t index)
-{
-     HotPyCacheEntry *last_plus_one_entry = &quickened->entry;
-     return &last_plus_one_entry[-1-index];
-}
-
-static inline
-HotPyCacheEntry *_HotPy_GetCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t index)
+static inline HotPyCacheEntry *
+_HotPy_GetCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t index)
 {
     HotPyCacheOrInstruction *last_cache_plus_one = (HotPyCacheOrInstruction *)first_instr;
     assert(&last_cache_plus_one->code[0] == first_instr);
     return &last_cache_plus_one[-1-index].entry;
+}
+
+/* Following two functions determine the index of a cache entry from the
+ * instruction index (in the instruction array) and the oparg.
+ * oparg_from_offset_and_index must be the inverse of
+ * offset_from_oparg_and_index
+ */
+
+static inline int
+oparg_from_offset_and_index(int offset, int index)
+{
+    return offset-(index>>1);
+}
+
+static inline int
+offset_from_oparg_and_index(int oparg, int index)
+{
+    return (index>>1)+oparg;
+}
+
+static inline HotPyCacheEntry *
+_HotPy_GetCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, int oparg)
+{
+    return _HotPy_GetCacheEntry(
+        first_instr,
+        offset_from_oparg_and_index(oparg, index)
+    );
 }
 
 #define HOTPY_INITIAL_WARMUP 8
