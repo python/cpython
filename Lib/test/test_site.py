@@ -49,9 +49,6 @@ def setUpModule():
             raise unittest.SkipTest('unable to create user site directory (%r): %s'
                                     % (site.USER_SITE, exc))
 
-    # sysconfig._CONFIG_VARS is None until the first call to this function
-    sysconfig.get_config_vars()
-
 def tearDownModule():
     sys.path[:] = OLD_SYS_PATH
 
@@ -76,8 +73,10 @@ class HelperFunctionsTests(unittest.TestCase):
         site.USER_SITE = self.old_site
         site.PREFIXES = self.old_prefixes
         sysconfig._CONFIG_VARS = self.original_vars
-        sysconfig._CONFIG_VARS.clear()
-        sysconfig._CONFIG_VARS.update(self.old_vars)
+        # sysconfig._CONFIG_VARS is None before the first call to sysconfig.get_config_vars()
+        if sysconfig._CONFIG_VARS is not None:
+            sysconfig._CONFIG_VARS.clear()
+            sysconfig._CONFIG_VARS.update(self.old_vars)
 
     def test_makepath(self):
         # Test makepath() have an absolute path for its first return value
