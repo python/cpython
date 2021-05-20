@@ -74,7 +74,7 @@ class HelperFunctionsTests(unittest.TestCase):
         site.USER_SITE = self.old_site
         site.PREFIXES = self.old_prefixes
         sysconfig._CONFIG_VARS = self.original_vars
-        # sysconfig._CONFIG_VARS is None before the first call to sysconfig.get_config_vars()
+        # sysconfig._CONFIG_VARS is None sysconfig.get_config_vars() is called
         if sysconfig._CONFIG_VARS is not None:
             sysconfig._CONFIG_VARS.clear()
             sysconfig._CONFIG_VARS.update(self.old_vars)
