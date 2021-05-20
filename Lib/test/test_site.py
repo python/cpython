@@ -49,6 +49,7 @@ def setUpModule():
             raise unittest.SkipTest('unable to create user site directory (%r): %s'
                                     % (site.USER_SITE, exc))
 
+
 def tearDownModule():
     sys.path[:] = OLD_SYS_PATH
 
