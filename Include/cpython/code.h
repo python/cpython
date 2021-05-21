@@ -24,7 +24,7 @@ struct PyCodeObject {
 
     /* metadata */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
-    /* co_name is used in for both the hash and comparisions.  This is
+    /* co_name is used for both the hash and comparisions.  This is
      * done to preserve the name and line number for tracebacks and
      * debuggers; otherwise, constant de-duplication would collapse
      * identical functions/lambdas defined on different lines.
