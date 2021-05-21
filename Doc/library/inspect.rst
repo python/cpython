@@ -834,10 +834,10 @@ function.
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
 
-    .. versionchanged:: 3.4
-        In Python 3.3 Parameter objects were allowed to have ``name`` set
-        to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
-        This is no longer permitted.
+   .. versionchanged:: 3.4
+      In Python 3.3 Parameter objects were allowed to have ``name`` set
+      to ``None`` if their ``kind`` was set to ``POSITIONAL_ONLY``.
+      This is no longer permitted.
 
 .. class:: BoundArguments
 
