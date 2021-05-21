@@ -626,8 +626,8 @@ _PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
 }
 
 Py_ssize_t
-_PyCode_GetFastlocalOffsetId(PyCodeObject *co, _Py_Identifier *id,
-                             _PyFastLocalKind kind)
+_PyCode_FastOffsetFromId(PyCodeObject *co, _Py_Identifier *id,
+                         _PyFastLocalKind kind)
 {
     Py_ssize_t baseoffset;
     PyObject *names = NULL;

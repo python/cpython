@@ -87,9 +87,9 @@ PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
 PyAPI_FUNC(Py_ssize_t) _PyCode_CellForLocal(PyCodeObject *, Py_ssize_t);
 
 /* This does not fail.  A negative result means "no match". */
-PyAPI_FUNC(Py_ssize_t) _PyCode_GetFastlocalOffsetId(PyCodeObject *,
-                                                    _Py_Identifier *,
-                                                    _PyFastLocalKind);
+PyAPI_FUNC(Py_ssize_t) _PyCode_FastOffsetFromId(PyCodeObject *,
+                                                _Py_Identifier *,
+                                                _PyFastLocalKind);
 
 // This is a speed hack for use in ceval.c.
 static inline PyObject **
