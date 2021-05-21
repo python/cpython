@@ -42,7 +42,7 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
    fills newly allocated memory with CLEANBYTE (0xCD) and newly freed memory
    with DEADBYTE (0xDD). Detect also "untouchable bytes" marked
    with FORBIDDENBYTE (0xFD). */
-static inline int _PyMem_IsPtrFreed(void *ptr)
+static inline int _PyMem_IsPtrFreed(const void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
