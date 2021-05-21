@@ -280,6 +280,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_posonlyargcount = posonlyargcount;
     co->co_kwonlyargcount = kwonlyargcount;
     co->co_nlocals = nlocals;
+    co->co_nlocalsplus = nlocals +
+        (int)PyTuple_GET_SIZE(freevars) + (int)PyTuple_GET_SIZE(cellvars);
     co->co_stacksize = stacksize;
     co->co_flags = flags;
     Py_INCREF(code);
@@ -304,7 +306,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_linetable = linetable;
     Py_INCREF(exceptiontable);
     co->co_exceptiontable = exceptiontable;
-    co->co_zombieframe = NULL;
     co->co_weakreflist = NULL;
     co->co_extra = NULL;
 
@@ -968,8 +969,6 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_exceptiontable);
     if (co->co_cell2arg != NULL)
         PyMem_Free(co->co_cell2arg);
-    if (co->co_zombieframe != NULL)
-        PyObject_GC_Del(co->co_zombieframe);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
     PyObject_Free(co);
