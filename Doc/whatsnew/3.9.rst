@@ -1564,6 +1564,9 @@ attribute on your FTP instance to ``True``.  (See :issue:`43285`)
 Notable changes in Python 3.9.5
 ===============================
 
+urllib.parse
+------------
+
 The presence of newline or tab characters in parts of a URL allows for some
 forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
 ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
