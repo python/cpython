@@ -96,6 +96,7 @@ class MultiplexedPath(abc.Traversable):
     def open(self, *args, **kwargs):
         raise FileNotFoundError('{} is not a file'.format(self))
 
+    @property
     def name(self):
         return self._paths[0].name
 
