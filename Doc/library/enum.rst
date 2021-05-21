@@ -595,8 +595,8 @@ Utilites and Decorators
 
    A :keyword:`class` decorator specifically for enumerations.  It replaces the
    :meth:`__repr__` method with one that shows *module_name*.*member_name*.  It
-   also injects the members, and their aliases, into the the global namespace
-   they were defined in.
+   also injects the members, and their aliases, into the global namespace they
+   were defined in.
 
 
 .. decorator:: property

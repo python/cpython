@@ -1574,7 +1574,7 @@ Deprecated
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
 
-* ``cgi.log()`` is deprecated and slated for for removal in Python 3.12.
+* ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
 
 
