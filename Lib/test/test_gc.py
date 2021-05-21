@@ -1371,9 +1371,7 @@ class PythonFinalizationTests(unittest.TestCase):
         # _PyAST_Fini() which clears references to AST types.
         code = textwrap.dedent("""
             import ast
-            import builtins
-            import sys
-            import os
+            import codecs
 
             # Small AST tree to keep their AST types alive
             tree = ast.parse("def f(x, y): return 2*x-y")
@@ -1381,12 +1379,12 @@ class PythonFinalizationTests(unittest.TestCase):
             x.append(x)
 
             # Put the cycle somewhere to survive until the last GC collection.
-            # Fork callbacks are only cleared at the end of
+            # Codec search functions are only cleared at the end of
             # interpreter_clear().
-            def callback():
-                pass
-            callback.a = x
-            os.register_at_fork(after_in_child=callback)
+            def search_func(encoding):
+                return None
+            search_func.a = x
+            codecs.register(search_func)
         """)
         assert_python_ok("-c", code)
 
