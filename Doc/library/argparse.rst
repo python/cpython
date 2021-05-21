@@ -566,6 +566,7 @@ This feature can be disabled by setting ``allow_abbrev`` to ``False``::
    >>> parser.parse_args(['--d'])
    usage: books [-h] [--debug DEBUG]
    books: error: unrecognized arguments: --d
+
 .. versionadded:: 3.5
 
 
