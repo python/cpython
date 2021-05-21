@@ -33,7 +33,7 @@ typedef unsigned char _PyFastLocalKind;
 #define CO_FAST_POSONLY     0x01
 #define CO_FAST_POSORKW     0x02
 #define CO_FAST_VARARGS     0x04
-#define CO_FAST_KWONLY      0x09
+#define CO_FAST_KWONLY      0x08
 #define CO_FAST_VARKWARGS   0x10
 #define CO_FAST_LOCALONLY   0x20
 #define CO_FAST_CELL        0x40
