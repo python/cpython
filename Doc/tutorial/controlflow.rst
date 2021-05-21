@@ -176,11 +176,8 @@ The :func:`range` 函数
 
 (没错，这段代码就是这么写。仔细看： ``else`` 子句属于 :keyword:`for` 循环, **而非** :keyword:`if` 语句。)
 
-When used with a loop, the ``else`` clause has more in common with the
-``else`` clause of a :keyword:`try` statement than it does with that of
-:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
-when no exception occurs, and a loop's ``else`` clause runs when no ``break``
-occurs. 更多有关 :keyword:`!try` 语句和异常, 详见
+与 :keyword:`if` 语句相比，循环的 ``else` 子句更像 :keyword:`try` 的 ``else``  子句： :keyword:`try` 的 ``else`` 子句在未触发异常时执行，
+循环的 ``else``   子句则在未运行 ``break`` 时执行。更多有关 :keyword:`!try` 语句和异常, 详见
 :ref:`tut-handling`.
 
 :keyword:`continue` 语句也借鉴自 C 语言，表示继续执行循环的下一次迭代::
@@ -205,40 +202,35 @@ occurs. 更多有关 :keyword:`!try` 语句和异常, 详见
 :keyword:`!pass` 语句
 ===========================
 
-The :keyword:`pass` statement does nothing. It can be used when a statement is
-required syntactically but the program requires no action. For example::
+:keyword:`pass` 语句不执行任何操作。语法上需要一个语句，但程序不实际执行任何动作时，可以使用该语句。例如::
 
    >>> while True:
    ...     pass  # Busy-wait for keyboard interrupt (Ctrl+C)
    ...
 
-This is commonly used for creating minimal classes::
+下面这段代码创建了一个最小的类::
 
    >>> class MyEmptyClass:
    ...     pass
    ...
 
-Another place :keyword:`pass` can be used is as a place-holder for a function or
-conditional body when you are working on new code, allowing you to keep thinking
-at a more abstract level.  The :keyword:`!pass` is silently ignored::
+此外 :keyword:`pass` 可以用作函数或条件子句的占位符， 让开发者聚焦更抽象的层次。此时，程序直接忽略 :keyword:`!pass` ::
 
    >>> def initlog(*args):
-   ...     pass   # Remember to implement this!
+   ...     pass   # 记住要实现这一点!
    ...
 
 
 .. _tut-match:
 
-:keyword:`!match` Statements
+:keyword:`!match` 语句
 ============================
 
-A match statement takes an expression and compares its value to successive
-patterns given as one or more case blocks.  This is superficially
-similar to a switch statement in C, Java or JavaScript (and many
-other languages), but it can also extract components (sequence elements or
-object attributes) from the value into variables.
+匹配语句接受一个表达式，并将其值与一个或多个case块给出的连续模式进行比较。
+从表面上看，这类似于C、Java或JavaScript(以及许多其他语言)中的switch语句，
+但它也可以从值中提取组件(序列元素或对象属性)到变量。
 
-The simplest form compares a subject value against one or more literals::
+最简单的方式是将值与一个或多个字面量进行比较::
 
     def http_error(status):
         match status:
@@ -251,18 +243,16 @@ The simplest form compares a subject value against one or more literals::
             case _:
                 return "Something's wrong with the Internet"
 
-Note the last block: the "variable name" ``_`` acts as a *wildcard* and
-never fails to match. If no case matches, none of the branches is executed.
+注意最会一块:  "变量名" ``_`` 扮演 *通配符* 匹配其他，如果没有事件匹配，则不执行任何分支。
 
-You can combine several literals in a single pattern using ``|`` ("or")::
+你可以简写匹配模式 ``|`` ("或")::
 
             case 401 | 403 | 404:
                 return "Not allowed"
 
-Patterns can look like unpacking assignments, and can be used to bind
-variables::
+模式可以看作开箱作业,可用于绑定变量::
 
-    # point is an (x, y) tuple
+    # point 是一个 (x, y) 元祖
     match point:
         case (0, 0):
             print("Origin")
@@ -275,16 +265,11 @@ variables::
         case _:
             raise ValueError("Not a point")
 
-Study that one carefully!  The first pattern has two literals, and can
-be thought of as an extension of the literal pattern shown above.  But
-the next two patterns combine a literal and a variable, and the
-variable *binds* a value from the subject (``point``).  The fourth
-pattern captures two values, which makes it conceptually similar to
-the unpacking assignment ``(x, y) = point``.
+仔细研究这个! 第一个模式有两个字面量,可以认为是上面所示的字面量模式的延伸。
+但是接下来的两个模式结合一个数值和一个变量,该变量*绑定*来自对象(``point``)的值。
+第四模式捕获两个值,这使得它在概念上类似于开箱作业``(x, y) = point``。
 
-If you are using classes to structure your data
-you can use the class name followed by an argument list resembling a
-constructor, but with the ability to capture attributes into variables::
+如果使用类来构建数据，则可以使用类名，后跟类似构造函数的参数列表，但能够将属性捕获到变量中::
 
     class Point:
         x: int
@@ -303,11 +288,9 @@ constructor, but with the ability to capture attributes into variables::
             case _:
                 print("Not a point")
 
-You can use positional parameters with some builtin classes that provide an
-ordering for their attributes (e.g. dataclasses). You can also define a specific
-position for attributes in patterns by setting the ``__match_args__`` special
-attribute in your classes. If it's set to ("x", "y"), the following patterns are all
-equivalent (and all bind the ``y`` attribute to the ``var`` variable)::
+您可以使用带有一些内置类的位置参数为其属性提供订购（例如 dataclasses）。
+您还可以通过在类中设置 ``__match_args__`` 特殊属性来定义模式中属性的特定位置。
+如果它设置为（“x”，“y”），则以下模式都是等效的（并且全部将``y``属性绑定到 ``var`` 变量）：
 
     Point(1, var)
     Point(1, y=var)
@@ -394,11 +377,10 @@ For a more detailed explanation and additional examples, you can look into
 
 .. _tut-functions:
 
-Defining Functions
+定义函数
 ==================
 
-We can create a function that writes the Fibonacci series to an arbitrary
-boundary::
+下列代码创建一个可以输出限定数值内的斐波那契数列函数::
 
    >>> def fib(n):    # write Fibonacci series up to n
    ...     """Print a Fibonacci series up to n."""
