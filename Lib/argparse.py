@@ -2230,10 +2230,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # if the arg_string is undeniably formatted as an option
         # check to see if there are similar option names where _ and - are used interchangeably
         if _re.search(r'^--.', arg_string):
+            explicit_arg = None
+            if '=' in arg_string:
+                arg_string, explicit_arg = arg_string.split('=', 1)
             for option, action in self._option_string_actions.items():
                 if _re.findall(r'([^\W_]+)', arg_string) == _re.findall(r'([^\W_]+)', option):
-                    action = self._option_string_actions[option]
-                    return action, arg_string, None
+                    return action, arg_string, explicit_arg
 
         # it was meant to be an optional but there is no such option
         # in this parser (though it might be a valid option in a subparser)
