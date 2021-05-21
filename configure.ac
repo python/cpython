@@ -2973,7 +2973,7 @@ esac
 [AC_MSG_RESULT(default)])
 
 validate_tzpath() {
-    # Checks that each element of hte path is an absolute path
+    # Checks that each element of the path is an absolute path
     if test -z "$1"; then
         # Empty string is allowed: it indicates no system TZPATH
         return 0
