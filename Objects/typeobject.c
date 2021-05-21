@@ -1446,6 +1446,12 @@ subtype_dealloc(PyObject *self)
     if (_PyType_IS_GC(base)) {
         _PyObject_GC_TRACK(self);
     }
+
+    // Don't read type memory after calling basedealloc() since basedealloc()
+    // can deallocate the type and free its memory.
+    int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
+                             && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
+
     assert(basedealloc);
     basedealloc(self);
 
@@ -1453,8 +1459,9 @@ subtype_dealloc(PyObject *self)
        our type from a HEAPTYPE to a non-HEAPTYPE, so be careful about
        reference counting. Only decref if the base type is not already a heap
        allocated type. Otherwise, basedealloc should have decref'd it already */
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))
-      Py_DECREF(type);
+    if (type_needs_decref) {
+        Py_DECREF(type);
+    }
 
   endlabel:
     Py_TRASHCAN_END
