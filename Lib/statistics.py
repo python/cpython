@@ -375,12 +375,14 @@ def fmean(data, weights=None):
             weights = list(weights)
             num_weights = len(weights)
         num = fsum(map(mul, data, weights))
-        den = fsum(weights)
         if n != num_weights:
             raise StatisticsError('data and weights must be the same length')
-    if den:
-        return num / den
-    raise StatisticsError('fmean requires at least one data point')
+        den = fsum(weights)
+        if not den:
+            raise StatisticsError('sum of weights must be non-zero')
+    if not n:
+        raise StatisticsError('fmean requires at least one data point')
+    return num / den
 
 
 def geometric_mean(data):
