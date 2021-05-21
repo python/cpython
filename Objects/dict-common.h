@@ -23,7 +23,7 @@ struct _dictkeysobject {
     Py_ssize_t dk_refcnt;
 
     /* Size of the hash table (dk_indices). It must be a power of 2. */
-    Py_ssize_t dk_size;
+    uint8_t dk_log2_size;
 
     /* Function to lookup in the hash table (dk_indices):
 

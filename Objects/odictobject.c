@@ -553,7 +553,7 @@ _odict_resize(PyODictObject *od)
     _ODictNode **fast_nodes, *node;
 
     /* Initialize a new "fast nodes" table. */
-    size = ((PyDictObject *)od)->ma_keys->dk_size;
+    size = 1 << (((PyDictObject *)od)->ma_keys->dk_log2_size);
     fast_nodes = PyMem_NEW(_ODictNode *, size);
     if (fast_nodes == NULL) {
         PyErr_NoMemory();
@@ -592,7 +592,7 @@ _odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
 
     /* Ensure od_fast_nodes and dk_entries are in sync. */
     if (od->od_resize_sentinel != keys ||
-        od->od_fast_nodes_size != keys->dk_size) {
+        od->od_fast_nodes_size != (1 << (keys->dk_log2_size))) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;
