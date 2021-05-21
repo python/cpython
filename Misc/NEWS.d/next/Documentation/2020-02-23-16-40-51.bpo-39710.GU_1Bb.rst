@@ -1,1 +1,0 @@
-"will be returned as unicode" reminiscent from Python 2
