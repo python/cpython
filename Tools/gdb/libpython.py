@@ -890,8 +890,8 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def _f_globals(self):
         f_localsplus = self.field('f_localsptr')
-        nlocalsplus = int_from_int(self.co.field('co_nlocalsplus'))
-        index = nlocalsplus + FRAME_SPECIALS_GLOBAL_OFFSET
+        nfastlocals = int_from_int(self.co.field('co_nfastlocals'))
+        index = nfastlocals + FRAME_SPECIALS_GLOBAL_OFFSET
         return PyObjectPtr.from_pyobject_ptr(f_localsplus[index])
 
     def iter_globals(self):
@@ -907,8 +907,8 @@ class PyFrameObjectPtr(PyObjectPtr):
 
     def _f_builtins(self):
         f_localsplus = self.field('f_localsptr')
-        nlocalsplus = int_from_int(self.co.field('co_nlocalsplus'))
-        index = nlocalsplus + FRAME_SPECIALS_BUILTINS_OFFSET
+        nfastlocals = int_from_int(self.co.field('co_nfastlocals'))
+        index = nfastlocals + FRAME_SPECIALS_BUILTINS_OFFSET
         return PyObjectPtr.from_pyobject_ptr(f_localsplus[index])
 
     def iter_builtins(self):
