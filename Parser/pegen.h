@@ -74,6 +74,7 @@ typedef struct {
     Token *known_err_token;
     int level;
     int call_invalid_rules;
+    int in_raw_rule;
 } Parser;
 
 typedef struct {

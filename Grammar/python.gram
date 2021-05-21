@@ -509,13 +509,13 @@ star_named_expression[expr_ty]:
     | '*' a=bitwise_or { _PyAST_Starred(a, Load, EXTRA) }
     | named_expression
 
-named_expression[expr_ty]:
-    | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
-    | invalid_named_expression
-    | expression !':='
 
-direct_named_expression[expr_ty]:
+assigment_expression[expr_ty]:
     | a=NAME ':=' ~ b=expression { _PyAST_NamedExpr(CHECK(expr_ty, _PyPegen_set_expr_context(p, a, Store)), b, EXTRA) }
+
+named_expression[expr_ty]:
+    | assigment_expression
+    | invalid_named_expression
     | expression !':='
 
 annotated_rhs[expr_ty]: yield_expr | star_expressions
@@ -706,7 +706,7 @@ group[expr_ty]:
     | '(' a=(yield_expr | named_expression) ')' { a }
     | invalid_group
 genexp[expr_ty]:
-    | '(' a=direct_named_expression b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
+    | '(' a=( assigment_expression | expression !':=') b=for_if_clauses ')' { _PyAST_GeneratorExp(a, b, EXTRA) }
     | invalid_comprehension
 set[expr_ty]: '{' a=star_named_expressions '}' { _PyAST_Set(a, EXTRA) }
 setcomp[expr_ty]:
@@ -745,11 +745,13 @@ arguments[expr_ty] (memo):
     | a=args [','] &')' { a }
     | invalid_arguments
 args[expr_ty]:
-    | a[asdl_expr_seq*]=','.(starred_expression | direct_named_expression !'=')+ b=[',' k=kwargs {k}] { _PyPegen_collect_call_seqs(p, a, b, EXTRA) }
+    | a[asdl_expr_seq*]=','.(starred_expression | ( assigment_expression | expression !':=') !'=')+ b=[',' k=kwargs {k}] {
+        _PyPegen_collect_call_seqs(p, a, b, EXTRA) }
     | a=kwargs { _PyAST_Call(_PyPegen_dummy_name(p),
                           CHECK_NULL_ALLOWED(asdl_expr_seq*, _PyPegen_seq_extract_starred_exprs(p, a)),
                           CHECK_NULL_ALLOWED(asdl_keyword_seq*, _PyPegen_seq_delete_starred_exprs(p, a)),
                           EXTRA) }
+
 kwargs[asdl_seq*]:
     | a=','.kwarg_or_starred+ ',' b=','.kwarg_or_double_starred+ { _PyPegen_join_sequences(p, a, b) }
     | ','.kwarg_or_starred+
@@ -757,15 +759,15 @@ kwargs[asdl_seq*]:
 starred_expression[expr_ty]:
     | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
 kwarg_or_starred[KeywordOrStarred*]:
+    | invalid_kwarg
     | a=NAME '=' b=expression {
         _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _PyAST_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | a=starred_expression { _PyPegen_keyword_or_starred(p, a, 0) }
-    | invalid_kwarg
 kwarg_or_double_starred[KeywordOrStarred*]:
+    | invalid_kwarg
     | a=NAME '=' b=expression {
         _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _PyAST_keyword(a->v.Name.id, b, EXTRA)), 1) }
     | '**' a=expression { _PyPegen_keyword_or_starred(p, CHECK(keyword_ty, _PyAST_keyword(NULL, a, EXTRA)), 1) }
-    | invalid_kwarg
 
 # NOTE: star_targets may contain *bitwise_or, targets may not.
 star_targets[expr_ty]:
@@ -838,29 +840,37 @@ invalid_arguments:
     | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, PyPegen_last_item(b, comprehension_ty)->target, "Generator expression must be parenthesized") }
+    | a=NAME b='=' expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | a=args for_if_clauses { _PyPegen_nonparen_genexp_in_call(p, a) }
     | args ',' a=expression b=for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, asdl_seq_GET(b, b->size-1)->target, "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
+    | a=NAME b='=' expression for_if_clauses {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
     | !(NAME '=') a=expression b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             a, b, "expression cannot contain assignment, perhaps you meant \"==\"?") }
 
+expression_without_invalid[expr_ty]:
+    | a=disjunction 'if' b=disjunction 'else' c=expression { _PyAST_IfExp(b, a, c, EXTRA) }
+    | disjunction
+    | lambdef
 invalid_expression:
     # !(NAME STRING) is not matched so we don't show this error with some invalid string prefixes like: kf"dsfsdf"
     # Soft keywords need to also be ignored because they can be parsed as NAME NAME
-    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression {
+    | !(NAME STRING | SOFT_KEYWORD) a=disjunction b=expression_without_invalid {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
 
 invalid_named_expression:
     | a=expression ':=' expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
-    | a=NAME '=' b=bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
-    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':='|',') {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
+    | a=NAME '=' b=bitwise_or !('='|':=') {
+        p->in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
+    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':=') {
+        p->in_raw_rule ? NULL : RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
 invalid_assignment:
