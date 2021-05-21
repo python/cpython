@@ -1,0 +1,1 @@
+Adding a feature to argparse to accept option names in case "_" is provided in the name inadvertently instead of "-" and vice versa.
