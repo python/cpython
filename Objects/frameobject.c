@@ -838,7 +838,7 @@ _PyFrame_TakeLocals(PyFrameObject *f)
 {
     assert(f->f_own_locals_memory == 0);
     assert(f->f_stackdepth == 0);
-    int size = frame_nslots(f);
+    Py_ssize_t size = frame_nslots(f);
     PyObject **copy = PyMem_Malloc(sizeof(PyObject *)*size);
     if (copy == NULL) {
         for (int i = 0; i < size; i++) {
