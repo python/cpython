@@ -57,6 +57,12 @@ typedef struct _err_stackitem {
 
 } _PyErr_StackItem;
 
+typedef struct _stack_chunk {
+    struct _stack_chunk *previous;
+    size_t size;
+    size_t top;
+    PyObject * data[1]; /* Variable sized */
+} _PyStackChunk;
 
 // The PyThreadState typedef is in Include/pystate.h.
 struct _ts {
@@ -149,6 +155,9 @@ struct _ts {
 
     CFrame root_cframe;
 
+    _PyStackChunk *datastack_chunk;
+    PyObject **datastack_top;
+    PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
 
 };

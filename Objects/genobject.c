@@ -176,7 +176,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(f));
-    assert(f->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(f->f_code->co_code))[0] == GEN_START);
+    assert(f->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(gen->gi_code->co_code))[0] == GEN_START);
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
@@ -331,7 +331,7 @@ _PyGen_yf(PyGenObject *gen)
     PyFrameObject *f = gen->gi_frame;
 
     if (f) {
-        PyObject *bytecode = f->f_code->co_code;
+        PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
         if (f->f_lasti < 0) {
@@ -826,8 +826,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     }
     gen->gi_frame = f;
     f->f_gen = (PyObject *) gen;
-    Py_INCREF(f->f_code);
-    gen->gi_code = (PyObject *)(f->f_code);
+    gen->gi_code = PyFrame_GetCode(f);
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
@@ -836,7 +835,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     if (name != NULL)
         gen->gi_name = name;
     else
-        gen->gi_name = ((PyCodeObject *)gen->gi_code)->co_name;
+        gen->gi_name = gen->gi_code->co_name;
     Py_INCREF(gen->gi_name);
     if (qualname != NULL)
         gen->gi_qualname = qualname;
@@ -1167,11 +1166,12 @@ compute_cr_origin(int origin_depth)
     }
     frame = PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = PyFrame_GetCode(frame);
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
                                             PyFrame_GetLineNumber(frame),
                                             code->co_name);
+        Py_DECREF(code);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
             return NULL;

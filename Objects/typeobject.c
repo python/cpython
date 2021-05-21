@@ -8836,14 +8836,14 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    PyObject *obj = f->f_localsplus[0];
+    PyObject *obj = f->f_localsptr[0];
     Py_ssize_t i, n;
     if (obj == NULL && co->co_cell2arg) {
         /* The first argument might be a cell. */
         n = PyTuple_GET_SIZE(co->co_cellvars);
         for (i = 0; i < n; i++) {
             if (co->co_cell2arg[i] == 0) {
-                PyObject *cell = f->f_localsplus[co->co_nlocals + i];
+                PyObject *cell = f->f_localsptr[co->co_nlocals + i];
                 assert(PyCell_Check(cell));
                 obj = PyCell_GET(cell);
                 break;
@@ -8871,7 +8871,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
             Py_ssize_t index = co->co_nlocals +
                 PyTuple_GET_SIZE(co->co_cellvars) + i;
-            PyObject *cell = f->f_localsplus[index];
+            PyObject *cell = f->f_localsptr[index];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
