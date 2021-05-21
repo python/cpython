@@ -19,6 +19,11 @@ enum decoding_state {
     STATE_NORMAL
 };
 
+enum interactive_underflow_t {
+    IUNDERFLOW_NORMAL,
+    IUNDERFLOW_STOP,
+};
+
 /* Tokenizer state */
 struct tok_state {
     /* Input state; buf <= cur <= inp <= end */
@@ -74,6 +79,7 @@ struct tok_state {
     int async_def_indent; /* Indentation level of the outermost 'async def'. */
     int async_def_nl;     /* =1 if the outermost 'async def' had at least one
                              NEWLINE token after it. */
+    enum interactive_underflow_t interactive_underflow;
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);
