@@ -20,12 +20,9 @@ enum _framestate {
 typedef signed char PyFrameState;
 
 struct _frame {
-    PyObject_VAR_HEAD
+    PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
     PyCodeObject *f_code;       /* code segment */
-    PyObject *f_builtins;       /* builtin symbol table (PyDictObject) */
-    PyObject *f_globals;        /* global symbol table (PyDictObject) */
-    PyObject *f_locals;         /* local symbol table (any mapping) */
     PyObject **f_valuestack;    /* points after the last local */
     PyObject *f_trace;          /* Trace function */
     /* Borrowed reference to a generator, or NULL */
@@ -36,7 +33,8 @@ struct _frame {
     PyFrameState f_state;       /* What state the frame is in */
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
-    PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
+    char f_own_locals_memory;   /* This frame owns the memory for the locals */
+    PyObject **f_localsptr;     /* Pointer to locals, cells, free */
 };
 
 static inline int _PyFrame_IsRunnable(struct _frame *f) {
@@ -62,7 +60,7 @@ PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
 
 /* only internal use */
 PyFrameObject*
-_PyFrame_New_NoTrack(PyThreadState *, PyFrameConstructor *, PyObject *);
+_PyFrame_New_NoTrack(PyThreadState *, PyFrameConstructor *, PyObject *, PyObject **);
 
 
 /* The rest of the interface is specific for frame objects */
