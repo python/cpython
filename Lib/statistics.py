@@ -366,22 +366,21 @@ def fmean(data, weights=None):
                 yield x
         data = count(data)
     if weights is None:
-        num = fsum(data)
-        den = n
-    else:
-        try:
-            num_weights = len(weights)
-        except TypeError:
-            weights = list(weights)
-            num_weights = len(weights)
-        num = fsum(map(mul, data, weights))
-        if n != num_weights:
-            raise StatisticsError('data and weights must be the same length')
-        den = fsum(weights)
-        if not den:
-            raise StatisticsError('sum of weights must be non-zero')
-    if not n:
-        raise StatisticsError('fmean requires at least one data point')
+        total = fsum(data)
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
+        return total / n
+    try:
+        num_weights = len(weights)
+    except TypeError:
+        weights = list(weights)
+        num_weights = len(weights)
+    num = fsum(map(mul, data, weights))
+    if n != num_weights:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
     return num / den
 
 
