@@ -1,6 +1,7 @@
 import ast
 import builtins
 import dis
+import enum
 import os
 import sys
 import types
@@ -697,6 +698,36 @@ class AST_Tests(unittest.TestCase):
             ast.fix_missing_locations(expr)
             with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
                 compile(expr, "<test>", "eval")
+
+    def test_precedence_enum(self):
+        class _Precedence(enum.IntEnum):
+            """Precedence table that originated from python grammar."""
+            NAMED_EXPR = enum.auto()      # <target> := <expr1>
+            TUPLE = enum.auto()           # <expr1>, <expr2>
+            YIELD = enum.auto()           # 'yield', 'yield from'
+            TEST = enum.auto()            # 'if'-'else', 'lambda'
+            OR = enum.auto()              # 'or'
+            AND = enum.auto()             # 'and'
+            NOT = enum.auto()             # 'not'
+            CMP = enum.auto()             # '<', '>', '==', '>=', '<=', '!=',
+                                          # 'in', 'not in', 'is', 'is not'
+            EXPR = enum.auto()
+            BOR = EXPR                    # '|'
+            BXOR = enum.auto()            # '^'
+            BAND = enum.auto()            # '&'
+            SHIFT = enum.auto()           # '<<', '>>'
+            ARITH = enum.auto()           # '+', '-'
+            TERM = enum.auto()            # '*', '@', '/', '%', '//'
+            FACTOR = enum.auto()          # unary '+', '-', '~'
+            POWER = enum.auto()           # '**'
+            AWAIT = enum.auto()           # 'await'
+            ATOM = enum.auto()
+            def next(self):
+                try:
+                    return self.__class__(self + 1)
+                except ValueError:
+                    return self
+        enum._test_simple_enum(_Precedence, ast._Precedence)
 
 
 class ASTHelpers_Test(unittest.TestCase):

@@ -7125,7 +7125,8 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_startfile__doc__,
-"startfile($module, /, filepath, operation=<unrepresentable>)\n"
+"startfile($module, /, filepath, operation=<unrepresentable>,\n"
+"          arguments=<unrepresentable>, cwd=None, show_cmd=1)\n"
 "--\n"
 "\n"
 "Start a file with its associated application.\n"
@@ -7136,6 +7137,16 @@ PyDoc_STRVAR(os_startfile__doc__,
 "application (if any) its extension is associated.\n"
 "When another \"operation\" is given, it specifies what should be done with\n"
 "the file.  A typical operation is \"print\".\n"
+"\n"
+"\"arguments\" is passed to the application, but should be omitted if the\n"
+"file is a document.\n"
+"\n"
+"\"cwd\" is the working directory for the operation. If \"filepath\" is\n"
+"relative, it will be resolved against this directory. This argument\n"
+"should usually be an absolute path.\n"
+"\n"
+"\"show_cmd\" can be used to override the recommended visibility option.\n"
+"See the Windows ShellExecute documentation for values.\n"
 "\n"
 "startfile returns as soon as the associated application is launched.\n"
 "There is no option to wait for the application to close, and no way\n"
@@ -7150,20 +7161,24 @@ PyDoc_STRVAR(os_startfile__doc__,
 
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
-                  const Py_UNICODE *operation);
+                  const Py_UNICODE *operation, const Py_UNICODE *arguments,
+                  path_t *cwd, int show_cmd);
 
 static PyObject *
 os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"filepath", "operation", NULL};
+    static const char * const _keywords[] = {"filepath", "operation", "arguments", "cwd", "show_cmd", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "startfile", 0};
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t filepath = PATH_T_INITIALIZE("startfile", "filepath", 0, 0);
     const Py_UNICODE *operation = NULL;
+    const Py_UNICODE *arguments = NULL;
+    path_t cwd = PATH_T_INITIALIZE("startfile", "cwd", 1, 0);
+    int show_cmd = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 5, 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -7173,20 +7188,54 @@ os_startfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("startfile", "argument 'operation'", "str", args[1]);
-        goto exit;
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("startfile", "argument 'operation'", "str", args[1]);
+            goto exit;
+        }
+        #if USE_UNICODE_WCHAR_CACHE
+        operation = _PyUnicode_AsUnicode(args[1]);
+        #else /* USE_UNICODE_WCHAR_CACHE */
+        operation = PyUnicode_AsWideCharString(args[1], NULL);
+        #endif /* USE_UNICODE_WCHAR_CACHE */
+        if (operation == NULL) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-    #if USE_UNICODE_WCHAR_CACHE
-    operation = _PyUnicode_AsUnicode(args[1]);
-    #else /* USE_UNICODE_WCHAR_CACHE */
-    operation = PyUnicode_AsWideCharString(args[1], NULL);
-    #endif /* USE_UNICODE_WCHAR_CACHE */
-    if (operation == NULL) {
+    if (args[2]) {
+        if (!PyUnicode_Check(args[2])) {
+            _PyArg_BadArgument("startfile", "argument 'arguments'", "str", args[2]);
+            goto exit;
+        }
+        #if USE_UNICODE_WCHAR_CACHE
+        arguments = _PyUnicode_AsUnicode(args[2]);
+        #else /* USE_UNICODE_WCHAR_CACHE */
+        arguments = PyUnicode_AsWideCharString(args[2], NULL);
+        #endif /* USE_UNICODE_WCHAR_CACHE */
+        if (arguments == NULL) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        if (!path_converter(args[3], &cwd)) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    show_cmd = _PyLong_AsInt(args[4]);
+    if (show_cmd == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = os_startfile_impl(module, &filepath, operation);
+    return_value = os_startfile_impl(module, &filepath, operation, arguments, &cwd, show_cmd);
 
 exit:
     /* Cleanup for filepath */
@@ -7195,6 +7244,12 @@ exit:
     #if !USE_UNICODE_WCHAR_CACHE
     PyMem_Free((void *)operation);
     #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for arguments */
+    #if !USE_UNICODE_WCHAR_CACHE
+    PyMem_Free((void *)arguments);
+    #endif /* USE_UNICODE_WCHAR_CACHE */
+    /* Cleanup for cwd */
+    path_cleanup(&cwd);
 
     return return_value;
 }
@@ -9208,4 +9263,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=ede310b1d316d2b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65a85d7d3f2c487e input=a9049054013a1b77]*/

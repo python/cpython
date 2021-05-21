@@ -34,7 +34,7 @@ Dynamic Type Creation
    freshly created class namespace. It should accept the class namespace
    as its sole argument and update the namespace directly with the class
    contents. If no callback is provided, it has the same effect as passing
-   in ``lambda ns: ns``.
+   in ``lambda ns: None``.
 
    .. versionadded:: 3.3
 

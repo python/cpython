@@ -77,90 +77,14 @@ envvar PYTHONDUMPREFS
     combinerefs.py, were new in Python 2.3b1.
 
 
-PYMALLOC_DEBUG
---------------
-
-When pymalloc is enabled (WITH_PYMALLOC is defined), calls to the PyObject_
-memory routines are handled by Python's own small-object allocator, while calls
-to the PyMem_ memory routines are directed to the system malloc/ realloc/free.
-If PYMALLOC_DEBUG is also defined, calls to both PyObject_ and PyMem_ memory
-routines are directed to a special debugging mode of Python's small-object
-allocator.
-
-This mode fills dynamically allocated memory blocks with special, recognizable
-bit patterns, and adds debugging info on each end of dynamically allocated
-memory blocks.  The special bit patterns are:
-
-#define CLEANBYTE     0xCB   /* clean (newly allocated) memory */
-#define DEADBYTE      0xDB   /* dead (newly freed) memory */
-#define FORBIDDENBYTE 0xFB   /* forbidden -- untouchable bytes */
-
-Strings of these bytes are unlikely to be valid addresses, floats, or 7-bit
-ASCII strings.
-
-Let S = sizeof(size_t). 2*S bytes are added at each end of each block of N bytes
-requested.  The memory layout is like so, where p represents the address
-returned by a malloc-like or realloc-like function (p[i:j] means the slice of
-bytes from *(p+i) inclusive up to *(p+j) exclusive; note that the treatment of
-negative indices differs from a Python slice):
-
-p[-2*S:-S]
-    Number of bytes originally asked for.  This is a size_t, big-endian (easier
-    to read in a memory dump).
-p[-S]
-    API ID.  See PEP 445.  This is a character, but seems undocumented.
-p[-S+1:0]
-    Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
-p[0:N]
-    The requested memory, filled with copies of CLEANBYTE, used to catch
-    reference to uninitialized memory.  When a realloc-like function is called
-    requesting a larger memory block, the new excess bytes are also filled with
-    CLEANBYTE.  When a free-like function is called, these are overwritten with
-    DEADBYTE, to catch reference to freed memory.  When a realloc- like function
-    is called requesting a smaller memory block, the excess old bytes are also
-    filled with DEADBYTE.
-p[N:N+S]
-    Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
-p[N+S:N+2*S]
-    A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function.  Big-endian size_t.  If "bad memory" is detected
-    later, the serial number gives an excellent way to set a breakpoint on the
-    next run, to capture the instant at which this block was passed out.  The
-    static function bumpserialno() in obmalloc.c is the only place the serial
-    number is incremented, and exists so you can set such a breakpoint easily.
-
-A realloc-like or free-like function first checks that the FORBIDDENBYTEs at
-each end are intact.  If they've been altered, diagnostic output is written to
-stderr, and the program is aborted via Py_FatalError().  The other main failure
-mode is provoking a memory error when a program reads up one of the special bit
-patterns and tries to use it as an address.  If you get in a debugger then and
-look at the object, you're likely to see that it's entirely filled with 0xDB
-(meaning freed memory is getting used) or 0xCB (meaning uninitialized memory is
-getting used).
-
-Note that PYMALLOC_DEBUG requires WITH_PYMALLOC. Py_DEBUG implies
-PYMALLOC_DEBUG (if WITH_PYMALLOC is enabled).
-
-Special gimmicks:
-
-envvar PYTHONMALLOCSTATS
-    If this envvar exists, a report of pymalloc summary statistics is printed to
-    stderr whenever a new arena is allocated, and also by Py_FinalizeEx().
-
-Changed in 2.5:  The number of extra bytes allocated is 4*sizeof(size_t).
-Before it was 16 on all boxes, reflecting that Python couldn't make use of
-allocations >= 2**32 bytes even on 64-bit boxes before 2.5.
-
-
 Py_DEBUG
 --------
 
 This is what is generally meant by "a debug build" of Python.
 
-Py_DEBUG implies LLTRACE, Py_REF_DEBUG, and PYMALLOC_DEBUG (if
-WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via the C way:
-by not defining NDEBUG), and some routines do additional sanity checks inside
-"#ifdef Py_DEBUG" blocks.
+Py_DEBUG implies LLTRACE and Py_REF_DEBUG. In addition, C assert()s are enabled
+(via the C way: by not defining NDEBUG), and some routines do additional sanity
+checks inside "#ifdef Py_DEBUG" blocks.
 
 
 LLTRACE

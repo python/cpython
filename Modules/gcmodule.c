@@ -1484,8 +1484,7 @@ static PyObject *
 gc_enable_impl(PyObject *module)
 /*[clinic end generated code: output=45a427e9dce9155c input=81ac4940ca579707]*/
 {
-    GCState *gcstate = get_gc_state();
-    gcstate->enabled = 1;
+    PyGC_Enable();
     Py_RETURN_NONE;
 }
 
@@ -1499,8 +1498,7 @@ static PyObject *
 gc_disable_impl(PyObject *module)
 /*[clinic end generated code: output=97d1030f7aa9d279 input=8c2e5a14e800d83b]*/
 {
-    GCState *gcstate = get_gc_state();
-    gcstate->enabled = 0;
+    PyGC_Disable();
     Py_RETURN_NONE;
 }
 
@@ -1514,8 +1512,7 @@ static int
 gc_isenabled_impl(PyObject *module)
 /*[clinic end generated code: output=1874298331c49130 input=30005e0422373b31]*/
 {
-    GCState *gcstate = get_gc_state();
-    return gcstate->enabled;
+    return PyGC_IsEnabled();
 }
 
 /*[clinic input]
@@ -2051,6 +2048,32 @@ PyMODINIT_FUNC
 PyInit_gc(void)
 {
     return PyModuleDef_Init(&gcmodule);
+}
+
+/* C API for controlling the state of the garbage collector */
+int
+PyGC_Enable(void)
+{
+    GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
+    gcstate->enabled = 1;
+    return old_state;
+}
+
+int
+PyGC_Disable(void)
+{
+    GCState *gcstate = get_gc_state();
+    int old_state = gcstate->enabled;
+    gcstate->enabled = 0;
+    return old_state;
+}
+
+int
+PyGC_IsEnabled(void)
+{
+    GCState *gcstate = get_gc_state();
+    return gcstate->enabled;
 }
 
 /* Public API to invoke gc.collect() from C */

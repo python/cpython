@@ -426,7 +426,8 @@ Certificate handling
       previously. Return an integer (no fractions of a second in the
       input format)
 
-.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, ca_certs=None)
+.. function:: get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT, \
+                                     ca_certs=None[, timeout])
 
    Given the address ``addr`` of an SSL-protected server, as a (*hostname*,
    *port-number*) pair, fetches the server's certificate, and returns it as a
@@ -436,7 +437,8 @@ Certificate handling
    same format as used for the same parameter in
    :meth:`SSLContext.wrap_socket`.  The call will attempt to validate the
    server certificate against that set of root certificates, and will fail
-   if the validation attempt fails.
+   if the validation attempt fails.  A timeout can be specified with the
+   ``timeout`` parameter.
 
    .. versionchanged:: 3.3
       This function is now IPv6-compatible.
@@ -444,6 +446,9 @@ Certificate handling
    .. versionchanged:: 3.5
       The default *ssl_version* is changed from :data:`PROTOCOL_SSLv3` to
       :data:`PROTOCOL_TLS` for maximum compatibility with modern servers.
+
+   .. versionchanged:: 3.10
+      The *timeout* parameter was added.
 
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 
@@ -1353,6 +1358,10 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.10
+
+      NPN has been superseded by ALPN
+
 .. method:: SSLSocket.unwrap()
 
    Performs the SSL shutdown handshake, which removes the TLS layer from the
@@ -1503,6 +1512,14 @@ to speed up repeated connections from the same clients.
       :class:`SSLContext` without protocol argument is deprecated. The
       context class will either require :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol in the future.
+
+   .. versionchanged:: 3.10
+
+      The default cipher suites now include only secure AES and ChaCha20
+      ciphers with forward secrecy and security level 2. RSA and DH keys with
+      less than 2048 bits and ECC keys with less than 224 bits are prohibited.
+      :data:`PROTOCOL_TLS`, :data:`PROTOCOL_TLS_CLIENT`, and
+      :data:`PROTOCOL_TLS_SERVER` use TLS 1.2 as minimum TLS version.
 
 
 :class:`SSLContext` objects have the following methods and attributes:
@@ -1700,6 +1717,10 @@ to speed up repeated connections from the same clients.
    ``False``.
 
    .. versionadded:: 3.3
+
+   .. deprecated:: 3.10
+
+      NPN has been superseded by ALPN
 
 .. attribute:: SSLContext.sni_callback
 

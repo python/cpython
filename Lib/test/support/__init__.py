@@ -1667,6 +1667,7 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
+    # TODO (PEP 632): alternate check without using distutils
     from distutils import ccompiler, sysconfig, spawn, errors
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)

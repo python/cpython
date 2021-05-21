@@ -556,7 +556,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 static Py_hash_t
 float_hash(PyFloatObject *v)
 {
-    return _Py_HashDouble(v->ob_fval);
+    return _Py_HashDouble((PyObject *)v, v->ob_fval);
 }
 
 static PyObject *

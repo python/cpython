@@ -3,8 +3,9 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
-#include "pycore_pylifecycle.h"
 #include "pycore_interp.h"        // _PyInterpreterState.num_threads
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_Init()
 #include <stddef.h>               // offsetof()
 #include "structmember.h"         // PyMemberDef
@@ -35,7 +36,7 @@ typedef struct {
 static inline thread_module_state*
 get_thread_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (thread_module_state *)state;
 }
@@ -311,7 +312,8 @@ static PyType_Slot lock_type_slots[] = {
 static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = lock_type_slots,
 };
 
@@ -682,7 +684,7 @@ static PyType_Slot local_dummy_type_slots[] = {
 static PyType_Spec local_dummy_type_spec = {
     .name = "_thread._localdummy",
     .basicsize = sizeof(localdummyobject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = local_dummy_type_slots,
 };
 

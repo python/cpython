@@ -1920,8 +1920,8 @@ precedence and have a left-to-right chaining feature as described in the
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.
 
-.. [#] The ``%`` operator is also used for string formatting; the same
-   precedence applies.
-
 .. [#] The power operator ``**`` binds less tightly than an arithmetic or
    bitwise unary operator on its right, that is, ``2**-1`` is ``0.5``.
+
+.. [#] The ``%`` operator is also used for string formatting; the same
+   precedence applies.

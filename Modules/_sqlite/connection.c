@@ -86,6 +86,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         return -1;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
+        return -1;
+    }
+
     database = PyBytes_AsString(database_obj);
 
     self->initialized = 1;
@@ -111,7 +115,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     Py_DECREF(database_obj);
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db, NULL);
+        _pysqlite_seterror(self->db);
         return -1;
     }
 
@@ -178,6 +182,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     self->InternalError         = pysqlite_InternalError;
     self->ProgrammingError      = pysqlite_ProgrammingError;
     self->NotSupportedError     = pysqlite_NotSupportedError;
+
+    if (PySys_Audit("sqlite3.connect/handle", "O", self) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -334,7 +342,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         rc = sqlite3_close_v2(self->db);
 
         if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->db, NULL);
+            _pysqlite_seterror(self->db);
             return NULL;
         } else {
             self->db = NULL;
@@ -375,13 +383,13 @@ PyObject* _pysqlite_connection_begin(pysqlite_Connection* self)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db, statement);
+        _pysqlite_seterror(self->db);
         goto error;
     }
 
     rc = pysqlite_step(statement, self);
     if (rc != SQLITE_DONE) {
-        _pysqlite_seterror(self->db, statement);
+        _pysqlite_seterror(self->db);
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -389,7 +397,7 @@ PyObject* _pysqlite_connection_begin(pysqlite_Connection* self)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK && !PyErr_Occurred()) {
-        _pysqlite_seterror(self->db, NULL);
+        _pysqlite_seterror(self->db);
     }
 
 error:
@@ -423,20 +431,20 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
         rc = sqlite3_prepare_v2(self->db, "COMMIT", -1, &statement, NULL);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->db, NULL);
+            _pysqlite_seterror(self->db);
             goto error;
         }
 
         rc = pysqlite_step(statement, self);
         if (rc != SQLITE_DONE) {
-            _pysqlite_seterror(self->db, statement);
+            _pysqlite_seterror(self->db);
         }
 
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_finalize(statement);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK && !PyErr_Occurred()) {
-            _pysqlite_seterror(self->db, NULL);
+            _pysqlite_seterror(self->db);
         }
 
     }
@@ -473,20 +481,20 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
         rc = sqlite3_prepare_v2(self->db, "ROLLBACK", -1, &statement, NULL);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->db, NULL);
+            _pysqlite_seterror(self->db);
             goto error;
         }
 
         rc = pysqlite_step(statement, self);
         if (rc != SQLITE_DONE) {
-            _pysqlite_seterror(self->db, statement);
+            _pysqlite_seterror(self->db);
         }
 
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_finalize(statement);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK && !PyErr_Occurred()) {
-            _pysqlite_seterror(self->db, NULL);
+            _pysqlite_seterror(self->db);
         }
 
     }
@@ -592,8 +600,7 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
             goto error;
         }
 
-        PyTuple_SetItem(args, i, cur_py_value);
-
+        PyTuple_SET_ITEM(args, i, cur_py_value);
     }
 
     return args;
@@ -1155,6 +1162,11 @@ pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
 {
     int rc;
 
+    if (PySys_Audit("sqlite3.enable_load_extension",
+                    "OO", self, onoff ? Py_True : Py_False) < 0) {
+        return NULL;
+    }
+
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
@@ -1185,6 +1197,10 @@ pysqlite_connection_load_extension_impl(pysqlite_Connection *self,
 {
     int rc;
     char* errmsg;
+
+    if (PySys_Audit("sqlite3.load_extension", "Os", self, extension_name) < 0) {
+        return NULL;
+    }
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1332,7 +1348,7 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
                 PyErr_SetString(pysqlite_Warning, "SQL is of wrong type. Must be string.");
         } else {
             (void)pysqlite_statement_reset(statement);
-            _pysqlite_seterror(self->db, NULL);
+            _pysqlite_seterror(self->db);
         }
         goto error;
     }
@@ -1653,7 +1669,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     Py_END_ALLOW_THREADS
 
     if (bck_handle == NULL) {
-        _pysqlite_seterror(bck_conn, NULL);
+        _pysqlite_seterror(bck_conn);
         return NULL;
     }
 
@@ -1691,7 +1707,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(bck_conn, NULL);
+        _pysqlite_seterror(bck_conn);
         return NULL;
     }
 
@@ -1777,7 +1793,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
                 PyErr_Clear();
             }
         }
-        _pysqlite_seterror(self->db, NULL);
+        _pysqlite_seterror(self->db);
         goto finally;
     }
 

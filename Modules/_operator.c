@@ -1,6 +1,5 @@
-
 #include "Python.h"
-
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -12,7 +11,7 @@ typedef struct {
 static inline _operator_state*
 get_operator_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_operator_state *)state;
 }

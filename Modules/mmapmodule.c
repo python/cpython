@@ -1370,13 +1370,10 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      */
     if (fileno != -1 && fileno != 0) {
         /* Ensure that fileno is within the CRT's valid range */
-        _Py_BEGIN_SUPPRESS_IPH
-        fh = (HANDLE)_get_osfhandle(fileno);
-        _Py_END_SUPPRESS_IPH
-        if (fh==(HANDLE)-1) {
-            PyErr_SetFromErrno(PyExc_OSError);
+        fh = _Py_get_osfhandle(fileno);
+        if (fh == INVALID_HANDLE_VALUE)
             return NULL;
-        }
+
         /* Win9x appears to need us seeked to zero */
         lseek(fileno, 0, SEEK_SET);
     }
