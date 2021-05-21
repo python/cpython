@@ -20,7 +20,10 @@ enum decoding_state {
 };
 
 enum interactive_underflow_t {
+    /* Normal mode of operation: return a new token when asked in interactie mode */
     IUNDERFLOW_NORMAL,
+    /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
+     * can be used to prevent the tokenizer to promt the user for new tokens */
     IUNDERFLOW_STOP,
 };
 
@@ -79,7 +82,8 @@ struct tok_state {
     int async_def_indent; /* Indentation level of the outermost 'async def'. */
     int async_def_nl;     /* =1 if the outermost 'async def' had at least one
                              NEWLINE token after it. */
-    enum interactive_underflow_t interactive_underflow;
+    /* How to proceed when asked for a new token in interactive mode */
+    enum interactive_underflow_t interactive_underflow; 
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);
