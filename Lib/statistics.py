@@ -354,7 +354,6 @@ def fmean(data, weights=None):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
     """
-
     try:
         n = len(data)
     except TypeError:
