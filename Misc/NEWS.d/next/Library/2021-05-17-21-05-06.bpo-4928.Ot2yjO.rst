@@ -1,0 +1,1 @@
+Documented existing behavior on POSIX: NamedTemporaryFiles are not deleted when creating process is killed with SIGKILL
