@@ -727,6 +727,8 @@ def _get_action_name(argument):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
+    elif isinstance(argument, _SubParsersAction):
+        return '{%s}' % ','.join(map(str, argument.choices))
     else:
         return None
 

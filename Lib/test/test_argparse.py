@@ -2052,6 +2052,12 @@ class TestAddSubparsers(TestCase):
         subparsers.add_parser('run')
         self._test_required_subparsers(parser)
 
+    def test_required_subparsers_via_kwarg_no_dest(self):
+        parser = ErrorRaisingArgumentParser()
+        subparsers = parser.add_subparsers(required=True)
+        subparsers.add_parser('run')
+        self.assertArgumentParserError(parser.parse_args, ())
+
     def test_required_subparsers_default(self):
         parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers(dest='command')
