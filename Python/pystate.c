@@ -292,7 +292,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
-        PyThreadState_Clear(p);
+        if (p != tstate) {
+            PyThreadState_Clear(p);
+        }
     }
     HEAD_UNLOCK(runtime);
 
@@ -324,6 +326,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
+    PyThreadState_Clear(tstate);
     _PyGC_Fini(interp);
 
     /* We don't clear sysdict and builtins until the end of this function.
