@@ -82,6 +82,12 @@ class MultiplexedPathTest(unittest.TestCase):
             "MultiplexedPath('{}')".format(self.folder),
         )
 
+    def test_name(self):
+        self.assertEqual(
+            MultiplexedPath(self.folder).name,
+            os.path.basename(self.folder),
+        )
+
 
 class NamespaceReaderTest(unittest.TestCase):
     site_dir = str(pathlib.Path(__file__).parent)
