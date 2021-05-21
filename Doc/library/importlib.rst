@@ -851,6 +851,10 @@ Resources are roughly akin to files inside directories, though it's important
 to keep in mind that this is just a metaphor.  Resources and packages **do
 not** have to exist as physical files and directories on the file system.
 
+Resources have no semantics associated with them, they are an abstract concept
+implemented by the module loader. Generally, in a file-system context, resources
+are considered the child files in a module directory.
+
 .. note::
 
    This module provides functionality similar to `pkg_resources

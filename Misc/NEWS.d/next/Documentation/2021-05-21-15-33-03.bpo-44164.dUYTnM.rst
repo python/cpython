@@ -1,0 +1,1 @@
+Document the semantic value of module resources.
