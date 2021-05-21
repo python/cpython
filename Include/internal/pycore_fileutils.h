@@ -48,6 +48,18 @@ PyAPI_FUNC(int) _Py_GetLocaleconvNumeric(
     PyObject **decimal_point,
     PyObject **thousands_sep);
 
+#ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
+extern int _Py_LocaleUsesNonUnicodeWchar(void);
+
+extern wchar_t* _Py_DecodeNonUnicodeWchar(
+    const wchar_t* native,
+    Py_ssize_t size);
+
+extern int _Py_EncodeNonUnicodeWchar_InPlace(
+    wchar_t* unicode,
+    Py_ssize_t size);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
