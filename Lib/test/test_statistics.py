@@ -1981,10 +1981,17 @@ class TestFMean(unittest.TestCase):
         self.assertEqual(
             fmean([10, 10, 20], [0.25, 0.25, 0.50]),
             fmean([10, 10, 20, 20]))
-        with self.assertRaises(ValueError):
+        self.assertEqual(                           # inputs are iterators
+            fmean(iter([10, 10, 20]), iter([0.25, 0.25, 0.50])),
+            fmean([10, 10, 20, 20]))
+        with self.assertRaises(StatisticsError):
             fmean([10, 20, 30], [1, 2])             # unequal lengths
         with self.assertRaises(StatisticsError):
+            fmean(iter([10, 20, 30]), iter([1, 2])) # unequal lengths
+        with self.assertRaises(StatisticsError):
             fmean([10, 20], [-1, 1])                # sum of weights is zero
+        with self.assertRaises(StatisticsError):
+            fmean(iter([10, 20]), iter([-1, 1]))    # sum of weights is zero
 
 
 # === Tests for variances and standard deviations ===

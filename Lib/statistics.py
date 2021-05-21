@@ -136,7 +136,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter
+from operator import itemgetter, mul
 from collections import Counter, namedtuple
 
 # === Exceptions ===
@@ -354,13 +354,7 @@ def fmean(data, weights=None):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
     """
-    if weights is not None:
-        weights = list(weights)
-        num = fsum(x_i * w_i for x_i, w_i in zip(data, weights, strict=True))
-        den = fsum(weights)
-        if den:
-            return num / den
-        raise StatisticsError('sum of weights must be non-zero')
+
     try:
         n = len(data)
     except TypeError:
@@ -370,13 +364,23 @@ def fmean(data, weights=None):
             nonlocal n
             for n, x in enumerate(iterable, start=1):
                 yield x
-        total = fsum(count(data))
+        data = count(data)
+    if weights is None:
+        num = fsum(data)
+        den = n
     else:
-        total = fsum(data)
-    try:
-        return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+        try:
+            num_weights = len(weights)
+        except TypeError:
+            weights = list(weights)
+            num_weights = len(weights)
+        num = fsum(map(mul, data, weights))
+        den = fsum(weights)
+        if n != num_weights:
+            raise StatisticsError('data and weights must be the same length')
+    if den:
+        return num / den
+    raise StatisticsError('fmean requires at least one data point')
 
 
 def geometric_mean(data):
