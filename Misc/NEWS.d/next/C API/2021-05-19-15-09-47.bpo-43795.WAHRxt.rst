@@ -1,2 +1,1 @@
-:c:func:`Py_FrozenMain`, is no longer considered part of the Limited API and Stable ABI,
-to which it was added in 3.10.0a4 (bpo-23730).
+The undocumented function :c:func:`Py_FrozenMain` is removed from the Limited API.

@@ -1919,6 +1919,11 @@ Porting to Python 3.10
   instead.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 
+* The undocumented function ``Py_FrozenMain`` has been removed from the
+  limited API. The function is mainly useful for custom builds of Python,
+  and it is not always present when Python is built as a shared library.
+  (Contributed by Petr Viktorin in :issue:`26241`)
+
 Deprecated
 ----------
 
