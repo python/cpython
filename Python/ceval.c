@@ -5061,6 +5061,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
     }
 
+
     /* Allocate and initialize storage for cell vars, and copy free
        vars into frame. */
     for (i = 0; i < co->co_ncellvars; ++i) {
