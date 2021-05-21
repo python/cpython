@@ -111,7 +111,7 @@ optimize(HotPyCacheOrInstruction *quickened, int len)
 
 int
 _Py_Quicken(PyCodeObject *code) {
-    Py_ssize_t size = PyBytes_Size(code->co_code);
+    Py_ssize_t size = PyBytes_GET_SIZE(code->co_code);
     int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
     if (instr_count > MAX_SIZE_TO_QUICKEN) {
         code->co_warmup = 255;
