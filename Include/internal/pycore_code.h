@@ -74,12 +74,6 @@ struct _PyCodeConstructor {
 
     /* used by the eval loop */
     PyObject *exceptiontable;
-
-    // Everything else could be computed later from fastlocal*.
-    // XXX Drop these.
-    PyObject *varnames;
-    PyObject *cellvars;
-    PyObject *freevars;
 };
 
 // Using an "arguments struct" like this is helpful for maintainability
@@ -98,6 +92,12 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 /* Private API */
 
 int _PyCode_InitOpcache(PyCodeObject *co);
+
+/* Getters for internal PyCodeObject data. */
+PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
+PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
+PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
+
 
 #ifdef __cplusplus
 }

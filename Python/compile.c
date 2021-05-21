@@ -2047,16 +2047,16 @@ static int
 compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                       PyObject *qualname)
 {
-    Py_ssize_t i, free = PyCode_GetNumFree(co);
     if (qualname == NULL)
         qualname = co->co_name;
 
-    if (free) {
-        for (i = 0; i < free; ++i) {
+    if (co->co_nfreevars) {
+        int i = co->co_nlocals + co->co_ncellvars;
+        for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
-            PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+            PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
 
             /* Special case: If a class contains a method with a
                free variable that has the same name as a method,
@@ -2076,6 +2076,10 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                 arg = compiler_lookup_arg(c->u->u_freevars, name);
             }
             if (arg == -1) {
+                PyObject *freevars = _PyCode_GetFreevars(co);
+                if (freevars == NULL) {
+                    PyErr_Clear();
+                }
                 PyErr_Format(PyExc_SystemError,
                     "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
                     "freevars of code %S: %R",
@@ -2083,13 +2087,13 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                     reftype,
                     c->u->u_name,
                     co->co_name,
-                    co->co_freevars);
+                    freevars);
                 return 0;
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
         }
         flags |= 0x08;
-        ADDOP_I(c, BUILD_TUPLE, free);
+        ADDOP_I(c, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, (PyObject*)co);
     ADDOP_LOAD_CONST(c, qualname);
@@ -7225,30 +7229,15 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *consts = NULL;
     PyObject *fastlocalnames = NULL;
     _PyFastLocalKinds fastlocalkinds;
-    PyObject *varnames = NULL;
     PyObject *name = NULL;
-    PyObject *freevars = NULL;
-    PyObject *cellvars = NULL;
     int flags;
     int posorkeywordargcount, posonlyargcount, kwonlyargcount;
 
     names = dict_keys_inorder(c->u->u_names, 0);
-    varnames = dict_keys_inorder(c->u->u_varnames, 0);
-    if (!names || !varnames) {
+    if (!names) {
         goto error;
     }
-    cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
-    if (!cellvars)
-        goto error;
-    freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_GET_SIZE(cellvars));
-    if (!freevars)
-        goto error;
-
-    if (!merge_const_one(c, &names) ||
-            !merge_const_one(c, &varnames) ||
-            !merge_const_one(c, &cellvars) ||
-            !merge_const_one(c, &freevars))
-    {
+    if (!merge_const_one(c, &names)) {
         goto error;
     }
 
@@ -7298,11 +7287,9 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .stacksize = maxdepth,
 
         .exceptiontable = a->a_except_table,
-
-        .varnames = varnames,
-        .cellvars = cellvars,
-        .freevars = freevars,
     };
+    memcpy(con.fastlocalkinds, fastlocalkinds, nlocalsplus);
+
     if (_PyCode_Validate(&con) < 0) {
         goto error;
     }
@@ -7317,16 +7304,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    memcpy(co->co_fastlocalkinds, fastlocalkinds, nlocalsplus);
-
  error:
     Py_XDECREF(names);
     Py_XDECREF(consts);
     Py_XDECREF(fastlocalnames);
-    Py_XDECREF(varnames);
     Py_XDECREF(name);
-    Py_XDECREF(freevars);
-    Py_XDECREF(cellvars);
     return co;
 }
 

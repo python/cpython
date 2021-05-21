@@ -520,9 +520,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_names, p);
         w_object(co->co_fastlocalnames, p);
         w_string(co->co_fastlocalkinds, co->co_nlocalsplus, p);
-        w_object(co->co_varnames, p);
-        w_object(co->co_freevars, p);
-        w_object(co->co_cellvars, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
@@ -1309,9 +1306,6 @@ r_object(RFILE *p)
             PyObject *consts = NULL;
             PyObject *names = NULL;
             PyObject *fastlocalnames = NULL;
-            PyObject *varnames = NULL;
-            PyObject *freevars = NULL;
-            PyObject *cellvars = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
@@ -1362,16 +1356,6 @@ r_object(RFILE *p)
                 }
             }
 
-            varnames = r_object(p);
-            if (varnames == NULL)
-                goto code_error;
-            Py_ssize_t nlocals = PyTuple_GET_SIZE(varnames);
-            freevars = r_object(p);
-            if (freevars == NULL)
-                goto code_error;
-            cellvars = r_object(p);
-            if (cellvars == NULL)
-                goto code_error;
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
@@ -1390,7 +1374,8 @@ r_object(RFILE *p)
 
             if (PySys_Audit("code.__new__", "OOOiiiiii",
                             code, filename, name, argcount, posonlyargcount,
-                            kwonlyargcount, nlocals, stacksize, flags) < 0) {
+                            kwonlyargcount, nlocalsplus, stacksize,
+                            flags) < 0) {
                 goto code_error;
             }
 
@@ -1416,15 +1401,12 @@ r_object(RFILE *p)
                 .stacksize = stacksize,
 
                 .exceptiontable = exceptiontable,
-
-                .varnames = varnames,
-                .cellvars = cellvars,
-                .freevars = freevars,
             };
+            memcpy(con.fastlocalkinds, fastlocalkinds, nlocalsplus);
+
             if (_PyCode_Validate(&con) < 0) {
                 goto code_error;
             }
-            memcpy(con.fastlocalkinds, fastlocalkinds, nlocalsplus);
 
             v = (PyObject *)_PyCode_New(&con);
             if (v == NULL) {
@@ -1437,9 +1419,6 @@ r_object(RFILE *p)
             Py_XDECREF(consts);
             Py_XDECREF(names);
             Py_XDECREF(fastlocalnames);
-            Py_XDECREF(varnames);
-            Py_XDECREF(freevars);
-            Py_XDECREF(cellvars);
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(linetable);

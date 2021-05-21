@@ -8895,12 +8895,12 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     PyTypeObject *type = NULL;
-    for (i = 0; i < co->co_nfreevars; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+    i = co->co_nlocals + co->co_ncellvars;
+    for (; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            Py_ssize_t index = co->co_nlocals + co->co_ncellvars + i;
-            PyObject *cell = f->f_localsptr[index];
+            PyObject *cell = f->f_localsptr[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
