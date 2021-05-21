@@ -529,7 +529,7 @@ file then shutil will silently fallback on using less efficient
 
 .. versionchanged:: 3.8
 
-.. versionchanged:: 3.10
+.. versionchanged:: 3.11
     Solaris now uses :func:`os.sendfile` rather than no fast-copy operation.
 
 .. _shutil-copytree-example:
