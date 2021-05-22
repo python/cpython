@@ -946,18 +946,18 @@ class MultiprocessTests(unittest.TestCase):
     def test_rollback_if_db_is_locked(self):
         # bpo-27334: ctx manager does not rollback if commit fails
         TIMEOUT = 0.01
-        SCRIPT = f"""
-import sqlite3
-input()  # wait for parent process to start
-cx = sqlite3.connect("{TESTFN}", timeout={TIMEOUT})
-try:
-    with cx:
-        cx.execute("insert into t values('test')")
-except Exception as exc:
-    print(exc)
-else:
-    print("no error in sub")
-input()  # keep proc open till parent calls
+        SCRIPT = f"""if 1:
+            import sqlite3
+            input()  # wait for parent process to start
+            cx = sqlite3.connect("{TESTFN}", timeout={TIMEOUT})
+            try:
+                with cx:
+                    cx.execute("insert into t values('test')")
+            except Exception as exc:
+                print(exc)
+            else:
+                print("no error in sub")
+            input()  # keep proc open till parent calls
         """
 
         # spawn child process
