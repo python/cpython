@@ -98,7 +98,8 @@ executables:
 * `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
 * `py2exe <http://www.py2exe.org/>`_ (Windows only)
 * `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
-
+* `Nuitka <https://nuitka.net/>`_ (Cross-platform)
+* `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
