@@ -1,0 +1,2 @@
+asyncio: signal handlers registered by add_signal_handler() now call
+previously registered handlers (if any).
