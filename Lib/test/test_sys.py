@@ -1274,11 +1274,7 @@ class SizeofTest(unittest.TestCase):
         # frame
         import inspect
         x = inspect.currentframe()
-        ncells = len(x.f_code.co_cellvars)
-        nfrees = len(x.f_code.co_freevars)
-        localsplus = x.f_code.co_stacksize + x.f_code.co_nlocals +\
-                  ncells + nfrees
-        check(x, vsize('8P3i3c' + localsplus*'P'))
+        check(x, size('5P3i4cP'))
         # function
         def func(): pass
         check(func, size('14P'))

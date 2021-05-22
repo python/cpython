@@ -5,6 +5,7 @@
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "frameobject.h"          // PyFrame_GetBack()
+#include "pycore_frame.h"
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -853,7 +854,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         *lineno = 1;
     }
     else {
-        globals = f->f_globals;
+        globals = _PyFrame_GetGlobals(f);
         PyCodeObject *code = PyFrame_GetCode(f);
         *filename = code->co_filename;
         Py_DECREF(code);

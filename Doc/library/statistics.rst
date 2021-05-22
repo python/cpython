@@ -43,7 +43,7 @@ or sample.
 
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
-:func:`fmean`            Fast, floating point arithmetic mean.
+:func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
@@ -128,7 +128,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(data)`` is equivalent to calculating the true population mean μ.
 
 
-.. function:: fmean(data)
+.. function:: fmean(data, weights=None)
 
    Convert *data* to floats and compute the arithmetic mean.
 
@@ -141,7 +141,24 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> fmean([3.5, 4.0, 5.25])
       4.25
 
+   Optional weighting is supported.  For example, a professor assigns a
+   grade for a course by weighting quizzes at 20%, homework at 20%, a
+   midterm exam at 30%, and a final exam at 30%:
+
+   .. doctest::
+
+      >>> grades = [85, 92, 83, 91]
+      >>> weights = [0.20, 0.20, 0.30, 0.30]
+      >>> fmean(grades, weights)
+      87.6
+
+   If *weights* is supplied, it must be the same length as the *data* or
+   a :exc:`ValueError` will be raised.
+
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added support for *weights*.
 
 
 .. function:: geometric_mean(data)

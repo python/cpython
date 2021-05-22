@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "frameobject.h"
+#include "pycore_frame.h"
 
 #include "pycore_pyerrors.h"
 
@@ -208,9 +209,10 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
 
     PyFrameObject *frame = traceback->tb_frame;
     assert(frame != NULL);
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code = PyFrame_GetCode(frame);
     assert(code != NULL && code->co_varnames != NULL);
     PyObject *dir = PySequence_List(code->co_varnames);
+    Py_DECREF(code);
     if (dir == NULL) {
         return NULL;
     }
@@ -221,7 +223,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_globals);
+    dir = PySequence_List(_PyFrame_GetGlobals(frame));
     if (dir == NULL) {
         return NULL;
     }
@@ -231,7 +233,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return suggestions;
     }
 
-    dir = PySequence_List(frame->f_builtins);
+    dir = PySequence_List(_PyFrame_GetBuiltins(frame));
     if (dir == NULL) {
         return NULL;
     }
