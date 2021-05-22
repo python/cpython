@@ -20,15 +20,30 @@ typedef struct _PyOpcache _PyOpcache;
 struct PyCodeObject {
     PyObject_HEAD
 
-    /* Note that not all fields are used in either hash or comparisons. */
+    /* Note only the following fields are used in hash and/or comparisons
+     *
+     * - co_name
+     * - co_argcount
+     * - co_posonlyargcount
+     * - co_kwonlyargcount
+     * - co_nlocals
+     * - co_stacksize
+     * - co_flags
+     * - co_firstlineno
+     * - co_code
+     * - co_consts
+     * - co_names
+     * - co_varnames
+     * - co_freevars
+     * - co_cellvars
+     *
+     * This is done to preserve the name and line number for tracebacks
+     * and debuggers; otherwise, constant de-duplication would collapse
+     * identical functions/lambdas defined on different lines.
+     */
 
     /* metadata */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
-    /* co_name is used for both the hash and comparisions.  This is
-     * done to preserve the name and line number for tracebacks and
-     * debuggers; otherwise, constant de-duplication would collapse
-     * identical functions/lambdas defined on different lines.
-    */
     PyObject *co_name;          /* unicode (name, for reference) */
     int co_flags;               /* CO_..., see below */
 
