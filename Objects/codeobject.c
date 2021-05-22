@@ -36,9 +36,7 @@ all_name_chars(PyObject *o)
 static int
 intern_strings(PyObject *tuple)
 {
-    Py_ssize_t i;
-
-    for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
+    for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (v == NULL || !PyUnicode_CheckExact(v)) {
             PyErr_SetString(PyExc_SystemError,
@@ -116,6 +114,13 @@ static int
 check_names(PyObject *names, const char *field, enum check_mode mode)
 {
     assert(names && PyTuple_Check(names));
+    if (PyTuple_GET_SIZE(names) > INT_MAX) {
+        if (mode == FAIL) {
+            PyErr_Format(PyExc_OverflowError,
+                         "code: %s larger than INT_MAX", field);
+        }
+        return -1;
+    }
     for (Py_ssize_t i = PyTuple_GET_SIZE(names); --i >= 0; ) {
         PyObject *item = PyTuple_GET_ITEM(names, i);
         if (!PyUnicode_Check(item)) {
@@ -206,39 +211,16 @@ check_code(struct _PyCodeConstructor *con, enum check_mode mode)
     CHECK_NEG(firstlineno);
     CHECK_TYPE(linetable, PyBytes_Check, "bytes");
 
-    if (check_names(con->names, "co_names", mode) < 0) {
-        return -1;
-    }
-
     CHECK_TYPE(consts, PyTuple_Check, "tuple");
-    CHECK_TYPE(names, PyTuple_Check, "tuple");
-
-    CHECK_NEG(argcount);
-    CHECK_NEG(posonlyargcount);
-    if (con->argcount < con->posonlyargcount) {
+    if (PyTuple_GET_SIZE(con->consts) > INT_MAX) {
         if (mode == FAIL) {
             PyErr_SetString(PyExc_OverflowError,
-                            "code: co_code larger than INT_MAX");
+                            "code: co_consts larger than INT_MAX");
         }
         return -1;
     }
-    CHECK_NEG(kwonlyargcount);
-    Py_ssize_t nlocals = PyTuple_GET_SIZE(con->varnames);
-    Py_ssize_t total_args;
-    if (con->argcount <= nlocals && con->kwonlyargcount <= nlocals) {
-        /* Never overflows. */
-        total_args = (Py_ssize_t)con->argcount +
-                     (Py_ssize_t)con->kwonlyargcount +
-                     ((con->flags & CO_VARARGS) != 0) +
-                     ((con->flags & CO_VARKEYWORDS) != 0);
-    }
-    else {
-        total_args = nlocals + 1;
-    }
-    if (total_args > nlocals) {
-        if (mode == FAIL) {
-            PyErr_SetString(PyExc_ValueError, "code: co_varnames is too small");
-        }
+    CHECK_TYPE(names, PyTuple_Check, "tuple");
+    if (check_names(con->names, "co_names", mode) < 0) {
         return -1;
     }
 
@@ -253,6 +235,70 @@ check_code(struct _PyCodeConstructor *con, enum check_mode mode)
     CHECK_TYPE(freevars, PyTuple_Check, "tuple");
     if (check_names(con->freevars, "co_freevars", mode) < 0) {
         return -1;
+    }
+    Py_ssize_t nlocals = PyTuple_GET_SIZE(con->varnames);
+    Py_ssize_t ncellvars = PyTuple_GET_SIZE(con->cellvars);
+    Py_ssize_t nfreevars = PyTuple_GET_SIZE(con->freevars);
+    Py_ssize_t nfastlocals = nlocals + ncellvars + nfreevars;
+    if (nfastlocals > INT_MAX ||
+        nlocals > nfastlocals ||
+        ncellvars > nfastlocals ||
+        nfreevars > nfastlocals
+        ) {
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "code: co_nfastlocals larger than INT_MAX");
+        }
+        return -1;
+    }
+
+    // Check the arg counts.
+    Py_ssize_t argsremainder = nlocals;
+    CHECK_NEG(argcount);
+    if (con->argcount > argsremainder) {
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "code: co_varnames is too small");
+        }
+        return -1;
+    }
+    argsremainder -= con->argcount;
+    CHECK_NEG(posonlyargcount);
+    if (con->argcount < con->posonlyargcount) {
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "code: co_posonlyargcount is larger than co_argcount");
+        }
+        return -1;
+    }
+    CHECK_NEG(kwonlyargcount);
+    if (con->kwonlyargcount > argsremainder) {
+        if (mode == FAIL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "code: co_varnames is too small");
+        }
+        return -1;
+    }
+    argsremainder -= con->kwonlyargcount;
+    if ((con->flags & CO_VARARGS) != 0) {
+        if (argsremainder < 1) {
+            if (mode == FAIL) {
+                PyErr_SetString(PyExc_ValueError,
+                                "code: co_varnames is too small");
+            }
+            return -1;
+        }
+        argsremainder -= 1;
+    }
+    if ((con->flags & CO_VARKEYWORDS) != 0) {
+        if (argsremainder < 1) {
+            if (mode == FAIL) {
+                PyErr_SetString(PyExc_ValueError,
+                                "code: co_varnames is too small");
+            }
+            return -1;
+        }
+        argsremainder -= 1;
     }
 
     CHECK_NEG(stacksize);
@@ -340,14 +386,13 @@ make_code(struct _PyCodeConstructor *con)
         return NULL;
     }
 
-    Py_ssize_t nlocals = PyTuple_GET_SIZE(con->varnames);
-    Py_ssize_t totalargs = (Py_ssize_t)con->argcount +
-                           (Py_ssize_t)con->kwonlyargcount +
-                           ((con->flags & CO_VARARGS) != 0) +
-                           ((con->flags & CO_VARKEYWORDS) != 0);
-    Py_ssize_t ncellvars = PyTuple_GET_SIZE(con->cellvars);
-    Py_ssize_t nfreevars = PyTuple_GET_SIZE(con->freevars);
-    Py_ssize_t nfastlocals = nlocals + ncellvars + nfreevars;
+    int nlocals = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(con->varnames),
+                                   Py_ssize_t, int);
+    int ncellvars = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(con->cellvars),
+                                     Py_ssize_t, int);
+    int nfreevars = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(con->freevars),
+                                     Py_ssize_t, int);
+    int nfastlocals = nlocals + ncellvars + nfreevars;
 
     /* Check for any inner or outer closure references */
     if (!ncellvars && !nfreevars) {
@@ -401,22 +446,26 @@ make_code(struct _PyCodeConstructor *con)
 
     /* Create mapping between cells and arguments if needed. */
     if (ncellvars) {
+        int totalargs = con->argcount +
+                        con->kwonlyargcount +
+                        ((con->flags & CO_VARARGS) != 0) +
+                        ((con->flags & CO_VARKEYWORDS) != 0);
         /* Find cells which are also arguments. */
-        for (Py_ssize_t i = 0; i < ncellvars; i++) {
+        for (int i = 0; i < ncellvars; i++) {
             PyObject *cellname = PyTuple_GET_ITEM(co->co_cellvars, i);
-            for (Py_ssize_t j = 0; j < totalargs; j++) {
+            for (int j = 0; j < totalargs; j++) {
                 PyObject *argname = PyTuple_GET_ITEM(co->co_varnames, j);
                 int cmp = PyUnicode_Compare(cellname, argname);
                 assert(cmp != -1 || !PyErr_Occurred());
                 if (cmp == 0) {
                     if (co->co_cell2arg == NULL) {
-                        co->co_cell2arg = PyMem_NEW(Py_ssize_t, ncellvars);
+                        co->co_cell2arg = PyMem_NEW(int, ncellvars);
                         if (co->co_cell2arg == NULL) {
                             Py_DECREF(co);
                             PyErr_NoMemory();
                             return NULL;
                         }
-                        for (Py_ssize_t k = 0; k < ncellvars; k++) {
+                        for (int k = 0; k < ncellvars; k++) {
                             co->co_cell2arg[k] = CO_CELL_NOT_AN_ARG;
                         }
                     }
@@ -447,7 +496,7 @@ _PyCode_New(struct _PyCodeConstructor *con)
  ******************/
 
 static int
-check_legacy_code(struct _PyCodeConstructor *con, Py_ssize_t nlocals,
+check_legacy_code(struct _PyCodeConstructor *con, int nlocals,
                   enum check_mode mode)
 {
     if (check_code(con, mode) < 0) {
@@ -591,10 +640,10 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
     }
 
     if (kind & CO_FAST_LOCALONLY) {
-        Py_ssize_t totalargs = (Py_ssize_t)co->co_argcount +
-                               (Py_ssize_t)co->co_kwonlyargcount +
-                               ((co->co_flags & CO_VARARGS) != 0) +
-                               ((co->co_flags & CO_VARKEYWORDS) != 0);
+        int totalargs = co->co_argcount +
+                        co->co_kwonlyargcount +
+                        ((co->co_flags & CO_VARARGS) != 0) +
+                        ((co->co_flags & CO_VARKEYWORDS) != 0);
         if (co->co_nlocals - totalargs) {
             return true;
         }
@@ -611,13 +660,13 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
     return false;
 }
 
-Py_ssize_t
-_PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
+int
+_PyCode_CellForLocal(PyCodeObject *co, int offset)
 {
-    if (co->co_cell2arg == 0) {
+    if (co->co_cell2arg == NULL) {
         return -1;
     }
-    for (Py_ssize_t i = 0; i < co->co_ncellvars; i++) {
+    for (int i = 0; i < co->co_ncellvars; i++) {
         if (co->co_cell2arg[i] == offset) {
             return co->co_nlocals + i;
         }
@@ -625,24 +674,24 @@ _PyCode_CellForLocal(PyCodeObject *co, Py_ssize_t offset)
     return -1;
 }
 
-Py_ssize_t
+int
 _PyCode_FastOffsetFromId(PyCodeObject *co, _Py_Identifier *id,
                          _PyFastLocalKind kind)
 {
-    Py_ssize_t baseoffset;
+    int baseoffset;
     PyObject *names = NULL;
     switch (kind) {
         case CO_FAST_LOCAL:
-            names = co->co_varnames;
             baseoffset = 0;
+            names = co->co_varnames;
             break;
         case CO_FAST_CELL:
-            names = co->co_cellvars;
             baseoffset = co->co_nlocals;
+            names = co->co_cellvars;
             break;
         case CO_FAST_FREE:
-            names = co->co_freevars;
             baseoffset = co->co_nlocals + co->co_ncellvars;
+            names = co->co_freevars;
             break;
         default:
             return -1;
@@ -650,8 +699,9 @@ _PyCode_FastOffsetFromId(PyCodeObject *co, _Py_Identifier *id,
     if (names == NULL) {
         return -1;
     }
-    Py_ssize_t namecount = PyTuple_GET_SIZE(names);
-    for (Py_ssize_t i = 0; i < namecount; i++) {
+    int namecount = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(names),
+                                     Py_ssize_t, int);
+    for (int i = 0; i < namecount; i++) {
         PyObject *name = PyTuple_GET_ITEM(names, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, id)) {
@@ -1421,7 +1471,7 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL) {
-        res += co->co_ncellvars * sizeof(Py_ssize_t);
+        res += co->co_ncellvars * sizeof(int);
     }
     if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +

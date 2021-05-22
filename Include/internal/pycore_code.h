@@ -84,10 +84,10 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 int _PyCode_InitOpcache(PyCodeObject *co);
 
 PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
-PyAPI_FUNC(Py_ssize_t) _PyCode_CellForLocal(PyCodeObject *, Py_ssize_t);
+PyAPI_FUNC(int) _PyCode_CellForLocal(PyCodeObject *, int);
 
 /* This does not fail.  A negative result means "no match". */
-PyAPI_FUNC(Py_ssize_t) _PyCode_FastOffsetFromId(PyCodeObject *,
+PyAPI_FUNC(int) _PyCode_FastOffsetFromId(PyCodeObject *,
                                                 _Py_Identifier *,
                                                 _PyFastLocalKind);
 
@@ -99,19 +99,19 @@ _PyCode_LocalvarsArray(PyCodeObject *co)
 }
 
 static inline PyObject *
-_PyCode_GetLocalvar(PyCodeObject *co, Py_ssize_t offset)
+_PyCode_GetLocalvar(PyCodeObject *co, int offset)
 {
     return PyTuple_GetItem(co->co_varnames, offset);
 }
 
 static inline PyObject *
-_PyCode_GetCellvar(PyCodeObject *co, Py_ssize_t offset)
+_PyCode_GetCellvar(PyCodeObject *co, int offset)
 {
     return PyTuple_GetItem(co->co_cellvars, offset);
 }
 
 static inline PyObject *
-_PyCode_GetFreevar(PyCodeObject *co, Py_ssize_t offset)
+_PyCode_GetFreevar(PyCodeObject *co, int offset)
 {
     return PyTuple_GetItem(co->co_freevars, offset);
 }

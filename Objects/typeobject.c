@@ -8839,7 +8839,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 
     PyObject *obj = f->f_localsptr[0];
     if (obj == NULL) {
-        Py_ssize_t celloffset = _PyCode_CellForLocal(co, 0);
+        int celloffset = _PyCode_CellForLocal(co, 0);
         if (celloffset >= 0) {
             PyObject *cell = f->f_localsptr[celloffset];
             assert(PyCell_Check(cell));
@@ -8852,8 +8852,8 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         }
     }
 
-    Py_ssize_t freeoffset = _PyCode_FastOffsetFromId(co, &PyId___class__,
-                                                     CO_FAST_FREE);
+    int freeoffset = _PyCode_FastOffsetFromId(co, &PyId___class__,
+                                              CO_FAST_FREE);
     if (freeoffset < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): __class__ cell not found");

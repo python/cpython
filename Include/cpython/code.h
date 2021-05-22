@@ -67,7 +67,7 @@ struct PyCodeObject {
     void *co_extra;
 
     /* internal */
-    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
+    int *co_cell2arg;    /* Maps cell vars which are arguments. */
     /* Per opcodes just-in-time cache
      *
      * To reduce cache size, we use indirect mapping from opcode index to
