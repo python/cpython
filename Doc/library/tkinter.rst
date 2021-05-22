@@ -55,6 +55,9 @@ details that are unchanged.
 
    Books:
 
+   `Programming Python <http://learning-python.com/about-pp4e.html>`_
+      Book by Mark Lutz, has excellent coverage of Tkinter.
+
    * `Modern Tkinter for Busy Python Developers <https://tkdocs.com/book.html>`_
       By Mark Roseman. (ISBN 978-1999149567)
 
