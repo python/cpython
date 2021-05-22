@@ -1234,6 +1234,9 @@ reset_parser_state(Parser *p)
     }
     p->mark = 0;
     p->call_invalid_rules = 1;
+    // Don't try to get extra tokens in interactive mode when trying to
+    // raise specialized errors in the second pass.
+    p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
 static int
