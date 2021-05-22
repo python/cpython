@@ -63,6 +63,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
+        self._old_handlers = {}
 
     def close(self):
         super().close()
@@ -113,7 +114,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             # Register a dummy signal handler to ask Python to write the signal
             # number in the wakeup file descriptor. _process_self_data() will
             # read signal numbers from this file descriptor to handle signals.
-            signal.signal(sig, _sighandler_noop)
+            old_handler = signal.signal(sig, _sighandler_noop)
+
+            if callable(old_handler):
+                # Store the previous handler as well so we can call it later.
+                self._old_handlers[sig] = old_handler
 
             # Set SA_RESTART to limit EINTR occurrences.
             signal.siginterrupt(sig, False)
@@ -139,6 +144,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             self.remove_signal_handler(sig)  # Remove it properly.
         else:
             self._add_callback_signalsafe(handle)
+
+        old_handler = self._old_handlers.get(sig)
+
+        if old_handler:
+            old_handler(sig, (None, "sorry, no stack available, greetings from asyncio/unix_events"))
 
     def remove_signal_handler(self, sig):
         """Remove a handler for a signal.  UNIX only.
