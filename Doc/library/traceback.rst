@@ -271,6 +271,13 @@ capture data for later printing in a lightweight fashion.
 
       Note that when locals are captured, they are also shown in the traceback.
 
+   .. method::  print(*, file=None, chain=True)
+
+      Print to *file* (default ``sys.stderr``) the exception information returned by
+      :meth:`format`.
+
+      .. versionadded:: 3.11
+
    .. method:: format(*, chain=True)
 
       Format the exception.
