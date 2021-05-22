@@ -94,7 +94,7 @@ for two inputs:
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
 >>> linear_regression(x, y)  #doctest:
-LinearRegression(intercept=1.5, slope=0.1)
+LinearRegression(slope=0.1, intercept=1.5)
 
 
 Exceptions
@@ -932,7 +932,7 @@ def correlation(x, y, /):
         raise StatisticsError('at least one of the inputs is constant')
 
 
-LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
+LinearRegression = namedtuple('LinearRegression', ['slope', 'intercept'])
 
 
 def linear_regression(x, y, /):
@@ -957,7 +957,7 @@ def linear_regression(x, y, /):
     >>> noise = NormalDist().samples(5, seed=42)
     >>> y = [2 + 3 * x[i] + noise[i] for i in range(5)]
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
-    LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
+    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
     """
     n = len(x)
@@ -974,7 +974,7 @@ def linear_regression(x, y, /):
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
     intercept = ybar - slope * xbar
-    return LinearRegression(intercept=intercept, slope=slope)
+    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################
