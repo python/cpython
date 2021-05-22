@@ -239,20 +239,20 @@ class PriorityQueue(Queue):
         return heappop(self.queue)
 
 
-class LifoQueue(Queue):
+class LifoQueue:
     '''Variant of Queue that retrieves most recently added entries first.'''
 
-    def _init(self, maxsize):
-        self.queue = []
+    def __init__(self):
+        self.stack = LinkedList()
 
     def _qsize(self):
-        return len(self.queue)
+        return self.stack.get_length()
 
     def _put(self, item):
-        self.queue.append(item)
+        self.stack.push(item)
 
     def _get(self):
-        return self.queue.pop()
+        return self.stack.pop()
 
 
 class _PySimpleQueue:
@@ -320,6 +320,90 @@ class _PySimpleQueue:
         return len(self._queue)
 
     __class_getitem__ = classmethod(types.GenericAlias)
+
+
+class LinkedList:
+    """creating a linked list class that can serve 2 purposes:
+    a queue and a stack. It includes an internal node class
+    where nodes can be initialized and added to the list.
+    The linked list class includes an enqueue, push and pop
+    methods"""
+
+    class Node:
+        """creation of Node class with data and
+        next(None by default) as arguments"""
+
+        def __init__(self, data, next=None):
+            self.data = data
+            self.next = next
+
+    def __init__(self):
+        """initializing each linked list with
+        a head and tail"""
+
+        self.head = None
+        self.tail = None
+        self.length = 0
+
+    def enqueue(self, data):
+        """Method for FIFO. Adds a node at end
+        of linked list"""
+
+        node = LinkedList.Node(data)
+
+        if self.tail is None:
+            self.head = self.tail = node
+        else:
+            tmp = self.tail
+            self.tail = node
+            tmp.next = node
+
+        self.length += 1
+
+    def pop(self):
+        """Method for LIFO and FIFO. Removes the
+        head node and returns the data from the node"""
+
+        tmp = None
+
+        if self.length == 0:
+            return None
+
+        elif self.head == self.tail:
+            tmp = self.head
+            self.head = self.tail = None
+        else:
+            tmp = self.head
+            self.head = tmp.next
+
+        self.length -= 1
+
+        # returns data from removed node
+        return tmp.data
+
+    def push(self, data):
+        """Method for LIFO. Adds a node to the
+        head of the list in a stack fashion"""
+
+        node = LinkedList.Node(data)
+
+        # if empty list, assign to both head and tail
+        if self.head is None:
+            self.head = self.tail = node
+
+        # adds to head and assigns head
+        # to point to previous list head
+        else:
+            tmp = self.head
+            self.head = node
+            self.head.next = tmp
+
+        self.length += 1
+
+    def get_length(self):
+        """return length of linked list"""
+
+        return self.length    
 
 
 if SimpleQueue is None:
