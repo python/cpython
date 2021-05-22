@@ -292,9 +292,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     HEAD_LOCK(runtime);
     for (PyThreadState *p = interp->tstate_head; p != NULL; p = p->next) {
-        if (p != tstate) {
-            PyThreadState_Clear(p);
-        }
+        PyThreadState_Clear(p);
     }
     HEAD_UNLOCK(runtime);
 
@@ -326,7 +324,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
-    PyThreadState_Clear(tstate);
     _PyGC_Fini(interp);
 
     /* We don't clear sysdict and builtins until the end of this function.
@@ -900,13 +897,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     if (tstate->on_delete != NULL) {
         tstate->on_delete(tstate->on_delete_data);
     }
-    _PyStackChunk *chunk = tstate->datastack_chunk;
-    tstate->datastack_chunk = NULL;
-    while (chunk != NULL) {
-        _PyStackChunk *prev = chunk->previous;
-        _PyObject_VirtualFree(chunk, chunk->size);
-        chunk = prev;
-    }
 }
 
 
@@ -938,6 +928,13 @@ tstate_delete_common(PyThreadState *tstate,
         PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
     {
         PyThread_tss_set(&gilstate->autoTSSkey, NULL);
+    }
+    _PyStackChunk *chunk = tstate->datastack_chunk;
+    tstate->datastack_chunk = NULL;
+    while (chunk != NULL) {
+        _PyStackChunk *prev = chunk->previous;
+        _PyObject_VirtualFree(chunk, chunk->size);
+        chunk = prev;
     }
 }
 
