@@ -94,12 +94,12 @@ interpreter to form a self-contained binary which acts exactly like your script.
 The following packages can help with the creation of console and GUI
 executables:
 
-* `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
-* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
-* `py2exe <http://www.py2exe.org/>`_ (Windows only)
-* `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
 * `Nuitka <https://nuitka.net/>`_ (Cross-platform)
+* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
 * `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
+* `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
+* `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
+* `py2exe <http://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
