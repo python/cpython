@@ -66,6 +66,8 @@ Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
 source code.
 
 
+.. _faq-create-standalone-binary:
+
 How can I create a stand-alone binary from a Python script?
 -----------------------------------------------------------
 
@@ -89,14 +91,15 @@ only contains those built-in modules which are actually used in the program.  It
 then compiles the generated C code and links it with the rest of the Python
 interpreter to form a self-contained binary which acts exactly like your script.
 
-Obviously, freeze requires a C compiler.  There are several other utilities
-which don't:
+The following packages can help with the creation of console and GUI
+executables:
 
-* `py2exe <http://www.py2exe.org/>`_ for Windows binaries
-* `py2app <https://github.com/ronaldoussoren/py2app>`_ for Mac OS X binaries
-* `cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ for cross-platform
-  binaries
-
+* `Nuitka <https://nuitka.net/>`_ (Cross-platform)
+* `PyInstaller <http://www.pyinstaller.org/>`_ (Cross-platform)
+* `PyOxidizer <https://pyoxidizer.readthedocs.io/en/stable/>`_ (Cross-platform)
+* `cx_Freeze <https://marcelotduarte.github.io/cx_Freeze/>`_ (Cross-platform)
+* `py2app <https://github.com/ronaldoussoren/py2app>`_ (macOS only)
+* `py2exe <http://www.py2exe.org/>`_ (Windows only)
 
 Are there coding standards or a style guide for Python programs?
 ----------------------------------------------------------------
