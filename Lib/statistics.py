@@ -935,7 +935,7 @@ def correlation(x, y, /):
 LinearRegression = namedtuple('LinearRegression', ['intercept', 'slope'])
 
 
-def linear_regression(x, dependent_variable, /):
+def linear_regression(x, y, /):
     """Intercept and slope for simple linear regression
 
     Return the intercept and slope of simple linear regression
@@ -943,7 +943,7 @@ def linear_regression(x, dependent_variable, /):
     regression describes relationship between *x* and
     *dependent variable* in terms of linear function:
 
-        dependent_variable = intercept + slope * x + noise
+        y = intercept + slope * x + noise
 
     where *intercept* and *slope* are the regression parameters that are
     estimated, and noise represents the variability of the data that was
@@ -955,17 +955,16 @@ def linear_regression(x, dependent_variable, /):
 
     >>> x = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> dependent_variable = [2 + 3 * x[i] + noise[i] for i in range(5)]
-    >>> linear_regression(x, dependent_variable)  #doctest: +ELLIPSIS
+    >>> y = [2 + 3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
     LinearRegression(intercept=1.75684970486..., slope=3.09078914170...)
 
     """
     n = len(x)
-    if len(dependent_variable) != n:
+    if len(y) != n:
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    x, y = x, dependent_variable
     xbar = fsum(x) / n
     ybar = fsum(y) / n
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
