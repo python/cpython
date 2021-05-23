@@ -4388,7 +4388,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             case FVC_FLOAT:
                 if (!PyNumber_Check(value)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                                  "a number is required, not %.200s",
+                                  "a real number is required, not %.200s",
                                   Py_TYPE(value)->tp_name);
                     Py_DECREF(value);
                     Py_XDECREF(fmt_spec);

@@ -555,13 +555,15 @@ class TestTranforms(BytecodeTestCase):
             eval("'%s%z' % (x,)", {'x': 1234})
         with self.assertRaisesRegex(ValueError, 'unsupported format character'):
             eval("'%s%z' % (x, 5)", {'x': 1234})
-        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+        with self.assertRaisesRegex(TypeError, r'\breal number\b.*, not str'):
             eval("'%d' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+        with self.assertRaisesRegex(TypeError,
+                    r'\binteger\b.*, not float|\bfloat.* cannot .*\binteger\b'):
             eval("'%x' % (x,)", {'x': 1234.56})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+        with self.assertRaisesRegex(TypeError,
+                    r'\binteger\b.*, not str|\bstr.* cannot .*\binteger\b'):
             eval("'%x' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+        with self.assertRaisesRegex(TypeError, r'\breal number\b.*, not str'):
             eval("'%f' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
