@@ -908,6 +908,9 @@ class RawConfigParser(MutableMapping):
 
         If `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        Please note that comments in the original configuration file are not
+        preserved when writing the configuration back.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
@@ -1006,7 +1009,7 @@ class RawConfigParser(MutableMapping):
         Configuration files may include comments, prefixed by specific
         characters (`#' and `;' by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
-        section names.
+        section names. Please note that comments get stripped off when reading configuration files.
         """
         elements_added = set()
         cursect = None                        # None, or a dictionary
