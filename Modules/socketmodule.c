@@ -7809,7 +7809,10 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_ISOTP_FORCE_RXSTMIN);
     PyModule_AddIntMacro(m, CAN_ISOTP_RX_EXT_ADDR);
     PyModule_AddIntMacro(m, CAN_ISOTP_WAIT_TX_DONE);
+#ifdef CAN_ISOTP_SF_BROADCAST
+    /* This constant is new and not always available */
     PyModule_AddIntMacro(m, CAN_ISOTP_SF_BROADCAST);
+#endif
 
     /* default values */
     PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_FLAGS);

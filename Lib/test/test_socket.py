@@ -2166,6 +2166,8 @@ class ISOTPTest(unittest.TestCase):
         socket.CAN_ISOTP
         socket.SOCK_DGRAM
 
+    @unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
+                         'Constants from isotp.h required for this test.')
     def testIsoTpConstants(self):
         socket.SOL_CAN_ISOTP
 
@@ -2190,7 +2192,8 @@ class ISOTPTest(unittest.TestCase):
         socket.CAN_ISOTP_FORCE_RXSTMIN
         socket.CAN_ISOTP_RX_EXT_ADDR
         socket.CAN_ISOTP_WAIT_TX_DONE
-        socket.CAN_ISOTP_SF_BROADCAST
+        # This constant is new and not always available
+        # socket.CAN_ISOTP_SF_BROADCAST
 
         # default values
         socket.CAN_ISOTP_DEFAULT_FLAGS
