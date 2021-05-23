@@ -106,9 +106,6 @@ support, pads, and mouse support. This means the module isn't compatible with
 operating systems that only have BSD curses, but there don't seem to be any
 currently maintained OSes that fall into this category.
 
-For Windows: use `the consolelib module
-<http://effbot.org/zone/console-index.htm>`_.
-
 
 Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
