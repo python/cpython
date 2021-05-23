@@ -172,7 +172,7 @@ These improvements are inspired by previous work in the PyPy interpreter.
 :issue:`40176`.)
 
 :exc:`SyntaxError` exceptions raised by the interpreter will now highlight the
-full error range of the expression that consistutes the syntax error itself,
+full error range of the expression that constitutes the syntax error itself,
 instead of just where the problem is detected. In this way, instead of displaying
 (before Python 3.10):
 
@@ -197,7 +197,7 @@ now Python 3.10 will display the exception as:
 This improvement was contributed by Pablo Galindo in :issue:`43914`.
 
 A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
-have been incorporated. Some of the most notable ones:
+have been incorporated. Some of the most notable ones are as follows:
 
 * Missing ``:`` before blocks:
 
@@ -219,7 +219,7 @@ have been incorporated. Some of the most notable ones:
           File "<stdin>", line 1
             {x,y for x,y in zip('abcd', '1234')}
              ^
-        SyntaxError: did you forget parentheses around the comprehension target?
+        SyntaxError: did you forget parenthesis around the comprehension target?
 
     (Contributed by Pablo Galindo in :issue:`43017`)
 
