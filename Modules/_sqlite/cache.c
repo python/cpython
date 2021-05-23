@@ -47,6 +47,8 @@ pysqlite_new_node(PyObject *key, PyObject *data)
 static int
 node_traverse(pysqlite_Node *self, visitproc visit, void *arg)
 {
+    Py_VISIT(self->key);
+    Py_VISIT(self->data);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }

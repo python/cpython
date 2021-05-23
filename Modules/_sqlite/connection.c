@@ -229,6 +229,7 @@ static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->statement_cache);
+    Py_VISIT(self->isolation_level);
     Py_VISIT(self->function_pinboard_trace_callback);
     Py_VISIT(self->function_pinboard_progress_handler);
     Py_VISIT(self->function_pinboard_authorizer_cb);
