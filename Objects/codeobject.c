@@ -662,29 +662,49 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
 
 void
 _PyCode_FastInfoFromOffset(PyCodeObject *co, int offset,
+                           _PyFastLocalKind expected,
                            PyObject **pname, _PyFastLocalKind *pkind)
 {
     assert(offset >= 0);
-    assert(pname != NULL && pkind != NULL);
-    int index = offset;
-    if (*pkind & CO_FAST_LOCAL) {
-        assert(*pkind < CO_FAST_CELL);
-        assert(index < co->co_nlocals);
-        *pname = PyTuple_GET_ITEM(co->co_varnames, index);
-        // For now we do not distinguish arg kinds.
-        *pkind = CO_FAST_LOCAL;
+    assert(expected > 0);
+    assert(pname != NULL || pkind != NULL);
+
+    PyObject *names;
+    int index;
+    _PyFastLocalKind kind;
+    if (expected & CO_FAST_LOCAL) {
+        // We treat offset as absolute relative to the fast locals.
+        if (offset < co->co_nlocals) {
+            names = co->co_varnames;
+            index = offset;
+            // For now we do not distinguish arg kinds.
+            kind = CO_FAST_LOCAL;
+            goto matched;
+        }
+        // For now, offsets for cells and free vars are separate from locals.
+        offset -= co->co_nlocals;
     }
-    else if (*pkind & CO_FAST_CELL && index < co->co_ncellvars) {
-        *pname = PyTuple_GET_ITEM(co->co_cellvars, index);
-        *pkind = CO_FAST_CELL;
+
+    if (expected & CO_FAST_CELL && offset < co->co_ncellvars) {
+        names = co->co_cellvars;
+        index = offset;
+        kind = CO_FAST_CELL;
     }
     else {
-        assert(*pkind & CO_FAST_FREE);
-        index -= co->co_ncellvars;
+        assert(expected & CO_FAST_FREE);
+        index = offset - co->co_ncellvars;
         assert(index >= 0);
         assert(index < co->co_nfreevars);
-        *pname = PyTuple_GET_ITEM(co->co_freevars, index);
-        *pkind = CO_FAST_FREE;
+        names = co->co_freevars;
+        kind = CO_FAST_FREE;
+    }
+
+matched:
+    if (pname != NULL) {
+        *pname = PyTuple_GET_ITEM(names, index);
+    }
+    if (pkind != NULL) {
+        *pkind = kind;
     }
 }
 
