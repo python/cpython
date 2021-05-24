@@ -35,6 +35,9 @@ struct _dictkeysobject {
     /* Kind of keys */
     uint8_t dk_kind;
 
+    /* Version number -- Reset to 0 by any modification to keys */
+    uint32_t dk_version;
+
     /* Number of usable entries in dk_entries. */
     Py_ssize_t dk_usable;
 

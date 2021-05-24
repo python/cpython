@@ -376,6 +376,7 @@ dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
     Py_ssize_t s = DK_SIZE(keys);
 
     assert(ix >= DKIX_DUMMY);
+    assert(keys->dk_version == 0);
 
     if (s <= 0xff) {
         int8_t *indices = (int8_t*)(keys->dk_indices);
@@ -464,6 +465,7 @@ estimate_log2_keysize(Py_ssize_t n)
 #define ENSURE_ALLOWS_DELETIONS(d) \
     if ((d)->ma_keys->dk_kind == DICT_KEYS_UNICODE_NO_DUMMY) { \
         (d)->ma_keys->dk_kind = DICT_KEYS_UNICODE; \
+        (d)->ma_keys->dk_version = 0; \
     }
 
 /* This immutable, empty PyDictKeysObject is used for PyDict_Clear()
@@ -473,6 +475,7 @@ static PyDictKeysObject empty_keys_struct = {
         1, /* dk_refcnt */
         0, /* dk_log2_size */
         DICT_KEYS_SPLIT, /* dk_kind */
+        1, /* dk_version */
         0, /* dk_usable (immutable) */
         0, /* dk_nentries */
         {DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY, DKIX_EMPTY,
@@ -614,6 +617,7 @@ new_keys_object(uint8_t log2_size)
     dk->dk_usable = usable;
     dk->dk_kind = DICT_KEYS_UNICODE_NO_DUMMY;
     dk->dk_nentries = 0;
+    dk->dk_version = 0;
     memset(&dk->dk_indices[0], 0xff, es * (1<<log2_size));
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
@@ -988,6 +992,7 @@ _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **valu
         case DICT_KEYS_SPLIT:
             return lookdict_split(mp, key, hash, value_addr);
     };
+    Py_UNREACHABLE();
 }
 
 int
@@ -1114,6 +1119,7 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
 
     if (ix == DKIX_EMPTY) {
         /* Insert into new slot. */
+        mp->ma_keys->dk_version = 0;
         assert(old_value == NULL);
         if (mp->ma_keys->dk_usable <= 0) {
             /* Need to resize. */
@@ -3078,6 +3084,7 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
     }
 
     if (ix == DKIX_EMPTY) {
+        mp->ma_keys->dk_version = 0;
         PyDictKeyEntry *ep, *ep0;
         value = defaultobj;
         if (mp->ma_keys->dk_usable <= 0) {
@@ -5107,4 +5114,19 @@ void
 _PyDictKeys_DecRef(PyDictKeysObject *keys)
 {
     dictkeys_decref(keys);
+}
+
+static uint32_t next_dict_keys_version = 2;
+
+uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictObject *dict)
+{
+    if (dict->ma_keys->dk_version != 0) {
+        return dict->ma_keys->dk_version;
+    }
+    if (next_dict_keys_version == 0) {
+        return 0;
+    }
+    uint32_t v = next_dict_keys_version++;
+    dict->ma_keys->dk_version = v;
+    return v;
 }
