@@ -30,6 +30,7 @@ struct _PyOpcache {
 
 // XXX Can we do this with an enum instead?
 typedef unsigned char _PyFastLocalKind;
+// Note that these all fit within _PyFastLocalKind, as do combinations.
 #define CO_FAST_POSONLY     0x01
 #define CO_FAST_POSORKW     0x02
 #define CO_FAST_VARARGS     0x04
@@ -38,9 +39,10 @@ typedef unsigned char _PyFastLocalKind;
 #define CO_FAST_LOCALONLY   0x20
 #define CO_FAST_CELL        0x40
 #define CO_FAST_FREE        0x80
-#define CO_FAST_LOCAL (CO_FAST_POSONLY | CO_FAST_POSORKW | CO_FAST_VARARGS | \
-                       CO_FAST_KWONLY | CO_FAST_VARKWARGS |                  \
-                       CO_FAST_LOCALONLY)
+
+#define CO_FAST_ARG (CO_FAST_POSONLY | CO_FAST_POSORKW | CO_FAST_VARARGS | \
+                     CO_FAST_KWONLY | CO_FAST_VARKWARGS)
+#define CO_FAST_LOCAL (CO_FAST_ARG | CO_FAST_LOCALONLY)
 #define CO_FAST_ANY (CO_FAST_LOCAL | CO_FAST_CELL | CO_FAST_FREE)
 
 
