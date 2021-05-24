@@ -1378,6 +1378,23 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
+    def test_print(self):
+        def f():
+            x = 12
+            try:
+                x/0
+            except Exception:
+                return sys.exc_info()
+        exc = traceback.TracebackException(*f(), capture_locals=True)
+        output = StringIO()
+        exc.print(file=output)
+        self.assertEqual(
+            output.getvalue().split('\n')[-4:],
+            ['    x/0',
+             '    x = 12',
+             'ZeroDivisionError: division by zero',
+             ''])
+
 
 class MiscTest(unittest.TestCase):
 
