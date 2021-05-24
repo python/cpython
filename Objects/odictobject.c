@@ -41,8 +41,8 @@ we've considered:
 The approach with the least performance impact (time and space) is #2,
 mirroring the key order of dict's dk_entries with an array of node pointers.
 While _Py_dict_lookup() does not give us the index into the array,
-we make use of pointer arithmetic to get that index.  An alternative
-would be to refactor lookdict() to provide the index, explicitly exposing
+we make use of pointer arithmetic to get that index.  An alternative would
+be to refactor _Py_dict_lookup() to provide the index, explicitly exposing
 the implementation detail.  We could even just use a custom lookup function
 for OrderedDict that facilitates our need.  However, both approaches are
 significantly more complicated than just using pointer arithmetic.
