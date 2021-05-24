@@ -651,7 +651,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    regression describes the relationship between an independent variable *x* and
    a dependent variable *y* in terms of this linear function:
 
-      *dependent_variable = intercept + slope \* independent_variable + noise*
+      *y = intercept + slope \* x + noise*
 
    where ``slope`` and ``intercept`` are the regression parameters that are
    estimated, and noise represents the
