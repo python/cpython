@@ -4371,14 +4371,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *fmt_spec;
             PyObject *value;
             PyObject *(*conv_fn)(PyObject *);
-            int which_conversion = oparg & FVC_MASK;
+            int conv = oparg & FVC_MASK;
             int have_fmt_spec = (oparg & FVS_MASK) == FVS_HAVE_SPEC;
 
             fmt_spec = have_fmt_spec ? POP() : NULL;
             value = POP();
 
             /* See if any conversion is specified. */
-            switch (which_conversion) {
+            switch (conv) {
             case FVC_NONE:  conv_fn = NULL;           break;
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
@@ -4394,17 +4394,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     Py_XDECREF(fmt_spec);
                     goto error;
                 }
-                if (which_conversion == FVC_INT) {
-                    conv_fn = PyNumber_Long;
-                }
-                else {
-                    conv_fn = PyNumber_Float;
-                }
+                conv_fn = (conv == FVC_INT) ? PyNumber_Long : PyNumber_Float;
                 break;
             default:
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "unexpected conversion flag %d",
-                              which_conversion);
+                              conv);
                 Py_DECREF(value);
                 Py_XDECREF(fmt_spec);
                 goto error;
