@@ -648,8 +648,8 @@ However, for reading convenience, most of the examples show sorted sequences.
    Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
    parameters estimated using ordinary least squares. Simple linear
-   regression describes the relationship between *independent_variable* and
-   *dependent variable* in terms of this linear function:
+   regression describes the relationship between an independent variable *x* and
+   a dependent variable *y* in terms of this linear function:
 
       *dependent_variable = intercept + slope \* independent_variable + noise*
 
