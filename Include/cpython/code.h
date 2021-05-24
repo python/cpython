@@ -50,7 +50,7 @@ struct PyCodeObject {
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
-    union _hotpy_quickened *co_quickened;
+    union _cache_or_instruction *co_quickened;
 
     /* Per opcodes just-in-time cache
      *

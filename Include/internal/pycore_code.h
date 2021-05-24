@@ -37,26 +37,26 @@ typedef struct {
 } EntryZero;
 
 /* Add specialized versions of entries to this union.
- * Do not break this invariant: sizeof(HotPyCacheEntry) == 8 */
+ * Do not break this invariant: sizeof(SpecializedCacheEntry) == 8 */
 typedef union {
     EntryZero zero;
     PyObject *object;
-} HotPyCacheEntry;
+} SpecializedCacheEntry;
 
-#define INSTRUCTIONS_PER_ENTRY (sizeof(HotPyCacheEntry)/sizeof(_Py_CODEUNIT))
+#define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
 
 /* Maximum size of code to quicken */
 #define MAX_SIZE_TO_QUICKEN 5000
 
-typedef union _hotpy_quickened {
+typedef union _cache_or_instruction {
     _Py_CODEUNIT code[1];
-    HotPyCacheEntry entry;
-} HotPyCacheOrInstruction;
+    SpecializedCacheEntry entry;
+} SpecializedCacheOrInstruction;
 
-static inline HotPyCacheEntry *
-_HotPy_GetCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t index)
+static inline SpecializedCacheEntry *
+_GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t index)
 {
-    HotPyCacheOrInstruction *last_cache_plus_one = (HotPyCacheOrInstruction *)first_instr;
+    SpecializedCacheOrInstruction *last_cache_plus_one = (SpecializedCacheOrInstruction *)first_instr;
     assert(&last_cache_plus_one->code[0] == first_instr);
     return &last_cache_plus_one[-1-index].entry;
 }
@@ -79,17 +79,17 @@ offset_from_oparg_and_index(int oparg, int index)
     return (index>>1)+oparg;
 }
 
-static inline HotPyCacheEntry *
-_HotPy_GetCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, int oparg)
+static inline SpecializedCacheEntry *
+_GetSpecializedCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, int oparg)
 {
-    return _HotPy_GetCacheEntry(
+    return _GetSpecializedCacheEntry(
         first_instr,
         offset_from_oparg_and_index(oparg, index)
     );
 }
 
-#define HOTPY_INITIAL_WARMUP_DELAY 8
-#define HOTPY_WARMUP_COLDEST 1
+#define QUICKENING_INITIAL_WARMUP_DELAY 8
+#define QUICKENING_WARMUP_COLDEST 1
 
 static inline void
 PyCodeObject_IncrementWarmup(PyCodeObject * co)

@@ -7,25 +7,25 @@
 
 /* We layout the quickened data as a bi-directional array:
  * Instructions upwards, cache entries downwards.
- * first_instr is aligned to at  a HotPyCacheEntry.
+ * first_instr is aligned to at  a SpecializedCacheEntry.
  * The nth instruction is located at first_instr[n]
- * The nth cache is located at ((HotPyCacheEntry *)first_instr)[-1-n]
+ * The nth cache is located at ((SpecializedCacheEntry *)first_instr)[-1-n]
  * The zeroth cache entry is reserved for the count, to enable finding
  * the first instruction from the base pointer.
- * We need to use the HotPyCacheOrInstruction union to refer to the data
+ * We need to use the SpecializedCacheOrInstruction union to refer to the data
  * so as not to break aliasing rules.
  */
 
 
-static HotPyCacheOrInstruction *
+static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
 {
-    assert(sizeof(HotPyCacheOrInstruction) == 2*sizeof(int32_t));
-    assert(sizeof(HotPyCacheEntry) == 2*sizeof(int32_t));
+    assert(sizeof(SpecializedCacheOrInstruction) == 2*sizeof(int32_t));
+    assert(sizeof(SpecializedCacheEntry) == 2*sizeof(int32_t));
     assert(cache_count > 0);
     int count = cache_count + (instruction_count + INSTRUCTIONS_PER_ENTRY -1)/INSTRUCTIONS_PER_ENTRY;
-    HotPyCacheOrInstruction *array = (HotPyCacheOrInstruction *)
-        PyMem_Malloc(sizeof(HotPyCacheOrInstruction) * count);
+    SpecializedCacheOrInstruction *array = (SpecializedCacheOrInstruction *)
+        PyMem_Malloc(sizeof(SpecializedCacheOrInstruction) * count);
     if (array == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -35,7 +35,7 @@ allocate(int cache_count, int instruction_count)
 }
 
 static int
-get_cache_count(HotPyCacheOrInstruction *quickened) {
+get_cache_count(SpecializedCacheOrInstruction *quickened) {
     return quickened[0].entry.zero.cache_count;
 }
 
@@ -70,13 +70,13 @@ entries_needed(_Py_CODEUNIT *code, int len)
 
 
 static inline _Py_CODEUNIT *
-first_instruction(HotPyCacheOrInstruction *quickened)
+first_instruction(SpecializedCacheOrInstruction *quickened)
 {
     return &quickened[get_cache_count(quickened)].code[0];
 }
 
 static void
-optimize(HotPyCacheOrInstruction *quickened, int len)
+optimize(SpecializedCacheOrInstruction *quickened, int len)
 {
     _Py_CODEUNIT *instructions = first_instruction(quickened);
     int cache_offset = 0;
@@ -115,14 +115,14 @@ _Py_Quicken(PyCodeObject *code) {
     Py_ssize_t size = PyBytes_GET_SIZE(code->co_code);
     int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
     if (instr_count > MAX_SIZE_TO_QUICKEN) {
-        code->co_warmup = HOTPY_WARMUP_COLDEST;
+        code->co_warmup = QUICKENING_WARMUP_COLDEST;
         return 0;
     }
     if (code->co_quickened) {
         return 0;
     }
     int entry_count = entries_needed(code->co_firstinstr, instr_count);
-    HotPyCacheOrInstruction *quickened = allocate(entry_count, instr_count);
+    SpecializedCacheOrInstruction *quickened = allocate(entry_count, instr_count);
     if (quickened == NULL) {
         return -1;
     }
