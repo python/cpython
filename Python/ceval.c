@@ -4879,7 +4879,6 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 {
     PyCodeObject *co = (PyCodeObject*)con->fc_code;
     const int total_args = co->co_argcount + co->co_kwonlyargcount;
-    PyObject **freevars = fastlocals + co->co_nlocals;
 
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
@@ -4887,7 +4886,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         kwdict = PyDict_New();
         if (kwdict == NULL)
             goto fail;
-        int offset = total_args;
+        int offset = _PyCode_OffsetFromIndex(co, total_args, CO_FAST_LOCAL);
         if (co->co_flags & CO_VARARGS) {
             assert(offset < INT_MAX - 1);
             offset++;
@@ -4903,9 +4902,10 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     if (nargs > argcount) {
         nargs = (int)argcount;
     }
-    for (int offset = 0; offset < nargs; offset++) {
-        PyObject *x = args[offset];
+    for (int i = 0; i < nargs; i++) {
+        PyObject *x = args[i];
         Py_INCREF(x);
+        int offset = _PyCode_OffsetFromIndex(co, i, CO_FAST_LOCAL);
         SETLOCAL(offset, x);
     }
 
@@ -4915,7 +4915,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (u == NULL) {
             goto fail;
         }
-        SETLOCAL(total_args, u);
+        int offset = _PyCode_OffsetFromIndex(co, total_args, CO_FAST_LOCAL);
+        SETLOCAL(offset, u);
     }
 
     /* Handle keyword arguments */
@@ -4925,7 +4926,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
             PyObject *value = args[i + argcount];
-            int offset;
+            int offset = -1;
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
                 _PyErr_Format(tstate, PyExc_TypeError,
@@ -4937,25 +4938,26 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             /* Speed hack: do raw pointer compares. As names are
             normally interned this should almost always hit. */
             co_varnames = _PyCode_LocalvarsArray(co);
-            for (offset = co->co_posonlyargcount; offset < total_args; offset++) {
-                PyObject *varname = co_varnames[offset];
+            for (int i = co->co_posonlyargcount; i < total_args; i++) {
+                PyObject *varname = co_varnames[i];
                 if (varname == keyword) {
+                    offset = _PyCode_OffsetFromIndex(co, i, CO_FAST_LOCAL);
                     goto kw_found;
                 }
             }
 
             /* Slow fallback, just in case */
-            for (offset = co->co_posonlyargcount; offset < total_args; offset++) {
-                PyObject *varname = co_varnames[offset];
+            for (int i = co->co_posonlyargcount; i < total_args; i++) {
+                PyObject *varname = co_varnames[i];
                 int cmp = PyObject_RichCompareBool(keyword, varname, Py_EQ);
                 if (cmp > 0) {
+                    offset = _PyCode_OffsetFromIndex(co, i, CO_FAST_LOCAL);
                     goto kw_found;
                 }
                 else if (cmp < 0) {
                     goto fail;
                 }
             }
-            assert(offset >= total_args);
             if (kwdict == NULL) {
                 if (co->co_posonlyargcount &&
                     positional_only_passed_as_keyword(tstate, co,
@@ -4975,6 +4977,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
             continue;
 
         kw_found:
+            assert(offset > -1);
             if (GETLOCAL(offset) != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
@@ -5002,9 +5005,10 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
                                         Py_ssize_t, int);
             assert(defcount <= co->co_argcount);
         }
-        int baseoffset = co->co_argcount - defcount;
+        int baseindex = co->co_argcount - defcount;
         int missing = 0;
-        for (int offset = argcount; offset < baseoffset; offset++) {
+        for (int i = argcount; i < baseindex; i++) {
+            int offset = _PyCode_OffsetFromIndex(co, i, CO_FAST_LOCAL);
             if (GETLOCAL(offset) == NULL) {
                 missing++;
             }
@@ -5016,9 +5020,9 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(con->fc_defaults, 0);
-            int i = (nargs > baseoffset) ? nargs - baseoffset : 0;
+            int i = (nargs > baseindex) ? nargs - baseindex : 0;
             for (; i < defcount; i++) {
-                int offset = baseoffset + i;
+                int offset = _PyCode_OffsetFromIndex(co, baseindex + i, CO_FAST_LOCAL);
                 if (GETLOCAL(offset) == NULL) {
                     PyObject *def = defs[i];
                     Py_INCREF(def);
@@ -5031,10 +5035,11 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     /* Add missing keyword arguments (copy default values from kwdefs) */
     if (co->co_kwonlyargcount > 0) {
         int missing = 0;
-        for (int offset = co->co_argcount; offset < total_args; offset++) {
+        for (int i = co->co_argcount; i < total_args; i++) {
+            int offset = _PyCode_OffsetFromIndex(co, i, CO_FAST_LOCAL);
             if (GETLOCAL(offset) != NULL)
                 continue;
-            PyObject *varname = _PyCode_GetLocalvar(co, offset);
+            PyObject *varname = _PyCode_GetLocalvar(co, i);
             if (con->fc_kwdefaults != NULL) {
                 PyObject *def = PyDict_GetItemWithError(con->fc_kwdefaults,
                                                         varname);
@@ -5060,13 +5065,18 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
        vars into frame. */
     for (int cellindex = 0; cellindex < co->co_ncellvars; ++cellindex) {
         PyObject *cell;
-        int argoffset;
         /* Possibly account for the cell variable being an argument. */
-        if (co->co_cell2arg != NULL &&
-            (argoffset = co->co_cell2arg[cellindex]) != CO_CELL_NOT_AN_ARG) {
-            cell = PyCell_New(GETLOCAL(argoffset));
-            /* Clear the local copy. */
-            SETLOCAL(argoffset, NULL);
+        if (co->co_cell2arg != NULL) {
+            int argindex = co->co_cell2arg[cellindex];
+            if (argindex != CO_CELL_NOT_AN_ARG) {
+                int argoffset = _PyCode_OffsetFromIndex(co, argindex, CO_FAST_LOCAL);
+                cell = PyCell_New(GETLOCAL(argoffset));
+                /* Clear the local copy. */
+                SETLOCAL(argoffset, NULL);
+            }
+            else {
+                cell = PyCell_New(NULL);
+            }
         }
         else {
             cell = PyCell_New(NULL);
@@ -5074,14 +5084,17 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         if (cell == NULL) {
             goto fail;
         }
-        SETLOCAL(co->co_nlocals + cellindex, cell);
+        int celloffset = _PyCode_OffsetFromIndex(co, cellindex, CO_FAST_CELL);
+        SETLOCAL(celloffset, cell);
     }
 
     /* Copy closure variables to free variables */
     for (int freeindex = 0; freeindex < co->co_nfreevars; ++freeindex) {
         PyObject *o = PyTuple_GET_ITEM(con->fc_closure, freeindex);
         Py_INCREF(o);
-        freevars[co->co_ncellvars + freeindex] = o;
+        int offset = _PyCode_OffsetFromIndex(co, freeindex, CO_FAST_FREE);
+        assert(GETLOCAL(offset) == NULL);
+        SETLOCAL(offset, o);
     }
 
     return 0;

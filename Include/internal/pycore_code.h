@@ -98,6 +98,7 @@ PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
 PyAPI_FUNC(void) _PyCode_FastInfoFromOffset(PyCodeObject *, int,
                                             _PyFastLocalKind,
                                             PyObject **, _PyFastLocalKind *);
+PyAPI_FUNC(int) _PyCode_OffsetFromIndex(PyCodeObject *, int, _PyFastLocalKind);
 PyAPI_FUNC(int) _PyCode_CellForLocal(PyCodeObject *, int);
 
 /* This does not fail.  A negative result means "no match". */

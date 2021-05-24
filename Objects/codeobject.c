@@ -709,6 +709,26 @@ matched:
 }
 
 int
+_PyCode_OffsetFromIndex(PyCodeObject *co, int index, _PyFastLocalKind kind)
+{
+    assert(index >= 0);
+    // For now we do not bother with anything more granular.
+    if (kind == CO_FAST_LOCAL) {
+        assert(index < co->co_nlocals);
+        return index;
+    }
+    else if (kind == CO_FAST_CELL) {
+        assert(index < co->co_ncellvars);
+        return index + co->co_nlocals;
+    }
+    else {
+        assert(kind == CO_FAST_FREE);
+        assert(index < co->co_nfreevars);
+        return index + co->co_ncellvars + co->co_nlocals;
+    }
+}
+
+int
 _PyCode_CellForLocal(PyCodeObject *co, int offset)
 {
     if (co->co_cell2arg == NULL) {
