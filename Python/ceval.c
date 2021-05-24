@@ -3075,14 +3075,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(LOAD_CLASSDEREF): {
-            PyObject *name, *value, *locals = LOCALS();
-            Py_ssize_t idx;
+            PyObject *value;
+            PyObject *locals = LOCALS();
             assert(locals);
-            // XXX Hide the layout away.
-            assert(oparg >= co->co_ncellvars);
-            idx = oparg - co->co_ncellvars;
-            assert(idx >= 0 && idx < co->co_nfreevars);
-            name = _PyCode_GetFreevar(co, idx);
+            PyObject *name = _PyCode_GetFastFreevar(co, oparg);
             if (PyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
                 if (value != NULL) {

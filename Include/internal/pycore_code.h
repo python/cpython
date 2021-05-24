@@ -104,29 +104,25 @@ PyAPI_FUNC(int) _PyCode_FastOffsetFromId(PyCodeObject *,
                                                 _Py_Identifier *,
                                                 _PyFastLocalKind);
 
-// This is a speed hack for use in ceval.c.
-static inline PyObject **
-_PyCode_LocalvarsArray(PyCodeObject *co)
+static inline PyObject *
+_PyCode_GetLocalvar(PyCodeObject *co, int index)
 {
-    return ((PyTupleObject *)(co->co_varnames))->ob_item;
+    assert(index >= 0 && index < co->co_nlocals);
+    return PyTuple_GetItem(co->co_varnames, index);
 }
 
 static inline PyObject *
-_PyCode_GetLocalvar(PyCodeObject *co, int offset)
+_PyCode_GetCellvar(PyCodeObject *co, int index)
 {
-    return PyTuple_GetItem(co->co_varnames, offset);
+    assert(index >= 0 && index < co->co_ncellvars);
+    return PyTuple_GetItem(co->co_cellvars, index);
 }
 
 static inline PyObject *
-_PyCode_GetCellvar(PyCodeObject *co, int offset)
+_PyCode_GetFreevar(PyCodeObject *co, int index)
 {
-    return PyTuple_GetItem(co->co_cellvars, offset);
-}
-
-static inline PyObject *
-_PyCode_GetFreevar(PyCodeObject *co, int offset)
-{
-    return PyTuple_GetItem(co->co_freevars, offset);
+    assert(index >= 0 && index < co->co_nfreevars);
+    return PyTuple_GetItem(co->co_freevars, index);
 }
 
 static inline bool
@@ -149,6 +145,23 @@ static inline Py_ssize_t
 _PyCode_NumInstructions(PyCodeObject *co)
 {
     return PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT);
+}
+
+/* Speed hacks for very specific performance-sensitive locations. */
+
+// For _PyEval_MakeFrameVector() in ceval.c.
+static inline PyObject **
+_PyCode_LocalvarsArray(PyCodeObject *co)
+{
+    return ((PyTupleObject *)(co->co_varnames))->ob_item;
+}
+
+// For LOAD_CLASSDEREF in ceval.c.
+// Normally we'd just use _PyCode_FastInfoFromOffset().
+static inline PyObject *
+_PyCode_GetFastFreevar(PyCodeObject *co, int offset)
+{
+    return _PyCode_GetFreevar(co, offset - co->co_ncellvars);
 }
 
 
