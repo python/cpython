@@ -932,7 +932,7 @@ def correlation(x, y, /):
         raise StatisticsError('at least one of the inputs is constant')
 
 
-LinearRegression = namedtuple('LinearRegression', ['slope', 'intercept'])
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
 def linear_regression(x, y, /):
