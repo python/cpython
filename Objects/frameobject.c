@@ -649,7 +649,9 @@ frame_dealloc(PyFrameObject *f)
 static inline Py_ssize_t
 frame_nslots(PyFrameObject *frame)
 {
-    //return frame->f_code->co_nfastlocals;
+    assert(frame->f_valuestack - frame->f_localsptr ==
+           // fastlocals + builtins + globals + locals
+           frame->f_code->co_nfastlocals + 3);
     return frame->f_valuestack - frame->f_localsptr;
 }
 
