@@ -259,7 +259,7 @@ connection_clear(pysqlite_Connection *self)
 }
 
 static void
-pysqlite_connection_dealloc(pysqlite_Connection *self)
+connection_dealloc(pysqlite_Connection *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -1932,7 +1932,7 @@ static struct PyMemberDef connection_members[] =
 };
 
 static PyType_Slot connection_slots[] = {
-    {Py_tp_dealloc, pysqlite_connection_dealloc},
+    {Py_tp_dealloc, connection_dealloc},
     {Py_tp_doc, (void *)connection_doc},
     {Py_tp_methods, connection_methods},
     {Py_tp_members, connection_members},
