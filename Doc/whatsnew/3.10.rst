@@ -1302,8 +1302,8 @@ Subclasses of ``typing.Protocol`` which only have data variables declared
 will now raise a ``TypeError`` when checked with ``isinstance`` unless they
 are decorated with :func:`runtime_checkable`.  Previously, these checks
 passed silently.  Users should decorate their
-subclasses with the :func:`runtime_checkable` decorator in Python 3.10 and
-higher if they want runtime protocols.
+subclasses with the :func:`runtime_checkable` decorator
+if they want runtime protocols.
 (Contributed by Yurii Karabas in :issue:`38908`)
 
 unittest
