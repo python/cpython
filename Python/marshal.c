@@ -1351,7 +1351,8 @@ r_object(RFILE *p)
             varnames = r_object(p);
             if (varnames == NULL)
                 goto code_error;
-            nlocals = PyTuple_GET_SIZE(varnames);
+            nlocals = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(varnames),
+                                       Py_ssize_t, int);
             freevars = r_object(p);
             if (freevars == NULL)
                 goto code_error;

@@ -4633,8 +4633,8 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
                   int missing, int defcount,
                   PyObject **fastlocals, PyObject *qualname)
 {
-    Py_ssize_t i, j = 0;
-    Py_ssize_t start, end;
+    int i, j = 0;
+    int start, end;
     int positional = (defcount != -1);
     const char *kind = positional ? "positional" : "keyword-only";
     PyObject *missing_names;
@@ -4921,7 +4921,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     /* Handle keyword arguments */
     if (kwnames != NULL) {
-        int kwcount = PyTuple_GET_SIZE(kwnames);
+        int kwcount = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(kwnames),
+                                       Py_ssize_t, int);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
@@ -5007,7 +5008,8 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
         }
         int baseindex = co->co_argcount - defcount;
         int missing = 0;
-        for (int i = argcount; i < baseindex; i++) {
+        int i = Py_SAFE_DOWNCAST(argcount, Py_ssize_t, int);
+        for (; i < baseindex; i++) {
             int offset = _PyCode_OffsetFromIndex(co, i, CO_FAST_LOCAL);
             if (GETLOCAL(offset) == NULL) {
                 missing++;

@@ -2054,12 +2054,12 @@ static int
 compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                       PyObject *qualname)
 {
-    Py_ssize_t i, free = co->co_nfreevars;
     if (qualname == NULL)
         qualname = co->co_name;
 
+    int free = co->co_nfreevars;
     if (free) {
-        for (i = 0; i < free; ++i) {
+        for (int i = 0; i < free; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
