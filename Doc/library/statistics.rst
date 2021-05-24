@@ -659,8 +659,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    (it is equal to the difference between predicted and actual values
    of dependent variable).
 
-   Both inputs must be of the same length (no less than two), and independent_variable
-   needs not to be constant; otherwise :exc:`StatisticsError` is raised.
+   Both inputs *x* and *y* must be of the same length (no less than two), and
+   the independent variable *x* needs not to be constant;
+   otherwise :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
    Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
