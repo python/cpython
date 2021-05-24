@@ -659,7 +659,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    (it is equal to the difference between predicted and actual values
    of dependent variable).
 
-   Both inputs *x* and *y* must be of the same length (no less than two), and
+   Both inputs must be of the same length (no less than two), and
    the independent variable *x* needs not to be constant;
    otherwise :exc:`StatisticsError` is raised.
 
