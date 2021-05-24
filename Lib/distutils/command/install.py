@@ -37,12 +37,19 @@ INSTALL_SCHEMES = {"unix_prefix": {}, "unix_home": {}, "nt": {}}
 
 # Copy from sysconfig._INSTALL_SCHEMES
 for key in SCHEME_KEYS:
-    sys_key = key
-    if key == "headers":
-        sys_key = "include"
-    INSTALL_SCHEMES["unix_prefix"][key] = sysconfig._INSTALL_SCHEMES["posix_prefix"][sys_key]
-    INSTALL_SCHEMES["unix_home"][key] = sysconfig._INSTALL_SCHEMES["posix_home"][sys_key]
-    INSTALL_SCHEMES["nt"][key] = sysconfig._INSTALL_SCHEMES["nt"][sys_key]
+    for distutils_scheme_name, sys_scheme_name in (
+            ("unix_prefix", "posix_prefix"), ("unix_home", "posix_home"),
+            ("nt", "nt")):
+        sys_key = key
+        sys_scheme = sysconfig._INSTALL_SCHEMES[sys_scheme_name]
+        if key == "headers" and key not in sys_scheme:
+            # On POSIX-y platofrms, Python will:
+            # - Build from .h files in 'headers' (only there when
+            #   building CPython)
+            # - Install .h files to 'include'
+            # When 'headers' is missing, fall back to 'include'
+            sys_key = 'include'
+        INSTALL_SCHEMES[distutils_scheme_name][key] = sys_scheme[sys_key]
 
 # Transformation to different template format
 for main_key in INSTALL_SCHEMES:
