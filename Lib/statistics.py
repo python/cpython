@@ -107,9 +107,12 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [
     'NormalDist',
     'StatisticsError',
+    'correlation',
+    'covariance',
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'linear_regression',
     'mean',
     'median',
     'median_grouped',
@@ -122,9 +125,6 @@ __all__ = [
     'quantiles',
     'stdev',
     'variance',
-    'correlation',
-    'covariance',
-    'linear_regression',
 ]
 
 import math
@@ -136,7 +136,7 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter
+from operator import itemgetter, mul
 from collections import Counter, namedtuple
 
 # === Exceptions ===
@@ -345,7 +345,7 @@ def mean(data):
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -363,13 +363,24 @@ def fmean(data):
             nonlocal n
             for n, x in enumerate(iterable, start=1):
                 yield x
-        total = fsum(count(data))
-    else:
+        data = count(data)
+    if weights is None:
         total = fsum(data)
-    try:
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
         return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+    try:
+        num_weights = len(weights)
+    except TypeError:
+        weights = list(weights)
+        num_weights = len(weights)
+    num = fsum(map(mul, data, weights))
+    if n != num_weights:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
+    return num / den
 
 
 def geometric_mean(data):
@@ -882,10 +893,10 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
-    xbar = fmean(x)
-    ybar = fmean(y)
-    total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    return total / (n - 1)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return sxy / (n - 1)
 
 
 def correlation(x, y, /):
@@ -910,11 +921,13 @@ def correlation(x, y, /):
         raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
-    cov = covariance(x, y)
-    stdx = stdev(x)
-    stdy = stdev(y)
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
+    s2y = fsum((yi - ybar) ** 2.0 for yi in y)
     try:
-        return cov / (stdx * stdy)
+        return sxy / sqrt(s2x * s2y)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
@@ -928,15 +941,15 @@ def linear_regression(regressor, dependent_variable, /):
     Return the intercept and slope of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
     regression describes relationship between *regressor* and
-    *dependent variable* in terms of linear function::
+    *dependent variable* in terms of linear function:
 
         dependent_variable = intercept + slope * regressor + noise
 
-    where ``intercept`` and ``slope`` are the regression parameters that are
-    estimated, and noise term is an unobserved random variable, for the
-    variability of the data that was not explained by the linear regression
-    (it is equal to the difference between prediction and the actual values
-    of dependent variable).
+    where *intercept* and *slope* are the regression parameters that are
+    estimated, and noise represents the variability of the data that was
+    not explained by the linear regression (it is equal to the
+    difference between predicted and actual values of dependent
+    variable).
 
     The parameters are returned as a named tuple.
 
@@ -958,7 +971,7 @@ def linear_regression(regressor, dependent_variable, /):
     sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     s2x = fsum((xi - xbar) ** 2.0 for xi in x)
     try:
-        slope = sxy / s2x
+        slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
         raise StatisticsError('regressor is constant')
     intercept = ybar - slope * xbar

@@ -213,6 +213,7 @@ class ExceptionTests(unittest.TestCase):
         check('[file for str(file) in []\n])', 2, 2)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
+        check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
@@ -242,6 +243,7 @@ class ExceptionTests(unittest.TestCase):
             """, 9, 24)
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
+        check("[interesting\nfoo()\n", 1, 1)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
