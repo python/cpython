@@ -316,6 +316,9 @@ class install(Command):
             self.config_vars['userbase'] = self.install_userbase
             self.config_vars['usersite'] = self.install_usersite
 
+        if sysconfig.is_python_build(True):
+            self.config_vars['srcdir'] = sysconfig.get_config_var('srcdir')
+
         self.expand_basedirs()
 
         self.dump_dirs("post-expand_basedirs()")
