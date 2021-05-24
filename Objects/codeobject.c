@@ -222,17 +222,23 @@ get_fastlocals_names(PyCodeObject *co, _PyFastLocalKind kind, Py_ssize_t num)
     }
     Py_ssize_t index = 0;
     for (Py_ssize_t offset = 0; offset < co->co_nlocalsplus; offset++) {
-        if (co->co_fastlocalkinds[offset] & kind) {
-            // XXX
-            assert(index < num);
-            PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, offset);
-            Py_INCREF(name);
-            PyTuple_SET_ITEM(names, index, name);
-            index += 1;
+        if ((co->co_fastlocalkinds[offset] & kind) == 0) {
+            continue;
         }
+        // For now there may be duplicates, which we ignore.
+        if (kind == CO_FAST_CELL && co->co_fastlocalkinds[offset] != kind) {
+            continue;
+        }
+        assert(index < num);
+        PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, offset);
+        Py_INCREF(name);
+        PyTuple_SET_ITEM(names, index, name);
+        index += 1;
     }
+    assert(index == num);
     return names;
 }
+
 
 int
 _PyCode_Validate(struct _PyCodeConstructor *con)
