@@ -2148,6 +2148,10 @@ function PyGC_Enable
 function PyGC_IsEnabled
     added 3.10
 
+# The following were added in PC/python3.def in Python 3.11:
+
+data PyStructSequence_UnnamedField
+    added 3.11  # And also 3.10
 
 # (Detailed comments aren't really needed for further entries: from here on
 #  we can use version control logs.)
