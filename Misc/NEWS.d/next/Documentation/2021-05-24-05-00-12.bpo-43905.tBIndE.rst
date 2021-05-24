@@ -1,0 +1,2 @@
+Expanded ``dataclasses.astuple()`` docs, warning about deepcopy being applied
+and providing a workaround.
