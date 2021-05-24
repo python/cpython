@@ -88,12 +88,13 @@ _HotPy_GetCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, int opa
     );
 }
 
-#define HOTPY_INITIAL_WARMUP 8
+#define HOTPY_INITIAL_WARMUP_DELAY 8
+#define HOTPY_WARMUP_COLDEST 1
 
 static inline void
 PyCodeObject_IncrementWarmup(PyCodeObject * co)
 {
-    co->co_warmup--;
+    co->co_warmup++;
 }
 
 static inline int

@@ -9,18 +9,19 @@
  * Instructions upwards, cache entries downwards.
  * first_instr is aligned to at  a HotPyCacheEntry.
  * The nth instruction is located at first_instr[n]
- * The nth cache is is located at ((HotPyCacheEntry *)first_instr)[-1-n]
- * The first cache [-count] is reserved for the count, to enable finding
+ * The nth cache is located at ((HotPyCacheEntry *)first_instr)[-1-n]
+ * The zeroth cache entry is reserved for the count, to enable finding
  * the first instruction from the base pointer.
  * We need to use the HotPyCacheOrInstruction union to refer to the data
  * so as not to break aliasing rules.
  */
 
+
 static HotPyCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
 {
-    assert(sizeof(HotPyCacheOrInstruction) == sizeof(void *));
-    assert(sizeof(HotPyCacheEntry) == sizeof(void *));
+    assert(sizeof(HotPyCacheOrInstruction) == 2*sizeof(int32_t));
+    assert(sizeof(HotPyCacheEntry) == 2*sizeof(int32_t));
     assert(cache_count > 0);
     int count = cache_count + (instruction_count + INSTRUCTIONS_PER_ENTRY -1)/INSTRUCTIONS_PER_ENTRY;
     HotPyCacheOrInstruction *array = (HotPyCacheOrInstruction *)
@@ -114,7 +115,7 @@ _Py_Quicken(PyCodeObject *code) {
     Py_ssize_t size = PyBytes_GET_SIZE(code->co_code);
     int instr_count = (int)(size/sizeof(_Py_CODEUNIT));
     if (instr_count > MAX_SIZE_TO_QUICKEN) {
-        code->co_warmup = 255;
+        code->co_warmup = HOTPY_WARMUP_COLDEST;
         return 0;
     }
     if (code->co_quickened) {
