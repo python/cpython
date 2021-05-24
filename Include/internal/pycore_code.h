@@ -95,6 +95,8 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 int _PyCode_InitOpcache(PyCodeObject *co);
 
 PyAPI_FUNC(bool) _PyCode_HasFastlocals(PyCodeObject *, _PyFastLocalKind);
+PyAPI_FUNC(void) _PyCode_FastInfoFromOffset(PyCodeObject *, int,
+                                            PyObject **, _PyFastLocalKind *);
 PyAPI_FUNC(void) _PyCode_FastInfoFromOparg(PyCodeObject *, int,
                                            _PyFastLocalKind,
                                            PyObject **, _PyFastLocalKind *);

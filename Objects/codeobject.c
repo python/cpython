@@ -661,50 +661,56 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
 }
 
 void
-_PyCode_FastInfoFromOparg(PyCodeObject *co, int offset,
-                          _PyFastLocalKind expected,
-                          PyObject **pname, _PyFastLocalKind *pkind)
+_PyCode_FastInfoFromOffset(PyCodeObject *co, int offset,
+                           PyObject **pname, _PyFastLocalKind *pkind)
 {
     assert(offset >= 0);
-    assert(expected > 0);
     assert(pname != NULL || pkind != NULL);
 
     PyObject *names;
-    int index;
+    int index = offset;
     _PyFastLocalKind kind;
-    if (expected & CO_FAST_LOCAL) {
-        // We treat offset as absolute relative to the fast locals.
-        if (offset < co->co_nlocals) {
-            names = co->co_varnames;
-            index = offset;
-            // For now we do not distinguish arg kinds.
-            kind = CO_FAST_LOCAL;
-            goto matched;
-        }
-        // For now, offsets for cells and free vars are separate from locals.
-        offset -= co->co_nlocals;
-    }
-
-    if (expected & CO_FAST_CELL && offset < co->co_ncellvars) {
-        names = co->co_cellvars;
-        index = offset;
-        kind = CO_FAST_CELL;
+    if (index < co->co_nlocals) {
+        names = co->co_varnames;
+        // For now we do not distinguish arg kinds.
+        kind = CO_FAST_LOCAL;
     }
     else {
-        assert(expected & CO_FAST_FREE);
-        index = offset - co->co_ncellvars;
-        assert(index >= 0);
-        assert(index < co->co_nfreevars);
-        names = co->co_freevars;
-        kind = CO_FAST_FREE;
+        index -= co->co_nlocals;
+        if (index < co->co_ncellvars) {
+            names = co->co_cellvars;
+            kind = CO_FAST_CELL;
+        }
+        else {
+            index -= co->co_ncellvars;
+            assert(index < co->co_nfreevars);
+            names = co->co_freevars;
+            kind = CO_FAST_FREE;
+        }
     }
 
-matched:
     if (pname != NULL) {
         *pname = PyTuple_GET_ITEM(names, index);
     }
     if (pkind != NULL) {
         *pkind = kind;
+    }
+}
+
+void
+_PyCode_FastInfoFromOparg(PyCodeObject *co, int oparg,
+                          _PyFastLocalKind expected,
+                          PyObject **pname, _PyFastLocalKind *pkind)
+{
+    assert(expected > 0);
+    if (expected & CO_FAST_LOCAL) {
+        assert(expected < CO_FAST_CELL);
+        assert(oparg < co->co_nlocals);
+        _PyCode_FastInfoFromOffset(co, oparg, pname, pkind);
+    }
+    else {
+        // For now, opargs for cells and free vars are separate from locals.
+        _PyCode_FastInfoFromOffset(co, oparg + co->co_nlocals, pname, pkind);
     }
 }
 
