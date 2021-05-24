@@ -349,16 +349,15 @@ Module contents
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
    to a tuple of its field values.  dataclasses, dicts, lists, and
-   tuples are recursed into.
+   tuples are recursed into. Other objects are copied with 
+   :func:`copy.deepcopy`.
 
    Continuing from the previous example::
 
      assert astuple(p) == (10, 20)
      assert astuple(c) == ([(0, 0), (10, 4)],)
      
-   The tuple is a :func:`copy.deepcopy` of contained objects, which may
-   be an issue in some corner cases. To create a shallow copy, the
-   following workaround may be used::
+   To create a shallow copy, the following workaround may be used::
    
      tuple(getattr(instance, field.name) for field in dataclasses.fields(instance))
 
