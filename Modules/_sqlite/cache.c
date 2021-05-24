@@ -124,6 +124,7 @@ cache_clear(pysqlite_Cache *self)
 {
     /* iterate over all nodes and deallocate them */
     pysqlite_Node *node = self->first;
+    self->first = NULL;
     while (node) {
         pysqlite_Node *delete_node = node;
         node = node->next;
