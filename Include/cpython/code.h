@@ -99,7 +99,7 @@ struct PyCodeObject {
 
     /* redundant data */
     int co_nfastlocals;         /* #entries needed for locals
-                                   (nlocals + ncellvars + nfreevars( */
+                                   (nlocals + ncellvars + nfreevars) */
     int co_nlocals;             /* #local variables */
     int co_ncellvars;           /* #escaping local variables */
     int co_nfreevars;           /* #closed variables (escaping or not) */
