@@ -40,8 +40,8 @@ we've considered:
 
 The approach with the least performance impact (time and space) is #2,
 mirroring the key order of dict's dk_entries with an array of node pointers.
-While lookdict() and friends (dk_lookup) don't give us the index into the
-array, we make use of pointer arithmetic to get that index.  An alternative
+While _Py_dict_lookup() does not give us the index into the array,
+we make use of pointer arithmetic to get that index.  An alternative
 would be to refactor lookdict() to provide the index, explicitly exposing
 the implementation detail.  We could even just use a custom lookup function
 for OrderedDict that facilitates our need.  However, both approaches are
@@ -535,7 +535,7 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
+    ix = _Py_dict_lookup((PyDictObject *)od, key, hash, &value);
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
