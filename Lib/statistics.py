@@ -941,7 +941,7 @@ def linear_regression(x, y, /):
     Return the intercept and slope of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
     regression describes relationship between *x* and
-    *dependent variable* in terms of linear function:
+    *y* in terms of linear function:
 
         y = intercept + slope * x + noise
 
