@@ -622,7 +622,7 @@ ABC hierarchy::
 
     .. method:: is_package(fullname)
 
-        An abstract method to return a true value if the module is a package, a
+        An optional method to return a true value if the module is a package, a
         false value otherwise. :exc:`ImportError` is raised if the
         :term:`loader` cannot find the module.
 
