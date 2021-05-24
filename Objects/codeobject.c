@@ -1531,7 +1531,6 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 /*[clinic end generated code: output=80957472b7f78ed6 input=38376b1193efbbae]*/
 {
     // All the logged values here have already been validated well enough.
-    // XXX This is the wrong name.
     if (PySys_Audit("code.replace", "OOOiiiiii",
                     co_code, co_filename, co_name, co_argcount,
                     co_posonlyargcount, co_kwonlyargcount, co_nlocals,

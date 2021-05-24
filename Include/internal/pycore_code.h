@@ -28,7 +28,7 @@ struct _PyOpcache {
 };
 
 
-// XXX Can we do this with an enum instead?
+// We would use an enum if C let us specify the storage type.
 typedef unsigned char _PyFastLocalKind;
 // Note that these all fit within _PyFastLocalKind, as do combinations.
 #define CO_FAST_POSONLY     0x01

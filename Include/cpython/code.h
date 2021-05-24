@@ -63,7 +63,6 @@ struct PyCodeObject {
     PyObject *co_freevars;      /* tuple of strings (free variable names) */
 
     /* args (within co_varnames) */
-    // XXX Make these convenience fields, reflecting co_fastlocalkinds.
     int co_argcount;            /* #arguments, except *args */
     int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
