@@ -1820,9 +1820,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(LOAD_FAST): {
             PyObject *value = GETLOCAL(oparg);
             if (value == NULL) {
-                PyObject *name = NULL;
-                _PyCode_FastInfoFromOffset(co, oparg, CO_FAST_LOCAL,
-                                           &name, NULL);
+                PyObject *name;
+                _PyCode_FastInfoFromOparg(co, oparg, CO_FAST_LOCAL,
+                                          &name, NULL);
                 format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                                      UNBOUNDLOCAL_ERROR_MSG, name);
                 goto error;
@@ -3049,8 +3049,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 SETLOCAL(oparg, NULL);
                 DISPATCH();
             }
-            PyObject *name = NULL;
-            _PyCode_FastInfoFromOffset(co, oparg, CO_FAST_LOCAL, &name, NULL);
+            PyObject *name;
+            _PyCode_FastInfoFromOparg(co, oparg, CO_FAST_LOCAL, &name, NULL);
             format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                                  UNBOUNDLOCAL_ERROR_MSG, name);
             goto error;
@@ -6427,10 +6427,10 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate)) {
         return;
     }
-    PyObject *name = NULL;
+    PyObject *name;
     _PyFastLocalKind kind;
-    _PyCode_FastInfoFromOffset(co, oparg, CO_FAST_CELL | CO_FAST_FREE,
-                               &name, &kind);
+    _PyCode_FastInfoFromOparg(co, oparg, CO_FAST_CELL | CO_FAST_FREE,
+                              &name, &kind);
     if (kind & CO_FAST_CELL) {
         format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                              UNBOUNDLOCAL_ERROR_MSG, name);

@@ -661,9 +661,9 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
 }
 
 void
-_PyCode_FastInfoFromOffset(PyCodeObject *co, int offset,
-                           _PyFastLocalKind expected,
-                           PyObject **pname, _PyFastLocalKind *pkind)
+_PyCode_FastInfoFromOparg(PyCodeObject *co, int offset,
+                          _PyFastLocalKind expected,
+                          PyObject **pname, _PyFastLocalKind *pkind)
 {
     assert(offset >= 0);
     assert(expected > 0);
