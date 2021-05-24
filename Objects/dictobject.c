@@ -232,9 +232,6 @@ static Py_ssize_t lookdict(PyDictObject *mp, PyObject *key,
                            Py_hash_t hash, PyObject **value_addr);
 static Py_ssize_t lookdict_unicode(PyDictObject *mp, PyObject *key,
                                    Py_hash_t hash, PyObject **value_addr);
-static Py_ssize_t
-lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
-                         Py_hash_t hash, PyObject **value_addr);
 static Py_ssize_t lookdict_split(PyDictObject *mp, PyObject *key,
                                  Py_hash_t hash, PyObject **value_addr);
 
@@ -461,12 +458,6 @@ estimate_log2_keysize(Py_ssize_t n)
  * GROWTH_RATE was set to used*2 + capacity/2 in 3.4.0-3.6.0.
  */
 #define GROWTH_RATE(d) ((d)->ma_used*3)
-
-#define ENSURE_ALLOWS_DELETIONS(d) \
-    if ((d)->ma_keys->dk_kind == DICT_KEYS_UNICODE_NO_DUMMY) { \
-        (d)->ma_keys->dk_kind = DICT_KEYS_UNICODE; \
-        (d)->ma_keys->dk_version = 0; \
-    }
 
 /* This immutable, empty PyDictKeysObject is used for PyDict_Clear()
  * (which cannot fail and thus can do no allocation).
@@ -792,9 +783,7 @@ comparison raises an exception.
 lookdict_unicode() below is specialized to string keys, comparison of which can
 never raise an exception; that function can never return DKIX_ERROR when key
 is string.  Otherwise, it falls back to lookdict().
-lookdict_unicode_nodummy is further specialized for string keys that cannot be
-the <dummy> value.
-For both, when the key isn't found a DKIX_EMPTY is returned.
+When the key isn't found a DKIX_EMPTY is returned.
 */
 static Py_ssize_t _Py_HOT_FUNCTION
 lookdict(PyDictObject *mp, PyObject *key,
@@ -892,51 +881,10 @@ lookdict_unicode(PyDictObject *mp, PyObject *key,
     Py_UNREACHABLE();
 }
 
-/* Faster version of lookdict_unicode when it is known that no <dummy> keys
- * will be present. */
-static Py_ssize_t _Py_HOT_FUNCTION
-lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
-                         Py_hash_t hash, PyObject **value_addr)
-{
-    assert(mp->ma_values == NULL);
-    /* Make sure this function doesn't have to handle non-unicode keys,
-       including subclasses of str; e.g., one reason to subclass
-       unicodes is to override __eq__, and for speed we don't cater to
-       that here. */
-    if (!PyUnicode_CheckExact(key)) {
-        return lookdict(mp, key, hash, value_addr);
-    }
-
-    PyDictKeyEntry *ep0 = DK_ENTRIES(mp->ma_keys);
-    size_t mask = DK_MASK(mp->ma_keys);
-    size_t perturb = (size_t)hash;
-    size_t i = (size_t)hash & mask;
-
-    for (;;) {
-        Py_ssize_t ix = dictkeys_get_index(mp->ma_keys, i);
-        assert (ix != DKIX_DUMMY);
-        if (ix == DKIX_EMPTY) {
-            *value_addr = NULL;
-            return DKIX_EMPTY;
-        }
-        PyDictKeyEntry *ep = &ep0[ix];
-        assert(ep->me_key != NULL);
-        assert(PyUnicode_CheckExact(ep->me_key));
-        if (ep->me_key == key ||
-            (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
-            *value_addr = ep->me_value;
-            return ix;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    Py_UNREACHABLE();
-}
-
 /* Version of lookdict for split tables.
  * All split tables and only split tables use this lookup function.
  * Split tables only contain unicode keys and no dummy keys,
- * so algorithm is the same as lookdict_unicode_nodummy.
+ * so algorithm is the same as lookdict_unicode, but doesn't check for dummy keys.
  */
 static Py_ssize_t _Py_HOT_FUNCTION
 lookdict_split(PyDictObject *mp, PyObject *key,
@@ -986,9 +934,8 @@ _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **valu
         case DICT_KEYS_GENERAL:
             return lookdict(mp, key, hash, value_addr);
         case DICT_KEYS_UNICODE:
-            return lookdict_unicode(mp, key, hash, value_addr);
         case DICT_KEYS_UNICODE_NO_DUMMY:
-            return lookdict_unicode_nodummy(mp, key, hash, value_addr);
+            return lookdict_unicode(mp, key, hash, value_addr);
         case DICT_KEYS_SPLIT:
             return lookdict_split(mp, key, hash, value_addr);
     };
@@ -1682,7 +1629,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     mp->ma_version_tag = DICT_NEXT_VERSION();
     ep = &DK_ENTRIES(mp->ma_keys)[ix];
     dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
-    ENSURE_ALLOWS_DELETIONS(mp);
+    mp->ma_keys->dk_version = 0;
     old_key = ep->me_key;
     ep->me_key = NULL;
     ep->me_value = NULL;
@@ -1953,7 +1900,7 @@ _PyDict_Pop_KnownHash(PyObject *dict, PyObject *key, Py_hash_t hash, PyObject *d
     mp->ma_version_tag = DICT_NEXT_VERSION();
     dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
     ep = &DK_ENTRIES(mp->ma_keys)[ix];
-    ENSURE_ALLOWS_DELETIONS(mp);
+    mp->ma_keys->dk_version = 0;
     old_key = ep->me_key;
     ep->me_key = NULL;
     ep->me_value = NULL;
@@ -3224,7 +3171,7 @@ dict_popitem_impl(PyDictObject *self)
             return NULL;
         }
     }
-    ENSURE_ALLOWS_DELETIONS(self);
+    self->ma_keys->dk_version = 0;
 
     /* Pop last item */
     ep0 = DK_ENTRIES(self->ma_keys);
