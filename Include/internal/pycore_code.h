@@ -82,7 +82,7 @@ struct _PyCodeConstructor {
 // in a case such as this with many parameters.  It does bear a risk:
 // if the struct changes and callers are not updated properly then the
 // compiler will not catch problems (like a missing argument).  This can
-// cause hard-to-debug problems.  The risk is miticated by the use of
+// cause hard-to-debug problems.  The risk is mitigated by the use of
 // check_code() in codeobject.c.  However, we may decide to switch
 // back to a regular function signature.  Regardless, this approach
 // wouldn't be appropriate if this weren't a strictly internal API.
