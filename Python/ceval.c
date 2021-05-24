@@ -6413,18 +6413,19 @@ format_exc_check_arg(PyThreadState *tstate, PyObject *exc,
 static void
 format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
 {
-    PyObject *name;
     /* Don't stomp existing exception */
-    if (_PyErr_Occurred(tstate))
+    if (_PyErr_Occurred(tstate)) {
         return;
-    if (oparg < co->co_ncellvars) {
-        name = _PyCode_GetCellvar(co, oparg);
-        format_exc_check_arg(tstate,
-            PyExc_UnboundLocalError,
-            UNBOUNDLOCAL_ERROR_MSG,
-            name);
-    } else {
-        name = _PyCode_GetFreevar(co, oparg - co->co_ncellvars);
+    }
+    PyObject *name = NULL;
+    _PyFastLocalKind kind = CO_FAST_CELL | CO_FAST_FREE;
+    _PyCode_FastInfoFromOffset(co, oparg, &name, &kind);
+    if (kind & CO_FAST_CELL) {
+        format_exc_check_arg(tstate, PyExc_UnboundLocalError,
+                             UNBOUNDLOCAL_ERROR_MSG, name);
+    }
+    else {
+        assert(kind & CO_FAST_FREE);
         format_exc_check_arg(tstate, PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }

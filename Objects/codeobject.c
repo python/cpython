@@ -660,6 +660,34 @@ _PyCode_HasFastlocals(PyCodeObject *co, _PyFastLocalKind kind)
     return false;
 }
 
+void
+_PyCode_FastInfoFromOffset(PyCodeObject *co, int offset,
+                           PyObject **pname, _PyFastLocalKind *pkind)
+{
+    assert(offset >= 0);
+    assert(pname != NULL && pkind != NULL);
+    int index = offset;
+    if (*pkind & CO_FAST_LOCAL) {
+        assert(*pkind < CO_FAST_CELL);
+        assert(index < co->co_nlocals);
+        *pname = PyTuple_GET_ITEM(co->co_varnames, index);
+        // For now we do not distinguish arg kinds.
+        *pkind = CO_FAST_LOCAL;
+    }
+    else if (*pkind & CO_FAST_CELL && index < co->co_ncellvars) {
+        *pname = PyTuple_GET_ITEM(co->co_cellvars, index);
+        *pkind = CO_FAST_CELL;
+    }
+    else {
+        assert(*pkind & CO_FAST_FREE);
+        index -= co->co_ncellvars;
+        assert(index >= 0);
+        assert(index < co->co_nfreevars);
+        *pname = PyTuple_GET_ITEM(co->co_freevars, index);
+        *pkind = CO_FAST_FREE;
+    }
+}
+
 int
 _PyCode_CellForLocal(PyCodeObject *co, int offset)
 {
