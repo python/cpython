@@ -1,21 +1,19 @@
 
-#define PY_LOCAL_AGGRESSIVE
-
 #include "Python.h"
 #include "pycore_code.h"
+#include "opcode.h"
 
 
 /* We layout the quickened data as a bi-directional array:
  * Instructions upwards, cache entries downwards.
- * first_instr is aligned to at  a SpecializedCacheEntry.
+ * first_instr is aligned to a SpecializedCacheEntry.
  * The nth instruction is located at first_instr[n]
  * The nth cache is located at ((SpecializedCacheEntry *)first_instr)[-1-n]
- * The zeroth cache entry is reserved for the count, to enable finding
+ * The first (index 0) cache entry is reserved for the count, to enable finding
  * the first instruction from the base pointer.
- * We need to use the SpecializedCacheOrInstruction union to refer to the data
- * so as not to break aliasing rules.
+ * We use the SpecializedCacheOrInstruction union to refer to the data
+ * to avoid type punning.
  */
-
 
 static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
@@ -84,14 +82,14 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
     for(int i = 0; i < len; i++) {
         int opcode = _Py_OPCODE(instructions[i]);
         uint8_t adaptive_opcode = adaptive[opcode];
-        if (adaptive_opcode) {
+        if (adaptive_opcode && previous_opcode != EXTENDED_ARG) {
             int oparg = oparg_from_offset_and_index(cache_offset, i);
             if (oparg < 0) {
                 cache_offset = i/2;
                 oparg = 0;
             }
             if (oparg < 256) {
-                instructions[i] = _Py_INSTRUCTION(adaptive_opcode, oparg);
+                instructions[i] = _Py_CODEUNIT(adaptive_opcode, oparg);
                 cache_offset += cache_requirements[opcode];
             }
         }
@@ -101,7 +99,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                  E.g.
                 case LOAD_FAST:
                     if (previous_opcode == LOAD_FAST)
-                        instructions[i-1] = _Py_INSTRUCTION(LOAD_FAST__LOAD_FAST, oparg);
+                        instructions[i-1] = _Py_CODEUNIT(LOAD_FAST__LOAD_FAST, oparg);
                  */
             }
         }
