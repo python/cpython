@@ -2224,11 +2224,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
        Return 0 on error, -1 if no annotations pushed, 1 if a annotations is pushed.
        */
-    _Py_static_string(PyId_return, "return");
-    identifier return_str = _PyUnicode_FromId(&PyId_return); /* borrowed ref */
-    if (return_str == NULL) {
-        return 0;
-    }
+    _Py_IDENTIFIER(return);
     Py_ssize_t annotations_len = 0;
 
     if (!compiler_visit_argannotations(c, args->args, &annotations_len))
@@ -2246,6 +2242,10 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
                                      args->kwarg->annotation, &annotations_len))
         return 0;
 
+    identifier return_str = _PyUnicode_FromId(&PyId_return); /* borrowed ref */
+    if (return_str == NULL) {
+        return 0;
+    }
     if (!compiler_visit_argannotation(c, return_str, returns, &annotations_len)) {
         return 0;
     }
@@ -2798,8 +2798,8 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (!compiler_check_debug_args(c, args))
         return 0;
 
-    _Py_static_string(PyId_name, "<lambda>");
-    name = _PyUnicode_FromId(&PyId_name); /* borrowed ref */
+    _Py_static_string(PyId_lambda, "<lambda>");
+    name = _PyUnicode_FromId(&PyId_lambda); /* borrowed ref */
     if (name == NULL) {
         return 0;
     }
@@ -4962,8 +4962,8 @@ error:
 static int
 compiler_genexp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_name, "<genexpr>");
-    identifier name = _PyUnicode_FromId(&PyId_name); /* borrowed ref */
+    _Py_static_string(PyId_genexpr, "<genexpr>");
+    identifier name = _PyUnicode_FromId(&PyId_genexpr); /* borrowed ref */
     if (name == NULL) {
         return 0;
     }
@@ -4976,8 +4976,8 @@ compiler_genexp(struct compiler *c, expr_ty e)
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_name, "<listcomp>");
-    identifier name = _PyUnicode_FromId(&PyId_name); /* borrowed ref */
+    _Py_static_string(PyId_listcomp, "<listcomp>");
+    identifier name = _PyUnicode_FromId(&PyId_listcomp); /* borrowed ref */
     if (name == NULL) {
         return 0;
     }
@@ -4990,8 +4990,8 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 static int
 compiler_setcomp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_name, "<setcomp>");
-    identifier name = _PyUnicode_FromId(&PyId_name); /* borrowed ref */
+    _Py_static_string(PyId_setcomp, "<setcomp>");
+    identifier name = _PyUnicode_FromId(&PyId_setcomp); /* borrowed ref */
     if (name == NULL) {
         return 0;
     }
@@ -5005,8 +5005,8 @@ compiler_setcomp(struct compiler *c, expr_ty e)
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
-    _Py_static_string(PyId_name, "<dictcomp>");
-    identifier name = _PyUnicode_FromId(&PyId_name); /* borrowed ref */
+    _Py_static_string(PyId_dictcomp, "<dictcomp>");
+    identifier name = _PyUnicode_FromId(&PyId_dictcomp); /* borrowed ref */
     if (name == NULL) {
         return 0;
     }
