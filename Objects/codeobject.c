@@ -164,7 +164,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
-    Py_ssize_t i, n_varnames, total_args;
+    Py_ssize_t i, total_args;
     int ncellvars, nfreevars;
 
     /* Check argument types */
@@ -228,16 +228,16 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         flags &= ~CO_NOFREE;
     }
 
-    n_varnames = PyTuple_GET_SIZE(varnames);
-    if (argcount <= n_varnames && kwonlyargcount <= n_varnames) {
+    assert(nlocals == PyTuple_GET_SIZE(varnames));
+    if (argcount <= nlocals && kwonlyargcount <= nlocals) {
         /* Never overflows. */
         total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
                       ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
     }
     else {
-        total_args = n_varnames + 1;
+        total_args = nlocals + 1;
     }
-    if (total_args > n_varnames) {
+    if (total_args > nlocals) {
         PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
         return NULL;
     }
