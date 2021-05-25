@@ -76,7 +76,7 @@ These functions calculate statistics regarding relations between two inputs.
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
 :func:`correlation`        Pearson's correlation coefficient for two variables.
-:func:`linear_regression`  Intercept and slope for simple linear regression.
+:func:`linear_regression`  Slope and intercept for simple linear regression.
 =========================  =====================================================
 
 
@@ -643,24 +643,25 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(regressor, dependent_variable)
+.. function:: linear_regression(independent_variable, dependent_variable)
 
-   Return the intercept and slope of `simple linear regression
+   Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
    parameters estimated using ordinary least squares. Simple linear
-   regression describes the relationship between *regressor* and
-   *dependent variable* in terms of this linear function:
+   regression describes the relationship between an independent variable *x* and
+   a dependent variable *y* in terms of this linear function:
 
-      *dependent_variable = intercept + slope \* regressor + noise*
+      *y = intercept + slope \* x + noise*
 
-   where ``intercept`` and ``slope`` are the regression parameters that are
+   where ``slope`` and ``intercept`` are the regression parameters that are
    estimated, and noise represents the
    variability of the data that was not explained by the linear regression
    (it is equal to the difference between predicted and actual values
    of dependent variable).
 
-   Both inputs must be of the same length (no less than two), and regressor
-   needs not to be constant; otherwise :exc:`StatisticsError` is raised.
+   Both inputs must be of the same length (no less than two), and
+   the independent variable *x* needs not to be constant;
+   otherwise :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
    Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
@@ -672,7 +673,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       >>> year = [1971, 1975, 1979, 1982, 1983]
       >>> films_total = [1, 2, 3, 4, 5]
-      >>> intercept, slope = linear_regression(year, films_total)
+      >>> slope, intercept = linear_regression(year, films_total)
       >>> round(intercept + slope * 2019)
       16
 
