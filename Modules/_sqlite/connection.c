@@ -225,27 +225,50 @@ pysqlite_do_all_statements(pysqlite_Connection *self, int action,
     }
 }
 
+static int
+connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->statement_cache);
+    Py_VISIT(self->isolation_level);
+    Py_VISIT(self->function_pinboard_trace_callback);
+    Py_VISIT(self->function_pinboard_progress_handler);
+    Py_VISIT(self->function_pinboard_authorizer_cb);
+    Py_VISIT(self->row_factory);
+    Py_VISIT(self->text_factory);
+    Py_VISIT(self->collations);
+    Py_VISIT(self->statements);
+    Py_VISIT(self->cursors);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static int
+connection_clear(pysqlite_Connection *self)
+{
+    Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->isolation_level);
+    Py_CLEAR(self->function_pinboard_trace_callback);
+    Py_CLEAR(self->function_pinboard_progress_handler);
+    Py_CLEAR(self->function_pinboard_authorizer_cb);
+    Py_CLEAR(self->row_factory);
+    Py_CLEAR(self->text_factory);
+    Py_CLEAR(self->collations);
+    Py_CLEAR(self->statements);
+    Py_CLEAR(self->cursors);
+    return 0;
+}
+
 static void
-pysqlite_connection_dealloc(pysqlite_Connection *self)
+connection_dealloc(pysqlite_Connection *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
-    Py_XDECREF(self->statement_cache);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear((PyObject *)self);
 
     /* Clean up if user has not called .close() explicitly. */
     if (self->db) {
         sqlite3_close_v2(self->db);
     }
-
-    Py_XDECREF(self->isolation_level);
-    Py_XDECREF(self->function_pinboard_trace_callback);
-    Py_XDECREF(self->function_pinboard_progress_handler);
-    Py_XDECREF(self->function_pinboard_authorizer_cb);
-    Py_XDECREF(self->row_factory);
-    Py_XDECREF(self->text_factory);
-    Py_XDECREF(self->collations);
-    Py_XDECREF(self->statements);
-    Py_XDECREF(self->cursors);
 
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -1328,7 +1351,7 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 
     _pysqlite_drop_unused_statement_references(self);
 
-    statement = PyObject_New(pysqlite_Statement, pysqlite_StatementType);
+    statement = PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType);
     if (!statement) {
         return NULL;
     }
@@ -1909,21 +1932,22 @@ static struct PyMemberDef connection_members[] =
 };
 
 static PyType_Slot connection_slots[] = {
-    {Py_tp_dealloc, pysqlite_connection_dealloc},
+    {Py_tp_dealloc, connection_dealloc},
     {Py_tp_doc, (void *)connection_doc},
     {Py_tp_methods, connection_methods},
     {Py_tp_members, connection_members},
     {Py_tp_getset, connection_getset},
-    {Py_tp_new, PyType_GenericNew},
     {Py_tp_init, pysqlite_connection_init},
     {Py_tp_call, pysqlite_connection_call},
+    {Py_tp_traverse, connection_traverse},
+    {Py_tp_clear, connection_clear},
     {0, NULL},
 };
 
 static PyType_Spec connection_spec = {
     .name = MODULE_NAME ".Connection",
     .basicsize = sizeof(pysqlite_Connection),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = connection_slots,
 };
 
