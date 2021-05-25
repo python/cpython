@@ -3310,7 +3310,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (res == 1) {
-        assert(type != NULL);
         return type;
     }
     assert(ctx.base != NULL);

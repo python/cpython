@@ -19,7 +19,7 @@ import traceback
 import types
 import unittest
 import warnings
-from contextlib import ExitStack
+from contextlib import ExitStack, suppress
 from functools import partial
 from inspect import CO_COROUTINE
 from itertools import product
@@ -2342,6 +2342,21 @@ class TestType(unittest.TestCase):
 
         C = type('C', (), od)
         self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
+
+    def test_new_type_bad_tp_new(self):
+        # bpo-44232: Bad tp_new in bases tuple should just return NULL
+        # instead of causing an interpreter crash in debug mode.
+        class XBase(type):
+            def __new__(cls, name, bases, attrs, **kwargs):
+                attrs.pop('__module__')
+                return super().__new__(cls, name, bases, attrs, **kwargs)
+
+        class X(metaclass=XBase): ...
+
+        # The actual error here doesn't matter.  As long as the interpreter
+        # doesn't crash.
+        with suppress(Exception):
+            type('A', (X,), {})
 
 
 def load_tests(loader, tests, pattern):

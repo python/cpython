@@ -1,0 +1,2 @@
+Fixed a crash caused by bad metaclass bases being passed into :func:`type`.
+This only affected debug builds of Python -- release builds are unaffected.
