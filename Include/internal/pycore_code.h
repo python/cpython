@@ -33,19 +33,27 @@ struct _PyOpcache {
 
 typedef struct {
     int32_t cache_count;
-    int32_t _;
-} EntryZero;
+    int32_t _; /* Force 8 byte size */
+} _PyEntryZero;
 
 /* Add specialized versions of entries to this union.
- * Do not break this invariant: sizeof(SpecializedCacheEntry) == 8 */
+ *
+ * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
+ * Preserving this invariant is necessary because:
+    - If any one form uses more space, then all must and on 64 bit machines
+      this is likely to double the memory consumption of caches
+    - The function for calculating the offset of caches assumes a 4:1
+      cache:instruction size ratio. Changing that would need careful
+      analysis to choose a new function.
+ */
 typedef union {
-    EntryZero zero;
+    _PyEntryZero zero;
     PyObject *object;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
 
-/* Maximum size of code to quicken */
+/* Maximum size of code to quicken, in code units. */
 #define MAX_SIZE_TO_QUICKEN 5000
 
 typedef union _cache_or_instruction {
@@ -53,12 +61,16 @@ typedef union _cache_or_instruction {
     SpecializedCacheEntry entry;
 } SpecializedCacheOrInstruction;
 
+/* Get pointer to the nth cache entry, from the first instruction and n.
+ * Cache entries are index backwards, with [count-1] first in memory, and [0] last.
+ * The zeroth entry immediately precedes the instructions.
+ */
 static inline SpecializedCacheEntry *
-_GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t index)
+_GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
 {
     SpecializedCacheOrInstruction *last_cache_plus_one = (SpecializedCacheOrInstruction *)first_instr;
     assert(&last_cache_plus_one->code[0] == first_instr);
-    return &last_cache_plus_one[-1-index].entry;
+    return &last_cache_plus_one[-1-n].entry;
 }
 
 /* Following two functions determine the index of a cache entry from the
@@ -79,6 +91,8 @@ offset_from_oparg_and_index(int oparg, int index)
     return (index>>1)+oparg;
 }
 
+/* Get pointer to the cache entry associated with an instruction.
+ This doesn't check that an entry has been allocated for that instruction. */
 static inline SpecializedCacheEntry *
 _GetSpecializedCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, int oparg)
 {
@@ -88,7 +102,10 @@ _GetSpecializedCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, in
     );
 }
 
-#define QUICKENING_INITIAL_WARMUP_DELAY 8
+#define QUICKENING_WARMUP_DELAY 8
+
+/* We want to compare to zero for efficiency, so we offset values accordingly */
+#define QUICKENING_INITIAL_WARMUP_VALUE (-QUICKENING_WARMUP_DELAY)
 #define QUICKENING_WARMUP_COLDEST 1
 
 static inline void
@@ -97,6 +114,7 @@ PyCodeObject_IncrementWarmup(PyCodeObject * co)
     co->co_warmup++;
 }
 
+/* Used by the interpreter to determine when a code object should be quickened */
 static inline int
 PyCodeObject_IsWarmedUp(PyCodeObject * co)
 {

@@ -316,7 +316,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_opcache = NULL;
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
-    co->co_warmup = -QUICKENING_INITIAL_WARMUP_DELAY;
+    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
     co->co_quickened = NULL;
     return co;
 }

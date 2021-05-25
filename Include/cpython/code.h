@@ -7,11 +7,11 @@ typedef uint16_t _Py_CODEUNIT;
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
 #  define _Py_OPARG(word) ((word) & 255)
-#  define _Py_INSTRUCTION(opcode, oparg) (((opcode)<<8)|(oparg))
+#  define _Py_CODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
 #else
 #  define _Py_OPCODE(word) ((word) & 255)
 #  define _Py_OPARG(word) ((word) >> 8)
-#  define _Py_INSTRUCTION(opcode, oparg) ((opcode)|((oparg)<<8))
+#  define _Py_CODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
 typedef struct _PyOpcache _PyOpcache;
@@ -26,7 +26,6 @@ struct PyCodeObject {
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_flags;               /* CO_..., see below */
     int co_firstlineno;         /* first source line number */
-    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening */
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
@@ -38,6 +37,7 @@ struct PyCodeObject {
        for tracebacks and debuggers; otherwise, constant de-duplication
        would collapse identical functions/lambdas defined on different lines.
     */
+    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening */
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
@@ -50,6 +50,9 @@ struct PyCodeObject {
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
+    /* Quickened instructions and cache, or NULL
+     This should be treated as opaque by all code except the specializer and
+     interpreter. */
     union _cache_or_instruction *co_quickened;
 
     /* Per opcodes just-in-time cache
@@ -66,6 +69,7 @@ struct PyCodeObject {
     _PyOpcache *co_opcache;
     int co_opcache_flag;  // used to determine when create a cache.
     unsigned char co_opcache_size;  // length of co_opcache.
+    /* Warmup counter for quickening */
     unsigned char co_warmup;
 };
 
