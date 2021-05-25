@@ -785,10 +785,6 @@ start:
         /* Strings only */
         for (;;) {
             ix = dictkeys_get_index(mp->ma_keys, i);
-            if (ix == DKIX_EMPTY) {
-                *value_addr = NULL;
-                return DKIX_EMPTY;
-            }
             if (ix >= 0) {
                 PyDictKeyEntry *ep = &ep0[ix];
                 assert(ep->me_key != NULL);
@@ -797,6 +793,26 @@ start:
                         (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
                     goto found;
                 }
+            }
+            else if (ix == DKIX_EMPTY) {
+                *value_addr = NULL;
+                return DKIX_EMPTY;
+            }
+            perturb >>= PERTURB_SHIFT;
+            i = mask & (i*5 + perturb + 1);
+            ix = dictkeys_get_index(mp->ma_keys, i);
+            if (ix >= 0) {
+                PyDictKeyEntry *ep = &ep0[ix];
+                assert(ep->me_key != NULL);
+                assert(PyUnicode_CheckExact(ep->me_key));
+                if (ep->me_key == key ||
+                        (ep->me_hash == hash && unicode_eq(ep->me_key, key))) {
+                    goto found;
+                }
+            }
+            else if (ix == DKIX_EMPTY) {
+                *value_addr = NULL;
+                return DKIX_EMPTY;
             }
             perturb >>= PERTURB_SHIFT;
             i = mask & (i*5 + perturb + 1);
