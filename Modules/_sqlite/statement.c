@@ -369,7 +369,7 @@ void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
 }
 
 static void
-pysqlite_statement_dealloc(pysqlite_Statement *self)
+stmt_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -480,7 +480,7 @@ static PyMemberDef stmt_members[] = {
 };
 static PyType_Slot stmt_slots[] = {
     {Py_tp_members, stmt_members},
-    {Py_tp_dealloc, pysqlite_statement_dealloc},
+    {Py_tp_dealloc, stmt_dealloc},
     {Py_tp_traverse, stmt_traverse},
     {Py_tp_clear, stmt_clear},
     {0, NULL},
