@@ -1,15 +1,12 @@
-__all__ = 'coroutine', 'iscoroutinefunction', 'iscoroutine'
+__all__ = 'iscoroutinefunction', 'iscoroutine'
 
 import collections.abc
-import functools
 import inspect
 import os
 import sys
 import traceback
 import types
-import warnings
 
-from . import base_futures
 from . import constants
 from . import format_helpers
 from .log import logger
@@ -28,9 +25,6 @@ def _is_debug_mode():
     # when _DEBUG is true.
     return sys.flags.dev_mode or (not sys.flags.ignore_environment and
                                   bool(os.environ.get('PYTHONASYNCIODEBUG')))
-
-
-_DEBUG = _is_debug_mode()
 
 
 class CoroWrapper:
@@ -100,61 +94,6 @@ class CoroWrapper:
                         f'{constants.DEBUG_STACK_DEPTH} last lines):\n')
                 msg += tb.rstrip()
             logger.error(msg)
-
-
-def coroutine(func):
-    """Decorator to mark coroutines.
-
-    If the coroutine is not yielded from before it is destroyed,
-    an error message is logged.
-    """
-    warnings.warn('"@coroutine" decorator is deprecated since Python 3.8, use "async def" instead',
-                  DeprecationWarning,
-                  stacklevel=2)
-    if inspect.iscoroutinefunction(func):
-        # In Python 3.5 that's all we need to do for coroutines
-        # defined with "async def".
-        return func
-
-    if inspect.isgeneratorfunction(func):
-        coro = func
-    else:
-        @functools.wraps(func)
-        def coro(*args, **kw):
-            res = func(*args, **kw)
-            if (base_futures.isfuture(res) or inspect.isgenerator(res) or
-                    isinstance(res, CoroWrapper)):
-                res = yield from res
-            else:
-                # If 'res' is an awaitable, run it.
-                try:
-                    await_meth = res.__await__
-                except AttributeError:
-                    pass
-                else:
-                    if isinstance(res, collections.abc.Awaitable):
-                        res = yield from await_meth()
-            return res
-
-    coro = types.coroutine(coro)
-    if not _DEBUG:
-        wrapper = coro
-    else:
-        @functools.wraps(func)
-        def wrapper(*args, **kwds):
-            w = CoroWrapper(coro(*args, **kwds), func=func)
-            if w._source_traceback:
-                del w._source_traceback[-1]
-            # Python < 3.5 does not implement __qualname__
-            # on generator objects, so we set it manually.
-            # We use getattr as some callables (such as
-            # functools.partial may lack __qualname__).
-            w.__name__ = getattr(func, '__name__', None)
-            w.__qualname__ = getattr(func, '__qualname__', None)
-            return w
-
-    wrapper._is_coroutine = _is_coroutine  # For iscoroutinefunction().
-    return wrapper
 
 
 # A marker for iscoroutinefunction.

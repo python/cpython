@@ -126,6 +126,10 @@ Deprecated
 Removed
 =======
 
+* The :func:`asyncio.coroutine` :term:`decorator` enabling legacy
+  generator-based coroutines to be compatible with async/await code.
+  Use :keyword:`async def` instead.
+  (Contributed by Illia Volochii in :issue:`43216`.)
 
 
 Porting to Python 3.11

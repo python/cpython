@@ -1,0 +1,3 @@
+Remove the :func:`asyncio.coroutine` :term:`decorator` enabling legacy
+generator-based coroutines to be compatible with async/await code. Patch by
+Illia Volochii.
