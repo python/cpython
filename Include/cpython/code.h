@@ -17,6 +17,29 @@ typedef struct _PyOpcache _PyOpcache;
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
+
+    /* Note only the following fields are used in hash and/or comparisons
+     *
+     * - co_name
+     * - co_argcount
+     * - co_posonlyargcount
+     * - co_kwonlyargcount
+     * - co_nlocals
+     * - co_stacksize
+     * - co_flags
+     * - co_firstlineno
+     * - co_code
+     * - co_consts
+     * - co_names
+     * - co_varnames
+     * - co_freevars
+     * - co_cellvars
+     *
+     * This is done to preserve the name and line number for tracebacks
+     * and debuggers; otherwise, constant de-duplication would collapse
+     * identical functions/lambdas defined on different lines.
+     */
+
     int co_argcount;            /* #arguments, except *args */
     int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
@@ -30,11 +53,6 @@ struct PyCodeObject {
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
     PyObject *co_freevars;      /* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest aren't used in either hash or comparisons, except for co_name,
-       used in both. This is done to preserve the name and line number
-       for tracebacks and debuggers; otherwise, constant de-duplication
-       would collapse identical functions/lambdas defined on different lines.
-    */
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
