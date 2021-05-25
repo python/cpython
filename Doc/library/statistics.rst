@@ -664,7 +664,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    otherwise a :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
-   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_,
+   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_
    to predict the cumulative number of Monty Python films
    that would have been produced by 2019
    assuming that they had kept the pace.
