@@ -19,7 +19,7 @@ typedef struct _PyOpcache _PyOpcache;
 
 // These are duplicated from pycore_code.h.
 typedef unsigned char _PyFastLocalKind;
-typedef _PyFastLocalKind _PyFastLocalKinds[_Py_MAX_OPARG + 1];
+typedef _PyFastLocalKind *_PyFastLocalKinds;
 
 /* Bytecode object */
 struct PyCodeObject {

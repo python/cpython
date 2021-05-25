@@ -252,6 +252,8 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         con->consts == NULL || !PyTuple_Check(con->consts) ||
         con->names == NULL || !PyTuple_Check(con->names) ||
         con->fastlocalnames == NULL || !PyTuple_Check(con->fastlocalnames) ||
+        (PyTuple_GET_SIZE(con->fastlocalnames) && con->fastlocalkinds == NULL) ||
+        (!PyTuple_GET_SIZE(con->fastlocalnames) && con->fastlocalkinds != NULL) ||
         con->name == NULL || !PyUnicode_Check(con->name) ||
         con->filename == NULL || !PyUnicode_Check(con->filename) ||
         con->linetable == NULL || !PyBytes_Check(con->linetable) ||
@@ -260,7 +262,6 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         PyErr_BadInternalCall();
         return -1;
     }
-    // For now we don't worry about checking fastlocalkinds.
 
     /* Make sure that code is indexable with an int, this is
        a long running assumption in ceval.c and many parts of
@@ -316,7 +317,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     Py_INCREF(con->fastlocalnames);
     co->co_fastlocalnames = con->fastlocalnames;
-    memcpy(co->co_fastlocalkinds, con->fastlocalkinds, nlocalsplus);
+    // We take ownership of the kinds array.
+    co->co_fastlocalkinds = con->fastlocalkinds;
 
     co->co_argcount = con->argcount;
     co->co_posonlyargcount = con->posonlyargcount;
@@ -439,7 +441,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 {
     PyCodeObject *co = NULL;
     PyObject *fastlocalnames = NULL;
-    _PyFastLocalKinds fastlocalkinds;
+    _PyFastLocalKinds fastlocalkinds = NULL;
 
     if (varnames == NULL || !PyTuple_Check(varnames) ||
         cellvars == NULL || !PyTuple_Check(cellvars) ||
@@ -456,6 +458,9 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     int nlocalsplus = nvarnames + ncellvars + nfreevars;
     fastlocalnames = PyTuple_New(nlocalsplus);
     if (fastlocalnames == NULL) {
+        goto error;
+    }
+    if (_PyCode_InitFastLocalKinds(nlocalsplus, &fastlocalkinds) < 0) {
         goto error;
     }
     int  offset = 0;
@@ -488,7 +493,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         .names = names,
 
         .fastlocalnames = fastlocalnames,
-        // We copy fastlocalkinds into place below.
+        .fastlocalkinds = fastlocalkinds,
 
         .argcount = argcount,
         .posonlyargcount = posonlyargcount,
@@ -498,7 +503,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 
         .exceptiontable = exceptiontable,
     };
-    memcpy(con.fastlocalkinds, fastlocalkinds, nlocalsplus);
 
     if (_PyCode_Validate(&con) < 0) {
         goto error;
@@ -514,6 +518,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         goto error;
     }
 
+    fastlocalkinds = NULL;  // This keeps it from getting freed below.
     Py_INCREF(varnames);
     co->co_varnames = varnames;
     Py_INCREF(cellvars);
@@ -523,6 +528,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 
 error:
     Py_XDECREF(fastlocalnames);
+    _PyCode_ClearFastLocalKinds(fastlocalkinds);
     return co;
 }
 
@@ -1213,6 +1219,8 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_code);
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);
+    Py_XDECREF(co->co_fastlocalnames);
+    _PyCode_ClearFastLocalKinds(co->co_fastlocalkinds);
     Py_XDECREF(co->co_varnames);
     Py_XDECREF(co->co_freevars);
     Py_XDECREF(co->co_cellvars);

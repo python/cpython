@@ -1306,6 +1306,7 @@ r_object(RFILE *p)
             PyObject *consts = NULL;
             PyObject *names = NULL;
             PyObject *fastlocalnames = NULL;
+            _PyFastLocalKinds fastlocalkinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
@@ -1348,10 +1349,13 @@ r_object(RFILE *p)
             if (fastlocalnames == NULL)
                 goto code_error;
 
-            _PyFastLocalKinds fastlocalkinds;
             assert(PyTuple_GET_SIZE(fastlocalnames) < INT_MAX);
-            int nlocalsplus = PyTuple_GET_SIZE(fastlocalnames);
+            int nlocalsplus = (int)PyTuple_GET_SIZE(fastlocalnames);
             if (nlocalsplus) {
+                if (_PyCode_InitFastLocalKinds(nlocalsplus,
+                                               &fastlocalkinds) < 0) {
+                    goto code_error;
+                }
                 for (int i = 0; i < nlocalsplus; i++) {
                     fastlocalkinds[i] = r_byte(p);
                 }
@@ -1393,7 +1397,7 @@ r_object(RFILE *p)
                 .names = names,
 
                 .fastlocalnames = fastlocalnames,
-                // We copy fastlocalkinds into place below.
+                .fastlocalkinds = fastlocalkinds,
 
                 .argcount = argcount,
                 .posonlyargcount = posonlyargcount,
@@ -1403,7 +1407,6 @@ r_object(RFILE *p)
 
                 .exceptiontable = exceptiontable,
             };
-            memcpy(con.fastlocalkinds, fastlocalkinds, nlocalsplus);
 
             if (_PyCode_Validate(&con) < 0) {
                 goto code_error;
@@ -1413,6 +1416,9 @@ r_object(RFILE *p)
             if (v == NULL) {
                 goto code_error;
             }
+
+            fastlocalkinds = NULL;  // This keeps it from getting freed below.
+
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
@@ -1420,6 +1426,7 @@ r_object(RFILE *p)
             Py_XDECREF(consts);
             Py_XDECREF(names);
             Py_XDECREF(fastlocalnames);
+            _PyCode_ClearFastLocalKinds(fastlocalkinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(linetable);

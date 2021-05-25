@@ -43,7 +43,31 @@ typedef unsigned char _PyFastLocalKind;
 #define CO_FAST_LOCAL (CO_FAST_ARG | CO_FAST_LOCALONLY)
 #define CO_FAST_ANY (CO_FAST_LOCAL | CO_FAST_CELL | CO_FAST_FREE)
 
-typedef _PyFastLocalKind _PyFastLocalKinds[_Py_MAX_OPARG + 1];
+typedef _PyFastLocalKind *_PyFastLocalKinds;
+
+static inline int
+_PyCode_InitFastLocalKinds(int num, _PyFastLocalKinds *pkinds)
+{
+    if (num == 0) {
+        *pkinds = NULL;
+        return 0;
+    }
+    _PyFastLocalKinds kinds = PyMem_NEW(_PyFastLocalKind, num);
+    if (kinds == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    *pkinds = kinds;
+    return 0;
+}
+
+static inline void
+_PyCode_ClearFastLocalKinds(_PyFastLocalKinds kinds)
+{
+    if (kinds != NULL) {
+        PyMem_Free(kinds);
+    }
+}
 
 struct _PyCodeConstructor {
     /* metadata */
