@@ -1128,6 +1128,26 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
+>>> (x, y, z=3, d, e)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> [x, y, z=3, d, e]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> [z=3]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> {x, y, z=3, d, e}
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> {z=3}
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
 >>> from t import x,
 Traceback (most recent call last):
 SyntaxError: trailing comma not allowed without surrounding parentheses

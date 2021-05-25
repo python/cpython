@@ -7,7 +7,7 @@ import types
 import importlib
 
 from typing import Union, Any, Optional
-from .abc import ResourceReader
+from .abc import ResourceReader, Traversable
 
 from ._adapters import wrap_spec
 
@@ -15,6 +15,7 @@ Package = Union[types.ModuleType, str]
 
 
 def files(package):
+    # type: (Package) -> Traversable
     """
     Get a Traversable resource from a package
     """
