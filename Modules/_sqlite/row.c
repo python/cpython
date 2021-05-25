@@ -31,14 +31,29 @@ class _sqlite3.Row "pysqlite_Row *" "pysqlite_RowType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=384227da65f250fd]*/
 
+static int
+row_clear(pysqlite_Row *self)
+{
+    Py_CLEAR(self->data);
+    Py_CLEAR(self->description);
+    return 0;
+}
+
+static int
+row_traverse(pysqlite_Row *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->data);
+    Py_VISIT(self->description);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
-pysqlite_row_dealloc(pysqlite_Row *self)
+pysqlite_row_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
-    Py_XDECREF(self->data);
-    Py_XDECREF(self->description);
-
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -231,13 +246,15 @@ static PyType_Slot row_slots[] = {
     {Py_sq_length, pysqlite_row_length},
     {Py_sq_item, pysqlite_row_item},
     {Py_tp_new, pysqlite_row_new},
+    {Py_tp_traverse, row_traverse},
+    {Py_tp_clear, row_clear},
     {0, NULL},
 };
 
 static PyType_Spec row_spec = {
     .name = MODULE_NAME ".Row",
     .basicsize = sizeof(pysqlite_Row),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = row_slots,
 };
 
