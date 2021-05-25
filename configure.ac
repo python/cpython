@@ -1388,10 +1388,11 @@ if test "$Py_LTO" = 'true' ; then
       fi
       if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
       then
-        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        # The Apple-supplied ar in Xcode or the Command Line Tools is apparently sufficient
+        found_llvm_ar=`/usr/bin/xcrun -find ar 2>/dev/null`
         if test -n "${found_llvm_ar}"
         then
-          LLVM_AR='/usr/bin/xcrun llvm-ar'
+          LLVM_AR='/usr/bin/xcrun ar'
           LLVM_AR_FOUND=found
           AC_MSG_NOTICE([llvm-ar found via xcrun: ${LLVM_AR}])
         fi
@@ -1408,6 +1409,7 @@ if test "$Py_LTO" = 'true' ; then
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
           LTOFLAGS="-flto -Wl,-export_dynamic"
+          LTOCFLAGS="-flto"
           ;;
         *)
           LTOFLAGS="-flto"
@@ -1418,6 +1420,7 @@ if test "$Py_LTO" = 'true' ; then
       case $ac_sys_system in
         Darwin*)
           LTOFLAGS="-flto -Wl,-export_dynamic"
+          LTOCFLAGS="-flto"
           ;;
         *)
           LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
@@ -1433,7 +1436,7 @@ if test "$Py_LTO" = 'true' ; then
       LTOFLAGS="$LTOFLAGS -g"
   fi
 
-  CFLAGS_NODIST="$CFLAGS_NODIST $LTOFLAGS"
+  CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
   LDFLAGS_NODIST="$LDFLAGS_NODIST $LTOFLAGS"
 fi
 
