@@ -513,7 +513,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
-        w_long(co->co_nlocals, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
         w_object(co->co_code, p);
@@ -1302,7 +1301,6 @@ r_object(RFILE *p)
             int argcount;
             int posonlyargcount;
             int kwonlyargcount;
-            int nlocals;
             int stacksize;
             int flags;
             PyObject *code = NULL;
@@ -1334,9 +1332,6 @@ r_object(RFILE *p)
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
-            nlocals = (int)r_long(p);
-            if (PyErr_Occurred())
-                goto code_error;
             stacksize = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
@@ -1355,6 +1350,7 @@ r_object(RFILE *p)
             varnames = r_object(p);
             if (varnames == NULL)
                 goto code_error;
+            Py_ssize_t nlocals = PyTuple_GET_SIZE(varnames);
             freevars = r_object(p);
             if (freevars == NULL)
                 goto code_error;
@@ -1376,7 +1372,6 @@ r_object(RFILE *p)
             exceptiontable = r_object(p);
             if (exceptiontable == NULL)
                 goto code_error;
-
 
             if (PySys_Audit("code.__new__", "OOOiiiiii",
                             code, filename, name, argcount, posonlyargcount,
