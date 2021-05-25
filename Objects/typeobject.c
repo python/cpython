@@ -3256,6 +3256,9 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
         if (winner->tp_new != type_new) {
             /* Pass it to the winner */
             *type = winner->tp_new(winner, ctx->args, ctx->kwds);
+            if (*type == NULL) {
+                return -1;
+            }
             return 1;
         }
 
@@ -3307,6 +3310,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     PyObject *type = NULL;
     int res = type_new_get_bases(&ctx, &type);
     if (res < 0) {
+        assert(PyErr_Occurred());
         return NULL;
     }
     if (res == 1) {
