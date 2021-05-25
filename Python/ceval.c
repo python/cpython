@@ -1343,6 +1343,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
+/* Get opcode and opcode from original instructions, not quickened form. */
+#define TRACING_NEXTOPARG() do { \
+        _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code))[INSTR_OFFSET()]; \
+        opcode = _Py_OPCODE(word); \
+        oparg = _Py_OPARG(word); \
+        next_instr++; \
+    } while (0)
+
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,
@@ -1763,11 +1771,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
     tracing_dispatch:
         f->f_lasti = INSTR_OFFSET();
-        /* Get opcode and opcode from original instructions, not quickened form. */
-        _Py_CODEUNIT inst = ((_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code))[INSTR_OFFSET()];
-        opcode = _Py_OPCODE(inst);
-        oparg = _Py_OPARG(inst);
-        next_instr++;
+        TRACING_NEXTOPARG();
 
         if (PyDTrace_LINE_ENABLED())
             maybe_dtrace_line(f, &trace_info);
