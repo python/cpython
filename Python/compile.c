@@ -7239,6 +7239,9 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
         .exceptiontable = a->a_except_table,
     };
+    if (_PyCode_Validate(&con) < 0) {
+        goto error;
+    }
     co = _PyCode_New(&con);
 
  error:

@@ -154,6 +154,52 @@ validate_and_copy_tuple(PyObject *tup)
  * _PyCode_New()
  ******************/
 
+int
+_PyCode_Validate(struct _PyCodeConstructor *con)
+{
+    /* Check argument types */
+    if (con->argcount < con->posonlyargcount || con->posonlyargcount < 0 ||
+        con->kwonlyargcount < 0 ||
+        con->stacksize < 0 || con->flags < 0 ||
+        con->code == NULL || !PyBytes_Check(con->code) ||
+        con->consts == NULL || !PyTuple_Check(con->consts) ||
+        con->names == NULL || !PyTuple_Check(con->names) ||
+        con->varnames == NULL || !PyTuple_Check(con->varnames) ||
+        con->freevars == NULL || !PyTuple_Check(con->freevars) ||
+        con->cellvars == NULL || !PyTuple_Check(con->cellvars) ||
+        con->name == NULL || !PyUnicode_Check(con->name) ||
+        con->filename == NULL || !PyUnicode_Check(con->filename) ||
+        con->linetable == NULL || !PyBytes_Check(con->linetable) ||
+        con->exceptiontable == NULL || !PyBytes_Check(con->exceptiontable)
+        ) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    /* Make sure that code is indexable with an int, this is
+       a long running assumption in ceval.c and many parts of
+       the interpreter. */
+    if (PyBytes_GET_SIZE(con->code) > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        return -1;
+    }
+
+    /* Ensure that the co_varnames has enough names to cover the arg counts.
+     * Note that totalargs = nlocals - nplainlocals.  We check nplainlocals
+     * here to avoid the possibility of overflow (however remote). */
+    int nplainlocals = (int)PyTuple_GET_SIZE(con->varnames) -
+                       con->argcount -
+                       con->kwonlyargcount -
+                       ((con->flags & CO_VARARGS) != 0) -
+                       ((con->flags & CO_VARKEYWORDS) != 0);
+    if (nplainlocals < 0) {
+        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        return -1;
+    }
+
+    return 0;
+}
+
 static inline void
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
@@ -300,50 +346,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           PyObject *filename, PyObject *name, int firstlineno,
                           PyObject *linetable, PyObject *exceptiontable)
 {
-    /* Check argument types */
-    if (argcount < posonlyargcount || posonlyargcount < 0 ||
-        kwonlyargcount < 0 || nlocals < 0 ||
-        stacksize < 0 || flags < 0 ||
-        code == NULL || !PyBytes_Check(code) ||
-        consts == NULL || !PyTuple_Check(consts) ||
-        names == NULL || !PyTuple_Check(names) ||
-        varnames == NULL || !PyTuple_Check(varnames) ||
-        freevars == NULL || !PyTuple_Check(freevars) ||
-        cellvars == NULL || !PyTuple_Check(cellvars) ||
-        name == NULL || !PyUnicode_Check(name) ||
-        filename == NULL || !PyUnicode_Check(filename) ||
-        linetable == NULL || !PyBytes_Check(linetable) ||
-        exceptiontable == NULL || !PyBytes_Check(exceptiontable)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
-    /* Make sure that code is indexable with an int, this is
-       a long running assumption in ceval.c and many parts of
-       the interpreter. */
-    if (PyBytes_GET_SIZE(code) > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
-        return NULL;
-    }
-
-    if (nlocals != PyTuple_GET_SIZE(varnames)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "code: co_nlocals != len(co_varnames)");
-        return NULL;
-    }
-
-    // Note that totalargs = nlocals - nplainlocals.  We check nplainlocals
-    // here to avoid the possibility of overflow (however remote).
-    int nplainlocals = nlocals -
-                       argcount -
-                       kwonlyargcount -
-                       ((flags & CO_VARARGS) != 0) -
-                       ((flags & CO_VARKEYWORDS) != 0);
-    if (nplainlocals < 0) {
-        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
-        return NULL;
-    }
-
     struct _PyCodeConstructor con = {
         .filename = filename,
         .name = name,
@@ -368,6 +370,16 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 
         .exceptiontable = exceptiontable,
     };
+    if (_PyCode_Validate(&con) < 0) {
+        return NULL;
+    }
+
+    if (nlocals != PyTuple_GET_SIZE(varnames)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "code: co_nlocals != len(co_varnames)");
+        return NULL;
+    }
+
     return _PyCode_New(&con);
 }
 
