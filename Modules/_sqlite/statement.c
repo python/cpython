@@ -369,26 +369,38 @@ void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
 }
 
 static void
-pysqlite_statement_dealloc(pysqlite_Statement *self)
+stmt_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear((PyObject *)self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
 
+static int
+stmt_clear(pysqlite_Statement *self)
+{
     if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
         Py_END_ALLOW_THREADS
+        self->st = 0;
     }
 
-    self->st = NULL;
-
-    Py_XDECREF(self->sql);
-
+    Py_CLEAR(self->sql);
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
     }
+    return 0;
+}
 
-    tp->tp_free(self);
-    Py_DECREF(tp);
+static int
+stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->sql);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
 }
 
 /*
@@ -467,15 +479,16 @@ static PyMemberDef stmt_members[] = {
 };
 static PyType_Slot stmt_slots[] = {
     {Py_tp_members, stmt_members},
-    {Py_tp_dealloc, pysqlite_statement_dealloc},
-    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_dealloc, stmt_dealloc},
+    {Py_tp_traverse, stmt_traverse},
+    {Py_tp_clear, stmt_clear},
     {0, NULL},
 };
 
 static PyType_Spec stmt_spec = {
     .name = MODULE_NAME ".Statement",
     .basicsize = sizeof(pysqlite_Statement),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = stmt_slots,
 };
 PyTypeObject *pysqlite_StatementType = NULL;
