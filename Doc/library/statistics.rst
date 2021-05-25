@@ -626,7 +626,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: linear_regression(independent_variable, dependent_variable)
+.. function:: linear_regression(x, y, /)
 
    Return the slope and intercept of `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
@@ -634,30 +634,30 @@ However, for reading convenience, most of the examples show sorted sequences.
    regression describes the relationship between an independent variable *x* and
    a dependent variable *y* in terms of this linear function:
 
-      *y = intercept + slope \* x + noise*
+      *y = slope \* x + intercept + noise*
 
    where ``slope`` and ``intercept`` are the regression parameters that are
-   estimated, and noise represents the
+   estimated, and ``noise`` represents the
    variability of the data that was not explained by the linear regression
    (it is equal to the difference between predicted and actual values
-   of dependent variable).
+   of the dependent variable).
 
    Both inputs must be of the same length (no less than two), and
-   the independent variable *x* needs not to be constant;
-   otherwise :exc:`StatisticsError` is raised.
+   the independent variable *x* cannot be constant;
+   otherwise a :exc:`StatisticsError` is raised.
 
    For example, we can use the `release dates of the Monty
-   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
-   it to predict the cumulative number of Monty Python films
+   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_
+   to predict the cumulative number of Monty Python films
    that would have been produced by 2019
-   assuming that they kept the pace.
+   assuming that they had kept the pace.
 
    .. doctest::
 
       >>> year = [1971, 1975, 1979, 1982, 1983]
       >>> films_total = [1, 2, 3, 4, 5]
       >>> slope, intercept = linear_regression(year, films_total)
-      >>> round(intercept + slope * 2019)
+      >>> round(slope * 2019 + intercept)
       16
 
    .. versionadded:: 3.10
