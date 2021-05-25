@@ -147,18 +147,37 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return (PyObject *)pto;
 }
 
+static int
+partial_clear(partialobject *pto)
+{
+    Py_CLEAR(pto->fn);
+    Py_CLEAR(pto->args);
+    Py_CLEAR(pto->kw);
+    Py_CLEAR(pto->dict);
+    return 0;
+}
+
+static int
+partial_traverse(partialobject *pto, visitproc visit, void *arg)
+{
+    Py_VISIT(pto->fn);
+    Py_VISIT(pto->args);
+    Py_VISIT(pto->kw);
+    Py_VISIT(pto->dict);
+    Py_VISIT(Py_TYPE(pto));
+    return 0;
+}
+
 static void
 partial_dealloc(partialobject *pto)
 {
     PyTypeObject *tp = Py_TYPE(pto);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
-    if (pto->weakreflist != NULL)
+    if (pto->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) pto);
-    Py_XDECREF(pto->fn);
-    Py_XDECREF(pto->args);
-    Py_XDECREF(pto->kw);
-    Py_XDECREF(pto->dict);
+    }
+    (void)partial_clear(pto);
     tp->tp_free(pto);
     Py_DECREF(tp);
 }
@@ -305,16 +324,6 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     Py_DECREF(args2);
     Py_XDECREF(kwargs2);
     return res;
-}
-
-static int
-partial_traverse(partialobject *pto, visitproc visit, void *arg)
-{
-    Py_VISIT(pto->fn);
-    Py_VISIT(pto->args);
-    Py_VISIT(pto->kw);
-    Py_VISIT(pto->dict);
-    return 0;
 }
 
 PyDoc_STRVAR(partial_doc,
@@ -469,11 +478,11 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_doc, (void *)partial_doc},
     {Py_tp_traverse, partial_traverse},
+    {Py_tp_clear, partial_clear},
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
     {Py_tp_new, partial_new},
-    {Py_tp_free, PyObject_GC_Del},
     {0, 0}
 };
 
@@ -506,8 +515,9 @@ static void
 keyobject_dealloc(keyobject *ko)
 {
     PyTypeObject *tp = Py_TYPE(ko);
-    keyobject_clear(ko);
-    PyObject_Free(ko);
+    PyObject_GC_UnTrack(ko);
+    (void)keyobject_clear(ko);
+    PyObject_GC_Del(ko);
     Py_DECREF(tp);
 }
 
@@ -516,6 +526,7 @@ keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 {
     Py_VISIT(ko->cmp);
     Py_VISIT(ko->object);
+    Py_VISIT(Py_TYPE(ko));
     return 0;
 }
 
@@ -546,7 +557,8 @@ static PyType_Slot keyobject_type_slots[] = {
 static PyType_Spec keyobject_type_spec = {
     .name = "functools.KeyWrapper",
     .basicsize = sizeof(keyobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
     .slots = keyobject_type_slots
 };
 
@@ -560,7 +572,7 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
 
-    result = PyObject_New(keyobject, Py_TYPE(ko));
+    result = PyObject_GC_New(keyobject, Py_TYPE(ko));
     if (result == NULL) {
         return NULL;
     }
@@ -568,6 +580,7 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     result->cmp = ko->cmp;
     Py_INCREF(object);
     result->object = object;
+    PyObject_GC_Track(result);
     return (PyObject *)result;
 }
 
@@ -621,12 +634,13 @@ functools_cmp_to_key(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
 
     state = get_functools_state(self);
-    object = PyObject_New(keyobject, state->keyobject_type);
+    object = PyObject_GC_New(keyobject, state->keyobject_type);
     if (!object)
         return NULL;
     Py_INCREF(cmp);
     object->cmp = cmp;
     object->object = NULL;
+    PyObject_GC_Track(object);
     return (PyObject *)object;
 }
 
@@ -748,25 +762,45 @@ typedef struct lru_list_elem {
     PyObject *key, *result;
 } lru_list_elem;
 
+static int
+lru_list_elem_clear(lru_list_elem *link)
+{
+    Py_CLEAR(link->key);
+    Py_CLEAR(link->result);
+    return 0;
+}
+
+static int
+lru_list_elem_traverse(lru_list_elem *link, visitproc visit, void *arg)
+{
+    Py_VISIT(link->key);
+    Py_VISIT(link->result);
+    Py_VISIT(Py_TYPE(link));
+    return 0;
+}
+
 static void
 lru_list_elem_dealloc(lru_list_elem *link)
 {
     PyTypeObject *tp = Py_TYPE(link);
-    Py_XDECREF(link->key);
-    Py_XDECREF(link->result);
-    PyObject_Free(link);
+    PyObject_GC_UnTrack(link);
+    (void)lru_list_elem_clear(link);
+    PyObject_GC_Del(link);
     Py_DECREF(tp);
 }
 
 static PyType_Slot lru_list_elem_type_slots[] = {
     {Py_tp_dealloc, lru_list_elem_dealloc},
+    {Py_tp_traverse, lru_list_elem_traverse},
+    {Py_tp_clear, lru_list_elem_clear},
     {0, 0}
 };
 
 static PyType_Spec lru_list_elem_type_spec = {
     .name = "functools._lru_list_elem",
     .basicsize = sizeof(lru_list_elem),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
     .slots = lru_list_elem_type_slots
 };
 
@@ -1031,8 +1065,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         self->root.next == &self->root)
     {
         /* Cache is not full, so put the result in a new link */
-        link = (lru_list_elem *)PyObject_New(lru_list_elem,
-                                             self->lru_list_elem_type);
+        link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
+                                                self->lru_list_elem_type);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -1042,6 +1076,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         link->hash = hash;
         link->key = key;
         link->result = result;
+        PyObject_GC_Track(link);
         /* What is really needed here is a SetItem variant with a "no clobber"
            option.  If the __eq__ call triggers a reentrant call that adds
            this same key, then this setitem call will update the cache dict
@@ -1260,7 +1295,7 @@ lru_cache_dealloc(lru_cache_object *obj)
         PyObject_ClearWeakRefs((PyObject*)obj);
     }
 
-    lru_cache_tp_clear(obj);
+    (void)lru_cache_tp_clear(obj);
     tp->tp_free(obj);
     Py_DECREF(tp);
 }
@@ -1330,8 +1365,7 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
-        Py_VISIT(link->key);
-        Py_VISIT(link->result);
+        Py_VISIT(link);
         link = next;
     }
     Py_VISIT(self->func);
@@ -1340,6 +1374,7 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     Py_VISIT(self->lru_list_elem_type);
     Py_VISIT(self->cache_info_type);
     Py_VISIT(self->dict);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
