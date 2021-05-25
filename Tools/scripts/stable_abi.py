@@ -285,8 +285,7 @@ def gen_ctypes_test(manifest, args, outfile):
         include_abi_only=True,
         ifdef=set())
     for item in items:
-        #if item.name != 'Py_FrozenMain':
-            write(f'    "{item.name}",')
+        write(f'    "{item.name}",')
     write(")")
 
 
