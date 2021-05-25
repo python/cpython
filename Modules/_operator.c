@@ -1124,7 +1124,8 @@ static PyType_Spec itemgetter_type_spec = {
     .name = "operator.itemgetter",
     .basicsize = sizeof(itemgetterobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = itemgetter_type_slots,
 };
 
@@ -1446,7 +1447,8 @@ static PyType_Spec attrgetter_type_spec = {
     .name = "operator.attrgetter",
     .basicsize = sizeof(attrgetterobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = attrgetter_type_slots,
 };
 
@@ -1691,7 +1693,8 @@ static PyType_Spec methodcaller_type_spec = {
     .name = "operator.methodcaller",
     .basicsize = sizeof(methodcallerobject),
     .itemsize = 0,
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = methodcaller_type_slots,
 };
 
