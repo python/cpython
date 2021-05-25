@@ -227,7 +227,7 @@ Effects of a debug build:
 * Install :ref:`debug hooks on memory allocators <default-memory-allocators>`
   to detect buffer overflow and other memory errors.
 * Define ``Py_DEBUG`` and ``Py_REF_DEBUG`` macros.
-* Add runtime checks: code surroundeded by ``#ifdef Py_DEBUG`` and ``#endif``.
+* Add runtime checks: code surrounded by ``#ifdef Py_DEBUG`` and ``#endif``.
   Enable ``assert(...)`` and ``_PyObject_ASSERT(...)`` assertions: don't set
   the ``NDEBUG`` macro (see also the :option:`--with-assertions` configure
   option). Main runtime checks:
@@ -550,7 +550,7 @@ Built-in modules have no ``__file__`` attribute::
       File "<stdin>", line 1, in <module>
     AttributeError: module 'sys' has no attribute '__file__'
 
-Other C extensins are built as dynamic libraires, like the ``_asyncio`` module.
+Other C extensions are built as dynamic libraires, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
 Example on Linux x86-64::
 
