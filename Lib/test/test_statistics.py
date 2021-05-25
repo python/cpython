@@ -2501,7 +2501,7 @@ class TestLinearRegression(unittest.TestCase):
             ([1, 2, 3], [21, 22, 23], 20, 1),
             ([1, 2, 3], [5.1, 5.2, 5.3], 5, 0.1),
         ]:
-            intercept, slope = statistics.linear_regression(x, y)
+            slope, intercept = statistics.linear_regression(x, y)
             self.assertAlmostEqual(intercept, true_intercept)
             self.assertAlmostEqual(slope, true_slope)
 
