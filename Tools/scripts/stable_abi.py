@@ -272,7 +272,7 @@ def gen_ctypes_test(manifest, args, outfile):
         import unittest
         from ctypes import pythonapi
 
-        class TestLimitedCAPI(unittest.TestCase):
+        class TestStableABIAvailability(unittest.TestCase):
             def test_available_symbols(self):
                 for symbol_name in SYMBOL_NAMES:
                     with self.subTest(symbol_name):
