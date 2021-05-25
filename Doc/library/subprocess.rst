@@ -1158,7 +1158,7 @@ calls these functions.
 
    This is equivalent to::
 
-       run(..., check=True, stdout=PIPE).stdout
+       run(..., check=True, stdout=PIPE.stdout)
 
    The arguments shown above are merely some common ones.
    The full function signature is largely the same as that of :func:`run` -
