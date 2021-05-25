@@ -172,8 +172,8 @@ PyDoc_STRVAR(_bisect_bisect_left__doc__,
 "Return the index where to insert item x in list a, assuming a is sorted.\n"
 "\n"
 "The return value i is such that all e in a[:i] have e < x, and all e in\n"
-"a[i:] have e >= x.  So if x already appears in the list, i points just\n"
-"before the leftmost x already there.\n"
+"a[i:] have e >= x.  So if x already appears in the list, i points at the\n"
+"leftmost x already there.\n"
 "\n"
 "Optional args lo (default 0) and hi (default len(a)) bound the\n"
 "slice of a to be searched.");
