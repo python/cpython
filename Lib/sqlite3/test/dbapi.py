@@ -945,11 +945,11 @@ class MultiprocessTests(unittest.TestCase):
 
     def test_rollback_if_db_is_locked(self):
         # bpo-27334: ctx manager does not rollback if commit fails
-        TIMEOUT = 0.01
+        CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
         SCRIPT = f"""if 1:
             import sqlite3
             input()  # wait for parent process to start
-            cx = sqlite3.connect("{TESTFN}", timeout={TIMEOUT})
+            cx = sqlite3.connect("{TESTFN}", timeout={CONNECTION_TIMEOUT})
             try:
                 with cx:
                     cx.execute("insert into t values('test')")
@@ -972,7 +972,7 @@ class MultiprocessTests(unittest.TestCase):
         self.addCleanup(proc.communicate)
 
         # connect to db, and create a UDF that waits for child
-        cx = sqlite.connect(TESTFN, timeout=TIMEOUT)
+        cx = sqlite.connect(TESTFN, timeout=CONNECTION_TIMEOUT)
         def wait():
             proc.stdin.write("\n")  # tell child to connect
             self.assertIn("database is locked", proc.stdout.readline())
