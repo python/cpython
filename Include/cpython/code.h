@@ -65,7 +65,7 @@ struct PyCodeObject {
     /* These fields are set with computed values on new code objects. */
 
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
-    // These are redundant.
+    // These are redundant but offer some performance benefit.
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
     int co_ncellvars;           /* number of cell variables */
