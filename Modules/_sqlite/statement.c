@@ -475,7 +475,7 @@ static PyType_Slot stmt_slots[] = {
 static PyType_Spec stmt_spec = {
     .name = MODULE_NAME ".Statement",
     .basicsize = sizeof(pysqlite_Statement),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = stmt_slots,
 };
 PyTypeObject *pysqlite_StatementType = NULL;
