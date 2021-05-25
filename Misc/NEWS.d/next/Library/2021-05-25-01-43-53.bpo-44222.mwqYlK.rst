@@ -1,2 +1,0 @@
-Improve the performance of _removeHandlerRef() for very long _handlerLists.
-Patch by Yonatan Goldschmidt.
