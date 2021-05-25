@@ -1375,6 +1375,18 @@ class SimplePathAsPureWindowsPathTest(PureWindowsPathTest, unittest.TestCase):
     cls = pathlib.SimplePath
 
 
+class SimplePosixPathAsPurePosixPathTest(
+    PurePosixPathTest, SubclassTestMixin, unittest.TestCase
+):
+    cls = pathlib.SimplePosixPath
+
+
+class SimpleWindowsPathAsPureWindowsPathTest(
+    PureWindowsPathTest, SubclassTestMixin, unittest.TestCase
+):
+    cls = pathlib.SimpleWindowsPath
+
+
 #
 # Tests for the concrete classes.
 #

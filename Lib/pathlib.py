@@ -541,10 +541,17 @@ class _PurePathBase(object):
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
-        mro_names = [class_.__name__ for class_ in cls.mro()[:-1]]
+        mro_without_obj = cls.mro()[:-1]
+        mro_names = [class_.__name__ for class_ in mro_without_obj]
         if "PurePath" not in mro_names:
-            is_posix = os.name == "posix"
-            cls._flavour = _posix_flavour if is_posix else _windows_flavour
+            has_flavour = False
+            for class_ in mro_without_obj:
+                if hasattr(class_, "_flavour"):
+                    has_flavour = True
+                    break
+            if not has_flavour:
+                is_posix = os.name == "posix"
+                cls._flavour = _posix_flavour if is_posix else _windows_flavour
         return cls
 
     def __new__(cls, *args):
@@ -922,11 +929,36 @@ class _PurePathBase(object):
         return True
 
 
-class PathIOMixin:
+class _PosixMixin:
     """
-    Provides I/O operations for FilePath and Path derivatives.
+    Provides Posix flavour for PurePath/SimplePath and derivatives
 
     Requires _PurePathBase in the mro.
+    """
+    _flavour = _posix_flavour
+    __slots__ = ()
+
+
+class _WindowsMixin:
+    """
+    Provides Windows flavour for PurePath/SimplePath and derivatives
+
+    Requires _PurePathBase in the mro.
+    """
+    _flavour = _windows_flavour
+    __slots__ = ()
+
+
+class PathIOMixin:
+    """
+    Provides the default I/O operations for Posix and Windows.
+
+    This mixin provides the methods used by FilePath and Path
+    derivatives in order to perform filesystem I/O. This can also be used
+    externally for custom Path/FilePath-like classes. To do so it must
+    be used in conjunction with either SimplePosixPath or
+    SimpleWindowsPath as it requires _PurePathBase to be in the method
+    resolution order.
     """
 
     _accessor = _normal_accessor
@@ -1450,24 +1482,22 @@ class PurePath(_PurePathBase):
 os.PathLike.register(PurePath)
 
 
-class PurePosixPath(PurePath):
+class PurePosixPath(PurePath, _PosixMixin):
     """PurePath subclass for non-Windows systems.
 
     On a POSIX system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    _flavour = _posix_flavour
-    __slots__ = ()
+    pass
 
 
-class PureWindowsPath(PurePath):
+class PureWindowsPath(PurePath, _WindowsMixin):
     """PurePath subclass for Windows systems.
 
     On a Windows system, instantiating a PurePath should return this object.
     However, you can also instantiate it directly on any system.
     """
-    _flavour = _windows_flavour
-    __slots__ = ()
+    pass
 
 
 # Filesystem-accessing classes
@@ -1519,6 +1549,26 @@ class SimplePath(_PurePathBase):
     class will return values that are appropriate for your system
     flavour, be that Windows or Posix, though the return values are not
     guaranteed to be the same for both platforms.
+    """
+    pass
+
+
+class SimplePosixPath(_PurePathBase, _PosixMixin):
+    """
+    Class for manipulating Posix paths without I/O.
+
+    SimplePosixPath represents a Posix specific filesystem path and
+    offers operations which don't perform any actual filesystem I/O.
+    """
+    pass
+
+
+class SimpleWindowsPath(_PurePathBase, _WindowsMixin):
+    """
+    Class for manipulating Windows paths without I/O.
+
+    SimpleWindowsPath represents a Windows specific filesystem path and
+    offers operations which don't perform any actual filesystem I/O.
     """
     pass
 
