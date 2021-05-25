@@ -275,7 +275,6 @@ connection_clear(pysqlite_Connection *self)
 static void
 connection_dealloc(pysqlite_Connection *self)
 {
-    PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)connection_clear(self);
