@@ -3081,9 +3081,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *name, *value, *locals = LOCALS();
             Py_ssize_t idx;
             assert(locals);
-            assert(oparg >= PyTuple_GET_SIZE(co->co_cellvars));
-            idx = oparg - PyTuple_GET_SIZE(co->co_cellvars);
-            assert(idx >= 0 && idx < PyTuple_GET_SIZE(co->co_freevars));
+            assert(oparg >= co->co_ncellvars);
+            idx = oparg - co->co_ncellvars;
+            assert(idx >= 0 && idx < co->co_nfreevars);
             name = PyTuple_GET_ITEM(co->co_freevars, idx);
             if (PyDict_CheckExact(locals)) {
                 value = PyDict_GetItemWithError(locals, name);
@@ -5062,7 +5062,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
 
     /* Allocate and initialize storage for cell vars, and copy free
        vars into frame. */
-    for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
+    for (i = 0; i < co->co_ncellvars; ++i) {
         PyObject *c;
         Py_ssize_t arg;
         /* Possibly account for the cell variable being an argument. */
@@ -5081,10 +5081,10 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     }
 
     /* Copy closure variables to free variables */
-    for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
+    for (i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
         Py_INCREF(o);
-        freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
+        freevars[co->co_ncellvars + i] = o;
     }
 
     return 0;
@@ -6417,7 +6417,7 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     /* Don't stomp existing exception */
     if (_PyErr_Occurred(tstate))
         return;
-    if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
+    if (oparg < co->co_ncellvars) {
         name = PyTuple_GET_ITEM(co->co_cellvars,
                                 oparg);
         format_exc_check_arg(tstate,
@@ -6425,8 +6425,7 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
             UNBOUNDLOCAL_ERROR_MSG,
             name);
     } else {
-        name = PyTuple_GET_ITEM(co->co_freevars, oparg -
-                                PyTuple_GET_SIZE(co->co_cellvars));
+        name = PyTuple_GET_ITEM(co->co_freevars, oparg - co->co_ncellvars);
         format_exc_check_arg(tstate, PyExc_NameError,
                              UNBOUNDFREE_ERROR_MSG, name);
     }

@@ -54,8 +54,8 @@ struct PyCodeObject {
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+    PyObject *co_freevars;      /* tuple of strings (free variable names) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -66,8 +66,10 @@ struct PyCodeObject {
 
     Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     // These are redundant.
-    int co_nlocalsplus;         /* Number of locals + free + cell variables */
-    int co_nlocals;             /* #local variables */
+    int co_nlocalsplus;         /* number of local + cell + free variables */
+    int co_nlocals;             /* number of local variables */
+    int co_ncellvars;           /* number of cell variables */
+    int co_nfreevars;           /* number of free variables */
 
     /* The remaining fields are zeroed out on new code objects. */
 

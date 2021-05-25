@@ -164,7 +164,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
-    Py_ssize_t i, n_cellvars, n_varnames, total_args;
+    Py_ssize_t i, n_varnames, total_args;
+    int ncellvars, nfreevars;
 
     /* Check argument types */
     if (argcount < posonlyargcount || posonlyargcount < 0 ||
@@ -217,8 +218,11 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     }
 
     /* Check for any inner or outer closure references */
-    n_cellvars = PyTuple_GET_SIZE(cellvars);
-    if (!n_cellvars && !PyTuple_GET_SIZE(freevars)) {
+    assert(PyTuple_GET_SIZE(cellvars) < INT_MAX);
+    ncellvars = (int)PyTuple_GET_SIZE(cellvars);
+    assert(PyTuple_GET_SIZE(freevars) < INT_MAX);
+    nfreevars = (int)PyTuple_GET_SIZE(freevars);
+    if (!ncellvars && !nfreevars) {
         flags |= CO_NOFREE;
     } else {
         flags &= ~CO_NOFREE;
@@ -239,15 +243,15 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     }
 
     /* Create mapping between cells and arguments if needed. */
-    if (n_cellvars) {
+    if (ncellvars) {
         bool used_cell2arg = false;
-        cell2arg = PyMem_NEW(Py_ssize_t, n_cellvars);
+        cell2arg = PyMem_NEW(Py_ssize_t, ncellvars);
         if (cell2arg == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
         /* Find cells which are also arguments. */
-        for (i = 0; i < n_cellvars; i++) {
+        for (i = 0; i < ncellvars; i++) {
             Py_ssize_t j;
             PyObject *cell = PyTuple_GET_ITEM(cellvars, i);
             cell2arg[i] = CO_CELL_NOT_AN_ARG;
@@ -279,9 +283,10 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_argcount = argcount;
     co->co_posonlyargcount = posonlyargcount;
     co->co_kwonlyargcount = kwonlyargcount;
+    co->co_nlocalsplus = nlocals + ncellvars + nfreevars;
     co->co_nlocals = nlocals;
-    co->co_nlocalsplus = nlocals +
-        (int)PyTuple_GET_SIZE(freevars) + (int)PyTuple_GET_SIZE(cellvars);
+    co->co_ncellvars = ncellvars;
+    co->co_nfreevars = nfreevars;
     co->co_stacksize = stacksize;
     co->co_flags = flags;
     Py_INCREF(code);
@@ -1139,7 +1144,7 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL) {
-        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
+        res += co->co_ncellvars * sizeof(Py_ssize_t);
     }
     if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +
