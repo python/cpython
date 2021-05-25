@@ -156,7 +156,7 @@ validate_and_copy_tuple(PyObject *tup)
 
 // This is also used in compile.c.
 void
-set_fastlocal_info(Py_ssize_t offset, PyObject *name, _PyFastLocalKind kind,
+set_fastlocal_info(int offset, PyObject *name, _PyFastLocalKind kind,
                    PyObject *names, _PyFastLocalKinds kinds)
 {
     Py_INCREF(name);
@@ -191,7 +191,9 @@ get_fastlocals_counts(PyObject *names, _PyFastLocalKinds kinds,
     int nlocals = 0;
     int ncellvars = 0;
     int nfreevars = 0;
-    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(names); i++) {
+    int nfastlocals = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(names),
+                                       Py_ssize_t, int);
+    for (int i = 0; i < nfastlocals; i++) {
         if (kinds[i] & CO_FAST_LOCAL) {
             nlocals += 1;
         }
@@ -214,14 +216,14 @@ get_fastlocals_counts(PyObject *names, _PyFastLocalKinds kinds,
 }
 
 static inline PyObject *
-get_fastlocals_names(PyCodeObject *co, _PyFastLocalKind kind, Py_ssize_t num)
+get_fastlocals_names(PyCodeObject *co, _PyFastLocalKind kind, int num)
 {
     PyObject *names = PyTuple_New(num);
     if (names == NULL) {
         return NULL;
     }
-    Py_ssize_t index = 0;
-    for (Py_ssize_t offset = 0; offset < co->co_nlocalsplus; offset++) {
+    int index = 0;
+    for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
         if ((co->co_fastlocalkinds[offset] & kind) == 0) {
             continue;
         }
@@ -238,7 +240,6 @@ get_fastlocals_names(PyCodeObject *co, _PyFastLocalKind kind, Py_ssize_t num)
     assert(index == num);
     return names;
 }
-
 
 int
 _PyCode_Validate(struct _PyCodeConstructor *con)

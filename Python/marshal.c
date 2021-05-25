@@ -1349,9 +1349,10 @@ r_object(RFILE *p)
                 goto code_error;
 
             _PyFastLocalKinds fastlocalkinds;
-            Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(fastlocalnames);
+            assert(PyTuple_GET_SIZE(fastlocalnames) < INT_MAX);
+            int nlocalsplus = PyTuple_GET_SIZE(fastlocalnames);
             if (nlocalsplus) {
-                for (Py_ssize_t i = 0; i < nlocalsplus; i++) {
+                for (int i = 0; i < nlocalsplus; i++) {
                     fastlocalkinds[i] = r_byte(p);
                 }
             }

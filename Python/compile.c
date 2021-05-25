@@ -7181,29 +7181,29 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 // This is in codeobject.c.
-extern void set_fastlocal_info(Py_ssize_t, PyObject *, _PyFastLocalKind,
+extern void set_fastlocal_info(int, PyObject *, _PyFastLocalKind,
                                PyObject *, _PyFastLocalKinds);
 
 static void
 compute_fastlocals_info(struct compiler *c,
                         PyObject *names, _PyFastLocalKinds kinds)
 {
-    Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(names);
+    int nlocalsplus = (int)PyTuple_GET_SIZE(names);
 
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(c->u->u_varnames, &pos, &k, &v)) {
-        Py_ssize_t offset = PyLong_AS_LONG(v);
+        int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         assert(offset < nlocalsplus);
 		// For now we do not distinguish arg kinds.
         set_fastlocal_info(offset, k, CO_FAST_LOCAL, names, kinds);
     }
-    Py_ssize_t nlocals = PyDict_GET_SIZE(c->u->u_varnames);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
 
     pos = 0;
     while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
-        Py_ssize_t offset = PyLong_AS_LONG(v);
+        int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         offset += nlocals;
         assert(offset < nlocalsplus);
@@ -7212,7 +7212,7 @@ compute_fastlocals_info(struct compiler *c,
 
     pos = 0;
     while (PyDict_Next(c->u->u_freevars, &pos, &k, &v)) {
-        Py_ssize_t offset = PyLong_AS_LONG(v);
+        int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         offset += nlocals;
         assert(offset < nlocalsplus);
