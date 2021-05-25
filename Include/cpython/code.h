@@ -40,26 +40,37 @@ struct PyCodeObject {
      * identical functions/lambdas defined on different lines.
      */
 
-    int co_argcount;            /* #arguments, except *args */
-    int co_posonlyargcount;     /* #positional only arguments */
-    int co_kwonlyargcount;      /* #keyword only arguments */
-    int co_nlocals;             /* #local variables */
-    int co_stacksize;           /* #entries needed for evaluation stack */
-    int co_flags;               /* CO_..., see below */
-    int co_firstlineno;         /* first source line number */
+    /* These fields are set with provided values on new code objects. */
+
+    // The hottest fields (in the eval loop) are grouped here at the top.
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
+    int co_flags;               /* CO_..., see below */
+    // The rest are not so impactful on performance.
+    int co_argcount;            /* #arguments, except *args */
+    int co_posonlyargcount;     /* #positional only arguments */
+    int co_kwonlyargcount;      /* #keyword only arguments */
+    int co_stacksize;           /* #entries needed for evaluation stack */
+    int co_firstlineno;         /* first source line number */
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
     PyObject *co_freevars;      /* tuple of strings (free variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
-    int co_nlocalsplus;         /* Number of locals + free + cell variables */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
+
+    /* These fields are set with computed values on new code objects. */
+
+    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
+    // These are redundant.
+    int co_nlocalsplus;         /* Number of locals + free + cell variables */
+    int co_nlocals;             /* #local variables */
+
+    /* The remaining fields are zeroed out on new code objects. */
+
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
     /* Scratch space for extra data relating to the code object.
        Type is a void* to keep the format private in codeobject.c to force
