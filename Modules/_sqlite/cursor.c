@@ -81,27 +81,46 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
     return 0;
 }
 
-static void pysqlite_cursor_dealloc(pysqlite_Cursor* self)
+static int
+cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    Py_VISIT(self->connection);
+    Py_VISIT(self->row_cast_map);
+    Py_VISIT(self->row_factory);
+    Py_VISIT(self->next_row);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
 
+static int
+cursor_clear(pysqlite_Cursor *self)
+{
     /* Reset the statement if the user has not closed the cursor */
     if (self->statement) {
         pysqlite_statement_reset(self->statement);
-        Py_DECREF(self->statement);
+        Py_CLEAR(self->statement);
     }
 
-    Py_XDECREF(self->connection);
-    Py_XDECREF(self->row_cast_map);
-    Py_XDECREF(self->description);
-    Py_XDECREF(self->lastrowid);
-    Py_XDECREF(self->row_factory);
-    Py_XDECREF(self->next_row);
+    Py_CLEAR(self->connection);
+    Py_CLEAR(self->row_cast_map);
+    Py_CLEAR(self->description);
+    Py_CLEAR(self->lastrowid);
+    Py_CLEAR(self->row_factory);
+    Py_CLEAR(self->next_row);
 
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
     }
 
+    return 0;
+}
+
+static void
+cursor_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -487,7 +506,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     if (self->statement->in_use) {
         Py_SETREF(self->statement,
-                  PyObject_New(pysqlite_Statement, pysqlite_StatementType));
+                  PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType));
         if (!self->statement) {
             goto error;
         }
@@ -1006,21 +1025,22 @@ static const char cursor_doc[] =
 PyDoc_STR("SQLite database cursor class.");
 
 static PyType_Slot cursor_slots[] = {
-    {Py_tp_dealloc, pysqlite_cursor_dealloc},
+    {Py_tp_dealloc, cursor_dealloc},
     {Py_tp_doc, (void *)cursor_doc},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, pysqlite_cursor_iternext},
     {Py_tp_methods, cursor_methods},
     {Py_tp_members, cursor_members},
-    {Py_tp_new, PyType_GenericNew},
     {Py_tp_init, pysqlite_cursor_init},
+    {Py_tp_traverse, cursor_traverse},
+    {Py_tp_clear, cursor_clear},
     {0, NULL},
 };
 
 static PyType_Spec cursor_spec = {
     .name = MODULE_NAME ".Cursor",
     .basicsize = sizeof(pysqlite_Cursor),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = cursor_slots,
 };
 
