@@ -936,26 +936,26 @@ LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
 
 
 def linear_regression(x, y, /):
-    """Intercept and slope for simple linear regression
+    """Slope and intercept for simple linear regression.
 
-    Return the intercept and slope of simple linear regression
+    Return the slope and intercept of simple linear regression
     parameters estimated using ordinary least squares. Simple linear
-    regression describes relationship between *x* and
-    *y* in terms of linear function:
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of linear function:
 
-        y = intercept + slope * x + noise
+        y = slope * x + intercept + noise
 
-    where *intercept* and *slope* are the regression parameters that are
+    where *slope* and *intercept* are the regression parameters that are
     estimated, and noise represents the variability of the data that was
     not explained by the linear regression (it is equal to the
-    difference between predicted and actual values of dependent
+    difference between predicted and actual values of the dependent
     variable).
 
     The parameters are returned as a named tuple.
 
     >>> x = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> y = [2 + 3 * x[i] + noise[i] for i in range(5)]
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
     LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
 
