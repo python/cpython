@@ -380,9 +380,9 @@ _PyCode_New(struct _PyCodeConstructor *con)
 
     /* Check for any inner or outer closure references */
     if (!co->co_ncellvars && !co->co_nfreevars) {
-        con->flags |= CO_NOFREE;
+        co->co_flags |= CO_NOFREE;
     } else {
-        con->flags &= ~CO_NOFREE;
+        co->co_flags &= ~CO_NOFREE;
     }
 
     /* Create mapping between cells and arguments if needed. */
