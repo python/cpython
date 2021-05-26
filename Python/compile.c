@@ -7196,7 +7196,7 @@ compute_fastlocals_info(struct compiler *c,
         int offset = (int)PyLong_AS_LONG(v);
         assert(offset >= 0);
         assert(offset < nlocalsplus);
-		// For now we do not distinguish arg kinds.
+        // For now we do not distinguish arg kinds.
         _Py_set_fastlocal_info(offset, k, CO_FAST_LOCAL, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
