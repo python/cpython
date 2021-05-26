@@ -1,0 +1,1 @@
+Use platform defined data directories instead of :file:`~/.python_history`
