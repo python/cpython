@@ -1,0 +1,1 @@
+Add native_thread_id to PyThreadState. Patch by Gabriele N. Tornetta.
