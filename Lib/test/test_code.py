@@ -240,6 +240,7 @@ class CodeTest(unittest.TestCase):
         # different co_name, co_varnames, co_consts
         def func2():
             y = 2
+            z = 3
             return y
         code2 = func2.__code__
 
@@ -247,14 +248,14 @@ class CodeTest(unittest.TestCase):
             ("co_argcount", 0),
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
-            ("co_nlocals", 0),
+            ("co_nlocals", 1),
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
             ("co_consts", code2.co_consts),
             ("co_names", ("myname",)),
-            ("co_varnames", code2.co_varnames),
+            ("co_varnames", ('spam',)),
             ("co_freevars", ("freevar",)),
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
@@ -264,6 +265,11 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+
+        new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
 
     def test_empty_linetable(self):
         def func():

@@ -185,6 +185,19 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
+    /* Make sure that code is indexable with an int, this is
+       a long running assumption in ceval.c and many parts of
+       the interpreter. */
+    if (PyBytes_GET_SIZE(code) > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        return NULL;
+    }
+
+    if (nlocals != PyTuple_GET_SIZE(varnames)) {
+        PyErr_SetString(PyExc_ValueError, "co_nlocals != len(co_varnames)");
+        return NULL;
+    }
+
     /* Ensure that strings are ready Unicode string */
     if (PyUnicode_READY(name) < 0) {
         return NULL;
@@ -209,14 +222,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
-    /* Make sure that code is indexable with an int, this is
-       a long running assumption in ceval.c and many parts of
-       the interpreter. */
-    if (PyBytes_GET_SIZE(code) > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
-        return NULL;
-    }
-
     /* Check for any inner or outer closure references */
     assert(PyTuple_GET_SIZE(cellvars) < INT_MAX);
     ncellvars = (int)PyTuple_GET_SIZE(cellvars);
@@ -228,7 +233,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         flags &= ~CO_NOFREE;
     }
 
-    assert(nlocals == PyTuple_GET_SIZE(varnames));
     if (argcount <= nlocals && kwonlyargcount <= nlocals) {
         /* Never overflows. */
         total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
