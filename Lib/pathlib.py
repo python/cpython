@@ -660,7 +660,7 @@ class _PurePathBase(object):
             return self._cached_cparts
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, _PurePathBase):
             return NotImplemented
         return (
             self._cparts == other._cparts
@@ -676,7 +676,7 @@ class _PurePathBase(object):
 
     def __lt__(self, other):
         if (
-            not isinstance(other, self.__class__)
+            not isinstance(other, _PurePathBase)
             or self._flavour is not other._flavour
         ):
             return NotImplemented
@@ -684,7 +684,7 @@ class _PurePathBase(object):
 
     def __le__(self, other):
         if (
-            not isinstance(other, self.__class__)
+            not isinstance(other, _PurePathBase)
             or self._flavour is not other._flavour
         ):
             return NotImplemented
@@ -692,7 +692,7 @@ class _PurePathBase(object):
 
     def __gt__(self, other):
         if (
-            not isinstance(other, self.__class__)
+            not isinstance(other, _PurePathBase)
             or self._flavour is not other._flavour
         ):
             return NotImplemented
@@ -700,7 +700,7 @@ class _PurePathBase(object):
 
     def __ge__(self, other):
         if (
-            not isinstance(other, self.__class__)
+            not isinstance(other, _PurePathBase)
             or self._flavour is not other._flavour
         ):
             return NotImplemented
