@@ -7,11 +7,11 @@ typedef uint16_t _Py_CODEUNIT;
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
 #  define _Py_OPARG(word) ((word) & 255)
-#  define _Py_CODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
+#  define _Py_MAKECODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
 #else
 #  define _Py_OPCODE(word) ((word) & 255)
 #  define _Py_OPARG(word) ((word) >> 8)
-#  define _Py_CODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
+#  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
 typedef struct _PyOpcache _PyOpcache;

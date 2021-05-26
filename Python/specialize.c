@@ -89,7 +89,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 oparg = 0;
             }
             if (oparg < 256) {
-                instructions[i] = _Py_CODEUNIT(adaptive_opcode, oparg);
+                instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
                 cache_offset += cache_requirements[opcode];
             }
         }
@@ -99,7 +99,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                  E.g.
                 case LOAD_FAST:
                     if (previous_opcode == LOAD_FAST)
-                        instructions[i-1] = _Py_CODEUNIT(LOAD_FAST__LOAD_FAST, oparg);
+                        instructions[i-1] = _Py_MAKECODEUNIT(LOAD_FAST__LOAD_FAST, oparg);
                  */
             }
         }
