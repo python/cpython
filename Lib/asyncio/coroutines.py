@@ -9,16 +9,7 @@ import types
 
 
 def _is_debug_mode():
-    # If you set _DEBUG to true, @coroutine will wrap the resulting
-    # generator objects in a CoroWrapper instance (defined below).  That
-    # instance will log a message when the generator is never iterated
-    # over, which may happen when you forget to use "await" or "yield from"
-    # with a coroutine call.
-    # Note that the value of the _DEBUG flag is taken
-    # when the decorator is used, so to be of any use it must be set
-    # before you define your coroutines.  A downside of using this feature
-    # is that tracebacks show entries for the CoroWrapper.__next__ method
-    # when _DEBUG is true.
+    # See: https://docs.python.org/3/library/asyncio-dev.html#asyncio-debug-mode.
     return sys.flags.dev_mode or (not sys.flags.ignore_environment and
                                   bool(os.environ.get('PYTHONASYNCIODEBUG')))
 
