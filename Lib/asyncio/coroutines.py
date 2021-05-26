@@ -7,9 +7,6 @@ import sys
 import traceback
 import types
 
-from . import constants
-from .log import logger
-
 
 def _is_debug_mode():
     # If you set _DEBUG to true, @coroutine will wrap the resulting
