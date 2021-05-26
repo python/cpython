@@ -2057,12 +2057,41 @@ static PyModuleDef_Slot winapi_slots[] = {
     {0, NULL}
 };
 
+static int
+winapi_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    WinApiState *st = winapi_get_state(m);
+
+    Py_VISIT(st->overlapped_type);
+
+    return 0;
+}
+
+static int
+winapi_clear(PyObject *m)
+{
+    WinApiState *st = winapi_get_state(m);
+
+    Py_CLEAR(st->overlapped_type);
+    
+    return 0;
+}
+
+static int
+winapi_free(void *m)
+{
+    winapi_clear((PyObject *)m);
+}
+
 static struct PyModuleDef winapi_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_winapi",
     .m_size = sizeof(WinApiState),
     .m_methods = winapi_functions,
     .m_slots = winapi_slots,
+    .m_traverse = winapi_traverse,
+    .m_clear = winapi_clear,
+    .m_free = winapi_free,
 };
 
 PyMODINIT_FUNC
