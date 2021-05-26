@@ -8848,11 +8848,10 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     PyObject *obj = f->f_localsptr[0];
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     if (obj == NULL && co->co_cell2arg) {
         /* The first argument might be a cell. */
-        n = PyTuple_GET_SIZE(co->co_cellvars);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < co->co_ncellvars; i++) {
             if (co->co_cell2arg[i] == 0) {
                 PyObject *cell = f->f_localsptr[co->co_nlocals + i];
                 assert(PyCell_Check(cell));
@@ -8867,21 +8866,12 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    if (co->co_freevars == NULL) {
-        n = 0;
-    }
-    else {
-        assert(PyTuple_Check(co->co_freevars));
-        n = PyTuple_GET_SIZE(co->co_freevars);
-    }
-
     PyTypeObject *type = NULL;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < co->co_nfreevars; i++) {
         PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            Py_ssize_t index = co->co_nlocals +
-                PyTuple_GET_SIZE(co->co_cellvars) + i;
+            Py_ssize_t index = co->co_nlocals + co->co_ncellvars + i;
             PyObject *cell = f->f_localsptr[index];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
