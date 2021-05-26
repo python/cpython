@@ -112,12 +112,22 @@ typedef struct {
     Py_buffer write_buffer;
 } OverlappedObject;
 
+static int
+overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->read_buffer);
+    Py_VISIT(self->write_buffer.obj);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 overlapped_dealloc(OverlappedObject *self)
 {
     DWORD bytes;
     int err = GetLastError();
 
+    PyObject_GC_UnTrack(self);
     if (self->pending) {
         if (check_CancelIoEx() &&
             Py_CancelIoEx(self->handle, &self->overlapped) &&
@@ -321,6 +331,7 @@ static PyMemberDef overlapped_members[] = {
 };
 
 static PyType_Slot winapi_overlapped_type_slots[] = {
+    {Py_tp_traverse, overlapped_traverse},
     {Py_tp_dealloc, overlapped_dealloc},
     {Py_tp_doc, "OVERLAPPED structure wrapper"},
     {Py_tp_methods, overlapped_methods},
@@ -331,7 +342,8 @@ static PyType_Slot winapi_overlapped_type_slots[] = {
 static PyType_Spec winapi_overlapped_type_spec = {
     .name = "_winapi.Overlapped",
     .basicsize = sizeof(OverlappedObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
     .slots = winapi_overlapped_type_slots,
 };
 
@@ -339,7 +351,7 @@ static OverlappedObject *
 new_overlapped(PyObject *module, HANDLE handle)
 {
     WinApiState *st = winapi_get_state(module);
-    OverlappedObject *self = PyObject_New(OverlappedObject, st->overlapped_type);
+    OverlappedObject *self = PyObject_GC_New(OverlappedObject, st->overlapped_type);
     if (!self)
         return NULL;
 
