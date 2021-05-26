@@ -1407,7 +1407,7 @@ r_object(RFILE *p)
                 .names = names,
 
                 .fastlocalnames = fastlocalnames,
-                // fastlocalkinds is set below.
+                // We copy fastlocalkinds into place below.
 
                 .argcount = argcount,
                 .posonlyargcount = posonlyargcount,

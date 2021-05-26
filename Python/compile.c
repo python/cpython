@@ -7224,6 +7224,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *names = NULL;
     PyObject *consts = NULL;
     PyObject *fastlocalnames = NULL;
+    _PyFastLocalKinds fastlocalkinds;
     PyObject *varnames = NULL;
     PyObject *name = NULL;
     PyObject *freevars = NULL;
@@ -7270,6 +7271,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (fastlocalnames == NULL) {
         goto error;
     }
+    compute_fastlocals_info(c, fastlocalnames, fastlocalkinds);
 
     posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
     posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
@@ -7287,7 +7289,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .names = names,
 
         .fastlocalnames = fastlocalnames,
-        // fastlocalkinds is statically allocated.
+        // We copy fastlocalkinds into place below.
 
         .argcount = posonlyargcount + posorkeywordargcount,
         .posonlyargcount = posonlyargcount,
@@ -7304,12 +7306,18 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (_PyCode_Validate(&con) < 0) {
         goto error;
     }
-    compute_fastlocals_info(c, con.fastlocalnames, con.fastlocalkinds);
+
     if (!merge_const_one(c, &fastlocalnames)) {
         goto error;
     }
     con.fastlocalnames = fastlocalnames;
+
     co = _PyCode_New(&con);
+    if (co == NULL) {
+        goto error;
+    }
+
+    memcpy(co->co_fastlocalkinds, fastlocalkinds, nlocalsplus);
 
  error:
     Py_XDECREF(names);
