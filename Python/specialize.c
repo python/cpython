@@ -1,7 +1,9 @@
 
 #include "Python.h"
 #include "pycore_code.h"
+#include "Objects/dict-common.h"
 #include "opcode.h"
+#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 
 /* We layout the quickened data as a bi-directional array:
@@ -56,10 +58,14 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 
 /* Map from opcode to adaptive opcode.
   Values of zero are ignored. */
-static uint8_t adaptive_opcodes[256] = { 0 };
+static uint8_t adaptive_opcodes[256] = {
+    [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
+};
 
 /* The number of cache entries required for a "family" of instructions. */
-static uint8_t cache_requirements[256] = { 0 };
+static uint8_t cache_requirements[256] = {
+    [LOAD_ATTR] = 2,
+};
 
 /* Return the oparg for the cache_offset and instruction index.
  *
@@ -192,6 +198,90 @@ _Py_Quicken(PyCodeObject *code) {
     optimize(quickened, instr_count);
     code->co_quickened = quickened;
     code->co_firstinstr = new_instructions;
+    return 0;
+}
+
+int
+_Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    PyTypeObject *type = Py_TYPE(owner);
+    if (type->tp_getattro != PyObject_GenericGetAttr) {
+        goto fail;
+    }
+    if (type->tp_dict == NULL) {
+        if (PyType_Ready(type) < 0) {
+            return -1;
+        }
+    }
+    PyObject *descr = _PyType_Lookup(type, name);
+    if (descr != NULL) {
+        // We found an attribute with a data-like descriptor.
+        PyTypeObject *dtype = Py_TYPE(descr);
+        if (dtype != &PyMemberDescr_Type) {
+            goto fail;
+        }
+        // It's a slot
+        PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
+        struct PyMemberDef *dmem = member->d_member;
+        if (dmem->type != T_OBJECT_EX) {
+            // It's a slot of a different type.  We don't handle those.
+            goto fail;
+        }
+        Py_ssize_t offset = dmem->offset;
+        assert(offset > 0);
+        cache0->index = offset;
+        cache1->tp_version = type->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
+        goto success;
+    }
+    // No desciptor
+    if (type->tp_dictoffset <= 0) {
+        // No dictionary, or computed offset dictionary
+        goto fail;
+    }
+    PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+    if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+        goto fail;
+    }
+    // We found an instance with a __dict__.
+    PyDictObject *dict = (PyDictObject *)*dictptr;
+    if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+        && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+    ) {
+        // Keys are shared
+        assert(PyUnicode_CheckExact(name));
+        Py_hash_t hash = PyObject_Hash(name);
+        if (hash == -1) {
+            return -1;
+        }
+        PyObject *value;
+        Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+        assert (index != DKIX_ERROR);
+        if (index != (uint16_t)index) {
+            goto fail;
+        }
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+        if (keys_version == 0) {
+            goto fail;
+        }
+        cache1->dk_version = keys_version;
+        cache1->tp_version = type->tp_version_tag;
+        cache0->index = index;
+        goto success;
+    }
+    else {
+        // Combined table
+        goto fail;
+    }
+fail:
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
     return 0;
 }
 
