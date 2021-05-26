@@ -918,7 +918,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_hash_disallow_instantiation(self):
         # internal types like _hashlib.HASH are not constructable
         support.check_disallow_instantiation(self, HASH)
-        support.check_disallow_instantiation(self, HASHOF)
+        support.check_disallow_instantiation(self, HASHXOF)
 
     def test_readonly_types(self):
         for algorithm, constructors in self.constructors_to_test.items():
