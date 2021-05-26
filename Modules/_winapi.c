@@ -363,6 +363,8 @@ new_overlapped(PyObject *module, HANDLE handle)
     memset(&self->write_buffer, 0, sizeof(Py_buffer));
     /* Manual reset, initially non-signalled */
     self->overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+    PyObject_GC_Track(self);
     return self;
 }
 
