@@ -7181,8 +7181,8 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 // This is in codeobject.c.
-extern void set_fastlocal_info(int, PyObject *, _PyFastLocalKind,
-                               PyObject *, _PyFastLocalKinds);
+extern void _Py_set_fastlocal_info(int, PyObject *, _PyFastLocalKind,
+                                   PyObject *, _PyFastLocalKinds);
 
 static void
 compute_fastlocals_info(struct compiler *c,
@@ -7197,7 +7197,7 @@ compute_fastlocals_info(struct compiler *c,
         assert(offset >= 0);
         assert(offset < nlocalsplus);
 		// For now we do not distinguish arg kinds.
-        set_fastlocal_info(offset, k, CO_FAST_LOCAL, names, kinds);
+        _Py_set_fastlocal_info(offset, k, CO_FAST_LOCAL, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
 
@@ -7207,7 +7207,7 @@ compute_fastlocals_info(struct compiler *c,
         assert(offset >= 0);
         offset += nlocals;
         assert(offset < nlocalsplus);
-        set_fastlocal_info(offset, k, CO_FAST_CELL, names, kinds);
+        _Py_set_fastlocal_info(offset, k, CO_FAST_CELL, names, kinds);
     }
 
     pos = 0;
@@ -7216,7 +7216,7 @@ compute_fastlocals_info(struct compiler *c,
         assert(offset >= 0);
         offset += nlocals;
         assert(offset < nlocalsplus);
-        set_fastlocal_info(offset, k, CO_FAST_FREE, names, kinds);
+        _Py_set_fastlocal_info(offset, k, CO_FAST_FREE, names, kinds);
     }
 }
 

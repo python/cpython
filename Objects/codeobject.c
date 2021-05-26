@@ -156,8 +156,8 @@ validate_and_copy_tuple(PyObject *tup)
 
 // This is also used in compile.c.
 void
-set_fastlocal_info(int offset, PyObject *name, _PyFastLocalKind kind,
-                   PyObject *names, _PyFastLocalKinds kinds)
+_Py_set_fastlocal_info(int offset, PyObject *name, _PyFastLocalKind kind,
+                       PyObject *names, _PyFastLocalKinds kinds)
 {
     Py_INCREF(name);
     PyTuple_SET_ITEM(names, offset, name);
@@ -466,18 +466,18 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     int  offset = 0;
     for (int i = 0; i < nvarnames; i++, offset++) {
         PyObject *name = PyTuple_GET_ITEM(varnames, i);
-        set_fastlocal_info(offset, name, CO_FAST_LOCAL,
-                           fastlocalnames, fastlocalkinds);
+        _Py_set_fastlocal_info(offset, name, CO_FAST_LOCAL,
+                               fastlocalnames, fastlocalkinds);
     }
     for (int i = 0; i < ncellvars; i++, offset++) {
         PyObject *name = PyTuple_GET_ITEM(cellvars, i);
-        set_fastlocal_info(offset, name, CO_FAST_CELL,
-                           fastlocalnames, fastlocalkinds);
+        _Py_set_fastlocal_info(offset, name, CO_FAST_CELL,
+                               fastlocalnames, fastlocalkinds);
     }
     for (int i = 0; i < nfreevars; i++, offset++) {
         PyObject *name = PyTuple_GET_ITEM(freevars, i);
-        set_fastlocal_info(offset, name, CO_FAST_FREE,
-                           fastlocalnames, fastlocalkinds);
+        _Py_set_fastlocal_info(offset, name, CO_FAST_FREE,
+                               fastlocalnames, fastlocalkinds);
     }
 
     struct _PyCodeConstructor con = {
