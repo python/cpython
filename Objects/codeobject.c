@@ -164,7 +164,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 {
     PyCodeObject *co;
     Py_ssize_t *cell2arg = NULL;
-    Py_ssize_t i, n_cellvars, n_varnames, total_args;
+    Py_ssize_t i, total_args;
+    int ncellvars, nfreevars;
 
     /* Check argument types */
     if (argcount < posonlyargcount || posonlyargcount < 0 ||
@@ -181,6 +182,19 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         linetable == NULL || !PyBytes_Check(linetable) ||
         exceptiontable == NULL || !PyBytes_Check(exceptiontable)) {
         PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    /* Make sure that code is indexable with an int, this is
+       a long running assumption in ceval.c and many parts of
+       the interpreter. */
+    if (PyBytes_GET_SIZE(code) > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        return NULL;
+    }
+
+    if (nlocals != PyTuple_GET_SIZE(varnames)) {
+        PyErr_SetString(PyExc_ValueError, "co_nlocals != len(co_varnames)");
         return NULL;
     }
 
@@ -208,46 +222,40 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
-    /* Make sure that code is indexable with an int, this is
-       a long running assumption in ceval.c and many parts of
-       the interpreter. */
-    if (PyBytes_GET_SIZE(code) > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
-        return NULL;
-    }
-
     /* Check for any inner or outer closure references */
-    n_cellvars = PyTuple_GET_SIZE(cellvars);
-    if (!n_cellvars && !PyTuple_GET_SIZE(freevars)) {
+    assert(PyTuple_GET_SIZE(cellvars) < INT_MAX);
+    ncellvars = (int)PyTuple_GET_SIZE(cellvars);
+    assert(PyTuple_GET_SIZE(freevars) < INT_MAX);
+    nfreevars = (int)PyTuple_GET_SIZE(freevars);
+    if (!ncellvars && !nfreevars) {
         flags |= CO_NOFREE;
     } else {
         flags &= ~CO_NOFREE;
     }
 
-    n_varnames = PyTuple_GET_SIZE(varnames);
-    if (argcount <= n_varnames && kwonlyargcount <= n_varnames) {
+    if (argcount <= nlocals && kwonlyargcount <= nlocals) {
         /* Never overflows. */
         total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
                       ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
     }
     else {
-        total_args = n_varnames + 1;
+        total_args = nlocals + 1;
     }
-    if (total_args > n_varnames) {
+    if (total_args > nlocals) {
         PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
         return NULL;
     }
 
     /* Create mapping between cells and arguments if needed. */
-    if (n_cellvars) {
+    if (ncellvars) {
         bool used_cell2arg = false;
-        cell2arg = PyMem_NEW(Py_ssize_t, n_cellvars);
+        cell2arg = PyMem_NEW(Py_ssize_t, ncellvars);
         if (cell2arg == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
         /* Find cells which are also arguments. */
-        for (i = 0; i < n_cellvars; i++) {
+        for (i = 0; i < ncellvars; i++) {
             Py_ssize_t j;
             PyObject *cell = PyTuple_GET_ITEM(cellvars, i);
             cell2arg[i] = CO_CELL_NOT_AN_ARG;
@@ -279,9 +287,10 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     co->co_argcount = argcount;
     co->co_posonlyargcount = posonlyargcount;
     co->co_kwonlyargcount = kwonlyargcount;
+    co->co_nlocalsplus = nlocals + ncellvars + nfreevars;
     co->co_nlocals = nlocals;
-    co->co_nlocalsplus = nlocals +
-        (int)PyTuple_GET_SIZE(freevars) + (int)PyTuple_GET_SIZE(cellvars);
+    co->co_ncellvars = ncellvars;
+    co->co_nfreevars = nfreevars;
     co->co_stacksize = stacksize;
     co->co_flags = flags;
     Py_INCREF(code);
@@ -1139,7 +1148,7 @@ code_sizeof(PyCodeObject *co, PyObject *Py_UNUSED(args))
     _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL) {
-        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
+        res += co->co_ncellvars * sizeof(Py_ssize_t);
     }
     if (co_extra != NULL) {
         res += sizeof(_PyCodeObjectExtra) +
