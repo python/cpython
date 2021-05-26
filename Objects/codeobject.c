@@ -332,15 +332,14 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
-    if (argcount > nlocals || kwonlyargcount > nlocals) {
-        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
-        return NULL;
-    }
-    int totalargs = argcount +
-                    kwonlyargcount +
-                    ((flags & CO_VARARGS) != 0) +
-                    ((flags & CO_VARKEYWORDS) != 0);
-    if (totalargs > nlocals) {
+    // Note that totalargs = nlocals - nplainlocals.  We check nplainlocals
+    // here to avoid the possibility of overflow (however remote).
+    int nplainlocals = nlocals -
+                       argcount -
+                       kwonlyargcount -
+                       ((flags & CO_VARARGS) != 0) -
+                       ((flags & CO_VARKEYWORDS) != 0);
+    if (nplainlocals < 0) {
         PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
         return NULL;
     }
