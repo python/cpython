@@ -1577,6 +1577,7 @@ Deprecated
 * ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
 
+.. _whatsnew310-removed:
 
 Removed
 =======
