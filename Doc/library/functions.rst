@@ -1022,7 +1022,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-memoryview:
-.. class:: memoryview(obj)
+.. class:: memoryview(object)
    :noindex:
 
    Return a "memory view" object created from the given argument.  See

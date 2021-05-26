@@ -1334,6 +1334,24 @@ class ClassCreationTests(unittest.TestCase):
             N(5)
         self.assertEqual(str(cm.exception), expected_message)
 
+    def test_metaclass_new_error(self):
+        # bpo-44232: The C function type_new() must properly report the
+        # exception when a metaclass constructor raises an exception and the
+        # winner class is not the metaclass.
+        class ModelBase(type):
+            def __new__(cls, name, bases, attrs):
+                super_new = super().__new__
+                new_class = super_new(cls, name, bases, {})
+                if name != "Model":
+                    raise RuntimeWarning(f"{name=}")
+                return new_class
+
+        class Model(metaclass=ModelBase):
+            pass
+
+        with self.assertRaises(RuntimeWarning):
+            type("SouthPonies", (Model,), {})
+
 
 class SimpleNamespaceTests(unittest.TestCase):
 
