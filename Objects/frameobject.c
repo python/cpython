@@ -956,8 +956,10 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
         PyObject *value = fast[i];
         if (kind & (CO_FAST_CELL | CO_FAST_FREE) && value != NULL) {
-            assert(PyCell_Check(value));
-            value = PyCell_GET(value);
+            if (!(kind & CO_FAST_LOCAL)) {
+                assert(PyCell_Check(value));
+                value = PyCell_GET(value);
+            }
         }
         if (value == NULL) {
             if (PyObject_DelItem(locals, name) != 0) {
@@ -1023,7 +1025,10 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
                 continue;
             }
         }
-        if (kind & (CO_FAST_CELL | CO_FAST_FREE)) {
+        if (kind & (CO_FAST_CELL | CO_FAST_FREE) &&
+            // For now we ignore args that are also cells.
+            !(kind & CO_FAST_LOCAL)
+            ) {
             assert(PyCell_Check(fast[i]));
             if (PyCell_GET(fast[i]) != value) {
                 if (PyCell_Set(fast[i], value) < 0) {
