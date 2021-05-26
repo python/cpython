@@ -42,9 +42,9 @@ class MiscTest(unittest.TestCase):
 
     @support.cpython_only
     def test_disallow_instantiation(self):
-        # Ensure that the type disallows instantiation (bpo-43916)
-        tp = type(iter(array.array('I')))
-        self.assertRaises(TypeError, tp)
+        my_array = array.array("I")
+        tp = type(iter(my_array))
+        support.check_disallow_instantiation(self, tp, my_array)
 
     @support.cpython_only
     def test_immutable(self):
