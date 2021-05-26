@@ -2077,7 +2077,7 @@ winapi_clear(PyObject *m)
     return 0;
 }
 
-static int
+static void
 winapi_free(void *m)
 {
     winapi_clear((PyObject *)m);
