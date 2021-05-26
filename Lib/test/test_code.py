@@ -271,6 +271,42 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(new_code.co_varnames, code2.co_varnames)
         self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
 
+    def test_nlocals_mismatch(self):
+        def func():
+            x = 1
+            return x
+        co = func.__code__
+        assert co.co_nlocals > 0;
+
+        # First we try the constructor.
+        CodeType = type(co)
+        for diff in (-1, 1):
+            with self.assertRaises(ValueError):
+                CodeType(co.co_argcount,
+                         co.co_posonlyargcount,
+                         co.co_kwonlyargcount,
+                         # This is the only change.
+                         co.co_nlocals + diff,
+                         co.co_stacksize,
+                         co.co_flags,
+                         co.co_code,
+                         co.co_consts,
+                         co.co_names,
+                         co.co_varnames,
+                         co.co_filename,
+                         co.co_name,
+                         co.co_firstlineno,
+                         co.co_lnotab,
+                         co.co_exceptiontable,
+                         co.co_freevars,
+                         co.co_cellvars,
+                         )
+        # Then we try the replace method.
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals - 1)
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals + 1)
+
     def test_empty_linetable(self):
         def func():
             pass
