@@ -312,10 +312,11 @@ Functions and classes provided:
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
-   :class:`io.StringIO` object::
+   :class:`io.StringIO` object. The replacement stream is returned from the
+   ``__enter__`` method and so is available as the target of the
+   :keyword:`with` statement::
 
-        f = io.StringIO()
-        with redirect_stdout(f):
+        with redirect_stdout(io.StringIO()) as f:
             help(pow)
         s = f.getvalue()
 
