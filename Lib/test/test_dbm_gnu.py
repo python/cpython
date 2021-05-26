@@ -31,8 +31,7 @@ class TestGdbm(unittest.TestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         self.g = gdbm.open(filename, 'c')
-        tp = type(self.g)
-        support.check_disallow_instantiation(self, tp)
+        support.check_disallow_instantiation(self, type(self.g))
 
     def test_key_methods(self):
         self.g = gdbm.open(filename, 'c')

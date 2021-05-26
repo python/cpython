@@ -2228,8 +2228,7 @@ class ImplementationTest(unittest.TestCase):
         check_disallow_instantiation(self, re.Match)
         check_disallow_instantiation(self, re.Pattern)
         pat = re.compile("")
-        tp = type(pat.scanner(""))
-        check_disallow_instantiation(self, tp)
+        check_disallow_instantiation(self, type(pat.scanner("")))
 
 
 class ExternalTests(unittest.TestCase):

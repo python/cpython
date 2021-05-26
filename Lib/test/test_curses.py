@@ -1053,8 +1053,7 @@ class TestCurses(unittest.TestCase):
         # Ensure that the type disallows instantiation (bpo-43916)
         w = curses.newwin(10, 10)
         panel = curses.panel.new_panel(w)
-        tp = type(panel)
-        check_disallow_instantiation(self, tp)
+        check_disallow_instantiation(self, type(panel))
 
     @requires_curses_func('is_term_resized')
     def test_is_term_resized(self):

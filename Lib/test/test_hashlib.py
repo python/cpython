@@ -911,8 +911,7 @@ class HashLibTestCase(unittest.TestCase):
             for constructor in constructors:
                 h = constructor()
                 with self.subTest(constructor=constructor):
-                    hash_type = type(h)
-                    support.check_disallow_instantiation(self, hash_type)
+                    support.check_disallow_instantiation(self, type(h))
 
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
     def test_hash_disallow_instantiation(self):

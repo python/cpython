@@ -132,10 +132,8 @@ class ExceptionTestCase(unittest.TestCase):
     @support.cpython_only
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
-        comp_type = type(zlib.compressobj())
-        decomp_type = type(zlib.decompressobj())
-        support.check_disallow_instantiation(self, comp_type)
-        support.check_disallow_instantiation(self, decomp_type)
+        support.check_disallow_instantiation(self, type(zlib.compressobj()))
+        support.check_disallow_instantiation(self, type(zlib.decompressobj()))
 
 
 class BaseCompressTestCase(object):
