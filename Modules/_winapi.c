@@ -127,7 +127,6 @@ overlapped_dealloc(OverlappedObject *self)
     DWORD bytes;
     int err = GetLastError();
 
-    PyObject_GC_UnTrack(self);
     if (self->pending) {
         if (check_CancelIoEx() &&
             Py_CancelIoEx(self->handle, &self->overlapped) &&
@@ -160,6 +159,7 @@ overlapped_dealloc(OverlappedObject *self)
 
     CloseHandle(self->overlapped.hEvent);
     SetLastError(err);
+    PyObject_GC_UnTrack(self);
     if (self->write_buffer.obj)
         PyBuffer_Release(&self->write_buffer);
     Py_CLEAR(self->read_buffer);
