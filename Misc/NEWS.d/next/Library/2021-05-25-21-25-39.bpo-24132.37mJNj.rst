@@ -1,0 +1,5 @@
+Add a drop-in, extensible alternative to :class:`pathlib.PurePath` named
+:class:`pathlib.SimplePath`, which has accompanying classes
+:class:`pathlib.SimplePosixPath` and :class:`pathlib.SimpleWindowsPath`.
+Also add extensible alternative to :class:`pathlib.Path` named
+:class:`pathlib.FilePath`.

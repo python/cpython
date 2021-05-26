@@ -173,6 +173,36 @@ we also call *flavours*:
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
+.. class:: SimplePath(*pathsegments)
+
+   A subclassable alternative to the factory :class:`PurePath`. While different
+   in name, when instantiated, it will otherwise behave similiarly to either
+   :class:`PurePosixPath` or :class:`PureWindowsPath` depending on the
+   respective system type on which it is being run.
+
+   *pathsegments* is specified similarly to :class:`PurePath`.
+
+   >>> PurePath('prog.txt').with_suffix('.py')    # On Windows
+   PureWindowsPath('prog.py')
+   >>> class MySimplePath(SimplePath): pass
+   ...
+   >>> MySimplePath('prog.txt').with_suffix('.py')
+   MySimplePath('prog.py')
+
+.. class:: SimplePosixPath(*pathsegments)
+
+   A subclassable alternative to :class:`PurePosixPath` which otherwise behaves
+   similarly.
+
+   *pathsegments* is specified similarly to :class:`PurePath`.
+
+.. class:: SimpleWindowsPath(*pathsegments)
+
+   A subclassable alternative to :class:`PurePosixPath` which otherwise behaves
+   similarly.
+
+   *pathsegments* is specified similarly to :class:`PurePath`.
+
 Regardless of the system you're running on, you can instantiate all of
 these classes, since they don't provide any operation that does system calls.
 
@@ -266,6 +296,92 @@ property:
       ('c:\\', 'Program Files', 'PSF')
 
    (note how the drive and local root are regrouped in a single part)
+
+
+Extensibility and Subclassing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Due to the factory functionality of :class:`PurePath` and :class:`Path`,
+subclassing them is not supported. However there are alternative classes
+:class:`SimplePath` and :class:`FilePath` which can act as direct
+replacements and which are subclassable.
+
+They test equivalently::
+
+    >>> PurePath('C:/Windows') == SimplePath('C:/Windows')
+    True
+    >>> Path('C:/Users') == FilePath('C:/Users')
+    True
+
+Moreover, for all methods and attributes they return similar (only
+possibly differing in class name) values::
+
+    >>> PurePath('C:/Windows').drive == SimplePath('C:/Windows').drive
+    True
+    >>> Path('C:/Users').is_dir() == FilePath('C:/Users').is_dir()
+    True
+
+Note that SimplePath and FilePath are not factories that return a
+different class. Instead they implement the type of class that would be
+returned by the factory on your particular system type. For instance on
+Windows::
+
+    >>> type(PurePath('.'))     # On Windows
+    <class 'pathlib.PureWindowsPath'>
+    >>> type(SimplePath('.'))
+    <class 'pathlib.SimplePath'>
+
+Similarly on Posix-based systems::
+
+    >>> type(Path('.'))    # on Posix
+    <class 'pathlib.PosixPath'>
+    >>> type(FilePath('.'))
+    <class 'pathlib.FilePath'>
+
+However unlike :class:`PurePath` and :class:`Path`, :class:`SimplePath`
+and :class:`FilePath` can be subclassed and still function equivalently::
+
+    >>> class MySimplePath(SimplePath): pass    # On Windows
+    ...
+    >>> MySimplePath('C:/Users').parent
+    MySimplePath('C:/')
+    >>> class MyFilePath(FilePath): pass
+    ...
+    >>> MyFilePath('C:/Windows/System32/drivers/etc/../..').resolve()
+    MyFilePath('C:/Windows/System32')
+
+Furthermore, if you are subclassing paths for a specific system type,
+but which don't require accessing the filesystem, much like with
+:class:`PurePath` you can use the derivatives of :class:`SimplePath`,
+:class:`SimplePosixPath` or :class:`SimpleWindowsPath`::
+
+    >>> PureWindowsPath('C:/').drive
+    'C:'
+    >>> MySimpleWindowsPath(SimpleWindowsPath): pass
+    ...
+    >>> MySimpleWindowsPath('C:/').drive
+    'C:'
+
+If you want to write a subclass but do need to customize how the
+methods that do access the filesystem are implemented, you can instead
+use the :class:`PathIOMixin`.
+
+.. class:: PathIOMixin
+
+   A mixin which provides a default filesystem I/O implementation for
+   Posix and Windows. It requires being used in conjunction with either
+   :class:`SimplePosixPath` or :class:`SimpleWindowsPath` to create a
+   full-fledged :class:`Path`/:class:`FilePath`-like class. This class
+   is actually the provider for all of the methods that are exclusively
+   available to :class:`Path` family and :class:`FilePath`. As such all
+   of these methods are available here to be extended by you.
+
+    >>> MyRemoteServerIOMixin(PathIOMixin):
+    ... def iterdir(self):
+    ...    ... # Override method to provide implementation
+    ...
+    >>> MyRemoteServerPath(SimplePosixPath, MyRemoteServerIOMixin): pass
+    ...
 
 
 Methods and properties
@@ -674,6 +790,24 @@ bugs or failures in your application)::
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
    NotImplementedError: cannot instantiate 'WindowsPath' on your system
+
+.. class:: FilePath(*pathsegments)
+
+   A subclass of :class:`SimplePath`, this is a subclassable alternative to
+   the factory :class:`Path`. It represents concrete paths of the system's
+   path flavour.
+   While different in name, when instantiated, it will otherwise behave
+   similarly to :class:`PosixPath` or :class:`Windows`Path` depending
+   on the respective system type on which it is being run.)
+
+   *pathsegments* is specified similarly to :class:`PurePath`.
+
+   >>> class MyFilePath(FilePath): pass    # On Posix
+   ...
+   >>> MyFilePath('usr/local/bin/../../').resolve()
+   MyFilePath('/usr')
+   >>> Path('/usr/local/bin/../..').resolve()
+   PosixPath('/usr')
 
 
 Methods

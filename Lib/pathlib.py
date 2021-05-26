@@ -17,6 +17,8 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 __all__ = [
     "PurePath", "PurePosixPath", "PureWindowsPath",
     "Path", "PosixPath", "WindowsPath",
+    "SimplePath", "SimplePosixPath", "SimpleWindowsPath",
+    "FilePath", "PathIOMixin",
     ]
 
 #
