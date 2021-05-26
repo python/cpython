@@ -1324,9 +1324,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     /* Ignore any exception raised by the lookup */
     _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
 
-    if (ix < 0) {
-        return NULL;
-    }
+
+    assert(ix >= 0 || value == NULL);
     return value;
 }
 
@@ -1385,9 +1384,7 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     }
 
     ix = _Py_dict_lookup(mp, key, hash, &value);
-    if (ix < 0) {
-        return NULL;
-    }
+    assert(ix >= 0 || value == NULL);
     return value;
 }
 
@@ -1417,8 +1414,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     }
 
     ix = _Py_dict_lookup(mp, key, hash, &value);
-    if (ix < 0)
-        return NULL;
+    assert(ix >= 0 || value == NULL);
     return value;
 }
 
@@ -1478,8 +1474,7 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 
     /* namespace 2: builtins */
     ix = _Py_dict_lookup(builtins, key, hash, &value);
-    if (ix < 0)
-        return NULL;
+    assert(ix >= 0 || value == NULL);
     return value;
 }
 
