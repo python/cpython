@@ -2107,78 +2107,6 @@ class BaseTaskTests:
         self.assertRaises(ValueError, self.loop.run_until_complete,
             asyncio.wait([]))
 
-    def test_await_corowrapper(self):
-        async def t1():
-            return await t2()
-
-        async def t2():
-            f = self.new_future(self.loop)
-            self.new_task(self.loop, t3(f))
-            return await f
-
-        async def t3(f):
-            f.set_result((1, 2, 3))
-
-        task = self.new_task(self.loop, asyncio.coroutines.CoroWrapper(t1()))
-        val = self.loop.run_until_complete(task)
-        self.assertEqual(val, (1, 2, 3))
-
-    def test_yield_from_corowrapper_send(self):
-        def foo():
-            a = yield
-            return a
-
-        def call(arg):
-            cw = asyncio.coroutines.CoroWrapper(foo())
-            cw.send(None)
-            try:
-                cw.send(arg)
-            except StopIteration as ex:
-                return ex.args[0]
-            else:
-                raise AssertionError('StopIteration was expected')
-
-        self.assertEqual(call((1, 2)), (1, 2))
-        self.assertEqual(call('spam'), 'spam')
-
-    def test_corowrapper_weakref(self):
-        wd = weakref.WeakValueDictionary()
-        def foo(): yield from []
-        cw = asyncio.coroutines.CoroWrapper(foo())
-        wd['cw'] = cw  # Would fail without __weakref__ slot.
-        cw.gen = None  # Suppress warning from __del__.
-
-    def test_corowrapper_throw(self):
-        # Issue 429: CoroWrapper.throw must be compatible with gen.throw
-        def foo():
-            value = None
-            while True:
-                try:
-                    value = yield value
-                except Exception as e:
-                    value = e
-
-        exception = Exception("foo")
-        cw = asyncio.coroutines.CoroWrapper(foo())
-        cw.send(None)
-        self.assertIs(exception, cw.throw(exception))
-
-        cw = asyncio.coroutines.CoroWrapper(foo())
-        cw.send(None)
-        self.assertIs(exception, cw.throw(Exception, exception))
-
-        cw = asyncio.coroutines.CoroWrapper(foo())
-        cw.send(None)
-        exception = cw.throw(Exception, "foo")
-        self.assertIsInstance(exception, Exception)
-        self.assertEqual(exception.args, ("foo", ))
-
-        cw = asyncio.coroutines.CoroWrapper(foo())
-        cw.send(None)
-        exception = cw.throw(Exception, "foo", None)
-        self.assertIsInstance(exception, Exception)
-        self.assertEqual(exception.args, ("foo", ))
-
     def test_log_destroyed_pending_task(self):
         Task = self.__class__.Task
 
@@ -3303,9 +3231,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             # otherwise it spills errors and breaks **other** unittests, since
             # 'target' is interacting with threads.
 
-            # With this call, `coro` will be advanced, so that
-            # CoroWrapper.__del__ won't do anything when asyncio tests run
-            # in debug mode.
+            # With this call, `coro` will be advanced.
             self.loop.call_soon_threadsafe(coro.send, None)
         try:
             return future.result(timeout)
