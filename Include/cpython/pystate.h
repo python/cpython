@@ -113,6 +113,12 @@ struct _ts {
     PyObject *async_exc; /* Asynchronous exception to raise */
     unsigned long thread_id; /* Thread id where this tstate was created */
 
+    /* Native thread id where this tstate was created. This will be 0 except on
+     * those platforms that have the notion of native thread id, for which the
+     * macro PY_HAVE_THREAD_NATIVE_ID is then defined.
+     */
+    unsigned long native_thread_id;
+
     int trash_delete_nesting;
     PyObject *trash_delete_later;
 
