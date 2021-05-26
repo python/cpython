@@ -134,8 +134,8 @@ class ExceptionTestCase(unittest.TestCase):
         # Ensure that the type disallows instantiation (bpo-43916)
         comp_type = type(zlib.compressobj())
         decomp_type = type(zlib.decompressobj())
-        self.assertRaises(TypeError, comp_type)
-        self.assertRaises(TypeError, decomp_type)
+        support.check_disallow_instantiation(self, comp_type)
+        support.check_disallow_instantiation(self, decomp_type)
 
 
 class BaseCompressTestCase(object):

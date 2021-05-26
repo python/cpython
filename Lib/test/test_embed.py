@@ -1550,8 +1550,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
         fd = self.get_stdout_fd()
         printer = self.create_printer(fd)
         PyStdPrinter_Type = type(printer)
-        with self.assertRaises(TypeError):
-            PyStdPrinter_Type(fd)
+        support.check_disallow_instantiation(self, PyStdPrinter_Type)
 
 
 if __name__ == "__main__":

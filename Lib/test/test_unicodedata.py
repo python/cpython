@@ -12,7 +12,7 @@ import sys
 import unicodedata
 import unittest
 from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only)
+                          cpython_only, check_disallow_instantiation)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
@@ -229,7 +229,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
     @cpython_only
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
-        self.assertRaises(TypeError, unicodedata.UCD)
+        check_disallow_instantiation(self, unicodedata.UCD)
 
     def test_failed_import_during_compiling(self):
         # Issue 4367

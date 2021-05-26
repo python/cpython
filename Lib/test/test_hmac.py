@@ -439,11 +439,7 @@ class ConstructorTestCase(unittest.TestCase):
     @unittest.skipUnless(C_HMAC is not None, 'need _hashlib')
     def test_internal_types(self):
         # internal types like _hashlib.C_HMAC are not constructable
-        with self.assertRaisesRegex(
-            TypeError, "cannot create '_hashlib.HMAC' instance"
-        ):
-            C_HMAC()
-
+        support.check_disallow_instantiation(self, C_HMAC)
         with self.assertRaisesRegex(TypeError, "immutable type"):
             C_HMAC.value = None
 

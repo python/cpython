@@ -89,11 +89,11 @@ class SelectTestCase(unittest.TestCase):
 
     def test_disallow_instantiation(self):
         tp = type(select.poll())
-        self.assertRaises(TypeError, tp)
+        support.check_disallow_instantiation(self, tp)
 
         if hasattr(select, 'devpoll'):
             tp = type(select.devpoll())
-            self.assertRaises(TypeError, tp)
+            support.check_disallow_instantiation(self, tp)
 
 def tearDownModule():
     support.reap_children()
