@@ -183,7 +183,7 @@ _Py_set_fastlocal_info(int offset, PyObject *name, _PyFastLocalKind kind,
     }
 }
 
-static inline void
+static void
 get_fastlocals_counts(PyObject *names, _PyFastLocalKinds kinds,
                       int *pnlocals, int *pncellvars,
                       int *pnfreevars)
@@ -215,7 +215,7 @@ get_fastlocals_counts(PyObject *names, _PyFastLocalKinds kinds,
     }
 }
 
-static inline PyObject *
+static PyObject *
 get_fastlocals_names(PyCodeObject *co, _PyFastLocalKind kind, int num)
 {
     PyObject *names = PyTuple_New(num);
