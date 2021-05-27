@@ -1049,7 +1049,7 @@ for selecting entry points by group and name through a new
 Note in the docs for more info on the deprecation and usage.
 Incidentally, these changes also removed access by index on the
 result of :func:`importlib.metadata.Distribution.entry_points`
-(see :issue:44246 for more detail).
+(see :issue:`44246` for more detail).
 
 Added :func:`importlib.metadata.packages_distributions` for resolving
 top-level Python modules and packages to their
