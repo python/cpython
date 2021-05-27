@@ -112,6 +112,11 @@ typedef struct {
     Py_buffer write_buffer;
 } OverlappedObject;
 
+/*
+Note: tp_clear (overlapped_clear) is not implemented because it
+requires cancelling the IO operation if it's pending and the cancellation is
+quite complex and can fail (see: overlapped_dealloc).
+*/
 static int
 overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 {
@@ -2058,29 +2063,25 @@ static PyModuleDef_Slot winapi_slots[] = {
 };
 
 static int
-winapi_traverse(PyObject *m, visitproc visit, void *arg)
+winapi_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    WinApiState *st = winapi_get_state(m);
-
+    WinApiState *st = winapi_get_state(module);
     Py_VISIT(st->overlapped_type);
-
     return 0;
 }
 
 static int
-winapi_clear(PyObject *m)
+winapi_clear(PyObject *module)
 {
-    WinApiState *st = winapi_get_state(m);
-
+    WinApiState *st = winapi_get_state(module);
     Py_CLEAR(st->overlapped_type);
-    
     return 0;
 }
 
 static void
-winapi_free(void *m)
+winapi_free(void *module)
 {
-    winapi_clear((PyObject *)m);
+    winapi_clear((PyObject *)module);
 }
 
 static struct PyModuleDef winapi_module = {
