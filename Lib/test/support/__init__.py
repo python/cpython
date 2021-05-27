@@ -1991,5 +1991,11 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
 
     See bpo-43916.
     """
-    msg = f"cannot create '{tp.__module__}\.{tp.__name__}' instances"
+    mod = tp.__module__
+    name = tp.__name__
+    if mod != 'builtins':
+        qualname = f"{mod}.{name}"
+    else:
+        qualname = f"{name}"
+    msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
