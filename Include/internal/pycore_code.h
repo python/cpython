@@ -73,12 +73,12 @@ _GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
     return &last_cache_plus_one[-1-n].entry;
 }
 
-/* Following two functions determine the index of a cache entry from the
- * instruction index (in the instruction array) and the oparg.
- * oparg_from_offset_and_index must be the inverse of
- * offset_from_oparg_and_index
+/* Following two functions from a pair.
+ *
+ * oparg_from_offset_and_index() is used to compute the oparg
+ * when quickening, so that offset_from_oparg_and_index()
+ * can be used at runtime to compute the offset.
  */
-
 static inline int
 oparg_from_offset_and_index(int offset, int index)
 {

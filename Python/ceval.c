@@ -1343,7 +1343,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
-/* Get opcode and opcode from original instructions, not quickened form. */
+/* Get opcode and oparg from original instructions, not quickened form. */
 #define TRACING_NEXTOPARG() do { \
         _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code))[INSTR_OFFSET()]; \
         opcode = _Py_OPCODE(word); \
@@ -1652,6 +1652,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     if (PyDTrace_FUNCTION_ENTRY_ENABLED())
         dtrace_function_entry(f);
 
+    /* Increment the warmup counter and quicken if warm enough
+     * _Py_Quicken is idempotent so we don't worry about overflow */
     if (!PyCodeObject_IsWarmedUp(co)) {
         PyCodeObject_IncrementWarmup(co);
         if (PyCodeObject_IsWarmedUp(co)) {
