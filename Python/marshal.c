@@ -13,6 +13,7 @@
 #include "code.h"
 #include "marshal.h"
 #include "pycore_hashtable.h"
+#include "pycore_code.h"        // _PyCode_New()
 
 /*[clinic input]
 module marshal
@@ -512,7 +513,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
-        w_long(co->co_nlocals, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
         w_object(co->co_code, p);
@@ -1301,7 +1301,6 @@ r_object(RFILE *p)
             int argcount;
             int posonlyargcount;
             int kwonlyargcount;
-            int nlocals;
             int stacksize;
             int flags;
             PyObject *code = NULL;
@@ -1333,9 +1332,6 @@ r_object(RFILE *p)
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
-            nlocals = (int)r_long(p);
-            if (PyErr_Occurred())
-                goto code_error;
             stacksize = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
@@ -1354,6 +1350,7 @@ r_object(RFILE *p)
             varnames = r_object(p);
             if (varnames == NULL)
                 goto code_error;
+            Py_ssize_t nlocals = PyTuple_GET_SIZE(varnames);
             freevars = r_object(p);
             if (freevars == NULL)
                 goto code_error;
@@ -1376,19 +1373,43 @@ r_object(RFILE *p)
             if (exceptiontable == NULL)
                 goto code_error;
 
-
             if (PySys_Audit("code.__new__", "OOOiiiiii",
                             code, filename, name, argcount, posonlyargcount,
                             kwonlyargcount, nlocals, stacksize, flags) < 0) {
                 goto code_error;
             }
 
-            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
-                            argcount, posonlyargcount, kwonlyargcount,
-                            nlocals, stacksize, flags,
-                            code, consts, names, varnames,
-                            freevars, cellvars, filename, name,
-                            firstlineno, linetable, exceptiontable);
+            struct _PyCodeConstructor con = {
+                .filename = filename,
+                .name = name,
+                .flags = flags,
+
+                .code = code,
+                .firstlineno = firstlineno,
+                .linetable = linetable,
+
+                .consts = consts,
+                .names = names,
+
+                .varnames = varnames,
+                .cellvars = cellvars,
+                .freevars = freevars,
+
+                .argcount = argcount,
+                .posonlyargcount = posonlyargcount,
+                .kwonlyargcount = kwonlyargcount,
+
+                .stacksize = stacksize,
+
+                .exceptiontable = exceptiontable,
+            };
+            if (_PyCode_Validate(&con) < 0) {
+                goto code_error;
+            }
+            v = (PyObject *)_PyCode_New(&con);
+            if (v == NULL) {
+                goto code_error;
+            }
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
