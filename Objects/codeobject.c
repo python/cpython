@@ -1363,9 +1363,9 @@ static PyMemberDef code_memberlist[] = {
     {"co_firstlineno",  T_INT,          OFF(co_firstlineno),     READONLY},
     {"co_linetable",    T_OBJECT,       OFF(co_linetable),       READONLY},
     {"co_exceptiontable",    T_OBJECT,  OFF(co_exceptiontable),  READONLY},
+    {"co_fastlocalnames",    T_OBJECT,  OFF(co_fastlocalnames),  READONLY},
     {NULL}      /* Sentinel */
 };
-
 
 
 static PyObject *
