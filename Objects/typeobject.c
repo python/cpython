@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -8894,9 +8895,11 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
+    // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
     i = co->co_nlocals + co->co_ncellvars;
     for (; i < co->co_nlocalsplus; i++) {
+        assert(co->co_fastlocalkinds[i] & CO_FAST_FREE);
         PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
