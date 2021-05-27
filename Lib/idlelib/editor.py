@@ -300,14 +300,15 @@ class EditorWindow:
         self.showerror = messagebox.showerror
 
         # Add pseudoevents for former extension fixed keys.
-        # (This probably needs to be done once in the process.)
-        text.event_add('<<autocomplete>>', '<Key-Tab>')
-        text.event_add('<<try-open-completions>>', '<KeyRelease-period>',
-                       '<KeyRelease-slash>', '<KeyRelease-backslash>')
-        text.event_add('<<try-open-calltip>>', '<KeyRelease-parenleft>')
-        text.event_add('<<refresh-calltip>>', '<KeyRelease-parenright>')
-        text.event_add('<<paren-closed>>', '<KeyRelease-parenright>',
-                       '<KeyRelease-bracketright>', '<KeyRelease-braceright>')
+        self.extra_events = []
+        self.add_extra_event('<<autocomplete>>', '<Key-Tab>')
+        self.add_extra_event('<<try-open-completions>>', '<KeyRelease-period>',
+                             '<KeyRelease-slash>', '<KeyRelease-backslash>')
+        self.add_extra_event('<<try-open-calltip>>', '<KeyRelease-parenleft>')
+        self.add_extra_event('<<refresh-calltip>>', '<KeyRelease-parenright>')
+        self.add_extra_event('<<paren-closed>>', '<KeyRelease-parenright>',
+                             '<KeyRelease-bracketright>',
+                             '<KeyRelease-braceright>')
 
         # Former extension bindings depends on frame.text being packed
         # (called from self.ResetColorizer()).
@@ -849,20 +850,25 @@ class EditorWindow:
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
         # Called from configdialog.py
+        event_delete = self.text.event_delete
+        for event_name, keylist in self.extra_events:
+            event_delete(event_name, *keylist)
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
-            self.text.event_delete(event, *keylist)
+            event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
             if xkeydefs:
                 for event, keylist in xkeydefs.items():
-                    self.text.event_delete(event, *keylist)
+                    event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
         "Update the keybindings after they are changed"
         # Called from configdialog.py
         self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         self.apply_bindings()
+        for event_name, keylist in self.extra_events:
+            self.text.event_add(event_name, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
             if xkeydefs:
@@ -1153,6 +1159,10 @@ class EditorWindow:
         for event, keylist in keydefs.items():
             if keylist:
                 text.event_add(event, *keylist)
+
+    def add_extra_event(self, event_name, *keylist):
+        self.extra_events.append((event_name, keylist))
+        self.text.event_add(event_name, *keylist)
 
     def fill_menus(self, menudefs=None, keydefs=None):
         """Add appropriate entries to the menus and submenus
