@@ -45,25 +45,27 @@ struct PyCodeObject {
     /* These fields are set with provided values on new code objects. */
 
     // The hottest fields (in the eval loop) are grouped here at the top.
-    PyObject *co_code;          /* instruction opcodes */
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
+    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening */
+    PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
     int co_flags;               /* CO_..., see below */
+    int co_warmup;              /* Warmup counter for quickening */
+
     // The rest are not so impactful on performance.
     int co_argcount;            /* #arguments, except *args */
     int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
+    PyObject *co_code;          /* instruction opcodes */
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
     PyObject *co_freevars;      /* tuple of strings (free variable names) */
-    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
-    PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
 
     /* These fields are set with computed values on new code objects. */
 
@@ -100,8 +102,6 @@ struct PyCodeObject {
     _PyOpcache *co_opcache;
     int co_opcache_flag;  // used to determine when create a cache.
     unsigned char co_opcache_size;  // length of co_opcache.
-    /* Warmup counter for quickening */
-    unsigned char co_warmup;
 };
 
 /* Masks for co_flags above */
