@@ -82,6 +82,7 @@ _token_pattern = re.compile(r"""
         (?P<INVALID>\w+|.)                           # invalid token
     """, re.VERBOSE|re.DOTALL)
 
+
 def _tokenize(plural):
     for mo in re.finditer(_token_pattern, plural):
         kind = mo.lastgroup
@@ -93,11 +94,13 @@ def _tokenize(plural):
         yield value
     yield ''
 
+
 def _error(value):
     if value:
         return ValueError('unexpected token in plural form: %s' % value)
     else:
         return ValueError('unexpected end of plural form')
+
 
 _binary_ops = (
     ('||',),
@@ -109,6 +112,7 @@ _binary_ops = (
 )
 _binary_ops = {op: i for i, ops in enumerate(_binary_ops, 1) for op in ops}
 _c2py_ops = {'||': 'or', '&&': 'and', '/': '//'}
+
 
 def _parse(tokens, priority=-1):
     result = ''
@@ -159,9 +163,10 @@ def _parse(tokens, priority=-1):
 
     return result, nexttok
 
+
 def _as_int(n):
     try:
-        i = round(n)
+        _ = round(n)
     except TypeError:
         raise TypeError('Plural value must be an integer, got %s' %
                         (n.__class__.__name__,)) from None
@@ -170,6 +175,7 @@ def _as_int(n):
                   (n.__class__.__name__,),
                   DeprecationWarning, 4)
     return n
+
 
 def c2py(plural):
     """Gets a C expression as used in PO files for plural forms and returns a
@@ -247,7 +253,6 @@ def _expand_lang(loc):
             ret.append(val)
     ret.reverse()
     return ret
-
 
 
 class NullTranslations:
@@ -495,9 +500,9 @@ def find(domain, localedir=None, languages=None, all=False):
     return result
 
 
-
 # a mapping between absolute .mo file path and Translation object
 _translations = {}
+
 
 def translation(domain, localedir=None, languages=None,
                 class_=None, fallback=False):
@@ -536,7 +541,6 @@ def translation(domain, localedir=None, languages=None,
 def install(domain, localedir=None, *, names=None):
     t = translation(domain, localedir, fallback=True)
     t.install(names)
-
 
 
 # a mapping b/w domains and locale directories
