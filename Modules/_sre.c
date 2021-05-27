@@ -562,17 +562,36 @@ pattern_error(Py_ssize_t status)
     }
 }
 
+static int
+pattern_traverse(PatternObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->groupindex);
+    Py_VISIT(self->indexgroup);
+    Py_VISIT(self->pattern);
+    return 0;
+}
+
+static int
+pattern_clear(PatternObject *self)
+{
+    Py_CLEAR(self->groupindex);
+    Py_CLEAR(self->indexgroup);
+    Py_CLEAR(self->pattern);
+    return 0;
+}
+
 static void
 pattern_dealloc(PatternObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    if (self->weakreflist != NULL)
+    PyObject_GC_UnTrack(self);
+    if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) self);
-    Py_XDECREF(self->pattern);
-    Py_XDECREF(self->groupindex);
-    Py_XDECREF(self->indexgroup);
-    PyObject_Free(self);
+    }
+    (void)pattern_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1396,7 +1415,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
 
     n = PyList_GET_SIZE(code);
     /* coverity[ampersand_in_size] */
-    self = PyObject_NewVar(PatternObject, module_state->Pattern_Type, n);
+    self = PyObject_GC_NewVar(PatternObject, module_state->Pattern_Type, n);
     if (!self)
         return NULL;
     self->weakreflist = NULL;
@@ -1416,6 +1435,7 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
             break;
         }
     }
+    PyObject_GC_Track(self);
 
     if (PyErr_Occurred()) {
         Py_DECREF(self);
@@ -1937,15 +1957,33 @@ _validate(PatternObject *self)
 /* -------------------------------------------------------------------- */
 /* match methods */
 
+static int
+match_traverse(MatchObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->string);
+    Py_VISIT(self->regs);
+    Py_VISIT(self->pattern);
+    return 0;
+}
+
+static int
+match_clear(MatchObject *self)
+{
+    Py_CLEAR(self->string);
+    Py_CLEAR(self->regs);
+    Py_CLEAR(self->pattern);
+    return 0;
+}
+
 static void
 match_dealloc(MatchObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    Py_XDECREF(self->regs);
-    Py_XDECREF(self->string);
-    Py_DECREF(self->pattern);
-    PyObject_Free(self);
+    PyObject_GC_UnTrack(self);
+    (void)match_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -2391,9 +2429,9 @@ pattern_new_match(_sremodulestate* module_state,
 
         /* create match object (with room for extra group marks) */
         /* coverity[ampersand_in_size] */
-        match = PyObject_NewVar(MatchObject,
-                                module_state->Match_Type,
-                                2*(pattern->groups+1));
+        match = PyObject_GC_NewVar(MatchObject,
+                                   module_state->Match_Type,
+                                   2*(pattern->groups+1));
         if (!match)
             return NULL;
 
@@ -2426,6 +2464,7 @@ pattern_new_match(_sremodulestate* module_state,
 
         match->lastindex = state->lastindex;
 
+        PyObject_GC_Track(match);
         return (PyObject*) match;
 
     } else if (status == 0) {
@@ -2444,14 +2483,30 @@ pattern_new_match(_sremodulestate* module_state,
 /* -------------------------------------------------------------------- */
 /* scanner methods (experimental) */
 
+static int
+scanner_traverse(ScannerObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->pattern);
+    return 0;
+}
+
+static int
+scanner_clear(ScannerObject *self)
+{
+    Py_CLEAR(self->pattern);
+    return 0;
+}
+
 static void
 scanner_dealloc(ScannerObject* self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
+    PyObject_GC_UnTrack(self);
     state_fini(&self->state);
-    Py_XDECREF(self->pattern);
-    PyObject_Free(self);
+    (void)scanner_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -2548,7 +2603,7 @@ pattern_scanner(_sremodulestate *module_state,
     ScannerObject* scanner;
 
     /* create scanner object */
-    scanner = PyObject_New(ScannerObject, module_state->Scanner_Type);
+    scanner = PyObject_GC_New(ScannerObject, module_state->Scanner_Type);
     if (!scanner)
         return NULL;
     scanner->pattern = NULL;
@@ -2562,6 +2617,7 @@ pattern_scanner(_sremodulestate *module_state,
     Py_INCREF(self);
     scanner->pattern = (PyObject*) self;
 
+    PyObject_GC_Track(scanner);
     return (PyObject*) scanner;
 }
 
@@ -2683,6 +2739,8 @@ static PyType_Slot pattern_slots[] = {
     {Py_tp_methods, pattern_methods},
     {Py_tp_members, pattern_members},
     {Py_tp_getset, pattern_getset},
+    {Py_tp_traverse, pattern_traverse},
+    {Py_tp_clear, pattern_clear},
     {0, NULL},
 };
 
@@ -2691,7 +2749,7 @@ static PyType_Spec pattern_spec = {
     .basicsize = sizeof(PatternObject),
     .itemsize = sizeof(SRE_CODE),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = pattern_slots,
 };
 
@@ -2741,6 +2799,8 @@ static PyType_Slot match_slots[] = {
     {Py_tp_methods, match_methods},
     {Py_tp_members, match_members},
     {Py_tp_getset, match_getset},
+    {Py_tp_traverse, match_traverse},
+    {Py_tp_clear, match_clear},
 
     /* As mapping.
      *
@@ -2757,7 +2817,7 @@ static PyType_Spec match_spec = {
     .basicsize = sizeof(MatchObject),
     .itemsize = sizeof(Py_ssize_t),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = match_slots,
 };
 
@@ -2777,6 +2837,8 @@ static PyType_Slot scanner_slots[] = {
     {Py_tp_dealloc, scanner_dealloc},
     {Py_tp_methods, scanner_methods},
     {Py_tp_members, scanner_members},
+    {Py_tp_traverse, scanner_traverse},
+    {Py_tp_clear, scanner_clear},
     {0, NULL},
 };
 
@@ -2784,7 +2846,7 @@ static PyType_Spec scanner_spec = {
     .name = "_" SRE_MODULE ".SRE_Scanner",
     .basicsize = sizeof(ScannerObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC),
     .slots = scanner_slots,
 };
 
