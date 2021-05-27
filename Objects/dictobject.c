@@ -597,7 +597,7 @@ new_keys_object(uint8_t log2_size)
     dk->dk_refcnt = 1;
     dk->dk_log2_size = log2_size;
     dk->dk_usable = usable;
-    dk->dk_kind = DICT_KEYS_UNICODE_NO_DUMMY;
+    dk->dk_kind = DICT_KEYS_UNICODE;
     dk->dk_nentries = 0;
     dk->dk_version = 0;
     memset(&dk->dk_indices[0], 0xff, es * (1<<log2_size));
@@ -1223,12 +1223,12 @@ make_keys_shared(PyObject *op)
         if (mp->ma_keys->dk_kind == DICT_KEYS_GENERAL) {
             return NULL;
         }
-        else if (mp->ma_keys->dk_kind == DICT_KEYS_UNICODE) {
+        else if (mp->ma_used > mp->ma_keys->dk_nentries) {
             /* Remove dummy keys */
             if (dictresize(mp, DK_LOG_SIZE(mp->ma_keys)))
                 return NULL;
         }
-        assert(mp->ma_keys->dk_kind == DICT_KEYS_UNICODE_NO_DUMMY);
+        assert(mp->ma_used == mp->ma_keys->dk_nentries);
         /* Copy values into a new array */
         ep0 = DK_ENTRIES(mp->ma_keys);
         size = USABLE_FRACTION(DK_SIZE(mp->ma_keys));

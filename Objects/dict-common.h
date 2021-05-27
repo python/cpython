@@ -21,8 +21,7 @@ Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyOb
 typedef enum {
     DICT_KEYS_GENERAL = 0,
     DICT_KEYS_UNICODE = 1,
-    DICT_KEYS_UNICODE_NO_DUMMY = 2,
-    DICT_KEYS_SPLIT = 3
+    DICT_KEYS_SPLIT = 2
 } DictKeysKind;
 
 /* See dictobject.c for actual layout of DictKeysObject */
