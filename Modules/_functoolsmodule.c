@@ -160,11 +160,11 @@ partial_clear(partialobject *pto)
 static int
 partial_traverse(partialobject *pto, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(pto));
     Py_VISIT(pto->fn);
     Py_VISIT(pto->args);
     Py_VISIT(pto->kw);
     Py_VISIT(pto->dict);
-    Py_VISIT(Py_TYPE(pto));
     return 0;
 }
 
@@ -524,9 +524,9 @@ keyobject_dealloc(keyobject *ko)
 static int
 keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(ko));
     Py_VISIT(ko->cmp);
     Py_VISIT(ko->object);
-    Py_VISIT(Py_TYPE(ko));
     return 0;
 }
 
@@ -1341,6 +1341,7 @@ lru_cache_deepcopy(PyObject *self, PyObject *unused)
 static int
 lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
@@ -1349,13 +1350,12 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
         Py_VISIT(Py_TYPE(link));
         link = next;
     }
-    Py_VISIT(self->func);
     Py_VISIT(self->cache);
+    Py_VISIT(self->func);
     Py_VISIT(self->kwd_mark);
     Py_VISIT(self->lru_list_elem_type);
     Py_VISIT(self->cache_info_type);
     Py_VISIT(self->dict);
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
