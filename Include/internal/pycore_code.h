@@ -62,7 +62,7 @@ typedef union _cache_or_instruction {
 } SpecializedCacheOrInstruction;
 
 /* Get pointer to the nth cache entry, from the first instruction and n.
- * Cache entries are index backwards, with [count-1] first in memory, and [0] last.
+ * Cache entries are indexed backwards, with [count-1] first in memory, and [0] last.
  * The zeroth entry immediately precedes the instructions.
  */
 static inline SpecializedCacheEntry *
@@ -73,7 +73,7 @@ _GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
     return &last_cache_plus_one[-1-n].entry;
 }
 
-/* Following two functions from a pair.
+/* Following two functions form a pair.
  *
  * oparg_from_offset_and_index() is used to compute the oparg
  * when quickening, so that offset_from_oparg_and_index()
