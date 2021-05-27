@@ -200,7 +200,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
     return 0;
 }
 
-static inline void
+static void
 init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 {
     Py_INCREF(con->filename);
