@@ -1161,6 +1161,7 @@ class EditorWindow:
                 text.event_add(event, *keylist)
 
     def add_extra_event(self, event_name, *keylist):
+        "Register a key binding for what was once a built-in extension"
         self.extra_events.append((event_name, keylist))
         self.text.event_add(event_name, *keylist)
 
