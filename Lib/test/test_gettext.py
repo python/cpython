@@ -203,6 +203,7 @@ trggrkg zrffntr pngnybt yvoenel.''')
 
     def test_the_alternative_interface(self):
         eq = self.assertEqual
+        neq = self.assertNotEqual
         # test the alternative interface
         with open(self.mofile, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
@@ -212,6 +213,15 @@ trggrkg zrffntr pngnybt yvoenel.''')
         # Try unicode return type
         t.install()
         eq(_('mullusk'), 'bacon')
+        # Test installation of other methods
+        import builtins
+        t.install(names=["gettext", "ngettext"])
+        eq(_, t.gettext)
+        eq(builtins.gettext, t.gettext)
+        eq(ngettext, t.ngettext)
+        neq(pgettext, t.pgettext)
+        del builtins.gettext
+        del builtins.ngettext
 
 
 class GettextTestCase2(GettextBaseTest):

@@ -172,8 +172,10 @@ install themselves in the built-in namespace as the function :func:`_`.
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
+   .. versionchanged:: 3.11
+      *codeset* parameter is removed.
 
-.. function:: install(domain, localedir=None, names=None)
+.. function:: install(domain, localedir=None, *, names=None)
 
    This installs the function :func:`_` in Python's builtins namespace, based on
    *domain* and *localedir* which are passed to the function :func:`translation`.
@@ -191,6 +193,8 @@ install themselves in the built-in namespace as the function :func:`_`.
    builtins namespace, so it is easily accessible in all modules of your
    application.
 
+   .. versionchanged:: 3.11
+      *names* is now a keyword-only parameter.
 
 The :class:`NullTranslations` class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

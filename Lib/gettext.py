@@ -254,7 +254,6 @@ class NullTranslations:
     def __init__(self, fp=None):
         self._info = {}
         self._charset = None
-        self._output_charset = None
         self._fallback = None
         if fp is not None:
             self._parse(fp)
@@ -499,7 +498,6 @@ def find(domain, localedir=None, languages=None, all=False):
 
 # a mapping between absolute .mo file path and Translation object
 _translations = {}
-_unspecified = ['unspecified']
 
 def translation(domain, localedir=None, languages=None,
                 class_=None, fallback=False):
@@ -535,7 +533,7 @@ def translation(domain, localedir=None, languages=None,
     return result
 
 
-def install(domain, localedir=None, names=None):
+def install(domain, localedir=None, *, names=None):
     t = translation(domain, localedir, fallback=True)
     t.install(names)
 
@@ -543,8 +541,6 @@ def install(domain, localedir=None, names=None):
 
 # a mapping b/w domains and locale directories
 _localedirs = {}
-# a mapping b/w domains and codesets
-_localecodesets = {}
 # current global domain, `messages' used for compatibility w/ GNU gettext
 _current_domain = 'messages'
 
