@@ -518,7 +518,7 @@ keyobject_dealloc(keyobject *ko)
     PyTypeObject *tp = Py_TYPE(ko);
     PyObject_GC_UnTrack(ko);
     (void)keyobject_clear(ko);
-    PyObject_GC_Del(ko);
+    tp->tp_free(ko);
     Py_DECREF(tp);
 }
 
