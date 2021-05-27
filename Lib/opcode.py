@@ -182,8 +182,7 @@ def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
 def_op('MAKE_CELL', 135)
-# XXX
-#hasfree.append(135)
+hasfree.append(135)
 def_op('LOAD_CLOSURE', 136)
 hasfree.append(136)
 def_op('LOAD_DEREF', 137)
