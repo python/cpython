@@ -358,11 +358,7 @@ class BasicSocketTests(unittest.TestCase):
             with self.subTest(ssl_type=ssl_type):
                 with self.assertRaisesRegex(TypeError, "immutable type"):
                     ssl_type.value = None
-        with self.assertRaisesRegex(
-            TypeError,
-            "cannot create '_ssl.Certificate' instances"
-        ):
-            _ssl.Certificate()
+        support.check_disallow_instantiation(self, _ssl.Certificate)
 
     def test_private_init(self):
         with self.assertRaisesRegex(TypeError, "public constructor"):
