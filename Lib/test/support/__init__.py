@@ -1997,9 +1997,9 @@ def infinite_recursion(max_depth=75):
 
 def check_disallow_instantiation(testcase, tp, *args, **kwds):
     """
-    Helper for testing types with the Py_TPFLAGS_DISALLOW_INSTANTIATION flag.
+    Check that given type cannot be instantiated using *args and **kwds.
 
-    See bpo-43916.
+    See bpo-43916: Add Py_TPFLAGS_DISALLOW_INSTANTIATION type flag.
     """
     msg = f"cannot create '{tp.__module__}\.{tp.__name__}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
