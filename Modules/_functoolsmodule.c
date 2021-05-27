@@ -764,14 +764,6 @@ typedef struct lru_list_elem {
 } lru_list_elem;
 
 static int
-lru_list_elem_clear(lru_list_elem *link)
-{
-    Py_CLEAR(link->key);
-    Py_CLEAR(link->result);
-    return 0;
-}
-
-static int
 lru_list_elem_traverse(lru_list_elem *link, visitproc visit, void *arg)
 {
     Py_VISIT(link->key);
@@ -794,7 +786,6 @@ lru_list_elem_dealloc(lru_list_elem *link)
 static PyType_Slot lru_list_elem_type_slots[] = {
     {Py_tp_dealloc, lru_list_elem_dealloc},
     {Py_tp_traverse, lru_list_elem_traverse},
-    {Py_tp_clear, lru_list_elem_clear},
     {0, 0}
 };
 
