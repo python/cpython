@@ -247,7 +247,13 @@ class AutoCompleteWindow:
         text.see(self.startindex)
         x, y, cx, cy = text.bbox(self.startindex)
         acw = self.autocompletewindow
-        acw.update()
+        if platform.system().startswith('Windows'):
+            # On Windows an update() call is needed for the completion list
+            # window to be created, so that we can fetch its width and
+            # height. However, this is not needed on other platforms (tested
+            # on Ubuntu and macOS) but at one point began causing freezes on
+            # macOS.  See issues 37849 and 41611.
+            acw.update()
         acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
         text_width, text_height = text.winfo_width(), text.winfo_height()
         new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
