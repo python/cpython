@@ -1346,6 +1346,7 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
         lru_list_elem *next = link->next;
         Py_VISIT(link->key);
         Py_VISIT(link->result);
+        Py_VISIT(Py_TYPE(link));
         link = next;
     }
     Py_VISIT(self->func);
