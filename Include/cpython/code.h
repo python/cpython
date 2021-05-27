@@ -71,12 +71,12 @@ struct PyCodeObject {
     /* These fields are set with computed values on new code objects. */
 
     int *co_cell2arg;           /* Maps cell vars which are arguments. */
-    // These are redundant but offer some performance benefit.
+    // redundant values (derived from co_fastlocalnames and co_fastlocalkinds)
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
     int co_ncellvars;           /* number of cell variables */
     int co_nfreevars;           /* number of free variables */
-    // cached values
+    // lazily-computed values
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
     PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
     PyObject *co_freevars;      /* tuple of strings (free variable names) */
