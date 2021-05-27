@@ -1369,6 +1369,9 @@ class Path(PurePath):
         """
         Check if this path is a POSIX mount point
         """
+        if os.name != "posix":
+            raise NotImplementedError("Path.is_mount() is "
+                                      "unsupported on this system")
         # Need to exist and be a dir
         if not self.exists() or not self.is_dir():
             return False
@@ -1492,9 +1495,6 @@ class WindowsPath(Path, PureWindowsPath):
     On a Windows system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
-    def is_mount(self):
-        raise NotImplementedError("Path.is_mount() is unsupported on this system")
 
 
 class SimplePath(_PurePathBase):
