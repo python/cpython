@@ -373,4 +373,28 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a272b22f63ea002e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(code__get_fastlocalnames__doc__,
+"_get_fastlocalnames($self, /)\n"
+"--\n"
+"\n"
+"(internal-only) Return the \"fast locals\" names tuple for the code object.\n"
+"\n"
+"WARNING: this method is for internal use only and may change or go away.\n"
+"\n"
+"This is the combined list of variable names mapped to the corresponding\n"
+"indices in the frame\'s \"fast locals\" array.  It is effectively the same\n"
+"as co_varnames + co_cellvars + co_freevars.");
+
+#define CODE__GET_FASTLOCALNAMES_METHODDEF    \
+    {"_get_fastlocalnames", (PyCFunction)code__get_fastlocalnames, METH_NOARGS, code__get_fastlocalnames__doc__},
+
+static PyObject *
+code__get_fastlocalnames_impl(PyCodeObject *self);
+
+static PyObject *
+code__get_fastlocalnames(PyCodeObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return code__get_fastlocalnames_impl(self);
+}
+/*[clinic end generated code: output=64b7f76e087bb6f6 input=a9049054013a1b77]*/

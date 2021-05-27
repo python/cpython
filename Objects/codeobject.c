@@ -1363,7 +1363,6 @@ static PyMemberDef code_memberlist[] = {
     {"co_firstlineno",  T_INT,          OFF(co_firstlineno),     READONLY},
     {"co_linetable",    T_OBJECT,       OFF(co_linetable),       READONLY},
     {"co_exceptiontable",    T_OBJECT,  OFF(co_exceptiontable),  READONLY},
-    {"co_fastlocalnames",    T_OBJECT,  OFF(co_fastlocalnames),  READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -1544,12 +1543,33 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+code._get_fastlocalnames
+
+(internal-only) Return the "fast locals" names tuple for the code object.
+
+WARNING: this method is for internal use only and may change or go away.
+
+This is the combined list of variable names mapped to the corresponding
+indices in the frame's "fast locals" array.  It is effectively the same
+as co_varnames + co_cellvars + co_freevars.
+[clinic start generated code]*/
+
+static PyObject *
+code__get_fastlocalnames_impl(PyCodeObject *self)
+/*[clinic end generated code: output=bd729980e307a1a0 input=16adacd478dd0459]*/
+{
+    Py_INCREF(self->co_fastlocalnames);
+    return self->co_fastlocalnames;
+}
+
 /* XXX code objects need to participate in GC? */
 
 static struct PyMethodDef code_methods[] = {
     {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
     {"co_lines", (PyCFunction)code_linesiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
+    CODE__GET_FASTLOCALNAMES_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

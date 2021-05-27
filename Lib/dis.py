@@ -279,7 +279,7 @@ def get_instructions(x, *, first_line=None):
     else:
         line_offset = 0
     return _get_instructions_bytes(co.co_code,
-                                   co.co_fastlocalnames, co.co_nlocals,
+                                   co._get_fastlocalnames(), co.co_nlocals,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset)
 
@@ -336,8 +336,10 @@ def parse_exception_table(code):
     except StopIteration:
         return entries
 
-def _get_instructions_bytes(code, fastlocalnames=None, nlocals=0, names=None, constants=None,
-                            linestarts=None, line_offset=0, exception_entries=()):
+def _get_instructions_bytes(code, fastlocalnames=None, nlocals=0,
+                            names=None, constants=None,
+                            linestarts=None, line_offset=0,
+                            exception_entries=()):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
@@ -400,7 +402,8 @@ def disassemble(co, lasti=-1, *, file=None):
     """Disassemble a code object."""
     linestarts = dict(findlinestarts(co))
     exception_entries = parse_exception_table(co)
-    _disassemble_bytes(co.co_code, lasti, co.co_fastlocalnames, co.co_nlocals,
+    _disassemble_bytes(co.co_code, lasti,
+                       co._get_fastlocalnames(), co.co_nlocals,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries)
 
@@ -524,7 +527,7 @@ class Bytecode:
     def __iter__(self):
         co = self.codeobj
         return _get_instructions_bytes(co.co_code,
-                                       co.co_fastlocalnames, co.co_nlocals,
+                                       co._get_fastlocalnames(), co.co_nlocals,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
                                        line_offset=self._line_offset,
@@ -553,7 +556,8 @@ class Bytecode:
         else:
             offset = -1
         with io.StringIO() as output:
-            _disassemble_bytes(co.co_code, fastlocalnames=co.co_fastlocalnames,
+            _disassemble_bytes(co.co_code,
+                               fastlocalnames=co._get_fastlocalnames(),
                                nlocals=co.co_nlocals,
                                names=co.co_names, constants=co.co_consts,
                                linestarts=self._linestarts,
