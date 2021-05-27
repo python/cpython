@@ -4371,22 +4371,37 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *fmt_spec;
             PyObject *value;
             PyObject *(*conv_fn)(PyObject *);
-            int which_conversion = oparg & FVC_MASK;
+            int conv = oparg & FVC_MASK;
             int have_fmt_spec = (oparg & FVS_MASK) == FVS_HAVE_SPEC;
 
             fmt_spec = have_fmt_spec ? POP() : NULL;
             value = POP();
 
             /* See if any conversion is specified. */
-            switch (which_conversion) {
+            switch (conv) {
             case FVC_NONE:  conv_fn = NULL;           break;
             case FVC_STR:   conv_fn = PyObject_Str;   break;
             case FVC_REPR:  conv_fn = PyObject_Repr;  break;
             case FVC_ASCII: conv_fn = PyObject_ASCII; break;
+            case FVC_INDEX: conv_fn = PyNumber_Index; break;
+            case FVC_INT:
+            case FVC_FLOAT:
+                if (!PyNumber_Check(value)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "a real number is required, not %.200s",
+                                  Py_TYPE(value)->tp_name);
+                    Py_DECREF(value);
+                    Py_XDECREF(fmt_spec);
+                    goto error;
+                }
+                conv_fn = (conv == FVC_INT) ? PyNumber_Long : PyNumber_Float;
+                break;
             default:
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "unexpected conversion flag %d",
-                              which_conversion);
+                              conv);
+                Py_DECREF(value);
+                Py_XDECREF(fmt_spec);
                 goto error;
             }
 

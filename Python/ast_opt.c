@@ -354,44 +354,95 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
 static expr_ty
 parse_format(PyObject *fmt, Py_ssize_t *ppos, expr_ty arg, PyArena *arena)
 {
-    int spec, flags, width = -1, prec = -1;
+    int spec, flags, width = -1, prec = -1, conv, type, align = 0;
     if (!simple_format_arg_parse(fmt, ppos, &spec, &flags, &width, &prec)) {
         // Unsupported format.
         return NULL;
     }
-    if (spec == 's' || spec == 'r' || spec == 'a') {
-        char buf[1 + MAXDIGITS + 1 + MAXDIGITS + 1], *p = buf;
-        if (!(flags & F_LJUST) && width > 0) {
-            *p++ = '>';
+    char buf[4 + MAXDIGITS + 1 + MAXDIGITS + 2], *p = buf;
+    align = (flags & F_LJUST) ? '<' : 0;
+    switch (spec) {
+        case 's': case 'r': case 'a': {
+            align = (flags & F_LJUST) ? 0 : '>';
+            flags &= F_LJUST;
+            conv = spec;
+            type = 0;
+            break;
         }
-        if (width >= 0) {
-            p += snprintf(p, MAXDIGITS + 1, "%d", width);
-        }
-        if (prec >= 0) {
-            p += snprintf(p, MAXDIGITS + 2, ".%d", prec);
-        }
-        expr_ty format_spec = NULL;
-        if (p != buf) {
-            PyObject *str = PyUnicode_FromString(buf);
-            if (str == NULL) {
+        case 'd': case 'u': case 'i': {
+            if (prec >= 0) {
+                // Unsupported format.
                 return NULL;
             }
-            if (_PyArena_AddPyObject(arena, str) < 0) {
-                Py_DECREF(str);
-                return NULL;
-            }
-            format_spec = _PyAST_Constant(str, NULL, -1, -1, -1, -1, arena);
-            if (format_spec == NULL) {
-                return NULL;
-            }
+            conv = 'd';
+            type = 0;
+            break;
         }
-        return _PyAST_FormattedValue(arg, spec, format_spec,
-                                     arg->lineno, arg->col_offset,
-                                     arg->end_lineno, arg->end_col_offset,
-                                     arena);
+        case 'o': case 'x': case 'X': {
+            if (prec >= 0) {
+                // Unsupported format.
+                return NULL;
+            }
+            conv = 'i';
+            type = spec;
+            break;
+        }
+        case 'f': case 'e': case 'g': case 'F': case 'E': case 'G': {
+            conv = 'f';
+            type = spec;
+            break;
+        }
+        default: {
+            // Unsupported format.
+            return NULL;
+        }
     }
-    // Unsupported format.
-    return NULL;
+
+    if (align && width > 0) {
+        *p++ = align;
+    }
+    if (flags & F_SIGN) {
+        *p++ = '+';
+    }
+    else if (flags & F_BLANK) {
+        *p++ = ' ';
+    }
+    if (flags & F_ALT) {
+        *p++ = '#';
+    }
+    if ((flags & F_ZERO) && !align && width > 0) {
+        *p++ = '0';
+    }
+
+    if (width >= 0) {
+        p += snprintf(p, MAXDIGITS + 1, "%d", width);
+    }
+    if (prec >= 0) {
+        p += snprintf(p, MAXDIGITS + 2, ".%d", prec);
+    }
+    if (type) {
+        *p++ = type;
+    }
+    *p = 0;
+    expr_ty format_spec = NULL;
+    if (p != buf) {
+        PyObject *str = PyUnicode_FromString(buf);
+        if (str == NULL) {
+            return NULL;
+        }
+        if (_PyArena_AddPyObject(arena, str) < 0) {
+            Py_DECREF(str);
+            return NULL;
+        }
+        format_spec = _PyAST_Constant(str, NULL, -1, -1, -1, -1, arena);
+        if (format_spec == NULL) {
+            return NULL;
+        }
+    }
+    return _PyAST_FormattedValue(arg, conv, format_spec,
+                                 arg->lineno, arg->col_offset,
+                                 arg->end_lineno, arg->end_col_offset,
+                                 arena);
 }
 
 static int

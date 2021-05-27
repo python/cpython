@@ -340,14 +340,14 @@ dis_fstring = """\
               4 LOAD_CONST               1 (' ')
               6 LOAD_FAST                1 (b)
               8 LOAD_CONST               2 ('4')
-             10 FORMAT_VALUE             4 (with format)
+             10 FORMAT_VALUE             8 (with format)
              12 LOAD_CONST               1 (' ')
              14 LOAD_FAST                2 (c)
              16 FORMAT_VALUE             2 (repr)
              18 LOAD_CONST               1 (' ')
              20 LOAD_FAST                3 (d)
              22 LOAD_CONST               2 ('4')
-             24 FORMAT_VALUE             6 (repr, with format)
+             24 FORMAT_VALUE            10 (repr, with format)
              26 BUILD_STRING             7
              28 RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno + 1,)

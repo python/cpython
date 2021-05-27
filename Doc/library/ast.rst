@@ -173,14 +173,21 @@ Literals
      function call).
    * ``conversion`` is an integer:
 
-     * -1: no formatting
-     * 115: ``!s`` string formatting
-     * 114: ``!r`` repr formatting
-     * 97: ``!a`` ascii formatting
+     * ``-1``: no formatting
+     * ``ord('s')``: convert to :class:`str` before formatting (``!s``)
+     * ``ord('r')``: call :func:`repr` before formatting (``!r``)
+     * ``ord('a')``: call :func:`ascii` before formatting (``!a``)
+     * ``ord('d')``: convert to :class:`int` with truncating before formatting
+     * ``ord('i')``: call :func:`operator.index` before formatting
+     * ``ord('f')``: convert to :class:`float` before formatting
 
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
      ``conversion`` and ``format_spec`` can be set at the same time.
+
+   .. versionchanged:: 3.11
+      Added support for lossy and lossless convertions to :class:`int`
+      and :class:`float`.
 
 
 .. class:: JoinedStr(values)
