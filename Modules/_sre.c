@@ -566,19 +566,16 @@ pattern_error(Py_ssize_t status)
 static int
 pattern_traverse(PatternObject *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->groupindex);
     Py_VISIT(self->indexgroup);
     Py_VISIT(self->pattern);
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
 pattern_clear(PatternObject *self)
 {
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
     Py_CLEAR(self->groupindex);
     Py_CLEAR(self->indexgroup);
     Py_CLEAR(self->pattern);
@@ -591,8 +588,11 @@ pattern_dealloc(PatternObject* self)
     PyTypeObject *tp = Py_TYPE(self);
 
     PyObject_GC_UnTrack(self);
+    if (self->weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *) self);
+    }
     (void)pattern_clear(self);
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1961,19 +1961,19 @@ _validate(PatternObject *self)
 static int
 match_traverse(MatchObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->pattern);
-    Py_VISIT(self->regs);
-    Py_VISIT(self->string);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->string);
+    Py_VISIT(self->regs);
+    Py_VISIT(self->pattern);
     return 0;
 }
 
 static int
 match_clear(MatchObject *self)
 {
-    Py_CLEAR(self->pattern);
-    Py_CLEAR(self->regs);
     Py_CLEAR(self->string);
+    Py_CLEAR(self->regs);
+    Py_CLEAR(self->pattern);
     return 0;
 }
 
@@ -1984,7 +1984,7 @@ match_dealloc(MatchObject* self)
 
     PyObject_GC_UnTrack(self);
     (void)match_clear(self);
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -2487,8 +2487,8 @@ pattern_new_match(_sremodulestate* module_state,
 static int
 scanner_traverse(ScannerObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->pattern);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->pattern);
     return 0;
 }
 
@@ -2507,7 +2507,7 @@ scanner_dealloc(ScannerObject* self)
     PyObject_GC_UnTrack(self);
     state_fini(&self->state);
     (void)scanner_clear(self);
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
