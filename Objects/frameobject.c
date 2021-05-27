@@ -953,13 +953,23 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
             continue;
         }
 
+        /* Some args are also cells.  For now each of those variables
+           has two indices in the fast array, with both marked as cells
+           but only one marked as an arg.  That one is always set
+           to NULL in _PyEval_MakeFrameVector() and the other index
+           gets the cell holding the arg value.  So we ignore the
+           former here and will later use the cell for the variable.
+        */
+        if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
+            assert(fast[i] == NULL);
+            continue;
+        }
+
         PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
         PyObject *value = fast[i];
         if (kind & (CO_FAST_CELL | CO_FAST_FREE) && value != NULL) {
-            if (!(kind & CO_FAST_LOCAL)) {
-                assert(PyCell_Check(value));
-                value = PyCell_GET(value);
-            }
+            assert(PyCell_Check(value));
+            value = PyCell_GET(value);
         }
         if (value == NULL) {
             if (PyObject_DelItem(locals, name) != 0) {
@@ -1016,6 +1026,10 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
             continue;
         }
+        /* Same test as in PyFrame_FastToLocals() above. */
+        if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
+            continue;
+        }
         PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
         PyObject *value = PyObject_GetItem(locals, name);
         /* We only care about NULLs if clear is true. */
@@ -1025,10 +1039,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
                 continue;
             }
         }
-        if (kind & (CO_FAST_CELL | CO_FAST_FREE) &&
-            // For now we ignore args that are also cells.
-            !(kind & CO_FAST_LOCAL)
-            ) {
+        if (kind & (CO_FAST_CELL | CO_FAST_FREE)) {
             assert(PyCell_Check(fast[i]));
             if (PyCell_GET(fast[i]) != value) {
                 if (PyCell_Set(fast[i], value) < 0) {
