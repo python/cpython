@@ -243,10 +243,8 @@ class AutoCompleteWindow:
         if not self.is_active():
             return
 
-        # Due to the <Configure> event sometimes being triggered after some
-        # delay, the completion list window may no longer exist when the
-        # handler is called.  Therefore it is necessary to catch potential
-        # TclError exceptions in the handler's code.  See: bpo-41611.
+        # Since the <Configure> event may occur after the completion window is gone,
+        # catch potential TclError exceptions when accessing acw.  See: bpo-41611.
         try:
             # Position the completion list window
             text = self.widget
