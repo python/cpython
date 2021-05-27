@@ -309,7 +309,10 @@ _PyCode_New(struct _PyCodeConstructor *con)
             for (int j = 0; j < totalargs; j++) {
                 PyObject *argname = PyTuple_GET_ITEM(co->co_varnames, j);
                 int cmp = PyUnicode_Compare(cellname, argname);
-                assert(cmp != -1 || !PyErr_Occurred());
+                if (cmp == -1 && PyErr_Occurred()) {
+                    Py_DECREF(co);
+                    return NULL;
+                }
                 if (cmp == 0) {
                     if (co->co_cell2arg == NULL) {
                         co->co_cell2arg = PyMem_NEW(int, ncellvars);
