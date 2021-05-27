@@ -151,7 +151,194 @@ validate_and_copy_tuple(PyObject *tup)
 
 
 /******************
- * the "constructors"
+ * _PyCode_New()
+ ******************/
+
+int
+_PyCode_Validate(struct _PyCodeConstructor *con)
+{
+    /* Check argument types */
+    if (con->argcount < con->posonlyargcount || con->posonlyargcount < 0 ||
+        con->kwonlyargcount < 0 ||
+        con->stacksize < 0 || con->flags < 0 ||
+        con->code == NULL || !PyBytes_Check(con->code) ||
+        con->consts == NULL || !PyTuple_Check(con->consts) ||
+        con->names == NULL || !PyTuple_Check(con->names) ||
+        con->varnames == NULL || !PyTuple_Check(con->varnames) ||
+        con->freevars == NULL || !PyTuple_Check(con->freevars) ||
+        con->cellvars == NULL || !PyTuple_Check(con->cellvars) ||
+        con->name == NULL || !PyUnicode_Check(con->name) ||
+        con->filename == NULL || !PyUnicode_Check(con->filename) ||
+        con->linetable == NULL || !PyBytes_Check(con->linetable) ||
+        con->exceptiontable == NULL || !PyBytes_Check(con->exceptiontable)
+        ) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    /* Make sure that code is indexable with an int, this is
+       a long running assumption in ceval.c and many parts of
+       the interpreter. */
+    if (PyBytes_GET_SIZE(con->code) > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        return -1;
+    }
+
+    /* Ensure that the co_varnames has enough names to cover the arg counts.
+     * Note that totalargs = nlocals - nplainlocals.  We check nplainlocals
+     * here to avoid the possibility of overflow (however remote). */
+    int nplainlocals = (int)PyTuple_GET_SIZE(con->varnames) -
+                       con->argcount -
+                       con->kwonlyargcount -
+                       ((con->flags & CO_VARARGS) != 0) -
+                       ((con->flags & CO_VARKEYWORDS) != 0);
+    if (nplainlocals < 0) {
+        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        return -1;
+    }
+
+    return 0;
+}
+
+static void
+init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
+{
+    Py_INCREF(con->filename);
+    co->co_filename = con->filename;
+    Py_INCREF(con->name);
+    co->co_name = con->name;
+    co->co_flags = con->flags;
+
+    Py_INCREF(con->code);
+    co->co_code = con->code;
+    co->co_firstlineno = con->firstlineno;
+    Py_INCREF(con->linetable);
+    co->co_linetable = con->linetable;
+
+    Py_INCREF(con->consts);
+    co->co_consts = con->consts;
+    Py_INCREF(con->names);
+    co->co_names = con->names;
+
+    Py_INCREF(con->varnames);
+    co->co_varnames = con->varnames;
+    Py_INCREF(con->cellvars);
+    co->co_cellvars = con->cellvars;
+    Py_INCREF(con->freevars);
+    co->co_freevars = con->freevars;
+
+    co->co_argcount = con->argcount;
+    co->co_posonlyargcount = con->posonlyargcount;
+    co->co_kwonlyargcount = con->kwonlyargcount;
+
+    co->co_stacksize = con->stacksize;
+
+    Py_INCREF(con->exceptiontable);
+    co->co_exceptiontable = con->exceptiontable;
+
+    /* derived values */
+    co->co_cell2arg = NULL;  // This will be set soon.
+    co->co_nlocals = (int)PyTuple_GET_SIZE(con->varnames);
+    co->co_ncellvars = (int)PyTuple_GET_SIZE(con->cellvars);
+    co->co_nfreevars = (int)PyTuple_GET_SIZE(con->freevars);
+    co->co_nlocalsplus = co->co_nlocals + co->co_ncellvars + co->co_nfreevars;
+
+    /* not set */
+    co->co_weakreflist = NULL;
+    co->co_extra = NULL;
+    co->co_opcache_map = NULL;
+    co->co_opcache = NULL;
+    co->co_opcache_flag = 0;
+    co->co_opcache_size = 0;
+}
+
+/* The caller is responsible for ensuring that the given data is valid. */
+
+PyCodeObject *
+_PyCode_New(struct _PyCodeConstructor *con)
+{
+    /* Ensure that strings are ready Unicode string */
+    if (PyUnicode_READY(con->name) < 0) {
+        return NULL;
+    }
+    if (PyUnicode_READY(con->filename) < 0) {
+        return NULL;
+    }
+
+    if (intern_strings(con->names) < 0) {
+        return NULL;
+    }
+    if (intern_string_constants(con->consts, NULL) < 0) {
+        return NULL;
+    }
+    if (intern_strings(con->varnames) < 0) {
+        return NULL;
+    }
+    if (intern_strings(con->freevars) < 0) {
+        return NULL;
+    }
+    if (intern_strings(con->cellvars) < 0) {
+        return NULL;
+    }
+
+    /* Check for any inner or outer closure references */
+    int ncellvars = (int)PyTuple_GET_SIZE(con->cellvars);
+    if (!ncellvars && !PyTuple_GET_SIZE(con->freevars)) {
+        con->flags |= CO_NOFREE;
+    } else {
+        con->flags &= ~CO_NOFREE;
+    }
+
+    PyCodeObject *co = PyObject_New(PyCodeObject, &PyCode_Type);
+    if (co == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    init_code(co, con);
+
+    /* Create mapping between cells and arguments if needed. */
+    if (ncellvars) {
+        int totalargs = co->co_argcount +
+                        co->co_kwonlyargcount +
+                        ((co->co_flags & CO_VARARGS) != 0) +
+                        ((co->co_flags & CO_VARKEYWORDS) != 0);
+        assert(totalargs <= co->co_nlocals);
+        /* Find cells which are also arguments. */
+        for (int i = 0; i < ncellvars; i++) {
+            PyObject *cellname = PyTuple_GET_ITEM(co->co_cellvars, i);
+            for (int j = 0; j < totalargs; j++) {
+                PyObject *argname = PyTuple_GET_ITEM(co->co_varnames, j);
+                int cmp = PyUnicode_Compare(cellname, argname);
+                if (cmp == -1 && PyErr_Occurred()) {
+                    Py_DECREF(co);
+                    return NULL;
+                }
+                if (cmp == 0) {
+                    if (co->co_cell2arg == NULL) {
+                        co->co_cell2arg = PyMem_NEW(int, ncellvars);
+                        if (co->co_cell2arg == NULL) {
+                            Py_DECREF(co);
+                            PyErr_NoMemory();
+                            return NULL;
+                        }
+                        for (int k = 0; k < ncellvars; k++) {
+                            co->co_cell2arg[k] = CO_CELL_NOT_AN_ARG;
+                        }
+                    }
+                    co->co_cell2arg[i] = j;
+                    // Go to the next cell name.
+                    break;
+                }
+            }
+        }
+    }
+
+    return co;
+}
+
+
+/******************
+ * the legacy "constructors"
  ******************/
 
 PyCodeObject *
@@ -162,167 +349,41 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
                           PyObject *filename, PyObject *name, int firstlineno,
                           PyObject *linetable, PyObject *exceptiontable)
 {
-    PyCodeObject *co;
-    Py_ssize_t *cell2arg = NULL;
-    Py_ssize_t i, total_args;
-    int ncellvars, nfreevars;
+    struct _PyCodeConstructor con = {
+        .filename = filename,
+        .name = name,
+        .flags = flags,
 
-    /* Check argument types */
-    if (argcount < posonlyargcount || posonlyargcount < 0 ||
-        kwonlyargcount < 0 || nlocals < 0 ||
-        stacksize < 0 || flags < 0 ||
-        code == NULL || !PyBytes_Check(code) ||
-        consts == NULL || !PyTuple_Check(consts) ||
-        names == NULL || !PyTuple_Check(names) ||
-        varnames == NULL || !PyTuple_Check(varnames) ||
-        freevars == NULL || !PyTuple_Check(freevars) ||
-        cellvars == NULL || !PyTuple_Check(cellvars) ||
-        name == NULL || !PyUnicode_Check(name) ||
-        filename == NULL || !PyUnicode_Check(filename) ||
-        linetable == NULL || !PyBytes_Check(linetable) ||
-        exceptiontable == NULL || !PyBytes_Check(exceptiontable)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
+        .code = code,
+        .firstlineno = firstlineno,
+        .linetable = linetable,
 
-    /* Make sure that code is indexable with an int, this is
-       a long running assumption in ceval.c and many parts of
-       the interpreter. */
-    if (PyBytes_GET_SIZE(code) > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        .consts = consts,
+        .names = names,
+
+        .varnames = varnames,
+        .cellvars = cellvars,
+        .freevars = freevars,
+
+        .argcount = argcount,
+        .posonlyargcount = posonlyargcount,
+        .kwonlyargcount = kwonlyargcount,
+
+        .stacksize = stacksize,
+
+        .exceptiontable = exceptiontable,
+    };
+    if (_PyCode_Validate(&con) < 0) {
         return NULL;
     }
 
     if (nlocals != PyTuple_GET_SIZE(varnames)) {
-        PyErr_SetString(PyExc_ValueError, "co_nlocals != len(co_varnames)");
+        PyErr_SetString(PyExc_ValueError,
+                        "code: co_nlocals != len(co_varnames)");
         return NULL;
     }
 
-    /* Ensure that strings are ready Unicode string */
-    if (PyUnicode_READY(name) < 0) {
-        return NULL;
-    }
-    if (PyUnicode_READY(filename) < 0) {
-        return NULL;
-    }
-
-    if (intern_strings(names) < 0) {
-        return NULL;
-    }
-    if (intern_strings(varnames) < 0) {
-        return NULL;
-    }
-    if (intern_strings(freevars) < 0) {
-        return NULL;
-    }
-    if (intern_strings(cellvars) < 0) {
-        return NULL;
-    }
-    if (intern_string_constants(consts, NULL) < 0) {
-        return NULL;
-    }
-
-    /* Check for any inner or outer closure references */
-    assert(PyTuple_GET_SIZE(cellvars) < INT_MAX);
-    ncellvars = (int)PyTuple_GET_SIZE(cellvars);
-    assert(PyTuple_GET_SIZE(freevars) < INT_MAX);
-    nfreevars = (int)PyTuple_GET_SIZE(freevars);
-    if (!ncellvars && !nfreevars) {
-        flags |= CO_NOFREE;
-    } else {
-        flags &= ~CO_NOFREE;
-    }
-
-    if (argcount <= nlocals && kwonlyargcount <= nlocals) {
-        /* Never overflows. */
-        total_args = (Py_ssize_t)argcount + (Py_ssize_t)kwonlyargcount +
-                      ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
-    }
-    else {
-        total_args = nlocals + 1;
-    }
-    if (total_args > nlocals) {
-        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
-        return NULL;
-    }
-
-    /* Create mapping between cells and arguments if needed. */
-    if (ncellvars) {
-        bool used_cell2arg = false;
-        cell2arg = PyMem_NEW(Py_ssize_t, ncellvars);
-        if (cell2arg == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        /* Find cells which are also arguments. */
-        for (i = 0; i < ncellvars; i++) {
-            Py_ssize_t j;
-            PyObject *cell = PyTuple_GET_ITEM(cellvars, i);
-            cell2arg[i] = CO_CELL_NOT_AN_ARG;
-            for (j = 0; j < total_args; j++) {
-                PyObject *arg = PyTuple_GET_ITEM(varnames, j);
-                int cmp = PyUnicode_Compare(cell, arg);
-                if (cmp == -1 && PyErr_Occurred()) {
-                    PyMem_Free(cell2arg);
-                    return NULL;
-                }
-                if (cmp == 0) {
-                    cell2arg[i] = j;
-                    used_cell2arg = true;
-                    break;
-                }
-            }
-        }
-        if (!used_cell2arg) {
-            PyMem_Free(cell2arg);
-            cell2arg = NULL;
-        }
-    }
-    co = PyObject_New(PyCodeObject, &PyCode_Type);
-    if (co == NULL) {
-        if (cell2arg)
-            PyMem_Free(cell2arg);
-        return NULL;
-    }
-    co->co_argcount = argcount;
-    co->co_posonlyargcount = posonlyargcount;
-    co->co_kwonlyargcount = kwonlyargcount;
-    co->co_nlocalsplus = nlocals + ncellvars + nfreevars;
-    co->co_nlocals = nlocals;
-    co->co_ncellvars = ncellvars;
-    co->co_nfreevars = nfreevars;
-    co->co_stacksize = stacksize;
-    co->co_flags = flags;
-    Py_INCREF(code);
-    co->co_code = code;
-    Py_INCREF(consts);
-    co->co_consts = consts;
-    Py_INCREF(names);
-    co->co_names = names;
-    Py_INCREF(varnames);
-    co->co_varnames = varnames;
-    Py_INCREF(freevars);
-    co->co_freevars = freevars;
-    Py_INCREF(cellvars);
-    co->co_cellvars = cellvars;
-    co->co_cell2arg = cell2arg;
-    Py_INCREF(filename);
-    co->co_filename = filename;
-    Py_INCREF(name);
-    co->co_name = name;
-    co->co_firstlineno = firstlineno;
-    Py_INCREF(linetable);
-    co->co_linetable = linetable;
-    Py_INCREF(exceptiontable);
-    co->co_exceptiontable = exceptiontable;
-    co->co_weakreflist = NULL;
-    co->co_extra = NULL;
-
-    co->co_opcache_map = NULL;
-    co->co_opcache = NULL;
-    co->co_opcache_flag = 0;
-    co->co_opcache_size = 0;
-    return co;
+    return _PyCode_New(&con);
 }
 
 PyCodeObject *
@@ -342,49 +403,47 @@ PyCode_New(int argcount, int kwonlyargcount,
 PyCodeObject *
 PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
 {
-    static PyObject *emptystring = NULL;
-    static PyObject *nulltuple = NULL;
+    PyObject *emptystring = NULL;
+    PyObject *nulltuple = NULL;
     PyObject *filename_ob = NULL;
     PyObject *funcname_ob = NULL;
     PyCodeObject *result = NULL;
+
+    emptystring = PyBytes_FromString("");
     if (emptystring == NULL) {
-        emptystring = PyBytes_FromString("");
-        if (emptystring == NULL)
-            goto failed;
+        goto failed;
     }
+    nulltuple = PyTuple_New(0);
     if (nulltuple == NULL) {
-        nulltuple = PyTuple_New(0);
-        if (nulltuple == NULL)
-            goto failed;
+        goto failed;
     }
     funcname_ob = PyUnicode_FromString(funcname);
-    if (funcname_ob == NULL)
+    if (funcname_ob == NULL) {
         goto failed;
+    }
     filename_ob = PyUnicode_DecodeFSDefault(filename);
-    if (filename_ob == NULL)
+    if (filename_ob == NULL) {
         goto failed;
+    }
 
-    result = PyCode_NewWithPosOnlyArgs(
-                0,                    /* argcount */
-                0,                              /* posonlyargcount */
-                0,                              /* kwonlyargcount */
-                0,                              /* nlocals */
-                0,                              /* stacksize */
-                0,                              /* flags */
-                emptystring,                    /* code */
-                nulltuple,                      /* consts */
-                nulltuple,                      /* names */
-                nulltuple,                      /* varnames */
-                nulltuple,                      /* freevars */
-                nulltuple,                      /* cellvars */
-                filename_ob,                    /* filename */
-                funcname_ob,                    /* name */
-                firstlineno,                    /* firstlineno */
-                emptystring,                    /* linetable */
-                emptystring                     /* exception table */
-                );
+    struct _PyCodeConstructor con = {
+        .filename = filename_ob,
+        .name = funcname_ob,
+        .code = emptystring,
+        .firstlineno = firstlineno,
+        .linetable = emptystring,
+        .consts = nulltuple,
+        .names = nulltuple,
+        .varnames = nulltuple,
+        .cellvars = nulltuple,
+        .freevars = nulltuple,
+        .exceptiontable = emptystring,
+    };
+    result = _PyCode_New(&con);
 
 failed:
+    Py_XDECREF(emptystring);
+    Py_XDECREF(nulltuple);
     Py_XDECREF(funcname_ob);
     Py_XDECREF(filename_ob);
     return result;
