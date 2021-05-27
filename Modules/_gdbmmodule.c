@@ -74,12 +74,14 @@ nextkey, reorganize, and sync.");
 static PyObject *
 newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
 {
-    gdbmobject *dp = PyObject_New(gdbmobject, state->gdbm_type);
+    gdbmobject *dp = PyObject_GC_New(gdbmobject, state->gdbm_type);
     if (dp == NULL) {
         return NULL;
     }
     dp->di_size = -1;
     errno = 0;
+    PyObject_GC_Track(dp);
+
     if ((dp->di_dbm = gdbm_open((char *)file, 0, flags, mode, NULL)) == 0) {
         if (errno != 0) {
             PyErr_SetFromErrnoWithFilename(state->gdbm_error, file);
@@ -94,10 +96,17 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
+static int
+gdbm_traverse(gdbmobject *dp, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(dp));
+    return 0;
+}
 
 static void
 gdbm_dealloc(gdbmobject *dp)
 {
+    PyObject_GC_UnTrack(dp);
     if (dp->di_dbm) {
         gdbm_close(dp->di_dbm);
     }
@@ -554,6 +563,7 @@ static PyMethodDef gdbm_methods[] = {
 
 static PyType_Slot gdbmtype_spec_slots[] = {
     {Py_tp_dealloc, gdbm_dealloc},
+    {Py_tp_traverse, gdbm_traverse},
     {Py_tp_methods, gdbm_methods},
     {Py_sq_contains, gdbm_contains},
     {Py_mp_length, gdbm_length},
@@ -570,7 +580,8 @@ static PyType_Spec gdbmtype_spec = {
     // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
     .slots = gdbmtype_spec_slots,
 };
 

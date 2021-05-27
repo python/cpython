@@ -102,12 +102,13 @@ new_previous_version(PyTypeObject *ucd_type,
                      Py_UCS4 (*normalization)(Py_UCS4))
 {
     PreviousDBVersion *self;
-    self = PyObject_New(PreviousDBVersion, ucd_type);
+    self = PyObject_GC_New(PreviousDBVersion, ucd_type);
     if (self == NULL)
         return NULL;
     self->name = name;
     self->getrecord = getrecord;
     self->normalization = normalization;
+    PyObject_GC_Track(self);
     return (PyObject*)self;
 }
 
@@ -1435,16 +1436,25 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
+static int
+ucd_traverse(PreviousDBVersion *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 ucd_dealloc(PreviousDBVersion *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Free(self);
+    PyObject_GC_UnTrack(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
 static PyType_Slot ucd_type_slots[] = {
     {Py_tp_dealloc, ucd_dealloc},
+    {Py_tp_traverse, ucd_traverse},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, unicodedata_functions},
     {Py_tp_members, DB_members},
@@ -1454,7 +1464,8 @@ static PyType_Slot ucd_type_slots[] = {
 static PyType_Spec ucd_type_spec = {
     .name = "unicodedata.UCD",
     .basicsize = sizeof(PreviousDBVersion),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
     .slots = ucd_type_slots
 };
 
