@@ -1987,9 +1987,9 @@ def skip_if_broken_multiprocessing_synchronize():
 
 def check_disallow_instantiation(testcase, tp, *args, **kwds):
     """
-    Helper for testing types with the Py_TPFLAGS_DISALLOW_INSTANTIATION flag.
+    Check that given type cannot be instantiated using *args and **kwds.
 
-    See bpo-43916.
+    See bpo-43916: Add Py_TPFLAGS_DISALLOW_INSTANTIATION type flag.
     """
     mod = tp.__module__
     name = tp.__name__
