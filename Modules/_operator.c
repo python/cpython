@@ -1024,8 +1024,8 @@ itemgetter_dealloc(itemgetterobject *ig)
 static int
 itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 {
-    Py_VISIT(ig->item);
     Py_VISIT(Py_TYPE(ig));
+    Py_VISIT(ig->item);
     return 0;
 }
 
