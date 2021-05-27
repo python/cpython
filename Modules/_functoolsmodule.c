@@ -766,8 +766,8 @@ static void
 lru_list_elem_dealloc(lru_list_elem *link)
 {
     PyTypeObject *tp = Py_TYPE(link);
-    Py_CLEAR(link->key);
-    Py_CLEAR(link->result);
+    Py_XDECREF(link->key);
+    Py_XDECREF(link->result);
     tp->tp_free(link);
     Py_DECREF(tp);
 }
