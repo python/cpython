@@ -523,8 +523,9 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *arg = NULL;
     _randomstate *state = _randomstate_type(type);
 
-    if (type == (PyTypeObject*)state->Random_Type &&
-        !_PyArg_NoKeywords("Random()", kwds)) {
+    if ((type == (PyTypeObject*)state->Random_Type ||
+         type->tp_init == ((PyTypeObject*)state->Random_Type)->tp_init) &&
+        !_PyArg_NoKeywords("Random", kwds)) {
         return NULL;
     }
 
