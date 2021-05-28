@@ -1316,7 +1316,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     /* Preserve the existing exception */
     PyObject *exc_type, *exc_value, *exc_tb;
     PyObject *value;
-    Py_ssize_t ix;
+    Py_ssize_t ix; (void)ix;
 
     _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
     ix = _Py_dict_lookup(mp, key, hash, &value);
@@ -1374,7 +1374,7 @@ _PyDict_GetItemHint(PyDictObject *mp, PyObject *key,
 PyObject *
 _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 {
-    Py_ssize_t ix;
+    Py_ssize_t ix; (void)ix;
     PyDictObject *mp = (PyDictObject *)op;
     PyObject *value;
 
@@ -1395,7 +1395,7 @@ _PyDict_GetItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
 PyObject *
 PyDict_GetItemWithError(PyObject *op, PyObject *key)
 {
-    Py_ssize_t ix;
+    Py_ssize_t ix; (void)ix;
     Py_hash_t hash;
     PyDictObject*mp = (PyDictObject *)op;
     PyObject *value;
