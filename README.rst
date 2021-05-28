@@ -120,7 +120,7 @@ Note also that any output, both stdout and stderr, that may appear at this step
 is suppressed.
 
 The final step is to build the actual interpreter, using the information
-collected from the instrumented one.  The result will be a Python binary
+collected from the instrumented one.  The end result will be a Python binary
 that is optimized; suitable for distribution or production installation.
 
 
