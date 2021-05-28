@@ -416,7 +416,7 @@ calculate_log2_keysize(Py_ssize_t minsize)
     minsize = (minsize | PyDict_MINSIZE) - 1;
     unsigned long msb;
     _BitScanReverse64(&msb, (uint64_t)minsize);
-    return msb + 1;
+    return (uint8_t)(msb + 1);
 #else
     uint8_t log2_size;
     for (log2_size = PyDict_LOG_MINSIZE;
@@ -600,7 +600,7 @@ new_keys_object(uint8_t log2_size)
     dk->dk_kind = DICT_KEYS_UNICODE;
     dk->dk_nentries = 0;
     dk->dk_version = 0;
-    memset(&dk->dk_indices[0], 0xff, es * (1<<log2_size));
+    memset(&dk->dk_indices[0], 0xff, es<<log2_size);
     memset(DK_ENTRIES(dk), 0, sizeof(PyDictKeyEntry) * usable);
     return dk;
 }
