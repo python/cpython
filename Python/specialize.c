@@ -71,8 +71,8 @@ oparg_from_instruction_and_update_offset(int index, int opcode, int original_opa
     int oparg = oparg_from_offset_and_index(*cache_offset, index);
     assert(*cache_offset == offset_from_oparg_and_index(oparg, index));
     if (oparg < 0) {
-        *cache_offset = index/2;
         oparg = 0;
+        *cache_offset = offset_from_oparg_and_index(oparg, index);
     }
     else if (oparg > 255) {
         return -1;
