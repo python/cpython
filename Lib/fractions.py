@@ -21,17 +21,17 @@ _PyHASH_MODULUS = sys.hash_info.modulus
 _PyHASH_INF = sys.hash_info.inf
 
 _RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                           # optional whitespace at the start, then
-    (?P<sign>[-+]?)                 # an optional sign, then
-    (?=\d|\.\d)                     # lookahead for digit or .digit
-    (?P<num>[_\d]*)                 # numerator (possibly empty)
-    (?:                             # followed by
-       (?:/(?P<denom>\d[_\d]*))?    # an optional denominator
-    |                               # or
-       (?:\.(?P<decimal>[_\d]*))?   # an optional fractional part
-       (?:E(?P<exp>[-+]?[_\d]+))?   # and optional exponent
+    \A\s*                                    # optional whitespace at the start,
+    (?P<sign>[-+]?)                          # an optional sign, then
+    (?=\d|\.\d)                              # lookahead for digit or .digit
+    (?P<num>((\d+_?)*\d|\d*))                # numerator (possibly empty)
+    (?:                                      # followed by
+       (?:/(?P<den>(\d+_?)*\d+))?            # an optional denominator
+    |                                        # or
+       (?:\.(?P<decimal>((\d+_?)*\d|\d*)))?  # an optional fractional part
+       (?:E(?P<exp>[-+]?(\d+_?)*\d+))?       # and optional exponent
     )
-    \s*\Z                           # and optional whitespace to finish
+    \s*\Z                                    # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -114,32 +114,28 @@ class Fraction(numbers.Rational):
                 if m is None:
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      numerator)
-                try:
-                    numerator_copy = numerator
-                    numerator = int(m.group('num') or '0')
-                    denom = m.group('denom')
-                    if denom:
-                        denominator = int(denom)
-                    else:
-                        denominator = 1
-                        decimal = m.group('decimal')
-                        if decimal:
-                            decimal = int(decimal)
-                            scale = 10**len(str(decimal))
-                            numerator = numerator * scale + decimal
-                            denominator *= scale
-                        exp = m.group('exp')
-                        if exp:
-                            exp = int(exp)
-                            if exp >= 0:
-                                numerator *= 10**exp
-                            else:
-                                denominator *= 10**-exp
-                    if m.group('sign') == '-':
-                        numerator = -numerator
-                except ValueError:
-                    raise ValueError('Invalid literal for Fraction: %r' %
-                                     numerator_copy)
+                numerator = int(m.group('num') or '0')
+                denominator = m.group('den')
+                if denominator:
+                    denominator = int(denominator)
+                else:
+                    denominator = 1
+                    decimal = m.group('decimal')
+                    if decimal:
+                        decimal = int(decimal)
+                        scale = 10**len(str(decimal))
+                        numerator = numerator * scale + decimal
+                        denominator *= scale
+                    exp = m.group('exp')
+                    if exp:
+                        exp = int(exp)
+                        if exp >= 0:
+                            numerator *= 10**exp
+                        else:
+                            denominator *= 10**-exp
+                if m.group('sign') == '-':
+                    numerator = -numerator
+
             else:
                 raise TypeError("argument should be a string "
                                 "or a Rational instance")
