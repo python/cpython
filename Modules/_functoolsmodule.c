@@ -763,20 +763,10 @@ typedef struct lru_list_elem {
     PyObject *key, *result;
 } lru_list_elem;
 
-static int
-lru_list_elem_traverse(lru_list_elem *link, visitproc visit, void *arg)
-{
-    Py_VISIT(link->key);
-    Py_VISIT(link->result);
-    Py_VISIT(Py_TYPE(link));
-    return 0;
-}
-
 static void
 lru_list_elem_dealloc(lru_list_elem *link)
 {
     PyTypeObject *tp = Py_TYPE(link);
-    PyObject_GC_UnTrack(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
     tp->tp_free(link);
@@ -785,15 +775,13 @@ lru_list_elem_dealloc(lru_list_elem *link)
 
 static PyType_Slot lru_list_elem_type_slots[] = {
     {Py_tp_dealloc, lru_list_elem_dealloc},
-    {Py_tp_traverse, lru_list_elem_traverse},
     {0, 0}
 };
 
 static PyType_Spec lru_list_elem_type_spec = {
     .name = "functools._lru_list_elem",
     .basicsize = sizeof(lru_list_elem),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-              Py_TPFLAGS_HAVE_GC),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = lru_list_elem_type_slots
 };
 
@@ -1058,8 +1046,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         self->root.next == &self->root)
     {
         /* Cache is not full, so put the result in a new link */
-        link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
-                                                self->lru_list_elem_type);
+        link = (lru_list_elem *)PyObject_New(lru_list_elem,
+                                             self->lru_list_elem_type);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -1069,7 +1057,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         link->hash = hash;
         link->key = key;
         link->result = result;
-        PyObject_GC_Track(link);
         /* What is really needed here is a SetItem variant with a "no clobber"
            option.  If the __eq__ call triggers a reentrant call that adds
            this same key, then this setitem call will update the cache dict
@@ -1359,7 +1346,9 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
-        Py_VISIT(link);
+        Py_VISIT(link->key);
+        Py_VISIT(link->result);
+        Py_VISIT(Py_TYPE(link));
         link = next;
     }
     Py_VISIT(self->cache);
