@@ -34,6 +34,8 @@ class Bdb:
         self.fncache = {}
         self.frame_returning = None
 
+        self._load_breaks()
+
     def canonic(self, filename):
         """Return canonical form of filename.
 
@@ -117,7 +119,7 @@ class Bdb:
         """Invoke user function and return trace function for call event.
 
         If the debugger stops on this function call, invoke
-        self.user_call(). Raise BbdQuit if self.quitting is set.
+        self.user_call(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
         """
         # XXX 'arg' is no longer used
@@ -365,6 +367,12 @@ class Bdb:
     # Call self.get_*break*() to see the breakpoints or better
     # for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
 
+    def _add_to_breaks(self, filename, lineno):
+        """Add breakpoint to breaks, if not already there."""
+        bp_linenos = self.breaks.setdefault(filename, [])
+        if lineno not in bp_linenos:
+            bp_linenos.append(lineno)
+
     def set_break(self, filename, lineno, temporary=False, cond=None,
                   funcname=None):
         """Set a new breakpoint for filename:lineno.
@@ -377,11 +385,20 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
-        list = self.breaks.setdefault(filename, [])
-        if lineno not in list:
-            list.append(lineno)
+        self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
         return None
+
+    def _load_breaks(self):
+        """Apply all breakpoints (set in other instances) to this one.
+
+        Populates this instance's breaks list from the Breakpoint class's
+        list, which can have breakpoints set by another Bdb instance. This
+        is necessary for interactive sessions to keep the breakpoints
+        active across multiple calls to run().
+        """
+        for (filename, lineno) in Breakpoint.bplist.keys():
+            self._add_to_breaks(filename, lineno)
 
     def _prune_breaks(self, filename, lineno):
         """Prune breakpoints for filename:lineno.
@@ -548,14 +565,7 @@ class Bdb:
             s += frame.f_code.co_name
         else:
             s += "<lambda>"
-        if '__args__' in frame.f_locals:
-            args = frame.f_locals['__args__']
-        else:
-            args = None
-        if args:
-            s += reprlib.repr(args)
-        else:
-            s += '()'
+        s += '()'
         if '__return__' in frame.f_locals:
             rv = frame.f_locals['__return__']
             s += '->'
@@ -687,6 +697,12 @@ class Breakpoint:
             self.bplist[file, line].append(self)
         else:
             self.bplist[file, line] = [self]
+
+    @staticmethod
+    def clearBreakpoints():
+        Breakpoint.next = 1
+        Breakpoint.bplist = {}
+        Breakpoint.bpbynumber = [None]
 
     def deleteMe(self):
         """Delete the breakpoint from the list associated to a file:line.

@@ -38,6 +38,42 @@ float___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return float___trunc___impl(self);
 }
 
+PyDoc_STRVAR(float___floor____doc__,
+"__floor__($self, /)\n"
+"--\n"
+"\n"
+"Return the floor as an Integral.");
+
+#define FLOAT___FLOOR___METHODDEF    \
+    {"__floor__", (PyCFunction)float___floor__, METH_NOARGS, float___floor____doc__},
+
+static PyObject *
+float___floor___impl(PyObject *self);
+
+static PyObject *
+float___floor__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return float___floor___impl(self);
+}
+
+PyDoc_STRVAR(float___ceil____doc__,
+"__ceil__($self, /)\n"
+"--\n"
+"\n"
+"Return the ceiling as an Integral.");
+
+#define FLOAT___CEIL___METHODDEF    \
+    {"__ceil__", (PyCFunction)float___ceil__, METH_NOARGS, float___ceil____doc__},
+
+static PyObject *
+float___ceil___impl(PyObject *self);
+
+static PyObject *
+float___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return float___ceil___impl(self);
+}
+
 PyDoc_STRVAR(float___round____doc__,
 "__round__($self, ndigits=None, /)\n"
 "--\n"
@@ -170,7 +206,7 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyObject *x = _PyLong_Zero;
+    PyObject *x = NULL;
 
     if ((type == &PyFloat_Type) &&
         !_PyArg_NoKeywords("float", kwargs)) {
@@ -351,4 +387,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1676433b9f04fbc9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb079c3e130e4ce6 input=a9049054013a1b77]*/

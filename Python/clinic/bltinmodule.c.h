@@ -134,11 +134,6 @@ builtin_chr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    if (PyFloat_Check(arg)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     i = _PyLong_AsInt(arg);
     if (i == -1 && PyErr_Occurred()) {
         goto exit;
@@ -216,11 +211,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[3]) {
-        if (PyFloat_Check(args[3])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         flags = _PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
@@ -230,11 +220,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[4]) {
-        if (PyFloat_Check(args[4])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         dont_inherit = _PyLong_AsInt(args[4]);
         if (dont_inherit == -1 && PyErr_Occurred()) {
             goto exit;
@@ -244,11 +229,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        if (PyFloat_Check(args[5])) {
-            PyErr_SetString(PyExc_TypeError,
-                            "integer argument expected, got float" );
-            goto exit;
-        }
         optimize = _PyLong_AsInt(args[5]);
         if (optimize == -1 && PyErr_Occurred()) {
             goto exit;
@@ -260,11 +240,6 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
-    }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     feature_version = _PyLong_AsInt(args[6]);
     if (feature_version == -1 && PyErr_Occurred()) {
@@ -555,6 +530,50 @@ PyDoc_STRVAR(builtin_hex__doc__,
 #define BUILTIN_HEX_METHODDEF    \
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
+PyDoc_STRVAR(builtin_aiter__doc__,
+"aiter($module, async_iterable, /)\n"
+"--\n"
+"\n"
+"Return an AsyncIterator for an AsyncIterable object.");
+
+#define BUILTIN_AITER_METHODDEF    \
+    {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
+
+PyDoc_STRVAR(builtin_anext__doc__,
+"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return the next item from the async iterator.");
+
+#define BUILTIN_ANEXT_METHODDEF    \
+    {"anext", (PyCFunction)(void(*)(void))builtin_anext, METH_FASTCALL, builtin_anext__doc__},
+
+static PyObject *
+builtin_anext_impl(PyObject *module, PyObject *aiterator,
+                   PyObject *default_value);
+
+static PyObject *
+builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *aiterator;
+    PyObject *default_value = NULL;
+
+    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
+        goto exit;
+    }
+    aiterator = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    default_value = args[1];
+skip_optional:
+    return_value = builtin_anext_impl(module, aiterator, default_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_len__doc__,
 "len($module, obj, /)\n"
 "--\n"
@@ -825,11 +844,11 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
 "issubclass($module, cls, class_or_tuple, /)\n"
 "--\n"
 "\n"
-"Return whether \'cls\' is a derived from another class or is the same class.\n"
+"Return whether \'cls\' is derived from another class or is the same class.\n"
 "\n"
 "A tuple, as in ``issubclass(x, (A, B, ...))``, may be given as the target to\n"
 "check against. This is equivalent to ``issubclass(x, A) or issubclass(x, B)\n"
-"or ...`` etc.");
+"or ...``.");
 
 #define BUILTIN_ISSUBCLASS_METHODDEF    \
     {"issubclass", (PyCFunction)(void(*)(void))builtin_issubclass, METH_FASTCALL, builtin_issubclass__doc__},
@@ -855,4 +874,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29686a89b739d600 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da9ae459e9233259 input=a9049054013a1b77]*/

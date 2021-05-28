@@ -130,7 +130,6 @@ import sys
 import threading
 import unittest
 import weakref
-import opcode
 try:
     import ctypes
 except ImportError:
@@ -228,6 +227,7 @@ class CodeTest(unittest.TestCase):
                         co.co_name,
                         co.co_firstlineno,
                         co.co_lnotab,
+                        co.co_exceptiontable,
                         co.co_freevars,
                         co.co_cellvars)
 
@@ -240,6 +240,7 @@ class CodeTest(unittest.TestCase):
         # different co_name, co_varnames, co_consts
         def func2():
             y = 2
+            z = 3
             return y
         code2 = func2.__code__
 
@@ -247,23 +248,70 @@ class CodeTest(unittest.TestCase):
             ("co_argcount", 0),
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
-            ("co_nlocals", 0),
+            ("co_nlocals", 1),
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
             ("co_consts", code2.co_consts),
             ("co_names", ("myname",)),
-            ("co_varnames", code2.co_varnames),
+            ("co_varnames", ('spam',)),
             ("co_freevars", ("freevar",)),
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
             ("co_name", "newname"),
-            ("co_lnotab", code2.co_lnotab),
+            ("co_linetable", code2.co_linetable),
         ):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+
+        new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+
+    def test_nlocals_mismatch(self):
+        def func():
+            x = 1
+            return x
+        co = func.__code__
+        assert co.co_nlocals > 0;
+
+        # First we try the constructor.
+        CodeType = type(co)
+        for diff in (-1, 1):
+            with self.assertRaises(ValueError):
+                CodeType(co.co_argcount,
+                         co.co_posonlyargcount,
+                         co.co_kwonlyargcount,
+                         # This is the only change.
+                         co.co_nlocals + diff,
+                         co.co_stacksize,
+                         co.co_flags,
+                         co.co_code,
+                         co.co_consts,
+                         co.co_names,
+                         co.co_varnames,
+                         co.co_filename,
+                         co.co_name,
+                         co.co_firstlineno,
+                         co.co_lnotab,
+                         co.co_exceptiontable,
+                         co.co_freevars,
+                         co.co_cellvars,
+                         )
+        # Then we try the replace method.
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals - 1)
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals + 1)
+
+    def test_empty_linetable(self):
+        def func():
+            pass
+        new_code = code = func.__code__.replace(co_linetable=b'')
+        self.assertEqual(list(new_code.co_lines()), [])
 
 
 def isinterned(s):
@@ -433,42 +481,6 @@ if check_impl_detail(cpython=True) and ctypes is not None:
             tt.start()
             tt.join()
             self.assertEqual(LAST_FREED, 500)
-
-        @cpython_only
-        def test_clean_stack_on_return(self):
-
-            def f(x):
-                return x
-
-            code = f.__code__
-            ct = type(f.__code__)
-
-            # Insert an extra LOAD_FAST, this duplicates the value of
-            # 'x' in the stack, leaking it if the frame is not properly
-            # cleaned up upon exit.
-
-            bytecode = list(code.co_code)
-            bytecode.insert(-2, opcode.opmap['LOAD_FAST'])
-            bytecode.insert(-2, 0)
-
-            c = ct(code.co_argcount, code.co_posonlyargcount,
-                   code.co_kwonlyargcount, code.co_nlocals, code.co_stacksize+1,
-                   code.co_flags, bytes(bytecode),
-                   code.co_consts, code.co_names, code.co_varnames,
-                   code.co_filename, code.co_name, code.co_firstlineno,
-                   code.co_lnotab, code.co_freevars, code.co_cellvars)
-            new_function = type(f)(c, f.__globals__, 'nf', f.__defaults__, f.__closure__)
-
-            class Var:
-                pass
-            the_object = Var()
-            var = weakref.ref(the_object)
-
-            new_function(the_object)
-
-            # Check if the_object is leaked
-            del the_object
-            assert var() is None
 
 
 def test_main(verbose=None):

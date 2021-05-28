@@ -11,15 +11,15 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 import re
 
-from tkinter import (Toplevel, Listbox, Text, Scale, Canvas,
+from tkinter import (Toplevel, Listbox, Scale, Canvas,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
                      HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
 from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
-import tkinter.colorchooser as tkColorChooser
-import tkinter.font as tkFont
+from tkinter import colorchooser
+import tkinter.font as tkfont
 from tkinter import messagebox
 
 from idlelib.config import idleConf, ConfigChanges
@@ -67,7 +67,6 @@ class ConfigDialog(Toplevel):
         if not _utest:
             self.withdraw()
 
-        self.configure(borderwidth=5)
         self.title(title or 'IDLE Preferences')
         x = parent.winfo_rootx() + 20
         y = parent.winfo_rooty() + (30 if not _htest else 150)
@@ -97,6 +96,7 @@ class ConfigDialog(Toplevel):
         """Create and place widgets for tabbed dialog.
 
         Widgets Bound to self:
+            frame: encloses all other widgets
             note: Notebook
             highpage: HighPage
             fontpage: FontPage
@@ -109,7 +109,9 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.note = note = Notebook(self)
+        self.frame = frame = Frame(self, padding="5px")
+        self.frame.grid(sticky="nwes")
+        self.note = note = Notebook(frame)
         self.highpage = HighPage(note)
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
@@ -148,18 +150,20 @@ class ConfigDialog(Toplevel):
             padding_args = {}
         else:
             padding_args = {'padding': (6, 3)}
-        outer = Frame(self, padding=2)
-        buttons = Frame(outer, padding=2)
+        outer = Frame(self.frame, padding=2)
+        buttons_frame = Frame(outer, padding=2)
+        self.buttons = {}
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
-                   **padding_args).pack(side=LEFT, padx=5)
+            self.buttons[txt] = Button(buttons_frame, text=txt, command=cmd,
+                       takefocus=FALSE, **padding_args)
+            self.buttons[txt].pack(side=LEFT, padx=5)
         # Add space above buttons.
         Frame(outer, height=2, borderwidth=0).pack(side=TOP)
-        buttons.pack(side=BOTTOM)
+        buttons_frame.pack(side=BOTTOM)
         return outer
 
     def ok(self):
@@ -191,6 +195,7 @@ class ConfigDialog(Toplevel):
         Methods:
             destroy: inherited
         """
+        changes.clear()
         self.destroy()
 
     def destroy(self):
@@ -204,13 +209,12 @@ class ConfigDialog(Toplevel):
 
         Attributes accessed:
             note
-
         Methods:
             view_text: Method from textview module.
         """
         page = self.note.tab(self.note.select(), option='text').strip()
         view_text(self, title='Help for IDLE preferences',
-                 text=help_common+help_pages.get(page, ''))
+                  contents=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
         """Remove current key bindings.
@@ -604,9 +608,8 @@ class FontPage(Frame):
         font_size = configured_font[1]
         font_bold  = configured_font[2]=='bold'
 
-        # Set editor font selection list and font_name.
-        fonts = list(tkFont.families(self))
-        fonts.sort()
+        # Set sorted no-duplicate editor font selection list and font_name.
+        fonts = sorted(set(tkfont.families(self)))
         for font in fonts:
             self.fontlist.insert(END, font)
         self.font_name.set(font_name)
@@ -660,7 +663,7 @@ class FontPage(Frame):
         Updates font_sample and highlight page highlight_sample.
         """
         font_name = self.font_name.get()
-        font_weight = tkFont.BOLD if self.font_bold.get() else tkFont.NORMAL
+        font_weight = tkfont.BOLD if self.font_bold.get() else tkfont.NORMAL
         new_font = (font_name, self.font_size.get(), font_weight)
         self.font_sample['font'] = new_font
         self.highlight_sample['font'] = new_font
@@ -686,7 +689,7 @@ class HighPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
-        self.cd = master.master
+        self.cd = master.winfo_toplevel()
         self.style = Style(master)
         self.create_page_highlight()
         self.load_theme_cfg()
@@ -851,6 +854,7 @@ class HighPage(Frame):
         text.configure(
                 font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
+        # Prevent perhaps invisible selection of word or slice.
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
@@ -1096,7 +1100,7 @@ class HighPage(Frame):
         target = self.highlight_target.get()
         prev_color = self.style.lookup(self.frame_color_set['style'],
                                        'background')
-        rgbTuplet, color_string = tkColorChooser.askcolor(
+        rgbTuplet, color_string = colorchooser.askcolor(
                 parent=self, title='Pick new color for : '+target,
                 initialcolor=prev_color)
         if color_string and (color_string != prev_color):
@@ -1283,8 +1287,7 @@ class HighPage(Frame):
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
         """
-        if not idleConf.userCfg['highlight'].has_section(theme_name):
-            idleConf.userCfg['highlight'].add_section(theme_name)
+        idleConf.userCfg['highlight'].AddSection(theme_name)
         for element in theme:
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
@@ -1345,7 +1348,7 @@ class KeysPage(Frame):
 
     def __init__(self, master):
         super().__init__(master)
-        self.cd = master.master
+        self.cd = master.winfo_toplevel()
         self.create_page_keys()
         self.load_key_cfg()
 
@@ -1729,8 +1732,7 @@ class KeysPage(Frame):
         keyset_name - string, the name of the new key set
         keyset - dictionary containing the new keybindings
         """
-        if not idleConf.userCfg['keys'].has_section(keyset_name):
-            idleConf.userCfg['keys'].add_section(keyset_name)
+        idleConf.userCfg['keys'].AddSection(keyset_name)
         for event in keyset:
             value = keyset[event]
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)
@@ -2314,7 +2316,15 @@ display when Code Context is turned on for an editor window.
 
 Shell Preferences: Auto-Squeeze Min. Lines is the minimum number of lines
 of output to automatically "squeeze".
-'''
+''',
+    'Extensions': '''
+ZzDummy: This extension is provided as an example for how to create and
+use an extension.  Enable indicates whether the extension is active or
+not; likewise enable_editor and enable_shell indicate which windows it
+will be active on.  For this extension, z-text is the text that will be
+inserted at or removed from the beginning of the lines of selected text,
+or the current line if no selection.
+''',
 }
 
 

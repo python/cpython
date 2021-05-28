@@ -7,8 +7,10 @@ extern "C" {
 
 /* Helpers for hash functions */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
+PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
+PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
+// Similar to _Py_HashPointer(), but don't replace -1 with -2
+PyAPI_FUNC(Py_hash_t) _Py_HashPointerRaw(const void*);
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 #endif
 
@@ -27,7 +29,6 @@ PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 
 #define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
 #define _PyHASH_INF 314159
-#define _PyHASH_NAN 0
 #define _PyHASH_IMAG _PyHASH_MULTIPLIER
 
 
@@ -75,7 +76,6 @@ typedef union {
     } expat;
 } _Py_HashSecret_t;
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
-#endif
 
 #ifdef Py_DEBUG
 PyAPI_DATA(int) _Py_HashSecret_Initialized;
@@ -83,7 +83,6 @@ PyAPI_DATA(int) _Py_HashSecret_Initialized;
 
 
 /* hash function definition */
-#ifndef Py_LIMITED_API
 typedef struct {
     Py_hash_t (*const hash)(const void *, Py_ssize_t);
     const char *name;

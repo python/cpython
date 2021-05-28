@@ -4,6 +4,8 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>               // va_list
+
 /* Error handling definitions */
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
@@ -21,14 +23,12 @@ PyAPI_FUNC(void) PyErr_GetExcInfo(PyObject **, PyObject **, PyObject **);
 PyAPI_FUNC(void) PyErr_SetExcInfo(PyObject *, PyObject *, PyObject *);
 #endif
 
-/* Defined in Python/pylifecycle.c */
-PyAPI_FUNC(void) _Py_NO_RETURN Py_FatalError(const char *message);
+/* Defined in Python/pylifecycle.c
 
-#if defined(Py_DEBUG) || defined(Py_LIMITED_API)
-#define _PyErr_OCCURRED() PyErr_Occurred()
-#else
-#define _PyErr_OCCURRED() (PyThreadState_GET()->curexc_type)
-#endif
+   The Py_FatalError() function is replaced with a macro which logs
+   automatically the name of the current function, unless the Py_LIMITED_API
+   macro is defined. */
+PyAPI_FUNC(void) _Py_NO_RETURN Py_FatalError(const char *message);
 
 /* Error testing and normalization */
 PyAPI_FUNC(int) PyErr_GivenExceptionMatches(PyObject *, PyObject *);
@@ -54,11 +54,11 @@ PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
      PyType_FastSubclass((PyTypeObject*)(x), Py_TPFLAGS_BASE_EXC_SUBCLASS))
 
 #define PyExceptionInstance_Check(x)                    \
-    PyType_FastSubclass((x)->ob_type, Py_TPFLAGS_BASE_EXC_SUBCLASS)
+    PyType_FastSubclass(Py_TYPE(x), Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
 PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 
-#define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))
+#define PyExceptionInstance_Class(x) ((PyObject*)Py_TYPE(x))
 
 
 /* Predefined exceptions */
@@ -146,6 +146,7 @@ PyAPI_DATA(PyObject *) PyExc_FutureWarning;
 PyAPI_DATA(PyObject *) PyExc_ImportWarning;
 PyAPI_DATA(PyObject *) PyExc_UnicodeWarning;
 PyAPI_DATA(PyObject *) PyExc_BytesWarning;
+PyAPI_DATA(PyObject *) PyExc_EncodingWarning;
 PyAPI_DATA(PyObject *) PyExc_ResourceWarning;
 
 
@@ -224,6 +225,9 @@ PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 /* In signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
+PyAPI_FUNC(int) PyErr_SetInterruptEx(int signum);
+#endif
 
 /* Support for adding program text to SyntaxErrors */
 PyAPI_FUNC(void) PyErr_SyntaxLocation(
@@ -303,21 +307,6 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
     const char *reason          /* UTF-8 encoded string */
     );
 
-/* These APIs aren't really part of the error implementation, but
-   often needed to format error messages; the native C lib APIs are
-   not available on all platforms, which is why we provide emulations
-   for those platforms in Python/mysnprintf.c,
-   WARNING:  The return value of snprintf varies across platforms; do
-   not rely on any particular behavior; eventually the C99 defn may
-   be reliable.
-*/
-#if defined(MS_WIN32) && !defined(HAVE_SNPRINTF)
-# define HAVE_SNPRINTF
-# define snprintf _snprintf
-# define vsnprintf _vsnprintf
-#endif
-
-#include <stdarg.h>
 PyAPI_FUNC(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
                         Py_GCC_ATTRIBUTE((format(printf, 3, 4)));
 PyAPI_FUNC(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)

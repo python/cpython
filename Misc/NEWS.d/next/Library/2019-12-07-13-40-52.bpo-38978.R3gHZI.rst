@@ -1,2 +1,0 @@
-Implement ``__class_getitem__`` on asyncio objects (Future, Task, Queue).
-Patch by Batuhan Taskaya.

@@ -17,6 +17,7 @@ import sys
 
 from tempfile import TemporaryFile
 
+from test.support import os_helper
 from test.support import TESTFN, requires_zlib
 
 TESTFN2 = TESTFN + "2"
@@ -73,7 +74,7 @@ class TestsWithSourceFile(unittest.TestCase):
             self.assertFalse(f.closed)
         self.zipTest(TESTFN2, zipfile.ZIP_STORED)
 
-    @requires_zlib
+    @requires_zlib()
     def testDeflated(self):
         # Try the temp file first.  If we do TESTFN2 first, then it hogs
         # gigabytes of disk space for the duration of the test.
@@ -138,8 +139,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(content, "%d" % (i**3 % 57))
 
     def tearDown(self):
-        support.unlink(TESTFN)
-        support.unlink(TESTFN2)
+        os_helper.unlink(TESTFN)
+        os_helper.unlink(TESTFN2)
 
 if __name__ == "__main__":
     unittest.main()

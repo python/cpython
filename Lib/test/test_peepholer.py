@@ -1,4 +1,5 @@
 import dis
+from itertools import combinations, product
 import unittest
 
 from test.support.bytecode_helper import BytecodeTestCase
@@ -65,14 +66,14 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
-        for line, cmp_op in (
-            ('not a is b', 'is not',),
-            ('not a in b', 'not in',),
-            ('not a is not b', 'is',),
-            ('not a not in b', 'in',),
+        for line, cmp_op, invert in (
+            ('not a is b', 'IS_OP', 1,),
+            ('not a is not b', 'IS_OP', 0,),
+            ('not a in b', 'CONTAINS_OP', 1,),
+            ('not a not in b', 'CONTAINS_OP', 0,),
             ):
             code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'COMPARE_OP', cmp_op)
+            self.assertInBytecode(code, cmp_op, invert)
             self.check_lnotab(code)
 
     def test_global_as_constant(self):
@@ -409,21 +410,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertLessEqual(len(returns), 6)
         self.check_lnotab(f)
 
-    def test_elim_jump_after_return2(self):
-        # Eliminate dead code: jumps immediately after returns can't be reached
-        def f(cond1, cond2):
-            while 1:
-                if cond1: return 4
-        self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        # There should be one jump for the while loop.
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'JUMP_ABSOLUTE']
-        self.assertEqual(len(returns), 1)
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
-        self.assertLessEqual(len(returns), 2)
-        self.check_lnotab(f)
-
     def test_make_function_doesnt_bail(self):
         def f():
             def g()->1+1:
@@ -495,6 +481,95 @@ class TestTranforms(BytecodeTestCase):
             return 6
         self.check_lnotab(f)
 
+    def test_assignment_idiom_in_comprehensions(self):
+        def listcomp():
+            return [y for x in a for y in [f(x)]]
+        self.assertEqual(count_instr_recursively(listcomp, 'FOR_ITER'), 1)
+        def setcomp():
+            return {y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(setcomp, 'FOR_ITER'), 1)
+        def dictcomp():
+            return {y: y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(dictcomp, 'FOR_ITER'), 1)
+        def genexpr():
+            return (y for x in a for y in [f(x)])
+        self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
+
+    def test_format_combinations(self):
+        flags = '-+ #0'
+        testcases = [
+            *product(('', '1234', 'абвг'), 'sra'),
+            *product((1234, -1234), 'duioxX'),
+            *product((1234.5678901, -1234.5678901), 'duifegFEG'),
+            *product((float('inf'), -float('inf')), 'fegFEG'),
+        ]
+        width_precs = [
+            *product(('', '1', '30'), ('', '.', '.0', '.2')),
+            ('', '.40'),
+            ('30', '.40'),
+        ]
+        for value, suffix in testcases:
+            for width, prec in width_precs:
+                for r in range(len(flags) + 1):
+                    for spec in combinations(flags, r):
+                        fmt = '%' + ''.join(spec) + width + prec + suffix
+                        with self.subTest(fmt=fmt, value=value):
+                            s1 = fmt % value
+                            s2 = eval(f'{fmt!r} % (x,)', {'x': value})
+                            self.assertEqual(s2, s1, f'{fmt = }')
+
+    def test_format_misc(self):
+        def format(fmt, *values):
+            vars = [f'x{i+1}' for i in range(len(values))]
+            if len(vars) == 1:
+                args = '(' + vars[0] + ',)'
+            else:
+                args = '(' + ', '.join(vars) + ')'
+            return eval(f'{fmt!r} % {args}', dict(zip(vars, values)))
+
+        self.assertEqual(format('string'), 'string')
+        self.assertEqual(format('x = %s!', 1234), 'x = 1234!')
+        self.assertEqual(format('x = %d!', 1234), 'x = 1234!')
+        self.assertEqual(format('x = %x!', 1234), 'x = 4d2!')
+        self.assertEqual(format('x = %f!', 1234), 'x = 1234.000000!')
+        self.assertEqual(format('x = %s!', 1234.5678901), 'x = 1234.5678901!')
+        self.assertEqual(format('x = %f!', 1234.5678901), 'x = 1234.567890!')
+        self.assertEqual(format('x = %d!', 1234.5678901), 'x = 1234!')
+        self.assertEqual(format('x = %s%% %%%%', 1234), 'x = 1234% %%')
+        self.assertEqual(format('x = %s!', '%% %s'), 'x = %% %s!')
+        self.assertEqual(format('x = %s, y = %d', 12, 34), 'x = 12, y = 34')
+
+    def test_format_errors(self):
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s' % ()")
+        with self.assertRaisesRegex(TypeError,
+                    'not all arguments converted during string formatting'):
+            eval("'%s' % (x, y)", {'x': 1, 'y': 2})
+        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+            eval("'%s%' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(ValueError, 'incomplete format'):
+            eval("'%s%%%' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s%z' % (x,)", {'x': 1234})
+        with self.assertRaisesRegex(ValueError, 'unsupported format character'):
+            eval("'%s%z' % (x, 5)", {'x': 1234})
+        with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
+            eval("'%d' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
+            eval("'%x' % (x,)", {'x': 1234.56})
+        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+            eval("'%x' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
+            eval("'%f' % (x,)", {'x': '1234'})
+        with self.assertRaisesRegex(TypeError,
+                    'not enough arguments for format string'):
+            eval("'%s, %s' % (x, *y)", {'x': 1, 'y': []})
+        with self.assertRaisesRegex(TypeError,
+                    'not all arguments converted during string formatting'):
+            eval("'%s, %s' % (x, *y)", {'x': 1, 'y': [2, 3]})
+
 
 class TestBuglets(unittest.TestCase):
 
@@ -508,6 +583,12 @@ class TestBuglets(unittest.TestCase):
         with self.assertRaises(ValueError):
             f()
 
+    def test_bpo_42057(self):
+        for i in range(10):
+            try:
+                raise Exception
+            except Exception or Exception:
+                pass
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,7 +25,7 @@ typedef struct {
 
 static PyTypeObject Xxo_Type;
 
-#define XxoObject_Check(v)      (Py_TYPE(v) == &Xxo_Type)
+#define XxoObject_Check(v)      Py_IS_TYPE(v, &Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
@@ -44,7 +44,7 @@ static void
 Xxo_dealloc(XxoObject *self)
 {
     Py_XDECREF(self->x_attr);
-    PyObject_Del(self);
+    PyObject_Free(self);
 }
 
 static PyObject *

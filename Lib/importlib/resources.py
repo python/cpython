@@ -1,177 +1,113 @@
 import os
-import tempfile
+import io
 
-from . import abc as resources_abc
-from contextlib import contextmanager, suppress
-from importlib import import_module
+from . import _common
+from ._common import as_file, files
+from .abc import ResourceReader
+from contextlib import suppress
 from importlib.abc import ResourceLoader
+from importlib.machinery import ModuleSpec
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from types import ModuleType
-from typing import Iterable, Iterator, Optional, Set, Union   # noqa: F401
+from typing import ContextManager, Iterable, Union
 from typing import cast
 from typing.io import BinaryIO, TextIO
-from zipimport import ZipImportError
+from collections.abc import Sequence
+from functools import singledispatch
 
 
 __all__ = [
     'Package',
     'Resource',
+    'ResourceReader',
+    'as_file',
     'contents',
+    'files',
     'is_resource',
     'open_binary',
     'open_text',
     'path',
     'read_binary',
     'read_text',
-    ]
+]
 
 
 Package = Union[str, ModuleType]
 Resource = Union[str, os.PathLike]
 
 
-def _get_package(package) -> ModuleType:
-    """Take a package name or module object and return the module.
-
-    If a name, the module is imported.  If the passed or imported module
-    object is not a package, raise an exception.
-    """
-    if hasattr(package, '__spec__'):
-        if package.__spec__.submodule_search_locations is None:
-            raise TypeError('{!r} is not a package'.format(
-                package.__spec__.name))
-        else:
-            return package
-    else:
-        module = import_module(package)
-        if module.__spec__.submodule_search_locations is None:
-            raise TypeError('{!r} is not a package'.format(package))
-        else:
-            return module
-
-
-def _normalize_path(path) -> str:
-    """Normalize a path by ensuring it is a string.
-
-    If the resulting string contains path separators, an exception is raised.
-    """
-    parent, file_name = os.path.split(path)
-    if parent:
-        raise ValueError('{!r} must be only a file name'.format(path))
-    else:
-        return file_name
-
-
-def _get_resource_reader(
-        package: ModuleType) -> Optional[resources_abc.ResourceReader]:
-    # Return the package's loader if it's a ResourceReader.  We can't use
-    # a issubclass() check here because apparently abc.'s __subclasscheck__()
-    # hook wants to create a weak reference to the object, but
-    # zipimport.zipimporter does not support weak references, resulting in a
-    # TypeError.  That seems terrible.
-    spec = package.__spec__
-    if hasattr(spec.loader, 'get_resource_reader'):
-        return cast(resources_abc.ResourceReader,
-                    spec.loader.get_resource_reader(spec.name))
-    return None
-
-
-def _check_location(package):
-    if package.__spec__.origin is None or not package.__spec__.has_location:
-        raise FileNotFoundError(f'Package has no location {package!r}')
-
-
 def open_binary(package: Package, resource: Resource) -> BinaryIO:
     """Return a file-like object opened for binary reading of the resource."""
-    resource = _normalize_path(resource)
-    package = _get_package(package)
-    reader = _get_resource_reader(package)
+    resource = _common.normalize_path(resource)
+    package = _common.get_package(package)
+    reader = _common.get_resource_reader(package)
     if reader is not None:
         return reader.open_resource(resource)
-    _check_location(package)
-    absolute_package_path = os.path.abspath(package.__spec__.origin)
-    package_path = os.path.dirname(absolute_package_path)
-    full_path = os.path.join(package_path, resource)
-    try:
-        return open(full_path, mode='rb')
-    except OSError:
-        # Just assume the loader is a resource loader; all the relevant
-        # importlib.machinery loaders are and an AttributeError for
-        # get_data() will make it clear what is needed from the loader.
-        loader = cast(ResourceLoader, package.__spec__.loader)
-        data = None
-        if hasattr(package.__spec__.loader, 'get_data'):
-            with suppress(OSError):
-                data = loader.get_data(full_path)
-        if data is None:
-            package_name = package.__spec__.name
-            message = '{!r} resource not found in {!r}'.format(
-                resource, package_name)
-            raise FileNotFoundError(message)
-        else:
-            return BytesIO(data)
+    spec = cast(ModuleSpec, package.__spec__)
+    # Using pathlib doesn't work well here due to the lack of 'strict'
+    # argument for pathlib.Path.resolve() prior to Python 3.6.
+    if spec.submodule_search_locations is not None:
+        paths = spec.submodule_search_locations
+    elif spec.origin is not None:
+        paths = [os.path.dirname(os.path.abspath(spec.origin))]
+
+    for package_path in paths:
+        full_path = os.path.join(package_path, resource)
+        try:
+            return open(full_path, mode='rb')
+        except OSError:
+            # Just assume the loader is a resource loader; all the relevant
+            # importlib.machinery loaders are and an AttributeError for
+            # get_data() will make it clear what is needed from the loader.
+            loader = cast(ResourceLoader, spec.loader)
+            data = None
+            if hasattr(spec.loader, 'get_data'):
+                with suppress(OSError):
+                    data = loader.get_data(full_path)
+            if data is not None:
+                return BytesIO(data)
+
+    raise FileNotFoundError(f'{resource!r} resource not found in {spec.name!r}')
 
 
-def open_text(package: Package,
-              resource: Resource,
-              encoding: str = 'utf-8',
-              errors: str = 'strict') -> TextIO:
+def open_text(
+    package: Package,
+    resource: Resource,
+    encoding: str = 'utf-8',
+    errors: str = 'strict',
+) -> TextIO:
     """Return a file-like object opened for text reading of the resource."""
-    resource = _normalize_path(resource)
-    package = _get_package(package)
-    reader = _get_resource_reader(package)
-    if reader is not None:
-        return TextIOWrapper(reader.open_resource(resource), encoding, errors)
-    _check_location(package)
-    absolute_package_path = os.path.abspath(package.__spec__.origin)
-    package_path = os.path.dirname(absolute_package_path)
-    full_path = os.path.join(package_path, resource)
-    try:
-        return open(full_path, mode='r', encoding=encoding, errors=errors)
-    except OSError:
-        # Just assume the loader is a resource loader; all the relevant
-        # importlib.machinery loaders are and an AttributeError for
-        # get_data() will make it clear what is needed from the loader.
-        loader = cast(ResourceLoader, package.__spec__.loader)
-        data = None
-        if hasattr(package.__spec__.loader, 'get_data'):
-            with suppress(OSError):
-                data = loader.get_data(full_path)
-        if data is None:
-            package_name = package.__spec__.name
-            message = '{!r} resource not found in {!r}'.format(
-                resource, package_name)
-            raise FileNotFoundError(message)
-        else:
-            return TextIOWrapper(BytesIO(data), encoding, errors)
+    return TextIOWrapper(
+        open_binary(package, resource), encoding=encoding, errors=errors
+    )
 
 
 def read_binary(package: Package, resource: Resource) -> bytes:
     """Return the binary contents of the resource."""
-    resource = _normalize_path(resource)
-    package = _get_package(package)
     with open_binary(package, resource) as fp:
         return fp.read()
 
 
-def read_text(package: Package,
-              resource: Resource,
-              encoding: str = 'utf-8',
-              errors: str = 'strict') -> str:
+def read_text(
+    package: Package,
+    resource: Resource,
+    encoding: str = 'utf-8',
+    errors: str = 'strict',
+) -> str:
     """Return the decoded string of the resource.
 
     The decoding-related arguments have the same semantics as those of
     bytes.decode().
     """
-    resource = _normalize_path(resource)
-    package = _get_package(package)
     with open_text(package, resource, encoding, errors) as fp:
         return fp.read()
 
 
-@contextmanager
-def path(package: Package, resource: Resource) -> Iterator[Path]:
+def path(
+    package: Package,
+    resource: Resource,
+) -> 'ContextManager[Path]':
     """A context manager providing a file path object to the resource.
 
     If the resource does not already exist on its own on the file system,
@@ -180,39 +116,30 @@ def path(package: Package, resource: Resource) -> Iterator[Path]:
     raised if the file was deleted prior to the context manager
     exiting).
     """
-    resource = _normalize_path(resource)
-    package = _get_package(package)
-    reader = _get_resource_reader(package)
-    if reader is not None:
-        try:
-            yield Path(reader.resource_path(resource))
-            return
-        except FileNotFoundError:
-            pass
-    else:
-        _check_location(package)
-    # Fall-through for both the lack of resource_path() *and* if
-    # resource_path() raises FileNotFoundError.
-    package_directory = Path(package.__spec__.origin).parent
-    file_path = package_directory / resource
-    if file_path.exists():
-        yield file_path
-    else:
-        with open_binary(package, resource) as fp:
-            data = fp.read()
-        # Not using tempfile.NamedTemporaryFile as it leads to deeper 'try'
-        # blocks due to the need to close the temporary file to work on
-        # Windows properly.
-        fd, raw_path = tempfile.mkstemp()
-        try:
-            os.write(fd, data)
-            os.close(fd)
-            yield Path(raw_path)
-        finally:
-            try:
-                os.remove(raw_path)
-            except FileNotFoundError:
-                pass
+    reader = _common.get_resource_reader(_common.get_package(package))
+    return (
+        _path_from_reader(reader, _common.normalize_path(resource))
+        if reader
+        else _common.as_file(
+            _common.files(package).joinpath(_common.normalize_path(resource))
+        )
+    )
+
+
+def _path_from_reader(reader, resource):
+    return _path_from_resource_path(reader, resource) or _path_from_open_resource(
+        reader, resource
+    )
+
+
+def _path_from_resource_path(reader, resource):
+    with suppress(FileNotFoundError):
+        return Path(reader.resource_path(resource))
+
+
+def _path_from_open_resource(reader, resource):
+    saved = io.BytesIO(reader.open_resource(resource).read())
+    return _common._tempfile(saved.read, suffix=resource)
 
 
 def is_resource(package: Package, name: str) -> bool:
@@ -220,22 +147,15 @@ def is_resource(package: Package, name: str) -> bool:
 
     Directories are *not* resources.
     """
-    package = _get_package(package)
-    _normalize_path(name)
-    reader = _get_resource_reader(package)
+    package = _common.get_package(package)
+    _common.normalize_path(name)
+    reader = _common.get_resource_reader(package)
     if reader is not None:
         return reader.is_resource(name)
-    try:
-        package_contents = set(contents(package))
-    except (NotADirectoryError, FileNotFoundError):
-        return False
+    package_contents = set(contents(package))
     if name not in package_contents:
         return False
-    # Just because the given file_name lives as an entry in the package's
-    # contents doesn't necessarily mean it's a resource.  Directories are not
-    # resources, so let's try to find out if it's a directory or not.
-    path = Path(package.__spec__.origin).parent / name
-    return path.is_file()
+    return (_common.from_package(package) / name).is_file()
 
 
 def contents(package: Package) -> Iterable[str]:
@@ -245,15 +165,21 @@ def contents(package: Package) -> Iterable[str]:
     not considered resources.  Use `is_resource()` on each entry returned here
     to check if it is a resource or not.
     """
-    package = _get_package(package)
-    reader = _get_resource_reader(package)
+    package = _common.get_package(package)
+    reader = _common.get_resource_reader(package)
     if reader is not None:
-        return reader.contents()
-    # Is the package a namespace package?  By definition, namespace packages
-    # cannot have resources.  We could use _check_location() and catch the
-    # exception, but that's extra work, so just inline the check.
-    elif package.__spec__.origin is None or not package.__spec__.has_location:
-        return ()
-    else:
-        package_directory = Path(package.__spec__.origin).parent
-        return os.listdir(package_directory)
+        return _ensure_sequence(reader.contents())
+    transversable = _common.from_package(package)
+    if transversable.is_dir():
+        return list(item.name for item in transversable.iterdir())
+    return []
+
+
+@singledispatch
+def _ensure_sequence(iterable):
+    return list(iterable)
+
+
+@_ensure_sequence.register(Sequence)
+def _(iterable):
+    return iterable

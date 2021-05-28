@@ -1,5 +1,0 @@
-Prevent UnboundLocalError to pop up in parse_message_id
-
-parse_message_id() was improperly using a token defined inside an exception
-handler, which was raising `UnboundLocalError` on parsing an invalid value.
-Patch by Claudiu Popa.

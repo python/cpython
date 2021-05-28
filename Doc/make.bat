@@ -13,7 +13,7 @@ if not defined SPHINXBUILD (
     %PYTHON% -c "import sphinx" > nul 2> nul
     if errorlevel 1 (
         echo Installing sphinx with %PYTHON%
-        %PYTHON% -m pip install sphinx
+        %PYTHON% -m pip install sphinx==2.2.0
         if errorlevel 1 exit /B
     )
     set SPHINXBUILD=%PYTHON% -c "import sphinx.cmd.build, sys; sys.exit(sphinx.cmd.build.main())"
@@ -54,9 +54,9 @@ if not exist "%HTMLHELP%" (
 )
 :skiphhcsearch
 
-if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
+if not defined DISTVERSION for /f "usebackq" %%v in (`%PYTHON% tools/extensions/patchlevel.py`) do set DISTVERSION=%%v
 
-if "%BUILDDIR%" EQU "" set BUILDDIR=build
+if not defined BUILDDIR set BUILDDIR=build
 
 rem Targets that don't require sphinx-build
 if "%1" EQU "" goto help
@@ -131,7 +131,7 @@ if exist ..\Misc\NEWS (
     )
 )
 
-if NOT "%PAPER%" == "" (
+if defined PAPER (
     set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
 if "%1" EQU "htmlhelp" (

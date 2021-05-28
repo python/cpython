@@ -40,6 +40,9 @@ alternatively be passed to :func:`faulthandler.enable`.
 The module is implemented in C, so tracebacks can be dumped on a crash or when
 Python is deadlocked.
 
+The :ref:`Python Development Mode <devmode>` calls :func:`faulthandler.enable`
+at Python startup.
+
 
 Dumping the traceback
 ---------------------

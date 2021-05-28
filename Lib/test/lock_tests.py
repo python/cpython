@@ -2,6 +2,7 @@
 Various tests for synchronization primitives.
 """
 
+import os
 import sys
 import time
 from _thread import start_new_thread, TIMEOUT_MAX
@@ -10,6 +11,12 @@ import unittest
 import weakref
 
 from test import support
+from test.support import threading_helper
+
+
+requires_fork = unittest.skipUnless(hasattr(os, 'fork'),
+                                    "platform doesn't support fork "
+                                     "(no _at_fork_reinit method)")
 
 
 def _wait():
@@ -31,7 +38,7 @@ class Bunch(object):
         self.started = []
         self.finished = []
         self._can_exit = not wait_before_exit
-        self.wait_thread = support.wait_threads_exit()
+        self.wait_thread = threading_helper.wait_threads_exit()
         self.wait_thread.__enter__()
 
         def task():
@@ -67,10 +74,10 @@ class Bunch(object):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._threads = support.threading_setup()
+        self._threads = threading_helper.threading_setup()
 
     def tearDown(self):
-        support.threading_cleanup(*self._threads)
+        threading_helper.threading_cleanup(*self._threads)
         support.reap_children()
 
     def assertTimeout(self, actual, expected):
@@ -233,7 +240,7 @@ class LockTests(BaseLockTests):
             lock.acquire()
             phase.append(None)
 
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             start_new_thread(f, ())
             while len(phase) == 0:
                 _wait()
@@ -264,6 +271,25 @@ class LockTests(BaseLockTests):
         lock.release()
         self.assertFalse(lock.locked())
         self.assertTrue(lock.acquire(blocking=False))
+
+    @requires_fork
+    def test_at_fork_reinit(self):
+        def use_lock(lock):
+            # make sure that the lock still works normally
+            # after _at_fork_reinit()
+            lock.acquire()
+            lock.release()
+
+        # unlocked
+        lock = self.locktype()
+        lock._at_fork_reinit()
+        use_lock(lock)
+
+        # locked: _at_fork_reinit() resets the lock to the unlocked state
+        lock2 = self.locktype()
+        lock2.acquire()
+        lock2._at_fork_reinit()
+        use_lock(lock2)
 
 
 class RLockTests(BaseLockTests):
@@ -417,12 +443,13 @@ class EventTests(BaseTestCase):
         b.wait_for_finished()
         self.assertEqual(results, [True] * N)
 
-    def test_reset_internal_locks(self):
+    @requires_fork
+    def test_at_fork_reinit(self):
         # ensure that condition is still using a Lock after reset
         evt = self.eventtype()
         with evt._cond:
             self.assertFalse(evt._cond.acquire(False))
-        evt._reset_internal_locks()
+        evt._at_fork_reinit()
         with evt._cond:
             self.assertFalse(evt._cond.acquire(False))
 

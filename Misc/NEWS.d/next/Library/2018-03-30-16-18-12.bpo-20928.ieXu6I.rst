@@ -1,1 +1,0 @@
-ElementTree supports recursive XInclude processing.  Patch by Stefan Behnel.

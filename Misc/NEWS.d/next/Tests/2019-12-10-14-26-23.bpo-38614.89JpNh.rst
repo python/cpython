@@ -1,6 +1,0 @@
-Replace hardcoded timeout constants in tests with
-new :mod:`test.support` constants: :data:`~test.support.LOOPBACK_TIMEOUT`,
-:data:`~test.support.INTERNET_TIMEOUT`, :data:`~test.support.SHORT_TIMEOUT` and
-:data:`~test.support.LONG_TIMEOUT`. It becomes easier to adjust these four
-timeout constants for all tests at once, rather than having to adjust every
-single test file.

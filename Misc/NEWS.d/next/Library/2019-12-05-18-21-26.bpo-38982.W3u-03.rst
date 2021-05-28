@@ -1,5 +1,0 @@
-Fix asyncio ``PidfdChildWatcher``: handle ``waitpid()`` error. If
-``waitpid()`` is called elsewhere, ``waitpid()`` call fails with
-:exc:`ChildProcessError`: use return code 255 in this case, and log a
-warning. It ensures that the pidfd file descriptor is closed if this error
-occurs.

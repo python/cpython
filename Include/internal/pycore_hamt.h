@@ -8,7 +8,7 @@
 #define _Py_HAMT_MAX_TREE_DEPTH 7
 
 
-#define PyHamt_Check(o) (Py_TYPE(o) == &_PyHamt_Type)
+#define PyHamt_Check(o) Py_IS_TYPE(o, &_PyHamt_Type)
 
 
 /* Abstract tree node. */

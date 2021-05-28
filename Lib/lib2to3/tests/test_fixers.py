@@ -1913,7 +1913,11 @@ def foo():
 """
         self.check(b, a)
 
+    def test_single_import(self):
+        b = "from urllib import getproxies"
+        a = "from urllib.request import getproxies"
 
+        self.check(b, a)
 
     def test_import_module_usage(self):
         for old, changes in self.modules.items():
@@ -2952,6 +2956,11 @@ class Test_filter(FixerTestCase):
         # Note the parens around x
         b = """x = filter(lambda (x): x%2 == 0, range(10))"""
         a = """x = [x for x in range(10) if x%2 == 0]"""
+        self.check(b, a)
+
+        # bpo-38871
+        b = """filter(lambda x: True if x > 2 else False, [1, 2, 3])"""
+        a = """[x for x in [1, 2, 3] if (True if x > 2 else False)]"""
         self.check(b, a)
 
     def test_filter_trailers(self):

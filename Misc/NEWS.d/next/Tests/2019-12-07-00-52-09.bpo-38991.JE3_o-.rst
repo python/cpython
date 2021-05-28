@@ -1,5 +1,0 @@
-:mod:`test.support`: :func:`~test.support.run_python_until_end`,
-:func:`~test.support.assert_python_ok` and
-:func:`~test.support.assert_python_failure` functions no longer strip
-whitespaces from stderr. Remove ``test.support.strip_python_stderr()``
-function.

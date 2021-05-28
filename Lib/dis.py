@@ -203,6 +203,9 @@ _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence
 _Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
 _Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
 
+_ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
+    "start end target depth lasti")
+
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
@@ -308,8 +311,33 @@ def _get_name_info(name_index, name_list):
     return argval, argrepr
 
 
+def parse_varint(iterator):
+    b = next(iterator)
+    val = b & 63
+    while b&64:
+        val <<= 6
+        b = next(iterator)
+        val |= b&63
+    return val
+
+def parse_exception_table(code):
+    iterator = iter(code.co_exceptiontable)
+    entries = []
+    try:
+        while True:
+            start = parse_varint(iterator)*2
+            length = parse_varint(iterator)*2
+            end = start + length
+            target = parse_varint(iterator)*2
+            dl = parse_varint(iterator)
+            depth = dl >> 1
+            lasti = bool(dl&1)
+            entries.append(_ExceptionTableEntry(start, end, target, depth, lasti))
+    except StopIteration:
+        return entries
+
 def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
-                      cells=None, linestarts=None, line_offset=0):
+                      cells=None, linestarts=None, line_offset=0, exception_entries=()):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
@@ -318,7 +346,10 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
     arguments.
 
     """
-    labels = findlabels(code)
+    labels = set(findlabels(code))
+    for start, end, target, _, _ in exception_entries:
+        for i in range(start, end):
+            labels.add(target)
     starts_line = None
     for offset, op, arg in _unpack_opargs(code):
         if linestarts is not None:
@@ -338,8 +369,11 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
                 argval, argrepr = _get_const_info(arg, constants)
             elif op in hasname:
                 argval, argrepr = _get_name_info(arg, names)
+            elif op in hasjabs:
+                argval = arg*2
+                argrepr = "to " + repr(argval)
             elif op in hasjrel:
-                argval = offset + 2 + arg
+                argval = offset + 2 + arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal:
                 argval, argrepr = _get_name_info(arg, varnames)
@@ -366,8 +400,10 @@ def disassemble(co, lasti=-1, *, file=None):
     """Disassemble a code object."""
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
+    exception_entries = parse_exception_table(co)
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
-                       co.co_consts, cell_names, linestarts, file=file)
+                       co.co_consts, cell_names, linestarts, file=file,
+                       exception_entries=exception_entries)
 
 def _disassemble_recursive(co, *, file=None, depth=None):
     disassemble(co, file=file)
@@ -382,9 +418,9 @@ def _disassemble_recursive(co, *, file=None, depth=None):
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
-                       *, file=None, line_offset=0):
+                       *, file=None, line_offset=0, exception_entries=()):
     # Omit the line number column entirely if we have no line number info
-    show_lineno = linestarts is not None
+    show_lineno = bool(linestarts)
     if show_lineno:
         maxlineno = max(linestarts.values()) + line_offset
         if maxlineno >= 1000:
@@ -400,7 +436,7 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         offset_width = 4
     for instr in _get_instructions_bytes(code, varnames, names,
                                          constants, cells, linestarts,
-                                         line_offset=line_offset):
+                                         line_offset=line_offset, exception_entries=exception_entries):
         new_source_line = (show_lineno and
                            instr.starts_line is not None and
                            instr.offset > 0)
@@ -409,6 +445,12 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         is_current_instr = instr.offset == lasti
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
+    if exception_entries:
+        print("ExceptionTable:", file=file)
+        for entry in exception_entries:
+            lasti = " lasti" if entry.lasti else ""
+            end = entry.end-2
+            print(f"  {entry.start} to {end} -> {entry.target} [{entry.depth}]{lasti}", file=file)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
@@ -437,9 +479,9 @@ def findlabels(code):
     for offset, op, arg in _unpack_opargs(code):
         if arg is not None:
             if op in hasjrel:
-                label = offset + 2 + arg
+                label = offset + 2 + arg*2
             elif op in hasjabs:
-                label = arg
+                label = arg*2
             else:
                 continue
             if label not in labels:
@@ -449,32 +491,15 @@ def findlabels(code):
 def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
 
-    Generate pairs (offset, lineno) as described in Python/compile.c.
-
+    Generate pairs (offset, lineno)
     """
-    byte_increments = code.co_lnotab[0::2]
-    line_increments = code.co_lnotab[1::2]
-    bytecode_len = len(code.co_code)
+    lastline = None
+    for start, end, line in code.co_lines():
+        if line is not None and line != lastline:
+            lastline = line
+            yield start, line
+    return
 
-    lastlineno = None
-    lineno = code.co_firstlineno
-    addr = 0
-    for byte_incr, line_incr in zip(byte_increments, line_increments):
-        if byte_incr:
-            if lineno != lastlineno:
-                yield (addr, lineno)
-                lastlineno = lineno
-            addr += byte_incr
-            if addr >= bytecode_len:
-                # The rest of the lnotab byte offsets are past the end of
-                # the bytecode, so the lines were optimized away.
-                return
-        if line_incr >= 0x80:
-            # line_increments is an array of 8-bit signed integers
-            line_incr -= 0x100
-        lineno += line_incr
-    if lineno != lastlineno:
-        yield (addr, lineno)
 
 class Bytecode:
     """The bytecode operations of a piece of code
@@ -496,13 +521,15 @@ class Bytecode:
         self._linestarts = dict(findlinestarts(co))
         self._original_object = x
         self.current_offset = current_offset
+        self.exception_entries = parse_exception_table(co)
 
     def __iter__(self):
         co = self.codeobj
         return _get_instructions_bytes(co.co_code, co.co_varnames, co.co_names,
                                        co.co_consts, self._cell_names,
                                        self._linestarts,
-                                       line_offset=self._line_offset)
+                                       line_offset=self._line_offset,
+                                       exception_entries=self.exception_entries)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
@@ -533,7 +560,8 @@ class Bytecode:
                                linestarts=self._linestarts,
                                line_offset=self._line_offset,
                                file=output,
-                               lasti=offset)
+                               lasti=offset,
+                                    exception_entries=self.exception_entries)
             return output.getvalue()
 
 
@@ -542,7 +570,7 @@ def _test():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('infile', type=argparse.FileType(), nargs='?', default='-')
+    parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()

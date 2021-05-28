@@ -153,47 +153,47 @@ Programmatic Interface
    count information.  *timing* enables a timestamp relative to when tracing was
    started to be displayed.
 
-    .. method:: run(cmd)
+   .. method:: run(cmd)
 
-       Execute the command and gather statistics from the execution with
-       the current tracing parameters.  *cmd* must be a string or code object,
-       suitable for passing into :func:`exec`.
+      Execute the command and gather statistics from the execution with
+      the current tracing parameters.  *cmd* must be a string or code object,
+      suitable for passing into :func:`exec`.
 
-    .. method:: runctx(cmd, globals=None, locals=None)
+   .. method:: runctx(cmd, globals=None, locals=None)
 
-       Execute the command and gather statistics from the execution with the
-       current tracing parameters, in the defined global and local
-       environments.  If not defined, *globals* and *locals* default to empty
-       dictionaries.
+      Execute the command and gather statistics from the execution with the
+      current tracing parameters, in the defined global and local
+      environments.  If not defined, *globals* and *locals* default to empty
+      dictionaries.
 
-    .. method:: runfunc(func, /, *args, **kwds)
+   .. method:: runfunc(func, /, *args, **kwds)
 
-       Call *func* with the given arguments under control of the :class:`Trace`
-       object with the current tracing parameters.
+      Call *func* with the given arguments under control of the :class:`Trace`
+      object with the current tracing parameters.
 
-    .. method:: results()
+   .. method:: results()
 
-       Return a :class:`CoverageResults` object that contains the cumulative
-       results of all previous calls to ``run``, ``runctx`` and ``runfunc``
-       for the given :class:`Trace` instance.  Does not reset the accumulated
-       trace results.
+      Return a :class:`CoverageResults` object that contains the cumulative
+      results of all previous calls to ``run``, ``runctx`` and ``runfunc``
+      for the given :class:`Trace` instance.  Does not reset the accumulated
+      trace results.
 
 .. class:: CoverageResults
 
    A container for coverage results, created by :meth:`Trace.results`.  Should
    not be created directly by the user.
 
-    .. method:: update(other)
+   .. method:: update(other)
 
-       Merge in data from another :class:`CoverageResults` object.
+      Merge in data from another :class:`CoverageResults` object.
 
-    .. method:: write_results(show_missing=True, summary=False, coverdir=None)
+   .. method:: write_results(show_missing=True, summary=False, coverdir=None)
 
-       Write coverage results.  Set *show_missing* to show lines that had no
-       hits.  Set *summary* to include in the output the coverage summary per
-       module.  *coverdir* specifies the directory into which the coverage
-       result files will be output.  If ``None``, the results for each source
-       file are placed in its directory.
+      Write coverage results.  Set *show_missing* to show lines that had no
+      hits.  Set *summary* to include in the output the coverage summary per
+      module.  *coverdir* specifies the directory into which the coverage
+      result files will be output.  If ``None``, the results for each source
+      file are placed in its directory.
 
 A simple example demonstrating the use of the programmatic interface::
 

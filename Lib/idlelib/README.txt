@@ -90,7 +90,7 @@ Configuration
 config-extensions.def # Defaults for extensions
 config-highlight.def  # Defaults for colorizing
 config-keys.def       # Defaults for key bindings
-config-main.def       # Defai;ts fpr font and geneal
+config-main.def       # Defaults for font and general tabs
 
 Text
 ----

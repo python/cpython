@@ -1,3 +1,0 @@
-:class:`typing.TypedDict` subclasses now track which keys are optional using
-the ``__required_keys__`` and ``__optional_keys__`` attributes, to enable
-runtime validation by downstream projects.  Patch by Zac Hatfield-Dodds.

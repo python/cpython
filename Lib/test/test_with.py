@@ -7,7 +7,7 @@ __email__ = "mbland at acm dot org"
 import sys
 import unittest
 from collections import deque
-from contextlib import _GeneratorContextManager, contextmanager
+from contextlib import _GeneratorContextManager, contextmanager, nullcontext
 
 
 class MockContextManager(_GeneratorContextManager):
@@ -640,6 +640,12 @@ class AssignmentTargetTestCase(unittest.TestCase):
             self.assertEqual(blah.one, 1)
             self.assertEqual(blah.two, 2)
             self.assertEqual(blah.three, 3)
+
+    def testWithExtendedTargets(self):
+        with nullcontext(range(1, 5)) as (a, *b, c):
+            self.assertEqual(a, 1)
+            self.assertEqual(b, [2, 3])
+            self.assertEqual(c, 4)
 
 
 class ExitSwallowsExceptionTestCase(unittest.TestCase):

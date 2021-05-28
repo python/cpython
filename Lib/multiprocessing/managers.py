@@ -21,6 +21,7 @@ import signal
 import array
 import queue
 import time
+import types
 import os
 from os import getpid
 
@@ -59,7 +60,7 @@ if view_types[0] is not list:       # only needed in Py3.0
 
 class Token(object):
     '''
-    Type to uniquely indentify a shared object
+    Type to uniquely identify a shared object
     '''
     __slots__ = ('typeid', 'address', 'id')
 
@@ -191,11 +192,8 @@ class Server(object):
             t.daemon = True
             t.start()
 
-    def handle_request(self, c):
-        '''
-        Handle a new connection
-        '''
-        funcname = result = request = None
+    def _handle_request(self, c):
+        request = None
         try:
             connection.deliver_challenge(c, self.authkey)
             connection.answer_challenge(c, self.authkey)
@@ -212,6 +210,7 @@ class Server(object):
                 msg = ('#TRACEBACK', format_exc())
             else:
                 msg = ('#RETURN', result)
+
         try:
             c.send(msg)
         except Exception as e:
@@ -223,7 +222,17 @@ class Server(object):
             util.info(' ... request was %r', request)
             util.info(' ... exception was %r', e)
 
-        c.close()
+    def handle_request(self, conn):
+        '''
+        Handle a new connection
+        '''
+        try:
+            self._handle_request(conn)
+        except SystemExit:
+            # Server.serve_client() calls sys.exit(0) on EOF
+            pass
+        finally:
+            conn.close()
 
     def serve_client(self, conn):
         '''
@@ -794,7 +803,7 @@ class BaseProxy(object):
 
     def _callmethod(self, methodname, args=(), kwds={}):
         '''
-        Try to call a method of the referrent and return a copy of the result
+        Try to call a method of the referent and return a copy of the result
         '''
         try:
             conn = self._tls.connection
@@ -1129,6 +1138,8 @@ class ValueProxy(BaseProxy):
         return self._callmethod('set', (value,))
     value = property(get, set)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
 
 BaseListProxy = MakeProxyType('BaseListProxy', (
     '__add__', '__contains__', '__delitem__', '__getitem__', '__len__',
@@ -1262,8 +1273,12 @@ if HAS_SHMEM:
 
         def __init__(self, *args, **kwargs):
             Server.__init__(self, *args, **kwargs)
+            address = self.address
+            # The address of Linux abstract namespaces can be bytes
+            if isinstance(address, bytes):
+                address = os.fsdecode(address)
             self.shared_memory_context = \
-                _SharedMemoryTracker(f"shmm_{self.address}_{getpid()}")
+                _SharedMemoryTracker(f"shm_{address}_{getpid()}")
             util.debug(f"SharedMemoryServer started by pid {getpid()}")
 
         def create(self, c, typeid, /, *args, **kwargs):

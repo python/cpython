@@ -98,7 +98,9 @@ provides three different variants:
 
    .. attribute:: path
 
-      Contains the request path.
+      Contains the request path. If query component of the URL is present,
+      then ``path`` includes the query. Using the terminology of :rfc:`3986`,
+      ``path`` here includes ``hier-part`` and the ``query``.
 
    .. attribute:: request_version
 
@@ -318,8 +320,15 @@ provides three different variants:
 
 .. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
 
-   This class serves files from the current directory and below, directly
+   This class serves files from the directory *directory* and below,
+   or the current directory if *directory* is not provided, directly
    mapping the directory structure to HTTP requests.
+
+   .. versionadded:: 3.7
+      The *directory* parameter.
+
+   .. versionchanged:: 3.9
+      The *directory* parameter accepts a :term:`path-like object`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -335,17 +344,13 @@ provides three different variants:
 
    .. attribute:: extensions_map
 
-      A dictionary mapping suffixes into MIME types. The default is
-      signified by an empty string, and is considered to be
-      ``application/octet-stream``. The mapping is used case-insensitively,
+      A dictionary mapping suffixes into MIME types, contains custom overrides
+      for the default system mappings. The mapping is used case-insensitively,
       and so should contain only lower-cased keys.
 
-   .. attribute:: directory
-
-      If not specified, the directory to serve is the current working directory.
-
       .. versionchanged:: 3.9
-         Accepts a :term:`path-like object`.
+         This dictionary is no longer filled with the default system mappings,
+         but only contains overrides.
 
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 

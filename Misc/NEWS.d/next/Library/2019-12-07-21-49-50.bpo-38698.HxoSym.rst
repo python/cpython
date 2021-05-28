@@ -1,3 +1,0 @@
-Add a new ``InvalidMessageID`` token to email parser to represent invalid
-Message-ID headers.  Also, add defects when there is remaining value after
-parsing the header.

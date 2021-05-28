@@ -251,6 +251,7 @@ def test():
         else:
             print("Executing:", command)
             sts = os.system(command)
+            sts = os.waitstatus_to_exitcode(sts)
             if sts:
                 print("Exit status:", sts)
 

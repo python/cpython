@@ -2,7 +2,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"  // _PyRuntime
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
 /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(open);
+
 /* External C interface */
 
 PyObject *
@@ -32,7 +34,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
               const char *errors, const char *newline, int closefd)
 {
     PyObject *io, *stream;
-    _Py_IDENTIFIER(open);
 
     /* import _io in case we are being used to open io.py */
     io = PyImport_ImportModule("_io");
@@ -75,7 +76,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
-        char *s = PyBytes_AS_STRING(result);
+        const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
             Py_DECREF(result);
@@ -84,7 +85,7 @@ PyFile_GetLine(PyObject *f, int n)
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (result->ob_refcnt == 1)
+            if (Py_REFCNT(result) == 1)
                 _PyBytes_Resize(&result, len-1);
             else {
                 PyObject *v;
@@ -136,7 +137,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = _PyObject_CallOneArg(writer, value);
+    result = PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -220,6 +221,17 @@ PyObject_AsFileDescriptor(PyObject *o)
         return -1;
     }
     return fd;
+}
+
+int
+_PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
+{
+    int fd = PyObject_AsFileDescriptor(o);
+    if (fd == -1) {
+        return 0;
+    }
+    *(int *)ptr = fd;
+    return 1;
 }
 
 /*
@@ -313,29 +325,6 @@ typedef struct {
     int fd;
 } PyStdPrinter_Object;
 
-static PyObject *
-stdprinter_new(PyTypeObject *type, PyObject *args, PyObject *kews)
-{
-    PyStdPrinter_Object *self;
-
-    assert(type != NULL && type->tp_alloc != NULL);
-
-    self = (PyStdPrinter_Object *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->fd = -1;
-    }
-
-    return (PyObject *) self;
-}
-
-static int
-stdprinter_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "cannot create 'stderrprinter' instances");
-    return -1;
-}
-
 PyObject *
 PyFile_NewStdPrinter(int fd)
 {
@@ -378,7 +367,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         return NULL;
     }
 
-    /* Encode Unicode to UTF-8/surrogateescape */
+    /* Encode Unicode to UTF-8/backslashreplace */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();
@@ -495,7 +484,7 @@ PyTypeObject PyStdPrinter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* tp_flags */
     0,                                          /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -511,9 +500,9 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    stdprinter_init,                            /* tp_init */
+    0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    stdprinter_new,                             /* tp_new */
+    0,                                          /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
 
@@ -547,7 +536,6 @@ PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
     PyObject *iomod, *f = NULL;
-    _Py_IDENTIFIER(open);
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",

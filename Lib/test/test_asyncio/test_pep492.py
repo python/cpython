@@ -43,13 +43,12 @@ class BaseTest(test_utils.TestCase):
 class LockTests(BaseTest):
 
     def test_context_manager_async_with(self):
-        with self.assertWarns(DeprecationWarning):
-            primitives = [
-                asyncio.Lock(loop=self.loop),
-                asyncio.Condition(loop=self.loop),
-                asyncio.Semaphore(loop=self.loop),
-                asyncio.BoundedSemaphore(loop=self.loop),
-            ]
+        primitives = [
+            asyncio.Lock(),
+            asyncio.Condition(),
+            asyncio.Semaphore(),
+            asyncio.BoundedSemaphore(),
+        ]
 
         async def test(lock):
             await asyncio.sleep(0.01)
@@ -66,24 +65,22 @@ class LockTests(BaseTest):
             self.assertFalse(primitive.locked())
 
     def test_context_manager_with_await(self):
-        with self.assertWarns(DeprecationWarning):
-            primitives = [
-                asyncio.Lock(loop=self.loop),
-                asyncio.Condition(loop=self.loop),
-                asyncio.Semaphore(loop=self.loop),
-                asyncio.BoundedSemaphore(loop=self.loop),
-            ]
+        primitives = [
+            asyncio.Lock(),
+            asyncio.Condition(),
+            asyncio.Semaphore(),
+            asyncio.BoundedSemaphore(),
+        ]
 
         async def test(lock):
             await asyncio.sleep(0.01)
             self.assertFalse(lock.locked())
-            with self.assertWarns(DeprecationWarning):
-                with await lock as _lock:
-                    self.assertIs(_lock, None)
-                    self.assertTrue(lock.locked())
-                    await asyncio.sleep(0.01)
-                    self.assertTrue(lock.locked())
-                self.assertFalse(lock.locked())
+            with self.assertRaisesRegex(
+                TypeError,
+                "can't be used in 'await' expression"
+            ):
+                with await lock:
+                    pass
 
         for primitive in primitives:
             self.loop.run_until_complete(test(primitive))
