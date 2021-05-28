@@ -237,7 +237,7 @@ class TraceCallbackTests(unittest.TestCase):
             traced_statements.append(statement)
         con.set_trace_callback(trace)
         con.execute("create table foo(x)")
-        con.execute('insert into foo(x) values ("%s")' % unicode_value)
+        con.execute("insert into foo(x) values ('%s')" % unicode_value)
         con.commit()
         self.assertTrue(any(unicode_value in stmt for stmt in traced_statements),
                         "Unicode data %s garbled in trace callback: %s"

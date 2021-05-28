@@ -1972,6 +1972,27 @@ class TestFMean(unittest.TestCase):
         with self.assertRaises(ValueError):
             fmean([Inf, -Inf])
 
+    def test_weights(self):
+        fmean = statistics.fmean
+        StatisticsError = statistics.StatisticsError
+        self.assertEqual(
+            fmean([10, 10, 10, 50], [0.25] * 4),
+            fmean([10, 10, 10, 50]))
+        self.assertEqual(
+            fmean([10, 10, 20], [0.25, 0.25, 0.50]),
+            fmean([10, 10, 20, 20]))
+        self.assertEqual(                           # inputs are iterators
+            fmean(iter([10, 10, 20]), iter([0.25, 0.25, 0.50])),
+            fmean([10, 10, 20, 20]))
+        with self.assertRaises(StatisticsError):
+            fmean([10, 20, 30], [1, 2])             # unequal lengths
+        with self.assertRaises(StatisticsError):
+            fmean(iter([10, 20, 30]), iter([1, 2])) # unequal lengths
+        with self.assertRaises(StatisticsError):
+            fmean([10, 20], [-1, 1])                # sum of weights is zero
+        with self.assertRaises(StatisticsError):
+            fmean(iter([10, 20]), iter([-1, 1]))    # sum of weights is zero
+
 
 # === Tests for variances and standard deviations ===
 
@@ -2405,6 +2426,84 @@ class TestQuantiles(unittest.TestCase):
             quantiles([10], n=4)                # not enough data points
         with self.assertRaises(TypeError):
             quantiles([10, None, 30], n=4)      # data is non-numeric
+
+
+class TestBivariateStatistics(unittest.TestCase):
+
+    def test_unequal_size_error(self):
+        for x, y in [
+            ([1, 2, 3], [1, 2]),
+            ([1, 2], [1, 2, 3]),
+        ]:
+            with self.assertRaises(statistics.StatisticsError):
+                statistics.covariance(x, y)
+            with self.assertRaises(statistics.StatisticsError):
+                statistics.correlation(x, y)
+            with self.assertRaises(statistics.StatisticsError):
+                statistics.linear_regression(x, y)
+
+    def test_small_sample_error(self):
+        for x, y in [
+            ([], []),
+            ([], [1, 2,]),
+            ([1, 2,], []),
+            ([1,], [1,]),
+            ([1,], [1, 2,]),
+            ([1, 2,], [1,]),
+        ]:
+            with self.assertRaises(statistics.StatisticsError):
+                statistics.covariance(x, y)
+            with self.assertRaises(statistics.StatisticsError):
+                statistics.correlation(x, y)
+            with self.assertRaises(statistics.StatisticsError):
+                statistics.linear_regression(x, y)
+
+
+class TestCorrelationAndCovariance(unittest.TestCase):
+
+    def test_results(self):
+        for x, y, result in [
+            ([1, 2, 3], [1, 2, 3], 1),
+            ([1, 2, 3], [-1, -2, -3], -1),
+            ([1, 2, 3], [3, 2, 1], -1),
+            ([1, 2, 3], [1, 2, 1], 0),
+            ([1, 2, 3], [1, 3, 2], 0.5),
+        ]:
+            self.assertAlmostEqual(statistics.correlation(x, y), result)
+            self.assertAlmostEqual(statistics.covariance(x, y), result)
+
+    def test_different_scales(self):
+        x = [1, 2, 3]
+        y = [10, 30, 20]
+        self.assertAlmostEqual(statistics.correlation(x, y), 0.5)
+        self.assertAlmostEqual(statistics.covariance(x, y), 5)
+
+        y = [.1, .2, .3]
+        self.assertAlmostEqual(statistics.correlation(x, y), 1)
+        self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
+
+
+class TestLinearRegression(unittest.TestCase):
+
+    def test_constant_input_error(self):
+        x = [1, 1, 1,]
+        y = [1, 2, 3,]
+        with self.assertRaises(statistics.StatisticsError):
+            statistics.linear_regression(x, y)
+
+    def test_results(self):
+        for x, y, true_intercept, true_slope in [
+            ([1, 2, 3], [0, 0, 0], 0, 0),
+            ([1, 2, 3], [1, 2, 3], 0, 1),
+            ([1, 2, 3], [100, 100, 100], 100, 0),
+            ([1, 2, 3], [12, 14, 16], 10, 2),
+            ([1, 2, 3], [-1, -2, -3], 0, -1),
+            ([1, 2, 3], [21, 22, 23], 20, 1),
+            ([1, 2, 3], [5.1, 5.2, 5.3], 5, 0.1),
+        ]:
+            slope, intercept = statistics.linear_regression(x, y)
+            self.assertAlmostEqual(intercept, true_intercept)
+            self.assertAlmostEqual(slope, true_slope)
 
 
 class TestNormalDist:

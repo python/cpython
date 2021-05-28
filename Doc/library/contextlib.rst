@@ -312,10 +312,11 @@ Functions and classes provided:
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
    You can capture that output in a string by redirecting the output to an
-   :class:`io.StringIO` object::
+   :class:`io.StringIO` object. The replacement stream is returned from the
+   ``__enter__`` method and so is available as the target of the
+   :keyword:`with` statement::
 
-        f = io.StringIO()
-        with redirect_stdout(f):
+        with redirect_stdout(io.StringIO()) as f:
             help(pow)
         s = f.getvalue()
 
@@ -578,7 +579,7 @@ Functions and classes provided:
    The :meth:`close` method is not implemented, :meth:`aclose` must be used
    instead.
 
-   .. method:: enter_async_context(cm)
+   .. coroutinemethod:: enter_async_context(cm)
 
       Similar to :meth:`enter_context` but expects an asynchronous context
       manager.
@@ -592,7 +593,7 @@ Functions and classes provided:
 
       Similar to :meth:`callback` but expects a coroutine function.
 
-   .. method:: aclose()
+   .. coroutinemethod:: aclose()
 
       Similar to :meth:`close` but properly handles awaitables.
 
@@ -753,7 +754,7 @@ even further by means of a small helper class::
 
    class Callback(ExitStack):
        def __init__(self, callback, /, *args, **kwds):
-           super(Callback, self).__init__()
+           super().__init__()
            self.callback(callback, *args, **kwds)
 
        def cancel(self):

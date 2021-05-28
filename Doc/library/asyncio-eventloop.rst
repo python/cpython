@@ -53,6 +53,11 @@ an event loop:
    Consider also using the :func:`asyncio.run` function instead of using
    lower level functions to manually create and close an event loop.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if there is no running event loop.
+      If future Python releases this function will be an alias of
+      :func:`get_running_loop`.
+
 .. function:: set_event_loop(loop)
 
    Set *loop* as a current event loop for the current OS thread.
@@ -440,7 +445,7 @@ Opening network connections
      and *local_addr* should be specified.
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
-     to bind the socket to locally.  The *local_host* and *local_port*
+     to bind the socket locally.  The *local_host* and *local_port*
      are looked up using ``getaddrinfo()``, similarly to *host* and *port*.
 
    * *ssl_handshake_timeout* is (for a TLS connection) the time in seconds
@@ -518,7 +523,7 @@ Opening network connections
    Other arguments:
 
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
-     to bind the socket to locally.  The *local_host* and *local_port*
+     to bind the socket locally.  The *local_host* and *local_port*
      are looked up using :meth:`getaddrinfo`.
 
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used

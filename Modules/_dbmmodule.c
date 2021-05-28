@@ -65,13 +65,14 @@ typedef struct {
 static PyObject *
 newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 {
-    dbmobject *dp;
-
-    dp = PyObject_New(dbmobject, state->dbm_type);
-    if (dp == NULL)
+    dbmobject *dp = PyObject_GC_New(dbmobject, state->dbm_type);
+    if (dp == NULL) {
         return NULL;
+    }
     dp->di_size = -1;
     dp->flags = flags;
+    PyObject_GC_Track(dp);
+
     /* See issue #19296 */
     if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
         PyErr_SetFromErrnoWithFilename(state->dbm_error, file);
@@ -82,10 +83,17 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
+static int
+dbm_traverse(dbmobject *dp, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(dp));
+    return 0;
+}
 
 static void
 dbm_dealloc(dbmobject *dp)
 {
+    PyObject_GC_UnTrack(dp);
     if (dp->di_dbm) {
         dbm_close(dp->di_dbm);
     }
@@ -299,8 +307,8 @@ Return the value for key if present, otherwise default.
 
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, PyTypeObject *cls, const char *key,
-                  Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=34851b5dc1c664dc input=66b993b8349fa8c1]*/
+                  Py_ssize_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=b4e55f8b6d482bc4 input=66b993b8349fa8c1]*/
 {
     datum dbm_key, val;
     _dbm_state *state = PyType_GetModuleState(cls);
@@ -331,9 +339,8 @@ If key is not in the database, it is inserted with default as the value.
 
 static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
-                         Py_ssize_clean_t key_length,
-                         PyObject *default_value)
-/*[clinic end generated code: output=d5c68fe673886767 input=126a3ff15c5f8232]*/
+                         Py_ssize_t key_length, PyObject *default_value)
+/*[clinic end generated code: output=9c2f6ea6d0fb576c input=126a3ff15c5f8232]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;
@@ -398,6 +405,7 @@ static PyMethodDef dbm_methods[] = {
 
 static PyType_Slot dbmtype_spec_slots[] = {
     {Py_tp_dealloc, dbm_dealloc},
+    {Py_tp_traverse, dbm_traverse},
     {Py_tp_methods, dbm_methods},
     {Py_sq_contains, dbm_contains},
     {Py_mp_length, dbm_length},
@@ -414,7 +422,8 @@ static PyType_Spec dbmtype_spec = {
     // dbmtype_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_HAVE_GC),
     .slots = dbmtype_spec_slots,
 };
 

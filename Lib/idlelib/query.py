@@ -28,6 +28,7 @@ from tkinter import Toplevel, StringVar, BooleanVar, W, E, S
 from tkinter.ttk import Frame, Button, Entry, Label, Checkbutton
 from tkinter import filedialog
 from tkinter.font import Font
+from tkinter.simpledialog import _setup_dialog
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -60,13 +61,8 @@ class Query(Toplevel):
         if not _utest:  # Otherwise fail when directly run unittest.
             self.grab_set()
 
-        windowingsystem = self.tk.call('tk', 'windowingsystem')
-        if windowingsystem == 'aqua':
-            try:
-                self.tk.call('::tk::unsupported::MacWindowStyle', 'style',
-                             self._w, 'moveableModal', '')
-            except:
-                pass
+        _setup_dialog(self)
+        if self._windowingsystem == 'aqua':
             self.bind("<Command-.>", self.cancel)
         self.bind('<Key-Escape>', self.cancel)
         self.protocol("WM_DELETE_WINDOW", self.cancel)

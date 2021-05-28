@@ -87,7 +87,7 @@ static inline int config_run_code(const PyConfig *config)
 }
 
 
-/* Return non-zero is stdin is a TTY or if -i command line option is used */
+/* Return non-zero if stdin is a TTY or if -i command line option is used */
 static int
 stdin_is_interactive(const PyConfig *config)
 {

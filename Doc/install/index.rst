@@ -10,6 +10,13 @@
 
 .. TODO: Fill in XXX comments
 
+.. note::
+
+   The entire ``distutils`` package has been deprecated and will be
+   removed in Python 3.12. This documentation is retained as a
+   reference only, and will be removed with the package. See the
+   :ref:`What's New <distutils-deprecated>` entry for more information.
+
 .. seealso::
 
    :ref:`installing-index`
@@ -1064,8 +1071,7 @@ normal libraries do.
 .. [#] This also means you could replace all existing COFF-libraries with OMF-libraries
    of the same name.
 
-.. [#] Check https://www.sourceware.org/cygwin/ and http://www.mingw.org/ for more
-   information
+.. [#] Check https://www.sourceware.org/cygwin/ for more information
 
 .. [#] Then you have no POSIX emulation available, but you also don't need
    :file:`cygwin1.dll`.

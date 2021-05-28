@@ -407,7 +407,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
 
     namespace = {
         '_tuple_new': tuple_new,
-        '__builtins__': None,
+        '__builtins__': {},
         '__name__': f'namedtuple_{typename}',
     }
     code = f'lambda _cls, {arg_list}: _tuple_new(_cls, ({arg_list}))'
@@ -472,6 +472,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__repr__': __repr__,
         '_asdict': _asdict,
         '__getnewargs__': __getnewargs__,
+        '__match_args__': field_names,
     }
     for index, name in enumerate(field_names):
         doc = _sys.intern(f'Alias for field number {index}')
@@ -579,6 +580,10 @@ class Counter(dict):
         'The count of elements not in the Counter is zero.'
         # Needed so that self[missing_item] does not raise KeyError
         return 0
+
+    def total(self):
+        'Sum of the counts'
+        return sum(self.values())
 
     def most_common(self, n=None):
         '''List the n most common elements and their counts from the most
@@ -1009,12 +1014,15 @@ class ChainMap(_collections_abc.MutableMapping):
 
     __copy__ = copy
 
-    def new_child(self, m=None):                # like Django's Context.push()
+    def new_child(self, m=None, **kwargs):      # like Django's Context.push()
         '''New ChainMap with a new map followed by all previous maps.
         If no map is provided, an empty dict is used.
+        Keyword arguments update the map or new empty dict.
         '''
         if m is None:
-            m = {}
+            m = kwargs
+        elif kwargs:
+            m.update(kwargs)
         return self.__class__(m, *self.maps)
 
     @property

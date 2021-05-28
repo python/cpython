@@ -336,7 +336,7 @@ class FaultHandlerTests(unittest.TestCase):
             import faulthandler
             import sys
             # Don't filter stdlib module names
-            sys.module_names = frozenset()
+            sys.stdlib_module_names = frozenset()
             faulthandler.enable()
             faulthandler._sigsegv()
             """
@@ -663,7 +663,7 @@ class FaultHandlerTests(unittest.TestCase):
             import sys
 
             all_threads = {all_threads}
-            signum = {signum}
+            signum = {signum:d}
             unregister = {unregister}
             chain = {chain}
             filename = {filename!r}

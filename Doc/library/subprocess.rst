@@ -543,7 +543,7 @@ functions.
 
    If *cwd* is not ``None``, the function changes the working directory to
    *cwd* before executing the child.  *cwd* can be a string, bytes or
-   :term:`path-like <path-like object>` object.  In POSIX, the function
+   :term:`path-like <path-like object>` object.  On POSIX, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
@@ -1292,11 +1292,17 @@ Replacing :func:`os.system`
 
    sts = os.system("mycmd" + " myarg")
    # becomes
-   sts = call("mycmd" + " myarg", shell=True)
+   retcode = call("mycmd" + " myarg", shell=True)
 
 Notes:
 
 * Calling the program through the shell is usually not required.
+* The :func:`call` return value is encoded differently to that of
+  :func:`os.system`.
+
+* The :func:`os.system` function ignores SIGINT and SIGQUIT signals while
+  the command is running, but the caller must do this separately when
+  using the :mod:`subprocess` module.
 
 A more realistic example would look like this::
 

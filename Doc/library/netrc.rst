@@ -38,6 +38,10 @@ the Unix :program:`ftp` program and other FTP clients.
       :func:`os.path.expanduser` is used to find the location of the
       :file:`.netrc` file when *file* is not passed as argument.
 
+   .. versionchanged:: 3.10
+      :class:`netrc` try UTF-8 encoding before using locale specific
+      encoding.
+
 
 .. exception:: NetrcParseError
 

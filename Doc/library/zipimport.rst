@@ -166,6 +166,15 @@ zipimporter Objects
 
          Use :meth:`exec_module` instead.
 
+
+   .. method:: invalidate_caches()
+
+      Clear out the internal cache of information about files found within
+      the ZIP archive.
+
+      .. versionadded:: 3.10
+
+
    .. attribute:: archive
 
       The file name of the importer's associated ZIP file, without a possible
