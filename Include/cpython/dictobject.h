@@ -82,3 +82,7 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *) _PyDictView_New(PyObject *, PyTypeObject *);
 PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+
+/* Gets a version number unique to the current state of the keys of dict, if possible.
+ * Returns the version number, or zero if it was not possible to get a version number. */
+uint32_t _PyDictKeys_GetVersionForCurrentState(PyDictObject *dict);
