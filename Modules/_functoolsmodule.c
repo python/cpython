@@ -1255,8 +1255,8 @@ static int
 lru_cache_tp_clear(lru_cache_object *self)
 {
     lru_list_elem *list = lru_cache_unlink_list(self);
-    Py_CLEAR(self->func);
     Py_CLEAR(self->cache);
+    Py_CLEAR(self->func);
     Py_CLEAR(self->kwd_mark);
     Py_CLEAR(self->lru_list_elem_type);
     Py_CLEAR(self->cache_info_type);
@@ -1342,15 +1342,17 @@ lru_cache_deepcopy(PyObject *self, PyObject *unused)
 static int
 lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
         Py_VISIT(link->key);
         Py_VISIT(link->result);
+        Py_VISIT(Py_TYPE(link));
         link = next;
     }
-    Py_VISIT(self->func);
     Py_VISIT(self->cache);
+    Py_VISIT(self->func);
     Py_VISIT(self->kwd_mark);
     Py_VISIT(self->lru_list_elem_type);
     Py_VISIT(self->cache_info_type);
