@@ -8,37 +8,34 @@ typedef struct {
     PyObject *me_value; /* This field is only meaningful for combined tables */
 } PyDictKeyEntry;
 
-/* dict_lookup_func() returns index of entry which can be used like DK_ENTRIES(dk)[index].
+/* _Py_dict_lookup() returns index of entry which can be used like DK_ENTRIES(dk)[index].
  * -1 when no entry found, -3 when compare raises error.
  */
-typedef Py_ssize_t (*dict_lookup_func)
-    (PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
+
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
+
+typedef enum {
+    DICT_KEYS_GENERAL = 0,
+    DICT_KEYS_UNICODE = 1,
+    DICT_KEYS_SPLIT = 2
+} DictKeysKind;
 
 /* See dictobject.c for actual layout of DictKeysObject */
 struct _dictkeysobject {
     Py_ssize_t dk_refcnt;
 
     /* Size of the hash table (dk_indices). It must be a power of 2. */
-    Py_ssize_t dk_size;
+    uint8_t dk_log2_size;
 
-    /* Function to lookup in the hash table (dk_indices):
+    /* Kind of keys */
+    uint8_t dk_kind;
 
-       - lookdict(): general-purpose, and may return DKIX_ERROR if (and
-         only if) a comparison raises an exception.
-
-       - lookdict_unicode(): specialized to Unicode string keys, comparison of
-         which can never raise an exception; that function can never return
-         DKIX_ERROR.
-
-       - lookdict_unicode_nodummy(): similar to lookdict_unicode() but further
-         specialized for Unicode string keys that cannot be the <dummy> value.
-
-       - lookdict_split(): Version of lookdict() for split tables. */
-    dict_lookup_func dk_lookup;
+    /* Version number -- Reset to 0 by any modification to keys */
+    uint32_t dk_version;
 
     /* Number of usable entries in dk_entries. */
     Py_ssize_t dk_usable;
