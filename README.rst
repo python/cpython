@@ -115,7 +115,7 @@ binary resulting from this step is not good for real-life workloads as it has
 profiling instructions embedded inside.
 
 After the instrumented interpreter is built, the Makefile will run a training
-workload.  This is necessary to profile the interpreter's execution.
+workload which is necessary to profile the interpreter's execution.
 Note also that any output, both stdout, and stderr, that may appear at this step
 is suppressed.
 
