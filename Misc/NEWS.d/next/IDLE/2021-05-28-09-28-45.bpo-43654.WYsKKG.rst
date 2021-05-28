@@ -1,0 +1,5 @@
+Fix the config dialog breaking tab completion.  This is achieved by removing
+the key configuration options for ``<<smart-indent>>`` (Tab),
+``<<newline-and-indent>>`` (Return, Enter) and ``<<smart-backspace>>``
+(Backspace) from the configuration mechanism, making them hard-coded
+instead.
