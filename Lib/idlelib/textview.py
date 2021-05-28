@@ -8,6 +8,7 @@ from tkinter.messagebox import showerror
 
 from idlelib import search
 from idlelib.colorizer import color_config
+from idlelib.config import idleConf
 
 
 class AutoHideScrollbar(Scrollbar):
@@ -96,25 +97,50 @@ class ViewFrame(Frame):
 
         buttons = Frame(self, padding=2)
         self.button_ok = button_ok = Button(
-                buttons, text='Close', command=self.ok, takefocus=False)
+            buttons, text='Close', command=self.ok, takefocus=False,
+        )
         self.textframe.pack(side='top', expand=True, fill='both')
         button_ok.pack(side='left', padx=5)
 
         self.button_search = button_search = Button(
-                buttons, text='Search', command=self.find, takefocus=False)
+            buttons, text='Search',
+            command=lambda: self.find_event(None),
+            takefocus=False,
+        )
         button_search.pack(side='left', padx=5)
 
-        text.event_add('<<find>>', '<Control-f>')
-        text.bind('<<find>>', self.find)
+        keydefs = idleConf.GetCurrentKeySet()
+        for pseudoevent, handler in [
+            ('<<find>>', self.find_event),
+            ('<<find-again>>', self.find_again_event),
+            ('<<find-selection>>', self.find_selection_event),
+        ]:
+            keylist = keydefs[pseudoevent]
+            if keylist:
+                text.event_add(pseudoevent, *keylist)
+            text.bind(pseudoevent, handler)
+
         buttons.pack(side='bottom')
 
-    def ok(self, event=None):
+    def ok(self):
         """Dismiss text viewer dialog."""
         self.parent.destroy()
+        return "break"
 
-    def find(self, event=None):
+    def find_event(self, event):
         """Open the search dialog."""
         search.find(self.text)
+        return "break"
+
+    def find_again_event(self, event):
+        """Search for the previously searched pattern again."""
+        search.find_again(self.text)
+        return "break"
+
+    def find_selection_event(self, event):
+        """Search for the currently selected text."""
+        search.find_selection(self.text)
+        return "break"
 
 
 class ViewWindow(Toplevel):
