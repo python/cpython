@@ -436,8 +436,7 @@ static PyType_Slot sslerror_type_slots[] = {
 static PyType_Spec sslerror_type_spec = {
     .name = "ssl.SSLError",
     .basicsize = sizeof(PyOSErrorObject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = sslerror_type_slots
 };
 
