@@ -2674,46 +2674,20 @@ elif os.name == 'nt':
                 # Returned as Unicode but problems if not converted to ASCII
                 proxyServer = str(winreg.QueryValueEx(internetSettings,
                                                        'ProxyServer')[0])
-
                 if '=' not in proxyServer and ';' not in proxyServer:
                     # Use one setting for all protocols.
-                    # Chromium treats this as a separate category, and some software
-                    # uses the ALL_PROXY environment variable for a similar purpose,
-                    # so arguably this should be 'all={}'.format(proxyServer),
-                    # but this is more backward compatible.
                     proxyServer = 'http={0};https={0};ftp={0}'.format(proxyServer)
-
                 for p in proxyServer.split(';'):
-                    # Chromium and WinInet are inconsistent in their treatment of
-                    # invalid strings with the wrong number of = characters. It
-                    # probably doesn't matter.
-                    protocol, addresses = p.split('=', 1)
+                    protocol, address = p.split('=', 1)
                     protocol = protocol.strip()
-
-                    # Chromium supports more than one proxy per protocol. I don't
-                    # know how many clients support the same, but handling it is at
-                    # least no worse than leaving the commas uninterpreted.
-                    for address in addresses.split(','):
-                        if protocol in {'http', 'https', 'ftp', 'socks'}:
-                            # See if address has a type:// prefix
-                            if not re.match('(?:[^/:]+)://', address):
-                                if protocol == 'socks':
-                                    # Chromium notes that the correct protocol here
-                                    # is SOCKS4, but "socks://" is interpreted
-                                    # as SOCKS5 elsewhere. I don't know whether
-                                    # prepending socks4:// here would break code.
-                                    address = 'socks://' + address
-                                else:
-                                    address = 'http://' + address
-
-                        # A string like 'http=foo;http=bar' will produce a
-                        # comma-separated list, while previously 'bar' would
-                        # override 'foo'. That could potentially break something.
-                        if protocol not in proxies:
-                            proxies[protocol] = address
-                        else:
-                            proxies[protocol] += ',' + address
-
+                    if '://' not in address:
+                        # Add type:// prefix to address without specifying type
+                        if protocol in ('http', 'https', 'ftp'):
+                            # The default proxy type of Windows is HTTP
+                            address = 'http://' + address
+                        elif protocol == 'socks':
+                            address = 'socks://' + address
+                    proxies[protocol] = address
             internetSettings.Close()
         except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an
