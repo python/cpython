@@ -1460,9 +1460,8 @@ _functools_exec(PyObject *module)
     if (state->lru_list_elem_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->lru_list_elem_type) < 0) {
-        return -1;
-    }
+    // lru_list_elem is used only in _lru_cache_wrapper.
+    // So we don't expose it in module namespace.
 
     return 0;
 }
