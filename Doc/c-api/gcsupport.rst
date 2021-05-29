@@ -38,8 +38,9 @@ Constructors for container types must conform to two rules:
       a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
       from its subclass or subclasses.
 
-      Some APIs like :c:func:`PyType_FromSpecWithBases` or
-      :c:func:`PyType_FromSpec` will automatically populate the
+      When calling :c:func:`PyType_Ready` or some of the APIs that indirectly
+      call it like :c:func:`PyType_FromSpecWithBases` or
+      :c:func:`PyType_FromSpec` the interpreter will automatically populate the
       :c:member:`~PyTypeObject.tp_flags`, :c:member:`~PyTypeObject.tp_traverse`
       and :c:member:`~PyTypeObject.tp_clear` fields if the type inherits from a
       class that implements the garbage collector protocol and the child class
