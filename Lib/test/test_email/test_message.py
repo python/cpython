@@ -515,13 +515,19 @@ class TestEmailMessageBase:
         with self.assertRaises(ValueError):
             m.add_header(header_name, header_value)
 
-    def test_throws_on_add_invalid_header_value(self):
+    def test_add_valid_value_with_crlf_chars(self):
         m = self._str_msg('')
         header_name = 'CUSTOM-HEADER'
-        header_value = 'data\ncontinued'
+        header_value = 'hello\nworld\ragain'
+        m.add_header(header_name, header_value)
+        self.assertEqual(m.get(header_name), 'hello\n world\r again')
 
-        with self.assertRaises(ValueError):
-            m.add_header(header_name, header_value)
+    def test_add_valid_value_with_escaped_crlf_chars(self):
+        m = self._str_msg('')
+        header_name = 'CUSTOM-HEADER'
+        header_value = 'hello\\nworld\\ragain'
+        m.add_header(header_name, header_value)
+        self.assertEqual(m.get(header_name), header_value)
 
     def test_get_content_with_cm(self):
         m = self._str_msg('')

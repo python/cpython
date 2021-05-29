@@ -22,6 +22,7 @@ __all__ = [
     ]
 
 linesep_splitter = re.compile(r'\n|\r')
+header_value_linesep = re.compile(r'(?<!\\)(\n|\r)(?=([^\s]+))')
 
 @_extend_docstrings
 class EmailPolicy(Policy):
@@ -134,8 +135,10 @@ class EmailPolicy(Policy):
         attribute and it matches the name ignoring case, the value is returned
         unchanged.  Otherwise the name and value are passed to header_factory
         method, and the resulting custom header object is returned as the
-        value.  In this case a ValueError is raised if the input name or value
-        contains CR or LF characters.
+        value.  In this case a ValueError is raised if the input name contains
+        CR or LF characters and input values including CR or LF characters are
+        modified to include a space character after each CR and LF character.
+
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
@@ -144,11 +147,8 @@ class EmailPolicy(Policy):
             # (see issue 22233), but I'm not sure what should happen here.
             raise ValueError("Header name may not contain linefeed "
                              "or carriage return characters")
-        if isinstance(value, str) and len(value.splitlines()) > 1:
-            # XXX this error message isn't quite right when we use splitlines
-            # (see issue 22233), but I'm not sure what should happen here.
-            raise ValueError("Header values may not contain linefeed "
-                             "or carriage return characters")
+        if isinstance(value, str) and re.search(header_value_linesep, value):
+            value = re.sub(header_value_linesep, r'\1 ', value)
         return (name, self.header_factory(name, value))
 
     def header_fetch_parse(self, name, value):
