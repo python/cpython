@@ -33,6 +33,17 @@ Constructors for container types must conform to two rules:
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :c:func:`PyObject_GC_Track`.
 
+   .. warning::
+      If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
+      a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
+      from its subclass or subclasses.
+
+      Some APIs like :c:func:`PyType_FromSpecWithBases` or
+      :c:func:`PyType_FromSpec` will automatically populate the
+      :c:member:`~PyTypeObject.tp_flags`, :c:member:`~PyTypeObject.tp_traverse`
+      and :c:member:`~PyTypeObject.tp_clear` fields if the type inherits from a
+      class that implements the garbage collector protocol and the child class
+      does *not* include the :const:`Py_TPFLAGS_HAVE_GC` flag.
 
 .. c:function:: TYPE* PyObject_GC_New(TYPE, PyTypeObject *type)
 
