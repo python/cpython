@@ -97,6 +97,15 @@ Type Objects
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
+   .. note::
+       If some of the base classes implements the GC protocol and the provided
+       type does not include the :const:`Py_TPFLAGS_HAVE_GC` in its flags, then
+       the GC protocol will be automatically implemented from its parents. On
+       the contrary, if the type being created does include
+       :const:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
+       GC protocol itself by at least implementing the
+       :c:member:`~PyTypeObject.tp_traverse` handle.
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
@@ -168,13 +177,6 @@ The following functions and structs are used to create
    retreived with :c:func:`PyType_GetModule`.
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
-
-   If some of the bases in *bases* implements the GC protocol and the type being
-   created does not include the :const:`Py_TPFLAGS_HAVE_GC` in the flags included in
-   *spec*, then the GC protocol will be automatically implemented from its parents. On
-   the contrary, if the type being created does include :const:`Py_TPFLAGS_HAVE_GC` in
-   its flags then it *must* implement the GC protocol itself by at least including a slot
-   for :c:member:`~PyTypeObject.tp_traverse` in *spec*.
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
