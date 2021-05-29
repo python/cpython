@@ -19,6 +19,7 @@ from ._meta import PackageMetadata
 from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache
 from ._itertools import unique_everseen
+from ._meta import PackageMetadata, SimplePath
 
 from contextlib import suppress
 from importlib import import_module
@@ -47,8 +48,7 @@ class PackageNotFoundError(ModuleNotFoundError):
     """The package was not found."""
 
     def __str__(self):
-        tmpl = "No package metadata was found for {self.name}"
-        return tmpl.format(**locals())
+        return f"No package metadata was found for {self.name}"
 
     @property
     def name(self):
@@ -385,7 +385,7 @@ class FileHash:
         self.mode, _, self.value = spec.partition('=')
 
     def __repr__(self):
-        return '<FileHash mode: {} value: {}>'.format(self.mode, self.value)
+        return f'<FileHash mode: {self.mode} value: {self.value}>'
 
 
 class Distribution:
@@ -569,13 +569,13 @@ class Distribution:
         """
 
         def make_condition(name):
-            return name and 'extra == "{name}"'.format(name=name)
+            return name and f'extra == "{name}"'
 
         def parse_condition(section):
             section = section or ''
             extra, sep, markers = section.partition(':')
             if extra and markers:
-                markers = '({markers})'.format(markers=markers)
+                markers = f'({markers})'
             conditions = list(filter(None, [markers, make_condition(extra)]))
             return '; ' + ' and '.join(conditions) if conditions else ''
 
@@ -612,10 +612,11 @@ class DistributionFinder(MetaPathFinder):
         @property
         def path(self):
             """
-            The path that a distribution finder should search.
+            The sequence of directory path that a distribution finder
+            should search.
 
-            Typically refers to Python package paths and defaults
-            to ``sys.path``.
+            Typically refers to Python installed package paths such as
+            "site-packages" directories and defaults to ``sys.path``.
             """
             return vars(self).get('path', sys.path)
 
@@ -772,11 +773,10 @@ class MetadataPathFinder(DistributionFinder):
 
 
 class PathDistribution(Distribution):
-    def __init__(self, path):
-        """Construct a distribution from a path to the metadata directory.
+    def __init__(self, path: SimplePath):
+        """Construct a distribution.
 
-        :param path: A pathlib.Path or similar object supporting
-                     .joinpath(), __div__, .parent, and .read_text().
+        :param path: SimplePath indicating the metadata directory.
         """
         self._path = path
 
@@ -870,7 +870,7 @@ def requires(distribution_name):
     Return a list of requirements for the named package.
 
     :return: An iterator of requirements, suitable for
-    packaging.requirement.Requirement.
+        packaging.requirement.Requirement.
     """
     return distribution(distribution_name).requires
 

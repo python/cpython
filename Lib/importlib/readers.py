@@ -94,16 +94,15 @@ class MultiplexedPath(abc.Traversable):
     __truediv__ = joinpath
 
     def open(self, *args, **kwargs):
-        raise FileNotFoundError('{} is not a file'.format(self))
+        raise FileNotFoundError(f'{self} is not a file')
 
     @property
     def name(self):
         return self._paths[0].name
 
     def __repr__(self):
-        return 'MultiplexedPath({})'.format(
-            ', '.join("'{}'".format(path) for path in self._paths)
-        )
+        paths = ', '.join(f"'{path}'" for path in self._paths)
+        return f'MultiplexedPath({paths})'
 
 
 class NamespaceReader(abc.TraversableResources):

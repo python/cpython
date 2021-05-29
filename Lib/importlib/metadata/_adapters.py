@@ -19,6 +19,7 @@ class Message(email.message.Message):
                 'Requires-Dist',
                 'Requires-External',
                 'Supported-Platform',
+                'Dynamic',
             ],
         )
     )

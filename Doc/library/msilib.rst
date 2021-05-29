@@ -119,7 +119,7 @@ structures.
 .. function:: gen_uuid()
 
    Return a new UUID, in the format that MSI typically requires (i.e. in curly
-   braces, and with all hexdigits in upper-case).
+   braces, and with all hexdigits in uppercase).
 
 
 .. seealso::

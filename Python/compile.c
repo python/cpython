@@ -24,6 +24,7 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
+#include "pycore_code.h"          // _PyCode_New()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -7166,16 +7167,16 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 static PyCodeObject *
-makecode(struct compiler *c, struct assembler *a, PyObject *consts, int maxdepth)
+makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
+         int maxdepth)
 {
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
+    PyObject *consts = NULL;
     PyObject *varnames = NULL;
     PyObject *name = NULL;
     PyObject *freevars = NULL;
     PyObject *cellvars = NULL;
-    Py_ssize_t nlocals;
-    int nlocals_int;
     int flags;
     int posorkeywordargcount, posonlyargcount, kwonlyargcount;
 
@@ -7199,34 +7200,53 @@ makecode(struct compiler *c, struct assembler *a, PyObject *consts, int maxdepth
         goto error;
     }
 
-    nlocals = PyDict_GET_SIZE(c->u->u_varnames);
-    assert(nlocals < INT_MAX);
-    nlocals_int = Py_SAFE_DOWNCAST(nlocals, Py_ssize_t, int);
-
     flags = compute_code_flags(c);
     if (flags < 0)
         goto error;
 
-    consts = PyList_AsTuple(consts); /* PyCode_New requires a tuple */
+    consts = PyList_AsTuple(constslist); /* PyCode_New requires a tuple */
     if (consts == NULL) {
         goto error;
     }
     if (!merge_const_one(c, &consts)) {
-        Py_DECREF(consts);
         goto error;
     }
 
     posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
     posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
     kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
-    co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
-                                   posonlyargcount, kwonlyargcount, nlocals_int,
-                                   maxdepth, flags, a->a_bytecode, consts, names,
-                                   varnames, freevars, cellvars, c->c_filename,
-                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab, a->a_except_table);
-    Py_DECREF(consts);
+    struct _PyCodeConstructor con = {
+        .filename = c->c_filename,
+        .name = c->u->u_name,
+        .flags = flags,
+
+        .code = a->a_bytecode,
+        .firstlineno = c->u->u_firstlineno,
+        .linetable = a->a_lnotab,
+
+        .consts = consts,
+        .names = names,
+
+        .varnames = varnames,
+        .cellvars = cellvars,
+        .freevars = freevars,
+
+        .argcount = posonlyargcount + posorkeywordargcount,
+        .posonlyargcount = posonlyargcount,
+        .kwonlyargcount = kwonlyargcount,
+
+        .stacksize = maxdepth,
+
+        .exceptiontable = a->a_except_table,
+    };
+    if (_PyCode_Validate(&con) < 0) {
+        goto error;
+    }
+    co = _PyCode_New(&con);
+
  error:
     Py_XDECREF(names);
+    Py_XDECREF(consts);
     Py_XDECREF(varnames);
     Py_XDECREF(name);
     Py_XDECREF(freevars);
