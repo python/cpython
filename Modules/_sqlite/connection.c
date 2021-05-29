@@ -149,14 +149,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         return -1;
     }
 
-    /* By default, the Cache class INCREFs the factory in its initializer, and
-     * decrefs it in its deallocator method. Since this would create a circular
-     * reference here, we're breaking it by decrementing self, and telling the
-     * cache class to not decref the factory (self) in its deallocator.
-     */
-    self->statement_cache->decref_factory = 0;
-    Py_DECREF(self);
-
     self->detect_types = detect_types;
     self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
