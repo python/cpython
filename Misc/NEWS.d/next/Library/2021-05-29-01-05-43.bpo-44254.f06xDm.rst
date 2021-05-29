@@ -1,0 +1,1 @@
+On Mac, remove disfunctional colors from turtledemo buttons.
