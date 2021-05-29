@@ -8,9 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_gc.h"         // _PyObject_GC_IS_TRACKED()
-#include "pycore_interp.h"     // PyInterpreterState.gc
-#include "pycore_pystate.h"    // _PyThreadState_GET()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_interp.h"        // PyInterpreterState.gc
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
@@ -85,8 +85,8 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyGC_Head *generation0 = tstate->interp->gc.generation0;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyGC_Head *generation0 = interp->gc.generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
@@ -173,6 +173,10 @@ extern int _Py_CheckSlotResult(
     PyObject *obj,
     const char *slot_name,
     int success);
+
+// PyType_Ready() must be called if _PyType_IsReady() is false.
+// See also the Py_TPFLAGS_READY flag.
+#define _PyType_IsReady(type) ((type)->tp_dict != NULL)
 
 #ifdef __cplusplus
 }

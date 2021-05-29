@@ -351,6 +351,27 @@ exactly as written here:
    assert     del        global     not        with
    async      elif       if         or         yield
 
+
+.. _soft-keywords:
+
+Soft Keywords
+-------------
+
+.. index:: soft keyword, keyword
+
+.. versionadded:: 3.10
+
+Some identifiers are only reserved under specific contexts. These are known as
+*soft keywords*.  The identifiers ``match``, ``case`` and ``_`` can
+syntactically act as keywords in contexts related to the pattern matching
+statement, but this distinction is done at the parser level, not when
+tokenizing.
+
+As soft keywords, their use with pattern matching is possible while still
+preserving compatibility with existing code that uses ``match``, ``case`` and ``_`` as
+identifier names.
+
+
 .. index::
    single: _, identifiers
    single: __, identifiers

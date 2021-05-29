@@ -57,6 +57,8 @@ Glossary
 
       See :term:`variable annotation`, :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
@@ -455,6 +457,8 @@ Glossary
 
       See :term:`variable annotation` and :pep:`484`,
       which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
@@ -708,7 +712,7 @@ Glossary
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
       ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
 
-      On Windows, it is is the ANSI code page (ex: ``cp1252``).
+      On Windows, it is the ANSI code page (ex: ``cp1252``).
 
       ``locale.getpreferredencoding(False)`` can be used to get the locale
       encoding.
@@ -1211,6 +1215,8 @@ Glossary
 
       See :term:`function annotation`, :pep:`484`
       and :pep:`526`, which describe this functionality.
+      Also see :ref:`annotations-howto`
+      for best practices on working with annotations.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

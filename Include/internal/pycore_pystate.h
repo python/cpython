@@ -22,11 +22,11 @@ _Py_IsMainThread(void)
 
 
 static inline int
-_Py_IsMainInterpreter(PyThreadState* tstate)
+_Py_IsMainInterpreter(PyInterpreterState *interp)
 {
     /* Use directly _PyRuntime rather than tstate->interp->runtime, since
        this function is used in performance critical code path (ceval) */
-    return (tstate->interp == _PyRuntime.interpreters.main);
+    return (interp == _PyRuntime.interpreters.main);
 }
 
 
@@ -146,6 +146,9 @@ PyAPI_FUNC(int) _PyState_AddModule(
 
 
 PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
+
+PyObject **_PyThreadState_PushLocals(PyThreadState *, int size);
+void _PyThreadState_PopLocals(PyThreadState *, PyObject **);
 
 #ifdef __cplusplus
 }

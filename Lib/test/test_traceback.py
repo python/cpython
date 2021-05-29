@@ -232,6 +232,29 @@ class TracebackCases(unittest.TestCase):
         output = traceback.format_exception_only(Exception("projector"))
         self.assertEqual(output, ["Exception: projector\n"])
 
+    def test_exception_is_None(self):
+        NONE_EXC_STRING = 'NoneType: None\n'
+        excfile = StringIO()
+        traceback.print_exception(None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        excfile = StringIO()
+        traceback.print_exception(None, None, None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        excfile = StringIO()
+        traceback.print_exc(None, file=excfile)
+        self.assertEqual(excfile.getvalue(), NONE_EXC_STRING)
+
+        self.assertEqual(traceback.format_exc(None), NONE_EXC_STRING)
+        self.assertEqual(traceback.format_exception(None), [NONE_EXC_STRING])
+        self.assertEqual(
+            traceback.format_exception(None, None, None), [NONE_EXC_STRING])
+        self.assertEqual(
+            traceback.format_exception_only(None), [NONE_EXC_STRING])
+        self.assertEqual(
+            traceback.format_exception_only(None, None), [NONE_EXC_STRING])
+
 
 class TracebackFormatTests(unittest.TestCase):
 
@@ -1354,6 +1377,23 @@ class TestTracebackException(unittest.TestCase):
         # see issue #24695
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
+
+    def test_print(self):
+        def f():
+            x = 12
+            try:
+                x/0
+            except Exception:
+                return sys.exc_info()
+        exc = traceback.TracebackException(*f(), capture_locals=True)
+        output = StringIO()
+        exc.print(file=output)
+        self.assertEqual(
+            output.getvalue().split('\n')[-4:],
+            ['    x/0',
+             '    x = 12',
+             'ZeroDivisionError: division by zero',
+             ''])
 
 
 class MiscTest(unittest.TestCase):

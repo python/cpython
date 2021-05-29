@@ -333,7 +333,7 @@ Encoders and Decoders
    *object_hook*, if specified, will be called with the result of every JSON
    object decoded and its return value will be used in place of the given
    :class:`dict`.  This can be used to provide custom deserializations (e.g. to
-   support JSON-RPC class hinting).
+   support `JSON-RPC <http://www.jsonrpc.org>`_ class hinting).
 
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
@@ -422,10 +422,9 @@ Encoders and Decoders
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
-   If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
-   attempt encoding of keys that are not :class:`str`, :class:`int`,
-   :class:`float` or ``None``.  If *skipkeys* is true, such items are simply
-   skipped.
+   If *skipkeys* is false (the default), a :exc:`TypeError` will be raised when
+   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`
+   or ``None``.  If *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
@@ -479,8 +478,8 @@ Encoders and Decoders
       object for *o*, or calls the base implementation (to raise a
       :exc:`TypeError`).
 
-      For example, to support arbitrary iterators, you could implement default
-      like this::
+      For example, to support arbitrary iterators, you could implement
+      :meth:`default` like this::
 
          def default(self, o):
             try:

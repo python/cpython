@@ -10,6 +10,7 @@ import functools
 import sys
 import unittest
 from copy import copy, deepcopy
+import pickle
 from pickle import dumps, loads
 F = fractions.Fraction
 
@@ -369,7 +370,9 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(F(1, 2), F(1, 10) + F(2, 5))
         self.assertEqual(F(-3, 10), F(1, 10) - F(2, 5))
         self.assertEqual(F(1, 25), F(1, 10) * F(2, 5))
+        self.assertEqual(F(5, 6), F(2, 3) * F(5, 4))
         self.assertEqual(F(1, 4), F(1, 10) / F(2, 5))
+        self.assertEqual(F(-15, 8), F(3, 4) / F(-2, 5))
         self.assertTypedEquals(2, F(9, 10) // F(2, 5))
         self.assertTypedEquals(10**23, F(10**23, 1) // F(1))
         self.assertEqual(F(5, 6), F(7, 3) % F(3, 2))
@@ -689,7 +692,8 @@ class FractionTest(unittest.TestCase):
     def test_copy_deepcopy_pickle(self):
         r = F(13, 7)
         dr = DummyFraction(13, 7)
-        self.assertEqual(r, loads(dumps(r)))
+        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+            self.assertEqual(r, loads(dumps(r, proto)))
         self.assertEqual(id(r), id(copy(r)))
         self.assertEqual(id(r), id(deepcopy(r)))
         self.assertNotEqual(id(dr), id(copy(dr)))

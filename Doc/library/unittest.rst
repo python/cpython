@@ -330,7 +330,10 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`.
+   Test discovery supports :term:`namespace packages <namespace package>`
+   for the start directory. Note that you need to specify the top level
+   directory too (e.g.
+   ``python -m unittest discover -s root/namespace -t root``).
 
 
 .. _organizing-tests:
@@ -594,8 +597,9 @@ The following decorators and exception implement test skipping and expected fail
 .. decorator:: expectedFailure
 
    Mark the test as an expected failure or error.  If the test fails or errors
-   it will be considered a success.  If the test passes, it will be considered
-   a failure.
+   in the test function itself (rather than in one of the :dfn:`test fixture`
+   methods) then it will be considered a success.  If the test passes, it will
+   be considered a failure.
 
 .. exception:: SkipTest(reason)
 
@@ -1870,11 +1874,15 @@ Loading and running tests
 
       .. versionchanged:: 3.4
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
-           not errors.
-         Discovery works for :term:`namespace packages <namespace package>`.
-         Paths are sorted before being imported so that execution order is
-           the same even if the underlying file system's ordering is not
-           dependent on file name.
+         not errors.
+
+      .. versionchanged:: 3.4
+         *start_dir* can be a :term:`namespace packages <namespace package>`.
+
+      .. versionchanged:: 3.4
+         Paths are sorted before being imported so that execution order is the
+         same even if the underlying file system's ordering is not dependent
+         on file name.
 
       .. versionchanged:: 3.5
          Found packages are now checked for ``load_tests`` regardless of
