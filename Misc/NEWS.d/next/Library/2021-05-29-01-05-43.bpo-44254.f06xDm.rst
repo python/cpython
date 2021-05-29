@@ -1,1 +1,2 @@
-On Mac, remove disfunctional colors from turtledemo buttons.
+On Mac, give turtledemo button text a color that works on light and
+dark background.  Programmers cannot control the latter.
