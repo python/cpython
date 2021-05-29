@@ -4014,13 +4014,6 @@ class TestBoundArguments(unittest.TestCase):
         self.assertIs(type(ba.arguments), dict)
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
-    def test_signature_get_bound_param(self):
-        getter = inspect._signature_get_bound_param
-
-        self.assertEqual(getter('($self)'), 'self')
-        self.assertEqual(getter('($self, obj)'), 'self')
-        self.assertEqual(getter('($cls, /, obj)'), 'cls')
-
     def _strip_non_python_syntax(self, input,
         clean_signature, self_parameter, last_positional_only):
         computed_clean_signature, \

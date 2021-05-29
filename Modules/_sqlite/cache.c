@@ -44,14 +44,29 @@ pysqlite_new_node(PyObject *key, PyObject *data)
     return node;
 }
 
+static int
+node_traverse(pysqlite_Node *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->key);
+    Py_VISIT(self->data);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static int
+node_clear(pysqlite_Node *self)
+{
+    Py_CLEAR(self->key);
+    Py_CLEAR(self->data);
+    return 0;
+}
+
 static void
 pysqlite_node_dealloc(pysqlite_Node *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
-    Py_DECREF(self->key);
-    Py_DECREF(self->data);
-
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -88,31 +103,51 @@ pysqlite_cache_init(pysqlite_Cache *self, PyObject *args, PyObject *kwargs)
     return 0;
 }
 
+static int
+cache_traverse(pysqlite_Cache *self, visitproc visit, void *arg)
+{
+    pysqlite_Node *node = self->first;
+    while (node) {
+        Py_VISIT(node);
+        node = node->next;
+    }
+    Py_VISIT(self->mapping);
+    if (self->decref_factory) {
+        Py_VISIT(self->factory);
+    }
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static int
+cache_clear(pysqlite_Cache *self)
+{
+    /* iterate over all nodes and deallocate them */
+    pysqlite_Node *node = self->first;
+    self->first = NULL;
+    while (node) {
+        pysqlite_Node *delete_node = node;
+        node = node->next;
+        Py_CLEAR(delete_node);
+    }
+    if (self->decref_factory) {
+        Py_CLEAR(self->factory);
+    }
+    Py_CLEAR(self->mapping);
+    return 0;
+}
+
 static void
 pysqlite_cache_dealloc(pysqlite_Cache *self)
 {
-    PyTypeObject *tp = Py_TYPE(self);
-    pysqlite_Node* node;
-    pysqlite_Node* delete_node;
-
     if (!self->factory) {
         /* constructor failed, just get out of here */
         return;
     }
 
-    /* iterate over all nodes and deallocate them */
-    node = self->first;
-    while (node) {
-        delete_node = node;
-        node = node->next;
-        Py_DECREF(delete_node);
-    }
-
-    if (self->decref_factory) {
-        Py_DECREF(self->factory);
-    }
-    Py_DECREF(self->mapping);
-
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -260,14 +295,15 @@ pysqlite_cache_display(pysqlite_Cache *self, PyObject *args)
 
 static PyType_Slot node_slots[] = {
     {Py_tp_dealloc, pysqlite_node_dealloc},
-    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_traverse, node_traverse},
+    {Py_tp_clear, node_clear},
     {0, NULL},
 };
 
 static PyType_Spec node_spec = {
     .name = MODULE_NAME ".Node",
     .basicsize = sizeof(pysqlite_Node),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = node_slots,
 };
 PyTypeObject *pysqlite_NodeType = NULL;
@@ -283,15 +319,16 @@ static PyMethodDef cache_methods[] = {
 static PyType_Slot cache_slots[] = {
     {Py_tp_dealloc, pysqlite_cache_dealloc},
     {Py_tp_methods, cache_methods},
-    {Py_tp_new, PyType_GenericNew},
     {Py_tp_init, pysqlite_cache_init},
+    {Py_tp_traverse, cache_traverse},
+    {Py_tp_clear, cache_clear},
     {0, NULL},
 };
 
 static PyType_Spec cache_spec = {
     .name = MODULE_NAME ".Cache",
     .basicsize = sizeof(pysqlite_Cache),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = cache_slots,
 };
 PyTypeObject *pysqlite_CacheType = NULL;
