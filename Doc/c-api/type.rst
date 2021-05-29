@@ -169,6 +169,13 @@ The following functions and structs are used to create
    The associated module is not inherited by subclasses; it must be specified
    for each class individually.
 
+   If some of the bases in *bases* implements the GC protocol and the type being
+   created does not include the :const:`Py_TPFLAGS_HAVE_GC` in the flags included in
+   *spec*, then the GC protocol will be automatically implemented from its parents. On
+   the contrary, if the type being created does include :const:`Py_TPFLAGS_HAVE_GC` in
+   its flags then it *must* implement the GC protocol itself by at least including a slot
+   for :c:member:`~PyTypeObject.tp_traverse` in *spec*.
+
    This function calls :c:func:`PyType_Ready` on the new type.
 
    .. versionadded:: 3.9
