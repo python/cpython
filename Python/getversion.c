@@ -14,6 +14,5 @@ Py_GetVersion(void)
     return version;
 }
 
-
 /* Export version as API data */
-const char * Py_Version = PY_VERSION_HEX;
+const long int Py_Version = PY_VERSION_HEX;

@@ -146,6 +146,8 @@
 #include "cpython/pyfpe.h"
 #include "tracemalloc.h"
 
-PyAPI_DATA(const char *) Py_Version;
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
+PyAPI_DATA(const long int) Py_Version;
+#endif
 
 #endif /* !Py_PYTHON_H */
