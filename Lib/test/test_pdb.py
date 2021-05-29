@@ -9,6 +9,7 @@ import codecs
 import unittest
 import subprocess
 import textwrap
+import linecache
 
 from contextlib import ExitStack
 from io import StringIO
@@ -213,6 +214,9 @@ def test_pdb_basic_commands():
     BAZ
     """
 
+def reset_Breakpoint():
+    import bdb
+    bdb.Breakpoint.clearBreakpoints()
 
 def test_pdb_breakpoint_commands():
     """Test basic commands related to breakpoints.
@@ -227,10 +231,7 @@ def test_pdb_breakpoint_commands():
     First, need to clear bdb state that might be left over from previous tests.
     Otherwise, the new breakpoints might get assigned different numbers.
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
-    >>> Breakpoint.bplist = {}
-    >>> Breakpoint.bpbynumber = [None]
+    >>> reset_Breakpoint()
 
     Now test the breakpoint commands.  NORMALIZE_WHITESPACE is needed because
     the breakpoint list outputs a tab for the "stop only" and "ignore next"
@@ -323,6 +324,72 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoints_preserved_across_interactive_sessions():
+    """Breakpoints are remembered between interactive sessions
+
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'import test.test_pdb',
+    ...    'break test.test_pdb.do_something',
+    ...    'break test.test_pdb.do_nothing',
+    ...    'break',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()...
+    (Pdb) import test.test_pdb
+    (Pdb) break test.test_pdb.do_something
+    Breakpoint 1 at ...test_pdb.py:...
+    (Pdb) break test.test_pdb.do_nothing
+    Breakpoint 2 at ...test_pdb.py:...
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    (Pdb) continue
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'break',
+    ...    'break pdb.find_function',
+    ...    'break',
+    ...    'clear 1',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()...
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    (Pdb) break pdb.find_function
+    Breakpoint 3 at ...pdb.py:94
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    1   breakpoint   keep yes   at ...test_pdb.py:...
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    3   breakpoint   keep yes   at ...pdb.py:...
+    (Pdb) clear 1
+    Deleted breakpoint 1 at ...test_pdb.py:...
+    (Pdb) continue
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...    'break',
+    ...    'clear 2',
+    ...    'clear 3',
+    ...    'continue',
+    ... ]):
+    ...    pdb.run('print()')
+    > <string>(1)<module>()...
+    (Pdb) break
+    Num Type         Disp Enb   Where
+    2   breakpoint   keep yes   at ...test_pdb.py:...
+    3   breakpoint   keep yes   at ...pdb.py:...
+    (Pdb) clear 2
+    Deleted breakpoint 2 at ...test_pdb.py:...
+    (Pdb) clear 3
+    Deleted breakpoint 3 at ...pdb.py:...
+    (Pdb) continue
+    """
 
 def do_nothing():
     pass
@@ -699,8 +766,7 @@ def test_next_until_return_at_return_event():
     ...     test_function_2()
     ...     end = 1
 
-    >>> from bdb import Breakpoint
-    >>> Breakpoint.next = 1
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_function_2',
     ...                    'continue',
     ...                    'return',
@@ -1127,6 +1193,7 @@ def test_pdb_next_command_in_generator_for_loop():
     ...         print('value', i)
     ...     x = 123
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['break test_gen',
     ...                    'continue',
     ...                    'next',
@@ -1137,7 +1204,7 @@ def test_pdb_next_command_in_generator_for_loop():
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[1]>(3)test_function()
     -> for i in test_gen():
     (Pdb) break test_gen
-    Breakpoint 6 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>:1
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_next_command_in_generator_for_loop[0]>(2)test_gen()
     -> yield 0
@@ -1213,6 +1280,7 @@ def test_pdb_issue_20766():
     ...         print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     ...         i += 1
 
+    >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
     ...     test_function()
@@ -1443,6 +1511,19 @@ def bœr():
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
 
+    def test_issue26053(self):
+        # run command of pdb prompt echoes the correct args
+        script = "print('hello')"
+        commands = """
+            continue
+            run a b c
+            run d e f
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        res = '\n'.join([x.strip() for x in stdout.splitlines()])
+        self.assertRegex(res, "Restarting .* with arguments:\na b c")
+        self.assertRegex(res, "Restarting .* with arguments:\nd e f")
 
     def test_readrc_kwarg(self):
         script = textwrap.dedent("""
@@ -1727,10 +1808,47 @@ def bœr():
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
 
+class ChecklineTests(unittest.TestCase):
+    def setUp(self):
+        linecache.clearcache()  # Pdb.checkline() uses linecache.getline()
+
+    def tearDown(self):
+        os_helper.unlink(os_helper.TESTFN)
+
+    def test_checkline_before_debugging(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
+    def test_checkline_after_reset(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        db.reset()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
+    def test_checkline_is_not_executable(self):
+        with open(os_helper.TESTFN, "w") as f:
+            # Test for comments, docstrings and empty lines
+            s = textwrap.dedent("""
+                # Comment
+                \"\"\" docstring \"\"\"
+                ''' docstring '''
+
+            """)
+            f.write(s)
+        db = pdb.Pdb()
+        num_lines = len(s.splitlines()) + 2  # Test for EOF
+        for lineno in range(num_lines):
+            self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+
+
 def load_tests(*args):
     from test import test_pdb
     suites = [
         unittest.makeSuite(PdbTestCase),
+        unittest.makeSuite(ChecklineTests),
         doctest.DocTestSuite(test_pdb)
     ]
     return unittest.TestSuite(suites)

@@ -162,6 +162,9 @@ following combinations of SDKs and universal-archs flavors are available:
 The makefile for a framework build will also install ``python3.x-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit`` and ``intel-64``).
+It will also install ``python3.x-intel64`` binaries in the ``universal2``
+case to allow easy execution with the Rosetta 2 Intel emulator on Apple
+Silicon Macs.
 
 Running a specific architecture
 ...............................
@@ -180,6 +183,9 @@ under that Python.  If you want to ensure that Python interpreters launched in
 subprocesses also run in 32-bit-mode if the main interpreter does, use
 a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 ``subprocess`` ``Popen`` executable value.
+
+Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
+with ``universal2`` binaries.
 
 Building and using a framework-based Python on macOS
 ====================================================
@@ -359,7 +365,7 @@ them symbolic links to files in ``/Library/Frameworks/Python.framework/Versions/
 Weak linking support
 ====================
 
-The CPython sources support building with the latest SDK while targetting deployment
+The CPython sources support building with the latest SDK while targeting deployment
 to macOS 10.9. This is done through weak linking of symbols introduced in macOS
 10.10 or later and checking for their availability at runtime.
 

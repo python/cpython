@@ -52,7 +52,7 @@ class AutoFileTests:
         # verify readinto refuses text files
         a = array('b', b'x'*10)
         self.f.close()
-        self.f = self.open(TESTFN, 'r')
+        self.f = self.open(TESTFN, encoding="utf-8")
         if hasattr(self.f, "readinto"):
             self.assertRaises(TypeError, self.f.readinto, a)
 

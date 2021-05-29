@@ -185,8 +185,14 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
         formatted = percent % ((value,) + additional)
     else:
         formatted = percent % value
+    if percent[-1] in 'eEfFgGdiu':
+        formatted = _localize(formatted, grouping, monetary)
+    return formatted
+
+# Transform formatted as locale number according to the locale settings
+def _localize(formatted, grouping=False, monetary=False):
     # floats and decimal ints need special action!
-    if percent[-1] in 'eEfFgG':
+    if '.' in formatted:
         seps = 0
         parts = formatted.split('.')
         if grouping:
@@ -196,7 +202,7 @@ def _format(percent, value, grouping=False, monetary=False, *additional):
         formatted = decimal_point.join(parts)
         if seps:
             formatted = _strip_padding(formatted, seps)
-    elif percent[-1] in 'diu':
+    else:
         seps = 0
         if grouping:
             formatted, seps = _group(formatted, monetary=monetary)
@@ -267,7 +273,7 @@ def currency(val, symbol=True, grouping=False, international=False):
         raise ValueError("Currency formatting is not possible using "
                          "the 'C' locale.")
 
-    s = _format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    s = _localize(f'{abs(val):.{digits}f}', grouping, monetary=True)
     # '<' and '>' are markers if the sign must be inserted between symbol and value
     s = '<' + s + '>'
 
@@ -322,6 +328,10 @@ def delocalize(string):
     if dd:
         string = string.replace(dd, '.')
     return string
+
+def localize(string, grouping=False, monetary=False):
+    """Parses a string as locale number according to the locale settings."""
+    return _localize(string, grouping, monetary)
 
 def atof(string, func=float):
     "Parses a string as a float according to the locale settings."

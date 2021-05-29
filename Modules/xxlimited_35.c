@@ -5,9 +5,11 @@
  * See the xxlimited module for an extension module template.
  */
 
-/* Xxo objects */
+#define Py_LIMITED_API 0x03050000
 
 #include "Python.h"
+
+/* Xxo objects */
 
 static PyObject *ErrorObject;
 

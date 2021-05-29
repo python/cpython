@@ -35,6 +35,7 @@ class BuildExtTestCase(TempdirManager,
         site.USER_BASE = self.mkdtemp()
         from distutils.command import build_ext
         build_ext.USER_BASE = site.USER_BASE
+        self.old_config_vars = dict(sysconfig._config_vars)
 
         # bpo-30132: On Windows, a .pdb file may be created in the current
         # working directory. Create a temporary working directory to cleanup
@@ -48,6 +49,8 @@ class BuildExtTestCase(TempdirManager,
         site.USER_BASE = self.old_user_base
         from distutils.command import build_ext
         build_ext.USER_BASE = self.old_user_base
+        sysconfig._config_vars.clear()
+        sysconfig._config_vars.update(self.old_config_vars)
         super(BuildExtTestCase, self).tearDown()
 
     def build_ext(self, *args, **kwargs):

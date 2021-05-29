@@ -77,7 +77,7 @@ class TestMailbox(TestBase):
         self.assertEqual(len(self._box), 6)
         with self.assertWarns(DeprecationWarning):
             keys.append(self._box.add(
-                io.TextIOWrapper(io.BytesIO(_bytes_sample_message))))
+                io.TextIOWrapper(io.BytesIO(_bytes_sample_message), encoding="utf-8")))
         self.assertEqual(len(self._box), 7)
         self.assertEqual(self._box.get_string(keys[0]), self._template % 0)
         for i in (1, 2, 3, 4, 5, 6):
@@ -160,7 +160,7 @@ class TestMailbox(TestBase):
             self._non_latin_bin_msg.split(b'\n'))
 
     def test_add_text_file_warns(self):
-        with tempfile.TemporaryFile('w+') as f:
+        with tempfile.TemporaryFile('w+', encoding='utf-8') as f:
             f.write(_sample_message)
             f.seek(0)
             with self.assertWarns(DeprecationWarning):
@@ -724,9 +724,9 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         # Remove old files from 'tmp'
         foo_path = os.path.join(self._path, 'tmp', 'foo')
         bar_path = os.path.join(self._path, 'tmp', 'bar')
-        with open(foo_path, 'w') as f:
+        with open(foo_path, 'w', encoding='utf-8') as f:
             f.write("@")
-        with open(bar_path, 'w') as f:
+        with open(bar_path, 'w', encoding='utf-8') as f:
             f.write("@")
         self._box.clean()
         self.assertTrue(os.path.exists(foo_path))
@@ -984,7 +984,7 @@ class _TestMboxMMDF(_TestSingleFile):
             os_helper.unlink(lock_remnant)
 
     def assertMailboxEmpty(self):
-        with open(self._path) as f:
+        with open(self._path, 'rb') as f:
             self.assertEqual(f.readlines(), [])
 
     def test_get_bytes_from(self):
@@ -1150,12 +1150,12 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     def test_message_separator(self):
         # Check there's always a single blank line after each message
         self._box.add('From: foo\n\n0')  # No newline at the end
-        with open(self._path) as f:
+        with open(self._path, encoding='utf-8') as f:
             data = f.read()
             self.assertEqual(data[-3:], '0\n\n')
 
         self._box.add('From: foo\n\n0\n')  # Newline at the end
-        with open(self._path) as f:
+        with open(self._path, encoding='utf-8') as f:
             data = f.read()
             self.assertEqual(data[-3:], '0\n\n')
 
@@ -1305,7 +1305,7 @@ class TestBabyl(_TestSingleFile, unittest.TestCase):
     _factory = lambda self, path, factory=None: mailbox.Babyl(path, factory)
 
     def assertMailboxEmpty(self):
-        with open(self._path) as f:
+        with open(self._path, 'rb') as f:
             self.assertEqual(f.readlines(), [])
 
     def tearDown(self):
@@ -1390,7 +1390,7 @@ class TestMessage(TestBase, unittest.TestCase):
 
     def test_initialize_with_file(self):
         # Initialize based on contents of file
-        with open(self._path, 'w+') as f:
+        with open(self._path, 'w+', encoding='utf-8') as f:
             f.write(_sample_message)
             f.seek(0)
             msg = self._factory(f)
@@ -2158,7 +2158,7 @@ class MaildirTestCase(unittest.TestCase):
         filename = ".".join((str(t), str(pid), "myhostname", "mydomain"))
         tmpname = os.path.join(self._dir, "tmp", filename)
         newname = os.path.join(self._dir, dir, filename)
-        with open(tmpname, "w") as fp:
+        with open(tmpname, "w", encoding="utf-8") as fp:
             self._msgfiles.append(tmpname)
             if mbox:
                 fp.write(FROM_)

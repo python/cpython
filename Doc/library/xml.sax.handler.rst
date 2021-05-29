@@ -50,7 +50,7 @@ module :mod:`xml.sax.handler`, so that all methods get default implementations.
 
 .. class:: LexicalHandler
 
-   Interface used by the parser to represent low freqency events which may not
+   Interface used by the parser to represent low frequency events which may not
    be of interest to many applications.
 
 In addition to these classes, :mod:`xml.sax.handler` provides symbolic constants

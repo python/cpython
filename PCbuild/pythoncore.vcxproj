@@ -110,11 +110,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\Include\Python-ast.h" />
     <ClInclude Include="..\Include\Python.h" />
     <ClInclude Include="..\Include\abstract.h" />
-    <ClInclude Include="..\Include\asdl.h" />
-    <ClInclude Include="..\Include\ast.h" />
     <ClInclude Include="..\Include\boolobject.h" />
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
@@ -131,6 +128,7 @@
     <ClInclude Include="..\Include\cpython\bytesobject.h" />
     <ClInclude Include="..\Include\cpython\ceval.h" />
     <ClInclude Include="..\Include\cpython\code.h" />
+    <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
     <ClInclude Include="..\Include\cpython\fileutils.h" />
@@ -142,11 +140,19 @@
     <ClInclude Include="..\Include\cpython\methodobject.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
+    <ClInclude Include="..\Include\cpython\odictobject.h" />
+    <ClInclude Include="..\Include\cpython\parser_interface.h" />
+    <ClInclude Include="..\Include\cpython\picklebufobject.h" />
+    <ClInclude Include="..\Include\cpython\pyarena.h" />
+    <ClInclude Include="..\Include\cpython\pyctype.h" />
+    <ClInclude Include="..\Include\cpython\pydebug.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
+    <ClInclude Include="..\Include\cpython\pyfpe.h" />
     <ClInclude Include="..\Include\cpython\pylifecycle.h" />
     <ClInclude Include="..\Include\cpython\pymem.h" />
     <ClInclude Include="..\Include\cpython\pystate.h" />
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
+    <ClInclude Include="..\Include\cpython\pytime.h" />
     <ClInclude Include="..\Include\cpython\sysmodule.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
@@ -167,6 +173,9 @@
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_abstract.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
+    <ClInclude Include="..\Include\internal\pycore_asdl.h" />
+    <ClInclude Include="..\Include\internal\pycore_ast.h" />
+    <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic_funcs.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
@@ -174,6 +183,7 @@
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
+    <ClInclude Include="..\Include\internal\pycore_compile.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
     <ClInclude Include="..\Include\internal\pycore_dtoa.h" />
@@ -189,15 +199,19 @@
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
+    <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
+    <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
     <ClInclude Include="..\Include\internal\pycore_pymem.h" />
     <ClInclude Include="..\Include\internal\pycore_pystate.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
+    <ClInclude Include="..\Include\internal\pycore_structseq.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
+    <ClInclude Include="..\Include\internal\pycore_symtable.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
@@ -217,21 +231,14 @@
     <ClInclude Include="..\Include\namespaceobject.h" />
     <ClInclude Include="..\Include\object.h" />
     <ClInclude Include="..\Include\objimpl.h" />
-    <ClInclude Include="..\Include\odictobject.h" />
     <ClInclude Include="..\Include\opcode.h" />
     <ClInclude Include="..\Include\osdefs.h" />
     <ClInclude Include="..\Include\osmodule.h" />
     <ClInclude Include="..\Include\patchlevel.h" />
-    <ClInclude Include="..\Include\parser_interface.h" />
-    <ClInclude Include="..\Include\picklebufobject.h" />
     <ClInclude Include="..\Include\py_curses.h" />
-    <ClInclude Include="..\Include\pyarena.h" />
     <ClInclude Include="..\Include\pycapsule.h" />
-    <ClInclude Include="..\Include\pyctype.h" />
-    <ClInclude Include="..\Include\pydebug.h" />
     <ClInclude Include="..\Include\pyerrors.h" />
     <ClInclude Include="..\Include\pyexpat.h" />
-    <ClInclude Include="..\Include\pyfpe.h" />
     <ClInclude Include="..\Include\pyframe.h" />
     <ClInclude Include="..\Include\pyhash.h" />
     <ClInclude Include="..\Include\pylifecycle.h" />
@@ -245,7 +252,6 @@
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
     <ClInclude Include="..\Include\pythread.h" />
-    <ClInclude Include="..\Include\pytime.h" />
     <ClInclude Include="..\Include\rangeobject.h" />
     <ClInclude Include="..\Include\setobject.h" />
     <ClInclude Include="..\Include\sliceobject.h" />
@@ -481,6 +487,7 @@
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
     <ClCompile Include="..\Python\pythonrun.c" />
+    <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />
     <ClCompile Include="..\Python\sysmodule.c" />
@@ -509,7 +516,9 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="regen.targets" />
   </ImportGroup>
+  <Target Name="_TriggerRegen" BeforeTargets="PrepareForBuild" DependsOnTargets="Regen" />
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>

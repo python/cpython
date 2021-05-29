@@ -519,8 +519,8 @@ pysqlite_connection_iterdump(pysqlite_Connection *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(pysqlite_connection_backup__doc__,
-"backup($self, /, target=<unrepresentable>, *, pages=-1, progress=None,\n"
-"       name=\'main\', sleep=0.25)\n"
+"backup($self, /, target, *, pages=-1, progress=None, name=\'main\',\n"
+"       sleep=0.25)\n"
 "--\n"
 "\n"
 "Makes a backup of the database. Non-standard.");
@@ -541,31 +541,22 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
     static const char * const _keywords[] = {"target", "pages", "progress", "name", "sleep", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "backup", 0};
     PyObject *argsbuf[5];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    pysqlite_Connection *target = NULL;
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    pysqlite_Connection *target;
     int pages = -1;
     PyObject *progress = Py_None;
     const char *name = "main";
     double sleep = 0.25;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (!PyObject_TypeCheck(args[0], pysqlite_ConnectionType)) {
+        _PyArg_BadArgument("backup", "argument 'target'", (pysqlite_ConnectionType)->tp_name, args[0]);
+        goto exit;
     }
-    if (args[0]) {
-        if (!PyObject_TypeCheck(args[0], pysqlite_ConnectionType)) {
-            _PyArg_BadArgument("backup", "argument 'target'", (pysqlite_ConnectionType)->tp_name, args[0]);
-            goto exit;
-        }
-        target = (pysqlite_Connection *)args[0];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-skip_optional_pos:
+    target = (pysqlite_Connection *)args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -719,4 +710,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=7cb13d491a5970aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1bf09db3bcd0105 input=a9049054013a1b77]*/

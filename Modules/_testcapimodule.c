@@ -19,7 +19,6 @@
 
 #include "Python.h"
 #include "datetime.h"
-#include "pydecimal.h"
 #include "marshal.h"
 #include "structmember.h"         // PyMemberDef
 #include <float.h>
@@ -145,6 +144,67 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 }
 
+static PyObject*
+test_gc_control(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int orig_enabled = PyGC_IsEnabled();
+    const char* msg = "ok";
+    int old_state;
+
+    old_state = PyGC_Enable();
+    msg = "Enable(1)";
+    if (old_state != orig_enabled) {
+        goto failed;
+    }
+    msg = "IsEnabled(1)";
+    if (!PyGC_IsEnabled()) {
+        goto failed;
+    }
+
+    old_state = PyGC_Disable();
+    msg = "disable(2)";
+    if (!old_state) {
+        goto failed;
+    }
+    msg = "IsEnabled(2)";
+    if (PyGC_IsEnabled()) {
+        goto failed;
+    }
+
+    old_state = PyGC_Enable();
+    msg = "enable(3)";
+    if (old_state) {
+        goto failed;
+    }
+    msg = "IsEnabled(3)";
+    if (!PyGC_IsEnabled()) {
+        goto failed;
+    }
+
+    if (!orig_enabled) {
+        old_state = PyGC_Disable();
+        msg = "disable(4)";
+        if (old_state) {
+            goto failed;
+        }
+        msg = "IsEnabled(4)";
+        if (PyGC_IsEnabled()) {
+            goto failed;
+        }
+    }
+
+    Py_RETURN_NONE;
+
+failed:
+    /* Try to clean up if we can. */
+    if (orig_enabled) {
+        PyGC_Enable();
+    } else {
+        PyGC_Disable();
+    }
+    PyErr_Format(TestError, "GC control failed in %s", msg);
+    return NULL;
+}
 
 static PyObject*
 test_list_api(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2095,51 +2155,6 @@ _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
 static PyObject *
-unicode_encodedecimal(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    char *errors = NULL;
-    PyObject *decimal;
-    Py_ssize_t decimal_length, new_length;
-    int res;
-
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length, &errors))
-        return NULL;
-
-    decimal_length = length * 7; /* len('&#8364;') */
-    decimal = PyBytes_FromStringAndSize(NULL, decimal_length);
-    if (decimal == NULL)
-        return NULL;
-
-    res = PyUnicode_EncodeDecimal(unicode, length,
-                                  PyBytes_AS_STRING(decimal),
-                                  errors);
-    if (res < 0) {
-        Py_DECREF(decimal);
-        return NULL;
-    }
-
-    new_length = strlen(PyBytes_AS_STRING(decimal));
-    assert(new_length <= decimal_length);
-    res = _PyBytes_Resize(&decimal, new_length);
-    if (res < 0)
-        return NULL;
-
-    return decimal;
-}
-
-static PyObject *
-unicode_transformdecimaltoascii(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *unicode;
-    Py_ssize_t length;
-    if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length))
-        return NULL;
-    return PyUnicode_TransformDecimalToASCII(unicode, length);
-}
-
-static PyObject *
 unicode_legacy_string(PyObject *self, PyObject *args)
 {
     Py_UNICODE *data;
@@ -2762,252 +2777,6 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     microseconds = PyDateTime_DELTA_GET_MICROSECONDS(obj);
 
     return Py_BuildValue("(lll)", days, seconds, microseconds);
-}
-
-/* Test decimal API */
-static int decimal_initialized = 0;
-static PyObject *
-decimal_is_special(PyObject *module, PyObject *dec)
-{
-    int is_special;
-
-    (void)module;
-    if (!decimal_initialized) {
-       if (import_decimal() < 0) {
-            return NULL;
-       }
-
-       decimal_initialized = 1;
-    }
-
-    is_special = PyDec_IsSpecial(dec);
-    if (is_special < 0) {
-        return NULL;
-    }
-
-    return PyBool_FromLong(is_special);
-}
-
-static PyObject *
-decimal_is_nan(PyObject *module, PyObject *dec)
-{
-    int is_nan;
-
-    (void)module;
-    if (!decimal_initialized) {
-       if (import_decimal() < 0) {
-            return NULL;
-       }
-
-       decimal_initialized = 1;
-    }
-
-    is_nan = PyDec_IsNaN(dec);
-    if (is_nan < 0) {
-        return NULL;
-    }
-
-    return PyBool_FromLong(is_nan);
-}
-
-static PyObject *
-decimal_is_infinite(PyObject *module, PyObject *dec)
-{
-    int is_infinite;
-
-    (void)module;
-    if (!decimal_initialized) {
-       if (import_decimal() < 0) {
-            return NULL;
-       }
-
-       decimal_initialized = 1;
-    }
-
-    is_infinite = PyDec_IsInfinite(dec);
-    if (is_infinite < 0) {
-        return NULL;
-    }
-
-    return PyBool_FromLong(is_infinite);
-}
-
-static PyObject *
-decimal_get_digits(PyObject *module, PyObject *dec)
-{
-    int64_t digits;
-
-    (void)module;
-    if (!decimal_initialized) {
-       if (import_decimal() < 0) {
-            return NULL;
-       }
-
-       decimal_initialized = 1;
-    }
-
-    digits = PyDec_GetDigits(dec);
-    if (digits < 0) {
-        return NULL;
-    }
-
-    return PyLong_FromLongLong(digits);
-}
-
-static PyObject *
-decimal_as_triple(PyObject *module, PyObject *dec)
-{
-    PyObject *tuple = NULL;
-    PyObject *sign, *hi, *lo;
-    mpd_uint128_triple_t triple;
-
-    (void)module;
-    if (!decimal_initialized) {
-       if (import_decimal() < 0) {
-            return NULL;
-       }
-
-       decimal_initialized = 1;
-    }
-
-    triple = PyDec_AsUint128Triple(dec);
-    if (triple.tag == MPD_TRIPLE_ERROR && PyErr_Occurred()) {
-        return NULL;
-    }
-
-    sign = PyLong_FromUnsignedLong(triple.sign);
-    if (sign == NULL) {
-        return NULL;
-    }
-
-    hi = PyLong_FromUnsignedLongLong(triple.hi);
-    if (hi == NULL) {
-        Py_DECREF(sign);
-        return NULL;
-    }
-
-    lo = PyLong_FromUnsignedLongLong(triple.lo);
-    if (lo == NULL) {
-        Py_DECREF(hi);
-        Py_DECREF(sign);
-        return NULL;
-    }
-
-    switch (triple.tag) {
-    case MPD_TRIPLE_QNAN:
-        assert(triple.exp == 0);
-        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "n");
-        break;
-
-    case MPD_TRIPLE_SNAN:
-        assert(triple.exp == 0);
-        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "N");
-        break;
-
-    case MPD_TRIPLE_INF:
-        assert(triple.hi == 0);
-        assert(triple.lo == 0);
-        assert(triple.exp == 0);
-        tuple = Py_BuildValue("(OOOs)", sign, hi, lo, "F");
-        break;
-
-    case MPD_TRIPLE_NORMAL:
-        tuple = Py_BuildValue("(OOOL)", sign, hi, lo, triple.exp);
-        break;
-
-    case MPD_TRIPLE_ERROR:
-        PyErr_SetString(PyExc_ValueError,
-            "value out of bounds for a uint128 triple");
-        break;
-
-    default:
-        PyErr_SetString(PyExc_RuntimeError,
-            "decimal_as_triple: internal error: unexpected tag");
-        break;
-    }
-
-    Py_DECREF(lo);
-    Py_DECREF(hi);
-    Py_DECREF(sign);
-
-    return tuple;
-}
-
-static PyObject *
-decimal_from_triple(PyObject *module, PyObject *tuple)
-{
-    mpd_uint128_triple_t triple = { MPD_TRIPLE_ERROR, 0, 0, 0, 0 };
-    PyObject *exp;
-    unsigned long sign;
-
-    (void)module;
-    if (!decimal_initialized) {
-       if (import_decimal() < 0) {
-            return NULL;
-       }
-
-       decimal_initialized = 1;
-    }
-
-    if (!PyTuple_Check(tuple)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a tuple");
-        return NULL;
-    }
-
-    if (PyTuple_GET_SIZE(tuple) != 4) {
-        PyErr_SetString(PyExc_ValueError, "tuple size must be 4");
-        return NULL;
-    }
-
-    sign = PyLong_AsUnsignedLong(PyTuple_GET_ITEM(tuple, 0));
-    if (sign == (unsigned long)-1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (sign > UINT8_MAX) {
-        PyErr_SetString(PyExc_ValueError, "sign must be 0 or 1");
-        return NULL;
-    }
-    triple.sign = (uint8_t)sign;
-
-    triple.hi = PyLong_AsUnsignedLongLong(PyTuple_GET_ITEM(tuple, 1));
-    if (triple.hi == (unsigned long long)-1 && PyErr_Occurred()) {
-        return NULL;
-    }
-
-    triple.lo = PyLong_AsUnsignedLongLong(PyTuple_GET_ITEM(tuple, 2));
-    if (triple.lo == (unsigned long long)-1 && PyErr_Occurred()) {
-        return NULL;
-    }
-
-    exp = PyTuple_GET_ITEM(tuple, 3);
-    if (PyLong_Check(exp)) {
-        triple.tag = MPD_TRIPLE_NORMAL;
-        triple.exp = PyLong_AsLongLong(exp);
-        if (triple.exp == -1 && PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-    else if (PyUnicode_Check(exp)) {
-        if (PyUnicode_CompareWithASCIIString(exp, "F") == 0) {
-            triple.tag = MPD_TRIPLE_INF;
-        }
-        else if (PyUnicode_CompareWithASCIIString(exp, "n") == 0) {
-            triple.tag = MPD_TRIPLE_QNAN;
-        }
-        else if (PyUnicode_CompareWithASCIIString(exp, "N") == 0) {
-            triple.tag = MPD_TRIPLE_SNAN;
-        }
-        else {
-            PyErr_SetString(PyExc_ValueError, "not a valid exponent");
-            return NULL;
-        }
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError, "exponent must be int or string");
-        return NULL;
-    }
-
-    return PyDec_FromUint128Triple(&triple);
 }
 
 /* test_thread_state spawns a thread of its own, and that thread releases
@@ -4036,6 +3805,25 @@ test_structseq_newtype_doesnt_leak(PyObject *Py_UNUSED(self),
     descr.doc = "This is used to test for memory leaks in NewType";
     descr.fields = descr_fields;
     descr.n_in_sequence = 1;
+
+    PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
+    assert(structseq_type != NULL);
+    assert(PyType_Check(structseq_type));
+    assert(PyType_FastSubclass(structseq_type, Py_TPFLAGS_TUPLE_SUBCLASS));
+    Py_DECREF(structseq_type);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_structseq_newtype_null_descr_doc(PyObject *Py_UNUSED(self),
+                              PyObject *Py_UNUSED(args))
+{
+    PyStructSequence_Field descr_fields[1] = {
+        (PyStructSequence_Field){NULL, NULL}
+    };
+    // Test specifically for NULL .doc field.
+    PyStructSequence_Desc descr = {"_testcapi.test_descr", NULL, &descr_fields[0], 0};
 
     PyTypeObject* structseq_type = PyStructSequence_NewType(&descr);
     assert(structseq_type != NULL);
@@ -5622,9 +5410,6 @@ pynumber_tobase(PyObject *module, PyObject *args)
 }
 
 
-static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
-
-
 static PyObject*
 test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -5648,32 +5433,98 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 
-// Test Py_NewRef() and Py_XNewRef() functions
+#define TEST_REFCOUNT() \
+    do { \
+        PyObject *obj = PyList_New(0); \
+        if (obj == NULL) { \
+            return NULL; \
+        } \
+        assert(Py_REFCNT(obj) == 1); \
+        \
+        /* test Py_NewRef() */ \
+        PyObject *ref = Py_NewRef(obj); \
+        assert(ref == obj); \
+        assert(Py_REFCNT(obj) == 2); \
+        Py_DECREF(ref); \
+        \
+        /* test Py_XNewRef() */ \
+        PyObject *xref = Py_XNewRef(obj); \
+        assert(xref == obj); \
+        assert(Py_REFCNT(obj) == 2); \
+        Py_DECREF(xref); \
+        \
+        assert(Py_XNewRef(NULL) == NULL); \
+        \
+        Py_DECREF(obj); \
+        Py_RETURN_NONE; \
+    } while (0) \
+
+
+// Test Py_NewRef() and Py_XNewRef() macros
 static PyObject*
-test_refcount(PyObject *self, PyObject *Py_UNUSED(ignored))
+test_refcount_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *obj = PyList_New(0);
-    if (obj == NULL) {
-        return NULL;
-    }
-    assert(Py_REFCNT(obj) == 1);
+    TEST_REFCOUNT();
+}
 
-    // Test Py_NewRef()
-    PyObject *ref = Py_NewRef(obj);
-    assert(ref == obj);
-    assert(Py_REFCNT(obj) == 2);
-    Py_DECREF(ref);
+#undef Py_NewRef
+#undef Py_XNewRef
 
-    // Test Py_XNewRef()
-    PyObject *xref = Py_XNewRef(obj);
-    assert(xref == obj);
-    assert(Py_REFCNT(obj) == 2);
-    Py_DECREF(xref);
+// Test Py_NewRef() and Py_XNewRef() functions, after undefining macros.
+static PyObject*
+test_refcount_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_REFCOUNT();
+}
 
-    assert(Py_XNewRef(NULL) == NULL);
 
-    Py_DECREF(obj);
-    Py_RETURN_NONE;
+// Test Py_Is() function
+#define TEST_PY_IS() \
+    do { \
+        PyObject *o_none = Py_None; \
+        PyObject *o_true = Py_True; \
+        PyObject *o_false = Py_False; \
+        PyObject *obj = PyList_New(0); \
+        if (obj == NULL) { \
+            return NULL; \
+        } \
+        \
+        /* test Py_Is() */ \
+        assert(Py_Is(obj, obj)); \
+        assert(!Py_Is(obj, o_none)); \
+        \
+        /* test Py_None */ \
+        assert(Py_Is(o_none, o_none)); \
+        assert(!Py_Is(obj, o_none)); \
+        \
+        /* test Py_True */ \
+        assert(Py_Is(o_true, o_true)); \
+        assert(!Py_Is(o_false, o_true)); \
+        assert(!Py_Is(obj, o_true)); \
+        \
+        /* test Py_False */ \
+        assert(Py_Is(o_false, o_false)); \
+        assert(!Py_Is(o_true, o_false)); \
+        assert(!Py_Is(obj, o_false)); \
+        \
+        Py_DECREF(obj); \
+        Py_RETURN_NONE; \
+    } while (0)
+
+// Test Py_Is() macro
+static PyObject*
+test_py_is_macros(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_PY_IS();
+}
+
+#undef Py_Is
+
+// Test Py_Is() function, after undefining its macro.
+static PyObject*
+test_py_is_funcs(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    TEST_PY_IS();
 }
 
 
@@ -5697,6 +5548,8 @@ test_fatal_error(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *test_buildvalue_issue38913(PyObject *, PyObject *);
+static PyObject *getargs_s_hash_int(PyObject *, PyObject *, PyObject*);
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -5725,12 +5578,7 @@ static PyMethodDef TestMethods[] = {
     {"PyDateTime_DATE_GET",        test_PyDateTime_DATE_GET,      METH_O},
     {"PyDateTime_TIME_GET",        test_PyDateTime_TIME_GET,      METH_O},
     {"PyDateTime_DELTA_GET",       test_PyDateTime_DELTA_GET,     METH_O},
-    {"decimal_is_special",      decimal_is_special,              METH_O},
-    {"decimal_is_nan",          decimal_is_nan,                  METH_O},
-    {"decimal_is_infinite",     decimal_is_infinite,             METH_O},
-    {"decimal_get_digits",      decimal_get_digits,              METH_O},
-    {"decimal_as_triple",       decimal_as_triple,               METH_O},
-    {"decimal_from_triple",     decimal_from_triple,             METH_O},
+    {"test_gc_control",         test_gc_control,                 METH_NOARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
@@ -5743,6 +5591,8 @@ static PyMethodDef TestMethods[] = {
     {"test_decref_doesnt_leak", test_decref_doesnt_leak,         METH_NOARGS},
     {"test_structseq_newtype_doesnt_leak",
         test_structseq_newtype_doesnt_leak, METH_NOARGS},
+    {"test_structseq_newtype_null_descr_doc",
+        test_structseq_newtype_null_descr_doc, METH_NOARGS},
     {"test_incref_decref_API",  test_incref_decref_API,          METH_NOARGS},
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_as_double",     test_long_as_double,             METH_NOARGS},
@@ -5807,6 +5657,8 @@ static PyMethodDef TestMethods[] = {
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
+    {"getargs_s_hash_int",      (PyCFunction)(void(*)(void))getargs_s_hash_int,
+      METH_VARARGS|METH_KEYWORDS},
     {"getargs_z",               getargs_z,                       METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
@@ -5840,8 +5692,6 @@ static PyMethodDef TestMethods[] = {
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
 #if USE_UNICODE_WCHAR_CACHE
-    {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
-    {"unicode_transformdecimaltoascii", unicode_transformdecimaltoascii, METH_VARARGS},
     {"unicode_legacy_string",   unicode_legacy_string,           METH_VARARGS},
 #endif /* USE_UNICODE_WCHAR_CACHE */
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
@@ -5969,7 +5819,10 @@ static PyMethodDef TestMethods[] = {
     {"pynumber_tobase", pynumber_tobase, METH_VARARGS},
     {"without_gc", without_gc, METH_O},
     {"test_set_type_size", test_set_type_size, METH_NOARGS},
-    {"test_refcount", test_refcount, METH_NOARGS},
+    {"test_refcount_macros", test_refcount_macros, METH_NOARGS},
+    {"test_refcount_funcs", test_refcount_funcs, METH_NOARGS},
+    {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
+    {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {NULL, NULL} /* sentinel */
@@ -7474,5 +7327,21 @@ test_buildvalue_issue38913(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyErr_Clear();
 
 
+    Py_RETURN_NONE;
+}
+
+#undef PyArg_ParseTupleAndKeywords
+PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
+                                            const char *, char **, ...);
+
+static PyObject *
+getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {"", "x", NULL};
+    const char *s;
+    int len;
+    int i = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#i", keywords, &s, &len, &i))
+        return NULL;
     Py_RETURN_NONE;
 }

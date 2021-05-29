@@ -23,8 +23,7 @@
 
 #ifndef PYSQLITE_PREPARE_PROTOCOL_H
 #define PYSQLITE_PREPARE_PROTOCOL_H
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
+#include "module.h"
 
 typedef struct
 {

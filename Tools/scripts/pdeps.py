@@ -64,7 +64,7 @@ m_from = re.compile('^[ \t]*import[ \t]+([^#]+)')
 # Collect data from one file
 #
 def process(filename, table):
-    with open(filename) as fp:
+    with open(filename, encoding='utf-8') as fp:
         mod = os.path.basename(filename)
         if mod[-3:] == '.py':
             mod = mod[:-3]
