@@ -354,7 +354,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
         return 0;
     }
     /* Ignore non null-terminated strings since _csv can't handle
-       embeded nulls */
+       embedded nulls */
     if (memchr(data, '\0', size) == NULL) {
         return 0;
     }
@@ -383,7 +383,7 @@ static int fuzz_csv_reader(const char* data, size_t size) {
     }
 
     /* Ignore csv.Error because we're probably going to generate
-       some bad files (embeded new-lines, unterminated quotes etc) */
+       some bad files (embedded new-lines, unterminated quotes etc) */
     if (PyErr_ExceptionMatches(csv_error)) {
         PyErr_Clear();
     }
@@ -411,9 +411,26 @@ int __lsan_is_turned_off(void) { return 1; }
 
 
 int LLVMFuzzerInitialize(int *argc, char ***argv) {
-    wchar_t* wide_program_name = Py_DecodeLocale(*argv[0], NULL);
-    Py_SetProgramName(wide_program_name);
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    config.install_signal_handlers = 0;
+    PyStatus status;
+    status = PyConfig_SetBytesString(&config, &config.program_name, *argv[0]);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        goto fail;
+    }
+    PyConfig_Clear(&config);
+
     return 0;
+
+fail:
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
 }
 
 /* Fuzz test interface.
@@ -424,12 +441,7 @@ int LLVMFuzzerInitialize(int *argc, char ***argv) {
    (And we bitwise or when running multiple tests to verify that normally we
    only return 0.) */
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    if (!Py_IsInitialized()) {
-        /* LLVMFuzzerTestOneInput is called repeatedly from the same process,
-           with no separate initialization phase, sadly, so we need to
-           initialize CPython ourselves on the first run. */
-        Py_InitializeEx(0);
-    }
+    assert(Py_IsInitialized());
 
     int rv = 0;
 

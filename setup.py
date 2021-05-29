@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import sysconfig
+import warnings
 from glob import glob, escape
 import _osx_support
 
@@ -30,14 +31,27 @@ except ImportError:
     SUBPROCESS_BOOTSTRAP = True
 
 
-from distutils import log
-from distutils.command.build_ext import build_ext
-from distutils.command.build_scripts import build_scripts
-from distutils.command.install import install
-from distutils.command.install_lib import install_lib
-from distutils.core import Extension, setup
-from distutils.errors import CCompilerError, DistutilsError
-from distutils.spawn import find_executable
+with warnings.catch_warnings():
+    # bpo-41282 (PEP 632) deprecated distutils but setup.py still uses it
+    warnings.filterwarnings(
+        "ignore",
+        "The distutils package is deprecated",
+        DeprecationWarning
+    )
+    warnings.filterwarnings(
+        "ignore",
+        "The distutils.sysconfig module is deprecated, use sysconfig instead",
+        DeprecationWarning
+    )
+
+    from distutils import log
+    from distutils.command.build_ext import build_ext
+    from distutils.command.build_scripts import build_scripts
+    from distutils.command.install import install
+    from distutils.command.install_lib import install_lib
+    from distutils.core import Extension, setup
+    from distutils.errors import CCompilerError, DistutilsError
+    from distutils.spawn import find_executable
 
 
 # Compile extensions used to test Python?
@@ -213,11 +227,11 @@ def macosx_sdk_specified():
 
 def is_macosx_sdk_path(path):
     """
-    Returns True if 'path' can be located in an OSX SDK
+    Returns True if 'path' can be located in a macOS SDK
     """
     return ( (path.startswith('/usr/') and not path.startswith('/usr/local'))
-                or path.startswith('/System/')
-                or path.startswith('/Library/') )
+                or path.startswith('/System/Library')
+                or path.startswith('/System/iOSSupport') )
 
 
 def grep_headers_for(function, headers):
@@ -545,10 +559,9 @@ class PyBuildExt(build_ext):
                for l in (self.missing, self.failed, self.failed_on_import)):
             print()
             print("Could not build the ssl module!")
-            print("Python requires an OpenSSL 1.0.2 or 1.1 compatible "
-                  "libssl with X509_VERIFY_PARAM_set1_host().")
-            print("LibreSSL 2.6.4 and earlier do not provide the necessary "
-                  "APIs, https://github.com/libressl-portable/portable/issues/381")
+            print("Python requires a OpenSSL 1.1.1 or newer")
+            if sysconfig.get_config_var("OPENSSL_LDFLAGS"):
+                print("Custom linker flags may require --with-openssl-rpath=auto")
             print()
 
     def build_extension(self, ext):
@@ -864,7 +877,8 @@ class PyBuildExt(build_ext):
         #
 
         # array objects
-        self.add(Extension('array', ['arraymodule.c']))
+        self.add(Extension('array', ['arraymodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
 
         # Context Variables
         self.add(Extension('_contextvars', ['_contextvarsmodule.c']))
@@ -929,9 +943,11 @@ class PyBuildExt(build_ext):
         self.add(Extension("_asyncio", ["_asynciomodule.c"],
                            extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _abc speedups
-        self.add(Extension("_abc", ["_abc.c"]))
+        self.add(Extension("_abc", ["_abc.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _queue module
-        self.add(Extension("_queue", ["_queuemodule.c"]))
+        self.add(Extension("_queue", ["_queuemodule.c"],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE']))
         # _statistics module
         self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
@@ -1862,15 +1878,8 @@ class PyBuildExt(build_ext):
 ##         # Uncomment these lines if you want to play with xxmodule.c
 ##         self.add(Extension('xx', ['xxmodule.c']))
 
-        if 'd' not in sysconfig.get_config_var('ABIFLAGS'):
-            # Non-debug mode: Build xxlimited with limited API
-            self.add(Extension('xxlimited', ['xxlimited.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03100000')]))
-            self.add(Extension('xxlimited_35', ['xxlimited_35.c'],
-                               define_macros=[('Py_LIMITED_API', '0x03050000')]))
-        else:
-            # Debug mode: Build xxlimited with the full API
-            # (which is compatible with the limited one)
+        # The limited C API is not compatible with the Py_TRACE_REFS macro.
+        if not sysconfig.get_config_var('Py_TRACE_REFS'):
             self.add(Extension('xxlimited', ['xxlimited.c']))
             self.add(Extension('xxlimited_35', ['xxlimited_35.c']))
 
@@ -2288,7 +2297,7 @@ class PyBuildExt(build_ext):
         undef_macros = []
         if '--with-system-libmpdec' in sysconfig.get_config_var("CONFIG_ARGS"):
             include_dirs = []
-            libraries = [':libmpdec.so.2']
+            libraries = ['mpdec']
             sources = ['_decimal/_decimal.c']
             depends = ['_decimal/docstrings.h']
         else:
@@ -2416,6 +2425,7 @@ class PyBuildExt(build_ext):
         openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
         openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
+        openssl_rpath = config_vars.get('OPENSSL_RPATH')
         if not openssl_libs:
             # libssl and libcrypto not found
             self.missing.extend(['_ssl', '_hashlib'])
@@ -2429,30 +2439,58 @@ class PyBuildExt(build_ext):
             self.missing.extend(['_ssl', '_hashlib'])
             return None, None
 
-        # OpenSSL 1.0.2 uses Kerberos for KRB5 ciphers
-        krb5_h = find_file(
-            'krb5.h', self.inc_dirs,
-            ['/usr/kerberos/include']
-        )
-        if krb5_h:
-            ssl_incs.extend(krb5_h)
-
-        if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(Extension(
-                '_ssl', ['_ssl.c'],
-                include_dirs=openssl_includes,
-                library_dirs=openssl_libdirs,
-                libraries=openssl_libs,
-                depends=['socketmodule.h', '_ssl/debughelpers.c'])
-            )
+        if openssl_rpath == 'auto':
+            runtime_library_dirs = openssl_libdirs[:]
+        elif not openssl_rpath:
+            runtime_library_dirs = []
         else:
-            self.missing.append('_ssl')
+            runtime_library_dirs = [openssl_rpath]
 
-        self.add(Extension('_hashlib', ['_hashopenssl.c'],
-                           depends=['hashlib.h'],
-                           include_dirs=openssl_includes,
-                           library_dirs=openssl_libdirs,
-                           libraries=openssl_libs))
+        openssl_extension_kwargs = dict(
+            include_dirs=openssl_includes,
+            library_dirs=openssl_libdirs,
+            libraries=openssl_libs,
+            runtime_library_dirs=runtime_library_dirs,
+        )
+
+        # This static linking is NOT OFFICIALLY SUPPORTED.
+        # Requires static OpenSSL build with position-independent code. Some
+        # features like DSO engines or external OSSL providers don't work.
+        # Only tested on GCC and clang on X86_64.
+        if os.environ.get("PY_UNSUPPORTED_OPENSSL_BUILD") == "static":
+            extra_linker_args = []
+            for lib in openssl_extension_kwargs["libraries"]:
+                # link statically
+                extra_linker_args.append(f"-l:lib{lib}.a")
+                # don't export symbols
+                extra_linker_args.append(f"-Wl,--exclude-libs,lib{lib}.a")
+            openssl_extension_kwargs["extra_link_args"] = extra_linker_args
+            # don't link OpenSSL shared libraries.
+            # include libz for OpenSSL build flavors with compression support
+            openssl_extension_kwargs["libraries"] = ["z"]
+
+        self.add(
+            Extension(
+                '_ssl',
+                ['_ssl.c'],
+                depends=[
+                    'socketmodule.h',
+                    '_ssl.h',
+                    '_ssl/debughelpers.c',
+                    '_ssl/misc.c',
+                    '_ssl/cert.c',
+                ],
+                **openssl_extension_kwargs
+            )
+        )
+        self.add(
+            Extension(
+                '_hashlib',
+                ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                **openssl_extension_kwargs,
+            )
+        )
 
     def detect_hash_builtins(self):
         # By default we always compile these even when OpenSSL is available
@@ -2676,7 +2714,8 @@ def main():
                       'install_lib': PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('_struct', ['_struct.c'],
+                                 extra_compile_args=['-DPy_BUILD_CORE_MODULE'])],
 
           # If you change the scripts installed here, you also need to
           # check the PyBuildScripts command above, and change the links

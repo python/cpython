@@ -239,11 +239,9 @@ def _norm_version(version, build=''):
     if build:
         l.append(build)
     try:
-        ints = map(int, l)
+        strings = list(map(str, map(int, l)))
     except ValueError:
         strings = l
-    else:
-        strings = list(map(str, ints))
     version = '.'.join(strings[:3])
     return version
 
@@ -365,17 +363,20 @@ def win32_ver(release='', version='', csd='', ptype=''):
         return release, version, csd, ptype
 
     winver = getwindowsversion()
-    maj, min, build = winver.platform_version or winver[:3]
-    version = '{0}.{1}.{2}'.format(maj, min, build)
+    try:
+        major, minor, build = map(int, _syscmd_ver()[2].split('.'))
+    except ValueError:
+        major, minor, build = winver.platform_version or winver[:3]
+    version = '{0}.{1}.{2}'.format(major, minor, build)
 
-    release = (_WIN32_CLIENT_RELEASES.get((maj, min)) or
-               _WIN32_CLIENT_RELEASES.get((maj, None)) or
+    release = (_WIN32_CLIENT_RELEASES.get((major, minor)) or
+               _WIN32_CLIENT_RELEASES.get((major, None)) or
                release)
 
     # getwindowsversion() reflect the compatibility mode Python is
     # running under, and so the service pack value is only going to be
     # valid if the versions match.
-    if winver[:2] == (maj, min):
+    if winver[:2] == (major, minor):
         try:
             csd = 'SP{}'.format(winver.service_pack_major)
         except AttributeError:
@@ -384,8 +385,8 @@ def win32_ver(release='', version='', csd='', ptype=''):
 
     # VER_NT_SERVER = 3
     if getattr(winver, 'product_type', None) == 3:
-        release = (_WIN32_SERVER_RELEASES.get((maj, min)) or
-                   _WIN32_SERVER_RELEASES.get((maj, None)) or
+        release = (_WIN32_SERVER_RELEASES.get((major, minor)) or
+                   _WIN32_SERVER_RELEASES.get((major, None)) or
                    release)
 
     try:

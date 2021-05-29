@@ -6,6 +6,7 @@ import unittest
 from collections import namedtuple
 from io import StringIO, BytesIO
 from test import support
+from test.support import warnings_helper
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -220,6 +221,7 @@ Content-Length: 3
                     else:
                         self.assertEqual(fs.getvalue(key), expect_val[0])
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_log(self):
         cgi.log("Testing")
 

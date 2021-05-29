@@ -73,6 +73,30 @@ second argument to the four "spread" functions to avoid recalculating it:
 2.5
 
 
+Statistics for relations between two inputs
+-------------------------------------------
+
+==================  ====================================================
+Function            Description
+==================  ====================================================
+covariance          Sample covariance for two variables.
+correlation         Pearson's correlation coefficient for two variables.
+linear_regression   Intercept and slope for simple linear regression.
+==================  ====================================================
+
+Calculate covariance, Pearson's correlation, and simple linear regression
+for two inputs:
+
+>>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+>>> covariance(x, y)
+0.75
+>>> correlation(x, y)  #doctest: +ELLIPSIS
+0.31622776601...
+>>> linear_regression(x, y)  #doctest:
+LinearRegression(slope=0.1, intercept=1.5)
+
+
 Exceptions
 ----------
 
@@ -83,9 +107,12 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [
     'NormalDist',
     'StatisticsError',
+    'correlation',
+    'covariance',
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'linear_regression',
     'mean',
     'median',
     'median_grouped',
@@ -109,8 +136,8 @@ from decimal import Decimal
 from itertools import groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
-from operator import itemgetter
-from collections import Counter
+from operator import itemgetter, mul
+from collections import Counter, namedtuple
 
 # === Exceptions ===
 
@@ -318,7 +345,7 @@ def mean(data):
     return _convert(total / n, T)
 
 
-def fmean(data):
+def fmean(data, weights=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
@@ -336,13 +363,24 @@ def fmean(data):
             nonlocal n
             for n, x in enumerate(iterable, start=1):
                 yield x
-        total = fsum(count(data))
-    else:
+        data = count(data)
+    if weights is None:
         total = fsum(data)
-    try:
+        if not n:
+            raise StatisticsError('fmean requires at least one data point')
         return total / n
-    except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+    try:
+        num_weights = len(weights)
+    except TypeError:
+        weights = list(weights)
+        num_weights = len(weights)
+    num = fsum(map(mul, data, weights))
+    if n != num_weights:
+        raise StatisticsError('data and weights must be the same length')
+    den = fsum(weights)
+    if not den:
+        raise StatisticsError('sum of weights must be non-zero')
+    return num / den
 
 
 def geometric_mean(data):
@@ -824,6 +862,119 @@ def pstdev(data, mu=None):
         return var.sqrt()
     except AttributeError:
         return math.sqrt(var)
+
+
+# === Statistics for relations between two inputs ===
+
+# See https://en.wikipedia.org/wiki/Covariance
+#     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+#     https://en.wikipedia.org/wiki/Simple_linear_regression
+
+
+def covariance(x, y, /):
+    """Covariance
+
+    Return the sample covariance of two inputs *x* and *y*. Covariance
+    is a measure of the joint variability of two inputs.
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+    >>> covariance(x, y)
+    0.75
+    >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> covariance(x, z)
+    -7.5
+    >>> covariance(z, x)
+    -7.5
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('covariance requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('covariance requires at least two data points')
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return sxy / (n - 1)
+
+
+def correlation(x, y, /):
+    """Pearson's correlation coefficient
+
+    Return the Pearson's correlation coefficient for two inputs. Pearson's
+    correlation coefficient *r* takes values between -1 and +1. It measures the
+    strength and direction of the linear relationship, where +1 means very
+    strong, positive linear relationship, -1 very strong, negative linear
+    relationship, and 0 no linear relationship.
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> correlation(x, x)
+    1.0
+    >>> correlation(x, y)
+    -1.0
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('correlation requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('correlation requires at least two data points')
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
+    s2y = fsum((yi - ybar) ** 2.0 for yi in y)
+    try:
+        return sxy / sqrt(s2x * s2y)
+    except ZeroDivisionError:
+        raise StatisticsError('at least one of the inputs is constant')
+
+
+LinearRegression = namedtuple('LinearRegression', ('slope', 'intercept'))
+
+
+def linear_regression(x, y, /):
+    """Slope and intercept for simple linear regression.
+
+    Return the slope and intercept of simple linear regression
+    parameters estimated using ordinary least squares. Simple linear
+    regression describes relationship between an independent variable
+    *x* and a dependent variable *y* in terms of linear function:
+
+        y = slope * x + intercept + noise
+
+    where *slope* and *intercept* are the regression parameters that are
+    estimated, and noise represents the variability of the data that was
+    not explained by the linear regression (it is equal to the
+    difference between predicted and actual values of the dependent
+    variable).
+
+    The parameters are returned as a named tuple.
+
+    >>> x = [1, 2, 3, 4, 5]
+    >>> noise = NormalDist().samples(5, seed=42)
+    >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('linear regression requires that both inputs have same number of data points')
+    if n < 2:
+        raise StatisticsError('linear regression requires at least two data points')
+    xbar = fsum(x) / n
+    ybar = fsum(y) / n
+    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    s2x = fsum((xi - xbar) ** 2.0 for xi in x)
+    try:
+        slope = sxy / s2x   # equivalent to:  covariance(x, y) / variance(x)
+    except ZeroDivisionError:
+        raise StatisticsError('x is constant')
+    intercept = ybar - slope * xbar
+    return LinearRegression(slope=slope, intercept=intercept)
 
 
 ## Normal Distribution #####################################################

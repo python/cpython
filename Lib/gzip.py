@@ -62,6 +62,7 @@ def open(filename, mode="rb", compresslevel=_COMPRESS_LEVEL_BEST,
         raise TypeError("filename must be a str or bytes object, or a file")
 
     if "t" in mode:
+        encoding = io.text_encoding(encoding)
         return io.TextIOWrapper(binary_file, encoding, errors, newline)
     else:
         return binary_file
@@ -397,6 +398,10 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
+    def __iter__(self):
+        self._check_not_closed()
+        return self._buffer.__iter__()
+
 
 class _GzipReader(_compression.DecompressReader):
     def __init__(self, fp):
@@ -516,7 +521,7 @@ class _GzipReader(_compression.DecompressReader):
 
     def _read_eof(self):
         # We've read to the end of the file
-        # We check the that the computed CRC and size of the
+        # We check that the computed CRC and size of the
         # uncompressed data matches the stored values.  Note that the size
         # stored is the true file size mod 2**32.
         crc32, isize = struct.unpack("<II", self._read_exact(8))

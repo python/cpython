@@ -176,27 +176,12 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(f));
-    if (f->f_lasti == -1) {
-        if (arg && arg != Py_None) {
-            const char *msg = "can't send non-None value to a "
-                              "just-started generator";
-            if (PyCoro_CheckExact(gen)) {
-                msg = NON_INIT_CORO_MSG;
-            }
-            else if (PyAsyncGen_CheckExact(gen)) {
-                msg = "can't send non-None value to a "
-                      "just-started async generator";
-            }
-            PyErr_SetString(PyExc_TypeError, msg);
-            return PYGEN_ERROR;
-        }
-    } else {
-        /* Push arg onto the frame's value stack */
-        result = arg ? arg : Py_None;
-        Py_INCREF(result);
-        gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
-        gen->gi_frame->f_stackdepth++;
-    }
+    assert(f->f_lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(gen->gi_code->co_code))[0] == GEN_START);
+    /* Push arg onto the frame's value stack */
+    result = arg ? arg : Py_None;
+    Py_INCREF(result);
+    gen->gi_frame->f_valuestack[gen->gi_frame->f_stackdepth] = result;
+    gen->gi_frame->f_stackdepth++;
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -346,7 +331,7 @@ _PyGen_yf(PyGenObject *gen)
     PyFrameObject *f = gen->gi_frame;
 
     if (f) {
-        PyObject *bytecode = f->f_code->co_code;
+        PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
         if (f->f_lasti < 0) {
@@ -357,7 +342,7 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[f->f_lasti + sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[(f->f_lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
         assert(f->f_stackdepth > 0);
         yf = f->f_valuestack[f->f_stackdepth-1];
@@ -481,7 +466,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
             assert(gen->gi_frame->f_lasti >= 0);
-            gen->gi_frame->f_lasti += sizeof(_Py_CODEUNIT);
+            gen->gi_frame->f_lasti += 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);
@@ -756,8 +741,8 @@ static PyGetSetDef gen_getsetlist[] = {
 };
 
 static PyMemberDef gen_memberlist[] = {
-    {"gi_frame",     T_OBJECT, offsetof(PyGenObject, gi_frame),    READONLY},
-    {"gi_code",      T_OBJECT, offsetof(PyGenObject, gi_code),     READONLY},
+    {"gi_frame",     T_OBJECT, offsetof(PyGenObject, gi_frame),    READONLY|PY_AUDIT_READ},
+    {"gi_code",      T_OBJECT, offsetof(PyGenObject, gi_code),     READONLY|PY_AUDIT_READ},
     {NULL}      /* Sentinel */
 };
 
@@ -841,8 +826,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     }
     gen->gi_frame = f;
     f->f_gen = (PyObject *) gen;
-    Py_INCREF(f->f_code);
-    gen->gi_code = (PyObject *)(f->f_code);
+    gen->gi_code = PyFrame_GetCode(f);
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_type = NULL;
     gen->gi_exc_state.exc_value = NULL;
@@ -851,7 +835,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     if (name != NULL)
         gen->gi_name = name;
     else
-        gen->gi_name = ((PyCodeObject *)gen->gi_code)->co_name;
+        gen->gi_name = gen->gi_code->co_name;
     Py_INCREF(gen->gi_name);
     if (qualname != NULL)
         gen->gi_qualname = qualname;
@@ -993,8 +977,8 @@ static PyGetSetDef coro_getsetlist[] = {
 };
 
 static PyMemberDef coro_memberlist[] = {
-    {"cr_frame",     T_OBJECT, offsetof(PyCoroObject, cr_frame),    READONLY},
-    {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY},
+    {"cr_frame",     T_OBJECT, offsetof(PyCoroObject, cr_frame),    READONLY|PY_AUDIT_READ},
+    {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY|PY_AUDIT_READ},
     {"cr_origin",    T_OBJECT, offsetof(PyCoroObject, cr_origin),   READONLY},
     {NULL}      /* Sentinel */
 };
@@ -1182,11 +1166,12 @@ compute_cr_origin(int origin_depth)
     }
     frame = PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
-        PyCodeObject *code = frame->f_code;
+        PyCodeObject *code = PyFrame_GetCode(frame);
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
                                             PyFrame_GetLineNumber(frame),
                                             code->co_name);
+        Py_DECREF(code);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
             return NULL;
@@ -1375,10 +1360,10 @@ static PyGetSetDef async_gen_getsetlist[] = {
 };
 
 static PyMemberDef async_gen_memberlist[] = {
-    {"ag_frame",   T_OBJECT, offsetof(PyAsyncGenObject, ag_frame),   READONLY},
+    {"ag_frame",   T_OBJECT, offsetof(PyAsyncGenObject, ag_frame),   READONLY|PY_AUDIT_READ},
     {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
         READONLY},
-    {"ag_code",    T_OBJECT, offsetof(PyAsyncGenObject, ag_code),    READONLY},
+    {"ag_code",    T_OBJECT, offsetof(PyAsyncGenObject, ag_code),    READONLY|PY_AUDIT_READ},
     {NULL}      /* Sentinel */
 };
 

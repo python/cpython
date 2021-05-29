@@ -4,6 +4,13 @@
  Using :mod:`!importlib.metadata`
 =================================
 
+.. module:: importlib.metadata
+   :synopsis: The implementation of the importlib metadata.
+
+.. versionadded:: 3.8
+
+**Source code:** :source:`Lib/importlib/metadata.py`
+
 .. note::
    This functionality is provisional and may deviate from the usual
    version semantics of the standard library.
@@ -163,6 +170,19 @@ the values are returned unparsed from the distribution metadata::
     >>> wheel_metadata['Requires-Python']  # doctest: +SKIP
     '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
 
+``PackageMetadata`` also presents a ``json`` attribute that returns
+all the metadata in a JSON-compatible form per :PEP:`566`::
+
+    >>> wheel_metadata.json['requires_python']
+    '>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
+
+.. versionchanged:: 3.10
+   The ``Description`` is now included in the metadata when presented
+   through the payload. Line continuation characters have been removed.
+
+.. versionadded:: 3.10
+   The ``json`` attribute was added.
+
 
 .. _version:
 
@@ -184,7 +204,7 @@ Distribution files
 You can also get the full set of files contained within a distribution.  The
 ``files()`` function takes a distribution package name and returns all of the
 files installed by this distribution.  Each file object returned is a
-``PackagePath``, a :class:`pathlib.Path` derived object with additional ``dist``,
+``PackagePath``, a :class:`pathlib.PurePath` derived object with additional ``dist``,
 ``size``, and ``hash`` properties as indicated by the metadata.  For example::
 
     >>> util = [p for p in files('wheel') if 'util.py' in str(p)][0]  # doctest: +SKIP
@@ -207,6 +227,12 @@ Once you have the file, you can also read its contents::
         if isinstance(s, text_type):
             return s.encode('utf-8')
         return s
+
+You can also use the ``locate`` method to get a the absolute path to the
+file::
+
+    >>> util.locate()  # doctest: +SKIP
+    PosixPath('/home/gustav/example/lib/site-packages/wheel/util.py')
 
 In the case where the metadata file listing files
 (RECORD or SOURCES.txt) is missing, ``files()`` will

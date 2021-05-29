@@ -512,7 +512,7 @@ Signal Handling
    and if so, invokes the corresponding signal handler.  If the :mod:`signal`
    module is supported, this can invoke a signal handler written in Python.
 
-   The function attemps to handle all pending signals, and then returns ``0``.
+   The function attempts to handle all pending signals, and then returns ``0``.
    However, if a Python signal handler raises an exception, the error
    indicator is set and the function returns ``-1`` immediately (such that
    other pending signals may not have been handled yet: they will be on the
@@ -674,27 +674,6 @@ The following functions are used to create and modify Unicode exceptions from C.
    Create a :class:`UnicodeDecodeError` object with the attributes *encoding*,
    *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
    UTF-8 encoded strings.
-
-.. c:function:: PyObject* PyUnicodeEncodeError_Create(const char *encoding, const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeEncodeError` object with the attributes *encoding*,
-   *object*, *length*, *start*, *end* and *reason*. *encoding* and *reason* are
-   UTF-8 encoded strings.
-
-   .. deprecated:: 3.3 3.11
-
-      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
-      ``PyObject_CallFunction(PyExc_UnicodeEncodeError, "sOnns", ...)``.
-
-.. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
-
-   Create a :class:`UnicodeTranslateError` object with the attributes *object*,
-   *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
-
-   .. deprecated:: 3.3 3.11
-
-      ``Py_UNICODE`` is deprecated since Python 3.3. Please migrate to
-      ``PyObject_CallFunction(PyExc_UnicodeTranslateError, "Onns", ...)``.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)

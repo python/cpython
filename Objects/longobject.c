@@ -5719,17 +5719,20 @@ _PyLong_Init(PyInterpreterState *interp)
 
         interp->small_ints[i] = v;
     }
+    return 0;
+}
 
-    if (_Py_IsMainInterpreter(interp)) {
-        /* initialize int_info */
-        if (Int_InfoType.tp_name == NULL) {
-            if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
-                return 0;
-            }
+
+int
+_PyLong_InitTypes(void)
+{
+    /* initialize int_info */
+    if (Int_InfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
+            return -1;
         }
     }
-
-    return 1;
+    return 0;
 }
 
 void

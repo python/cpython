@@ -16,7 +16,6 @@ import importlib.util
 import io
 import types
 import os
-from pkgutil import read_code, get_importer
 
 __all__ = [
     "run_module", "run_path",
@@ -233,6 +232,7 @@ def _get_main_module_details(error=ImportError):
 
 def _get_code_from_file(run_name, fname):
     # Check for a compiled file first
+    from pkgutil import read_code
     decoded_path = os.path.abspath(os.fsdecode(fname))
     with io.open_code(decoded_path) as f:
         code = read_code(f)
@@ -255,6 +255,7 @@ def run_path(path_name, init_globals=None, run_name=None):
     if run_name is None:
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
+    from pkgutil import get_importer
     importer = get_importer(path_name)
     # Trying to avoid importing imp so as to not consume the deprecation warning.
     is_NullImporter = False

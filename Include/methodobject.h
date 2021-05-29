@@ -79,15 +79,15 @@ PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03100000
-#define METH_FASTCALL  0x0080
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
+#  define METH_FASTCALL  0x0080
 #endif
 
 /* This bit is preserved for Stackless Python */
 #ifdef STACKLESS
-#define METH_STACKLESS 0x0100
+#  define METH_STACKLESS 0x0100
 #else
-#define METH_STACKLESS 0x0000
+#  define METH_STACKLESS 0x0000
 #endif
 
 /* METH_METHOD means the function stores an

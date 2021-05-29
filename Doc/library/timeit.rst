@@ -15,8 +15,8 @@
 This module provides a simple way to time small bits of Python code. It has both
 a :ref:`timeit-command-line-interface` as well as a :ref:`callable <python-interface>`
 one.  It avoids a number of common traps for measuring execution times.
-See also Tim Peters' introduction to the "Algorithms" chapter in the *Python
-Cookbook*, published by O'Reilly.
+See also Tim Peters' introduction to the "Algorithms" chapter in the second
+edition of *Python Cookbook*, published by O'Reilly.
 
 
 Basic Examples

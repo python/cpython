@@ -845,8 +845,9 @@ def _removeHandlerRef(wr):
     if acquire and release and handlers:
         acquire()
         try:
-            if wr in handlers:
-                handlers.remove(wr)
+            handlers.remove(wr)
+        except ValueError:
+            pass
         finally:
             release()
 
@@ -1150,6 +1151,8 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        if "b" not in mode:
+            self.encoding = io.text_encoding(encoding)
         self.errors = errors
         self.delay = delay
         # bpo-26789: FileHandler keeps a reference to the builtin open()
@@ -2022,8 +2025,10 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    if 'b'in mode:
+                    if 'b' in mode:
                         errors = None
+                    else:
+                        encoding = io.text_encoding(encoding)
                     h = FileHandler(filename, mode,
                                     encoding=encoding, errors=errors)
                 else:

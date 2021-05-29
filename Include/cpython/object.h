@@ -186,6 +186,8 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
+// If this structure is modified, Doc/includes/typestruct.h should be updated
+// as well.
 struct _typeobject {
     PyObject_VAR_HEAD
     const char *tp_name; /* For printing, in format "<module>.<name>" */

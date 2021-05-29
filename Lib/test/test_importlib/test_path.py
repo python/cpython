@@ -29,11 +29,9 @@ class PathDiskTests(PathTests, unittest.TestCase):
     data = data01
 
     def test_natural_path(self):
-        """
-        Guarantee the internal implementation detail that
-        file-system-backed resources do not get the tempdir
-        treatment.
-        """
+        # Guarantee the internal implementation detail that
+        # file-system-backed resources do not get the tempdir
+        # treatment.
         with resources.path(self.data, 'utf-8.file') as path:
             assert 'data' in str(path)
 

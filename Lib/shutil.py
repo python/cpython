@@ -32,16 +32,6 @@ try:
 except ImportError:
     _LZMA_SUPPORTED = False
 
-try:
-    from pwd import getpwnam
-except ImportError:
-    getpwnam = None
-
-try:
-    from grp import getgrnam
-except ImportError:
-    getgrnam = None
-
 _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
@@ -50,6 +40,8 @@ elif _WINDOWS:
     import nt
 
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
+# This should never be removed, see rationale in:
+# https://bugs.python.org/issue43743#msg393429
 _USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
@@ -843,8 +835,14 @@ def _is_immutable(src):
 
 def _get_gid(name):
     """Returns a gid, given a group name."""
-    if getgrnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from grp import getgrnam
+    except ImportError:
+        return None
+
     try:
         result = getgrnam(name)
     except KeyError:
@@ -855,8 +853,14 @@ def _get_gid(name):
 
 def _get_uid(name):
     """Returns an uid, given a user name."""
-    if getpwnam is None or name is None:
+    if name is None:
         return None
+
+    try:
+        from pwd import getpwnam
+    except ImportError:
+        return None
+
     try:
         result = getpwnam(name)
     except KeyError:
@@ -1159,20 +1163,16 @@ def _unpack_zipfile(filename, extract_dir):
             if name.startswith('/') or '..' in name:
                 continue
 
-            target = os.path.join(extract_dir, *name.split('/'))
-            if not target:
+            targetpath = os.path.join(extract_dir, *name.split('/'))
+            if not targetpath:
                 continue
 
-            _ensure_directory(target)
+            _ensure_directory(targetpath)
             if not name.endswith('/'):
                 # file
-                data = zip.read(info.filename)
-                f = open(target, 'wb')
-                try:
-                    f.write(data)
-                finally:
-                    f.close()
-                    del data
+                with zip.open(name, 'r') as source, \
+                        open(targetpath, 'wb') as target:
+                    copyfileobj(source, target)
     finally:
         zip.close()
 

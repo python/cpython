@@ -918,7 +918,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS |
-        _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
+        _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
     tuple_new__doc__,                           /* tp_doc */
     (traverseproc)tupletraverse,                /* tp_traverse */
     0,                                          /* tp_clear */

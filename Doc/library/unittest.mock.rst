@@ -328,8 +328,8 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_once_with(*args, **kwargs)
 
-       Assert that the mock was called exactly once and that that call was
-       with the specified arguments.
+       Assert that the mock was called exactly once and that call was with the
+       specified arguments.
 
             >>> mock = Mock(return_value=None)
             >>> mock('foo', bar='baz')
