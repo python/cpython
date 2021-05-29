@@ -776,7 +776,7 @@ class PurePath(object):
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
-    def relative_to(self, *other, strict=True):
+    def relative_to(self, *other, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         related to the other path), raise ValueError.
@@ -806,16 +806,16 @@ class PurePath(object):
             if p != tp:
                 break
             common += 1
-        if strict:
-            failure = (root or drv) if n == 0 else common != n
-            error_message = "{!r} is not in the subpath of {!r}"
-            up_parts = []
-        else:
+        if walk_up:
             failure = root != to_root
             if drv or to_drv:
                 failure = cf([drv]) != cf([to_drv]) or (failure and n > 1)
             error_message = "{!r} is not on the same drive as {!r}"
             up_parts = (n-common)*['..']
+        else:
+            failure = (root or drv) if n == 0 else common != n
+            error_message = "{!r} is not in the subpath of {!r}"
+            up_parts = []
         error_message += " OR one path is relative and the other is absolute."
         if failure:
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)

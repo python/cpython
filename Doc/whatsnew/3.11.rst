@@ -90,8 +90,8 @@ pathlib
 -------
 
 :meth:`pathlib.PurePath.relative_to` now supports generating relative paths
-containing ``..`` entries if its new *strict* keyword-only argument is set to
-``False``. The new behavior is more consistent with :func:`os.path.relpath`.
+containing ``..`` entries if its new *walk_up* keyword-only argument is set to
+``True``. The new behavior is more consistent with :func:`os.path.relpath`.
 (Contributed by Domenico Ragusa in :issue:`40358`.)
 
 Optimizations

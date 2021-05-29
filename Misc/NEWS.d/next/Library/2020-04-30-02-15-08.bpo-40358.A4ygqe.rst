@@ -1,1 +1,1 @@
-Add strict argument in :meth:`pathlib.PurePath.relative_to`.
+Add walk_up argument in :meth:`pathlib.PurePath.relative_to`.

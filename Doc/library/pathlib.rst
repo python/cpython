@@ -538,7 +538,7 @@ Pure paths provide the following methods and properties:
       True
 
 
-.. method:: PurePath.relative_to(*other, strict=True)
+.. method:: PurePath.relative_to(*other, walk_up=False)
 
    Compute a version of this path relative to the path represented by
    *other*.  If it's impossible, :exc:`ValueError` is raised::
@@ -554,26 +554,26 @@ Pure paths provide the following methods and properties:
         File "pathlib.py", line 941, in relative_to
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other is absolute.
-      >>> p.relative_to('/usr', strict=False)
+      >>> p.relative_to('/usr', walk_up=True)
       PurePosixPath('../etc/passwd')
-      >>> p.relative_to('foo', strict=False)
+      >>> p.relative_to('foo', walk_up=True)
       Traceback (most recent call last):
         File "<stdin>", line 1, in <module>
         File "pathlib.py", line 941, in relative_to
           raise ValueError(error_message.format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not on the same drive as 'foo' OR one path is relative and the other is absolute.
 
-   In strict mode (the default), the path must start with *other*. In non-strict
-   mode, ``..`` entries may be added to form the relative path. In all other
-   cases, such as the paths referencing different drives, :exc:`ValueError` is
-   raised.
+   When *walk_up* is False, the default, the path must start with *other*,
+   when it's True ``..`` entries may be added to form the relative path. In
+   all other cases, such as the paths referencing different drives,
+   :exc:`ValueError` is raised.
 
    .. warning::
-      Non-strict mode assumes that no symlinks are present in the path; you
+      The *walk_up* option assumes that no symlinks are present in the path; you
       should call :meth:`~Path.resolve` first to ensure this.
 
    .. versionadded:: 3.11
-      The *strict* argument (pre-3.11 behavior is strict).
+      The *walk_up* argument (pre-3.11 behavior is the same as walk_up=False).
 
 
 .. method:: PurePath.with_name(name)
