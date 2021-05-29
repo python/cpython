@@ -268,6 +268,20 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
             F, "1.1e+1__1")
+        # Test catastrophic backtracking.
+        val = "9"*50 + "_"
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '" + val + "'",
+            F, val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/" + val + "'",
+            F, "1/" + val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1." + val + "'",
+            F, "1." + val)
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1.1+e" + val + "'",
+            F, "1.1+e" + val)
 
     def testImmutable(self):
         r = F(7, 3)
