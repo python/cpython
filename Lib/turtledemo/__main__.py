@@ -172,11 +172,11 @@ class DemoWindow(object):
                                 relief=RIDGE)
         if darwin:  # Leave Mac button colors alone - #44254.
             self.start_btn = Button(root, text=" START ", font=btnfont,
-                                    command=self.startDemo)
+                                    fg='#00cc22', command=self.startDemo)
             self.stop_btn = Button(root, text=" STOP ", font=btnfont,
-                                   command=self.stopIt)
+                                   fg='#00cc22', command=self.stopIt)
             self.clear_btn = Button(root, text=" CLEAR ", font=btnfont,
-                                    command = self.clearCanvas)
+                                    fg='#00cc22', command = self.clearCanvas)
         else:
             self.start_btn = Button(root, text=" START ", font=btnfont,
                                     fg="white", disabledforeground = "#fed",
