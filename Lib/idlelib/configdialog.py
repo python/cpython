@@ -2420,8 +2420,7 @@ class VerticalScrolledFrame(Frame):
         def _configure_interior(event):
             try:
                 # Update the scrollbars to match the size of the inner frame.
-                size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
-                canvas.config(scrollregion="0 0 %s %s" % size)
+                canvas.config(scrollregion=canvas.bbox("all"))
             except TclError:
                 pass
         interior.bind('<Configure>', _configure_interior)
