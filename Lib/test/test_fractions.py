@@ -220,9 +220,6 @@ class FractionTest(unittest.TestCase):
             ValueError, "Invalid literal for Fraction: '_'",
             F, "_")
         self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1_'",
-            F, "1_")
-        self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '_1'",
             F, "_1")
         self.assertRaisesMessage(
@@ -244,9 +241,6 @@ class FractionTest(unittest.TestCase):
             ValueError, "Invalid literal for Fraction: '1/_'",
             F, "1/_")
         self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1/1_'",
-            F, "1/1_")
-        self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1/_1'",
             F, "1/_1")
         self.assertRaisesMessage(
@@ -259,14 +253,8 @@ class FractionTest(unittest.TestCase):
             ValueError, "Invalid literal for Fraction: '1.1__1'",
             F, "1.1__1")
         self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1.1_'",
-            F, "1.1_")
-        self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1.1e+_1'",
             F, "1.1e+_1")
-        self.assertRaisesMessage(
-            ValueError, "Invalid literal for Fraction: '1.1e+1_'",
-            F, "1.1e+1_")
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
             F, "1.1e+1__1")
