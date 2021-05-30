@@ -204,7 +204,7 @@ class Event:
     following attributes (in braces are the event types for which
     the attribute is valid):
 
-        serial - serial number of event
+    serial - serial number of event
     num - mouse button pressed (ButtonPress, ButtonRelease)
     focus - whether the window has the focus (Enter, Leave)
     height - height of the exposed window (Configure, Expose)
