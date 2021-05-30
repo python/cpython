@@ -112,12 +112,21 @@ class ConfigDialog(Toplevel):
         """
         self.frame = frame = Frame(self, padding="5px")
         self.frame.grid(sticky="nwes")
+
+        vscrollables = []
+
         self.note = note = Notebook(frame)
-        self.highpage = HighPage(note)
-        self.fontpage = FontPage(note, self.highpage)
-        self.keyspage = KeysPage(note)
-        self.genpage = GenPage(note)
+        self.highpage = HighPage(note, vscrollables)
+        self.fontpage = FontPage(note, vscrollables, self.highpage)
+        self.keyspage = KeysPage(note, vscrollables)
+        self.genpage = GenPage(note, vscrollables)
         self.extpage = self.create_page_extensions()
+
+        self._vscrollables_re = re.compile(fr'''
+            ^
+            ({'|'.join(map(re.escape, (x._w for x in vscrollables)))})
+            (?:\.|\Z)
+        ''', re.VERBOSE)
 
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
@@ -435,10 +444,21 @@ class ConfigDialog(Toplevel):
             self.ext_userCfg.Save()
 
     def mousewheel_event(self, event):
-        if self.note.select() == self.genpage._w:
-            canvas_w = self.genpage.scrollable_frame.canvas._w
-            if event.widget._w.startswith(f'{canvas_w}.'):
-                self.genpage.scrollable_frame.mousewheel_event(event)
+        if self._vscrollables_re.match(event.widget._w):
+            return
+        page = self._nametowidget(self.note.select())
+        if is_child_widget(event.widget, page.scrollable_frame.canvas):
+            page.scrollable_frame.mousewheel_event(event)
+            return "break"
+
+
+def is_child_widget(widget, parent_candidate):
+    """Check if a Tk widget is direct or indirect child of another widget."""
+    return (
+        widget._w.removeprefix('.')
+        .removeprefix(parent_candidate._w.removeprefix('.'))
+        [:1] in {'', '.'}
+    )
 
 
 # class TabPage(Frame):  # A template for Page classes.
@@ -489,14 +509,14 @@ font_sample_text = (
 
 class FontPage(Frame):
 
-    def __init__(self, master, highpage):
+    def __init__(self, master, vscrollables, highpage):
         super().__init__(master)
         self.highlight_sample = highpage.highlight_sample
-        self.create_page_font_tab()
+        self.create_page_font_tab(vscrollables)
         self.load_font_cfg()
         self.load_tab_cfg()
 
-    def create_page_font_tab(self):
+    def create_page_font_tab(self, vscrollables):
         """Return frame of widgets for Font/Tabs tab.
 
         Fonts: Enable users to provisionally change font face, size, or
@@ -548,13 +568,17 @@ class FontPage(Frame):
         self.space_num = tracers.add(IntVar(self), ('main', 'Indent', 'num-spaces'))
 
         # Define frames and widgets.
+        self.scrollable_frame = VerticalScrolledFrame(self)
         frame_font = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
+                self.scrollable_frame.interior,
+                borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
         frame_sample = LabelFrame(
-                self, borderwidth=2, relief=GROOVE,
-                text=' Font Sample (Editable) ')
+                self.scrollable_frame.interior,
+                borderwidth=2, relief=GROOVE, text=' Font Sample (Editable) ')
         frame_indent = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
+                self.scrollable_frame.interior,
+                borderwidth=2, relief=GROOVE, text=' Indentation Width ')
+
         # frame_font.
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
@@ -562,10 +586,12 @@ class FontPage(Frame):
                 frame_font_name, justify=LEFT, text='Font Face :')
         self.fontlist = Listbox(frame_font_name, height=15,
                                 takefocus=True, exportselection=FALSE)
+        vscrollables.append(self.fontlist)
         self.fontlist.bind('<ButtonRelease-1>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Up>', self.on_fontlist_select)
         self.fontlist.bind('<KeyRelease-Down>', self.on_fontlist_select)
         scroll_font = Scrollbar(frame_font_name)
+        vscrollables.append(scroll_font)
         scroll_font.config(command=self.fontlist.yview)
         self.fontlist.config(yscrollcommand=scroll_font.set)
         font_size_title = Label(frame_font_param, text='Size :')
@@ -587,8 +613,9 @@ class FontPage(Frame):
                 orient='horizontal', tickinterval=2, from_=2, to=16)
 
         # Grid and pack widgets:
-        self.columnconfigure(1, weight=1)
-        self.rowconfigure(2, weight=1)
+        self.scrollable_frame.pack(side=TOP, expand=TRUE, fill=BOTH)
+        self.scrollable_frame.interior.columnconfigure(1, weight=1)
+        self.scrollable_frame.interior.rowconfigure(2, weight=1)
         frame_font.grid(row=0, column=0, padx=5, pady=5)
         frame_sample.grid(row=0, column=1, rowspan=3, padx=5, pady=5,
                           sticky='nsew')
@@ -699,14 +726,14 @@ class FontPage(Frame):
 
 class HighPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, vscrollables):
         super().__init__(master)
         self.cd = master.winfo_toplevel()
         self.style = Style(master)
-        self.create_page_highlight()
+        self.create_page_highlight(vscrollables)
         self.load_theme_cfg()
 
-    def create_page_highlight(self):
+    def create_page_highlight(self, vscrollables):
         """Return frame of widgets for Highlighting tab.
 
         Enable users to provisionally change foreground and background
@@ -1358,13 +1385,13 @@ class HighPage(Frame):
 
 class KeysPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, vscrollables):
         super().__init__(master)
         self.cd = master.winfo_toplevel()
-        self.create_page_keys()
+        self.create_page_keys(vscrollables)
         self.load_key_cfg()
 
-    def create_page_keys(self):
+    def create_page_keys(self, vscrollables):
         """Return frame of widgets for Keys tab.
 
         Enable users to provisionally change both individual and sets of
@@ -1790,11 +1817,11 @@ class KeysPage(Frame):
 
 class GenPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, vscrollables):
         super().__init__(master)
 
         self.init_validators()
-        self.create_page_general()
+        self.create_page_general(vscrollables)
         self.load_general_cfg()
 
     def init_validators(self):
@@ -1804,7 +1831,7 @@ class GenPage(Frame):
             return digits_or_empty_re.fullmatch(s) is not None
         self.digits_only = (self.register(is_digits_or_empty), '%P',)
 
-    def create_page_general(self):
+    def create_page_general(self, vscrollables):
         """Return frame of widgets for General tab.
 
         Enable users to provisionally change general options. Function
@@ -1906,9 +1933,9 @@ class GenPage(Frame):
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
+        # Create widgets:
         self.scrollable_frame = VerticalScrolledFrame(self)
 
-        # Create widgets:
         # Section frames.
         frame_window = LabelFrame(self.scrollable_frame.interior,
                                   borderwidth=2, relief=GROOVE,
