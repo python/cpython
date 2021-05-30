@@ -26,7 +26,7 @@ _RATIONAL_FORMAT = re.compile(r"""
     (?=\d|\.\d)                           # lookahead for digit or .digit
     (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
     (?:                                   # followed by
-       (?:/(?P<den>\d+(_\d+)*))?          # an optional denominator
+       (?:/(?P<denom>\d+(_\d+)*))?        # an optional denominator
     |                                     # or
        (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
@@ -115,9 +115,9 @@ class Fraction(numbers.Rational):
                     raise ValueError('Invalid literal for Fraction: %r' %
                                      numerator)
                 numerator = int(m.group('num') or '0')
-                denominator = m.group('den')
-                if denominator:
-                    denominator = int(denominator)
+                denom = m.group('denom')
+                if denom:
+                    denominator = int(denom)
                 else:
                     denominator = 1
                     decimal = m.group('decimal')
