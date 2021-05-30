@@ -89,6 +89,9 @@ another rational number, or from a string.
       and *denominator*. :func:`math.gcd` always return a :class:`int` type.
       Previously, the GCD type depended on *numerator* and *denominator*.
 
+   .. versionchanged:: 3.11
+      Supported :PEP:`515`-style initialization from string.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.

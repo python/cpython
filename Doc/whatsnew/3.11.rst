@@ -86,6 +86,11 @@ New Modules
 Improved Modules
 ================
 
+fractions
+---------
+
+Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
+string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
 
 Optimizations
 =============
