@@ -283,6 +283,7 @@ class _SSLPipe(object):
 class _SSLProtocolTransport(transports._FlowControlMixin,
                             transports.Transport):
 
+    _start_tls_compatible = True
     _sendfile_compatible = constants._SendfileMode.FALLBACK
 
     def __init__(self, loop, ssl_protocol):
