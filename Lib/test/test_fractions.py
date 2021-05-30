@@ -177,6 +177,8 @@ class FractionTest(unittest.TestCase):
         self.assertEqual((41, 107), _components(F("1_2_3/3_2_1")))
         self.assertEqual((6283, 2000), _components(F("3.14_15")))
         self.assertEqual((6283, 2*10**13), _components(F("3.14_15e-1_0")))
+        self.assertEqual((101, 100), _components(F("1.01")))
+        self.assertEqual((101, 100), _components(F("1.0_1")))
 
         self.assertRaisesMessage(
             ZeroDivisionError, "Fraction(3, 0)",

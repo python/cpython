@@ -122,9 +122,9 @@ class Fraction(numbers.Rational):
                     denominator = 1
                     decimal = m.group('decimal')
                     if decimal:
-                        decimal = int(decimal)
-                        scale = 10**len(str(decimal))
-                        numerator = numerator * scale + decimal
+                        decimal = decimal.replace('_', '')
+                        scale = 10**len(decimal)
+                        numerator = numerator * scale + int(decimal)
                         denominator *= scale
                     exp = m.group('exp')
                     if exp:
