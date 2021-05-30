@@ -11,7 +11,7 @@ Refer to comments in EditorWindow autoindent code for details.
 """
 import re
 
-from tkinter import (Toplevel, Listbox, Scale, Canvas,
+from tkinter import (Toplevel, Listbox, Scale, Canvas, TclError,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
@@ -34,6 +34,7 @@ from idlelib.parenmatch import ParenMatch
 from idlelib.format import FormatParagraph
 from idlelib.squeezer import Squeezer
 from idlelib.textview import ScrollableTextFrame
+from idlelib.tree import wheel_event
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
@@ -117,6 +118,7 @@ class ConfigDialog(Toplevel):
         self.keyspage = KeysPage(note)
         self.genpage = GenPage(note)
         self.extpage = self.create_page_extensions()
+
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
@@ -125,6 +127,10 @@ class ConfigDialog(Toplevel):
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
         self.create_action_buttons().pack(side=BOTTOM)
+
+        self.bind_all('<MouseWheel>', self.mousewheel_event)
+        self.bind_all('<Button-4>', self.mousewheel_event)
+        self.bind_all('<Button-5>', self.mousewheel_event)
 
     def create_action_buttons(self):
         """Return frame of action buttons for dialog.
@@ -427,6 +433,12 @@ class ConfigDialog(Toplevel):
                     has_changes = True
         if has_changes:
             self.ext_userCfg.Save()
+
+    def mousewheel_event(self, event):
+        if self.note.select() == self.genpage._w:
+            canvas_w = self.genpage.scrollable_frame.canvas._w
+            if event.widget._w.startswith(f'{canvas_w}.'):
+                self.genpage.scrollable_frame.mousewheel_event(event)
 
 
 # class TabPage(Frame):  # A template for Page classes.
@@ -1894,15 +1906,21 @@ class GenPage(Frame):
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
 
+        self.scrollable_frame = VerticalScrolledFrame(self)
+
         # Create widgets:
         # Section frames.
-        frame_window = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_window = LabelFrame(self.scrollable_frame.interior,
+                                  borderwidth=2, relief=GROOVE,
                                   text=' Window Preferences')
-        frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_editor = LabelFrame(self.scrollable_frame.interior,
+                                  borderwidth=2, relief=GROOVE,
                                   text=' Editor Preferences')
-        frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_shell = LabelFrame(self.scrollable_frame.interior,
+                                 borderwidth=2, relief=GROOVE,
                                  text=' Shell Preferences')
-        frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_help = LabelFrame(self.scrollable_frame.interior,
+                                borderwidth=2, relief=GROOVE,
                                 text=' Additional Help Sources ')
         # Frame_window.
         frame_run = Frame(frame_window, borderwidth=0)
@@ -2021,6 +2039,7 @@ class GenPage(Frame):
 
         # Pack widgets:
         # Body.
+        self.scrollable_frame.pack(side=TOP, expand=TRUE, fill=BOTH)
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
@@ -2350,12 +2369,16 @@ class VerticalScrolledFrame(Frame):
         Frame.__init__(self, parent, *args, **kw)
 
         # Create a canvas object and a vertical scrollbar for scrolling it.
-        vscrollbar = Scrollbar(self, orient=VERTICAL)
+        self.vscrollbar = vscrollbar = Scrollbar(self, orient=VERTICAL)
         vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
-        canvas = Canvas(self, borderwidth=0, highlightthickness=0,
-                        yscrollcommand=vscrollbar.set, width=240)
+        self.canvas = canvas = Canvas(
+            self, borderwidth=0, highlightthickness=0,
+            yscrollcommand=vscrollbar.set, width=240)
         canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
         vscrollbar.config(command=canvas.yview)
+        vscrollbar.bind('<MouseWheel>', self.mousewheel_event)
+        vscrollbar.bind('<Button-4>', self.mousewheel_event)
+        vscrollbar.bind('<Button-5>', self.mousewheel_event)
 
         # Reset the view.
         canvas.xview_moveto(0)
@@ -2368,18 +2391,28 @@ class VerticalScrolledFrame(Frame):
         # Track changes to the canvas and frame width and sync them,
         # also updating the scrollbar.
         def _configure_interior(event):
-            # Update the scrollbars to match the size of the inner frame.
-            size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
-            canvas.config(scrollregion="0 0 %s %s" % size)
+            try:
+                # Update the scrollbars to match the size of the inner frame.
+                size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
+                canvas.config(scrollregion="0 0 %s %s" % size)
+            except TclError:
+                pass
         interior.bind('<Configure>', _configure_interior)
 
         def _configure_canvas(event):
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # Update the inner frame's width to fill the canvas.
-                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
+            try:
+                if interior.winfo_reqwidth() != canvas.winfo_width():
+                    # Update the inner frame's width to fill the canvas.
+                    canvas.itemconfigure(interior_id,
+                                         width=canvas.winfo_width())
+            except TclError:
+                pass
         canvas.bind('<Configure>', _configure_canvas)
 
         return
+
+    def mousewheel_event(self, event):
+        return wheel_event(event, self.canvas)
 
 
 if __name__ == '__main__':
