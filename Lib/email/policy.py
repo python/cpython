@@ -22,7 +22,7 @@ __all__ = [
     ]
 
 linesep_splitter = re.compile(r'\n|\r')
-header_value_linesep = re.compile(r'(?<!\\)(\n|\r)(?=([^\s]+))')
+header_value_linesep_splitter = re.compile(r'(\n|\r)(?=([^\s]+))')
 
 @_extend_docstrings
 class EmailPolicy(Policy):
@@ -135,20 +135,27 @@ class EmailPolicy(Policy):
         attribute and it matches the name ignoring case, the value is returned
         unchanged.  Otherwise the name and value are passed to header_factory
         method, and the resulting custom header object is returned as the
-        value.  In this case a ValueError is raised if the input name contains
-        CR or LF characters and input values including CR or LF characters are
-        modified to include a space character after each CR and LF character.
+        value.
+
+        In this case a ValueError is raised if the input name contains CR or
+        LF characters. Input values including CR or LF characters followed by
+        a non-space character have a space character appended to them to
+        indicate header value continuation. Other occurrences of CR or LF
+        characters in the header value raise a ValueError.
 
         """
         if hasattr(value, 'name') and value.name.lower() == name.lower():
             return (name, value)
-        if isinstance(name, str) and len(name.splitlines()) > 1:
-            # XXX this error message isn't quite right when we use splitlines
-            # (see issue 22233), but I'm not sure what should happen here.
+        if isinstance(name, str) and len(linesep_splitter.split(name)) > 1:
             raise ValueError("Header name may not contain linefeed "
                              "or carriage return characters")
-        if isinstance(value, str) and re.search(header_value_linesep, value):
-            value = re.sub(header_value_linesep, r'\1 ', value)
+        if isinstance(value, str) and \
+                re.search(header_value_linesep_splitter, value):
+            value = re.sub(header_value_linesep_splitter, r'\1 ', value)
+        elif isinstance(value, str) and re.search(linesep_splitter, value):
+            raise ValueError("Header value may not contain linefeed "
+                             "or carriage return characters without "
+                             "a following non-space character")
         return (name, self.header_factory(name, value))
 
     def header_fetch_parse(self, name, value):

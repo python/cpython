@@ -323,6 +323,13 @@ added matters.  To illustrate::
       string subclasses that do not change the content of the passed in
       arguments.
 
+      Header names including linefeed or carriage return characters will
+      raise a ``ValueError``. Header values including these characters
+      followed by a non-space character will be modified to include a space
+      character after each linefeed and carriage return to signal value
+      continuation. Any other linefeed or carriage return characters in the
+      header value will raise a ``ValueError``.
+
       There is no default implementation
 
 
