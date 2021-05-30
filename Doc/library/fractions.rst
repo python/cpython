@@ -42,7 +42,8 @@ another rational number, or from a string.
 
    where the optional ``sign`` may be either '+' or '-' and
    ``numerator`` and ``denominator`` (if present) are strings of
-   decimal digits.  In addition, any string that represents a finite
+   decimal digits (underscores may be used to delimit digits as with
+   integral literals in code).  In addition, any string that represents a finite
    value and is accepted by the :class:`float` constructor is also
    accepted by the :class:`Fraction` constructor.  In either form the
    input string may also have leading and/or trailing whitespace.
