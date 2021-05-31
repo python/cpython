@@ -373,6 +373,9 @@ stmt_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject*)self);
+    }
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -389,17 +392,14 @@ stmt_clear(pysqlite_Statement *self)
     }
 
     Py_CLEAR(self->sql);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
     return 0;
 }
 
 static int
 stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->sql);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->sql);
     return 0;
 }
 
