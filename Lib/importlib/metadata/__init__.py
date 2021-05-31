@@ -204,7 +204,100 @@ class EntryPoint(
         return all(map(operator.eq, params.values(), attrs))
 
 
-class EntryPoints(tuple):
+class DeprecatedList(list):
+    """
+    Allow an otherwise immutable object to implement mutability
+    for compatibility.
+
+    >>> recwarn = getfixture('recwarn')
+    >>> dl = DeprecatedList(range(3))
+    >>> dl[0] = 1
+    >>> dl.append(3)
+    >>> del dl[3]
+    >>> dl.reverse()
+    >>> dl.sort()
+    >>> dl.extend([4])
+    >>> dl.pop(-1)
+    4
+    >>> dl.remove(1)
+    >>> dl += [5]
+    >>> dl + [6]
+    [1, 2, 5, 6]
+    >>> dl + (6,)
+    [1, 2, 5, 6]
+    >>> dl.insert(0, 0)
+    >>> dl
+    [0, 1, 2, 5]
+    >>> dl == [0, 1, 2, 5]
+    True
+    >>> dl == (0, 1, 2, 5)
+    True
+    >>> len(recwarn)
+    1
+    """
+
+    _warn = functools.partial(
+        warnings.warn,
+        "EntryPoints list interface is deprecated. Cast to list if needed.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    def __setitem__(self, *args, **kwargs):
+        self._warn()
+        return super().__setitem__(*args, **kwargs)
+
+    def __delitem__(self, *args, **kwargs):
+        self._warn()
+        return super().__delitem__(*args, **kwargs)
+
+    def append(self, *args, **kwargs):
+        self._warn()
+        return super().append(*args, **kwargs)
+
+    def reverse(self, *args, **kwargs):
+        self._warn()
+        return super().reverse(*args, **kwargs)
+
+    def extend(self, *args, **kwargs):
+        self._warn()
+        return super().extend(*args, **kwargs)
+
+    def pop(self, *args, **kwargs):
+        self._warn()
+        return super().pop(*args, **kwargs)
+
+    def remove(self, *args, **kwargs):
+        self._warn()
+        return super().remove(*args, **kwargs)
+
+    def __iadd__(self, *args, **kwargs):
+        self._warn()
+        return super().__iadd__(*args, **kwargs)
+
+    def __add__(self, other):
+        if not isinstance(other, tuple):
+            self._warn()
+            other = tuple(other)
+        return self.__class__(tuple(self) + other)
+
+    def insert(self, *args, **kwargs):
+        self._warn()
+        return super().insert(*args, **kwargs)
+
+    def sort(self, *args, **kwargs):
+        self._warn()
+        return super().sort(*args, **kwargs)
+
+    def __eq__(self, other):
+        if not isinstance(other, tuple):
+            self._warn()
+            other = tuple(other)
+
+        return tuple(self).__eq__(other)
+
+
+class EntryPoints(DeprecatedList):
     """
     An immutable collection of selectable EntryPoint objects.
     """
@@ -215,6 +308,14 @@ class EntryPoints(tuple):
         """
         Get the EntryPoint in self matching name.
         """
+        if isinstance(name, int):
+            warnings.warn(
+                "Accessing entry points by index is deprecated. "
+                "Cast to tuple if needed.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return super().__getitem__(name)
         try:
             return next(iter(self.select(name=name)))
         except StopIteration:
