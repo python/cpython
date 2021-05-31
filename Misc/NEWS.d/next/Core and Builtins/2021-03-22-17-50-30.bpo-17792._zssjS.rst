@@ -1,1 +1,1 @@
-More accurate error message for UnboundLocalError: local variable could have been referenced after deletion, rather than before assignment.
+More accurate error messages for access of unbound locals or free vars.
