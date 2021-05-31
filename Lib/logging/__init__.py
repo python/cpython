@@ -34,8 +34,8 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'LogRecord', 'Logger', 'LoggerAdapter', 'NOTSET', 'NullHandler',
            'StreamHandler', 'WARN', 'WARNING', 'addLevelName', 'basicConfig',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
-           'exception', 'fatal', 'getLevelName', 'getLogger',
-           'getLoggerClass', 'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
+           'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
+           'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
            'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
 
