@@ -1,2 +1,0 @@
-Syntax errors when default ``except`` is not the last ``except``  are
-reported with the correct location. Patch by Mark Shannon.
