@@ -1382,21 +1382,42 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
     file.
-
     `mode` defaults to os.F_OK | os.X_OK. `path` defaults to the result
     of os.environ.get("PATH"), or can be overridden with a custom search
     path.
-
     """
+
+    use_bytes = isinstance(cmd, bytes)
+    is_windows = sys.platform == "win32"
+
+    if is_windows:
+        # PATHEXT is necessary to check on Windows.
+        pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
+        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+
+        if use_bytes:
+            pathext = [os.fsencode(ext) for ext in pathext]
+        # See if the given file matches any of the expected path extensions.
+        # This will allow us to short circuit when given "python.exe".
+        # If it does match, only test that one, otherwise we have to try
+        # others.
+        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
+            files = [cmd]
+        else:
+            files = [cmd + ext for ext in pathext]
+    else:
+        # On other platforms you don't have things like PATHEXT to tell you
+        # what file suffixes are executable, so just pass on cmd as-is.
+        files = [cmd]
+
     # If we're given a path with a directory part, look it up directly rather
     # than referring to PATH directories. This includes checking relative to the
     # current directory, e.g. ./script
     if os.path.dirname(cmd):
-        if _access_check(cmd, mode):
-            return cmd
+        for thefile in files:
+            if _access_check(thefile, mode):
+                return thefile
         return None
-
-    use_bytes = isinstance(cmd, bytes)
 
     if path is None:
         path = os.environ.get("PATH", None)
@@ -1420,32 +1441,13 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         path = os.fsdecode(path)
         path = path.split(os.pathsep)
 
-    if sys.platform == "win32":
+    if is_windows:
         # The current directory takes precedence on Windows.
         curdir = os.curdir
         if use_bytes:
             curdir = os.fsencode(curdir)
         if curdir not in path:
             path.insert(0, curdir)
-
-        # PATHEXT is necessary to check on Windows.
-        pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
-        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
-
-        if use_bytes:
-            pathext = [os.fsencode(ext) for ext in pathext]
-        # See if the given file matches any of the expected path extensions.
-        # This will allow us to short circuit when given "python.exe".
-        # If it does match, only test that one, otherwise we have to try
-        # others.
-        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-            files = [cmd]
-        else:
-            files = [cmd + ext for ext in pathext]
-    else:
-        # On other platforms you don't have things like PATHEXT to tell you
-        # what file suffixes are executable, so just pass on cmd as-is.
-        files = [cmd]
 
     seen = set()
     for dir in path:
