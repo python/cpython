@@ -93,7 +93,7 @@ typedef struct
     /* a dictionary of registered collation name => collation callable mappings */
     PyObject* collations;
 
-    /* Exception objects */
+    /* Exception objects: borrowed refs. */
     PyObject* Warning;
     PyObject* Error;
     PyObject* InterfaceError;

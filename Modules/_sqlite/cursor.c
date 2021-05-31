@@ -84,43 +84,44 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 static int
 cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->connection);
-    Py_VISIT(self->row_cast_map);
-    Py_VISIT(self->row_factory);
-    Py_VISIT(self->next_row);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->connection);
+    Py_VISIT(self->description);
+    Py_VISIT(self->row_cast_map);
+    Py_VISIT(self->lastrowid);
+    Py_VISIT(self->row_factory);
+    Py_VISIT(self->statement);
+    Py_VISIT(self->next_row);
     return 0;
 }
 
 static int
 cursor_clear(pysqlite_Cursor *self)
 {
-    /* Reset the statement if the user has not closed the cursor */
+    Py_CLEAR(self->connection);
+    Py_CLEAR(self->description);
+    Py_CLEAR(self->row_cast_map);
+    Py_CLEAR(self->lastrowid);
+    Py_CLEAR(self->row_factory);
     if (self->statement) {
+        /* Reset the statement if the user has not closed the cursor */
         pysqlite_statement_reset(self->statement);
         Py_CLEAR(self->statement);
     }
-
-    Py_CLEAR(self->connection);
-    Py_CLEAR(self->row_cast_map);
-    Py_CLEAR(self->description);
-    Py_CLEAR(self->lastrowid);
-    Py_CLEAR(self->row_factory);
     Py_CLEAR(self->next_row);
-
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
 
     return 0;
 }
 
 static void
-cursor_dealloc(PyObject *self)
+cursor_dealloc(pysqlite_Cursor *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear(self);
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject*)self);
+    }
+    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

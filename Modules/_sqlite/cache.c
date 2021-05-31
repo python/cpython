@@ -47,9 +47,9 @@ pysqlite_new_node(PyObject *key, PyObject *data)
 static int
 node_traverse(pysqlite_Node *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->key);
     Py_VISIT(self->data);
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -106,22 +106,28 @@ pysqlite_cache_init(pysqlite_Cache *self, PyObject *args, PyObject *kwargs)
 static int
 cache_traverse(pysqlite_Cache *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->mapping);
+    if (self->decref_factory) {
+        Py_VISIT(self->factory);
+    }
+
     pysqlite_Node *node = self->first;
     while (node) {
         Py_VISIT(node);
         node = node->next;
     }
-    Py_VISIT(self->mapping);
-    if (self->decref_factory) {
-        Py_VISIT(self->factory);
-    }
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
 cache_clear(pysqlite_Cache *self)
 {
+    Py_CLEAR(self->mapping);
+    if (self->decref_factory) {
+        Py_CLEAR(self->factory);
+    }
+
     /* iterate over all nodes and deallocate them */
     pysqlite_Node *node = self->first;
     self->first = NULL;
@@ -130,10 +136,6 @@ cache_clear(pysqlite_Cache *self)
         node = node->next;
         Py_CLEAR(delete_node);
     }
-    if (self->decref_factory) {
-        Py_CLEAR(self->factory);
-    }
-    Py_CLEAR(self->mapping);
     return 0;
 }
 
