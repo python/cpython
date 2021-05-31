@@ -512,6 +512,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
             goto error;
         }
         rc = pysqlite_statement_create(self->statement, self->connection, operation);
+        PyObject_GC_Track(self->statement);
         if (rc != SQLITE_OK) {
             Py_CLEAR(self->statement);
             goto error;

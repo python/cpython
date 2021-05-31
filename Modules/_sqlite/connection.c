@@ -1363,6 +1363,7 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
     statement->in_weakreflist = NULL;
 
     rc = pysqlite_statement_create(statement, self, sql);
+    PyObject_GC_Track(statement);
     if (rc != SQLITE_OK) {
         if (rc == PYSQLITE_TOO_MUCH_SQL) {
             PyErr_SetString(pysqlite_Warning, "You can only execute one statement at a time.");
