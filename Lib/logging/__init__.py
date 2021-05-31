@@ -116,6 +116,9 @@ _nameToLevel = {
     'NOTSET': NOTSET,
 }
 
+def getLevelNamesDict():
+    return _nameToLevel.copy()
+
 def getLevelName(level):
     """
     Return the textual or numeric representation of logging level 'level'.
