@@ -1111,6 +1111,12 @@ functions.
    .. note:: If you are thinking of defining your own levels, please see the
       section on :ref:`custom-levels`.
 
+.. function:: getLevelNamesDict()
+
+   Returns the dictionary of all available level names and respective logging levels.
+   
+   .. versionadded:: 3.11
+
 .. function:: getLevelName(level)
 
    Returns the textual or numeric representation of logging level *level*.
