@@ -228,33 +228,33 @@ pysqlite_do_all_statements(pysqlite_Connection *self, int action,
 static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->statement_cache);
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->isolation_level);
+    Py_VISIT(self->statement_cache);
+    Py_VISIT(self->statements);
+    Py_VISIT(self->cursors);
+    Py_VISIT(self->row_factory);
+    Py_VISIT(self->text_factory);
     Py_VISIT(self->function_pinboard_trace_callback);
     Py_VISIT(self->function_pinboard_progress_handler);
     Py_VISIT(self->function_pinboard_authorizer_cb);
-    Py_VISIT(self->row_factory);
-    Py_VISIT(self->text_factory);
     Py_VISIT(self->collations);
-    Py_VISIT(self->statements);
-    Py_VISIT(self->cursors);
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
 connection_clear(pysqlite_Connection *self)
 {
-    Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->isolation_level);
+    Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->statements);
+    Py_CLEAR(self->cursors);
+    Py_CLEAR(self->row_factory);
+    Py_CLEAR(self->text_factory);
     Py_CLEAR(self->function_pinboard_trace_callback);
     Py_CLEAR(self->function_pinboard_progress_handler);
     Py_CLEAR(self->function_pinboard_authorizer_cb);
-    Py_CLEAR(self->row_factory);
-    Py_CLEAR(self->text_factory);
     Py_CLEAR(self->collations);
-    Py_CLEAR(self->statements);
-    Py_CLEAR(self->cursors);
     return 0;
 }
 

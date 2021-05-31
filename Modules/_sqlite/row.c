@@ -42,9 +42,9 @@ row_clear(pysqlite_Row *self)
 static int
 row_traverse(pysqlite_Row *self, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->data);
     Py_VISIT(self->description);
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
