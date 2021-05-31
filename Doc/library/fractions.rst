@@ -91,7 +91,8 @@ another rational number, or from a string.
       Previously, the GCD type depended on *numerator* and *denominator*.
 
    .. versionchanged:: 3.11
-      Supported :PEP:`515`-style initialization from string.
+      Underscores are now permitted when creating a :class:`Fraction` instance
+      from a string, following :PEP:`515` rules.
 
    .. attribute:: numerator
 
