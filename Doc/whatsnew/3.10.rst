@@ -1039,7 +1039,7 @@ and will be incorrect in some rare cases, including some ``_``-s in
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 4.2
+Feature parity with ``importlib_metadata`` 4.4
 (`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
 :ref:`importlib.metadata entry points <entry-points>`
@@ -1047,9 +1047,6 @@ now provides a nicer experience
 for selecting entry points by group and name through a new
 :class:`importlib.metadata.EntryPoints` class. See the Compatibility
 Note in the docs for more info on the deprecation and usage.
-Incidentally, these changes also removed access by index on the
-result of :func:`importlib.metadata.Distribution.entry_points`
-(see :issue:`44246` for more detail).
 
 Added :func:`importlib.metadata.packages_distributions` for resolving
 top-level Python modules and packages to their
