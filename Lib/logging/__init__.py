@@ -34,10 +34,10 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
 'LogRecord', 'Logger', 'LoggerAdapter', 'NOTSET', 'NullHandler',
 'StreamHandler', 'WARN', 'WARNING', 'addLevelName', 'basicConfig',
 'captureWarnings', 'critical', 'debug', 'disable', 'error',
-'exception', 'fatal', 'getLevelNamesDict', 'getLevelName', 'getLogger',
+'exception', 'fatal', 'getLevelName', 'getLogger',
 'getLoggerClass', 'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
 'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
-'lastResort', 'raiseExceptions']
+'lastResort', 'raiseExceptions', 'getLevelNamesMapping']
 
 import threading
 
@@ -116,7 +116,7 @@ _nameToLevel = {
     'NOTSET': NOTSET,
 }
 
-def getLevelNamesDict():
+def getLevelNamesMapping():
     return _nameToLevel.copy()
 
 def getLevelName(level):

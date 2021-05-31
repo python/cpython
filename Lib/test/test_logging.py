@@ -4390,6 +4390,10 @@ class ModuleLevelMiscTest(BaseTest):
         self.assertNotIn("Cannot recover from stack overflow.", err)
         self.assertEqual(rc, 1)
 
+    def test_get_level_names_mapping(self):
+        self.assertEqual(logging._nameToLevel, logging.getLevelNamesMapping())
+        self.assertNotEqual(id(logging._nameToLevel), id(logging.getLevelNamesMapping()))
+
 
 class LogRecordTest(BaseTest):
     def test_str_rep(self):

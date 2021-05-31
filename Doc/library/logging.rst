@@ -1111,10 +1111,12 @@ functions.
    .. note:: If you are thinking of defining your own levels, please see the
       section on :ref:`custom-levels`.
 
-.. function:: getLevelNamesDict()
+.. function:: getLevelNamesMapping()
 
-   Returns the dictionary of all available level names and respective logging levels.
-   
+   Returns a mapping from level names to their corresponding logging
+   levels. The returned mapping is copied from internal mapping on each call to this
+   function.
+
    .. versionadded:: 3.11
 
 .. function:: getLevelName(level)
