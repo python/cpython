@@ -117,7 +117,7 @@ converting the dict to the combined table.
 #include "pycore_object.h"   // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h" // _PyErr_Fetch()
 #include "pycore_pystate.h"  // _PyThreadState_GET()
-#include "dict-common.h"
+#include "pycore_dict.h"
 #include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]

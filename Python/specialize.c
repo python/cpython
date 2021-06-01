@@ -1,7 +1,7 @@
 
 #include "Python.h"
 #include "pycore_code.h"
-#include "Objects/dict-common.h"
+#include "pycore_dict.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 

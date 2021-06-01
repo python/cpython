@@ -24,7 +24,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include "code.h"
-#include "Objects/dict-common.h"
+#include "pycore_dict.h"
 #include "dictobject.h"
 #include "frameobject.h"
 #include "pycore_frame.h"

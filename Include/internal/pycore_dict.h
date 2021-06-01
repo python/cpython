@@ -1,5 +1,14 @@
-#ifndef Py_DICT_COMMON_H
-#define Py_DICT_COMMON_H
+
+#ifndef Py_INTERNAL_DICT_H
+#define Py_INTERNAL_DICT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 
 typedef struct {
     /* Cached hash code of me_key. */
@@ -62,4 +71,10 @@ struct _dictkeysobject {
        see the DK_ENTRIES() macro */
 };
 
+#define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
+
+
+#ifdef __cplusplus
+}
 #endif
+#endif   /* !Py_INTERNAL_DICT_H */
