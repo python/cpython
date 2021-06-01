@@ -229,7 +229,8 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     zst.zalloc = PyZlib_Malloc;
     zst.zfree = PyZlib_Free;
     zst.next_in = ibuf;
-    int err =  deflateInit2(&zst, level, DEFLATED, wbits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    int err = deflateInit2(&zst, level, DEFLATED, wbits, DEF_MEM_LEVEL,
+                           Z_DEFAULT_STRATEGY);
 
     switch (err) {
     case Z_OK:
