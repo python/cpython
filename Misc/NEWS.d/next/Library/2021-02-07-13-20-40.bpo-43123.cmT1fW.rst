@@ -1,4 +1,4 @@
-Raise ValueError if an email header name includes linefeed or carriage 
+Raise ValueError if an email header name includes linefeed or carriage
 return characters. Allow email header values to include linefeed and
 carriage return characters following a non-space character, appending
 space characters to indicate header value continuation. Other occurrences
