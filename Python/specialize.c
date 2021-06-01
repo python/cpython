@@ -102,7 +102,7 @@ entries_needed(_Py_CODEUNIT *code, int len)
         }
         previous_opcode = opcode;
     }
-    return cache_offset+1;
+    return cache_offset + 1;   // One extra for the count entry
 }
 
 
