@@ -270,13 +270,15 @@ def gen_ctypes_test(manifest, args, outfile):
         """
 
         import unittest
-        from ctypes import pythonapi
+        from test.support.import_helper import import_module
+
+        ctypes_test = import_module('ctypes')
 
         class TestStableABIAvailability(unittest.TestCase):
             def test_available_symbols(self):
                 for symbol_name in SYMBOL_NAMES:
                     with self.subTest(symbol_name):
-                        pythonapi[symbol_name]
+                        ctypes_test.pythonapi[symbol_name]
 
         SYMBOL_NAMES = (
     '''))
