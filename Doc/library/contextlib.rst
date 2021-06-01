@@ -267,8 +267,9 @@ Functions and classes provided:
 .. function:: suppress(*exceptions)
 
    Return a context manager that suppresses any of the specified exceptions
-   if they occur in the body of a with statement and then resumes execution
-   with the first statement following the end of the with statement.
+   if they are raised in the body of a :keyword:`!with` statement and then
+   resumes execution with the first statement following the end of the
+   :keyword:`!with` statement.
 
    As with any other mechanism that completely suppresses exceptions, this
    context manager should be used only to cover very specific errors where
