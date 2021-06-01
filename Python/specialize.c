@@ -15,11 +15,11 @@
  * We use the SpecializedCacheOrInstruction union to refer to the data
  * to avoid type punning.
 
- Layout of quickened data, each line 8 bytes:
+ Layout of quickened data, each line 8 bytes for M cache entries and N instructions:
 
  <cache_count>                              <---- co->co_quickened
- <cache N-1>
- <cache N-2>
+ <cache M-1>
+ <cache M-2>
  ...
  <cache 0>
  <instr 0> <instr 1> <instr 2> <instr 3>    <--- co->co_first_instr
@@ -58,9 +58,17 @@ static uint8_t adaptive_opcodes[256] = { 0 };
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = { 0 };
 
-/* Return the oparg for the cache_offset and instruction index,
- * or -1 if no cache is needed or possible.
- * The cache_offset is updated as a side-effect */
+/* Return the oparg for the cache_offset and instruction index.
+ *
+ * If no cache is needed then return the original oparg.
+ * If a cache is needed, but cannot be accessed because
+ * oparg would be too large, then return -1.
+ *
+ * Also updates the cache_offset, as it may need to be incremented by
+ * more than the cache requirements, if many instructions do not need caches.
+ *
+ * See pycore_code.h for details of how the cache offset,
+ * instruction index and oparg are related */
 static int
 oparg_from_instruction_and_update_offset(int index, int opcode, int original_oparg, int *cache_offset) {
     uint8_t need = cache_requirements[opcode];
@@ -70,6 +78,7 @@ oparg_from_instruction_and_update_offset(int index, int opcode, int original_opa
     assert(adaptive_opcodes[opcode] != 0);
     int oparg = oparg_from_offset_and_index(*cache_offset, index);
     assert(*cache_offset == offset_from_oparg_and_index(oparg, index));
+    /* Some cache space is wasted here as the minimum possible offset is (index>>1) */
     if (oparg < 0) {
         oparg = 0;
         *cache_offset = offset_from_oparg_and_index(oparg, index);
@@ -103,6 +112,12 @@ first_instruction(SpecializedCacheOrInstruction *quickened)
     return &quickened[get_cache_count(quickened)].code[0];
 }
 
+/** Insert adaptive instructions and superinstructions.
+ *
+ * Skip instruction preceded by EXTENDED_ARG for
+ * adaptive instructions as those are both very rare and tricky
+ * to handle.
+ */
 static void
 optimize(SpecializedCacheOrInstruction *quickened, int len)
 {
@@ -120,6 +135,7 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
                 previous_opcode = adaptive_opcode;
             }
             else {
+                /* Not possible to allocate a cache for this instruction */
                 previous_opcode = opcode;
             }
         }

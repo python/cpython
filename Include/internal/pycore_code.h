@@ -78,6 +78,23 @@ _GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
  * oparg_from_offset_and_index() is used to compute the oparg
  * when quickening, so that offset_from_oparg_and_index()
  * can be used at runtime to compute the offset.
+ *
+ * The relationship between the three values is currently
+ *     offset == (index>>1) + oparg
+ * This relation is chosen based on the following observations:
+ * 1. typically 1 in 4 instructions need a cache
+ * 2. instructions that need a cache typically use 2 entries
+ *  These observations imply:  offset ≈ index/2
+ *  We use the oparg to fine tune the relation to avoid wasting space
+ * and allow consecutive instructions to use caches.
+ *
+ * If the number of cache entries < number of instructions/2 we will waste
+ * some small amoount of space.
+ * If the number of cache entries > (number of instructions/2) + 255, then
+ * some instructions will not be able to use a cache.
+ * In practice, we expect some small amount of wasted space in a shorter functions
+ * and only functions exceeding a 1000 lines or more not to have enugh cache space.
+ *
  */
 static inline int
 oparg_from_offset_and_index(int offset, int index)
