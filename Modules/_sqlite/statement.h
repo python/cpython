@@ -29,9 +29,6 @@
 #include "connection.h"
 #include "sqlite3.h"
 
-#define PYSQLITE_TOO_MUCH_SQL (-100)
-#define PYSQLITE_SQL_WRONG_TYPE (-101)
-
 typedef struct
 {
     PyObject_HEAD
