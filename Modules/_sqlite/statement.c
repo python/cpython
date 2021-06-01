@@ -61,8 +61,9 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 
     sql_cstr = PyUnicode_AsUTF8AndSize(sql, &sql_cstr_len);
     if (sql_cstr == NULL) {
-        PyErr_SetString(pysqlite_Warning,
-                        "SQL is of wrong type. Must be string.");
+        PyErr_Format(pysqlite_Warning,
+                     "SQL is of wrong type ('%s'). Must be string.",
+                     Py_TYPE(sql)->tp_name);
         return NULL;
     }
     if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
