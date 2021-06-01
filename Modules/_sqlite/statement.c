@@ -78,14 +78,15 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
+    self->db = connection->db;
     self->st = NULL;
-    self->in_use = 0;
-    self->in_weakreflist = NULL;
     self->sql = Py_NewRef(sql);
+    self->in_use = 0;
+    self->is_dml = 0;
+    self->in_weakreflist = NULL;
 
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
-    self->is_dml = 0;
     for (p = sql_cstr; *p != 0; p++) {
         switch (*p) {
             case ' ':
@@ -103,14 +104,13 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare_v2(connection->db,
+    rc = sqlite3_prepare_v2(self->db,
                             sql_cstr,
                             -1,
                             &self->st,
                             &tail);
     Py_END_ALLOW_THREADS
 
-    self->db = connection->db;
     PyObject_GC_Track(self);
 
     if (rc != SQLITE_OK) {
