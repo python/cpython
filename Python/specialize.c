@@ -114,8 +114,8 @@ first_instruction(SpecializedCacheOrInstruction *quickened)
 
 /** Insert adaptive instructions and superinstructions.
  *
- * Skip instruction preceded by EXTENDED_ARG for
- * adaptive instructions as those are both very rare and tricky
+ * Skip instruction preceded by EXTENDED_ARG for adaptive
+ * instructions as those are both very rare and tricky
  * to handle.
  */
 static void
@@ -125,22 +125,36 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
     int cache_offset = 0;
     int previous_opcode = -1;
     for(int i = 0; i < len; i++) {
+        /* The instruction pointer in the intperpreter points to the next
+         *  instruction. We want to use index+1 for efficiency. */
+        int nexti = i + 1;
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
         if (adaptive_opcode && previous_opcode != EXTENDED_ARG) {
-            oparg = oparg_from_instruction_and_update_offset(i, opcode, oparg, &cache_offset);
-            if (oparg >= 0) {
-                instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, oparg);
-                previous_opcode = adaptive_opcode;
-            }
-            else {
+            int new_oparg = oparg_from_instruction_and_update_offset(
+                nexti, opcode, oparg, &cache_offset
+            );
+            if (new_oparg < 0) {
                 /* Not possible to allocate a cache for this instruction */
                 previous_opcode = opcode;
+                continue;
+            }
+            instructions[i] = _Py_MAKECODEUNIT(adaptive_opcode, new_oparg);
+            previous_opcode = adaptive_opcode;
+            int entries_needed = cache_requirements[opcode];
+            if (entries_needed) {
+                /* Initialize the adpative cache entry */
+                int cache0_offset = cache_offset-entries_needed;
+                SpecializedCacheEntry *cache =
+                    _GetSpecializedCacheEntry(instructions, cache0_offset);
+                cache->adaptive.original_oparg = oparg;
+                cache->adaptive.counter = 0;
             }
         }
         else {
-            /* Super instructions don't use the cache, so no need to update the offset. */
+            /* Super instructions don't use the cache,
+             * so no need to update the offset. */
             switch (opcode) {
                 /* Insert superinstructions here
                  E.g.

@@ -36,6 +36,12 @@ typedef struct {
     int32_t _; /* Force 8 byte size */
 } _PyEntryZero;
 
+typedef struct {
+    uint8_t original_oparg;
+    uint8_t counter;
+    uint16_t index;
+} _PyAdaptiveEntry;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -48,7 +54,7 @@ typedef struct {
  */
 typedef union {
     _PyEntryZero zero;
-    PyObject *object;
+    _PyAdaptiveEntry adaptive;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
