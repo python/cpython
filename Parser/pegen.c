@@ -217,7 +217,7 @@ _PyPegen_get_expr_name(expr_ty e)
                 return "True";
             }
             if (value == Py_Ellipsis) {
-                return "Ellipsis";
+                return "ellipsis";
             }
             return "literal";
         }
