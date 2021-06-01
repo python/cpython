@@ -50,7 +50,6 @@ The available exception and functions in this module are:
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
-
    *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
    ``1`` (Z_BEST_SPEED) is fastest and produces the least compression, ``9`` (Z_BEST_COMPRESSION)
    is slowest and produces the most.  ``0`` (Z_NO_COMPRESSION) is no compression.
@@ -82,8 +81,9 @@ The available exception and functions in this module are:
    .. versionchanged:: 3.6
       *level* can now be used as a keyword parameter.
 
-   .. versionchanged:: 3.10
-      *wbits* parameter added.
+   .. versionchanged:: 3.11
+      The *wbits* parameter is now available to set window bits and
+      compression type.
 
 .. function:: compressobj(level=-1, method=DEFLATED, wbits=MAX_WBITS, memLevel=DEF_MEM_LEVEL, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
@@ -101,7 +101,7 @@ The available exception and functions in this module are:
    :const:`DEFLATED`.
 
    The *wbits* parameter controls the size of the history buffer (or the
-   "window size"), and what header and trailer format will be used  It has
+   "window size"), and what header and trailer format will be used. It has
    the same meaning as `described for compress() <#compress-wbits>`__.
 
    The *memLevel* argument controls the amount of memory used for the
