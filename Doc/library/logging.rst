@@ -1113,9 +1113,9 @@ functions.
 
 .. function:: getLevelNamesMapping()
 
-   Returns a mapping from level names to their corresponding logging
-   levels. The returned mapping is copied from internal mapping on each call to this
-   function.
+   Returns a mapping from level names to their corresponding logging levels. For example, the
+   string "CRITICAL" maps to :const:`CRITICAL`. The returned mapping is copied from an internal
+   mapping on each call to this function.
 
    .. versionadded:: 3.11
 
