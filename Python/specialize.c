@@ -71,17 +71,20 @@ static uint8_t cache_requirements[256] = { 0 };
  * instruction index and oparg are related */
 static int
 oparg_from_instruction_and_update_offset(int index, int opcode, int original_oparg, int *cache_offset) {
+    /* The instruction pointer in the interpreter points to the next
+     * instruction, so we compute the offset using nexti (index + 1) */
+    int nexti = index + 1;
     uint8_t need = cache_requirements[opcode];
     if (need == 0) {
         return original_oparg;
     }
     assert(adaptive_opcodes[opcode] != 0);
-    int oparg = oparg_from_offset_and_index(*cache_offset, index);
-    assert(*cache_offset == offset_from_oparg_and_index(oparg, index));
-    /* Some cache space is wasted here as the minimum possible offset is (index>>1) */
+    int oparg = oparg_from_offset_and_nexti(*cache_offset, nexti);
+    assert(*cache_offset == offset_from_oparg_and_nexti(oparg, nexti));
+    /* Some cache space is wasted here as the minimum possible offset is (nexti>>1) */
     if (oparg < 0) {
         oparg = 0;
-        *cache_offset = offset_from_oparg_and_index(oparg, index);
+        *cache_offset = offset_from_oparg_and_nexti(oparg, nexti);
     }
     else if (oparg > 255) {
         return -1;
@@ -105,7 +108,6 @@ entries_needed(_Py_CODEUNIT *code, int len)
     return cache_offset + 1;   // One extra for the count entry
 }
 
-
 static inline _Py_CODEUNIT *
 first_instruction(SpecializedCacheOrInstruction *quickened)
 {
@@ -125,15 +127,12 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
     int cache_offset = 0;
     int previous_opcode = -1;
     for(int i = 0; i < len; i++) {
-        /* The instruction pointer in the intperpreter points to the next
-         *  instruction. We want to use index+1 for efficiency. */
-        int nexti = i + 1;
         int opcode = _Py_OPCODE(instructions[i]);
         int oparg = _Py_OPARG(instructions[i]);
         uint8_t adaptive_opcode = adaptive_opcodes[opcode];
         if (adaptive_opcode && previous_opcode != EXTENDED_ARG) {
             int new_oparg = oparg_from_instruction_and_update_offset(
-                nexti, opcode, oparg, &cache_offset
+                i, opcode, oparg, &cache_offset
             );
             if (new_oparg < 0) {
                 /* Not possible to allocate a cache for this instruction */

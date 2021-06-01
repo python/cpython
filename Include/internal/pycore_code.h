@@ -82,7 +82,7 @@ _GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
 /* Following two functions form a pair.
  *
  * oparg_from_offset_and_index() is used to compute the oparg
- * when quickening, so that offset_from_oparg_and_index()
+ * when quickening, so that offset_from_oparg_and_nexti()
  * can be used at runtime to compute the offset.
  *
  * The relationship between the three values is currently
@@ -103,25 +103,27 @@ _GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
  *
  */
 static inline int
-oparg_from_offset_and_index(int offset, int index)
+oparg_from_offset_and_nexti(int offset, int nexti)
 {
-    return offset-(index>>1);
+    return offset-(nexti>>1);
 }
 
 static inline int
-offset_from_oparg_and_index(int oparg, int index)
+offset_from_oparg_and_nexti(int oparg, int nexti)
 {
-    return (index>>1)+oparg;
+    return (nexti>>1)+oparg;
 }
 
 /* Get pointer to the cache entry associated with an instruction.
- This doesn't check that an entry has been allocated for that instruction. */
+ * nexti is the index of the instruction plus one.
+ * nexti is used as it corresponds to the instruction pointer in the interpreter.
+ * This doesn't check that an entry has been allocated for that instruction. */
 static inline SpecializedCacheEntry *
-_GetSpecializedCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int index, int oparg)
+_GetSpecializedCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int nexti, int oparg)
 {
     return _GetSpecializedCacheEntry(
         first_instr,
-        offset_from_oparg_and_index(oparg, index)
+        offset_from_oparg_and_nexti(oparg, nexti)
     );
 }
 
