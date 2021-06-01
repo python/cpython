@@ -251,7 +251,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
     ) {
         // Keys are shared
-        assert(PyUnicode_CheckExact(name));
+        assert(PyUnicode_CheckExact());
         Py_hash_t hash = PyObject_Hash(name);
         if (hash == -1) {
             return -1;
@@ -266,14 +266,24 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         if (keys_version == 0) {
             goto fail;
         }
-        cache1->dk_version = keys_version;
+        cache1->dk_version_or_hint = keys_version;
         cache1->tp_version = type->tp_version_tag;
         cache0->index = index;
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
         goto success;
     }
     else {
-        // Combined table
-        goto fail;
+        PyObject *value;
+        Py_ssize_t hint =
+            _PyDict_GetItemHint(dict, name, -1, &value);
+        if (hint != (uint32_t)hint) {
+            goto fail;
+        }
+        cache0->index = (uint16_t)hint;
+        cache1->tp_version = type->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_COMBINED_KEYS, _Py_OPARG(*instr));
+        goto success;
+
     }
 fail:
     assert(!PyErr_Occurred());

@@ -222,5 +222,6 @@ del def_op, name_op, jrel_op, jabs_op
 _specialized_instructions = [
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_SPLIT_KEYS",
+    "LOAD_ATTR_COMBINED_KEYS",
     "LOAD_ATTR_SLOT",
 ]

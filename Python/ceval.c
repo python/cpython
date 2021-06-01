@@ -3494,8 +3494,35 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
-            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version, LOAD_ATTR);
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
             res = dict->ma_values[cache0->index];
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_COMBINED_KEYS): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, LOAD_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            PyObject *name = GETITEM(names, cache0->original_oparg);
+            uint16_t hint = cache0->index;
+            DEOPT_IF(hint > dict->ma_keys->dk_nentries, LOAD_ATTR);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + (size_t)hint;
+            DEOPT_IF(ep->me_key != name, LOAD_ATTR);
+            res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             record_cache_hit(cache0);
             Py_INCREF(res);
