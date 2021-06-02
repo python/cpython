@@ -551,7 +551,7 @@ class ColorDelegatorTest(unittest.TestCase):
             ''')
         self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
 
-    @run_in_tk_mainloop
+    @run_in_tk_mainloop(delay=50)
     def test_incremental_editing(self):
         text = self.text
         eq = self.assertEqual
