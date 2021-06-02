@@ -26,6 +26,22 @@ struct _PyOpcache {
 };
 
 
+/* "Locals plus" for a code object is the set of locals + cell vars +
+ * free vars.  This relates to variable names as well as offsets into
+ * the "fast locals" storage array of execution frames.  The compiler
+ * builds the list of names, their offsets, and the corresponding
+ * kind of local.
+ *
+ * Those kinds represent the source of the initial value and the
+ * variable's scope (as related to closures).  A "local" is an
+ * argument or other variable defined in the current scope.  A "free"
+ * variable is one that is defined in an outer scope and comes from
+ * the function's closure.  A "cell" variable is a local that escapes
+ * into an inner function as part of a closure, and thus must be
+ * wrapped in a cell.  Any "local" can also be a "cell", but the
+ * "free" kind is mutually exclusive with both.
+ */
+
 // We would use an enum if C let us specify the storage type.
 typedef unsigned char _PyLocalsPlusKind;
 /* Note that these all fit within _PyLocalsPlusKind, as do combinations. */
