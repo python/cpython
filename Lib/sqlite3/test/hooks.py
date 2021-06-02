@@ -23,6 +23,7 @@
 import unittest
 import sqlite3 as sqlite
 
+from test.support import gc_collect
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -264,8 +265,7 @@ class TraceCallbackTests(unittest.TestCase):
         # bpo-42213: ensure that TESTFN is closed before the cleanup runs
         con1.close()
         con2.close()
-        import gc
-        gc.collect()
+        gc_collect()
 
 
 def suite():

@@ -25,6 +25,7 @@ import unittest
 import sqlite3 as sqlite
 import sys
 
+from test.support import gc_collect
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -174,8 +175,7 @@ class ConnectionTests(unittest.TestCase):
 class OpenTests(unittest.TestCase):
     def tearDown(self):
         # bpo-42213: ensure that TESTFN is closed before unlinking
-        import gc
-        gc.collect()
+        gc_collect()
         unlink(TESTFN)
 
     def test_open_with_path_like_object(self):
