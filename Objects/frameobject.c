@@ -660,9 +660,9 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
 
     /* locals */
-    PyObject **fastlocals = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
-        Py_VISIT(*fastlocals);
+    PyObject **localsplus = f->f_localsptr;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++localsplus) {
+        Py_VISIT(*localsplus);
     }
 
     /* stack */
@@ -685,9 +685,9 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
 
     /* locals */
-    PyObject **fastlocals = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
-        Py_CLEAR(*fastlocals);
+    PyObject **localsplus = f->f_localsptr;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++localsplus) {
+        Py_CLEAR(*localsplus);
     }
 
     /* stack */
@@ -939,7 +939,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     co = f->f_code;
     fast = f->f_localsptr;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyFastLocalKind kind = co->co_fastlocalkinds[i];
+        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
 
         /* If the namespace is unoptimized, then one of the
            following cases applies:
@@ -965,7 +965,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
             continue;
         }
 
-        PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
         if (kind & (CO_FAST_CELL | CO_FAST_FREE) && value != NULL) {
             assert(PyCell_Check(value));
@@ -1020,7 +1020,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyFastLocalKind kind = co->co_fastlocalkinds[i];
+        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
 
         /* Same test as in PyFrame_FastToLocals() above. */
         if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
@@ -1030,7 +1030,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
             continue;
         }
-        PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = PyObject_GetItem(locals, name);
         /* We only care about NULLs if clear is true. */
         if (value == NULL) {

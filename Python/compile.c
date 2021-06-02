@@ -2056,7 +2056,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
-            PyObject *name = PyTuple_GET_ITEM(co->co_fastlocalnames, i);
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
 
             /* Special case: If a class contains a method with a
                free variable that has the same name as a method,
@@ -7181,12 +7181,12 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 // This is in codeobject.c.
-extern void _Py_set_fastlocal_info(int, PyObject *, _PyFastLocalKind,
-                                   PyObject *, _PyFastLocalKinds);
+extern void _Py_set_localsplus_info(int, PyObject *, _PyLocalsPlusKind,
+                                   PyObject *, _PyLocalsPlusKinds);
 
 static void
-compute_fastlocals_info(struct compiler *c,
-                        PyObject *names, _PyFastLocalKinds kinds)
+compute_localsplus_info(struct compiler *c,
+                        PyObject *names, _PyLocalsPlusKinds kinds)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(names);
 
@@ -7197,7 +7197,7 @@ compute_fastlocals_info(struct compiler *c,
         assert(offset >= 0);
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
-        _Py_set_fastlocal_info(offset, k, CO_FAST_LOCAL, names, kinds);
+        _Py_set_localsplus_info(offset, k, CO_FAST_LOCAL, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
 
@@ -7207,7 +7207,7 @@ compute_fastlocals_info(struct compiler *c,
         assert(offset >= 0);
         offset += nlocals;
         assert(offset < nlocalsplus);
-        _Py_set_fastlocal_info(offset, k, CO_FAST_CELL, names, kinds);
+        _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
     }
 
     pos = 0;
@@ -7216,7 +7216,7 @@ compute_fastlocals_info(struct compiler *c,
         assert(offset >= 0);
         offset += nlocals;
         assert(offset < nlocalsplus);
-        _Py_set_fastlocal_info(offset, k, CO_FAST_FREE, names, kinds);
+        _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
 }
 
@@ -7227,8 +7227,8 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
     PyObject *consts = NULL;
-    PyObject *fastlocalnames = NULL;
-    _PyFastLocalKinds fastlocalkinds = NULL;
+    PyObject *localsplusnames = NULL;
+    _PyLocalsPlusKinds localspluskinds = NULL;
     PyObject *name = NULL;
     int flags;
     int posorkeywordargcount, posonlyargcount, kwonlyargcount;
@@ -7256,14 +7256,14 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     Py_ssize_t nlocalsplus = PyDict_GET_SIZE(c->u->u_varnames) +
                              PyDict_GET_SIZE(c->u->u_cellvars) +
                              PyDict_GET_SIZE(c->u->u_freevars);
-    fastlocalnames = PyTuple_New(nlocalsplus);
-    if (fastlocalnames == NULL) {
+    localsplusnames = PyTuple_New(nlocalsplus);
+    if (localsplusnames == NULL) {
         goto error;
     }
-    if (_PyCode_InitFastLocalKinds(nlocalsplus, &fastlocalkinds) < 0) {
+    if (_PyCode_InitLocalsPlusKinds(nlocalsplus, &localspluskinds) < 0) {
         goto error;
     }
-    compute_fastlocals_info(c, fastlocalnames, fastlocalkinds);
+    compute_localsplus_info(c, localsplusnames, localspluskinds);
 
     posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
     posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
@@ -7280,8 +7280,8 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .consts = consts,
         .names = names,
 
-        .fastlocalnames = fastlocalnames,
-        .fastlocalkinds = fastlocalkinds,
+        .localsplusnames = localsplusnames,
+        .localspluskinds = localspluskinds,
 
         .argcount = posonlyargcount + posorkeywordargcount,
         .posonlyargcount = posonlyargcount,
@@ -7296,24 +7296,24 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    if (!merge_const_one(c, &fastlocalnames)) {
-        _PyCode_ClearFastLocalKinds(con.fastlocalkinds);
+    if (!merge_const_one(c, &localsplusnames)) {
+        _PyCode_ClearLocalsPlusKinds(con.localspluskinds);
         goto error;
     }
-    con.fastlocalnames = fastlocalnames;
+    con.localsplusnames = localsplusnames;
 
     co = _PyCode_New(&con);
     if (co == NULL) {
         goto error;
     }
 
-    fastlocalkinds = NULL;  // This keeps it from getting freed below.
+    localspluskinds = NULL;  // This keeps it from getting freed below.
 
  error:
     Py_XDECREF(names);
     Py_XDECREF(consts);
-    Py_XDECREF(fastlocalnames);
-    _PyCode_ClearFastLocalKinds(fastlocalkinds);
+    Py_XDECREF(localsplusnames);
+    _PyCode_ClearLocalsPlusKinds(localspluskinds);
     Py_XDECREF(name);
     return co;
 }

@@ -279,7 +279,7 @@ def get_instructions(x, *, first_line=None):
     else:
         line_offset = 0
     return _get_instructions_bytes(co.co_code,
-                                   co._get_fastlocalnames(), co.co_nlocals,
+                                   co._get_localsplusnames(), co.co_nlocals,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset)
 
@@ -336,7 +336,7 @@ def parse_exception_table(code):
     except StopIteration:
         return entries
 
-def _get_instructions_bytes(code, fastlocalnames=None, nlocals=0,
+def _get_instructions_bytes(code, localsplusnames=None, nlocals=0,
                             names=None, constants=None,
                             linestarts=None, line_offset=0,
                             exception_entries=()):
@@ -378,12 +378,12 @@ def _get_instructions_bytes(code, fastlocalnames=None, nlocals=0,
                 argval = offset + 2 + arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal:
-                argval, argrepr = _get_name_info(arg, fastlocalnames)
+                argval, argrepr = _get_name_info(arg, localsplusnames)
             elif op in hascompare:
                 argval = cmp_op[arg]
                 argrepr = argval
             elif op in hasfree:
-                argval, argrepr = _get_name_info(arg + nlocals, fastlocalnames)
+                argval, argrepr = _get_name_info(arg + nlocals, localsplusnames)
             elif op == FORMAT_VALUE:
                 argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
                 argval = (argval, bool(arg & 0x4))
@@ -403,7 +403,7 @@ def disassemble(co, lasti=-1, *, file=None):
     linestarts = dict(findlinestarts(co))
     exception_entries = parse_exception_table(co)
     _disassemble_bytes(co.co_code, lasti,
-                       co._get_fastlocalnames(), co.co_nlocals,
+                       co._get_localsplusnames(), co.co_nlocals,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries)
 
@@ -418,7 +418,7 @@ def _disassemble_recursive(co, *, file=None, depth=None):
                 print("Disassembly of %r:" % (x,), file=file)
                 _disassemble_recursive(x, file=file, depth=depth)
 
-def _disassemble_bytes(code, lasti=-1, fastlocalnames=None, nlocals=0,
+def _disassemble_bytes(code, lasti=-1, localsplusnames=None, nlocals=0,
                        names=None, constants=None, linestarts=None,
                        *, file=None, line_offset=0, exception_entries=()):
     # Omit the line number column entirely if we have no line number info
@@ -436,7 +436,7 @@ def _disassemble_bytes(code, lasti=-1, fastlocalnames=None, nlocals=0,
         offset_width = len(str(maxoffset))
     else:
         offset_width = 4
-    for instr in _get_instructions_bytes(code, fastlocalnames, nlocals, names,
+    for instr in _get_instructions_bytes(code, localsplusnames, nlocals, names,
                                          constants, linestarts,
                                          line_offset=line_offset, exception_entries=exception_entries):
         new_source_line = (show_lineno and
@@ -527,7 +527,7 @@ class Bytecode:
     def __iter__(self):
         co = self.codeobj
         return _get_instructions_bytes(co.co_code,
-                                       co._get_fastlocalnames(), co.co_nlocals,
+                                       co._get_localsplusnames(), co.co_nlocals,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
                                        line_offset=self._line_offset,
@@ -557,7 +557,7 @@ class Bytecode:
             offset = -1
         with io.StringIO() as output:
             _disassemble_bytes(co.co_code,
-                               fastlocalnames=co._get_fastlocalnames(),
+                               localsplusnames=co._get_localsplusnames(),
                                nlocals=co.co_nlocals,
                                names=co.co_names, constants=co.co_consts,
                                linestarts=self._linestarts,

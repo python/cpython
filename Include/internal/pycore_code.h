@@ -27,24 +27,24 @@ struct _PyOpcache {
 
 
 // We would use an enum if C let us specify the storage type.
-typedef unsigned char _PyFastLocalKind;
-/* Note that these all fit within _PyFastLocalKind, as do combinations. */
+typedef unsigned char _PyLocalsPlusKind;
+/* Note that these all fit within _PyLocalsPlusKind, as do combinations. */
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
 
-typedef _PyFastLocalKind *_PyFastLocalKinds;
+typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
 
 static inline int
-_PyCode_InitFastLocalKinds(int num, _PyFastLocalKinds *pkinds)
+_PyCode_InitLocalsPlusKinds(int num, _PyLocalsPlusKinds *pkinds)
 {
     if (num == 0) {
         *pkinds = NULL;
         return 0;
     }
-    _PyFastLocalKinds kinds = PyMem_NEW(_PyFastLocalKind, num);
+    _PyLocalsPlusKinds kinds = PyMem_NEW(_PyLocalsPlusKind, num);
     if (kinds == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -54,7 +54,7 @@ _PyCode_InitFastLocalKinds(int num, _PyFastLocalKinds *pkinds)
 }
 
 static inline void
-_PyCode_ClearFastLocalKinds(_PyFastLocalKinds kinds)
+_PyCode_ClearLocalsPlusKinds(_PyLocalsPlusKinds kinds)
 {
     if (kinds != NULL) {
         PyMem_Free(kinds);
@@ -77,8 +77,8 @@ struct _PyCodeConstructor {
     PyObject *names;
 
     /* mapping frame offsets to information */
-    PyObject *fastlocalnames;
-    _PyFastLocalKinds fastlocalkinds;
+    PyObject *localsplusnames;
+    _PyLocalsPlusKinds localspluskinds;
 
     /* args (within varnames) */
     int argcount;

@@ -211,7 +211,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
     PyFrameObject *frame = traceback->tb_frame;
     assert(frame != NULL);
     PyCodeObject *code = PyFrame_GetCode(frame);
-    assert(code != NULL && code->co_fastlocalnames != NULL);
+    assert(code != NULL && code->co_localsplusnames != NULL);
     PyObject *varnames = _PyCode_GetVarnames(code);
     if (varnames == NULL) {
         return NULL;

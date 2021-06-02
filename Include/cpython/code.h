@@ -18,8 +18,8 @@ typedef struct _PyOpcache _PyOpcache;
 
 
 // These are duplicated from pycore_code.h.
-typedef unsigned char _PyFastLocalKind;
-typedef _PyFastLocalKind *_PyFastLocalKinds;
+typedef unsigned char _PyLocalsPlusKind;
+typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
 
 /* Bytecode object */
 struct PyCodeObject {
@@ -60,8 +60,8 @@ struct PyCodeObject {
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
-    PyObject *co_fastlocalnames;  /* tuple mapping fastlocalsplus to names */
-    _PyFastLocalKinds co_fastlocalkinds; /* array mapping to local kinds */
+    PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
+    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -71,7 +71,7 @@ struct PyCodeObject {
     /* These fields are set with computed values on new code objects. */
 
     int *co_cell2arg;           /* Maps cell vars which are arguments. */
-    // redundant values (derived from co_fastlocalnames and co_fastlocalkinds)
+    // redundant values (derived from co_localsplusnames and co_localspluskinds)
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
     int co_ncellvars;           /* number of cell variables */

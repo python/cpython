@@ -518,8 +518,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_code, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
-        w_object(co->co_fastlocalnames, p);
-        w_string(co->co_fastlocalkinds, co->co_nlocalsplus, p);
+        w_object(co->co_localsplusnames, p);
+        w_string(co->co_localspluskinds, co->co_nlocalsplus, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
@@ -1305,8 +1305,8 @@ r_object(RFILE *p)
             PyObject *code = NULL;
             PyObject *consts = NULL;
             PyObject *names = NULL;
-            PyObject *fastlocalnames = NULL;
-            _PyFastLocalKinds fastlocalkinds = NULL;
+            PyObject *localsplusnames = NULL;
+            _PyLocalsPlusKinds localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
@@ -1345,19 +1345,19 @@ r_object(RFILE *p)
             names = r_object(p);
             if (names == NULL)
                 goto code_error;
-            fastlocalnames = r_object(p);
-            if (fastlocalnames == NULL)
+            localsplusnames = r_object(p);
+            if (localsplusnames == NULL)
                 goto code_error;
 
-            assert(PyTuple_GET_SIZE(fastlocalnames) < INT_MAX);
-            int nlocalsplus = (int)PyTuple_GET_SIZE(fastlocalnames);
+            assert(PyTuple_GET_SIZE(localsplusnames) < INT_MAX);
+            int nlocalsplus = (int)PyTuple_GET_SIZE(localsplusnames);
             if (nlocalsplus) {
-                if (_PyCode_InitFastLocalKinds(nlocalsplus,
-                                               &fastlocalkinds) < 0) {
+                if (_PyCode_InitLocalsPlusKinds(nlocalsplus,
+                                               &localspluskinds) < 0) {
                     goto code_error;
                 }
                 for (int i = 0; i < nlocalsplus; i++) {
-                    fastlocalkinds[i] = r_byte(p);
+                    localspluskinds[i] = r_byte(p);
                 }
             }
 
@@ -1396,8 +1396,8 @@ r_object(RFILE *p)
                 .consts = consts,
                 .names = names,
 
-                .fastlocalnames = fastlocalnames,
-                .fastlocalkinds = fastlocalkinds,
+                .localsplusnames = localsplusnames,
+                .localspluskinds = localspluskinds,
 
                 .argcount = argcount,
                 .posonlyargcount = posonlyargcount,
@@ -1417,7 +1417,7 @@ r_object(RFILE *p)
                 goto code_error;
             }
 
-            fastlocalkinds = NULL;  // This keeps it from getting freed below.
+            localspluskinds = NULL;  // This keeps it from getting freed below.
 
             v = r_ref_insert(v, idx, flag, p);
 
@@ -1425,8 +1425,8 @@ r_object(RFILE *p)
             Py_XDECREF(code);
             Py_XDECREF(consts);
             Py_XDECREF(names);
-            Py_XDECREF(fastlocalnames);
-            _PyCode_ClearFastLocalKinds(fastlocalkinds);
+            Py_XDECREF(localsplusnames);
+            _PyCode_ClearLocalsPlusKinds(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(linetable);
