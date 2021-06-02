@@ -164,6 +164,9 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
             /* Super instructions don't use the cache,
              * so no need to update the offset. */
             switch (opcode) {
+                case JUMP_ABSOLUTE:
+                    instructions[i] = _Py_MAKECODEUNIT(JUMP_ABSOLUTE_QUICK, oparg);
+                    break;
                 /* Insert superinstructions here
                  E.g.
                 case LOAD_FAST:

@@ -136,10 +136,11 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
-#define LOAD_ATTR_ADAPTIVE        7
-#define LOAD_ATTR_SPLIT_KEYS      8
-#define LOAD_ATTR_COMBINED_KEYS  13
-#define LOAD_ATTR_SLOT           14
+#define JUMP_ABSOLUTE_QUICK       7
+#define LOAD_ATTR_ADAPTIVE        8
+#define LOAD_ATTR_SPLIT_KEYS     13
+#define LOAD_ATTR_COMBINED_KEYS  14
+#define LOAD_ATTR_SLOT           18
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
