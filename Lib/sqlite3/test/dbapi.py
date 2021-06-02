@@ -958,6 +958,7 @@ class MultiprocessTests(unittest.TestCase):
             else:
                 print("no error in sub")
             input()  # keep proc open till parent calls
+            cx.close()
         """
 
         # spawn child process
@@ -974,7 +975,7 @@ class MultiprocessTests(unittest.TestCase):
         # connect to db, and create a UDF that waits for child
         cx = sqlite.connect(TESTFN, timeout=CONNECTION_TIMEOUT)
         def wait():
-            proc.stdin.write("\n")  # tell child to connect
+            print("go", file=proc.stdin)  # tell child to connect
             self.assertIn("database is locked", proc.stdout.readline())
         cx.create_function("wait", 0, wait)
 
@@ -999,6 +1000,7 @@ class MultiprocessTests(unittest.TestCase):
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.communicate()
+            raise
 
 
 def suite():
