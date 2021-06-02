@@ -23,7 +23,6 @@
 import unittest
 import sqlite3 as sqlite
 
-from test.support import gc_collect
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -261,11 +260,6 @@ class TraceCallbackTests(unittest.TestCase):
         con2.execute("create table bar(x)")
         cur.execute(queries[1])
         self.assertEqual(traced_statements, queries)
-
-        # bpo-42213: ensure that TESTFN is closed before the cleanup runs
-        con1.close()
-        con2.close()
-        gc_collect()
 
 
 def suite():
