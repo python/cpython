@@ -1815,6 +1815,9 @@ static PyObject *
 pysqlite_connection_enter_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=457b09726d3e9dcd input=127d7a4f17e86d8f]*/
 {
+    if (!pysqlite_check_connection(self)) {
+        return NULL;
+    }
     return Py_NewRef((PyObject *)self);
 }
 
