@@ -589,8 +589,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         old_agen_hooks = sys.get_asyncgen_hooks()
         sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
                                finalizer=self._asyncgen_finalizer_hook)
+
         try:
             events._set_running_loop(self)
+            self._stopping = False              # set inital value to false [fix bpo-44225]
             while True:
                 self._run_once()
                 if self._stopping:
