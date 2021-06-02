@@ -1263,6 +1263,7 @@ calculate_read_pyenv(PyCalculatePath *calculate)
 
     status = calculate_open_pyenv(calculate, &env_file);
     if (_PyStatus_EXCEPTION(status)) {
+        assert(env_file == NULL);
         return status;
     }
     if (env_file == NULL) {
