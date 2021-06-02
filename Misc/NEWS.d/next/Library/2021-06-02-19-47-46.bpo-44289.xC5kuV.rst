@@ -1,0 +1,1 @@
+Keep argument file object's current position in tarfile.is_tarifle method.
