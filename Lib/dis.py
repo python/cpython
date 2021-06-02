@@ -279,7 +279,7 @@ def get_instructions(x, *, first_line=None):
     else:
         line_offset = 0
     return _get_instructions_bytes(co.co_code,
-                                   co._get_localsplusnames(), co.co_nlocals,
+                                   co._varname_from_oparg,
                                    co.co_names, co.co_consts,
                                    linestarts, line_offset)
 
@@ -295,7 +295,7 @@ def _get_const_info(const_index, const_list):
         argval = const_list[const_index]
     return argval, repr(argval)
 
-def _get_name_info(name_index, name_list):
+def _get_name_info(name_index, get_name, **extrainfo):
     """Helper to get optional details about named references
 
        Returns the dereferenced name as both value and repr if the name
@@ -303,8 +303,8 @@ def _get_name_info(name_index, name_list):
        Otherwise returns the name index and its repr().
     """
     argval = name_index
-    if name_list is not None:
-        argval = name_list[name_index]
+    if get_name is not None:
+        argval = get_name(name_index, **extrainfo)
         argrepr = argval
     else:
         argrepr = repr(argval)
@@ -336,7 +336,7 @@ def parse_exception_table(code):
     except StopIteration:
         return entries
 
-def _get_instructions_bytes(code, localsplusnames=None, nlocals=0,
+def _get_instructions_bytes(code, varname_from_oparg=None,
                             names=None, constants=None,
                             linestarts=None, line_offset=0,
                             exception_entries=()):
@@ -348,6 +348,7 @@ def _get_instructions_bytes(code, localsplusnames=None, nlocals=0,
     arguments.
 
     """
+    get_name = None if names is None else names.__getitem__
     labels = set(findlabels(code))
     for start, end, target, _, _ in exception_entries:
         for i in range(start, end):
@@ -370,7 +371,7 @@ def _get_instructions_bytes(code, localsplusnames=None, nlocals=0,
             if op in hasconst:
                 argval, argrepr = _get_const_info(arg, constants)
             elif op in hasname:
-                argval, argrepr = _get_name_info(arg, names)
+                argval, argrepr = _get_name_info(arg, get_name)
             elif op in hasjabs:
                 argval = arg*2
                 argrepr = "to " + repr(argval)
@@ -378,12 +379,13 @@ def _get_instructions_bytes(code, localsplusnames=None, nlocals=0,
                 argval = offset + 2 + arg*2
                 argrepr = "to " + repr(argval)
             elif op in haslocal:
-                argval, argrepr = _get_name_info(arg, localsplusnames)
+                argval, argrepr = _get_name_info(arg, varname_from_oparg)
             elif op in hascompare:
                 argval = cmp_op[arg]
                 argrepr = argval
             elif op in hasfree:
-                argval, argrepr = _get_name_info(arg + nlocals, localsplusnames)
+                argval, argrepr = _get_name_info(arg, varname_from_oparg,
+                                                 cell=True)
             elif op == FORMAT_VALUE:
                 argval, argrepr = FORMAT_VALUE_CONVERTERS[arg & 0x3]
                 argval = (argval, bool(arg & 0x4))
@@ -403,7 +405,7 @@ def disassemble(co, lasti=-1, *, file=None):
     linestarts = dict(findlinestarts(co))
     exception_entries = parse_exception_table(co)
     _disassemble_bytes(co.co_code, lasti,
-                       co._get_localsplusnames(), co.co_nlocals,
+                       co._varname_from_oparg,
                        co.co_names, co.co_consts, linestarts, file=file,
                        exception_entries=exception_entries)
 
@@ -418,7 +420,7 @@ def _disassemble_recursive(co, *, file=None, depth=None):
                 print("Disassembly of %r:" % (x,), file=file)
                 _disassemble_recursive(x, file=file, depth=depth)
 
-def _disassemble_bytes(code, lasti=-1, localsplusnames=None, nlocals=0,
+def _disassemble_bytes(code, lasti=-1, varname_from_oparg=None,
                        names=None, constants=None, linestarts=None,
                        *, file=None, line_offset=0, exception_entries=()):
     # Omit the line number column entirely if we have no line number info
@@ -436,7 +438,7 @@ def _disassemble_bytes(code, lasti=-1, localsplusnames=None, nlocals=0,
         offset_width = len(str(maxoffset))
     else:
         offset_width = 4
-    for instr in _get_instructions_bytes(code, localsplusnames, nlocals, names,
+    for instr in _get_instructions_bytes(code, varname_from_oparg, names,
                                          constants, linestarts,
                                          line_offset=line_offset, exception_entries=exception_entries):
         new_source_line = (show_lineno and
@@ -527,7 +529,7 @@ class Bytecode:
     def __iter__(self):
         co = self.codeobj
         return _get_instructions_bytes(co.co_code,
-                                       co._get_localsplusnames(), co.co_nlocals,
+                                       co._varname_from_oparg,
                                        co.co_names, co.co_consts,
                                        self._linestarts,
                                        line_offset=self._line_offset,
@@ -557,8 +559,7 @@ class Bytecode:
             offset = -1
         with io.StringIO() as output:
             _disassemble_bytes(co.co_code,
-                               localsplusnames=co._get_localsplusnames(),
-                               nlocals=co.co_nlocals,
+                               varname_from_oparg=co._varname_from_oparg,
                                names=co.co_names, constants=co.co_consts,
                                linestarts=self._linestarts,
                                line_offset=self._line_offset,

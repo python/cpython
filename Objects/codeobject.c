@@ -1544,23 +1544,30 @@ error:
 }
 
 /*[clinic input]
-code._get_localsplusnames
+code._varname_from_oparg
 
-(internal-only) Return the "fast locals" names tuple for the code object.
+    oparg: int
+    *
+    cell: bool = False
+
+(internal-only) Return the local variable name for the given oparg.
 
 WARNING: this method is for internal use only and may change or go away.
-
-This is the combined list of variable names mapped to the corresponding
-indices in the frame's "fast locals" array.  It is effectively the same
-as co_varnames + co_cellvars + co_freevars.
 [clinic start generated code]*/
 
 static PyObject *
-code__get_localsplusnames_impl(PyCodeObject *self)
-/*[clinic end generated code: output=1ba0ba2302737af6 input=4c57e413e404152b]*/
+code__varname_from_oparg_impl(PyCodeObject *self, int oparg, int cell)
+/*[clinic end generated code: output=c7d39c9723692c8f input=2945bb291d3a3118]*/
 {
-    Py_INCREF(self->co_localsplusnames);
-    return self->co_localsplusnames;
+    if (cell) {
+        oparg += self->co_nlocals;
+    }
+    PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
+    if (name == NULL) {
+        return NULL;
+    }
+    Py_INCREF(name);
+    return name;
 }
 
 /* XXX code objects need to participate in GC? */
@@ -1569,7 +1576,7 @@ static struct PyMethodDef code_methods[] = {
     {"__sizeof__", (PyCFunction)code_sizeof, METH_NOARGS},
     {"co_lines", (PyCFunction)code_linesiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
-    CODE__GET_LOCALSPLUSNAMES_METHODDEF
+    CODE__VARNAME_FROM_OPARG_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

@@ -374,27 +374,50 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(code__get_localsplusnames__doc__,
-"_get_localsplusnames($self, /)\n"
+PyDoc_STRVAR(code__varname_from_oparg__doc__,
+"_varname_from_oparg($self, /, oparg, *, cell=False)\n"
 "--\n"
 "\n"
-"(internal-only) Return the \"fast locals\" names tuple for the code object.\n"
+"(internal-only) Return the local variable name for the given oparg.\n"
 "\n"
-"WARNING: this method is for internal use only and may change or go away.\n"
-"\n"
-"This is the combined list of variable names mapped to the corresponding\n"
-"indices in the frame\'s \"fast locals\" array.  It is effectively the same\n"
-"as co_varnames + co_cellvars + co_freevars.");
+"WARNING: this method is for internal use only and may change or go away.");
 
-#define CODE__GET_LOCALSPLUSNAMES_METHODDEF    \
-    {"_get_localsplusnames", (PyCFunction)code__get_localsplusnames, METH_NOARGS, code__get_localsplusnames__doc__},
+#define CODE__VARNAME_FROM_OPARG_METHODDEF    \
+    {"_varname_from_oparg", (PyCFunction)(void(*)(void))code__varname_from_oparg, METH_FASTCALL|METH_KEYWORDS, code__varname_from_oparg__doc__},
 
 static PyObject *
-code__get_localsplusnames_impl(PyCodeObject *self);
+code__varname_from_oparg_impl(PyCodeObject *self, int oparg, int cell);
 
 static PyObject *
-code__get_localsplusnames(PyCodeObject *self, PyObject *Py_UNUSED(ignored))
+code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return code__get_localsplusnames_impl(self);
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"oparg", "cell", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_varname_from_oparg", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int oparg;
+    int cell = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    oparg = _PyLong_AsInt(args[0]);
+    if (oparg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    cell = PyObject_IsTrue(args[1]);
+    if (cell < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = code__varname_from_oparg_impl(self, oparg, cell);
+
+exit:
+    return return_value;
 }
-/*[clinic end generated code: output=76ebaed2c2db0159 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43f4eef80d584fe0 input=a9049054013a1b77]*/
