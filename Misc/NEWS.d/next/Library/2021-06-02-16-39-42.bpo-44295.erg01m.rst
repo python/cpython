@@ -1,0 +1,2 @@
+Ensure deprecation warning from :func:`assertDictContainsSubset` points at
+calling code - by Anthony Sottile.

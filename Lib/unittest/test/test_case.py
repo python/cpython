@@ -706,6 +706,10 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             with self.assertRaises(self.failureException):
                 self.assertDictContainsSubset({'foo': one}, {'foo': '\uFFFD'})
 
+        with self.assertWarns(DeprecationWarning) as warninfo:
+            self.assertDictContainsSubset({}, {})
+        self.assertEqual(warninfo.warnings[0].filename, __file__)
+
     def testAssertEqual(self):
         equal_pairs = [
                 ((), ()),

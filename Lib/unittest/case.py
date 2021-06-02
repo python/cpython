@@ -1146,7 +1146,8 @@ class TestCase(object):
     def assertDictContainsSubset(self, subset, dictionary, msg=None):
         """Checks whether dictionary is a superset of subset."""
         warnings.warn('assertDictContainsSubset is deprecated',
-                      DeprecationWarning)
+                      DeprecationWarning,
+                      stacklevel=2)
         missing = []
         mismatched = []
         for key, value in subset.items():
