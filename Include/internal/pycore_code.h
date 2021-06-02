@@ -28,8 +28,10 @@ struct _PyOpcache {
 
 // We would use an enum if C let us specify the storage type.
 typedef unsigned char _PyFastLocalKind;
-// Note that these all fit within _PyFastLocalKind, as do combinations.
-#define CO_FAST_LOCAL   0x01
+/* Note that these all fit within _PyFastLocalKind, as do combinations. */
+// Later, we will use the smaller numbers to differentiate the different
+// kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
 
