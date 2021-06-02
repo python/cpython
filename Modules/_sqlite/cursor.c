@@ -696,6 +696,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
+    Py_ssize_t sql_len;
     PyObject* result;
 
     if (!check_cursor(self)) {
@@ -705,8 +706,15 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     self->reset = 0;
 
     if (PyUnicode_Check(script_obj)) {
-        script_cstr = PyUnicode_AsUTF8(script_obj);
+        script_cstr = PyUnicode_AsUTF8AndSize(script_obj, &sql_len);
         if (!script_cstr) {
+            return NULL;
+        }
+
+        int max_length = sqlite3_limit(self->connection->db,
+                                       SQLITE_LIMIT_LENGTH, -1);
+        if (sql_len >= max_length) {
+            PyErr_SetString(pysqlite_DataError, "query string is too large");
             return NULL;
         }
     } else {
@@ -722,12 +730,14 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     Py_DECREF(result);
 
     while (1) {
+        const char *tail;
+
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare_v2(self->connection->db,
                                 script_cstr,
-                                -1,
+                                (int)sql_len + 1,
                                 &statement,
-                                &script_cstr);
+                                &tail);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->connection->db);
@@ -755,9 +765,11 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
             goto error;
         }
 
-        if (*script_cstr == (char)0) {
+        if (*tail == (char)0) {
             break;
         }
+        sql_len -= (tail - script_cstr);
+        script_cstr = tail;
     }
 
 error:
