@@ -232,8 +232,14 @@ class CursorTests(unittest.TestCase):
     def test_execute_too_long_string(self):
         # The default value of SQLITE_MAX_LENGTH is 1_000_000_000, but it may
         # be up to 2_147_483_647.
+        res = self.cu.execute("pragma compile_options")
+        opts = {k: v for k, v in [o[0].split("=") for o in res if "=" in o[0]]}
         try:
-            too_long = " " * 2_147_483_648
+            max_length = int(opts['MAX_LENGTH'])
+        except (KeyError, TypeError):
+            max_length = 1_000_000_000
+        try:
+            too_long = " " * (max_length + 1)
         except OverflowError:
             self.skipTest("Unable to create too large SQL string")
         regex = "query string is too large"
