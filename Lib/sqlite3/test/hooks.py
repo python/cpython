@@ -259,6 +259,8 @@ class TraceCallbackTests(unittest.TestCase):
         cur.execute(queries[0])
         con2.execute("create table bar(x)")
         cur.execute(queries[1])
+        con1.close()
+        con2.close()
         self.assertEqual(traced_statements, queries)
 
 
