@@ -261,6 +261,11 @@ class TraceCallbackTests(unittest.TestCase):
         cur.execute(queries[1])
         self.assertEqual(traced_statements, queries)
 
+        con1.close()
+        con2.close()
+        import gc
+        gc.collect()
+
 
 def suite():
     tests = [
