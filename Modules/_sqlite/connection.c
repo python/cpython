@@ -250,17 +250,14 @@ connection_clear(pysqlite_Connection *self)
     return 0;
 }
 
-static int
+static void
 connection_close(pysqlite_Connection *self)
 {
-    int rc = SQLITE_OK;
-
     if (self->db) {
-        rc = sqlite3_close_v2(self->db);
+        int rc = sqlite3_close_v2(self->db);
+        assert(rc == SQLITE_OK);
         self->db = NULL;
     }
-
-    return rc;
 }
 
 static void
@@ -271,7 +268,7 @@ connection_dealloc(pysqlite_Connection *self)
     tp->tp_clear((PyObject *)self);
 
     /* Clean up if user has not called .close() explicitly. */
-    (void)connection_close(self);
+    connection_close(self);
 
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -367,11 +364,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
         Py_CLEAR(self->statements);
         Py_CLEAR(self->cursors);
 
-        int rc = connection_close(self);
-        if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->db);
-            return NULL;
-        }
+        connection_close(self);
     }
 
     Py_RETURN_NONE;
