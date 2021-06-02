@@ -170,10 +170,16 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+
+class OpenTests(unittest.TestCase):
+    def tearDown(self):
+        import gc
+        gc.collect()
+        unlink(TESTFN)
+
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        self.addCleanup(unlink, TESTFN)
         class Path:
             def __fspath__(self):
                 return TESTFN
@@ -182,7 +188,6 @@ class ConnectionTests(unittest.TestCase):
             cx.execute('create table test(id integer)')
 
     def test_open_uri(self):
-        self.addCleanup(unlink, TESTFN)
         with sqlite.connect(TESTFN) as cx:
             cx.execute('create table test(id integer)')
         with sqlite.connect('file:' + TESTFN, uri=True) as cx:
@@ -942,6 +947,7 @@ def suite():
         CursorTests,
         ExtensionTests,
         ModuleTests,
+        OpenTests,
         SqliteOnConflictTests,
         ThreadTests,
     ]
