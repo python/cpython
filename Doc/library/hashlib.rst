@@ -266,6 +266,12 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
       Python implementation uses an inline version of :mod:`hmac`. It is about
       three times slower and doesn't release the GIL.
 
+   .. deprecated:: 3.10
+
+      Slow Python implementation of *pbkdf2_hmac* is deprecated. In the
+      future the function will only be available when Python is compiled
+      with OpenSSL.
+
 .. function:: scrypt(password, *, salt, n, r, p, maxmem=0, dklen=64)
 
    The function provides scrypt password-based key derivation function as
@@ -279,8 +285,6 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    *n* is the CPU/Memory cost factor, *r* the block size, *p* parallelization
    factor and *maxmem* limits memory (OpenSSL 1.1.0 defaults to 32 MiB).
    *dklen* is the length of the derived key.
-
-   .. availability:: OpenSSL 1.1+.
 
    .. versionadded:: 3.6
 

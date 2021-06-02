@@ -884,29 +884,60 @@ _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
     return result;
 }
 
+static inline int
+set_attribute_error_context(PyObject* v, PyObject* name)
+{
+    assert(PyErr_Occurred());
+    _Py_IDENTIFIER(name);
+    _Py_IDENTIFIER(obj);
+    // Intercept AttributeError exceptions and augment them to offer
+    // suggestions later.
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)){
+        PyObject *type, *value, *traceback;
+        PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
+        if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
+            (_PyObject_SetAttrId(value, &PyId_name, name) ||
+             _PyObject_SetAttrId(value, &PyId_obj, v))) {
+            return 1;
+        }
+        PyErr_Restore(type, value, traceback);
+    }
+    return 0;
+}
+
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
-
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
                      Py_TYPE(name)->tp_name);
         return NULL;
     }
-    if (tp->tp_getattro != NULL)
-        return (*tp->tp_getattro)(v, name);
-    if (tp->tp_getattr != NULL) {
-        const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
-            return NULL;
-        return (*tp->tp_getattr)(v, (char *)name_str);
+
+    PyObject* result = NULL;
+    if (tp->tp_getattro != NULL) {
+        result = (*tp->tp_getattro)(v, name);
     }
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
-    return NULL;
+    else if (tp->tp_getattr != NULL) {
+        const char *name_str = PyUnicode_AsUTF8(name);
+        if (name_str == NULL) {
+            return NULL;
+        }
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    }
+    else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.50s' object has no attribute '%U'",
+                    tp->tp_name, name);
+    }
+
+    if (result == NULL) {
+        set_attribute_error_context(v, name);
+    }
+    return result;
 }
 
 int
@@ -1165,6 +1196,8 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     PyErr_Format(PyExc_AttributeError,
                  "'%.50s' object has no attribute '%U'",
                  tp->tp_name, name);
+
+    set_attribute_error_context(obj, name);
     return 0;
 }
 

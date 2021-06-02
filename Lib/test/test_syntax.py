@@ -93,7 +93,7 @@ SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> ... = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to Ellipsis here. Maybe you meant '==' instead of '='?
+SyntaxError: cannot assign to ellipsis here. Maybe you meant '==' instead of '='?
 
 >>> `1` = 1
 Traceback (most recent call last):
@@ -248,21 +248,35 @@ SyntaxError: did you forget parentheses around the comprehension target?
 
 # Missing commas in literals collections should not
 # produce special error messages regarding missing
-# parentheses
+# parentheses, but about missing commas instead
 
 >>> [1, 2 3]
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 >>> {1, 2 3}
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 >>> {1:2, 2:5 3:12}
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 >>> (1, 2 3)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+
+# Make sure soft keywords constructs don't raise specialized
+# errors regarding missing commas
+
+>>> match x:
+...     y = 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match x:
+...     case y:
+...        3 $ 3
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
@@ -444,28 +458,33 @@ SyntaxError: expected ':'
 ...   290, 291, 292, 293, 294, 295, 296, 297, 298, 299)  # doctest: +ELLIPSIS
 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ..., 297, 298, 299)
 
-# >>> f(lambda x: x[0] = 3)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(lambda x: x[0] = 3)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+
+# Check that this error doesn't trigger for names:
+>>> f(a={x: for x in {}})
+Traceback (most recent call last):
+SyntaxError: invalid syntax
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
-# >>> f(x()=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(a or b=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(x.y=1)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f((x)=2)
-# Traceback (most recent call last):
-# SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
-# >>> f(True=2)
-# Traceback (most recent call last):
-# SyntaxError: cannot assign to True here. Maybe you meant '==' instead of '='?
+>>> f(x()=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(a or b=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(x.y=1)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f((x)=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(True=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(__debug__=1)
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
@@ -863,6 +882,187 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
+Ensure that early = are not matched by the parser as invalid comparisons
+   >>> f(2, 4, x=34); 1 $ 2
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> dict(x=34); x $ y
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> dict(x=34, (x for x in range 10), 1); x $ y
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+   >>> dict(x=34, x=1, y=2); x $ y
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+Incomplete dictionary literals
+
+   >>> {1:2, 3:4, 5}
+   Traceback (most recent call last):
+   SyntaxError: ':' expected after dictionary key
+
+   >>> {1:2, 3:4, 5:}
+   Traceback (most recent call last):
+   SyntaxError: expression expected after dictionary key and ':'
+
+   >>> {1: *12+1, 23: 1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1: *12+1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1: 23, 1: *12+1}
+   Traceback (most recent call last):
+   SyntaxError: cannot use a starred expression in a dictionary value
+
+   >>> {1:}
+   Traceback (most recent call last):
+   SyntaxError: expression expected after dictionary key and ':'
+
+   # Ensure that the error is not raise for syntax errors that happen after sets
+
+   >>> {1} $
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
+
+Specialized indentation errors:
+
+   >>> while condition:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'while' statement on line 1
+
+   >>> for x in range(10):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'for' statement on line 1
+
+   >>> for x in range(10):
+   ...     pass
+   ... else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'else' statement on line 3
+
+   >>> async for x in range(10):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'for' statement on line 1
+
+   >>> async for x in range(10):
+   ...     pass
+   ... else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'else' statement on line 3
+
+   >>> if something:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'if' statement on line 1
+
+   >>> if something:
+   ...     pass
+   ... elif something_else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'elif' statement on line 3
+
+   >>> if something:
+   ...     pass
+   ... elif something_else:
+   ...     pass
+   ... else:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'else' statement on line 5
+
+   >>> try:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'try' statement on line 1
+
+   >>> try:
+   ...     something()
+   ... except A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'except' statement on line 3
+
+   >>> try:
+   ...     something()
+   ... except A:
+   ...     pass
+   ... finally:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'finally' statement on line 5
+
+   >>> with A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'with' statement on line 1
+
+   >>> with A as a, B as b:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'with' statement on line 1
+
+   >>> with (A as a, B as b):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'with' statement on line 1
+
+   >>> async with A:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'with' statement on line 1
+
+   >>> async with A as a, B as b:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'with' statement on line 1
+
+   >>> async with (A as a, B as b):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'with' statement on line 1
+
+   >>> def foo(x, /, y, *, z=2):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after function definition on line 1
+
+   >>> class Blech(A):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after class definition on line 1
+
+   >>> match something:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'match' statement on line 1
+
+   >>> match something:
+   ...     case []:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'case' statement on line 2
+
+   >>> match something:
+   ...     case []:
+   ...         ...
+   ...     case {}:
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after 'case' statement on line 4
+
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
    Traceback (most recent call last):
@@ -873,7 +1073,7 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
      ...
    SyntaxError: invalid syntax
 
-Check that an exception group with missing parentheses
+Check that an multiple exception types with missing parentheses
 raise a custom exception
 
    >>> try:
@@ -881,21 +1081,21 @@ raise a custom exception
    ... except A, B:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
@@ -904,7 +1104,7 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: exception group must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized
 
 
 >>> f(a=23, a=234)
@@ -927,6 +1127,26 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 >>> f'{x}-{y}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
+
+>>> (x, y, z=3, d, e)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> [x, y, z=3, d, e]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> [z=3]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> {x, y, z=3, d, e}
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
+
+>>> {z=3}
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
 
 >>> from t import x,
 Traceback (most recent call last):
@@ -952,6 +1172,14 @@ SyntaxError: only single target (not list) can be annotated
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to __debug__
+
+    >>> def f(*args:(lambda __debug__:0)): pass
+    Traceback (most recent call last):
+    SyntaxError: cannot assign to __debug__
+
+    >>> def f(**kwargs:(lambda __debug__:0)): pass
     Traceback (most recent call last):
     SyntaxError: cannot assign to __debug__
 
@@ -1008,8 +1236,8 @@ class SyntaxTestCase(unittest.TestCase):
     def test_expression_with_assignment(self):
         self._check_error(
             "print(end1 + end2 = ' ')",
-            "cannot assign to expression here. Maybe you meant '==' instead of '='?",
-            offset=19
+            'expression cannot contain assignment, perhaps you meant "=="?',
+            offset=7
         )
 
     def test_curly_brace_after_primary_raises_immediately(self):
@@ -1219,6 +1447,13 @@ def case(x):
 case(34)
 """
         compile(code, "<string>", "exec")
+
+    def test_multiline_compiler_error_points_to_the_end(self):
+        self._check_error(
+            "call(\na=1,\na=1\n)",
+            "keyword argument repeated",
+            lineno=3
+        )
 
 
 def test_main():

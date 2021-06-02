@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "pycore_ast.h"           // _PyAST_Validate()
+#include "pycore_ast.h"           // _PyAST_Validate(),
 #include <errcode.h>
 #include "tokenizer.h"
 
@@ -217,7 +217,7 @@ _PyPegen_get_expr_name(expr_ty e)
                 return "True";
             }
             if (value == Py_Ellipsis) {
-                return "Ellipsis";
+                return "ellipsis";
             }
             return "literal";
         }
@@ -274,7 +274,7 @@ raise_unclosed_parentheses_error(Parser *p) {
        int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
        int error_col = p->tok->parencolstack[p->tok->level-1];
        RAISE_ERROR_KNOWN_LOCATION(p, PyExc_SyntaxError,
-                                  error_lineno, error_col,
+                                  error_lineno, error_col, error_lineno, -1,
                                   "'%c' was never closed",
                                   p->tok->parenstack[p->tok->level-1]);
 }
@@ -366,7 +366,7 @@ tokenizer_error(Parser *p)
             msg = "unknown parsing error";
     }
 
-    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, msg);
+    RAISE_ERROR_KNOWN_LOCATION(p, errtype, p->tok->lineno, col_offset, p->tok->lineno, -1, msg);
     return -1;
 }
 
@@ -375,6 +375,7 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
 {
     Token *t = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t col_offset;
+    Py_ssize_t end_col_offset = -1;
     if (t->col_offset == -1) {
         col_offset = Py_SAFE_DOWNCAST(p->tok->cur - p->tok->buf,
                                       intptr_t, int);
@@ -382,10 +383,13 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
         col_offset = t->col_offset + 1;
     }
 
+    if (t->end_col_offset != -1) {
+        end_col_offset = t->end_col_offset + 1;
+    }
+
     va_list va;
     va_start(va, errmsg);
-    _PyPegen_raise_error_known_location(p, errtype, t->lineno,
-                                        col_offset, errmsg, va);
+    _PyPegen_raise_error_known_location(p, errtype, t->lineno, col_offset, t->end_lineno, end_col_offset, errmsg, va);
     va_end(va);
 
     return NULL;
@@ -416,6 +420,7 @@ get_error_line(Parser *p, Py_ssize_t lineno)
 void *
 _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t lineno, Py_ssize_t col_offset,
+                                    Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
     PyObject *value = NULL;
@@ -423,6 +428,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     PyObject *error_line = NULL;
     PyObject *tmp = NULL;
     p->error_indicator = 1;
+
+    if (end_lineno == CURRENT_POS) {
+        end_lineno = p->tok->lineno;
+    }
+    if (end_col_offset == CURRENT_POS) {
+        end_col_offset = p->tok->cur - p->tok->line_start;
+    }
 
     if (p->start_rule == Py_fstring_input) {
         const char *fstring_msg = "f-string: ";
@@ -475,14 +487,19 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     if (p->start_rule == Py_fstring_input) {
         col_offset -= p->starting_col_offset;
+        end_col_offset -= p->starting_col_offset;
     }
+
     Py_ssize_t col_number = col_offset;
+    Py_ssize_t end_col_number = end_col_offset;
 
     if (p->tok->encoding != NULL) {
         col_number = byte_offset_to_character_offset(error_line, col_offset);
+        end_col_number = end_col_number > 0 ?
+                         byte_offset_to_character_offset(error_line, end_col_offset) :
+                         end_col_number;
     }
-
-    tmp = Py_BuildValue("(OiiN)", p->tok->filename, lineno, col_number, error_line);
+    tmp = Py_BuildValue("(OiiNii)", p->tok->filename, lineno, col_number, error_line, end_lineno, end_col_number);
     if (!tmp) {
         goto error;
     }
@@ -943,6 +960,23 @@ _PyPegen_string_token(Parser *p)
     return _PyPegen_expect_token(p, STRING);
 }
 
+
+expr_ty _PyPegen_soft_keyword_token(Parser *p) {
+    Token *t = _PyPegen_expect_token(p, NAME);
+    if (t == NULL) {
+        return NULL;
+    }
+    char *the_token;
+    Py_ssize_t size;
+    PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
+    for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
+        if (strncmp(*keyword, the_token, size) == 0) {
+            return _PyPegen_name_token(p);
+        }
+    }
+    return NULL;
+}
+
 static PyObject *
 parsenumber_raw(const char *s)
 {
@@ -1151,6 +1185,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
+    p->soft_keywords = NULL;
     p->tokens = PyMem_Malloc(sizeof(Token *));
     if (!p->tokens) {
         PyMem_Free(p);
@@ -1187,7 +1222,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-
+    p->in_raw_rule = 0;
     return p;
 }
 
@@ -1199,6 +1234,9 @@ reset_parser_state(Parser *p)
     }
     p->mark = 0;
     p->call_invalid_rules = 1;
+    // Don't try to get extra tokens in interactive mode when trying to
+    // raise specialized errors in the second pass.
+    p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
 static int
@@ -1224,6 +1262,7 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {
+                        PyErr_Clear();
                         raise_unclosed_parentheses_error(p);
                         return -1;
                     }
@@ -1245,9 +1284,13 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+                _PyPegen_check_tokenizer_errors(p);
+            }
             return NULL;
         }
         if (p->fill == 0) {
@@ -1268,7 +1311,11 @@ _PyPegen_run_parser(Parser *p)
                 RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid syntax");
+                // Use the last token we found on the first pass to avoid reporting
+                // incorrect locations for generic syntax errors just because we reached
+                // further away when trying to find specific syntax errors in the second
+                // pass.
+                RAISE_SYNTAX_ERROR_KNOWN_LOCATION(last_token, "invalid syntax");
                 // _PyPegen_check_tokenizer_errors will override the existing
                 // generic SyntaxError we just raised if errors are found.
                 _PyPegen_check_tokenizer_errors(p);
@@ -1474,6 +1521,13 @@ _PyPegen_seq_flatten(Parser *p, asdl_seq *seqs)
     assert(flattened_seq_idx == flattened_seq_size);
 
     return flattened_seq;
+}
+
+void *
+_PyPegen_seq_last_item(asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    return asdl_seq_GET_UNTYPED(seq, len - 1);
 }
 
 /* Creates a new name of the form <first_name>.<second_name> */
@@ -1772,6 +1826,51 @@ _PyPegen_get_values(Parser *p, asdl_seq *seq)
     for (Py_ssize_t i = 0; i < len; i++) {
         KeyValuePair *pair = asdl_seq_GET_UNTYPED(seq, i);
         asdl_seq_SET(new_seq, i, pair->value);
+    }
+    return new_seq;
+}
+
+/* Constructs a KeyPatternPair that is used when parsing mapping & class patterns */
+KeyPatternPair *
+_PyPegen_key_pattern_pair(Parser *p, expr_ty key, pattern_ty pattern)
+{
+    KeyPatternPair *a = _PyArena_Malloc(p->arena, sizeof(KeyPatternPair));
+    if (!a) {
+        return NULL;
+    }
+    a->key = key;
+    a->pattern = pattern;
+    return a;
+}
+
+/* Extracts all keys from an asdl_seq* of KeyPatternPair*'s */
+asdl_expr_seq *
+_PyPegen_get_pattern_keys(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_expr_seq *new_seq = _Py_asdl_expr_seq_new(len, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeyPatternPair *pair = asdl_seq_GET_UNTYPED(seq, i);
+        asdl_seq_SET(new_seq, i, pair->key);
+    }
+    return new_seq;
+}
+
+/* Extracts all patterns from an asdl_seq* of KeyPatternPair*'s */
+asdl_pattern_seq *
+_PyPegen_get_patterns(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_pattern_seq *new_seq = _Py_asdl_pattern_seq_new(len, p->arena);
+    if (!new_seq) {
+        return NULL;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeyPatternPair *pair = asdl_seq_GET_UNTYPED(seq, i);
+        asdl_seq_SET(new_seq, i, pair->pattern);
     }
     return new_seq;
 }
@@ -2261,6 +2360,26 @@ error:
     return NULL;
 }
 
+expr_ty
+_PyPegen_ensure_imaginary(Parser *p, expr_ty exp)
+{
+    if (exp->kind != Constant_kind || !PyComplex_CheckExact(exp->v.Constant.value)) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "imaginary number required in complex literal");
+        return NULL;
+    }
+    return exp;
+}
+
+expr_ty
+_PyPegen_ensure_real(Parser *p, expr_ty exp)
+{
+    if (exp->kind != Constant_kind || PyComplex_CheckExact(exp->v.Constant.value)) {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(exp, "real number required in complex literal");
+        return NULL;
+    }
+    return exp;
+}
+
 mod_ty
 _PyPegen_make_module(Parser *p, asdl_stmt_seq *a) {
     asdl_type_ignore_seq *type_ignores = NULL;
@@ -2380,7 +2499,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args)
         return NULL;
     }
 
-    return RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+    return RAISE_SYNTAX_ERROR_STARTING_FROM(
         (expr_ty) asdl_seq_GET(args->v.Call.args, len - 1),
         "Generator expression must be parenthesized"
     );

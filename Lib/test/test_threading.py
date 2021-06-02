@@ -4,7 +4,7 @@ Tests for the threading module.
 
 import test.support
 from test.support import threading_helper
-from test.support import verbose, cpython_only
+from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -19,6 +19,7 @@ import os
 import subprocess
 import signal
 import textwrap
+import traceback
 
 from unittest import mock
 from test import lock_tests
@@ -30,6 +31,11 @@ from test import support
 # problems with some operating systems (issue #3863): skip problematic tests
 # on platforms known to behave badly.
 platforms_to_skip = ('netbsd5', 'hp-ux11')
+
+
+def restore_default_excepthook(testcase):
+    testcase.addCleanup(setattr, threading, 'excepthook', threading.excepthook)
+    threading.excepthook = threading.__excepthook__
 
 
 # A trivial mutable counter.
@@ -113,6 +119,12 @@ class ThreadTests(BaseTestCase):
         with mock.patch.object(threading, '_counter', return_value=5):
             thread = threading.Thread(target=func)
             self.assertEqual(thread.name, "Thread-5 (func)")
+
+    @cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        lock = threading.Lock()
+        test.support.check_disallow_instantiation(self, type(lock))
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -426,6 +438,8 @@ class ThreadTests(BaseTestCase):
             def _run(self, other_ref, yet_another):
                 if self.should_raise:
                     raise SystemExit
+
+        restore_default_excepthook(self)
 
         cyclic_object = RunSelfFunction(should_raise=False)
         weak_cyclic_object = weakref.ref(cyclic_object)
@@ -893,6 +907,13 @@ class ThreadTests(BaseTestCase):
         thread.join()
         self.assertTrue(target.ran)
 
+    def test_leak_without_join(self):
+        # bpo-37788: Test that a thread which is not joined explicitly
+        # does not leak. Test written for reference leak checks.
+        def noop(): pass
+        with threading_helper.wait_threads_exit():
+            threading.Thread(target=noop).start()
+            # Thread.join() is not called
 
 
 class ThreadJoinOnShutdown(BaseTestCase):
@@ -1324,6 +1345,22 @@ class ThreadingExceptionTests(BaseTestCase):
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
 
+    def test_multithread_modify_file_noerror(self):
+        # See issue25872
+        def modify_file():
+            with open(os_helper.TESTFN, 'w', encoding='utf-8') as fp:
+                fp.write(' ')
+                traceback.format_stack()
+
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        threads = [
+            threading.Thread(target=modify_file)
+            for i in range(100)
+        ]
+        for t in threads:
+            t.start()
+            t.join()
+
 
 class ThreadRunFail(threading.Thread):
     def run(self):
@@ -1331,6 +1368,10 @@ class ThreadRunFail(threading.Thread):
 
 
 class ExceptHookTests(BaseTestCase):
+    def setUp(self):
+        restore_default_excepthook(self)
+        super().setUp()
+
     def test_excepthook(self):
         with support.captured_output("stderr") as stderr:
             thread = ThreadRunFail(name="excepthook thread")
@@ -1501,6 +1542,8 @@ class BarrierTests(lock_tests.BarrierTests):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
+        restore_default_excepthook(self)
+
         extra = {"ThreadError"}
         not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),

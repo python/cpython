@@ -5,6 +5,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
@@ -63,7 +64,7 @@ typedef struct {
 static array_state *
 get_array_state(PyObject *module)
 {
-    return (array_state *)PyModule_GetState(module);
+    return (array_state *)_PyModule_GetState(module);
 }
 
 #define find_array_state_by_type(tp) \
@@ -660,10 +661,18 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 
 /* Methods */
 
+static int
+array_tp_traverse(arrayobject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
 static void
 array_dealloc(arrayobject *op)
 {
     PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
 
     if (op->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) op);
@@ -2819,7 +2828,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_getset, array_getsets},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
-    {Py_tp_free, PyObject_Del},
+    {Py_tp_traverse, array_tp_traverse},
 
     /* as sequence */
     {Py_sq_length, array_length},
@@ -2846,7 +2855,9 @@ static PyType_Slot array_slots[] = {
 static PyType_Spec array_spec = {
     .name = "array.array",
     .basicsize = sizeof(arrayobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_SEQUENCE),
     .slots = array_slots,
 };
 
@@ -2919,6 +2930,7 @@ arrayiter_dealloc(arrayiterobject *it)
 static int
 arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(it));
     Py_VISIT(it->ao);
     return 0;
 }
@@ -2984,7 +2996,8 @@ static PyType_Slot arrayiter_slots[] = {
 static PyType_Spec arrayiter_spec = {
     .name = "array.arrayiterator",
     .basicsize = sizeof(arrayiterobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION),
     .slots = arrayiter_slots,
 };
 

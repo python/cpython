@@ -95,20 +95,9 @@ Managing Packages with pip
 You can install, upgrade, and remove packages using a program called
 :program:`pip`.  By default ``pip`` will install packages from the Python
 Package Index, <https://pypi.org>.  You can browse the Python
-Package Index by going to it in your web browser, or you can use ``pip``'s
-limited search feature:
+Package Index by going to it in your web browser.
 
-.. code-block:: bash
-
-  (tutorial-env) $ pip search astronomy
-  skyfield               - Elegant astronomy for Python
-  gary                   - Galactic astronomy and gravitational dynamics.
-  novas                  - The United States Naval Observatory NOVAS astronomy library
-  astroobs               - Provides astronomy ephemeris to plan telescope observations
-  PyAstronomy            - A collection of astronomy related tools for Python.
-  ...
-
-``pip`` has a number of subcommands: "search", "install", "uninstall",
+``pip`` has a number of subcommands: "install", "uninstall",
 "freeze", etc.  (Consult the :ref:`installing-index` guide for
 complete documentation for ``pip``.)
 

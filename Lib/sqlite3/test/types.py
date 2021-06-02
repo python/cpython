@@ -255,7 +255,9 @@ class DeclTypesTests(unittest.TestCase):
     def test_convert_zero_sized_blob(self):
         self.con.execute("insert into test(cbin) values (?)", (b"",))
         cur = self.con.execute("select cbin from test")
-        self.assertEqual(cur.fetchone()[0], b"blobish")
+        # Zero-sized blobs with converters returns None.  This differs from
+        # blobs without a converter, where b"" is returned.
+        self.assertIsNone(cur.fetchone()[0])
 
 
 class ColNamesTests(unittest.TestCase):

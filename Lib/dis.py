@@ -203,6 +203,9 @@ _Instruction.offset.__doc__ = "Start index of operation within bytecode sequence
 _Instruction.starts_line.__doc__ = "Line started by this opcode (if any), otherwise None"
 _Instruction.is_jump_target.__doc__ = "True if other code jumps to here, otherwise False"
 
+_ExceptionTableEntry = collections.namedtuple("_ExceptionTableEntry",
+    "start end target depth lasti")
+
 _OPNAME_WIDTH = 20
 _OPARG_WIDTH = 5
 
@@ -308,8 +311,33 @@ def _get_name_info(name_index, name_list):
     return argval, argrepr
 
 
+def parse_varint(iterator):
+    b = next(iterator)
+    val = b & 63
+    while b&64:
+        val <<= 6
+        b = next(iterator)
+        val |= b&63
+    return val
+
+def parse_exception_table(code):
+    iterator = iter(code.co_exceptiontable)
+    entries = []
+    try:
+        while True:
+            start = parse_varint(iterator)*2
+            length = parse_varint(iterator)*2
+            end = start + length
+            target = parse_varint(iterator)*2
+            dl = parse_varint(iterator)
+            depth = dl >> 1
+            lasti = bool(dl&1)
+            entries.append(_ExceptionTableEntry(start, end, target, depth, lasti))
+    except StopIteration:
+        return entries
+
 def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
-                      cells=None, linestarts=None, line_offset=0):
+                      cells=None, linestarts=None, line_offset=0, exception_entries=()):
     """Iterate over the instructions in a bytecode string.
 
     Generates a sequence of Instruction namedtuples giving the details of each
@@ -318,7 +346,10 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
     arguments.
 
     """
-    labels = findlabels(code)
+    labels = set(findlabels(code))
+    for start, end, target, _, _ in exception_entries:
+        for i in range(start, end):
+            labels.add(target)
     starts_line = None
     for offset, op, arg in _unpack_opargs(code):
         if linestarts is not None:
@@ -369,8 +400,10 @@ def disassemble(co, lasti=-1, *, file=None):
     """Disassemble a code object."""
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
+    exception_entries = parse_exception_table(co)
     _disassemble_bytes(co.co_code, lasti, co.co_varnames, co.co_names,
-                       co.co_consts, cell_names, linestarts, file=file)
+                       co.co_consts, cell_names, linestarts, file=file,
+                       exception_entries=exception_entries)
 
 def _disassemble_recursive(co, *, file=None, depth=None):
     disassemble(co, file=file)
@@ -385,7 +418,7 @@ def _disassemble_recursive(co, *, file=None, depth=None):
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
-                       *, file=None, line_offset=0):
+                       *, file=None, line_offset=0, exception_entries=()):
     # Omit the line number column entirely if we have no line number info
     show_lineno = bool(linestarts)
     if show_lineno:
@@ -403,7 +436,7 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         offset_width = 4
     for instr in _get_instructions_bytes(code, varnames, names,
                                          constants, cells, linestarts,
-                                         line_offset=line_offset):
+                                         line_offset=line_offset, exception_entries=exception_entries):
         new_source_line = (show_lineno and
                            instr.starts_line is not None and
                            instr.offset > 0)
@@ -412,6 +445,12 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
         is_current_instr = instr.offset == lasti
         print(instr._disassemble(lineno_width, is_current_instr, offset_width),
               file=file)
+    if exception_entries:
+        print("ExceptionTable:", file=file)
+        for entry in exception_entries:
+            lasti = " lasti" if entry.lasti else ""
+            end = entry.end-2
+            print(f"  {entry.start} to {end} -> {entry.target} [{entry.depth}]{lasti}", file=file)
 
 def _disassemble_str(source, **kwargs):
     """Compile the source string, then disassemble the code object."""
@@ -482,13 +521,15 @@ class Bytecode:
         self._linestarts = dict(findlinestarts(co))
         self._original_object = x
         self.current_offset = current_offset
+        self.exception_entries = parse_exception_table(co)
 
     def __iter__(self):
         co = self.codeobj
         return _get_instructions_bytes(co.co_code, co.co_varnames, co.co_names,
                                        co.co_consts, self._cell_names,
                                        self._linestarts,
-                                       line_offset=self._line_offset)
+                                       line_offset=self._line_offset,
+                                       exception_entries=self.exception_entries)
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__,
@@ -519,7 +560,8 @@ class Bytecode:
                                linestarts=self._linestarts,
                                line_offset=self._line_offset,
                                file=output,
-                               lasti=offset)
+                               lasti=offset,
+                                    exception_entries=self.exception_entries)
             return output.getvalue()
 
 

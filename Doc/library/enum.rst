@@ -108,7 +108,7 @@ Module Contents
       :class:`Enum` class decorator to apply the appropriate global `__repr__`,
       and export its members into the global name space.
 
-   :func:`property`
+   :func:`.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
       other members' names.
@@ -139,6 +139,12 @@ Data Types
         >>> some_var = Color.RED
         >>> some_var in Color
         True
+
+      .. note::
+
+         In Python 3.12 it will be possible to check for member values and not
+         just members; until then, a ``TypeError`` will be raised if a
+         non-Enum-member is used in a containment check.
 
    .. method:: EnumType.__dir__(cls)
 
@@ -569,6 +575,8 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          KeepFlag.BLUE|0x10
 
+.. versionadded:: 3.10  ``FlagBoundary``
+
 
 Utilites and Decorators
 -----------------------
@@ -589,9 +597,10 @@ Utilites and Decorators
 
    A :keyword:`class` decorator specifically for enumerations.  It replaces the
    :meth:`__repr__` method with one that shows *module_name*.*member_name*.  It
-   also injects the members, and their aliases, into the the global namespace
-   they were defined in.
+   also injects the members, and their aliases, into the global namespace they
+   were defined in.
 
+.. versionadded:: 3.10
 
 .. decorator:: property
 
@@ -603,6 +612,8 @@ Utilites and Decorators
              for example, the *value* and *name* attributes are defined in the
              *Enum* class, and *Enum* subclasses can define members with the
              names ``value`` and ``name``.
+
+.. versionadded:: 3.10
 
 .. decorator:: unique
 
@@ -621,4 +632,3 @@ Utilites and Decorators
       Traceback (most recent call last):
       ...
       ValueError: duplicate values found in <enum 'Mistake'>: FOUR -> THREE
-

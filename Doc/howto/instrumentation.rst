@@ -46,7 +46,8 @@ or::
    $ sudo apt-get install systemtap-sdt-dev
 
 
-CPython must then be configured ``--with-dtrace``:
+CPython must then be :option:`configured with the --with-dtrace option
+<--with-dtrace>`:
 
 .. code-block:: none
 
@@ -77,7 +78,8 @@ the built binary by seeing if it contains a ".note.stapsdt" section.
    $ readelf -S ./python | grep .note.stapsdt
    [30] .note.stapsdt        NOTE         0000000000000000 00308d78
 
-If you've built Python as a shared library (with --enable-shared), you
+If you've built Python as a shared library
+(with the :option:`--enable-shared` configure option), you
 need to look instead within the shared library.  For example::
 
    $ readelf -S libpython3.3dm.so.1.0 | grep .note.stapsdt
@@ -252,7 +254,7 @@ where the columns are:
 
 and the remainder indicates the call/return hierarchy as the script executes.
 
-For a `--enable-shared` build of CPython, the markers are contained within the
+For a :option:`--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
 example, this line from the above example:
 
