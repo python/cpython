@@ -261,6 +261,7 @@ class TraceCallbackTests(unittest.TestCase):
         cur.execute(queries[1])
         self.assertEqual(traced_statements, queries)
 
+        # bpo-42213: ensure that TESTFN is closed before the cleanup runs
         con1.close()
         con2.close()
         import gc

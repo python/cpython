@@ -173,6 +173,7 @@ class ConnectionTests(unittest.TestCase):
 
 class OpenTests(unittest.TestCase):
     def tearDown(self):
+        # bpo-42213: ensure that TESTFN is closed before unlinking
         import gc
         gc.collect()
         unlink(TESTFN)
