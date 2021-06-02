@@ -362,7 +362,7 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     Note: This does not raise TimeoutError! Futures that aren't done
     when the timeout occurs are returned in the second set.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
+    if futures.isfuture(fs) or inspect.isawaitable(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
         raise ValueError('Set of coroutines/Futures is empty.')
