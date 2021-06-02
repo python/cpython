@@ -1,0 +1,1 @@
+Use ``inspect.isawaitable()`` to detect if ``as_completed()``'s first parameter is awaitable
