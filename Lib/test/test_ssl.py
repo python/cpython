@@ -4464,11 +4464,18 @@ class TestPostHandshakeAuth(unittest.TestCase):
                     '(certificate required|EOF occurred)'
                 ):
                     # receive CertificateRequest
-                    self.assertEqual(s.recv(1024), b'OK\n')
+                    data = s.recv(1024)
+                    if not data:
+                        raise ssl.SSLError(1, "EOF occurred")
+                    self.assertEqual(data, b'OK\n')
+
                     # send empty Certificate + Finish
                     s.write(b'HASCERT')
+
                     # receive alert
-                    s.recv(1024)
+                    data = s.recv(1024)
+                    if not data:
+                        raise ssl.SSLError(1, "EOF occurred")
 
     def test_pha_optional(self):
         if support.verbose:
