@@ -250,6 +250,19 @@ connection_clear(pysqlite_Connection *self)
     return 0;
 }
 
+static int
+connection_close(pysqlite_Connection *self)
+{
+    int rc = SQLITE_OK;
+
+    if (self->db) {
+        rc = sqlite3_close_v2(self->db);
+        self->db = NULL;
+    }
+
+    return rc;
+}
+
 static void
 connection_dealloc(pysqlite_Connection *self)
 {
@@ -258,9 +271,7 @@ connection_dealloc(pysqlite_Connection *self)
     tp->tp_clear((PyObject *)self);
 
     /* Clean up if user has not called .close() explicitly. */
-    if (self->db) {
-        sqlite3_close_v2(self->db);
-    }
+    (void)connection_close(self);
 
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -345,22 +356,21 @@ static PyObject *
 pysqlite_connection_close_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=a546a0da212c9b97 input=3d58064bbffaa3d3]*/
 {
-    int rc;
-
     if (!pysqlite_check_thread(self)) {
         return NULL;
     }
 
-    pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
-
     if (self->db) {
-        rc = sqlite3_close_v2(self->db);
+        /* Free pending statements before closing. This implies also cleaning
+         * up cursors, as they may have strong refs to statements. */
+        Py_CLEAR(self->statement_cache);
+        Py_CLEAR(self->statements);
+        Py_CLEAR(self->cursors);
 
+        int rc = connection_close(self);
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db);
             return NULL;
-        } else {
-            self->db = NULL;
         }
     }
 
