@@ -101,10 +101,10 @@ static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
 #define UNBOUNDLOCAL_ERROR_MSG \
-    "local variable '%.200s' referenced before assignment"
+    "cannot access local variable '%s' where it is not associated with a value"
 #define UNBOUNDFREE_ERROR_MSG \
-    "free variable '%.200s' referenced before assignment" \
-    " in enclosing scope"
+    "cannot access free variable '%s' where it is not associated with a" \
+    " value in enclosing scope"
 
 /* Dynamic execution profile */
 #ifdef DYNAMIC_EXECUTION_PROFILE
