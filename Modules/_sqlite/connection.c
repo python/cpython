@@ -1845,22 +1845,23 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
     if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
         commit = 1;
         result = pysqlite_connection_commit_impl(self);
-    } else {
+    }
+    else {
         result = pysqlite_connection_rollback_impl(self);
     }
 
-    if (!result) {
+    if (result == NULL) {
         if (commit) {
-            /* If commit failed, rollback and keep the existing exception. If
-             * rollback also fails, overwrite the exception. We use
-             * sqlite3_exec() to avoid accidentally clearing the current
-             * exception when rolling back. */
-            int rc;
-            Py_BEGIN_ALLOW_THREADS
-            rc = sqlite3_exec(self->db, "rollback;", NULL, NULL, NULL);
-            Py_END_ALLOW_THREADS
-            if (rc != SQLITE_OK && !PyErr_Occurred()) {
-                _pysqlite_seterror(self->db);
+            /* Commit failed; try to rollback in order to unlock the database.
+             * If rollback also fails, chain the exceptions. */
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            result = pysqlite_connection_rollback_impl(self);
+            if (result == NULL) {
+                _PyErr_ChainExceptions(exc, val, tb);
+            }
+            else {
+                PyErr_Restore(exc, val, tb);
             }
         }
         return NULL;
