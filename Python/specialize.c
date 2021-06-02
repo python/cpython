@@ -77,11 +77,13 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
   Values of zero are ignored. */
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
+    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2,
+    [LOAD_GLOBAL] = 2,
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -368,3 +370,68 @@ success:
     return 0;
 }
 
+
+int
+_Py_Specialize_LoadGlobal(
+    PyObject *globals, PyObject *builtins,
+    _Py_CODEUNIT *instr, PyObject *name,
+    SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyLoadGlobalCache *cache1 = &cache[-1].load_global;
+    assert(PyUnicode_CheckExact(name));
+    Py_hash_t hash = PyObject_Hash(name);
+    if (hash == -1) {
+        return -1;
+    }
+    if (!PyDict_CheckExact(globals)) {
+        goto fail;
+    }
+    if (((PyDictObject *)globals)->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
+        goto fail;
+    }
+    PyObject *value;
+    Py_ssize_t index = _Py_dict_lookup((PyDictObject *)globals, name, hash, &value);
+    assert (index != DKIX_ERROR);
+    if (index != DKIX_EMPTY) {
+        if (index != (uint16_t)index) {
+            goto fail;
+        }
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+        if (keys_version == 0) {
+            goto fail;
+        }
+        cache1->module_keys_version = keys_version;
+        cache0->index = index;
+        *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_MODULE, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (!PyDict_CheckExact(builtins)) {
+        goto fail;
+    }
+    if (((PyDictObject *)builtins)->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
+        goto fail;
+    }
+    index = _Py_dict_lookup((PyDictObject *)builtins, name, hash, &value);
+    assert (index != DKIX_ERROR);
+    if (index != (uint16_t)index) {
+        goto fail;
+    }
+    cache1->module_keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
+    if (keys_version == 0) {
+        goto fail;
+    }
+    cache1->builtin_keys_version = keys_version;
+    cache0->index = index;
+    *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
+    goto success;
+fail:
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}

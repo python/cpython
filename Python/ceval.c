@@ -2974,30 +2974,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(LOAD_GLOBAL): {
-            PyObject *name;
+            PREDICTED(LOAD_GLOBAL);
+            PyObject *name = GETITEM(names, oparg);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
             {
-                OPCACHE_CHECK();
-                if (co_opcache != NULL && co_opcache->optimized > 0) {
-                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
-
-                    if (lg->globals_ver ==
-                            ((PyDictObject *)GLOBALS())->ma_version_tag
-                        && lg->builtins_ver ==
-                           ((PyDictObject *)BUILTINS())->ma_version_tag)
-                    {
-                        PyObject *ptr = lg->ptr;
-                        OPCACHE_STAT_GLOBAL_HIT();
-                        assert(ptr != NULL);
-                        Py_INCREF(ptr);
-                        PUSH(ptr);
-                        DISPATCH();
-                    }
-                }
-
-                name = GETITEM(names, oparg);
                 v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
                                        (PyDictObject *)BUILTINS(),
                                        name);
@@ -3010,25 +2992,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     }
                     goto error;
                 }
-
-                if (co_opcache != NULL) {
-                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
-
-                    if (co_opcache->optimized == 0) {
-                        /* Wasn't optimized before. */
-                        OPCACHE_STAT_GLOBAL_OPT();
-                    } else {
-                        OPCACHE_STAT_GLOBAL_MISS();
-                    }
-
-                    co_opcache->optimized = 1;
-                    lg->globals_ver =
-                        ((PyDictObject *)GLOBALS())->ma_version_tag;
-                    lg->builtins_ver =
-                        ((PyDictObject *)BUILTINS())->ma_version_tag;
-                    lg->ptr = v; /* borrowed */
-                }
-
                 Py_INCREF(v);
             }
             else {
@@ -3056,6 +3019,58 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 }
             }
             PUSH(v);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_GLOBAL_ADAPTIVE): {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+                next_instr--;
+                if (_Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
+            }
+        }
+
+        case TARGET(LOAD_GLOBAL_MODULE): {
+            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
+            PyDictObject *dict = (PyDictObject *)GLOBALS();
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadGlobalCache *cache1 = &caches[-1].load_global;
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->module_keys_version, LOAD_GLOBAL);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
+            PyObject *res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            PUSH(res);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_GLOBAL_BUILTIN): {
+            DEOPT_IF(!PyDict_CheckExact(GLOBALS()), LOAD_GLOBAL);
+            DEOPT_IF(!PyDict_CheckExact(BUILTINS()), LOAD_GLOBAL);
+            PyDictObject *mdict = (PyDictObject *)GLOBALS();
+            PyDictObject *bdict = (PyDictObject *)BUILTINS();
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadGlobalCache *cache1 = &caches[-1].load_global;
+            DEOPT_IF(mdict->ma_keys->dk_version != cache1->module_keys_version, LOAD_GLOBAL);
+            DEOPT_IF(bdict->ma_keys->dk_version != cache1->builtin_keys_version, LOAD_GLOBAL);
+            PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache0->index;
+            PyObject *res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            PUSH(res);
             DISPATCH();
         }
 
@@ -4459,6 +4474,18 @@ LOAD_ATTR_miss:
         }
         oparg = cache->original_oparg;
         JUMP_TO_INSTRUCTION(LOAD_ATTR);
+    }
+
+LOAD_GLOBAL_miss:
+    {
+        _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive;
+        record_cache_miss(cache);
+        if (too_many_cache_misses(cache)) {
+            next_instr[-1] = _Py_MAKECODEUNIT(LOAD_GLOBAL_ADAPTIVE, _Py_OPARG(next_instr[-1]));
+            cache_backoff(cache);
+        }
+        oparg = cache->original_oparg;
+        JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
     }
 
 error:

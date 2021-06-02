@@ -48,6 +48,11 @@ typedef struct {
     uint32_t dk_version_or_hint;
 } _PyLoadAttrCache;
 
+typedef struct {
+    uint32_t module_keys_version;
+    uint32_t builtin_keys_version;
+} _PyLoadGlobalCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -62,6 +67,7 @@ typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
     _PyLoadAttrCache load_attr;
+    _PyLoadGlobalCache load_global;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -318,6 +324,7 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 
 #define SPECIALIZATION_STATS 0
 #if SPECIALIZATION_STATS
