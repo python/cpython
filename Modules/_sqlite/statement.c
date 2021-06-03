@@ -125,10 +125,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         goto error;
     }
 
-    if (rc != SQLITE_OK) {
-        return rc;
-    }
-
     if (pysqlite_check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
         self->st = NULL;
