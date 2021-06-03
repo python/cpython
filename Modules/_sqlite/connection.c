@@ -21,7 +21,6 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "cache.h"
 #include "module.h"
 #include "structmember.h"         // PyMemberDef
 #include "connection.h"
@@ -57,6 +56,26 @@ static const char * const begin_statements[] = {
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level, void *Py_UNUSED(ignored));
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
+static PyObject *
+new_statement_cache(pysqlite_Connection *self, int maxsize)
+{
+    PyObject *args[] = { PyLong_FromLong(maxsize), };
+    if (args[0] == NULL) {
+        return NULL;
+    }
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    PyObject *inner = PyObject_Vectorcall(state->lru_cache, args, 1, NULL);
+    Py_DECREF(args[0]);
+    if (inner == NULL) {
+        return NULL;
+    }
+
+    args[0] = (PyObject *)self;  // Borrowed ref.
+    PyObject *res = PyObject_Vectorcall(inner, args, 1, NULL);
+    Py_DECREF(inner);
+    return res;
+}
+
 static int
 pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
                          PyObject *kwargs)
@@ -73,7 +92,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     PyObject* isolation_level = NULL;
     PyObject* factory = NULL;
     int check_same_thread = 1;
-    int cached_statements = 100;
+    int cached_statements = 128;
     int uri = 0;
     double timeout = 5.0;
     int rc;
@@ -134,7 +153,10 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     }
     Py_DECREF(isolation_level);
 
-    self->statement_cache = (pysqlite_Cache*)PyObject_CallFunction((PyObject*)pysqlite_CacheType, "Oi", self, cached_statements);
+    self->statement_cache = new_statement_cache(self, cached_statements);
+    if (self->statement_cache == NULL) {
+        return -1;
+    }
     if (PyErr_Occurred()) {
         return -1;
     }
