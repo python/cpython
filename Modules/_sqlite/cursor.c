@@ -415,6 +415,38 @@ static int check_cursor(pysqlite_Cursor* cur)
     return pysqlite_check_thread(cur->connection) && pysqlite_check_connection(cur->connection);
 }
 
+static int
+begin_transaction(pysqlite_Connection *self)
+{
+    int rc;
+    sqlite3_stmt *statement;
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_prepare_v2(self->db, self->begin_statement, -1, &statement,
+                            NULL);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(self->db);
+        goto error;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    sqlite3_step(statement);
+    rc = sqlite3_finalize(statement);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK && !PyErr_Occurred()) {
+        _pysqlite_seterror(self->db);
+    }
+
+error:
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyObject *
 get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
@@ -431,7 +463,6 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     PyObject* parameters = NULL;
     int i;
     int rc;
-    PyObject* result;
     int numcols;
     PyObject* column_name;
     sqlite_int64 lastrowid;
@@ -515,13 +546,12 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     /* We start a transaction implicitly before a DML statement.
        SELECT is the only exception. See #9924. */
-    if (self->connection->begin_statement && self->statement->is_dml) {
-        if (sqlite3_get_autocommit(self->connection->db)) {
-            result = _pysqlite_connection_begin(self->connection);
-            if (!result) {
-                goto error;
-            }
-            Py_DECREF(result);
+    if (self->connection->begin_statement
+        && self->statement->is_dml
+        && sqlite3_get_autocommit(self->connection->db))
+    {
+        if (begin_transaction(self->connection) < 0) {
+            goto error;
         }
     }
 
