@@ -969,22 +969,20 @@ class SqliteOnConflictTests(unittest.TestCase):
 
 
 class MultiprocessTests(unittest.TestCase):
-    CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
-
     def setUp(self):
-        self.cx = sqlite.connect(TESTFN, timeout=self.CONNECTION_TIMEOUT)
-        self.cx.execute("create table t(t)")
+        with sqlite.connect(TESTFN) as cx:
+            cx.execute("create table t(t)")
 
     def tearDown(self):
-        self.cx.close()
         unlink(TESTFN)
 
     def test_rollback_if_db_is_locked(self):
         # bpo-27334: ctx manager does not rollback if commit fails
+        CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
         SCRIPT = f"""if 1:
             import sqlite3
             input()  # wait for parent process to start
-            cx = sqlite3.connect("{TESTFN}", timeout={self.CONNECTION_TIMEOUT})
+            cx = sqlite3.connect("{TESTFN}", timeout={CONNECTION_TIMEOUT})
             try:
                 with cx:
                     cx.execute("insert into t values('test')")
@@ -1007,25 +1005,26 @@ class MultiprocessTests(unittest.TestCase):
         )
         self.addCleanup(proc.communicate)
 
-        # create a UDF that waits for child
+        # connect to db, and create a UDF that waits for child
         def wait():
             print("go", file=proc.stdin)  # tell child to connect
             self.assertIn("database is locked", proc.stdout.readline())
-        self.cx.create_function("wait", 0, wait)
+        with managed_connect(TESTFN, timeout=CONNECTION_TIMEOUT) as cx:
+            cx.create_function("wait", 0, wait)
 
-        # execute two transactions; both will try to lock the db
-        self.cx.executescript("""
-            -- execute a transaction and wait for child
-            begin transaction;
-            select * from t;
-            select wait();
-            rollback;
+            # execute two transactions; both will try to lock the db
+            cx.executescript("""
+                -- execute a transaction and wait for child
+                begin transaction;
+                select * from t;
+                select wait();
+                rollback;
 
-            -- start a new transaction; will fail if child holds lock
-            begin transaction;
-            select * from t;
-            rollback;
-        """)
+                -- start a new transaction; will fail if child holds lock
+                begin transaction;
+                select * from t;
+                rollback;
+            """)
 
         # terminate child process
         self.assertIsNone(proc.returncode)
