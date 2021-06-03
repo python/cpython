@@ -579,7 +579,7 @@ class BrokenProcessPool(_base.BrokenExecutor):
 
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None, mp_context=None,
-                 initializer=None, initargs=()):
+                 initializer=None, initargs=(), daemon=None):
         """Initializes a new ProcessPoolExecutor instance.
 
         Args:
@@ -658,6 +658,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._call_queue._ignore_epipe = True
         self._result_queue = mp_context.SimpleQueue()
         self._work_ids = queue.Queue()
+        self._daemon = daemon
 
     def _start_executor_manager_thread(self):
         if self._executor_manager_thread is None:
@@ -679,7 +680,8 @@ class ProcessPoolExecutor(_base.Executor):
                 args=(self._call_queue,
                       self._result_queue,
                       self._initializer,
-                      self._initargs))
+                      self._initargs),
+                daemon=self._daemon)
             p.start()
             self._processes[p.pid] = p
 
