@@ -274,6 +274,20 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`43823`)
 
+* ``try`` blocks without ``except`` or ``finally`` blocks:
+
+    .. code-block:: python
+
+        >>> try
+        ...     x = 2
+        ... something = 3
+          File "<stdin>", line 3
+            something  = 3
+            ^^^^^^^^^
+        SyntaxError: expected 'except' or 'finally' block
+
+    (Contributed by Pablo Galindo in :issue:`44305`)
+
 * Usage of ``=`` instead of ``==`` in comparisons:
 
     .. code-block:: python

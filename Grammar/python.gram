@@ -964,6 +964,7 @@ invalid_with_stmt_indent:
 invalid_try_stmt:
     | a='try' ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'try' statement on line %d", a->lineno) }
+    | 'try' ':' block !('except' | 'finally') { RAISE_SYNTAX_ERROR("expected 'except' or 'finally' block") }
 invalid_except_stmt:
     | 'except' a=expression ',' expressions ['as' NAME ] ':' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
