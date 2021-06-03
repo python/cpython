@@ -26,6 +26,57 @@ struct _PyOpcache {
 };
 
 
+/* "Locals plus" for a code object is the set of locals + cell vars +
+ * free vars.  This relates to variable names as well as offsets into
+ * the "fast locals" storage array of execution frames.  The compiler
+ * builds the list of names, their offsets, and the corresponding
+ * kind of local.
+ *
+ * Those kinds represent the source of the initial value and the
+ * variable's scope (as related to closures).  A "local" is an
+ * argument or other variable defined in the current scope.  A "free"
+ * variable is one that is defined in an outer scope and comes from
+ * the function's closure.  A "cell" variable is a local that escapes
+ * into an inner function as part of a closure, and thus must be
+ * wrapped in a cell.  Any "local" can also be a "cell", but the
+ * "free" kind is mutually exclusive with both.
+ */
+
+// We would use an enum if C let us specify the storage type.
+typedef unsigned char _PyLocalsPlusKind;
+/* Note that these all fit within _PyLocalsPlusKind, as do combinations. */
+// Later, we will use the smaller numbers to differentiate the different
+// kinds of locals (e.g. pos-only arg, varkwargs, local-only).
+#define CO_FAST_LOCAL   0x20
+#define CO_FAST_CELL    0x40
+#define CO_FAST_FREE    0x80
+
+typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
+
+static inline int
+_PyCode_InitLocalsPlusKinds(int num, _PyLocalsPlusKinds *pkinds)
+{
+    if (num == 0) {
+        *pkinds = NULL;
+        return 0;
+    }
+    _PyLocalsPlusKinds kinds = PyMem_NEW(_PyLocalsPlusKind, num);
+    if (kinds == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    *pkinds = kinds;
+    return 0;
+}
+
+static inline void
+_PyCode_ClearLocalsPlusKinds(_PyLocalsPlusKinds kinds)
+{
+    if (kinds != NULL) {
+        PyMem_Free(kinds);
+    }
+}
+
 struct _PyCodeConstructor {
     /* metadata */
     PyObject *filename;
@@ -42,13 +93,13 @@ struct _PyCodeConstructor {
     PyObject *names;
 
     /* mapping frame offsets to information */
-    PyObject *varnames;
-    PyObject *cellvars;
-    PyObject *freevars;
+    PyObject *localsplusnames;
+    _PyLocalsPlusKinds localspluskinds;
 
     /* args (within varnames) */
     int argcount;
     int posonlyargcount;
+    // XXX Replace argcount with posorkwargcount (argcount - posonlyargcount).
     int kwonlyargcount;
 
     /* needed to create the frame */
@@ -74,6 +125,11 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 /* Private API */
 
 int _PyCode_InitOpcache(PyCodeObject *co);
+
+/* Getters for internal PyCodeObject data. */
+PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
+PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
+PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
 
 
 #ifdef __cplusplus
