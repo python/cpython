@@ -150,6 +150,7 @@ class ConnectionTests(unittest.TestCase):
         self.assertRaises(sqlite.ProgrammingError, self.cx.executescript, sql)
         self.assertRaises(sqlite.ProgrammingError,
                           self.cx.create_function, "t", 1, lambda x: x)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.cursor)
         with self.assertRaises(sqlite.ProgrammingError):
             with self.cx:
                 pass
