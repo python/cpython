@@ -1,1 +1,1 @@
-Fix ``asyncio`` bug in ``BaseEventLoop.run_forever()`` which only ran once if the initial value of ``_stopping``  was ``False``
+Fix ``asyncio`` bug in ``BaseEventLoop.run_forever()`` which only ran once if the initial value of ``_stopping``  was ``True``
