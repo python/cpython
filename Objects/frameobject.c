@@ -1023,7 +1023,6 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     PyObject **fast;
     PyCodeObject *co;
     Py_ssize_t j;
-    Py_ssize_t ncells, nfreevars;
 
     if (f == NULL) {
         PyErr_BadInternalCall();
@@ -1051,10 +1050,8 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         if (map_to_dict(map, j, locals, fast, 0) < 0)
             return -1;
     }
-    ncells = PyTuple_GET_SIZE(co->co_cellvars);
-    nfreevars = PyTuple_GET_SIZE(co->co_freevars);
-    if (ncells || nfreevars) {
-        if (map_to_dict(co->co_cellvars, ncells,
+    if (co->co_ncellvars || co->co_nfreevars) {
+        if (map_to_dict(co->co_cellvars, co->co_ncellvars,
                         locals, fast + co->co_nlocals, 1))
             return -1;
 
@@ -1067,8 +1064,8 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
            into the locals dict used by the class.
         */
         if (co->co_flags & CO_OPTIMIZED) {
-            if (map_to_dict(co->co_freevars, nfreevars,
-                            locals, fast + co->co_nlocals + ncells, 1) < 0)
+            if (map_to_dict(co->co_freevars, co->co_nfreevars, locals,
+                            fast + co->co_nlocals + co->co_ncellvars, 1) < 0)
                 return -1;
         }
     }
@@ -1096,7 +1093,6 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
     Py_ssize_t j;
-    Py_ssize_t ncells, nfreevars;
     if (f == NULL)
         return;
     locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
@@ -1113,16 +1109,14 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         j = co->co_nlocals;
     if (co->co_nlocals)
         dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
-    ncells = PyTuple_GET_SIZE(co->co_cellvars);
-    nfreevars = PyTuple_GET_SIZE(co->co_freevars);
-    if (ncells || nfreevars) {
-        dict_to_map(co->co_cellvars, ncells,
+    if (co->co_ncellvars || co->co_nfreevars) {
+        dict_to_map(co->co_cellvars, co->co_ncellvars,
                     locals, fast + co->co_nlocals, 1, clear);
         /* Same test as in PyFrame_FastToLocals() above. */
         if (co->co_flags & CO_OPTIMIZED) {
-            dict_to_map(co->co_freevars, nfreevars,
-                locals, fast + co->co_nlocals + ncells, 1,
-                clear);
+            dict_to_map(co->co_freevars, co->co_nfreevars, locals,
+                        fast + co->co_nlocals + co->co_ncellvars, 1,
+                        clear);
         }
     }
     PyErr_Restore(error_type, error_value, error_traceback);

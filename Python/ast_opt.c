@@ -30,6 +30,20 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
 
 #define COPY_NODE(TO, FROM) (memcpy((TO), (FROM), sizeof(struct _expr)))
 
+static int
+has_starred(asdl_expr_seq *elts)
+{
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+        if (e->kind == Starred_kind) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 static PyObject*
 unary_not(PyObject *v)
 {
@@ -318,8 +332,8 @@ simple_format_arg_parse(PyObject *fmt, Py_ssize_t *ppos,
 
     if (ch == '.') {
         NEXTC;
+        *prec = 0;
         if ('0' <= ch && ch <= '9') {
-            *prec = 0;
             int digits = 0;
             while ('0' <= ch && ch <= '9') {
                 *prec = *prec * 10 + (ch - '0');
@@ -445,7 +459,8 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 
     if (node->v.BinOp.op == Mod &&
         rhs->kind == Tuple_kind &&
-        PyUnicode_Check(lv))
+        PyUnicode_Check(lv) &&
+        !has_starred(rhs->v.Tuple.elts))
     {
         return optimize_format(node, lv, rhs->v.Tuple.elts, arena);
     }
@@ -572,12 +587,8 @@ fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
     if (arg->kind == List_kind) {
         /* First change a list into tuple. */
         asdl_expr_seq *elts = arg->v.List.elts;
-        Py_ssize_t n = asdl_seq_LEN(elts);
-        for (Py_ssize_t i = 0; i < n; i++) {
-            expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-            if (e->kind == Starred_kind) {
-                return 1;
-            }
+        if (has_starred(elts)) {
+            return 1;
         }
         expr_context_ty ctx = arg->v.List.ctx;
         arg->kind = Tuple_kind;
