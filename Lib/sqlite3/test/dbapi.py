@@ -135,6 +135,26 @@ class ConnectionTests(unittest.TestCase):
     def test_close(self):
         self.cx.close()
 
+    def test_use_after_close(self):
+        sql = "select 1"
+        cu = self.cx.cursor()
+        res = cu.execute(sql)
+        self.cx.close()
+        self.assertRaises(sqlite.ProgrammingError, res.fetchall)
+        self.assertRaises(sqlite.ProgrammingError, cu.execute, sql)
+        self.assertRaises(sqlite.ProgrammingError, cu.executemany, sql, [])
+        self.assertRaises(sqlite.ProgrammingError, cu.executescript, sql)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.execute, sql)
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.cx.executemany, sql, [])
+        self.assertRaises(sqlite.ProgrammingError, self.cx.executescript, sql)
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.cx.create_function, "t", 1, lambda x: x)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.cursor)
+        with self.assertRaises(sqlite.ProgrammingError):
+            with self.cx:
+                pass
+
     def test_exceptions(self):
         # Optional DB-API extension.
         self.assertEqual(self.cx.Warning, sqlite.Warning)
