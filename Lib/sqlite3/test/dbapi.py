@@ -20,14 +20,27 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import threading
-import unittest
+import contextlib
 import sqlite3 as sqlite
 import subprocess
 import sys
+import threading
+import unittest
 
 from test.support import SHORT_TIMEOUT
 from test.support.os_helper import TESTFN, unlink
+
+
+# Helper for tests using TESTFN
+@contextlib.contextmanager
+def managed_connect(*args, **kwargs):
+    cx = sqlite.connect(*args, **kwargs)
+    try:
+        yield cx
+    finally:
+        cx.close()
+        unlink(TESTFN)
+
 
 
 class ModuleTests(unittest.TestCase):
@@ -973,25 +986,25 @@ class MultiprocessTests(unittest.TestCase):
         self.addCleanup(proc.communicate)
 
         # connect to db, and create a UDF that waits for child
-        cx = sqlite.connect(TESTFN, timeout=CONNECTION_TIMEOUT)
         def wait():
             print("go", file=proc.stdin)  # tell child to connect
             self.assertIn("database is locked", proc.stdout.readline())
-        cx.create_function("wait", 0, wait)
+        with managed_connect(TESTFN, timeout=CONNECTION_TIMEOUT) as cx:
+            cx.create_function("wait", 0, wait)
 
-        # execute two transactions; both will try to lock the db
-        cx.executescript("""
-            -- execute a transaction and wait for child
-            begin transaction;
-            select * from t;
-            select wait();
-            rollback;
+            # execute two transactions; both will try to lock the db
+            cx.executescript("""
+                -- execute a transaction and wait for child
+                begin transaction;
+                select * from t;
+                select wait();
+                rollback;
 
-            -- start a new transaction; will fail if child holds lock
-            begin transaction;
-            select * from t;
-            rollback;
-        """)
+                -- start a new transaction; will fail if child holds lock
+                begin transaction;
+                select * from t;
+                rollback;
+            """)
 
         # terminate child process
         self.assertIsNone(proc.returncode)
