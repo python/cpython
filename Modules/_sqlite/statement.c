@@ -114,7 +114,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     PyObject_GC_Track(self);
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db);
+        _pysqlite_seterror(self->db, NULL);
         goto error;
     }
 
