@@ -202,7 +202,7 @@ class TestResult(object):
 
 
     def _is_relevant_tb_level(self, tb):
-        return '__unittest' in tb.tb_frame.f_globals
+        return '__unittest' in (tb.tb_frame.f_globals or {})
 
     def _count_relevant_tb_levels(self, tb):
         length = 0
