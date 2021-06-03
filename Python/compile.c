@@ -7230,8 +7230,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *localsplusnames = NULL;
     _PyLocalsPlusKinds localspluskinds = NULL;
     PyObject *name = NULL;
-    int flags;
-    int posorkeywordargcount, posonlyargcount, kwonlyargcount;
 
     names = dict_keys_inorder(c->u->u_names, 0);
     if (!names) {
@@ -7241,9 +7239,10 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    flags = compute_code_flags(c);
-    if (flags < 0)
+    int flags = compute_code_flags(c);
+    if (flags < 0) {
         goto error;
+    }
 
     consts = PyList_AsTuple(constslist); /* PyCode_New requires a tuple */
     if (consts == NULL) {
@@ -7253,9 +7252,23 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    Py_ssize_t nlocalsplus = PyDict_GET_SIZE(c->u->u_varnames) +
-                             PyDict_GET_SIZE(c->u->u_cellvars) +
-                             PyDict_GET_SIZE(c->u->u_freevars);
+    assert(c->u->u_posonlyargcount < INT_MAX);
+    assert(c->u->u_argcount < INT_MAX);
+    assert(c->u->u_kwonlyargcount < INT_MAX);
+    int posonlyargcount = (int)c->u->u_posonlyargcount;
+    int posorkwargcount = (int)c->u->u_argcount;
+    assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
+    int kwonlyargcount = (int)c->u->u_kwonlyargcount;
+
+    Py_ssize_t nlocals = PyDict_GET_SIZE(c->u->u_varnames);
+    Py_ssize_t ncellvars = PyDict_GET_SIZE(c->u->u_cellvars);
+    Py_ssize_t nfreevars = PyDict_GET_SIZE(c->u->u_freevars);
+    assert(nlocals < INT_MAX);
+    assert(ncellvars < INT_MAX);
+    assert(nfreevars < INT_MAX);
+    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
+    int nlocalsplus = (int)nlocals + (int)ncellvars + (int)nfreevars;
+
     localsplusnames = PyTuple_New(nlocalsplus);
     if (localsplusnames == NULL) {
         goto error;
@@ -7265,9 +7278,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     }
     compute_localsplus_info(c, localsplusnames, localspluskinds);
 
-    posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
-    posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
-    kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
         .name = c->u->u_name,
@@ -7283,7 +7293,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .localsplusnames = localsplusnames,
         .localspluskinds = localspluskinds,
 
-        .argcount = posonlyargcount + posorkeywordargcount,
+        .argcount = posonlyargcount + posorkwargcount,
         .posonlyargcount = posonlyargcount,
         .kwonlyargcount = kwonlyargcount,
 
