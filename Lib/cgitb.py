@@ -163,7 +163,7 @@ function calls leading up to the error, in the order they occurred.</p>'''
                     name = where + strong(name.split('.')[-1])
                 dump.append('%s&nbsp;= %s' % (name, pydoc.html.repr(value)))
             else:
-                dump.append(name + ' <em>undefined</em>')
+                dump.append(f'{name} <em>undefined</em>')
 
         rows.append('<tr><td>%s</td></tr>' % small(grey(', '.join(dump))))
         frames.append('''
