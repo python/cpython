@@ -1137,6 +1137,9 @@ identification from `freedesktop.org os-release
 pprint
 ------
 
+:func:`pprint.pprint` now accepts a new ``underscore_numbers`` keyword argument.
+(Contributed by sblondon in :issue:`42914`.)
+
 :mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
 (Contributed by Lewis Gaul in :issue:`43080`.)
 
