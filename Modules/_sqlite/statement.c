@@ -48,7 +48,8 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
-int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql)
+pysqlite_Statement *
+pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 {
     const char* tail;
     int rc;
@@ -56,27 +57,36 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     Py_ssize_t sql_cstr_len;
     const char* p;
 
-    self->st = NULL;
-    self->in_use = 0;
-
     assert(PyUnicode_Check(sql));
 
     sql_cstr = PyUnicode_AsUTF8AndSize(sql, &sql_cstr_len);
     if (sql_cstr == NULL) {
-        rc = PYSQLITE_SQL_WRONG_TYPE;
-        return rc;
+        PyErr_Format(pysqlite_Warning,
+                     "SQL is of wrong type ('%s'). Must be string.",
+                     Py_TYPE(sql)->tp_name);
+        return NULL;
     }
     if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
-        PyErr_SetString(PyExc_ValueError, "the query contains a null character");
-        return PYSQLITE_SQL_WRONG_TYPE;
+        PyErr_SetString(PyExc_ValueError,
+                        "the query contains a null character");
+        return NULL;
     }
 
-    self->in_weakreflist = NULL;
+    pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
+                                               pysqlite_StatementType);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->db = connection->db;
+    self->st = NULL;
     self->sql = Py_NewRef(sql);
+    self->in_use = 0;
+    self->is_dml = 0;
+    self->in_weakreflist = NULL;
 
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
-    self->is_dml = 0;
     for (p = sql_cstr; *p != 0; p++) {
         switch (*p) {
             case ' ':
@@ -94,22 +104,33 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare_v2(connection->db,
+    rc = sqlite3_prepare_v2(self->db,
                             sql_cstr,
                             -1,
                             &self->st,
                             &tail);
     Py_END_ALLOW_THREADS
 
-    self->db = connection->db;
+    PyObject_GC_Track(self);
+
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(self->db, NULL);
+        goto error;
+    }
 
     if (rc == SQLITE_OK && pysqlite_check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
         self->st = NULL;
-        rc = PYSQLITE_TOO_MUCH_SQL;
+        PyErr_SetString(pysqlite_Warning,
+                        "You can only execute one statement at a time.");
+        goto error;
     }
 
-    return rc;
+    return self;
+
+error:
+    Py_DECREF(self);
+    return NULL;
 }
 
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)

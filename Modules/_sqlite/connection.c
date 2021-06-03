@@ -1337,7 +1337,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
     PyObject* sql;
     pysqlite_Statement* statement;
     PyObject* weakref;
-    int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1351,29 +1350,9 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 
     _pysqlite_drop_unused_statement_references(self);
 
-    statement = PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType);
-    if (!statement) {
+    statement = pysqlite_statement_create(self, sql);
+    if (statement == NULL) {
         return NULL;
-    }
-
-    statement->db = NULL;
-    statement->st = NULL;
-    statement->sql = NULL;
-    statement->in_use = 0;
-    statement->in_weakreflist = NULL;
-
-    rc = pysqlite_statement_create(statement, self, sql);
-    if (rc != SQLITE_OK) {
-        if (rc == PYSQLITE_TOO_MUCH_SQL) {
-            PyErr_SetString(pysqlite_Warning, "You can only execute one statement at a time.");
-        } else if (rc == PYSQLITE_SQL_WRONG_TYPE) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_SetString(pysqlite_Warning, "SQL is of wrong type. Must be string.");
-        } else {
-            (void)pysqlite_statement_reset(statement);
-            _pysqlite_seterror(self->db, NULL);
-        }
-        goto error;
     }
 
     weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
