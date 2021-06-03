@@ -29,6 +29,12 @@
 #define PYSQLITE_VERSION "2.6.0"
 #define MODULE_NAME "sqlite3"
 
+typedef struct {
+    PyObject *lru_cache;
+} pysqlite_state;
+
+extern pysqlite_state *pysqlite_get_state(PyObject *module);
+
 extern PyObject* pysqlite_Error;
 extern PyObject* pysqlite_Warning;
 extern PyObject* pysqlite_InterfaceError;

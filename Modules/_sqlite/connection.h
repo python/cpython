@@ -28,7 +28,6 @@
 #include "pythread.h"
 #include "structmember.h"
 
-#include "cache.h"
 #include "module.h"
 
 #include "sqlite3.h"
@@ -64,7 +63,7 @@ typedef struct
     /* thread identification of the thread the connection was created in */
     unsigned long thread_ident;
 
-    pysqlite_Cache* statement_cache;
+    PyObject *statement_cache;
 
     /* Lists of weak references to statements and cursors used within this connection */
     PyObject* statements;
