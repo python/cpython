@@ -22,6 +22,7 @@ import warnings
 # strings to intern in test_intern()
 INTERN_NUMRUNS = 0
 
+DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
 class DisplayHookTest(unittest.TestCase):
 
@@ -605,11 +606,12 @@ class SysModuleTest(unittest.TestCase):
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
         # sys.flags, sys.version_info, and sys.getwindowsversion.
+        arg = sys_attr
         attr_type = type(sys_attr)
         with self.assertRaises(TypeError):
-            attr_type()
+            attr_type(arg)
         with self.assertRaises(TypeError):
-            attr_type.__new__(attr_type)
+            attr_type.__new__(attr_type, arg)
 
     def test_sys_flags_no_instantiation(self):
         self.assert_raise_on_new_sys_type(sys.flags)
@@ -1228,9 +1230,9 @@ class SizeofTest(unittest.TestCase):
         # empty dict
         check({}, size('nQ2P'))
         # dict
-        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
+        check(longdict, size('nQ2P') + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
         check({}.keys(), size('P'))
         # dictionary-valueview
@@ -1272,13 +1274,8 @@ class SizeofTest(unittest.TestCase):
         check(sys.float_info, vsize('') + self.P * len(sys.float_info))
         # frame
         import inspect
-        CO_MAXBLOCKS = 20
         x = inspect.currentframe()
-        ncells = len(x.f_code.co_cellvars)
-        nfrees = len(x.f_code.co_freevars)
-        extras = x.f_code.co_stacksize + x.f_code.co_nlocals +\
-                  ncells + nfrees - 1
-        check(x, vsize('4Pi2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
+        check(x, size('5P3i4cP'))
         # function
         def func(): pass
         check(func, size('14P'))
@@ -1389,13 +1386,13 @@ class SizeofTest(unittest.TestCase):
                   '5P')
         class newstyleclass(object): pass
         # Separate block for PyDictKeysObject with 8 keys and 5 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 8 + 5*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 8 + 5*calcsize("n2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + 5*self.P)
         o = newstyleclass()
         o.a = o.b = o.c = o.d = o.e = o.f = o.g = o.h = 1
         # Separate block for PyDictKeysObject with 16 keys and 10 entries
-        check(newstyleclass, s + calcsize("2nP2n0P") + 16 + 10*calcsize("n2P"))
+        check(newstyleclass, s + calcsize(DICT_KEY_STRUCT_FORMAT) + 16 + 10*calcsize("n2P"))
         # dict with shared keys
         check(newstyleclass().__dict__, size('nQ2P') + 10*self.P)
         # unicode

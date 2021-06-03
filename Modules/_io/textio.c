@@ -1085,6 +1085,19 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->ok = 0;
     self->detached = 0;
 
+    if (encoding == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
+            if (PyErr_WarnEx(PyExc_EncodingWarning,
+                             "'encoding' argument not specified", 1)) {
+                return -1;
+            }
+        }
+    }
+    else if (strcmp(encoding, "locale") == 0) {
+        encoding = NULL;
+    }
+
     if (errors == Py_None) {
         errors = _PyUnicode_FromId(&PyId_strict); /* borrowed */
         if (errors == NULL) {
@@ -1122,17 +1135,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     self->pending_bytes_count = 0;
     self->encodefunc = NULL;
     self->b2cratio = 0.0;
-
-    if (encoding == NULL) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (_PyInterpreterState_GetConfig(interp)->warn_default_encoding) {
-            PyErr_WarnEx(PyExc_EncodingWarning,
-                         "'encoding' argument not specified", 1);
-        }
-    }
-    else if (strcmp(encoding, "locale") == 0) {
-        encoding = NULL;
-    }
 
     if (encoding == NULL) {
         /* Try os.device_encoding(fileno) */

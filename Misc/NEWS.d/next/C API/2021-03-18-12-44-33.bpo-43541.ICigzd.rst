@@ -1,2 +1,0 @@
-Fix a ``PyEval_EvalCodeEx()`` regression: fix reference counting on
-builtins. Patch by Victor Stinner.

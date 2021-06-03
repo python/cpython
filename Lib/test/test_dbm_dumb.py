@@ -232,7 +232,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(f.keys(), [])
 
     def test_eval(self):
-        with open(_fname + '.dir', 'w') as stream:
+        with open(_fname + '.dir', 'w', encoding="utf-8") as stream:
             stream.write("str(print('Hacked!')), 0\n")
         with support.captured_stdout() as stdout:
             with self.assertRaises(ValueError):

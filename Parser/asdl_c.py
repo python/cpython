@@ -264,6 +264,10 @@ class StructVisitor(EmitVisitor):
         self.emit("", depth)
 
 
+def ast_func_name(name):
+    return f"_PyAST_{name}"
+
+
 class PrototypeVisitor(EmitVisitor):
     """Generate function prototypes for the .h file"""
 
@@ -322,12 +326,7 @@ class PrototypeVisitor(EmitVisitor):
             argstr += ", PyArena *arena"
         else:
             argstr = "PyArena *arena"
-        margs = "a0"
-        for i in range(1, len(args)+1):
-            margs += ", a%d" % i
-        self.emit("#define %s(%s) _Py_%s(%s)" % (name, margs, name, margs), 0,
-                reflow=False)
-        self.emit("%s _Py_%s(%s);" % (ctype, name, argstr), False)
+        self.emit("%s %s(%s);" % (ctype, ast_func_name(name), argstr), False)
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),
@@ -349,7 +348,7 @@ class FunctionVisitor(PrototypeVisitor):
         else:
             argstr = "PyArena *arena"
         self.emit("%s" % ctype, 0)
-        emit("%s(%s)" % (name, argstr))
+        emit("%s(%s)" % (ast_func_name(name), argstr))
         emit("{")
         emit("%s p;" % ctype, 1)
         for argtype, argname, opt in args:
@@ -488,7 +487,7 @@ class Obj2ModVisitor(PickleVisitor):
             for f in t.fields:
                 self.visitField(f, t.name, sum=sum, depth=2)
             args = [f.name for f in t.fields] + [a.name for a in sum.attributes]
-            self.emit("*out = %s(%s);" % (t.name, self.buildArgs(args)), 2)
+            self.emit("*out = %s(%s);" % (ast_func_name(t.name), self.buildArgs(args)), 2)
             self.emit("if (*out == NULL) goto failed;", 2)
             self.emit("return 0;", 2)
             self.emit("}", 1)
@@ -521,7 +520,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.visitField(a, name, prod=prod, depth=1)
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
-        self.emit("*out = %s(%s);" % (name, self.buildArgs(args)), 1)
+        self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
         self.emit("Py_XDECREF(tmp);", 1)
@@ -1423,34 +1422,29 @@ def generate_module_def(mod, f, internal_h):
 
     generate_ast_state(module_state, internal_h)
 
-    print(textwrap.dedent(f"""
+    print(textwrap.dedent("""
+        #include "Python.h"
+        #include "pycore_ast.h"
         #include "pycore_ast_state.h"       // struct ast_state
         #include "pycore_interp.h"          // _PyInterpreterState.ast
         #include "pycore_pystate.h"         // _PyInterpreterState_GET()
-    """).rstrip(), file=f)
-
-    f.write("""
-// Forward declaration
-static int init_types(struct ast_state *state);
-
-static struct ast_state*
-get_ast_state(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct ast_state *state = &interp->ast;
-    if (!init_types(state)) {
-        return NULL;
-    }
-    return state;
-}
-""")
-
-    print(textwrap.dedent("""
-        // Include pycore_ast.h after pycore_interp.h to avoid conflicts
-        // with the Yield macro redefined by <winbase.h>
-        #include "pycore_ast.h"
         #include "structmember.h"
-    """).rstrip(), file=f)
+        #include <stddef.h>
+
+        // Forward declaration
+        static int init_types(struct ast_state *state);
+
+        static struct ast_state*
+        get_ast_state(void)
+        {
+            PyInterpreterState *interp = _PyInterpreterState_GET();
+            struct ast_state *state = &interp->ast;
+            if (!init_types(state)) {
+                return NULL;
+            }
+            return state;
+        }
+    """).strip(), file=f)
 
     generate_ast_fini(module_state, f)
 
@@ -1476,8 +1470,6 @@ def write_header(mod, f):
         #endif
 
         #include "pycore_asdl.h"
-
-        #undef Yield   /* undefine macro conflicting with <winbase.h> */
 
     """).lstrip())
     c = ChainOfVisitors(TypeDefVisitor(f),
@@ -1534,12 +1526,6 @@ def write_internal_h_footer(mod, f):
 
 
 def write_source(mod, f, internal_h_file):
-    print(textwrap.dedent(f"""
-        #include <stddef.h>
-
-        #include "Python.h"
-    """), file=f)
-
     generate_module_def(mod, f, internal_h_file)
 
     v = ChainOfVisitors(

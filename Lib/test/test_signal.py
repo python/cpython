@@ -1,3 +1,4 @@
+import enum
 import errno
 import os
 import random
@@ -32,6 +33,32 @@ class GenericTests(unittest.TestCase):
             elif name.startswith('CTRL_'):
                 self.assertIsInstance(sig, signal.Signals)
                 self.assertEqual(sys.platform, "win32")
+
+        CheckedSignals = enum._old_convert_(
+                enum.IntEnum, 'Signals', 'signal',
+                lambda name:
+                    name.isupper()
+                    and (name.startswith('SIG') and not name.startswith('SIG_'))
+                    or name.startswith('CTRL_'),
+                source=signal,
+                )
+        enum._test_simple_enum(CheckedSignals, signal.Signals)
+
+        CheckedHandlers = enum._old_convert_(
+                enum.IntEnum, 'Handlers', 'signal',
+                lambda name: name in ('SIG_DFL', 'SIG_IGN'),
+                source=signal,
+                )
+        enum._test_simple_enum(CheckedHandlers, signal.Handlers)
+
+        Sigmasks = getattr(signal, 'Sigmasks', None)
+        if Sigmasks is not None:
+            CheckedSigmasks = enum._old_convert_(
+                    enum.IntEnum, 'Sigmasks', 'signal',
+                    lambda name: name in ('SIG_BLOCK', 'SIG_UNBLOCK', 'SIG_SETMASK'),
+                    source=signal,
+                    )
+            enum._test_simple_enum(CheckedSigmasks, Sigmasks)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -872,7 +899,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         %s
 
-        blocked = %s
+        blocked = %r
         signum = signal.SIGALRM
 
         # child: block and wait the signal
@@ -1296,7 +1323,7 @@ class StressTest(unittest.TestCase):
                     # race condition, check it.
                     self.assertIsInstance(cm.unraisable.exc_value, OSError)
                     self.assertIn(
-                        f"Signal {signum} ignored due to race condition",
+                        f"Signal {signum:d} ignored due to race condition",
                         str(cm.unraisable.exc_value))
                     ignored = True
 

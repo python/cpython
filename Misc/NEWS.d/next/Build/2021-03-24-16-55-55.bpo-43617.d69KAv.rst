@@ -1,2 +1,0 @@
-Improve configure.ac: Check for presence of autoconf-archive package and
-remove our copies of M4 macros.

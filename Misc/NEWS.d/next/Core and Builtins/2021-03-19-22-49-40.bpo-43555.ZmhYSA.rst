@@ -1,2 +1,0 @@
-Report the column offset for :exc:`SyntaxError` for invalid line
-continuation characters. Patch by Pablo Galindo.

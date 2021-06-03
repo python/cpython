@@ -407,7 +407,8 @@ def main():
     # if flist is provided then load it
     if args.flist:
         try:
-            with (sys.stdin if args.flist=='-' else open(args.flist)) as f:
+            with (sys.stdin if args.flist=='-' else
+                    open(args.flist, encoding="utf-8")) as f:
                 for line in f:
                     compile_dests.append(line.strip())
         except OSError:

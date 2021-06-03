@@ -1,7 +1,7 @@
 # Originally contributed by Sjoerd Mullender.
 # Significantly modified by Jeffrey Yasskin <jyasskin at gmail.com>.
 
-"""Fraction, infinite-precision, real numbers."""
+"""Fraction, infinite-precision, rational numbers."""
 
 from decimal import Decimal
 import math
@@ -735,7 +735,7 @@ class Fraction(numbers.Rational):
     # support for pickling, copy, and deepcopy
 
     def __reduce__(self):
-        return (self.__class__, (str(self),))
+        return (self.__class__, (self._numerator, self._denominator))
 
     def __copy__(self):
         if type(self) == Fraction:

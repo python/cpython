@@ -42,6 +42,7 @@ IGNORE = {
 # Windows extension modules
 WINDOWS_MODULES = (
     '_msi',
+    '_overlapped',
     '_testconsole',
     '_winapi',
     'msvcrt',

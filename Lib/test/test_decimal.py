@@ -289,7 +289,7 @@ class IBMTestCases(unittest.TestCase):
         global skip_expected
         if skip_expected:
             raise unittest.SkipTest
-        with open(file) as f:
+        with open(file, encoding="utf-8") as f:
             for line in f:
                 line = line.replace('\r\n', '').replace('\n', '')
                 #print line

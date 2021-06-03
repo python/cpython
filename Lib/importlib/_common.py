@@ -7,7 +7,7 @@ import types
 import importlib
 
 from typing import Union, Any, Optional
-from .abc import ResourceReader
+from .abc import ResourceReader, Traversable
 
 from ._adapters import wrap_spec
 
@@ -15,6 +15,7 @@ Package = Union[types.ModuleType, str]
 
 
 def files(package):
+    # type: (Package) -> Traversable
     """
     Get a Traversable resource from a package
     """
@@ -30,7 +31,7 @@ def normalize_path(path):
     str_path = str(path)
     parent, file_name = os.path.split(str_path)
     if parent:
-        raise ValueError('{!r} must be only a file name'.format(path))
+        raise ValueError(f'{path!r} must be only a file name')
     return file_name
 
 
@@ -64,7 +65,7 @@ def get_package(package):
     """
     resolved = resolve(package)
     if wrap_spec(resolved).submodule_search_locations is None:
-        raise TypeError('{!r} is not a package'.format(package))
+        raise TypeError(f'{package!r} is not a package')
     return resolved
 
 

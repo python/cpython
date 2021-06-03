@@ -119,6 +119,9 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Deprecated since Python 3.10. Use find_spec() instead.
         """
+        _warnings.warn("zipimporter.find_loader() is deprecated and slated for "
+                       "removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         mi = _get_module_info(self, fullname)
         if mi is not None:
             # This is a module or package.
@@ -152,6 +155,9 @@ class zipimporter(_bootstrap_external._LoaderBasics):
 
         Deprecated since Python 3.10. Use find_spec() instead.
         """
+        _warnings.warn("zipimporter.find_module() is deprecated and slated for "
+                       "removal in Python 3.12; use find_spec() instead",
+                       DeprecationWarning)
         return self.find_loader(fullname, path)[0]
 
     def find_spec(self, fullname, target=None):

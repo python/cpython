@@ -106,9 +106,6 @@ support, pads, and mouse support. This means the module isn't compatible with
 operating systems that only have BSD curses, but there don't seem to be any
 currently maintained OSes that fall into this category.
 
-For Windows: use `the consolelib module
-<http://effbot.org/zone/console-index.htm>`_.
-
 
 Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
@@ -319,11 +316,11 @@ Here's a trivial example::
            try:
                arg = q.get(block=False)
            except queue.Empty:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('queue empty')
                break
            else:
-               print('Worker', threading.currentThread(), end=' ')
+               print('Worker', threading.current_thread(), end=' ')
                print('running with argument', arg)
                time.sleep(0.5)
 

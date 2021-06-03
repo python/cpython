@@ -74,7 +74,9 @@ def write_file(path, content, binary=False):
     """
     if isinstance(path, tuple):
         path = os.path.join(*path)
-    with open(path, 'wb' if binary else 'w') as fp:
+    mode = 'wb' if binary else 'w'
+    encoding = None if binary else "utf-8"
+    with open(path, mode, encoding=encoding) as fp:
         fp.write(content)
 
 def write_test_file(path, size):
@@ -104,7 +106,9 @@ def read_file(path, binary=False):
     """
     if isinstance(path, tuple):
         path = os.path.join(*path)
-    with open(path, 'rb' if binary else 'r') as fp:
+    mode = 'rb' if binary else 'r'
+    encoding = None if binary else "utf-8"
+    with open(path, mode, encoding=encoding) as fp:
         return fp.read()
 
 def rlistdir(path):
@@ -674,7 +678,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         flag = []
         src = self.mkdtemp()
         dst = tempfile.mktemp(dir=self.mkdtemp())
-        with open(os.path.join(src, 'foo'), 'w') as f:
+        with open(os.path.join(src, 'foo'), 'w', encoding='utf-8') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
         self.assertEqual(len(flag), 1)
@@ -746,7 +750,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
         os.mkdir(os.path.join(src_dir, 'real_dir'))
-        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'w'):
+        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'wb'):
             pass
         os.symlink(os.path.join(src_dir, 'real_dir'),
                    os.path.join(src_dir, 'link_to_dir'),
@@ -1172,14 +1176,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         src = os.path.join(TESTFN, 'cheese')
         dst = os.path.join(TESTFN, 'shop')
         try:
-            with open(src, 'w') as f:
+            with open(src, 'w', encoding='utf-8') as f:
                 f.write('cheddar')
             try:
                 os.link(src, dst)
             except PermissionError as e:
                 self.skipTest('os.link(): %s' % e)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
-            with open(src, 'r') as f:
+            with open(src, 'r', encoding='utf-8') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
         finally:
@@ -1192,14 +1196,14 @@ class TestCopy(BaseTest, unittest.TestCase):
         src = os.path.join(TESTFN, 'cheese')
         dst = os.path.join(TESTFN, 'shop')
         try:
-            with open(src, 'w') as f:
+            with open(src, 'w', encoding='utf-8') as f:
                 f.write('cheddar')
             # Using `src` here would mean we end up with a symlink pointing
             # to TESTFN/TESTFN/cheese, while it should point at
             # TESTFN/cheese.
             os.symlink('cheese', dst)
             self.assertRaises(shutil.SameFileError, shutil.copyfile, src, dst)
-            with open(src, 'r') as f:
+            with open(src, 'r', encoding='utf-8') as f:
                 self.assertEqual(f.read(), 'cheddar')
             os.remove(dst)
         finally:
@@ -2586,7 +2590,7 @@ class TestGetTerminalSize(unittest.TestCase):
 
             # sys.__stdout__ is not a terminal on Unix
             # or fileno() not in (0, 1, 2) on Windows
-            with open(os.devnull, 'w') as f, \
+            with open(os.devnull, 'w', encoding='utf-8') as f, \
                  support.swap_attr(sys, '__stdout__', f):
                 size = shutil.get_terminal_size(fallback=(30, 40))
             self.assertEqual(size.columns, 30)

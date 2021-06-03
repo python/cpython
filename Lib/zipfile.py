@@ -2334,6 +2334,8 @@ class Path:
             if args or kwargs:
                 raise ValueError("encoding args invalid for binary operation")
             return stream
+        else:
+            kwargs["encoding"] = io.text_encoding(kwargs.get("encoding"))
         return io.TextIOWrapper(stream, *args, **kwargs)
 
     @property
@@ -2341,10 +2343,23 @@ class Path:
         return pathlib.Path(self.at).name or self.filename.name
 
     @property
+    def suffix(self):
+        return pathlib.Path(self.at).suffix or self.filename.suffix
+
+    @property
+    def suffixes(self):
+        return pathlib.Path(self.at).suffixes or self.filename.suffixes
+
+    @property
+    def stem(self):
+        return pathlib.Path(self.at).stem or self.filename.stem
+
+    @property
     def filename(self):
         return pathlib.Path(self.root.filename).joinpath(self.at)
 
     def read_text(self, *args, **kwargs):
+        kwargs["encoding"] = io.text_encoding(kwargs.get("encoding"))
         with self.open('r', *args, **kwargs) as strm:
             return strm.read()
 
