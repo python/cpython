@@ -99,6 +99,7 @@ struct _PyCodeConstructor {
     /* args (within varnames) */
     int argcount;
     int posonlyargcount;
+    // XXX Replace argcount with posorkwargcount (argcount - posonlyargcount).
     int kwonlyargcount;
 
     /* needed to create the frame */
