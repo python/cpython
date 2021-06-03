@@ -93,7 +93,7 @@ SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> ... = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to Ellipsis here. Maybe you meant '==' instead of '='?
+SyntaxError: cannot assign to ellipsis here. Maybe you meant '==' instead of '='?
 
 >>> `1` = 1
 Traceback (most recent call last):

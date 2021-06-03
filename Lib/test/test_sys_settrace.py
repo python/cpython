@@ -995,6 +995,52 @@ class TraceTestCase(unittest.TestCase):
              (5, 'line'),
              (5, 'return')])
 
+    def test_early_exit_with(self):
+
+        class C:
+            def __enter__(self):
+                return self
+            def __exit__(*args):
+                pass
+
+        def func_break():
+            for i in (1,2):
+                with C():
+                    break
+            pass
+
+        def func_return():
+            with C():
+                return
+
+        self.run_and_compare(func_break,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (-5, 'call'),
+             (-4, 'line'),
+             (-4, 'return'),
+             (3, 'line'),
+             (2, 'line'),
+             (-3, 'call'),
+             (-2, 'line'),
+             (-2, 'return'),
+             (4, 'line'),
+             (4, 'return')])
+
+        self.run_and_compare(func_return,
+            [(0, 'call'),
+             (1, 'line'),
+             (-11, 'call'),
+             (-10, 'line'),
+             (-10, 'return'),
+             (2, 'line'),
+             (1, 'line'),
+             (-9, 'call'),
+             (-8, 'line'),
+             (-8, 'return'),
+             (1, 'return')])
+
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
     """Repeat the trace tests, but with per-line events skipped"""

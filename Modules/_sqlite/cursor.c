@@ -84,43 +84,44 @@ pysqlite_cursor_init_impl(pysqlite_Cursor *self,
 static int
 cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->connection);
-    Py_VISIT(self->row_cast_map);
-    Py_VISIT(self->row_factory);
-    Py_VISIT(self->next_row);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->connection);
+    Py_VISIT(self->description);
+    Py_VISIT(self->row_cast_map);
+    Py_VISIT(self->lastrowid);
+    Py_VISIT(self->row_factory);
+    Py_VISIT(self->statement);
+    Py_VISIT(self->next_row);
     return 0;
 }
 
 static int
 cursor_clear(pysqlite_Cursor *self)
 {
-    /* Reset the statement if the user has not closed the cursor */
+    Py_CLEAR(self->connection);
+    Py_CLEAR(self->description);
+    Py_CLEAR(self->row_cast_map);
+    Py_CLEAR(self->lastrowid);
+    Py_CLEAR(self->row_factory);
     if (self->statement) {
+        /* Reset the statement if the user has not closed the cursor */
         pysqlite_statement_reset(self->statement);
         Py_CLEAR(self->statement);
     }
-
-    Py_CLEAR(self->connection);
-    Py_CLEAR(self->row_cast_map);
-    Py_CLEAR(self->description);
-    Py_CLEAR(self->lastrowid);
-    Py_CLEAR(self->row_factory);
     Py_CLEAR(self->next_row);
-
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
 
     return 0;
 }
 
 static void
-cursor_dealloc(PyObject *self)
+cursor_dealloc(pysqlite_Cursor *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear(self);
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject*)self);
+    }
+    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -503,13 +504,8 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
 
     if (self->statement->in_use) {
         Py_SETREF(self->statement,
-                  PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType));
-        if (!self->statement) {
-            goto error;
-        }
-        rc = pysqlite_statement_create(self->statement, self->connection, operation);
-        if (rc != SQLITE_OK) {
-            Py_CLEAR(self->statement);
+                  pysqlite_statement_create(self->connection, operation));
+        if (self->statement == NULL) {
             goto error;
         }
     }
@@ -697,6 +693,7 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
+    Py_ssize_t sql_len;
     PyObject* result;
 
     if (!check_cursor(self)) {
@@ -706,8 +703,15 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     self->reset = 0;
 
     if (PyUnicode_Check(script_obj)) {
-        script_cstr = PyUnicode_AsUTF8(script_obj);
+        script_cstr = PyUnicode_AsUTF8AndSize(script_obj, &sql_len);
         if (!script_cstr) {
+            return NULL;
+        }
+
+        int max_length = sqlite3_limit(self->connection->db,
+                                       SQLITE_LIMIT_LENGTH, -1);
+        if (sql_len >= max_length) {
+            PyErr_SetString(pysqlite_DataError, "query string is too large");
             return NULL;
         }
     } else {
@@ -723,12 +727,14 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
     Py_DECREF(result);
 
     while (1) {
+        const char *tail;
+
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_prepare_v2(self->connection->db,
                                 script_cstr,
-                                -1,
+                                (int)sql_len + 1,
                                 &statement,
-                                &script_cstr);
+                                &tail);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->connection->db);
@@ -756,9 +762,11 @@ pysqlite_cursor_executescript(pysqlite_Cursor *self, PyObject *script_obj)
             goto error;
         }
 
-        if (*script_cstr == (char)0) {
+        if (*tail == (char)0) {
             break;
         }
+        sql_len -= (tail - script_cstr);
+        script_cstr = tail;
     }
 
 error:

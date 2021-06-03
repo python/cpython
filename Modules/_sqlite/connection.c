@@ -242,34 +242,44 @@ pysqlite_do_all_statements(pysqlite_Connection *self, int action,
 static int
 connection_traverse(pysqlite_Connection *self, visitproc visit, void *arg)
 {
-    Py_VISIT(self->statement_cache);
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->isolation_level);
+    Py_VISIT(self->statement_cache);
+    Py_VISIT(self->statements);
+    Py_VISIT(self->cursors);
+    Py_VISIT(self->row_factory);
+    Py_VISIT(self->text_factory);
     Py_VISIT(self->function_pinboard_trace_callback);
     Py_VISIT(self->function_pinboard_progress_handler);
     Py_VISIT(self->function_pinboard_authorizer_cb);
-    Py_VISIT(self->row_factory);
-    Py_VISIT(self->text_factory);
     Py_VISIT(self->collations);
-    Py_VISIT(self->statements);
-    Py_VISIT(self->cursors);
-    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
 connection_clear(pysqlite_Connection *self)
 {
-    Py_CLEAR(self->statement_cache);
     Py_CLEAR(self->isolation_level);
+    Py_CLEAR(self->statement_cache);
+    Py_CLEAR(self->statements);
+    Py_CLEAR(self->cursors);
+    Py_CLEAR(self->row_factory);
+    Py_CLEAR(self->text_factory);
     Py_CLEAR(self->function_pinboard_trace_callback);
     Py_CLEAR(self->function_pinboard_progress_handler);
     Py_CLEAR(self->function_pinboard_authorizer_cb);
-    Py_CLEAR(self->row_factory);
-    Py_CLEAR(self->text_factory);
     Py_CLEAR(self->collations);
-    Py_CLEAR(self->statements);
-    Py_CLEAR(self->cursors);
     return 0;
+}
+
+static void
+connection_close(pysqlite_Connection *self)
+{
+    if (self->db) {
+        int rc = sqlite3_close_v2(self->db);
+        assert(rc == SQLITE_OK);
+        self->db = NULL;
+    }
 }
 
 static void
@@ -280,9 +290,7 @@ connection_dealloc(pysqlite_Connection *self)
     (void)connection_clear(self);
 
     /* Clean up if user has not called .close() explicitly. */
-    if (self->db) {
-        sqlite3_close_v2(self->db);
-    }
+    connection_close(self);
 
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -367,24 +375,12 @@ static PyObject *
 pysqlite_connection_close_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=a546a0da212c9b97 input=3d58064bbffaa3d3]*/
 {
-    int rc;
-
     if (!pysqlite_check_thread(self)) {
         return NULL;
     }
 
     pysqlite_do_all_statements(self, ACTION_FINALIZE, 1);
-
-    if (self->db) {
-        rc = sqlite3_close_v2(self->db);
-
-        if (rc != SQLITE_OK) {
-            _pysqlite_seterror(self->db);
-            return NULL;
-        } else {
-            self->db = NULL;
-        }
-    }
+    connection_close(self);
 
     Py_RETURN_NONE;
 }
@@ -465,7 +461,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
     if (!sqlite3_get_autocommit(self->db)) {
 
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare_v2(self->db, "COMMIT", -1, &statement, NULL);
+        rc = sqlite3_prepare_v2(self->db, "COMMIT", 7, &statement, NULL);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db);
@@ -515,7 +511,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
         pysqlite_do_all_statements(self, ACTION_RESET, 1);
 
         Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_prepare_v2(self->db, "ROLLBACK", -1, &statement, NULL);
+        rc = sqlite3_prepare_v2(self->db, "ROLLBACK", 9, &statement, NULL);
         Py_END_ALLOW_THREADS
         if (rc != SQLITE_OK) {
             _pysqlite_seterror(self->db);
@@ -1351,7 +1347,6 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
     PyObject* sql;
     pysqlite_Statement* statement;
     PyObject* weakref;
-    int rc;
 
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1365,29 +1360,9 @@ pysqlite_connection_call(pysqlite_Connection *self, PyObject *args,
 
     _pysqlite_drop_unused_statement_references(self);
 
-    statement = PyObject_GC_New(pysqlite_Statement, pysqlite_StatementType);
-    if (!statement) {
+    statement = pysqlite_statement_create(self, sql);
+    if (statement == NULL) {
         return NULL;
-    }
-
-    statement->db = NULL;
-    statement->st = NULL;
-    statement->sql = NULL;
-    statement->in_use = 0;
-    statement->in_weakreflist = NULL;
-
-    rc = pysqlite_statement_create(statement, self, sql);
-    if (rc != SQLITE_OK) {
-        if (rc == PYSQLITE_TOO_MUCH_SQL) {
-            PyErr_SetString(pysqlite_Warning, "You can only execute one statement at a time.");
-        } else if (rc == PYSQLITE_SQL_WRONG_TYPE) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_SetString(pysqlite_Warning, "SQL is of wrong type. Must be string.");
-        } else {
-            (void)pysqlite_statement_reset(statement);
-            _pysqlite_seterror(self->db);
-        }
-        goto error;
     }
 
     weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
@@ -1855,6 +1830,9 @@ static PyObject *
 pysqlite_connection_enter_impl(pysqlite_Connection *self)
 /*[clinic end generated code: output=457b09726d3e9dcd input=127d7a4f17e86d8f]*/
 {
+    if (!pysqlite_check_connection(self)) {
+        return NULL;
+    }
     return Py_NewRef((PyObject *)self);
 }
 
