@@ -1554,8 +1554,8 @@ WARNING: this method is for internal use only and may change or go away.
 [clinic start generated code]*/
 
 static PyObject *
-code__varname_from_oparg_impl(PyCodeObject *self, int oparg, int cell)
-/*[clinic end generated code: output=c7d39c9723692c8f input=2945bb291d3a3118]*/
+code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
+/*[clinic end generated code: output=1fd1130413184206 input=c5fa3ee9bac7d4ca]*/
 {
     PyObject *name = PyTuple_GetItem(self->co_localsplusnames, oparg);
     if (name == NULL) {
