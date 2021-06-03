@@ -90,7 +90,7 @@ Improved Modules
 Optimizations
 =============
 
-* Compiler optimizes now simple C-style formatting with literal format
+* Compiler now optimizes simple C-style formatting with literal format
   containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
   fast as corresponding f-string expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
@@ -98,6 +98,20 @@ Optimizations
 * "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Method calls with keywords are now faster due to bytecode
+  changes which avoid creating bound method instances. Previously, this
+  optimization was applied only to method calls with purely positional
+  arguments.
+  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
+  implemented in PyPy.)
+
+CPython bytecode changes
+========================
+
+* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
+  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
+  in tandem with :opcode:`LOAD_METHOD`.
 
 
 Build Changes
@@ -130,6 +144,39 @@ New Features
 Porting to Python 3.11
 ----------------------
 
+* The :c:func:`PyType_Ready` function now raises an error if a type is defined
+  with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
+  (:c:member:`PyTypeObject.tp_traverse`).
+  (Contributed by Victor Stinner in :issue:`44263`.)
+
+* Since :c:func:`Py_TYPE()` is changed to a inline static function,
+  ``Py_TYPE(obj) = new_type`` must be replaced with
+  ``Py_SET_TYPE(obj, new_type)``: see the :c:func:`Py_SET_TYPE()` function
+  (available since Python 3.9). For backward compatibility, this macro can be
+  used::
+
+      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
+      static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+      { ob->ob_type = type; }
+      #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
+* Since :c:func:`Py_SIZE()` is changed to a inline static function,
+  ``Py_SIZE(obj) = new_size`` must be replaced with
+  ``Py_SET_SIZE(obj, new_size)``: see the :c:func:`Py_SET_SIZE()` function
+  (available since Python 3.9). For backward compatibility, this macro can be
+  used::
+
+      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE)
+      static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
+      { ob->ob_size = size; }
+      #define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
+      #endif
+
+  (Contributed by Victor Stinner in :issue:`39573`.)
+
 Deprecated
 ----------
 
@@ -155,3 +202,15 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+* The following deprecated functions and methods are removed in the :mod:`gettext`
+  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
+  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
+
+  Function :func:`~gettext.bind_textdomain_codeset`, methods
+  :meth:`~gettext.NullTranslations.output_charset` and
+  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
+  parameter of functions :func:`~gettext.translation` and
+  :func:`~gettext.install` are also removed, since they are only used for
+  the ``l*gettext()`` functions.
+  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)

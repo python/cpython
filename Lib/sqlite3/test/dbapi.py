@@ -42,7 +42,6 @@ def managed_connect(*args, **kwargs):
         unlink(TESTFN)
 
 
-
 class ModuleTests(unittest.TestCase):
     def test_api_level(self):
         self.assertEqual(sqlite.apilevel, "2.0",
@@ -150,6 +149,26 @@ class ConnectionTests(unittest.TestCase):
     def test_close(self):
         self.cx.close()
 
+    def test_use_after_close(self):
+        sql = "select 1"
+        cu = self.cx.cursor()
+        res = cu.execute(sql)
+        self.cx.close()
+        self.assertRaises(sqlite.ProgrammingError, res.fetchall)
+        self.assertRaises(sqlite.ProgrammingError, cu.execute, sql)
+        self.assertRaises(sqlite.ProgrammingError, cu.executemany, sql, [])
+        self.assertRaises(sqlite.ProgrammingError, cu.executescript, sql)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.execute, sql)
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.cx.executemany, sql, [])
+        self.assertRaises(sqlite.ProgrammingError, self.cx.executescript, sql)
+        self.assertRaises(sqlite.ProgrammingError,
+                          self.cx.create_function, "t", 1, lambda x: x)
+        self.assertRaises(sqlite.ProgrammingError, self.cx.cursor)
+        with self.assertRaises(sqlite.ProgrammingError):
+            with self.cx:
+                pass
+
     def test_exceptions(self):
         # Optional DB-API extension.
         self.assertEqual(self.cx.Warning, sqlite.Warning)
@@ -185,26 +204,27 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+class OpenTests(unittest.TestCase):
+    _sql = "create table test(id integer)"
+
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
-        self.addCleanup(unlink, TESTFN)
         class Path:
             def __fspath__(self):
                 return TESTFN
         path = Path()
-        with sqlite.connect(path) as cx:
-            cx.execute('create table test(id integer)')
+        with managed_connect(path) as cx:
+            cx.execute(self._sql)
 
     def test_open_uri(self):
-        self.addCleanup(unlink, TESTFN)
-        with sqlite.connect(TESTFN) as cx:
-            cx.execute('create table test(id integer)')
-        with sqlite.connect('file:' + TESTFN, uri=True) as cx:
-            cx.execute('insert into test(id) values(0)')
-        with sqlite.connect('file:' + TESTFN + '?mode=ro', uri=True) as cx:
-            with self.assertRaises(sqlite.OperationalError):
-                cx.execute('insert into test(id) values(1)')
+        with managed_connect(TESTFN) as cx:
+            cx.execute(self._sql)
+        with managed_connect(f"file:{TESTFN}", uri=True) as cx:
+            cx.execute(self._sql)
+        with self.assertRaises(sqlite.OperationalError):
+            with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
+                cx.execute(self._sql)
 
 
 class CursorTests(unittest.TestCase):

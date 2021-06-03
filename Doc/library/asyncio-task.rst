@@ -297,6 +297,12 @@ Sleeping
    tasks to run. This can be used by long-running functions to avoid
    blocking the event loop for the full duration of the function call.
 
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    .. _asyncio_example_sleep:
 
    Example of coroutine displaying the current date every second
@@ -315,6 +321,14 @@ Sleeping
             await asyncio.sleep(1)
 
     asyncio.run(display_date())
+
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 
 Running Tasks Concurrently
@@ -348,6 +362,12 @@ Running Tasks Concurrently
    call is **not** cancelled in this case.  This is to prevent the
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
+
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
    .. _asyncio_example_gather:
 
@@ -400,6 +420,12 @@ Running Tasks Concurrently
       If the *gather* itself is cancelled, the cancellation is
       propagated regardless of *return_exceptions*.
 
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    .. deprecated:: 3.10
       Deprecation warning is emitted if no positional arguments are provided
       or not all positional arguments are Future-like objects
@@ -442,6 +468,12 @@ Shielding From Cancellation
        except CancelledError:
            res = None
 
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    .. deprecated:: 3.10
       Deprecation warning is emitted if *aw* is not Future-like object
       and there is no running event loop.
@@ -473,6 +505,12 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    .. _asyncio_example_waitfor:
 
    Example::
@@ -499,6 +537,12 @@ Timeouts
       When *aw* is cancelled due to a timeout, ``wait_for`` waits
       for *aw* to be cancelled.  Previously, it raised
       :exc:`asyncio.TimeoutError` immediately.
+
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
 
 Waiting Primitives
@@ -556,6 +600,12 @@ Waiting Primitives
       ``wait()`` directly is deprecated as it leads to
       :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    .. _asyncio_example_wait_coroutine:
    .. note::
 
@@ -583,6 +633,13 @@ Waiting Primitives
           if task in done:
               # Everything will work as expected now.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    .. deprecated-removed:: 3.8 3.11
 
       Passing coroutine objects to ``wait()`` directly is
@@ -599,11 +656,23 @@ Waiting Primitives
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
 
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
+
    Example::
 
        for coro in as_completed(aws):
            earliest_result = await coro
            # ...
+
+   .. deprecated-removed:: 3.8 3.10
+      The ``loop`` parameter.  This function has been implicitly getting the
+      current running loop since 3.7.  See
+      :ref:`What's New in 3.10's Removed section <whatsnew310-removed>`
+      for more information.
 
    .. deprecated:: 3.10
       Deprecation warning is emitted if not all awaitable objects in the *aws*
