@@ -3194,7 +3194,8 @@ class ThreadedTests(unittest.TestCase):
         )
         with server, \
              client_context.wrap_socket(socket.socket(),
-                                        server_hostname=hostname) as s:
+                                        server_hostname=hostname,
+                                        suppress_ragged_eofs=False) as s:
             # TLS 1.3 perform client cert exchange after handshake
             s.connect((HOST, server.port))
             try:
@@ -3211,13 +3212,7 @@ class ThreadedTests(unittest.TestCase):
                 if support.verbose:
                     sys.stdout.write("\nsocket.error is %r\n" % e)
             else:
-                if sys.platform == "win32":
-                    self.skipTest(
-                        "Ignoring failed test_wrong_cert_tls13 test case. "
-                        "The test is flaky on Windows, see bpo-43921."
-                    )
-                else:
-                    self.fail("Use of invalid cert should have failed!")
+                self.fail("Use of invalid cert should have failed!")
 
     def test_rude_shutdown(self):
         """A brutal shutdown of an SSL server should raise an OSError
@@ -4454,7 +4449,8 @@ class TestPostHandshakeAuth(unittest.TestCase):
         server = ThreadedEchoServer(context=server_context, chatty=True)
         with server:
             with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+                                            server_hostname=hostname,
+                                            suppress_ragged_eofs=False) as s:
                 s.connect((HOST, server.port))
                 s.write(b'PHA')
                 # test sometimes fails with EOF error. Test passes as long as
@@ -4465,17 +4461,13 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 ):
                     # receive CertificateRequest
                     data = s.recv(1024)
-                    if not data:
-                        raise ssl.SSLError(1, "EOF occurred")
                     self.assertEqual(data, b'OK\n')
 
                     # send empty Certificate + Finish
                     s.write(b'HASCERT')
 
                     # receive alert
-                    data = s.recv(1024)
-                    if not data:
-                        raise ssl.SSLError(1, "EOF occurred")
+                    s.recv(1024)
 
     def test_pha_optional(self):
         if support.verbose:
