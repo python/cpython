@@ -1796,7 +1796,6 @@ static int
 compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                        int preserve_tos)
 {
-    int loc;
     switch (info->fb_type) {
         case WHILE_LOOP:
         case EXCEPTION_HANDLER:
@@ -1850,7 +1849,6 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case WITH:
         case ASYNC_WITH:
-            loc = c->u->u_lineno;
             SET_LOC(c, (stmt_ty)info->fb_datum);
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
@@ -1865,7 +1863,10 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 ADDOP(c, YIELD_FROM);
             }
             ADDOP(c, POP_TOP);
-            c->u->u_lineno = loc;
+            /* The exit block should appear to execute after the
+             * statement causing the unwinding, so make the unwinding
+             * instruction artificial */
+            c->u->u_lineno = -1;
             return 1;
 
         case HANDLER_CLEANUP:
@@ -3020,12 +3021,17 @@ compiler_return(struct compiler *c, stmt_ty s)
     if (preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
     } else {
-        /* Emit instruction with line number for expression */
+        /* Emit instruction with line number for return value */
         if (s->v.Return.value != NULL) {
             SET_LOC(c, s->v.Return.value);
             ADDOP(c, NOP);
         }
     }
+    if (s->v.Return.value == NULL || s->v.Return.value->lineno != s->lineno) {
+        SET_LOC(c, s);
+        ADDOP(c, NOP);
+    }
+
     if (!compiler_unwind_fblock_stack(c, preserve_tos, NULL))
         return 0;
     if (s->v.Return.value == NULL) {
@@ -3044,6 +3050,8 @@ static int
 compiler_break(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
+    /* Emit instruction with line number */
+    ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
@@ -3062,6 +3070,8 @@ static int
 compiler_continue(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
+    /* Emit instruction with line number */
+    ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
@@ -4306,7 +4316,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         ADDOP_I(c, CALL_METHOD_KW, argsl + kwdsl);
     }
     else {
-        ADDOP_I(c, CALL_METHOD, argsl);    
+        ADDOP_I(c, CALL_METHOD, argsl);
     }
     c->u->u_lineno = old_lineno;
     return 1;
@@ -4473,7 +4483,7 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
     return 1;
 }
 
-/* Used by compiler_call_helper and maybe_optimize_method_call to emit 
+/* Used by compiler_call_helper and maybe_optimize_method_call to emit
 LOAD_CONST kw1
 LOAD_CONST kw2
 ...
@@ -4484,7 +4494,7 @@ Returns 1 on success, 0 on error.
 */
 static int
 compiler_call_simple_kw_helper(struct compiler *c,
-                               asdl_keyword_seq *keywords, 
+                               asdl_keyword_seq *keywords,
                                Py_ssize_t nkwelts)
 {
     PyObject *names;
