@@ -329,9 +329,8 @@ class DispatcherWithSendTests(unittest.TestCase):
     @threading_helper.reap_threads
     def test_send(self):
         evt = threading.Event()
-        sock = socket.socket()
+        sock, port = socket_helper.get_bound_ip_socket_and_port()
         sock.settimeout(3)
-        port = socket_helper.bind_port(sock)
 
         cap = BytesIO()
         args = (evt, cap, sock)
@@ -344,7 +343,7 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             data = b"Suppose there isn't a 16-ton weight?"
             d = dispatcherwithsend_noread()
-            d.create_socket()
+            d.create_socket(family=sock.family)
             d.connect((socket_helper.HOST, port))
 
             # give time for socket to connect
@@ -793,6 +792,7 @@ class BaseTestAPI:
         finally:
             threading_helper.join_thread(t)
 
+@unittest.skipUnless(socket_helper.IPV4_ENABLED, 'IPv4 support required')
 class TestAPI_UseIPv4Sockets(BaseTestAPI):
     family = socket.AF_INET
     addr = (socket_helper.HOST, 0)

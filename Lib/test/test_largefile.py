@@ -221,10 +221,11 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
     # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 2.5)
     def test_it(self):
-        port = socket_helper.find_unused_port()
-        with socket.create_server(("", port)) as sock:
+        with socket_helper.bind_ip_socket_and_port() as sock_port:
+            sock, port = sock_port
+            sock.listen()
             self.tcp_server(sock)
-            with socket.create_connection(("127.0.0.1", port)) as client:
+            with socket.create_connection((socket_helper.HOST, port)) as client:
                 with open(TESTFN, 'rb') as f:
                     client.sendfile(f)
         self.tearDown()

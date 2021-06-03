@@ -3234,7 +3234,11 @@ class SendfileTestServer(asyncore.dispatcher, threading.Thread):
     def __init__(self, address):
         threading.Thread.__init__(self)
         asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        if socket_helper.IPV4_ENABLED:
+            family = socket.AF_INET
+        elif socket_helper.IPV6_ENABLED:
+            family = socket.AF_INET6
+        self.create_socket(family, socket.SOCK_STREAM)
         self.bind(address)
         self.listen(5)
         self.host, self.port = self.socket.getsockname()[:2]
@@ -3316,7 +3320,7 @@ class TestSendfile(unittest.TestCase):
     def setUp(self):
         self.server = SendfileTestServer((socket_helper.HOST, 0))
         self.server.start()
-        self.client = socket.socket()
+        self.client = socket.socket(self.server.socket.family)
         self.client.connect((self.server.host, self.server.port))
         self.client.settimeout(1)
         # synchronize by waiting for "220 ready" response

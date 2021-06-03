@@ -1,5 +1,6 @@
 import io
 import os
+import socket
 import threading
 import unittest
 import urllib.robotparser
@@ -314,7 +315,14 @@ class PasswordProtectedSiteTestCase(unittest.TestCase):
         # clear _opener global variable
         self.addCleanup(urllib.request.urlcleanup)
 
-        self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
+        try:
+            self.server = HTTPServer((socket_helper.HOST, 0), RobotHandler)
+        except OSError:
+            if not socket_helper.IPV6_ENABLED:
+                raise
+            class IPv6HTTPServer(HTTPServer):
+                address_family = socket.AF_INET6
+            self.server = IPv6HTTPServer((socket_helper.HOST, 0), RobotHandler)
 
         self.t = threading.Thread(
             name='HTTPServer serving',

@@ -1585,8 +1585,8 @@ class MockSslTests(MockSocketTests):
 
 class LocalServerTests(unittest.TestCase):
     def setUp(self):
-        sock = socket.socket()
-        port = socket_helper.bind_port(sock)
+        sock, port = socket_helper.get_bound_ip_socket_and_port()
+        self.addCleanup(sock.close)
         sock.listen()
         self.background = threading.Thread(
             target=self.run_server, args=(sock,))

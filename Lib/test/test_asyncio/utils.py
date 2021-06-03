@@ -18,6 +18,7 @@ import unittest
 import weakref
 
 from unittest import mock
+from test.support import socket_helper
 
 from http.server import HTTPServer
 from wsgiref.simple_server import WSGIRequestHandler, WSGIServer
@@ -140,6 +141,7 @@ class SilentWSGIRequestHandler(WSGIRequestHandler):
 
 class SilentWSGIServer(WSGIServer):
 
+    address_family = socket_helper.get_family()
     request_timeout = support.LOOPBACK_TIMEOUT
 
     def get_request(self):
@@ -215,7 +217,7 @@ if hasattr(socket, 'AF_UNIX'):
 
         def server_bind(self):
             socketserver.UnixStreamServer.server_bind(self)
-            self.server_name = '127.0.0.1'
+            self.server_name = socket_helper.HOST
             self.server_port = 80
 
 
@@ -236,7 +238,7 @@ if hasattr(socket, 'AF_UNIX'):
             # as the second return value will be a path;
             # hence we return some fake data sufficient
             # to get the tests going
-            return request, ('127.0.0.1', '')
+            return request, (socket_helper.HOST, '')
 
 
     class SilentUnixWSGIServer(UnixWSGIServer):
@@ -275,7 +277,7 @@ if hasattr(socket, 'AF_UNIX'):
 
 
 @contextlib.contextmanager
-def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
+def run_test_server(*, host=socket_helper.HOST, port=0, use_ssl=False):
     yield from _run_test_server(address=(host, port), use_ssl=use_ssl,
                                 server_cls=SilentWSGIServer,
                                 server_ssl_cls=SSLWSGIServer)

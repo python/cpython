@@ -51,6 +51,9 @@ if hasattr(socket, 'AF_UNIX'):
     default_family = 'AF_UNIX'
     families += ['AF_UNIX']
 
+if hasattr(socket, 'AF_INET6') and socket.has_ipv6:
+    families.append('AF_INET6')
+
 if sys.platform == 'win32':
     default_family = 'AF_PIPE'
     families += ['AF_PIPE']
@@ -70,7 +73,7 @@ def arbitrary_address(family):
     '''
     Return an arbitrary free address for the given family
     '''
-    if family == 'AF_INET':
+    if family in {'AF_INET', 'AF_INET6'}:
         return ('localhost', 0)
     elif family == 'AF_UNIX':
         # Prefer abstract sockets if possible to avoid problems with the address
@@ -101,9 +104,16 @@ def address_type(address):
     '''
     Return the types of the address
 
-    This can be 'AF_INET', 'AF_UNIX', or 'AF_PIPE'
+    This can be 'AF_INET', 'AF_INET6', 'AF_UNIX', or 'AF_PIPE'
     '''
     if type(address) == tuple:
+        if '.' in address[0]:
+            return 'AF_INET'
+        if ':' in address[0]:
+            return 'AF_INET6'
+        addr_info = socket.getaddrinfo(*address[:2])
+        if addr_info:
+            return addr_info[0][0].name
         return 'AF_INET'
     elif type(address) is str and address.startswith('\\\\'):
         return 'AF_PIPE'
