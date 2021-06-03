@@ -416,7 +416,7 @@ static int check_cursor(pysqlite_Cursor* cur)
 }
 
 static PyObject *
-get_statement(pysqlite_Cursor *self, PyObject *operation)
+get_statement_from_cache(pysqlite_Cursor *self, PyObject *operation)
 {
     PyObject *args[] = { operation, };
     PyObject *cache = self->connection->statement_cache;
@@ -496,7 +496,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         (void)pysqlite_statement_reset(self->statement);
     }
 
-    PyObject *stmt = get_statement(self, operation);
+    PyObject *stmt = get_statement_from_cache(self, operation);
     Py_XSETREF(self->statement, (pysqlite_Statement *)stmt);
     if (!self->statement) {
         goto error;
