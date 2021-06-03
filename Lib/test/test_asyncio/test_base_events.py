@@ -918,6 +918,26 @@ class BaseEventLoopTests(test_utils.TestCase):
         test_utils.run_once(self.loop)
         self.assertEqual(count, 1)
 
+    def test_run_forever_iteration_break(self):
+        # Pre stopping makes it execute without errors but only once 
+        # This test validates if it isn't breaking out before it should 
+        arr = []
+        loop = asyncio.new_event_loop()
+
+        async def coro(x):
+            arr.append(x)
+            if x < 2:
+                asyncio.create_task(coro(x+1))
+            else:
+                loop.stop()
+
+        loop.create_task(coro(0))
+        loop.stop()
+        loop.run_forever()
+        loop.close()
+
+        self.assertEqual(len(arr), 3)
+
     def test_run_forever_pre_stopped(self):
         # Test that the old idiom for pre-stopping the loop works.
         self.loop._process_events = mock.Mock()
