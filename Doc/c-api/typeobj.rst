@@ -2453,6 +2453,8 @@ Async Object Structures
    See :c:func:`PyIter_Send` for details.
    This slot may be set to ``NULL``.
 
+   .. versionadded:: 3.10
+
 
 .. _slot-typedefs:
 

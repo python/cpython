@@ -438,22 +438,33 @@ sha512_get_state(PyObject *module)
 static SHAobject *
 newSHA384object(SHA512State *st)
 {
-    return (SHAobject *)PyObject_New(SHAobject, st->sha384_type);
+    SHAobject *sha = (SHAobject *)PyObject_GC_New(SHAobject, st->sha384_type);
+    PyObject_GC_Track(sha);
+    return sha;
 }
 
 static SHAobject *
 newSHA512object(SHA512State *st)
 {
-    return (SHAobject *)PyObject_New(SHAobject, st->sha512_type);
+    SHAobject *sha = (SHAobject *)PyObject_GC_New(SHAobject, st->sha512_type);
+    PyObject_GC_Track(sha);
+    return sha;
 }
 
 /* Internal methods for a hash object */
+static int
+SHA_traverse(PyObject *ptr, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(ptr));
+    return 0;
+}
 
 static void
 SHA512_dealloc(PyObject *ptr)
 {
     PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_Free(ptr);
+    PyObject_GC_UnTrack(ptr);
+    PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }
 
@@ -596,13 +607,15 @@ static PyType_Slot sha512_sha384_type_slots[] = {
     {Py_tp_methods, SHA_methods},
     {Py_tp_members, SHA_members},
     {Py_tp_getset, SHA_getseters},
+    {Py_tp_traverse, SHA_traverse},
     {0,0}
 };
 
 static PyType_Spec sha512_sha384_type_spec = {
     .name = "_sha512.sha384",
     .basicsize =  sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = sha512_sha384_type_slots
 };
 
@@ -611,6 +624,7 @@ static PyType_Slot sha512_sha512_type_slots[] = {
     {Py_tp_methods, SHA_methods},
     {Py_tp_members, SHA_members},
     {Py_tp_getset, SHA_getseters},
+    {Py_tp_traverse, SHA_traverse},
     {0,0}
 };
 
@@ -619,7 +633,8 @@ static PyType_Slot sha512_sha512_type_slots[] = {
 static PyType_Spec sha512_sha512_type_spec = {
     .name = "_sha512.sha512",
     .basicsize =  sizeof(SHAobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = sha512_sha512_type_slots
 };
 

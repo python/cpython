@@ -85,6 +85,7 @@ tok_new(void)
     tok->async_def = 0;
     tok->async_def_indent = 0;
     tok->async_def_nl = 0;
+    tok->interactive_underflow = IUNDERFLOW_NORMAL;
 
     return tok;
 }
@@ -845,6 +846,10 @@ tok_underflow_string(struct tok_state *tok) {
 
 static int
 tok_underflow_interactive(struct tok_state *tok) {
+    if (tok->interactive_underflow == IUNDERFLOW_STOP) {
+        tok->done = E_INTERACT_STOP;
+        return 1;
+    }
     char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
     if (newtok != NULL) {
         char *translated = translate_newlines(newtok, 0, tok);
@@ -1397,6 +1402,10 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 }
             }
         }
+    }
+
+    if (tok->done == E_INTERACT_STOP) {
+        return ENDMARKER;
     }
 
     /* Check for EOF and errors now */

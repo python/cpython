@@ -2079,8 +2079,6 @@ function PyType_GetModule
     added 3.10
 function PyType_GetModuleState
     added 3.10
-function Py_FrozenMain
-    added 3.10
 function PyFrame_GetLineNumber
     added 3.10
 function PyFrame_GetCode

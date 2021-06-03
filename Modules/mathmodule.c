@@ -845,13 +845,15 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
+
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < nargs; i++) {
         x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_GetOne()) {
+        if (res == one) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -918,13 +920,15 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
         Py_SETREF(res, PyNumber_Absolute(res));
         return res;
     }
+
+    PyObject *zero = _PyLong_GetZero();  // borrowed ref
     for (i = 1; i < nargs; i++) {
         x = PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
         }
-        if (res == _PyLong_GetZero()) {
+        if (res == zero) {
             /* Fast path: just check arguments.
                It is okay to use identity comparison here. */
             Py_DECREF(x);
@@ -3293,10 +3297,10 @@ math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
         goto done;
     }
 
-    factor = n;
-    Py_INCREF(factor);
+    factor = Py_NewRef(n);
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
+        Py_SETREF(factor, PyNumber_Subtract(factor, one));
         if (factor == NULL) {
             goto error;
         }
@@ -3415,10 +3419,10 @@ math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
         goto done;
     }
 
-    factor = n;
-    Py_INCREF(factor);
+    factor = Py_NewRef(n);
+    PyObject *one = _PyLong_GetOne();  // borrowed ref
     for (i = 1; i < factors; ++i) {
-        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_GetOne()));
+        Py_SETREF(factor, PyNumber_Subtract(factor, one));
         if (factor == NULL) {
             goto error;
         }

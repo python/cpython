@@ -310,17 +310,26 @@ sha1_get_state(PyObject *module)
 static SHA1object *
 newSHA1object(SHA1State *st)
 {
-    return (SHA1object *)PyObject_New(SHA1object, st->sha1_type);
+    SHA1object *sha = (SHA1object *)PyObject_GC_New(SHA1object, st->sha1_type);
+    PyObject_GC_Track(sha);
+    return sha;
 }
 
 
 /* Internal methods for a hash object */
+static int
+SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(ptr));
+    return 0;
+}
 
 static void
 SHA1_dealloc(PyObject *ptr)
 {
     PyTypeObject *tp = Py_TYPE(ptr);
-    PyObject_Free(ptr);
+    PyObject_GC_UnTrack(ptr);
+    PyObject_GC_Del(ptr);
     Py_DECREF(tp);
 }
 
@@ -456,13 +465,15 @@ static PyType_Slot sha1_type_slots[] = {
     {Py_tp_dealloc, SHA1_dealloc},
     {Py_tp_methods, SHA1_methods},
     {Py_tp_getset, SHA1_getseters},
+    {Py_tp_traverse, SHA1_traverse},
     {0,0}
 };
 
 static PyType_Spec sha1_type_spec = {
     .name = "_sha1.sha1",
     .basicsize =  sizeof(SHA1object),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = sha1_type_slots
 };
 
