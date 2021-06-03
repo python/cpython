@@ -6,6 +6,7 @@ import sys
 import textwrap
 
 from argparse import ArgumentParser
+from contextlib import contextmanager
 from pathlib import Path
 
 import asdl
@@ -421,6 +422,14 @@ class Obj2ModPrototypeVisitor(PickleVisitor):
 
 
 class Obj2ModVisitor(PickleVisitor):
+    @contextmanager
+    def recursive_call(self, node, level):
+        self.emit('if (Py_EnterRecursiveCall(" while traversing \'%s\' node")) {' % node, level, reflow=False)
+        self.emit('goto failed;', level + 1)
+        self.emit('}', level)
+        yield
+        self.emit('Py_LeaveRecursiveCall();', level)
+
     def funcHeader(self, name):
         ctype = get_c_type(name)
         self.emit("int", 0)
@@ -596,8 +605,9 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("%s val;" % ctype, depth+2)
             self.emit("PyObject *tmp2 = PyList_GET_ITEM(tmp, i);", depth+2)
             self.emit("Py_INCREF(tmp2);", depth+2)
-            self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
-                      field.type, depth+2, reflow=False)
+            with self.recursive_call(name, depth+2):
+                self.emit("res = obj2ast_%s(state, tmp2, &val, arena);" %
+                          field.type, depth+2, reflow=False)
             self.emit("Py_DECREF(tmp2);", depth+2)
             self.emit("if (res != 0) goto failed;", depth+2)
             self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
@@ -610,8 +620,9 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("asdl_seq_SET(%s, i, val);" % field.name, depth+2)
             self.emit("}", depth+1)
         else:
-            self.emit("res = obj2ast_%s(state, tmp, &%s, arena);" %
-                      (field.type, field.name), depth+1)
+            with self.recursive_call(name, depth+1):
+                self.emit("res = obj2ast_%s(state, tmp, &%s, arena);" %
+                          (field.type, field.name), depth+1)
             self.emit("if (res != 0) goto failed;", depth+1)
 
         self.emit("Py_CLEAR(tmp);", depth+1)
