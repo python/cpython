@@ -319,6 +319,25 @@ cache_backoff(_PyAdaptiveEntry *entry) {
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 
+#define SPECIALIZATION_STATS 0
+#if SPECIALIZATION_STATS
+
+typedef struct _specialization_stats {
+    uint64_t specialization_success;
+    uint64_t specialization_failure;
+    uint64_t loadattr_hit;
+    uint64_t loadattr_deferred;
+    uint64_t loadattr_miss;
+    uint64_t loadattr_deopt;
+} SpecializationStats;
+
+extern SpecializationStats _specialization_stats;
+#define STAT_INC(name) _specialization_stats.name++
+void _Py_PrintSpecializationStats(void);
+#else
+#define STAT_INC(name) ((void)0)
+#endif
+
 
 #ifdef __cplusplus
 }

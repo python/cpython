@@ -20,7 +20,7 @@ static void *opcode_targets[256] = {
     &&TARGET_LOAD_ATTR_SLOT,
     &&TARGET_BINARY_POWER,
     &&TARGET_BINARY_MULTIPLY,
-    &&_unknown_opcode,
+    &&TARGET_LOAD_ATTR_MODULE,
     &&TARGET_BINARY_MODULO,
     &&TARGET_BINARY_ADD,
     &&TARGET_BINARY_SUBTRACT,

@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_dict.h"
+#include "pycore_moduleobject.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
@@ -31,6 +32,22 @@
 */
 
 Py_ssize_t _Py_QuickenedCount = 0;
+#if SPECIALIZATION_STATS
+SpecializationStats _specialization_stats = { 0 };
+
+#define PRINT_STAT(name) fprintf(stderr, #name " : %" PRIu64" \n", _specialization_stats.name);
+void
+_Py_PrintSpecializationStats(void)
+{
+    PRINT_STAT(specialization_success);
+    PRINT_STAT(specialization_failure);
+    PRINT_STAT(loadattr_hit);
+    PRINT_STAT(loadattr_deferred);
+    PRINT_STAT(loadattr_miss);
+    PRINT_STAT(loadattr_deopt);
+}
+
+#endif
 
 static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
@@ -205,10 +222,54 @@ _Py_Quicken(PyCodeObject *code) {
 }
 
 int
+special_module_load_attr(
+    PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+    _PyAdaptiveEntry *cache0, _PyLoadAttrCache *cache1)
+{
+    PyModuleObject *m = (PyModuleObject *)owner;
+    PyObject *attr, *getattr;
+    _Py_IDENTIFIER(__getattr__);
+    PyDictObject *dict = (PyDictObject *)m->md_dict;
+    getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+        return -1;
+    }
+    if (getattr != NULL) {
+        return -1;
+    }
+    Py_hash_t hash = PyObject_Hash(name);
+    if (hash == -1) {
+        PyErr_Clear();
+        return -1;
+    }
+    Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &attr);
+    assert (index != DKIX_ERROR);
+    if (index != (uint16_t)index) {
+        return -1;
+    }
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+    if (keys_version == 0) {
+        return -1;
+    }
+    cache1->dk_version_or_hint = keys_version;
+    cache0->index = index;
+    *instr = _Py_MAKECODEUNIT(LOAD_ATTR_MODULE, _Py_OPARG(*instr));
+    return 0;
+}
+
+int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    if (PyModule_CheckExact(owner)) {
+        int err = special_module_load_attr(owner, instr, name, cache0, cache1);
+        if (err) {
+            goto fail;
+        }
+        goto success;
+    }
     PyTypeObject *type = Py_TYPE(owner);
     if (type->tp_getattro != PyObject_GenericGetAttr) {
         goto fail;
@@ -254,7 +315,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
     ) {
         // Keys are shared
-        assert(PyUnicode_CheckExact());
+        assert(PyUnicode_CheckExact(name));
         Py_hash_t hash = PyObject_Hash(name);
         if (hash == -1) {
             return -1;
@@ -276,7 +337,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         goto success;
     }
     else {
-        PyObject *value;
+        PyObject *value = NULL;
         Py_ssize_t hint =
             _PyDict_GetItemHint(dict, name, -1, &value);
         if (hint != (uint32_t)hint) {

@@ -225,4 +225,5 @@ _specialized_instructions = [
     "LOAD_ATTR_SPLIT_KEYS",
     "LOAD_ATTR_COMBINED_KEYS",
     "LOAD_ATTR_SLOT",
+    "LOAD_ATTR_MODULE",
 ]

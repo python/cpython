@@ -16,6 +16,7 @@
 #include "pycore_code.h"          // _PyCode_InitOpcache()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_moduleobject.h"
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -3475,6 +3476,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 DISPATCH();
             }
             else {
+                STAT_INC(loadattr_deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
                 JUMP_TO_INSTRUCTION(LOAD_ATTR);
@@ -3496,6 +3498,26 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             assert(PyDict_CheckExact((PyObject *)dict));
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
             res = dict->ma_values[cache0->index];
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            record_cache_hit(cache0);
+            STAT_INC(loadattr_hit);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_MODULE): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
+            res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             record_cache_hit(cache0);
             Py_INCREF(res);
