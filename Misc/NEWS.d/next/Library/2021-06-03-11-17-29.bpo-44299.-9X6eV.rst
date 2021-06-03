@@ -1,0 +1,1 @@
+Enable control over daemon flag in ThreadPoolExecutor and ProcessPoolExecutor
