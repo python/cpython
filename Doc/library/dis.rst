@@ -1059,7 +1059,7 @@ All of the following opcodes use their arguments.
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
-   storage.  The name of the variable is ``co_fastlocalnames[i]``. 
+   storage.  The name of the variable is ``co_fastlocalnames[i]``.
 
    Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
    It exists to keep bytecode a little more readable.
