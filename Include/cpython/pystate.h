@@ -57,6 +57,12 @@ typedef struct _err_stackitem {
 
 } _PyErr_StackItem;
 
+typedef struct _stack_chunk {
+    struct _stack_chunk *previous;
+    size_t size;
+    size_t top;
+    PyObject * data[1]; /* Variable sized */
+} _PyStackChunk;
 
 // The PyThreadState typedef is in Include/pystate.h.
 struct _ts {
@@ -107,6 +113,12 @@ struct _ts {
     PyObject *async_exc; /* Asynchronous exception to raise */
     unsigned long thread_id; /* Thread id where this tstate was created */
 
+    /* Native thread id where this tstate was created. This will be 0 except on
+     * those platforms that have the notion of native thread id, for which the
+     * macro PY_HAVE_THREAD_NATIVE_ID is then defined.
+     */
+    unsigned long native_thread_id;
+
     int trash_delete_nesting;
     PyObject *trash_delete_later;
 
@@ -149,6 +161,9 @@ struct _ts {
 
     CFrame root_cframe;
 
+    _PyStackChunk *datastack_chunk;
+    PyObject **datastack_top;
+    PyObject **datastack_limit;
     /* XXX signal handlers should also be here */
 
 };

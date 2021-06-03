@@ -2343,6 +2343,18 @@ class Path:
         return pathlib.Path(self.at).name or self.filename.name
 
     @property
+    def suffix(self):
+        return pathlib.Path(self.at).suffix or self.filename.suffix
+
+    @property
+    def suffixes(self):
+        return pathlib.Path(self.at).suffixes or self.filename.suffixes
+
+    @property
+    def stem(self):
+        return pathlib.Path(self.at).stem or self.filename.stem
+
+    @property
     def filename(self):
         return pathlib.Path(self.root.filename).joinpath(self.at)
 

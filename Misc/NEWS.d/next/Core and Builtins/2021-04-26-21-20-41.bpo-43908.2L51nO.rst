@@ -1,2 +1,0 @@
-Make :mod:`re` types immutable. Patch by
-Erlend E. Aasland.

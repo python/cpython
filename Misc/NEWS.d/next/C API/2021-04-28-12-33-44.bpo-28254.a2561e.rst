@@ -1,3 +1,0 @@
-Add new C-API functions to control the state of the garbage collector:
-:c:func:`PyGC_Enable()`, :c:func:`PyGC_Disable()`, :c:func:`PyGC_IsEnabled()`,
-corresponding to the functions in the :mod:`gc` module.

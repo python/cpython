@@ -27,10 +27,11 @@ parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
 """
 
+from collections import namedtuple
+import functools
 import re
 import sys
 import types
-import collections
 import warnings
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
@@ -81,15 +82,10 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
-# XXX: Consider replacing with functools.lru_cache
-MAX_CACHE_SIZE = 20
-_parse_cache = {}
-
 def clear_cache():
-    """Clear the parse cache and the quoters cache."""
-    _parse_cache.clear()
-    _safe_quoters.clear()
-
+    """Clear internal performance caches. Undocumented; some tests want it."""
+    urlsplit.cache_clear()
+    _byte_quoter_factory.cache_clear()
 
 # Helpers for bytes handling
 # For 3.2, we deliberately require applications that
@@ -242,8 +238,6 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
             port = None
         return hostname, port
 
-
-from collections import namedtuple
 
 _DefragResultBase = namedtuple('DefragResult', 'url fragment')
 _SplitResultBase = namedtuple(
@@ -434,6 +428,9 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+# typed=True avoids BytesWarnings being emitted during cache key
+# comparison since this API supports both bytes and str input.
+@functools.lru_cache(typed=True)
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
     <scheme>://<netloc>/<path>?<query>#<fragment>
@@ -462,12 +459,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
         scheme = scheme.replace(b, "")
 
     allow_fragments = bool(allow_fragments)
-    key = url, scheme, allow_fragments, type(url), type(scheme)
-    cached = _parse_cache.get(key, None)
-    if cached:
-        return _coerce_result(cached)
-    if len(_parse_cache) >= MAX_CACHE_SIZE: # avoid runaway growth
-        clear_cache()
     netloc = query = fragment = ''
     i = url.find(':')
     if i > 0:
@@ -488,7 +479,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
         url, query = url.split('?', 1)
     _checknetloc(netloc)
     v = SplitResult(scheme, netloc, url, query, fragment)
-    _parse_cache[key] = v
     return _coerce_result(v)
 
 def urlunparse(components):
@@ -791,23 +781,30 @@ _ALWAYS_SAFE = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                          b'0123456789'
                          b'_.-~')
 _ALWAYS_SAFE_BYTES = bytes(_ALWAYS_SAFE)
-_safe_quoters = {}
 
-class Quoter(collections.defaultdict):
-    """A mapping from bytes (in range(0,256)) to strings.
+def __getattr__(name):
+    if name == 'Quoter':
+        warnings.warn('Deprecated in 3.11. '
+                      'urllib.parse.Quoter will be removed in Python 3.14. '
+                      'It was not intended to be a public API.',
+                      DeprecationWarning, stacklevel=2)
+        return _Quoter
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+class _Quoter(dict):
+    """A mapping from bytes numbers (in range(0,256)) to strings.
 
     String values are percent-encoded byte values, unless the key < 128, and
-    in the "safe" set (either the specified safe set, or default set).
+    in either of the specified safe set, or the always safe set.
     """
-    # Keeps a cache internally, using defaultdict, for efficiency (lookups
+    # Keeps a cache internally, via __missing__, for efficiency (lookups
     # of cached keys don't call Python code at all).
     def __init__(self, safe):
         """safe: bytes object."""
         self.safe = _ALWAYS_SAFE.union(safe)
 
     def __repr__(self):
-        # Without this, will just display as a defaultdict
-        return "<%s %r>" % (self.__class__.__name__, dict(self))
+        return f"<Quoter {dict(self)!r}>"
 
     def __missing__(self, b):
         # Handle a cache miss. Store quoted string in cache and return.
@@ -886,6 +883,11 @@ def quote_plus(string, safe='', encoding=None, errors=None):
     string = quote(string, safe + space, encoding, errors)
     return string.replace(' ', '+')
 
+# Expectation: A typical program is unlikely to create more than 5 of these.
+@functools.lru_cache
+def _byte_quoter_factory(safe):
+    return _Quoter(safe).__getitem__
+
 def quote_from_bytes(bs, safe='/'):
     """Like quote(), but accepts a bytes object rather than a str, and does
     not perform string-to-bytes encoding.  It always returns an ASCII string.
@@ -899,13 +901,11 @@ def quote_from_bytes(bs, safe='/'):
         # Normalize 'safe' by converting to bytes and removing non-ASCII chars
         safe = safe.encode('ascii', 'ignore')
     else:
+        # List comprehensions are faster than generator expressions.
         safe = bytes([c for c in safe if c < 128])
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
-    try:
-        quoter = _safe_quoters[safe]
-    except KeyError:
-        _safe_quoters[safe] = quoter = Quoter(safe).__getitem__
+    quoter = _byte_quoter_factory(safe)
     return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,

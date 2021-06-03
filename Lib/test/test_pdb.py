@@ -9,6 +9,7 @@ import codecs
 import unittest
 import subprocess
 import textwrap
+import linecache
 
 from contextlib import ExitStack
 from io import StringIO
@@ -1807,10 +1808,47 @@ def bœr():
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
 
+class ChecklineTests(unittest.TestCase):
+    def setUp(self):
+        linecache.clearcache()  # Pdb.checkline() uses linecache.getline()
+
+    def tearDown(self):
+        os_helper.unlink(os_helper.TESTFN)
+
+    def test_checkline_before_debugging(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
+    def test_checkline_after_reset(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        db.reset()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
+    def test_checkline_is_not_executable(self):
+        with open(os_helper.TESTFN, "w") as f:
+            # Test for comments, docstrings and empty lines
+            s = textwrap.dedent("""
+                # Comment
+                \"\"\" docstring \"\"\"
+                ''' docstring '''
+
+            """)
+            f.write(s)
+        db = pdb.Pdb()
+        num_lines = len(s.splitlines()) + 2  # Test for EOF
+        for lineno in range(num_lines):
+            self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+
+
 def load_tests(*args):
     from test import test_pdb
     suites = [
         unittest.makeSuite(PdbTestCase),
+        unittest.makeSuite(ChecklineTests),
         doctest.DocTestSuite(test_pdb)
     ]
     return unittest.TestSuite(suites)

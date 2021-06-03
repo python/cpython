@@ -3,6 +3,8 @@
 #endif
 
 typedef uint16_t _Py_CODEUNIT;
+// Each oparg must fit in the second half of _Py_CODEUNIT, hence 8 bits.
+#define _Py_MAX_OPARG 255
 
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
@@ -14,34 +16,73 @@ typedef uint16_t _Py_CODEUNIT;
 
 typedef struct _PyOpcache _PyOpcache;
 
+
+// These are duplicated from pycore_code.h.
+typedef unsigned char _PyLocalsPlusKind;
+typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
+
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
-    int co_argcount;            /* #arguments, except *args */
-    int co_posonlyargcount;     /* #positional only arguments */
-    int co_kwonlyargcount;      /* #keyword only arguments */
-    int co_nlocals;             /* #local variables */
-    int co_stacksize;           /* #entries needed for evaluation stack */
-    int co_flags;               /* CO_..., see below */
-    int co_firstlineno;         /* first source line number */
+
+    /* Note only the following fields are used in hash and/or comparisons
+     *
+     * - co_name
+     * - co_argcount
+     * - co_posonlyargcount
+     * - co_kwonlyargcount
+     * - co_nlocals
+     * - co_stacksize
+     * - co_flags
+     * - co_firstlineno
+     * - co_code
+     * - co_consts
+     * - co_names
+     * - co_varnames
+     * - co_freevars
+     * - co_cellvars
+     *
+     * This is done to preserve the name and line number for tracebacks
+     * and debuggers; otherwise, constant de-duplication would collapse
+     * identical functions/lambdas defined on different lines.
+     */
+
+    /* These fields are set with provided values on new code objects. */
+
+    // The hottest fields (in the eval loop) are grouped here at the top.
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_consts;        /* list (constants used) */
     PyObject *co_names;         /* list of strings (names used) */
-    PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest aren't used in either hash or comparisons, except for co_name,
-       used in both. This is done to preserve the name and line number
-       for tracebacks and debuggers; otherwise, constant de-duplication
-       would collapse identical functions/lambdas defined on different lines.
-    */
-    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
+    int co_flags;               /* CO_..., see below */
+    // The rest are not so impactful on performance.
+    int co_argcount;            /* #arguments, except *args */
+    int co_posonlyargcount;     /* #positional only arguments */
+    int co_kwonlyargcount;      /* #keyword only arguments */
+    int co_stacksize;           /* #entries needed for evaluation stack */
+    int co_firstlineno;         /* first source line number */
+    PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
+    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
     PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
-    void *co_zombieframe;       /* for optimization only (see frameobject.c) */
+
+    /* These fields are set with computed values on new code objects. */
+
+    int *co_cell2arg;           /* Maps cell vars which are arguments. */
+    // redundant values (derived from co_localsplusnames and co_localspluskinds)
+    int co_nlocalsplus;         /* number of local + cell + free variables */
+    int co_nlocals;             /* number of local variables */
+    int co_ncellvars;           /* number of cell variables */
+    int co_nfreevars;           /* number of free variables */
+    // lazily-computed values
+    PyObject *co_varnames;      /* tuple of strings (local variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+    PyObject *co_freevars;      /* tuple of strings (free variable names) */
+
+    /* The remaining fields are zeroed out on new code objects. */
+
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
     /* Scratch space for extra data relating to the code object.
        Type is a void* to keep the format private in codeobject.c to force
@@ -112,7 +153,7 @@ struct PyCodeObject {
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
-#define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
+#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
 
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(

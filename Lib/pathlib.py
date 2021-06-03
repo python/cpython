@@ -1265,7 +1265,7 @@ class Path(PurePath):
         warnings.warn("pathlib.Path.link_to() is deprecated and is scheduled "
                       "for removal in Python 3.12. "
                       "Use pathlib.Path.hardlink_to() instead.",
-                      DeprecationWarning)
+                      DeprecationWarning, stacklevel=2)
         self._accessor.link(self, target)
 
     # Convenience functions for querying the stat results
