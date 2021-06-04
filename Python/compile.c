@@ -229,12 +229,23 @@ struct compiler_unit {
     int u_end_col_offset;  /* the end offset of the current stmt */
 };
 
+// Because the compiler, optimizer, and most of the assembler operate on an
+// abstract CFG, a proper jump table (with offsets) cannot be constructed until
+// the very latest stages of assembly. This structure contains all of the
+// information necessary to build one such deferred jump table.
 typedef struct jump_table {
+    // An object() inside of the code's constants. It will be replaced with
+    // the actual mapping once all of the block offsets are calculated. For
+    // efficiency reasons, the placeholders in the code's constants must be in
+    // the same order as the list of jump_tables.
     PyObject *placeholder;
-    Py_ssize_t size;
-    PyObject **keys;
+    // An ordered list of keys for the table.
+    PyObject *keys;
+    // An array of basicblocks corresponding to the table's keys.
     basicblock **values;
-    struct jump_table *next;
+    // The previous jump table in the singly-linked list. This whole list is
+    // linked "backwards" (for fast appends)!
+    struct jump_table *previous;
 } jump_table;
 
 /* This struct captures the global state of a compilation.
@@ -264,7 +275,10 @@ struct compiler {
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
 
-    jump_table *c_jump_tables;
+    // The tail of a singly-linked list of jump_tables (or NULL). For efficency
+    // reasons, this list is linked "backwards":
+    // c_jump_table_tail -> table_n -> ... -> table_1 -> table_0 -> NULL
+    jump_table *c_jump_table_tail;
 };
 
 typedef struct {
@@ -500,13 +514,10 @@ compiler_free(struct compiler *c)
     Py_DECREF(c->c_const_cache);
     Py_DECREF(c->c_stack);
     jump_table *table;
-    while ((table = c->c_jump_tables)) {
-        while (table->size--) {
-            Py_XDECREF(table->keys[table->size]);
-        }
-        c->c_jump_tables = table->next;
+    while ((table = c->c_jump_table_tail)) {
+        c->c_jump_table_tail = table->previous;
         Py_DECREF(table->placeholder);
-        PyMem_Free(table->keys);
+        Py_DECREF(table->keys);
         PyMem_Free(table->values);
         PyMem_Free(table);
     }
@@ -7098,30 +7109,42 @@ build_jump_tables(struct compiler *c, PyObject *consts)
 {
     jump_table *table;
     Py_ssize_t i = PyList_GET_SIZE(consts);
-    while ((table = c->c_jump_tables)) {
+    // For efficiency reasons (elsewhere, not here), the list of jump_table
+    // structs is linked "backwards". Start at the tail and work to the front:
+    while ((table = c->c_jump_table_tail)) {
+        // The placeholder objects are guaranteed to be in the same order as the
+        // jump tables. Again, that means *reverse* order. Find this one:
         while (PyList_GET_ITEM(consts, --i) != table->placeholder);
         // XXX: Use a _frozendict or something here:
-        PyObject *dict = _PyDict_NewPresized(table->size);
+        PyObject *dict = _PyDict_NewPresized(PyList_GET_SIZE(table->keys));
         if (!dict) {
             return 1;
         }
         PyList_SET_ITEM(consts, i, dict);
         Py_DECREF(table->placeholder);
-        for (Py_ssize_t j = 0; j < table->size; j++) {
+        for (Py_ssize_t j = 0; j < PyList_GET_SIZE(table->keys); j++) {
+            PyObject *key = PyList_GET_ITEM(table->keys, j);
             PyObject *value = PyLong_FromLong(table->values[j]->b_offset);
             if (value == NULL) {
                 return 1;
             }
-            int error = PyDict_SetItem(dict, table->keys[j], value);
-            Py_CLEAR(table->keys[j]);
-            Py_DECREF(value);
-            if (error) {
+            // PyDict_SetDefault is used here because if we have two or more
+            // equal patterns, we want to jump to whichever block comes first.
+            // For example:
+            // match ...:
+            //     case 42: ...  # The table should only ever jump here.
+            //     case 42: ...
+            //     case 42.0: ...
+            //     case 42+0j: ...
+            if (PyDict_SetDefault(dict, key, value) == NULL) {
+                Py_DECREF(value);
                 return 1;
             }
+            Py_DECREF(value);
         }
-        c->c_jump_tables = table->next;
+        c->c_jump_table_tail = table->previous;
         Py_DECREF(table->placeholder);
-        PyMem_Free(table->keys);
+        Py_DECREF(table->keys);
         PyMem_Free(table->values);
         PyMem_Free(table);
     }
