@@ -374,7 +374,7 @@ int pysqlite_statement_reset(pysqlite_Statement* self)
 
     rc = SQLITE_OK;
 
-    if (self->st && sqlite3_stmt_busy(self->st)) {
+    if (self->st) {
         Py_BEGIN_ALLOW_THREADS
         rc = sqlite3_reset(self->st);
         Py_END_ALLOW_THREADS
