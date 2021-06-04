@@ -3,8 +3,6 @@
 #endif
 
 typedef uint16_t _Py_CODEUNIT;
-// Each oparg must fit in the second half of _Py_CODEUNIT, hence 8 bits.
-#define _Py_MAX_OPARG 255
 
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
@@ -15,11 +13,6 @@ typedef uint16_t _Py_CODEUNIT;
 #endif
 
 typedef struct _PyOpcache _PyOpcache;
-
-
-// These are duplicated from pycore_code.h.
-typedef unsigned char _PyLocalsPlusKind;
-typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
 
 /* Bytecode object */
 struct PyCodeObject {
@@ -60,8 +53,9 @@ struct PyCodeObject {
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
-    PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
-    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
+    PyObject *co_varnames;      /* tuple of strings (local variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+    PyObject *co_freevars;      /* tuple of strings (free variable names) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -71,15 +65,11 @@ struct PyCodeObject {
     /* These fields are set with computed values on new code objects. */
 
     int *co_cell2arg;           /* Maps cell vars which are arguments. */
-    // redundant values (derived from co_localsplusnames and co_localspluskinds)
+    // These are redundant but offer some performance benefit.
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
     int co_ncellvars;           /* number of cell variables */
     int co_nfreevars;           /* number of free variables */
-    // lazily-computed values
-    PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
 
     /* The remaining fields are zeroed out on new code objects. */
 
@@ -153,7 +143,7 @@ struct PyCodeObject {
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
-#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
+#define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
 
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
