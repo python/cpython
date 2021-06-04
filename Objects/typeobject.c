@@ -11,6 +11,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
+#include "pycore_frame.h"         // _PyFrame_OpAlreadyRan
+#include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
 #include <ctype.h>
@@ -8883,8 +8885,10 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         for (i = 0; i < co->co_ncellvars; i++) {
             if (co->co_cell2arg[i] == 0) {
                 PyObject *cell = f->f_localsptr[co->co_nlocals + i];
-                assert(PyCell_Check(cell));
-                obj = PyCell_GET(cell);
+                if (PyCell_Check(cell) &&
+                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, 0)) {
+                    obj = PyCell_GET(cell);
+                }
                 break;
             }
         }

@@ -3077,27 +3077,27 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(MAKE_CELL): {
-            if (GETLOCAL(oparg) != NULL) {
-                // A cell must have been set in PyFrame_LocalsToFast().
-                // (This is unlikely to happen.)
-                assert(PyCell_Check(GETLOCAL(oparg)));
-                DISPATCH();
-            }
-            PyObject *cell = PyCell_New(NULL);
+            PyObject *initial = GETLOCAL(oparg);
+            // Normally initial would be NULL.  However, it
+            // might have been set to an initial value during
+            // a call to PyFrame_LocalsToFast().
+            PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 goto error;
             }
             /* If it is an arg then copy the arg into the cell. */
-            if (co->co_cell2arg != NULL) {
+            if (initial == NULL && co->co_cell2arg != NULL) {
                 int argoffset = co->co_cell2arg[oparg - co->co_nlocals];
                 if (argoffset != CO_CELL_NOT_AN_ARG) {
                     PyObject *arg = GETLOCAL(argoffset);
-                    // It will have been set in initialize_locals().
-                    assert(arg != NULL);
-                    Py_INCREF(arg);
-                    PyCell_SET(cell, arg);
-                    /* Clear the local copy. */
-                    SETLOCAL(argoffset, NULL);
+                    // It will have been set in initialize_locals() but
+                    // may have been deleted PyFrame_LocalsToFast().
+                    if (arg != NULL) {;
+                        Py_INCREF(arg);
+                        PyCell_SET(cell, arg);
+                        /* Clear the local copy. */
+                        SETLOCAL(argoffset, NULL);
+                    }
                 }
             }
             SETLOCAL(oparg, cell);
