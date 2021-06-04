@@ -217,6 +217,7 @@ offer_suggestions_for_name_error(PyNameErrorObject *exc)
         return NULL;
     }
     PyObject *dir = PySequence_List(varnames);
+    Py_DECREF(varnames);
     Py_DECREF(code);
     if (dir == NULL) {
         return NULL;

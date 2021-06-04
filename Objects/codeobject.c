@@ -1043,6 +1043,7 @@ PyObject *
 _PyCode_GetVarnames(PyCodeObject *co)
 {
     if (co->co_varnames == NULL) {
+        // PyCodeObject owns this reference.
         co->co_varnames = get_localsplus_names(co, CO_FAST_LOCAL,
                                                co->co_nlocals);
         if (co->co_varnames == NULL) {
@@ -1057,6 +1058,7 @@ PyObject *
 _PyCode_GetCellvars(PyCodeObject *co)
 {
     if (co->co_cellvars == NULL) {
+        // PyCodeObject owns this reference.
         co->co_cellvars = get_localsplus_names(co, CO_FAST_CELL,
                                                co->co_ncellvars);
         if (co->co_cellvars == NULL) {
@@ -1071,6 +1073,7 @@ PyObject *
 _PyCode_GetFreevars(PyCodeObject *co)
 {
     if (co->co_freevars == NULL) {
+        // PyCodeObject owns this reference.
         co->co_freevars = get_localsplus_names(co, CO_FAST_FREE,
                                                co->co_nfreevars);
         if (co->co_freevars == NULL) {
@@ -1517,6 +1520,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         return NULL;
     }
 
+    PyCodeObject *co = NULL;
     PyObject *varnames = NULL;
     PyObject *cellvars = NULL;
     PyObject *freevars = NULL;
@@ -1542,21 +1546,17 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_freevars = freevars;
     }
 
-    PyCodeObject *co = PyCode_NewWithPosOnlyArgs(
+    co = PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
         co_firstlineno, (PyObject*)co_linetable, (PyObject*)co_exceptiontable);
-    if (co == NULL) {
-        goto error;
-    }
-    return (PyObject *)co;
 
 error:
     Py_XDECREF(varnames);
     Py_XDECREF(cellvars);
     Py_XDECREF(freevars);
-    return NULL;
+    return (PyObject *)co;
 }
 
 /*[clinic input]

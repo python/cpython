@@ -2088,6 +2088,7 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                     c->u->u_name,
                     co->co_name,
                     freevars);
+                Py_DECREF(freevars);
                 return 0;
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
