@@ -7435,24 +7435,6 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
     }
 }
 
-static void
-offset_derefs(basicblock *entryblock, int nlocals)
-{
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        for (int i = 0; i < b->b_iused; i++) {
-            struct instr *inst = &b->b_instr[i];
-            switch(inst->i_opcode) {
-                case LOAD_CLOSURE:
-                case LOAD_DEREF:
-                case STORE_DEREF:
-                case DELETE_DEREF:
-                case LOAD_CLASSDEREF:
-                    inst->i_oparg += nlocals;
-            }
-        }
-    }
-}
-
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -7507,9 +7489,6 @@ assemble(struct compiler *c, int addNone)
         goto error;
     a.a_entry = entryblock;
     a.a_nblocks = nblocks;
-
-    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
-    offset_derefs(entryblock, (int)PyDict_GET_SIZE(c->u->u_varnames));
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {

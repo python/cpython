@@ -375,7 +375,7 @@ exit:
 }
 
 PyDoc_STRVAR(code__varname_from_oparg__doc__,
-"_varname_from_oparg($self, /, oparg)\n"
+"_varname_from_oparg($self, /, oparg, *, cell=False)\n"
 "--\n"
 "\n"
 "(internal-only) Return the local variable name for the given oparg.\n"
@@ -386,16 +386,18 @@ PyDoc_STRVAR(code__varname_from_oparg__doc__,
     {"_varname_from_oparg", (PyCFunction)(void(*)(void))code__varname_from_oparg, METH_FASTCALL|METH_KEYWORDS, code__varname_from_oparg__doc__},
 
 static PyObject *
-code__varname_from_oparg_impl(PyCodeObject *self, int oparg);
+code__varname_from_oparg_impl(PyCodeObject *self, int oparg, int cell);
 
 static PyObject *
 code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"oparg", NULL};
+    static const char * const _keywords[] = {"oparg", "cell", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "_varname_from_oparg", 0};
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int oparg;
+    int cell = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -405,9 +407,17 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
     if (oparg == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = code__varname_from_oparg_impl(self, oparg);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    cell = PyObject_IsTrue(args[1]);
+    if (cell < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = code__varname_from_oparg_impl(self, oparg, cell);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ba4c5487e0364ce8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43f4eef80d584fe0 input=a9049054013a1b77]*/
