@@ -546,7 +546,6 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
     int i;
     sqlite3_value* cur_value;
     PyObject* cur_py_value;
-    const char* val_str;
     Py_ssize_t buflen;
 
     args = PyTuple_New(argc);
@@ -563,16 +562,19 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
             case SQLITE_FLOAT:
                 cur_py_value = PyFloat_FromDouble(sqlite3_value_double(cur_value));
                 break;
-            case SQLITE_TEXT:
-                val_str = (const char*)sqlite3_value_text(cur_value);
-                cur_py_value = PyUnicode_FromString(val_str);
-                /* TODO: have a way to show errors here */
-                if (!cur_py_value) {
-                    PyErr_Clear();
-                    Py_INCREF(Py_None);
-                    cur_py_value = Py_None;
+            case SQLITE_TEXT: {
+                sqlite3 *db = sqlite3_context_db_handle(context);
+                const char *text = (const char *)sqlite3_value_text(cur_value);
+
+                if (text == NULL && sqlite3_errcode(db) == SQLITE_NOMEM) {
+                    PyErr_NoMemory();
+                    goto error;
                 }
+
+                Py_ssize_t size = sqlite3_value_bytes(cur_value);
+                cur_py_value = PyUnicode_FromStringAndSize(text, size);
                 break;
+            }
             case SQLITE_BLOB:
                 buflen = sqlite3_value_bytes(cur_value);
                 cur_py_value = PyBytes_FromStringAndSize(
@@ -585,8 +587,7 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
         }
 
         if (!cur_py_value) {
-            Py_DECREF(args);
-            return NULL;
+            goto error;
         }
 
         PyTuple_SetItem(args, i, cur_py_value);
@@ -594,6 +595,10 @@ PyObject* _pysqlite_build_py_params(sqlite3_context *context, int argc, sqlite3_
     }
 
     return args;
+
+error:
+    Py_DECREF(args);
+    return NULL;
 }
 
 void _pysqlite_func_callback(sqlite3_context* context, int argc, sqlite3_value** argv)
