@@ -78,8 +78,9 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
+    pysqlite_state *state = pysqlite_get_state(NULL);
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
-                                               pysqlite_StatementType);
+                                               state->StatementType);
     if (self == NULL) {
         return NULL;
     }
@@ -525,14 +526,15 @@ static PyType_Spec stmt_spec = {
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = stmt_slots,
 };
-PyTypeObject *pysqlite_StatementType = NULL;
 
 int
 pysqlite_statement_setup_types(PyObject *module)
 {
-    pysqlite_StatementType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
-    if (pysqlite_StatementType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->StatementType = (PyTypeObject *)type;
     return 0;
 }
