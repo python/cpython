@@ -31,9 +31,9 @@
 
 /*[clinic input]
 module _sqlite3
-class _sqlite3.Cursor "pysqlite_Cursor *" "pysqlite_CursorType"
+class _sqlite3.Cursor "pysqlite_Cursor *" "clinic_state()->CursorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2072d8db95411d5]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c5b8115c5cf30f1]*/
 
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
@@ -1082,14 +1082,14 @@ static PyType_Spec cursor_spec = {
     .slots = cursor_slots,
 };
 
-PyTypeObject *pysqlite_CursorType = NULL;
-
 int
 pysqlite_cursor_setup_types(PyObject *module)
 {
-    pysqlite_CursorType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &cursor_spec, NULL);
-    if (pysqlite_CursorType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &cursor_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->CursorType = (PyTypeObject *)type;
     return 0;
 }

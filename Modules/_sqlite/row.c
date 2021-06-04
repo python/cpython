@@ -23,7 +23,10 @@
 
 #include "row.h"
 #include "cursor.h"
+
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/row.c.h"
+#undef clinic_state
 
 /*[clinic input]
 module _sqlite3
@@ -62,7 +65,7 @@ pysqlite_row_dealloc(PyObject *self)
 @classmethod
 _sqlite3.Row.__new__ as pysqlite_row_new
 
-    cursor: object(type='pysqlite_Cursor *', subclass_of='pysqlite_CursorType')
+    cursor: object(type='pysqlite_Cursor *', subclass_of='clinic_state()->CursorType')
     data: object(subclass_of='&PyTuple_Type')
     /
 
@@ -71,7 +74,7 @@ _sqlite3.Row.__new__ as pysqlite_row_new
 static PyObject *
 pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
                       PyObject *data)
-/*[clinic end generated code: output=10d58b09a819a4c1 input=f6cd7e6e0935828d]*/
+/*[clinic end generated code: output=10d58b09a819a4c1 input=b9e954ca31345dbf]*/
 {
     pysqlite_Row *self;
 

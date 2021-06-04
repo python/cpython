@@ -406,7 +406,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     ADD_TYPE(module, *state->ConnectionType);
-    ADD_TYPE(module, *pysqlite_CursorType);
+    ADD_TYPE(module, *state->CursorType);
     ADD_TYPE(module, *pysqlite_PrepareProtocolType);
     ADD_TYPE(module, *pysqlite_RowType);
 
