@@ -1,6 +1,5 @@
-The opargs for cell-related opcodes were out of sync with the fast locals,
-leading to unnecessary runtime costs and extra complexity in the code. Now
-much of the work has been moved to the compiler.  This includes the addition
-of the ``MAKE_CELL`` opcode.  Additionally, when an arg "escapes" the
-function (in the closure to an inner function) the cell is stored at the
-same index as the arg now, whereas before one of the slots was wasted.
+A new opcode MAKE_CELL has been added that effectively moves some of
+the work done on function entry into the compiler and into the eval
+loop.  In addition to creating the required cell objects, the new
+opcode converts relevant arguments (and other locals) to cell
+variables on function entry.
