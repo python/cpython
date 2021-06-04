@@ -56,7 +56,7 @@ struct PyCodeObject {
     int co_stacksize;           /* #entries needed for evaluation stack */
     int co_firstlineno;         /* first source line number */
     PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
-    unsigned char* co_localspluskinds; /* array mapping to local kinds */
+    unsigned char *co_localspluskinds; /* array mapping to local kinds */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -217,5 +217,4 @@ void PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstl
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-
 
