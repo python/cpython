@@ -32,7 +32,10 @@
 #error "SQLite 3.7.15 or higher required"
 #endif
 
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/module.c.h"
+#undef clinic_state
+
 /*[clinic input]
 module _sqlite3
 [clinic start generated code]*/
@@ -177,9 +180,12 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
         pysqlite_BaseTypeAdapted = 1;
     }
 
-    rc = pysqlite_microprotocols_add(type, (PyObject*)pysqlite_PrepareProtocolType, caster);
-    if (rc == -1)
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+    rc = pysqlite_microprotocols_add(type, protocol, caster);
+    if (rc == -1) {
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -241,7 +247,7 @@ pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
 _sqlite3.adapt as pysqlite_adapt
 
     obj: object
-    proto: object(c_default='(PyObject*)pysqlite_PrepareProtocolType') = PrepareProtocolType
+    proto: object(c_default='(PyObject *)clinic_state()->PrepareProtocolType') = PrepareProtocolType
     alt: object = NULL
     /
 
@@ -251,7 +257,7 @@ Adapt given object to given protocol. Non-standard.
 static PyObject *
 pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
-/*[clinic end generated code: output=0c3927c5fcd23dd9 input=a58ab77fb5ae22dd]*/
+/*[clinic end generated code: output=0c3927c5fcd23dd9 input=c8995aeb25d0e542]*/
 {
     return pysqlite_microprotocols_adapt(obj, proto, alt);
 }
@@ -407,7 +413,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     ADD_TYPE(module, *state->ConnectionType);
     ADD_TYPE(module, *state->CursorType);
-    ADD_TYPE(module, *pysqlite_PrepareProtocolType);
+    ADD_TYPE(module, *state->PrepareProtocolType);
     ADD_TYPE(module, *pysqlite_RowType);
 
     /*** Create DB-API Exception hierarchy */

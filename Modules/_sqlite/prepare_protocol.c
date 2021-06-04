@@ -60,14 +60,14 @@ static PyType_Spec type_spec = {
     .slots = type_slots,
 };
 
-PyTypeObject *pysqlite_PrepareProtocolType = NULL;
-
 int
 pysqlite_prepare_protocol_setup_types(PyObject *module)
 {
-    pysqlite_PrepareProtocolType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &type_spec, NULL);
-    if (pysqlite_PrepareProtocolType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &type_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->PrepareProtocolType = (PyTypeObject *)type;
     return 0;
 }
