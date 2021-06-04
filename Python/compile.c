@@ -1796,7 +1796,6 @@ static int
 compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                        int preserve_tos)
 {
-    int loc;
     switch (info->fb_type) {
         case WHILE_LOOP:
         case EXCEPTION_HANDLER:
@@ -1850,7 +1849,6 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
 
         case WITH:
         case ASYNC_WITH:
-            loc = c->u->u_lineno;
             SET_LOC(c, (stmt_ty)info->fb_datum);
             ADDOP(c, POP_BLOCK);
             if (preserve_tos) {
@@ -1865,7 +1863,10 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 ADDOP(c, YIELD_FROM);
             }
             ADDOP(c, POP_TOP);
-            c->u->u_lineno = loc;
+            /* The exit block should appear to execute after the
+             * statement causing the unwinding, so make the unwinding
+             * instruction artificial */
+            c->u->u_lineno = -1;
             return 1;
 
         case HANDLER_CLEANUP:
@@ -2046,16 +2047,16 @@ static int
 compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                       PyObject *qualname)
 {
-    Py_ssize_t i, free = PyCode_GetNumFree(co);
     if (qualname == NULL)
         qualname = co->co_name;
 
-    if (free) {
-        for (i = 0; i < free; ++i) {
+    if (co->co_nfreevars) {
+        int i = co->co_nlocals + co->co_ncellvars;
+        for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
             */
-            PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+            PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
 
             /* Special case: If a class contains a method with a
                free variable that has the same name as a method,
@@ -2075,6 +2076,10 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                 arg = compiler_lookup_arg(c->u->u_freevars, name);
             }
             if (arg == -1) {
+                PyObject *freevars = _PyCode_GetFreevars(co);
+                if (freevars == NULL) {
+                    PyErr_Clear();
+                }
                 PyErr_Format(PyExc_SystemError,
                     "compiler_lookup_arg(name=%R) with reftype=%d failed in %S; "
                     "freevars of code %S: %R",
@@ -2082,13 +2087,13 @@ compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags,
                     reftype,
                     c->u->u_name,
                     co->co_name,
-                    co->co_freevars);
+                    freevars);
                 return 0;
             }
             ADDOP_I(c, LOAD_CLOSURE, arg);
         }
         flags |= 0x08;
-        ADDOP_I(c, BUILD_TUPLE, free);
+        ADDOP_I(c, BUILD_TUPLE, co->co_nfreevars);
     }
     ADDOP_LOAD_CONST(c, (PyObject*)co);
     ADDOP_LOAD_CONST(c, qualname);
@@ -3020,12 +3025,17 @@ compiler_return(struct compiler *c, stmt_ty s)
     if (preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
     } else {
-        /* Emit instruction with line number for expression */
+        /* Emit instruction with line number for return value */
         if (s->v.Return.value != NULL) {
             SET_LOC(c, s->v.Return.value);
             ADDOP(c, NOP);
         }
     }
+    if (s->v.Return.value == NULL || s->v.Return.value->lineno != s->lineno) {
+        SET_LOC(c, s);
+        ADDOP(c, NOP);
+    }
+
     if (!compiler_unwind_fblock_stack(c, preserve_tos, NULL))
         return 0;
     if (s->v.Return.value == NULL) {
@@ -3044,6 +3054,8 @@ static int
 compiler_break(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
+    /* Emit instruction with line number */
+    ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
@@ -3062,6 +3074,8 @@ static int
 compiler_continue(struct compiler *c)
 {
     struct fblockinfo *loop = NULL;
+    /* Emit instruction with line number */
+    ADDOP(c, NOP);
     if (!compiler_unwind_fblock_stack(c, 0, &loop)) {
         return 0;
     }
@@ -4306,7 +4320,7 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
         ADDOP_I(c, CALL_METHOD_KW, argsl + kwdsl);
     }
     else {
-        ADDOP_I(c, CALL_METHOD, argsl);    
+        ADDOP_I(c, CALL_METHOD, argsl);
     }
     c->u->u_lineno = old_lineno;
     return 1;
@@ -4473,7 +4487,7 @@ compiler_subkwargs(struct compiler *c, asdl_keyword_seq *keywords, Py_ssize_t be
     return 1;
 }
 
-/* Used by compiler_call_helper and maybe_optimize_method_call to emit 
+/* Used by compiler_call_helper and maybe_optimize_method_call to emit
 LOAD_CONST kw1
 LOAD_CONST kw2
 ...
@@ -4484,7 +4498,7 @@ Returns 1 on success, 0 on error.
 */
 static int
 compiler_call_simple_kw_helper(struct compiler *c,
-                               asdl_keyword_seq *keywords, 
+                               asdl_keyword_seq *keywords,
                                Py_ssize_t nkwelts)
 {
     PyObject *names;
@@ -7166,6 +7180,46 @@ merge_const_one(struct compiler *c, PyObject **obj)
     return 1;
 }
 
+// This is in codeobject.c.
+extern void _Py_set_localsplus_info(int, PyObject *, _PyLocalsPlusKind,
+                                   PyObject *, _PyLocalsPlusKinds);
+
+static void
+compute_localsplus_info(struct compiler *c,
+                        PyObject *names, _PyLocalsPlusKinds kinds)
+{
+    int nlocalsplus = (int)PyTuple_GET_SIZE(names);
+
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(c->u->u_varnames, &pos, &k, &v)) {
+        int offset = (int)PyLong_AS_LONG(v);
+        assert(offset >= 0);
+        assert(offset < nlocalsplus);
+        // For now we do not distinguish arg kinds.
+        _Py_set_localsplus_info(offset, k, CO_FAST_LOCAL, names, kinds);
+    }
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+
+    pos = 0;
+    while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
+        int offset = (int)PyLong_AS_LONG(v);
+        assert(offset >= 0);
+        offset += nlocals;
+        assert(offset < nlocalsplus);
+        _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
+    }
+
+    pos = 0;
+    while (PyDict_Next(c->u->u_freevars, &pos, &k, &v)) {
+        int offset = (int)PyLong_AS_LONG(v);
+        assert(offset >= 0);
+        offset += nlocals;
+        assert(offset < nlocalsplus);
+        _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
+    }
+}
+
 static PyCodeObject *
 makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
          int maxdepth)
@@ -7173,36 +7227,22 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyCodeObject *co = NULL;
     PyObject *names = NULL;
     PyObject *consts = NULL;
-    PyObject *varnames = NULL;
+    PyObject *localsplusnames = NULL;
+    _PyLocalsPlusKinds localspluskinds = NULL;
     PyObject *name = NULL;
-    PyObject *freevars = NULL;
-    PyObject *cellvars = NULL;
-    int flags;
-    int posorkeywordargcount, posonlyargcount, kwonlyargcount;
 
     names = dict_keys_inorder(c->u->u_names, 0);
-    varnames = dict_keys_inorder(c->u->u_varnames, 0);
-    if (!names || !varnames) {
+    if (!names) {
         goto error;
     }
-    cellvars = dict_keys_inorder(c->u->u_cellvars, 0);
-    if (!cellvars)
-        goto error;
-    freevars = dict_keys_inorder(c->u->u_freevars, PyTuple_GET_SIZE(cellvars));
-    if (!freevars)
-        goto error;
-
-    if (!merge_const_one(c, &names) ||
-            !merge_const_one(c, &varnames) ||
-            !merge_const_one(c, &cellvars) ||
-            !merge_const_one(c, &freevars))
-    {
+    if (!merge_const_one(c, &names)) {
         goto error;
     }
 
-    flags = compute_code_flags(c);
-    if (flags < 0)
+    int flags = compute_code_flags(c);
+    if (flags < 0) {
         goto error;
+    }
 
     consts = PyList_AsTuple(constslist); /* PyCode_New requires a tuple */
     if (consts == NULL) {
@@ -7212,9 +7252,32 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    posonlyargcount = Py_SAFE_DOWNCAST(c->u->u_posonlyargcount, Py_ssize_t, int);
-    posorkeywordargcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
-    kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
+    assert(c->u->u_posonlyargcount < INT_MAX);
+    assert(c->u->u_argcount < INT_MAX);
+    assert(c->u->u_kwonlyargcount < INT_MAX);
+    int posonlyargcount = (int)c->u->u_posonlyargcount;
+    int posorkwargcount = (int)c->u->u_argcount;
+    assert(INT_MAX - posonlyargcount - posorkwargcount > 0);
+    int kwonlyargcount = (int)c->u->u_kwonlyargcount;
+
+    Py_ssize_t nlocals = PyDict_GET_SIZE(c->u->u_varnames);
+    Py_ssize_t ncellvars = PyDict_GET_SIZE(c->u->u_cellvars);
+    Py_ssize_t nfreevars = PyDict_GET_SIZE(c->u->u_freevars);
+    assert(nlocals < INT_MAX);
+    assert(ncellvars < INT_MAX);
+    assert(nfreevars < INT_MAX);
+    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
+    int nlocalsplus = (int)nlocals + (int)ncellvars + (int)nfreevars;
+
+    localsplusnames = PyTuple_New(nlocalsplus);
+    if (localsplusnames == NULL) {
+        goto error;
+    }
+    if (_PyCode_InitLocalsPlusKinds(nlocalsplus, &localspluskinds) < 0) {
+        goto error;
+    }
+    compute_localsplus_info(c, localsplusnames, localspluskinds);
+
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
         .name = c->u->u_name,
@@ -7227,11 +7290,10 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         .consts = consts,
         .names = names,
 
-        .varnames = varnames,
-        .cellvars = cellvars,
-        .freevars = freevars,
+        .localsplusnames = localsplusnames,
+        .localspluskinds = localspluskinds,
 
-        .argcount = posonlyargcount + posorkeywordargcount,
+        .argcount = posonlyargcount + posorkwargcount,
         .posonlyargcount = posonlyargcount,
         .kwonlyargcount = kwonlyargcount,
 
@@ -7239,18 +7301,30 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
         .exceptiontable = a->a_except_table,
     };
+
     if (_PyCode_Validate(&con) < 0) {
         goto error;
     }
+
+    if (!merge_const_one(c, &localsplusnames)) {
+        _PyCode_ClearLocalsPlusKinds(con.localspluskinds);
+        goto error;
+    }
+    con.localsplusnames = localsplusnames;
+
     co = _PyCode_New(&con);
+    if (co == NULL) {
+        goto error;
+    }
+
+    localspluskinds = NULL;  // This keeps it from getting freed below.
 
  error:
     Py_XDECREF(names);
     Py_XDECREF(consts);
-    Py_XDECREF(varnames);
+    Py_XDECREF(localsplusnames);
+    _PyCode_ClearLocalsPlusKinds(localspluskinds);
     Py_XDECREF(name);
-    Py_XDECREF(freevars);
-    Py_XDECREF(cellvars);
     return co;
 }
 
@@ -7361,6 +7435,24 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
     }
 }
 
+static void
+offset_derefs(basicblock *entryblock, int nlocals)
+{
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            struct instr *inst = &b->b_instr[i];
+            switch(inst->i_opcode) {
+                case LOAD_CLOSURE:
+                case LOAD_DEREF:
+                case STORE_DEREF:
+                case DELETE_DEREF:
+                case LOAD_CLASSDEREF:
+                    inst->i_oparg += nlocals;
+            }
+        }
+    }
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -7415,6 +7507,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     a.a_entry = entryblock;
     a.a_nblocks = nblocks;
+
+    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
+    offset_derefs(entryblock, (int)PyDict_GET_SIZE(c->u->u_varnames));
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {

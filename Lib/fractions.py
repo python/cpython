@@ -1,7 +1,7 @@
 # Originally contributed by Sjoerd Mullender.
 # Significantly modified by Jeffrey Yasskin <jyasskin at gmail.com>.
 
-"""Fraction, infinite-precision, real numbers."""
+"""Fraction, infinite-precision, rational numbers."""
 
 from decimal import Decimal
 import math
