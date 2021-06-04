@@ -5423,10 +5423,9 @@ test_set_type_size(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(Py_TYPE(obj) == &PyList_Type);
     assert(Py_SIZE(obj) == 0);
 
-    // bpo-39573: Check that Py_TYPE() and Py_SIZE() can be used
-    // as l-values to set an object type and size.
-    Py_TYPE(obj) = &PyList_Type;
-    Py_SIZE(obj) = 0;
+    // bpo-39573: Test Py_SET_TYPE() and Py_SET_SIZE() functions.
+    Py_SET_TYPE(obj, &PyList_Type);
+    Py_SET_SIZE(obj, 0);
 
     Py_DECREF(obj);
     Py_RETURN_NONE;
@@ -6548,6 +6547,13 @@ heapctype_init(PyObject *self, PyObject *args, PyObject *kwargs)
     return 0;
 }
 
+static int
+heapgcctype_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 heapgcctype_dealloc(HeapCTypeObject *self)
 {
@@ -6561,6 +6567,7 @@ static PyType_Slot HeapGcCType_slots[] = {
     {Py_tp_init, heapctype_init},
     {Py_tp_members, heapctype_members},
     {Py_tp_dealloc, heapgcctype_dealloc},
+    {Py_tp_traverse, heapgcctype_traverse},
     {Py_tp_doc, (char*)heapgctype__doc__},
     {0, 0},
 };

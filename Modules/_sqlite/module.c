@@ -24,7 +24,6 @@
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
-#include "cache.h"
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
@@ -55,6 +54,14 @@ PyObject *pysqlite_NotSupportedError = NULL;
 PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
+
+pysqlite_state pysqlite_global_state;
+
+pysqlite_state *
+pysqlite_get_state(PyObject *Py_UNUSED(module))
+{
+    return &pysqlite_global_state;
+}
 
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         kwargs)
@@ -261,6 +268,23 @@ static int converters_init(PyObject* module)
     return res;
 }
 
+static int
+load_functools_lru_cache(PyObject *module)
+{
+    PyObject *functools = PyImport_ImportModule("functools");
+    if (functools == NULL) {
+        return -1;
+    }
+
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
+    Py_DECREF(functools);
+    if (state->lru_cache == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyMethodDef module_methods[] = {
     {"connect",  (PyCFunction)(void(*)(void))module_connect,
      METH_VARARGS | METH_KEYWORDS, module_connect_doc},
@@ -373,7 +397,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         (pysqlite_row_setup_types(module) < 0) ||
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
-        (pysqlite_cache_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
         (pysqlite_prepare_protocol_setup_types(module) < 0)
        ) {
@@ -421,6 +444,10 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* initialize the default converters */
     if (converters_init(module) < 0) {
+        goto error;
+    }
+
+    if (load_functools_lru_cache(module) < 0) {
         goto error;
     }
 

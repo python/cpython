@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -157,6 +158,12 @@ _PyType_CheckConsistency(PyTypeObject *type)
 
     CHECK(!(type->tp_flags & Py_TPFLAGS_READYING));
     CHECK(type->tp_dict != NULL);
+
+    if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
+        // bpo-44263: tp_traverse is required if Py_TPFLAGS_HAVE_GC is set.
+        // Note: tp_clear is optional.
+        CHECK(type->tp_traverse != NULL);
+    }
 
     if (type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
         CHECK(type->tp_new == NULL);
@@ -3607,6 +3614,7 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
         }
     }
 
+    assert(_PyType_CheckConsistency(type));
     return (PyObject*)res;
 
  fail:
@@ -5944,7 +5952,7 @@ static int add_tp_new_wrapper(PyTypeObject *type);
 #define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 static int
-type_ready_checks(PyTypeObject *type)
+type_ready_pre_checks(PyTypeObject *type)
 {
     /* Consistency checks for PEP 590:
      * - Py_TPFLAGS_METHOD_DESCRIPTOR requires tp_descr_get
@@ -6306,9 +6314,27 @@ type_ready_set_new(PyTypeObject *type)
 
 
 static int
+type_ready_post_checks(PyTypeObject *type)
+{
+    // bpo-44263: tp_traverse is required if Py_TPFLAGS_HAVE_GC is set.
+    // Note: tp_clear is optional.
+    if (type->tp_flags & Py_TPFLAGS_HAVE_GC
+        && type->tp_traverse == NULL)
+    {
+        PyErr_Format(PyExc_SystemError,
+                     "type %s has the Py_TPFLAGS_HAVE_GC flag "
+                     "but has no traverse function",
+                     type->tp_name);
+        return -1;
+    }
+    return 0;
+}
+
+
+static int
 type_ready(PyTypeObject *type)
 {
-    if (type_ready_checks(type) < 0) {
+    if (type_ready_pre_checks(type) < 0) {
         return -1;
     }
 
@@ -6344,6 +6370,9 @@ type_ready(PyTypeObject *type)
         return -1;
     }
     if (type_ready_add_subclasses(type) < 0) {
+        return -1;
+    }
+    if (type_ready_post_checks(type) < 0) {
         return -1;
     }
     return 0;
@@ -8848,11 +8877,10 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     PyObject *obj = f->f_localsptr[0];
-    Py_ssize_t i, n;
+    Py_ssize_t i;
     if (obj == NULL && co->co_cell2arg) {
         /* The first argument might be a cell. */
-        n = PyTuple_GET_SIZE(co->co_cellvars);
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < co->co_ncellvars; i++) {
             if (co->co_cell2arg[i] == 0) {
                 PyObject *cell = f->f_localsptr[co->co_nlocals + i];
                 assert(PyCell_Check(cell));
@@ -8867,22 +8895,15 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    if (co->co_freevars == NULL) {
-        n = 0;
-    }
-    else {
-        assert(PyTuple_Check(co->co_freevars));
-        n = PyTuple_GET_SIZE(co->co_freevars);
-    }
-
+    // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    for (i = 0; i < n; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+    i = co->co_nlocals + co->co_ncellvars;
+    for (; i < co->co_nlocalsplus; i++) {
+        assert(co->co_localspluskinds[i] & CO_FAST_FREE);
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            Py_ssize_t index = co->co_nlocals +
-                PyTuple_GET_SIZE(co->co_cellvars) + i;
-            PyObject *cell = f->f_localsptr[index];
+            PyObject *cell = f->f_localsptr[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");

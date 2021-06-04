@@ -274,6 +274,20 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`43823`)
 
+* ``try`` blocks without ``except`` or ``finally`` blocks:
+
+    .. code-block:: python
+
+        >>> try
+        ...     x = 2
+        ... something = 3
+          File "<stdin>", line 3
+            something  = 3
+            ^^^^^^^^^
+        SyntaxError: expected 'except' or 'finally' block
+
+    (Contributed by Pablo Galindo in :issue:`44305`)
+
 * Usage of ``=`` instead of ``==`` in comparisons:
 
     .. code-block:: python
@@ -1039,11 +1053,14 @@ and will be incorrect in some rare cases, including some ``_``-s in
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 3.7.
+Feature parity with ``importlib_metadata`` 4.4
+(`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
-:func:`importlib.metadata.entry_points` now provides a nicer experience
+:ref:`importlib.metadata entry points <entry-points>`
+now provides a nicer experience
 for selecting entry points by group and name through a new
-:class:`importlib.metadata.EntryPoints` class.
+:class:`importlib.metadata.EntryPoints` class. See the Compatibility
+Note in the docs for more info on the deprecation and usage.
 
 Added :func:`importlib.metadata.packages_distributions` for resolving
 top-level Python modules and packages to their
@@ -1133,6 +1150,9 @@ identification from `freedesktop.org os-release
 
 pprint
 ------
+
+:func:`pprint.pprint` now accepts a new ``underscore_numbers`` keyword argument.
+(Contributed by sblondon in :issue:`42914`.)
 
 :mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
 (Contributed by Lewis Gaul in :issue:`43080`.)
@@ -1578,6 +1598,7 @@ Deprecated
 * ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
 
+.. _whatsnew310-removed:
 
 Removed
 =======

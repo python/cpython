@@ -93,7 +93,7 @@ SyntaxError: cannot assign to literal here. Maybe you meant '==' instead of '='?
 
 >>> ... = 1
 Traceback (most recent call last):
-SyntaxError: cannot assign to Ellipsis here. Maybe you meant '==' instead of '='?
+SyntaxError: cannot assign to ellipsis here. Maybe you meant '==' instead of '='?
 
 >>> `1` = 1
 Traceback (most recent call last):
@@ -881,6 +881,14 @@ leading to spurious errors.
    ...    pass
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
+
+Custom error messages for try blocks that are not followed by except/finally
+
+   >>> try:
+   ...    x = 34
+   ...
+   Traceback (most recent call last):
+   SyntaxError: expected 'except' or 'finally' block
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2

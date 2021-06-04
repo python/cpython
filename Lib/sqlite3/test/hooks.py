@@ -254,11 +254,15 @@ class TraceCallbackTests(unittest.TestCase):
         self.addCleanup(unlink, TESTFN)
         con1 = sqlite.connect(TESTFN, isolation_level=None)
         con2 = sqlite.connect(TESTFN)
-        con1.set_trace_callback(trace)
-        cur = con1.cursor()
-        cur.execute(queries[0])
-        con2.execute("create table bar(x)")
-        cur.execute(queries[1])
+        try:
+            con1.set_trace_callback(trace)
+            cur = con1.cursor()
+            cur.execute(queries[0])
+            con2.execute("create table bar(x)")
+            cur.execute(queries[1])
+        finally:
+            con1.close()
+            con2.close()
         self.assertEqual(traced_statements, queries)
 
 
