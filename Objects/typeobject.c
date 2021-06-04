@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_call.h"
-#include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -8895,15 +8894,13 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    i = co->co_nlocals + co->co_ncellvars;
-    for (; i < co->co_nlocalsplus; i++) {
-        assert(co->co_localspluskinds[i] & CO_FAST_FREE);
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+    for (i = 0; i < co->co_nfreevars; i++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            PyObject *cell = f->f_localsptr[i];
+            Py_ssize_t index = co->co_nlocals + co->co_ncellvars + i;
+            PyObject *cell = f->f_localsptr[index];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
