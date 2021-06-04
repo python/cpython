@@ -365,7 +365,7 @@ static struct PyModuleDef _sqlite3module = {
 
 #define ADD_TYPE(module, type)                 \
 do {                                           \
-    if (PyModule_AddType(module, &type) < 0) { \
+    if (PyModule_AddType(module, type) < 0) {  \
         goto error;                            \
     }                                          \
 } while (0)
@@ -411,10 +411,10 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         goto error;
     }
 
-    ADD_TYPE(module, *state->ConnectionType);
-    ADD_TYPE(module, *state->CursorType);
-    ADD_TYPE(module, *state->PrepareProtocolType);
-    ADD_TYPE(module, *state->RowType);
+    ADD_TYPE(module, state->ConnectionType);
+    ADD_TYPE(module, state->CursorType);
+    ADD_TYPE(module, state->PrepareProtocolType);
+    ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
     ADD_EXCEPTION(module, "Error", pysqlite_Error, PyExc_Exception);
