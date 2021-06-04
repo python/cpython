@@ -665,7 +665,7 @@ if sys.platform != 'win32':
 
         Watcher = unix_events.ThreadedChildWatcher
 
-    @unittest.skip("SubprocessMultiLoopWatcher has a race condition \
+    @unittest.skip("bpo-38323: MultiLoopChildWatcher has a race condition \
                     and these tests can hang the test suite")
     class SubprocessMultiLoopWatcherTests(SubprocessWatcherMixin,
                                           test_utils.TestCase):
