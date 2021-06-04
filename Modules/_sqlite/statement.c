@@ -89,7 +89,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     self->sql = Py_NewRef(sql);
     self->in_use = 0;
     self->is_dml = 0;
-    self->column_count = 0;
     self->in_weakreflist = NULL;
 
     /* Determine if the statement is a DML statement.
@@ -131,13 +130,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         PyErr_SetString(pysqlite_Warning,
                         "You can only execute one statement at a time.");
         goto error;
-    }
-
-    /* Set column count just before returning, to minimise SQLite API calls */
-    if (!self->is_dml) {
-        Py_BEGIN_ALLOW_THREADS
-        self->column_count = sqlite3_column_count(self->st);
-        Py_END_ALLOW_THREADS
     }
 
     return self;
