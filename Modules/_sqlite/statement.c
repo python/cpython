@@ -124,7 +124,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         goto error;
     }
 
-    if (pysqlite_check_remaining_sql(tail)) {
+    if (rc == SQLITE_OK && pysqlite_check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
         self->st = NULL;
         PyErr_SetString(pysqlite_Warning,
