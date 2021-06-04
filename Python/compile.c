@@ -7399,7 +7399,8 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock) {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
-        Py_ssize_t cellindex = PyLong_AS_LONG(v);
+        assert(PyLong_AS_LONG(v) < INT_MAX);
+        int cellindex = (int)PyLong_AS_LONG(v);
         struct instr make_cell = {
             .i_opcode = MAKE_CELL,
             // This will get fixed in offset_derefs().
@@ -7407,7 +7408,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock) {
             .i_lineno = -1,
             .i_target = NULL,
         };
-        if (insert_instruction(entryblock, pos - 1, &make_cell) < 0) {
+        if (insert_instruction(entryblock, (int)(pos - 1), &make_cell) < 0) {
             return -1;
         }
     }
