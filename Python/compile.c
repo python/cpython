@@ -229,6 +229,14 @@ struct compiler_unit {
     int u_end_col_offset;  /* the end offset of the current stmt */
 };
 
+typedef struct jump_table {
+    PyObject *placeholder;
+    Py_ssize_t size;
+    PyObject **keys;
+    basicblock **values;
+    struct jump_table *next;
+} jump_table;
+
 /* This struct captures the global state of a compilation.
 
 The u pointer points to the current compilation unit, while units
@@ -255,6 +263,8 @@ struct compiler {
     struct compiler_unit *u; /* compiler state for current block */
     PyObject *c_stack;           /* Python list holding compiler_unit ptrs */
     PyArena *c_arena;            /* pointer to memory allocation arena */
+
+    jump_table *c_jump_tables;
 };
 
 typedef struct {
@@ -489,6 +499,17 @@ compiler_free(struct compiler *c)
     Py_XDECREF(c->c_filename);
     Py_DECREF(c->c_const_cache);
     Py_DECREF(c->c_stack);
+    jump_table *table;
+    while ((table = c->c_jump_tables)) {
+        while (table->size--) {
+            Py_XDECREF(table->keys[table->size]);
+        }
+        c->c_jump_tables = table->next;
+        Py_DECREF(table->placeholder);
+        PyMem_Free(table->keys);
+        PyMem_Free(table->values);
+        PyMem_Free(table);
+    }
 }
 
 static PyObject *
@@ -7072,6 +7093,41 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
     } while (extended_arg_recompile);
 }
 
+static int
+build_jump_tables(struct compiler *c, PyObject *consts)
+{
+    jump_table *table;
+    Py_ssize_t i = PyList_GET_SIZE(consts);
+    while ((table = c->c_jump_tables)) {
+        while (PyList_GET_ITEM(consts, --i) != table->placeholder);
+        // XXX: Use a _frozendict or something here:
+        PyObject *dict = _PyDict_NewPresized(table->size);
+        if (!dict) {
+            return 1;
+        }
+        PyList_SET_ITEM(consts, i, dict);
+        Py_DECREF(table->placeholder);
+        for (Py_ssize_t j = 0; j < table->size; j++) {
+            PyObject *value = PyLong_FromLong(table->values[j]->b_offset);
+            if (value == NULL) {
+                return 1;
+            }
+            int error = PyDict_SetItem(dict, table->keys[j], value);
+            Py_CLEAR(table->keys[j]);
+            Py_DECREF(value);
+            if (error) {
+                return 1;
+            }
+        }
+        c->c_jump_tables = table->next;
+        Py_DECREF(table->placeholder);
+        PyMem_Free(table->keys);
+        PyMem_Free(table->values);
+        PyMem_Free(table);
+    }
+    return 0;
+}
+
 static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
@@ -7541,6 +7597,10 @@ assemble(struct compiler *c, int addNone)
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
+
+    if (build_jump_tables(c, consts)) {
+        goto error;
+    }
 
     /* Emit code. */
     for(b = entryblock; b != NULL; b = b->b_next) {
