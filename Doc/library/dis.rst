@@ -1059,8 +1059,9 @@ All of the following opcodes use their arguments.
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot *i* of the cell and free
-   variable storage.  The name of the variable is
-   ``co_fastlocalnames[i + len(co_varnames)]``.
+   variable storage.  The name of the variable is ``co_cellvars[i]`` if *i* is
+   less than the length of *co_cellvars*.  Otherwise it is ``co_freevars[i -
+   len(co_cellvars)]``.
 
 
 .. opcode:: LOAD_DEREF (i)

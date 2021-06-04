@@ -871,8 +871,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             self.f_lineno = int_from_int(self.field('f_lineno'))
             self.f_lasti = int_from_int(self.field('f_lasti'))
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
-            pnames = self.co.field('co_localsplusnames')
-            self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
+            self.co_varnames = PyTupleObjectPtr.from_pyobject_ptr(self.co.field('co_varnames'))
 
     def iter_locals(self):
         '''
@@ -885,10 +884,9 @@ class PyFrameObjectPtr(PyObjectPtr):
         f_localsplus = self.field('f_localsptr')
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(f_localsplus[i])
-            if pyop_value.is_null():
-                continue
-            pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
-            yield (pyop_name, pyop_value)
+            if not pyop_value.is_null():
+                pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_varnames[i])
+                yield (pyop_name, pyop_value)
 
     def _f_globals(self):
         f_localsplus = self.field('f_localsptr')
