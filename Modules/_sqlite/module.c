@@ -60,12 +60,6 @@ int pysqlite_BaseTypeAdapted = 0;
 
 pysqlite_state pysqlite_global_state;
 
-pysqlite_state *
-pysqlite_get_state(PyObject *Py_UNUSED(module))
-{
-    return &pysqlite_global_state;
-}
-
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {

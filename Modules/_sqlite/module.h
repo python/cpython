@@ -38,7 +38,13 @@ typedef struct {
     PyTypeObject *StatementType;
 } pysqlite_state;
 
-extern pysqlite_state *pysqlite_get_state(PyObject *module);
+extern pysqlite_state pysqlite_global_state;
+
+static inline pysqlite_state *
+pysqlite_get_state(PyObject *Py_UNUSED(module))
+{
+    return &pysqlite_global_state;
+}
 
 extern PyObject* pysqlite_Error;
 extern PyObject* pysqlite_Warning;
