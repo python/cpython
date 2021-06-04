@@ -144,10 +144,11 @@ The :mod:`functools` module defines the following functions:
    functions with side-effects, functions that need to create distinct mutable
    objects on each call, or impure functions such as time() or random().
 
-   Keep in mind that the LRU cache locks all method arguments in memory and
-   prevents them from being garabage collected, including *self*.
-   This may cause memory leaks.
-
+   The LRU cache takes string references to the arguments provided in the decorated callable
+   as well as the return value. Notice that this means that if a class method is decorated, the cache
+   will keep strong references to all arguments provided, including the instance itself (provided as  the
+   argument of the method, normally called ``self``). This has the consequence that calling the cached
+   method will keep the instances alive until they are discarded by the cache or manually removed.
    Example of an LRU cache for static web content::
 
         @lru_cache(maxsize=32)
