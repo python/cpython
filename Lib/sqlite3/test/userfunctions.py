@@ -236,9 +236,11 @@ class FunctionTests(unittest.TestCase):
 
     def test_param_string(self):
         cur = self.con.cursor()
-        cur.execute("select isstring(?)", ("foo",))
-        val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
+        for text in ["foo", str()]:
+            with self.subTest(text=text):
+                cur.execute("select isstring(?)", (text,))
+                val = cur.fetchone()[0]
+                self.assertEqual(val, 1)
 
     def test_param_int(self):
         cur = self.con.cursor()
@@ -391,9 +393,9 @@ class AggregateTests(unittest.TestCase):
 
     def test_aggr_check_param_str(self):
         cur = self.con.cursor()
-        cur.execute("select checkType('str', ?)", ("foo",))
+        cur.execute("select checkTypes('str', ?, ?)", ("foo", str()))
         val = cur.fetchone()[0]
-        self.assertEqual(val, 1)
+        self.assertEqual(val, 2)
 
     def test_aggr_check_param_int(self):
         cur = self.con.cursor()
