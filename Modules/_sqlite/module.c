@@ -93,7 +93,8 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     }
 
     if (factory == NULL) {
-        factory = (PyObject*)pysqlite_ConnectionType;
+        pysqlite_state *state = pysqlite_get_state(self);
+        factory = (PyObject *)state->ConnectionType;
     }
 
     return PyObject_Call(factory, args, kwargs);
@@ -392,6 +393,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     module = PyModule_Create(&_sqlite3module);
+    pysqlite_state *state = pysqlite_get_state(module);
 
     if (!module ||
         (pysqlite_row_setup_types(module) < 0) ||
@@ -403,7 +405,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
         goto error;
     }
 
-    ADD_TYPE(module, *pysqlite_ConnectionType);
+    ADD_TYPE(module, *state->ConnectionType);
     ADD_TYPE(module, *pysqlite_CursorType);
     ADD_TYPE(module, *pysqlite_PrepareProtocolType);
     ADD_TYPE(module, *pysqlite_RowType);

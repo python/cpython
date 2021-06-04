@@ -24,7 +24,10 @@
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
+
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/cursor.c.h"
+#undef clinic_state
 
 /*[clinic input]
 module _sqlite3
@@ -37,7 +40,7 @@ static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset be
 /*[clinic input]
 _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 
-    connection: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
+    connection: object(type='pysqlite_Connection *', subclass_of='clinic_state()->ConnectionType')
     /
 
 [clinic start generated code]*/
@@ -45,7 +48,7 @@ _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
                           pysqlite_Connection *connection)
-/*[clinic end generated code: output=ac59dce49a809ca8 input=a8a4f75ac90999b2]*/
+/*[clinic end generated code: output=ac59dce49a809ca8 input=23d4265b534989fb]*/
 {
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);

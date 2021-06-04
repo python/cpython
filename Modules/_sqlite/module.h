@@ -31,6 +31,7 @@
 
 typedef struct {
     PyObject *lru_cache;
+    PyTypeObject *ConnectionType;
 } pysqlite_state;
 
 extern pysqlite_state *pysqlite_get_state(PyObject *module);
