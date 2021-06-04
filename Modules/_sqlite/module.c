@@ -414,7 +414,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module, *state->ConnectionType);
     ADD_TYPE(module, *state->CursorType);
     ADD_TYPE(module, *state->PrepareProtocolType);
-    ADD_TYPE(module, *pysqlite_RowType);
+    ADD_TYPE(module, *state->RowType);
 
     /*** Create DB-API Exception hierarchy */
     ADD_EXCEPTION(module, "Error", pysqlite_Error, PyExc_Exception);

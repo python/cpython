@@ -30,9 +30,9 @@
 
 /*[clinic input]
 module _sqlite3
-class _sqlite3.Row "pysqlite_Row *" "pysqlite_RowType"
+class _sqlite3.Row "pysqlite_Row *" "clinic_state()->RowType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=384227da65f250fd]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=966c53403d7f3a40]*/
 
 static int
 row_clear(pysqlite_Row *self)
@@ -219,7 +219,8 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
     if (opid != Py_EQ && opid != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
 
-    if (PyObject_TypeCheck(_other, pysqlite_RowType)) {
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    if (PyObject_TypeCheck(_other, state->RowType)) {
         pysqlite_Row *other = (pysqlite_Row *)_other;
         int eq = PyObject_RichCompareBool(self->description, other->description, Py_EQ);
         if (eq < 0) {
@@ -261,14 +262,14 @@ static PyType_Spec row_spec = {
     .slots = row_slots,
 };
 
-PyTypeObject *pysqlite_RowType = NULL;
-
 int
 pysqlite_row_setup_types(PyObject *module)
 {
-    pysqlite_RowType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &row_spec, NULL);
-    if (pysqlite_RowType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &row_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->RowType = (PyTypeObject *)type;
     return 0;
 }
