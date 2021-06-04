@@ -144,6 +144,10 @@ The :mod:`functools` module defines the following functions:
    functions with side-effects, functions that need to create distinct mutable
    objects on each call, or impure functions such as time() or random().
 
+   Keep in mind that the LRU cache locks all method arguments in memory and
+   prevents them from being garabage collected, including *self*.
+   This may cause memory leaks.
+
    Example of an LRU cache for static web content::
 
         @lru_cache(maxsize=32)
