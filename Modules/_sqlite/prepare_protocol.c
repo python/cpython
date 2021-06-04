@@ -30,26 +30,33 @@ pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol *self, PyObject *args,
     return 0;
 }
 
+static int
+pysqlite_prepare_protocol_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
+    PyObject_GC_UnTrack(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static PyType_Slot type_slots[] = {
     {Py_tp_dealloc, pysqlite_prepare_protocol_dealloc},
-    {Py_tp_new, PyType_GenericNew},
     {Py_tp_init, pysqlite_prepare_protocol_init},
+    {Py_tp_traverse, pysqlite_prepare_protocol_traverse},
     {0, NULL},
 };
 
 static PyType_Spec type_spec = {
     .name = MODULE_NAME ".PrepareProtocol",
     .basicsize = sizeof(pysqlite_PrepareProtocol),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = type_slots,
 };
 

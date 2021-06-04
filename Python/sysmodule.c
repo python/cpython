@@ -2293,7 +2293,10 @@ PySys_AddWarnOption(const wchar_t *s)
     unicode = PyUnicode_FromWideChar(s, -1);
     if (unicode == NULL)
         return;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PySys_AddWarnOptionUnicode(unicode);
+_Py_COMP_DIAG_POP
     Py_DECREF(unicode);
 }
 

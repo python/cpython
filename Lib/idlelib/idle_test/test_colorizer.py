@@ -1,11 +1,12 @@
-"Test colorizer, coverage 93%."
-
+"Test colorizer, coverage 99%."
 from idlelib import colorizer
 from test.support import requires
 import unittest
 from unittest import mock
+from .tkinter_testing_utils import run_in_tk_mainloop
 
 from functools import partial
+import textwrap
 from tkinter import Tk, Text
 from idlelib import config
 from idlelib.percolator import Percolator
@@ -19,15 +20,38 @@ testcfg = {
     'extensions': config.IdleUserConfParser(''),
 }
 
-source = (
-    "if True: int ('1') # keyword, builtin, string, comment\n"
-    "elif False: print(0)  # 'string' in comment\n"
-    "else: float(None)  # if in comment\n"
-    "if iF + If + IF: 'keyword matching must respect case'\n"
-    "if'': x or''  # valid string-keyword no-space combinations\n"
-    "async def f(): await g()\n"
-    "'x', '''x''', \"x\", \"\"\"x\"\"\"\n"
-    )
+source = textwrap.dedent("""\
+    if True: int ('1') # keyword, builtin, string, comment
+    elif False: print(0)  # 'string' in comment
+    else: float(None)  # if in comment
+    if iF + If + IF: 'keyword matching must respect case'
+    if'': x or''  # valid keyword-string no-space combinations
+    async def f(): await g()
+    # Strings should be entirely colored, including quotes.
+    'x', '''x''', "x", \"""x\"""
+    'abc\\
+    def'
+    '''abc\\
+    def'''
+    # All valid prefixes for unicode and byte strings should be colored.
+    r'x', u'x', R'x', U'x', f'x', F'x'
+    fr'x', Fr'x', fR'x', FR'x', rf'x', rF'x', Rf'x', RF'x'
+    b'x',B'x', br'x',Br'x',bR'x',BR'x', rb'x', rB'x',Rb'x',RB'x'
+    # Invalid combinations of legal characters should be half colored.
+    ur'x', ru'x', uf'x', fu'x', UR'x', ufr'x', rfu'x', xf'x', fx'x'
+    match point:
+        case (x, 0) as _:
+            print(f"X={x}")
+        case [_, [_], "_",
+                _]:
+            pass
+        case _ if ("a" if _ else set()): pass
+        case _:
+            raise ValueError("Not a point _")
+    '''
+    case _:'''
+    "match x:"
+    """)
 
 
 def setUpModule():
@@ -107,7 +131,7 @@ class ColorDelegatorInstantiationTest(unittest.TestCase):
         requires('gui')
         root = cls.root = Tk()
         root.withdraw()
-        text = cls.text = Text(root)
+        cls.text = Text(root)
 
     @classmethod
     def tearDownClass(cls):
@@ -152,7 +176,7 @@ class ColorDelegatorTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.percolator.redir.close()
+        cls.percolator.close()
         del cls.percolator, cls.text
         cls.root.update_idletasks()
         cls.root.destroy()
@@ -364,8 +388,21 @@ class ColorDelegatorTest(unittest.TestCase):
                     ('4.0', ('KEYWORD',)), ('4.3', ()), ('4.6', ()),
                     ('5.2', ('STRING',)), ('5.8', ('KEYWORD',)), ('5.10', ('STRING',)),
                     ('6.0', ('KEYWORD',)), ('6.10', ('DEFINITION',)), ('6.11', ()),
-                    ('7.0', ('STRING',)), ('7.4', ()), ('7.5', ('STRING',)),
-                    ('7.12', ()), ('7.14', ('STRING',)),
+                    ('8.0', ('STRING',)), ('8.4', ()), ('8.5', ('STRING',)),
+                    ('8.12', ()), ('8.14', ('STRING',)),
+                    ('19.0', ('KEYWORD',)),
+                    ('20.4', ('KEYWORD',)), ('20.16', ('KEYWORD',)),# ('20.19', ('KEYWORD',)),
+                    #('22.4', ('KEYWORD',)), ('22.10', ('KEYWORD',)), ('22.14', ('KEYWORD',)), ('22.19', ('STRING',)),
+                    #('23.12', ('KEYWORD',)),
+                    ('24.8', ('KEYWORD',)),
+                    ('25.4', ('KEYWORD',)), ('25.9', ('KEYWORD',)),
+                    ('25.11', ('KEYWORD',)), ('25.15', ('STRING',)),
+                    ('25.19', ('KEYWORD',)), ('25.22', ()),
+                    ('25.24', ('KEYWORD',)), ('25.29', ('BUILTIN',)), ('25.37', ('KEYWORD',)),
+                    ('26.4', ('KEYWORD',)), ('26.9', ('KEYWORD',)),# ('26.11', ('KEYWORD',)), ('26.14', (),),
+                    ('27.25', ('STRING',)), ('27.38', ('STRING',)),
+                    ('29.0', ('STRING',)),
+                    ('30.1', ('STRING',)),
                     # SYNC at the end of every line.
                     ('1.55', ('SYNC',)), ('2.50', ('SYNC',)), ('3.34', ('SYNC',)),
                    )
@@ -391,11 +428,173 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('COMMENT', '2.0'), ('2.22', '2.43'))
         eq(text.tag_nextrange('SYNC', '2.0'), ('2.43', '3.0'))
         eq(text.tag_nextrange('STRING', '2.0'), ('4.17', '4.53'))
-        eq(text.tag_nextrange('STRING', '7.0'), ('7.0', '7.3'))
-        eq(text.tag_nextrange('STRING', '7.3'), ('7.5', '7.12'))
-        eq(text.tag_nextrange('STRING', '7.12'), ('7.14', '7.17'))
-        eq(text.tag_nextrange('STRING', '7.17'), ('7.19', '7.26'))
-        eq(text.tag_nextrange('SYNC', '7.0'), ('7.26', '9.0'))
+        eq(text.tag_nextrange('STRING', '8.0'), ('8.0', '8.3'))
+        eq(text.tag_nextrange('STRING', '8.3'), ('8.5', '8.12'))
+        eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
+        eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
+        eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
+        eq(text.tag_nextrange('SYNC', '30.0'), ('30.10', '32.0'))
+
+    def _assert_highlighting(self, source, tag_ranges):
+        """Check highlighting of a given piece of code.
+
+        This inserts just this code into the Text widget. It will then
+        check that the resulting highlighting tag ranges exactly match
+        those described in the given `tag_ranges` dict.
+
+        Note that the irrelevant tags 'sel', 'TODO' and 'SYNC' are
+        ignored.
+        """
+        text = self.text
+
+        with mock.patch.object(colorizer.ColorDelegator, 'notify_range'):
+            text.delete('1.0', 'end-1c')
+            text.insert('insert', source)
+            text.tag_add('TODO', '1.0', 'end-1c')
+            self.color.recolorize_main()
+
+        # Make a dict with highlighting tag ranges in the Text widget.
+        text_tag_ranges = {}
+        for tag in set(text.tag_names()) - {'sel', 'TODO', 'SYNC'}:
+            indexes = [rng.string for rng in text.tag_ranges(tag)]
+            for index_pair in zip(indexes[::2], indexes[1::2]):
+                text_tag_ranges.setdefault(tag, []).append(index_pair)
+
+        self.assertEqual(text_tag_ranges, tag_ranges)
+
+        with mock.patch.object(colorizer.ColorDelegator, 'notify_range'):
+            text.delete('1.0', 'end-1c')
+
+    def test_def_statement(self):
+        # empty def
+        self._assert_highlighting('def', {'KEYWORD': [('1.0', '1.3')]})
+
+        # def followed by identifier
+        self._assert_highlighting('def foo:', {'KEYWORD': [('1.0', '1.3')],
+                                               'DEFINITION': [('1.4', '1.7')]})
+
+        # def followed by partial identifier
+        self._assert_highlighting('def fo', {'KEYWORD': [('1.0', '1.3')],
+                                             'DEFINITION': [('1.4', '1.6')]})
+
+        # def followed by non-keyword
+        self._assert_highlighting('def ++', {'KEYWORD': [('1.0', '1.3')]})
+
+    def test_match_soft_keyword(self):
+        # empty match
+        self._assert_highlighting('match', {'KEYWORD': [('1.0', '1.5')]})
+
+        # match followed by partial identifier
+        self._assert_highlighting('match fo', {'KEYWORD': [('1.0', '1.5')]})
+
+        # match followed by identifier and colon
+        self._assert_highlighting('match foo:', {'KEYWORD': [('1.0', '1.5')]})
+
+        # match followed by keyword
+        self._assert_highlighting('match and', {'KEYWORD': [('1.6', '1.9')]})
+
+        # match followed by builtin with keyword prefix
+        self._assert_highlighting('match int:', {'KEYWORD': [('1.0', '1.5')],
+                                                 'BUILTIN': [('1.6', '1.9')]})
+
+        # match followed by non-text operator
+        self._assert_highlighting('match^', {})
+        self._assert_highlighting('match @', {})
+
+        # match followed by colon
+        self._assert_highlighting('match :', {})
+
+        # match followed by comma
+        self._assert_highlighting('match\t,', {})
+
+        # match followed by a lone underscore
+        self._assert_highlighting('match _:', {'KEYWORD': [('1.0', '1.5')]})
+
+    def test_case_soft_keyword(self):
+        # empty case
+        self._assert_highlighting('case', {'KEYWORD': [('1.0', '1.4')]})
+
+        # case followed by partial identifier
+        self._assert_highlighting('case fo', {'KEYWORD': [('1.0', '1.4')]})
+
+        # case followed by identifier and colon
+        self._assert_highlighting('case foo:', {'KEYWORD': [('1.0', '1.4')]})
+
+        # case followed by keyword
+        self._assert_highlighting('case and', {'KEYWORD': [('1.5', '1.8')]})
+
+        # case followed by builtin with keyword prefix
+        self._assert_highlighting('case int:', {'KEYWORD': [('1.0', '1.4')],
+                                                'BUILTIN': [('1.5', '1.8')]})
+
+        # case followed by non-text operator
+        self._assert_highlighting('case^', {})
+        self._assert_highlighting('case @', {})
+
+        # case followed by colon
+        self._assert_highlighting('case :', {})
+
+        # case followed by comma
+        self._assert_highlighting('case\t,', {})
+
+        # case followed by a lone underscore
+        self._assert_highlighting('case _:', {'KEYWORD': [('1.0', '1.4'),
+                                                          ('1.5', '1.6')]})
+
+    def test_long_multiline_string(self):
+        source = textwrap.dedent('''\
+            """a
+            b
+            c
+            d
+            e"""
+            ''')
+        self._assert_highlighting(source, {'STRING': [('1.0', '5.4')]})
+
+    @run_in_tk_mainloop(delay=50)
+    def test_incremental_editing(self):
+        text = self.text
+        eq = self.assertEqual
+
+        # Simulate typing 'inte'. During this, the highlighting should
+        # change from normal to keyword to builtin to normal.
+        text.insert('insert', 'i')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        text.insert('insert', 'n')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ('1.0', '1.2'))
+
+        text.insert('insert', 't')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ('1.0', '1.3'))
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        text.insert('insert', 'e')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        # Simulate deleting three characters from the end of 'inte'.
+        # During this, the highlighting should change from normal to
+        # builtin to keyword to normal.
+        text.delete('insert-1c', 'insert')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ('1.0', '1.3'))
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
+
+        text.delete('insert-1c', 'insert')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ('1.0', '1.2'))
+
+        text.delete('insert-1c', 'insert')
+        yield
+        eq(text.tag_nextrange('BUILTIN', '1.0'), ())
+        eq(text.tag_nextrange('KEYWORD', '1.0'), ())
 
     @mock.patch.object(colorizer.ColorDelegator, 'recolorize')
     @mock.patch.object(colorizer.ColorDelegator, 'notify_range')
