@@ -39,12 +39,18 @@ SpecializationStats _specialization_stats = { 0 };
 void
 _Py_PrintSpecializationStats(void)
 {
-    PRINT_STAT(specialization_success);
-    PRINT_STAT(specialization_failure);
+    PRINT_STAT(loadattr_specialization_success);
+    PRINT_STAT(loadattr_specialization_failure);
     PRINT_STAT(loadattr_hit);
     PRINT_STAT(loadattr_deferred);
     PRINT_STAT(loadattr_miss);
     PRINT_STAT(loadattr_deopt);
+    PRINT_STAT(loadglobal_specialization_success);
+    PRINT_STAT(loadglobal_specialization_failure);
+    PRINT_STAT(loadglobal_hit);
+    PRINT_STAT(loadglobal_deferred);
+    PRINT_STAT(loadglobal_miss);
+    PRINT_STAT(loadglobal_deopt);
 }
 
 #endif
@@ -359,12 +365,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
 
 fail:
-    STAT_INC(specialization_failure);
+    STAT_INC(loadattr_specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(specialization_success);
+    STAT_INC(loadattr_specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
@@ -427,10 +433,12 @@ _Py_Specialize_LoadGlobal(
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
+    STAT_INC(loadglobal_specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
+    STAT_INC(loadglobal_specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;

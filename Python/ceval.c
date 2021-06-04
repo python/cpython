@@ -3033,6 +3033,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 DISPATCH();
             }
             else {
+                STAT_INC(loadglobal_deferred);
                 cache->adaptive.counter--;
                 oparg = cache->adaptive.original_oparg;
                 JUMP_TO_INSTRUCTION(LOAD_GLOBAL);
@@ -3050,6 +3051,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             record_cache_hit(cache0);
+            STAT_INC(loadglobal_hit);
             Py_INCREF(res);
             PUSH(res);
             DISPATCH();
@@ -3069,6 +3071,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
             record_cache_hit(cache0);
+            STAT_INC(loadglobal_hit);
             Py_INCREF(res);
             PUSH(res);
             DISPATCH();
@@ -4478,9 +4481,11 @@ LOAD_ATTR_miss:
 
 LOAD_GLOBAL_miss:
     {
+        STAT_INC(loadglobal_miss);
         _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive;
         record_cache_miss(cache);
         if (too_many_cache_misses(cache)) {
+            STAT_INC(loadglobal_deopt);
             next_instr[-1] = _Py_MAKECODEUNIT(LOAD_GLOBAL_ADAPTIVE, _Py_OPARG(next_instr[-1]));
             cache_backoff(cache);
         }
