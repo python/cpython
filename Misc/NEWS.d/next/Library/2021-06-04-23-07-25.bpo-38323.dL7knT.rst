@@ -1,0 +1,6 @@
+Fix a race condition in asyncio MultiLoopChildWatcher: call the loop
+add_signal_handler() rather than calling directly signal.signal(), so
+signal.set_wakeup_fd() is used to wake up the event loop when the SIGCHLD
+signal is received. Previously, the event loop could block forever if the
+signal was received while the loop was idle. The signal was only proceed
+when another event woke up the event loop. Patch by Victor Stinner.

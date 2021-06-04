@@ -1199,7 +1199,7 @@ class FastChildWatcher(BaseChildWatcher):
 
 
 class MultiLoopChildWatcher(AbstractChildWatcher):
-    """A watcher that doesn't require running loop in the main thread.
+    """A watcher that requires running loop in the main thread.
 
     This implementation registers a SIGCHLD signal handler on
     instantiation (which may conflict with other code that
@@ -1211,30 +1211,25 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     """
 
     # Implementation note:
-    # The class keeps compatibility with AbstractChildWatcher ABC
-    # To achieve this it has empty attach_loop() method
-    # and doesn't accept explicit loop argument
-    # for add_child_handler()/remove_child_handler()
-    # but retrieves the current loop by get_running_loop()
+    # The class keeps compatibility with AbstractChildWatcher ABC.
+    # add_child_handler() and remove_child_handler() retrieve the current loop
+    # by get_running_loop()
 
     def __init__(self):
         self._callbacks = {}
-        self._saved_sighandler = None
+        self._loop = None
 
     def is_active(self):
-        return self._saved_sighandler is not None
+        return (self._loop is not None)
+
+    def _remove_signal_handler(self):
+        self._loop.remove_signal_handler(signal.SIGCHLD)
+        self._loop = None
 
     def close(self):
         self._callbacks.clear()
-        if self._saved_sighandler is None:
-            return
-
-        handler = signal.getsignal(signal.SIGCHLD)
-        if handler != self._sig_chld:
-            logger.warning("SIGCHLD handler was changed by outside code")
-        else:
-            signal.signal(signal.SIGCHLD, self._saved_sighandler)
-        self._saved_sighandler = None
+        if self._loop is not None:
+            self._remove_signal_handler()
 
     def __enter__(self):
         return self
@@ -1257,21 +1252,16 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
             return False
 
     def attach_loop(self, loop):
-        # Don't save the loop but initialize itself if called first time
-        # The reason to do it here is that attach_loop() is called from
-        # unix policy only for the main thread.
-        # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is not None:
+        if loop is None:
             return
 
-        self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-        if self._saved_sighandler is None:
-            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                           "restore to default handler on watcher close.")
-            self._saved_sighandler = signal.SIG_DFL
+        # attach_loop() is called from unix policy only for the main thread.
+        # Main thread is required for subscription on SIGCHLD signal
+        if self._loop is not None:
+            return
 
-        # Set SA_RESTART to limit EINTR occurrences.
-        signal.siginterrupt(signal.SIGCHLD, False)
+        loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
+        self._loop = loop
 
     def _do_waitpid_all(self):
         for pid in list(self._callbacks):
@@ -1314,7 +1304,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
                                  expected_pid, returncode)
                 loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
-    def _sig_chld(self, signum, frame):
+    def _sig_chld(self):
         try:
             self._do_waitpid_all()
         except (SystemExit, KeyboardInterrupt):
