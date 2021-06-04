@@ -43,7 +43,8 @@ are available on all platforms):
 .. data:: METHOD_SHA512
 
    A Modular Crypt Format method with 16 character salt and 86 character
-   hash based on the SHA-512 hash function.  This is the strongest method.
+   hash based on the SHA-512 hash function.  This is the strongest method
+   supported on all UNIX-based operating systems.
 
 .. data:: METHOD_SHA256
 
@@ -66,6 +67,14 @@ are available on all platforms):
 
    The traditional method with a 2 character salt and 13 characters of
    hash.  This is the weakest method.
+
+   .. versionadded:: 3.10
+
+.. data:: METHOD_YESCRYPT
+
+   Another Modular Crypt Format method with 24 character salt and 43
+   character hash based on the yescrypt hash function.  This is the
+   strongest method supported on Linux distributions using libxcrypt.
 
 
 Module Attributes

@@ -45,7 +45,19 @@ def mksalt(method=None, *, rounds=None):
     else:  # modular
         s = f'${method.ident}$'
 
-    if method.ident and method.ident[0] == '2':  # Blowfish variants
+    if method.ident and method.ident == 'y':  # yescrypt
+        if rounds is not None:
+            if not 1 <= rounds <= 11:
+                raise ValueError('rounds out of the range 1 to 11')
+        else:
+            rounds = 5
+        if rounds < 3:
+            s += 'j' + chr(54 + rounds) + '5$'
+        elif rounds < 6:
+            s += 'j' + chr(52 + rounds) + 'T$'
+        elif rounds < 12:
+            s += 'j' + chr(59 + rounds) + 'T$'
+    elif method.ident and method.ident[0] == '2':  # Blowfish variants
         if rounds is None:
             log_rounds = 12
         else:
@@ -102,6 +114,10 @@ def _add_method(name, *args, rounds=None):
         return True
     return False
 
+# Supported by libxcrypt.  Strongest hashing method currently supported.
+_add_method('YESCRYPT', 'y', 24, 75, rounds=1)
+
+# SHA-2 based methods.
 _add_method('SHA512', '6', 16, 106)
 _add_method('SHA256', '5', 16, 63)
 

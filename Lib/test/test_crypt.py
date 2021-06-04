@@ -88,7 +88,34 @@ class CryptTestCase(unittest.TestCase):
             cr2 = crypt.crypt('mypassword', cr)
             self.assertEqual(cr2, cr)
 
+    @unittest.skipUnless(
+        crypt and crypt.METHOD_YESCRYPT in crypt.methods, 'requires support of yescrypt'
+    )
+    def test_yescrypt_rounds(self):
+        for rounds in range(1, 11):
+            if rounds < 3:
+                enc_rounds = 'j' + chr(54 + rounds) + '5'
+            elif rounds < 6:
+                enc_rounds = 'j' + chr(52 + rounds) + 'T'
+            elif rounds < 12:
+                enc_rounds = 'j' + chr(59 + rounds) + 'T'
+            salt = crypt.mksalt(crypt.METHOD_YESCRYPT, rounds=rounds)
+            self.assertIn('$%s$' % enc_rounds, salt)
+            self.assertEqual(len(salt) - crypt.METHOD_YESCRYPT.salt_chars, 7)
+            cr = crypt.crypt('mypassword', salt)
+            self.assertTrue(cr)
+            cr2 = crypt.crypt('mypassword', cr)
+            self.assertEqual(cr2, cr)
+
     def test_invalid_rounds(self):
+        if crypt.METHOD_YESCRYPT in crypt.methods:
+            with self.assertRaises(TypeError):
+                crypt.mksalt(crypt.METHOD_YESCRYPT, rounds='4096')
+            with self.assertRaises(TypeError):
+                crypt.mksalt(crypt.METHOD_YESCRYPT, rounds=4096.0)
+            for rounds in (0, -1, 1000, 1<<999):
+                with self.assertRaises(ValueError):
+                    crypt.mksalt(crypt.METHOD_YESCRYPT, rounds=rounds)
         for method in (crypt.METHOD_SHA256, crypt.METHOD_SHA512,
                        crypt.METHOD_BLOWFISH):
             with self.assertRaises(TypeError):
