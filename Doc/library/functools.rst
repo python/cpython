@@ -160,8 +160,10 @@ The :mod:`functools` module defines the following functions:
    grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
-   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
-   as distinct calls with distinct results.
+   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will always be
+   treated as distinct calls with distinct results.  If *typed* is false,
+   the implementation will usually but not always regard them as equivalent
+   calls and only cache a single result.
 
    The wrapped function is instrumented with a :func:`cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
