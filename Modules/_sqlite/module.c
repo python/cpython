@@ -92,14 +92,15 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
 /*[clinic end generated code: output=450ac9078b4868bb input=938c5058ce37130a]*/
 {
     PyObject *result = NULL;
-    int decref_isolation_level = 0;
 
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
         if (isolation_level == NULL) {
             return NULL;
         }
-        decref_isolation_level = 1;
+    }
+    else {
+        Py_INCREF(isolation_level);
     }
 
     PyObject *obj_timeout = PyFloat_FromDouble(timeout);
@@ -121,9 +122,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                                            NULL);
 
 error:
-    if (decref_isolation_level) {
-        Py_DECREF(isolation_level);
-    }
+    Py_DECREF(isolation_level);
     Py_XDECREF(database);
     Py_XDECREF(obj_timeout);
     Py_XDECREF(obj_detect_types);
