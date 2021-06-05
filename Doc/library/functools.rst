@@ -154,8 +154,7 @@ The :mod:`functools` module defines the following functions:
 
        @lru_cache
        def count_vowels(sentence):
-           sentence = sentence.casefold()
-           return sum(sentence.count(vowel) for vowel in 'aeiou')
+           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.
