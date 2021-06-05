@@ -23,6 +23,7 @@
 
 import unittest
 import unittest.mock
+import gc
 import sqlite3 as sqlite
 
 def func_returntext():
@@ -322,6 +323,22 @@ class FunctionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.con.create_function("deterministic", 0, int, True)
 
+    def test_function_destructor_via_gc(self):
+        # See bpo-44304: The destructor of the user function can
+        # crash if is called without the GIL from the gc functions
+        dest = sqlite.connect(':memory:')
+        def md5sum(t):
+            return
+
+        dest.create_function("md5", 1, md5sum)
+        x = dest("create table lang (name, first_appeared)")
+        del md5sum, dest
+
+        y = [x]
+        y.append(y)
+
+        del x,y
+        gc.collect()
 
 class AggregateTests(unittest.TestCase):
     def setUp(self):
