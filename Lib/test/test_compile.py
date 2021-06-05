@@ -6,6 +6,7 @@ import sys
 import _ast
 import tempfile
 import types
+import textwrap
 from test import support
 from test.support import script_helper
 from test.support.os_helper import FakePath
@@ -790,6 +791,41 @@ if 1:
                 self.assertEqual(2, len(opcodes))
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_imported_load_method(self):
+        sources = [
+            """\
+            import ast
+            def foo():
+                return ast.Name('abydos')
+            """,
+            """\
+            import ast as python_ast
+            def foo():
+                return python_ast.Name('chulak')
+            """,
+            """\
+            from concurrent import futures
+            def foo():
+                return futures.Executor()
+            """,
+            """\
+            from concurrent import futures as c_futures
+            def foo():
+                return c_futures.Executor()
+            """
+        ]
+        for source in sources:
+            namespace = {}
+            exec(textwrap.dedent(source), namespace)
+            func = namespace['foo']
+            with self.subTest(func=func.__name__):
+                opcodes = list(dis.get_instructions(func))
+                instructions = [opcode.opname for opcode in opcodes]
+                self.assertNotIn('LOAD_METHOD', instructions)
+                self.assertNotIn('CALL_METHOD', instructions)
+                self.assertIn('LOAD_ATTR', instructions)
+                self.assertIn('CALL_FUNCTION', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
