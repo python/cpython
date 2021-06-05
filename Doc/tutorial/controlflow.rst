@@ -214,6 +214,7 @@ iteration of the loop::
     ...         print("Found an even number", num)
     ...         continue
     ...     print("Found an odd number", num)
+    ...
     Found an even number 2
     Found an odd number 3
     Found an even number 4
@@ -1038,7 +1039,7 @@ function.  Parameter annotations are defined by a colon after the parameter name
 by an expression evaluating to the value of the annotation.  Return annotations are
 defined by a literal ``->``, followed by an expression, between the parameter
 list and the colon denoting the end of the :keyword:`def` statement.  The
-following example has a positional argument, a keyword argument, and the return
+following example has a required argument, an optional argument, and the return
 value annotated::
 
    >>> def f(ham: str, eggs: str = 'eggs') -> str:

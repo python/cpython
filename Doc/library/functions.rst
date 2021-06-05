@@ -12,31 +12,31 @@ are always available.  They are listed here in alphabetical order.
 +=========================+=======================+=======================+=========================+
 | |  **A**                | |  **E**              | |  **L**              | |  **R**                |
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| |  :func:`all`          | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| |  :func:`any`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`ascii`        | |                     | |                     | |  :func:`round`        |
-| |                       | |  **F**              | |  **M**              | |                       |
-| |  **B**                | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
-| |  :func:`bin`          | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| |  :func:`bool`         | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`breakpoint`   | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| |  |func-bytearray|_    | |                     | |                     | |  :func:`sorted`       |
-| |  |func-bytes|_        | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| |                       | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| |  **C**                | |  :func:`globals`    | |                     | |  :func:`sum`          |
-| |  :func:`callable`     | |                     | |  **O**              | |  :func:`super`        |
-| |  :func:`chr`          | |  **H**              | |  :func:`object`     | |                       |
-| |  :func:`classmethod`  | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| |  :func:`compile`      | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`complex`      | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| |                       | |  :func:`hex`        | |                     | |                       |
-| |  **D**                | |                     | |  **P**              | |  **V**                |
-| |  :func:`delattr`      | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| |  |func-dict|_         | |  :func:`id`         | |  :func:`print`      | |                       |
-| |  :func:`dir`          | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| |  :func:`divmod`       | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |                       | |  :func:`isinstance` | |                     | |                       |
-| |                       | |  :func:`issubclass` | |                     | |  **_**                |
+| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
+| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
+| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
+| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
+| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
+| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
+| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
+| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
+| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
+| |                       | |                     | |  **O**              | |  :func:`super`        |
+| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
+| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
+| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
+| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
+| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
+| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
+| |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
+| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
+| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
+| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
+| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
+| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
@@ -61,6 +61,18 @@ are always available.  They are listed here in alphabetical order.
    If the argument is a complex number, its magnitude is returned.
 
 
+.. function:: aiter(async_iterable)
+
+   Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
+   Equivalent to calling ``x.__aiter__()``.
+
+   ``aiter(x)`` itself has an ``__aiter__()`` method that returns ``x``,
+   so ``aiter(aiter(x))`` is the same as ``aiter(x)``.
+
+   Note: Unlike :func:`iter`, :func:`aiter` has no 2-argument variant.
+
+   .. versionadded:: 3.10
+
 .. function:: all(iterable)
 
    Return ``True`` if all elements of the *iterable* are true (or if the iterable
@@ -72,6 +84,21 @@ are always available.  They are listed here in alphabetical order.
                   return False
           return True
 
+
+.. awaitablefunction:: anext(async_iterator[, default])
+
+   When awaited, return the next item from the given :term:`asynchronous
+   iterator`, or *default* if given and the iterator is exhausted.
+
+   This is the async variant of the :func:`next` builtin, and behaves
+   similarly.
+
+   This calls the :meth:`~object.__anext__` method of *async_iterator*,
+   returning an :term:`awaitable`. Awaiting this returns the next value of the
+   iterator. If *default* is given, it is returned if the iterator is exhausted,
+   otherwise :exc:`StopAsyncIteration` is raised.
+
+   .. versionadded:: 3.10
 
 .. function:: any(iterable)
 
@@ -241,6 +268,11 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.9
       Class methods can now wrap other :term:`descriptors <descriptor>` such as
       :func:`property`.
+
+   .. versionchanged:: 3.10
+      Class methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``) and
+      have a new ``__wrapped__`` attribute.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
@@ -990,7 +1022,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-memoryview:
-.. class:: memoryview(obj)
+.. class:: memoryview(object)
    :noindex:
 
    Return a "memory view" object created from the given argument.  See
@@ -1587,8 +1619,9 @@ are always available.  They are listed here in alphabetical order.
    The ``@staticmethod`` form is a function :term:`decorator` -- see
    :ref:`function` for details.
 
-   A static method can be called either on the class (such as ``C.f()``) or on an instance (such
-   as ``C().f()``).
+   A static method can be called either on the class (such as ``C.f()``) or on
+   an instance (such as ``C().f()``). Moreover, they can be called as regular
+   functions (such as ``f()``).
 
    Static methods in Python are similar to those found in Java or C++. Also see
    :func:`classmethod` for a variant that is useful for creating alternate class
@@ -1600,10 +1633,19 @@ are always available.  They are listed here in alphabetical order.
    body and you want to avoid the automatic transformation to instance
    method.  For these cases, use this idiom::
 
+      def regular_function():
+          ...
+
       class C:
-          builtin_open = staticmethod(open)
+          method = staticmethod(regular_function)
 
    For more information on static methods, see :ref:`types`.
+
+   .. versionchanged:: 3.10
+      Static methods now inherit the method attributes (``__module__``,
+      ``__name__``, ``__qualname__``, ``__doc__`` and ``__annotations__``),
+      have a new ``__wrapped__`` attribute, and are now callable as regular
+      functions.
 
 
 .. index::
@@ -1635,7 +1677,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       The *start* parameter can be specified as a keyword argument.
 
-.. function:: super([type[, object-or-type]])
+.. class:: super([type[, object-or-type]])
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
@@ -1669,7 +1711,7 @@ are always available.  They are listed here in alphabetical order.
    not found in statically compiled languages or languages that only support
    single inheritance.  This makes it possible to implement "diamond diagrams"
    where multiple base classes implement the same method.  Good design dictates
-   that this method have the same calling signature in every case (because the
+   that such implementations have the same calling signature in every case (because the
    order of calls is determined at runtime, because that order adapts
    to changes in the class hierarchy, and because that order can include
    sibling classes that are unknown prior to runtime).

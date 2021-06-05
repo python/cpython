@@ -1,0 +1,5 @@
+:mod:`urllib.parse` now uses :func:`functool.lru_cache` for its internal URL
+splitting and quoting caches instead of rolling its own like its the '90s.
+
+The undocumented internal :mod:`urllib.parse` ``Quoted`` class API is now
+deprecated, for removal in 3.14.

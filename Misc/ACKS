@@ -33,6 +33,7 @@ Nir Aides
 Akira
 Yaniv Aknin
 Jyrki Alakuijala
+Tatiana Al-Chueyr
 Steve Alexander
 Fred Allen
 Jeff Allen
@@ -139,6 +140,7 @@ Bas van Beek
 Ian Beer
 Stefan Behnel
 Reimer Behrends
+Maxime Bélanger
 Ben Bell
 Thomas Bellman
 John Belmonte
@@ -156,6 +158,7 @@ Michel Van den Bergh
 Julian Berman
 Brice Berna
 Olivier Bernard
+Vivien Bernet-Rollande
 Maxwell Bernstein
 Eric Beser
 Steven Bethard
@@ -205,6 +208,7 @@ Eric Bouck
 Thierry Bousch
 Sebastian Boving
 Michal Bozon
+Arseny Boykov
 Jeff Bradberry
 Chris Bradbury
 Aaron Brancotti
@@ -359,6 +363,7 @@ Mircea Cosbuc
 David Costanzo
 Scott Cotton
 Greg Couch
+FX Coudert
 David Cournapeau
 Julien Courteau
 Steve Cousins
@@ -385,7 +390,7 @@ Brian Curtin
 Jason Curtis
 Hakan Celik
 Paul Dagnelie
-Florian Dahlitz 
+Florian Dahlitz
 Lisandro Dalcin
 Darren Dale
 Andrew Dalke
@@ -393,6 +398,7 @@ Lars Damerow
 Evan Dandrea
 Eric Daniel
 Scott David Daniels
+Lawrence D'Anna
 Ben Darnell
 Kushal Das
 Jonathan Dasteel
@@ -635,6 +641,7 @@ Andrea Griffini
 Duncan Grisby
 Olivier Grisel
 Fabian Groffen
+Linus Groh
 Eric Groo
 Daniel Andrade Groppe
 Dag Gruneau
@@ -691,6 +698,7 @@ Michael Haubenwallner
 Janko Hauser
 Flavian Hautbois
 Rycharde Hawkes
+Yahor Harunovich
 Ben Hayden
 Jochen Hayek
 Tim Heaney
@@ -719,6 +727,7 @@ Kevan Heydon
 Wouter van Heyst
 Kelsey Hightower
 Jason Hildebrand
+Ryan Hileman
 Aaron Hill
 Joel Hillacre
 Richie Hindle
@@ -727,6 +736,7 @@ David Hobley
 Tim Hochberg
 Benjamin Hodgson
 Joerg-Cyril Hoehle
+Douwe Hoekstra
 Gregor Hoffleit
 Chris Hoffman
 Tim Hoffmann
@@ -770,6 +780,7 @@ Christian Hudon
 Benoît Hudson
 Lawrence Hudson
 Michael Hudson
+Roberto Hueso Gomez
 Jim Hugunin
 Greg Humphreys
 Chris Hunt
@@ -902,6 +913,7 @@ James King
 W. Trevor King
 Jeffrey Kintscher
 Paul Kippes
+Sergey B Kirpichev
 Steve Kirsch
 Sebastian Kirsche
 Kamil Kisiel
@@ -1380,6 +1392,7 @@ Matheus Vieira Portela
 Davin Potts
 Guillaume Pratte
 Florian Preinstorfer
+Alex Prengère
 Amrit Prem
 Paul Prescod
 Donovan Preston
@@ -1446,6 +1459,7 @@ Vlad Riscutia
 Wes Rishel
 Daniel Riti
 Juan M. Bello Rivas
+Llandy Riveron Del Risco
 Mohd Sanad Zaki Rizvi
 Davide Rizzo
 Anthony Roach
@@ -1502,6 +1516,7 @@ Mark Russell
 Rusty Russell
 Nick Russo
 James Rutherford
+Eli Rykoff
 Chris Ryland
 Bernt Røskar Brenna
 Constantina S.
@@ -1794,16 +1809,19 @@ Adnan Umer
 Utkarsh Upadhyay
 Roger Upole
 Daniel Urban
+Matthias Urlichs
 Michael Urman
 Hector Urtubia
 Elizabeth Uselton
 Lukas Vacek
+Juho Vähä-Herttua
 Ville Vainio
 Yann Vaginay
 Andi Vajda
 Case Van Horsen
 John Mark Vandenberg
 Kyle VanderBeek
+Wm. Keith van der Meulen
 Eric N. Vander Weele
 Andrew Vant
 Atul Varma
@@ -1919,6 +1937,7 @@ David Wolever
 Klaus-Juergen Wolf
 Dan Wolfe
 Richard Wolff
+Tymoteusz Wołodźko
 Adam Woodbeck
 William Woodruff
 Steven Work

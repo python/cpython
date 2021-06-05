@@ -275,7 +275,6 @@ class CodeopTests(unittest.TestCase):
         ai("a = 'a\\\n")
 
         ai("a = 1","eval")
-        ai("a = (","eval")
         ai("]","eval")
         ai("())","eval")
         ai("[}","eval")

@@ -78,8 +78,8 @@ def find_loader(name, path=None):
     This function is deprecated in favor of importlib.util.find_spec().
 
     """
-    warnings.warn('Deprecated since Python 3.4. '
-                  'Use importlib.util.find_spec() instead.',
+    warnings.warn('Deprecated since Python 3.4 and slated for removal in '
+                  'Python 3.10; use importlib.util.find_spec() instead',
                   DeprecationWarning, stacklevel=2)
     try:
         loader = sys.modules[name].__loader__

@@ -1,6 +1,7 @@
 import ast
 import builtins
 import dis
+import enum
 import os
 import sys
 import types
@@ -334,6 +335,26 @@ class AST_Tests(unittest.TestCase):
         self.assertIsInstance(mod.body[0], ast.ImportFrom)
         mod.body[0].module = " __future__ ".strip()
         compile(mod, "<test>", "exec")
+
+    def test_alias(self):
+        im = ast.parse("from bar import y").body[0]
+        self.assertEqual(len(im.names), 1)
+        alias = im.names[0]
+        self.assertEqual(alias.name, 'y')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
+
+        im = ast.parse("from bar import *").body[0]
+        alias = im.names[0]
+        self.assertEqual(alias.name, '*')
+        self.assertIsNone(alias.asname)
+        self.assertEqual(alias.lineno, 1)
+        self.assertEqual(alias.end_lineno, 1)
+        self.assertEqual(alias.col_offset, 16)
+        self.assertEqual(alias.end_col_offset, 17)
 
     def test_base_classes(self):
         self.assertTrue(issubclass(ast.For, ast.stmt))
@@ -677,6 +698,36 @@ class AST_Tests(unittest.TestCase):
             ast.fix_missing_locations(expr)
             with self.assertRaisesRegex(ValueError, f"Name node can't be used with '{constant}' constant"):
                 compile(expr, "<test>", "eval")
+
+    def test_precedence_enum(self):
+        class _Precedence(enum.IntEnum):
+            """Precedence table that originated from python grammar."""
+            NAMED_EXPR = enum.auto()      # <target> := <expr1>
+            TUPLE = enum.auto()           # <expr1>, <expr2>
+            YIELD = enum.auto()           # 'yield', 'yield from'
+            TEST = enum.auto()            # 'if'-'else', 'lambda'
+            OR = enum.auto()              # 'or'
+            AND = enum.auto()             # 'and'
+            NOT = enum.auto()             # 'not'
+            CMP = enum.auto()             # '<', '>', '==', '>=', '<=', '!=',
+                                          # 'in', 'not in', 'is', 'is not'
+            EXPR = enum.auto()
+            BOR = EXPR                    # '|'
+            BXOR = enum.auto()            # '^'
+            BAND = enum.auto()            # '&'
+            SHIFT = enum.auto()           # '<<', '>>'
+            ARITH = enum.auto()           # '+', '-'
+            TERM = enum.auto()            # '*', '@', '/', '%', '//'
+            FACTOR = enum.auto()          # unary '+', '-', '~'
+            POWER = enum.auto()           # '**'
+            AWAIT = enum.auto()           # 'await'
+            ATOM = enum.auto()
+            def next(self):
+                try:
+                    return self.__class__(self + 1)
+                except ValueError:
+                    return self
+        enum._test_simple_enum(_Precedence, ast._Precedence)
 
 
 class ASTHelpers_Test(unittest.TestCase):
@@ -1037,7 +1088,8 @@ Module(
 
     def test_level_as_none(self):
         body = [ast.ImportFrom(module='time',
-                               names=[ast.alias(name='sleep')],
+                               names=[ast.alias(name='sleep',
+                                                lineno=0, col_offset=0)],
                                level=None,
                                lineno=0, col_offset=0)]
         mod = ast.Module(body, [])
@@ -1045,6 +1097,20 @@ Module(
         ns = {}
         exec(code, ns)
         self.assertIn('sleep', ns)
+
+    def test_recursion_direct(self):
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e.operand = e
+        with self.assertRaises(RecursionError):
+            compile(ast.Expression(e), "<test>", "eval")
+
+    def test_recursion_indirect(self):
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e.operand = f
+        f.operand = e
+        with self.assertRaises(RecursionError):
+            compile(ast.Expression(e), "<test>", "eval")
 
 
 class ASTValidatorTests(unittest.TestCase):
@@ -1735,6 +1801,7 @@ class EndPositionTests(unittest.TestCase):
         ''').strip()
         imp = ast.parse(s).body[0]
         self._check_end_pos(imp, 3, 1)
+        self._check_end_pos(imp.names[2], 2, 16)
 
     def test_slices(self):
         s1 = 'f()[1, 2] [0]'
@@ -2095,8 +2162,8 @@ exec_results = [
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),
 ('Module', [('Assert', (1, 0, 1, 8), ('Name', (1, 7, 1, 8), 'v', ('Load',)), None)], []),
-('Module', [('Import', (1, 0, 1, 10), [('alias', 'sys', None)])], []),
-('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', 'v', None)], 0)], []),
+('Module', [('Import', (1, 0, 1, 10), [('alias', (1, 7, 1, 10), 'sys', None)])], []),
+('Module', [('ImportFrom', (1, 0, 1, 17), 'sys', [('alias', (1, 16, 1, 17), 'v', None)], 0)], []),
 ('Module', [('Global', (1, 0, 1, 8), ['v'])], []),
 ('Module', [('Expr', (1, 0, 1, 1), ('Constant', (1, 0, 1, 1), 1, None))], []),
 ('Module', [('Pass', (1, 0, 1, 4))], []),
