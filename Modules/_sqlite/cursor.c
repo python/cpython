@@ -119,7 +119,7 @@ cursor_dealloc(pysqlite_Cursor *self)
     }
     /* Reset the statement if the user has not closed the cursor */
     if (self->statement) {
-        (void)pysqlite_statement_reset(self->statement);
+        (void)sqlite3_reset(self->statement->st);
     }
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
