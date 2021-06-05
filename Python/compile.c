@@ -1271,6 +1271,8 @@ stack_effect(int opcode, int oparg, int jump)
             return 2;
         case ROT_N:
             return 0;
+        case ATTEMPT_SAFE_MATCH:
+            return jump > 0 ? -2 : -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -6454,6 +6456,104 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
     return compiler_error(c, e, p->kind);
 }
 
+static inline int
+case_safe_for_table(match_case_ty m)
+{
+    PyObject *val;
+    expr_ty e;
+    switch(m->pattern->kind) {
+        case MatchValue_kind:
+            e = m->pattern->v.MatchValue.value;
+            if (e->kind != Constant_kind) {
+                return 0;
+            }
+            val = e->v.Constant.value;
+            return PyLong_CheckExact(val) || PyUnicode_CheckExact(val);
+        case MatchSingleton_kind:
+            val = m->pattern->v.MatchSingleton.value;
+            return Py_Is(val, Py_None);
+        default:
+            return 0;
+    }
+}
+
+static inline PyObject *
+case_get_safe_value(match_case_ty m)
+{
+    switch(m->pattern->kind) {
+        case MatchValue_kind:
+            return Py_NewRef(m->pattern->v.MatchValue.value->v.Constant.value);
+        case MatchSingleton_kind:
+            return Py_NewRef(m->pattern->v.MatchValue.value);
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+#define MIN_CASES_FOR_JUMP_TABLE 2
+
+static int
+maybe_make_jump_table(struct compiler *c, stmt_ty s, basicblock *end,
+                      jump_table **result)
+{
+    // Determine whether to use a table
+    Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
+    if (cases < MIN_CASES_FOR_JUMP_TABLE) {
+        *result = NULL;
+        return 1;
+    }
+    for (Py_ssize_t i = 0; i < cases; i++) {
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        if (!case_safe_for_table(m)) {
+            *result = NULL;
+            return 1;
+        }
+    }
+    // allocate and initialize table
+    jump_table *table;
+    RETURN_IF_FALSE(table = PyMem_Calloc(1, sizeof(jump_table)));
+    if (!(table->keys = PyList_New(cases))) {
+        goto error;
+    }
+    if (!(table->placeholder
+          = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type))) {
+        goto error;
+    }
+    if (!(table->values = PyMem_Calloc(cases, sizeof(basicblock *)))) {
+        goto error;
+    }
+    // Initialize keys
+    for (Py_ssize_t i = 0; i < cases; i++) {
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        PyObject *val = case_get_safe_value(m);
+        PyList_SET_ITEM(table->keys, i, val);
+    }
+    // Add the LOAD_COST and ATTEMPT_SAFE_MATCH opcodes
+    SET_LOC(c, asdl_seq_GET(s->v.Match.cases, 0)->pattern);
+    if (!compiler_addop_load_const(c, table->placeholder)) {
+        goto error;
+    }
+    if (!compiler_addop_j(c, ATTEMPT_SAFE_MATCH, end)) {
+        goto error;
+    }
+    if (!compiler_next_block(c)) {
+        goto error;
+    }
+    // Push onto the linked list
+    table->previous = c->c_jump_table_tail;
+    c->c_jump_table_tail = table;
+    *result = table;
+    return 1;
+  error:
+    if (table->values) {
+        PyMem_Free(table->values);
+    }
+    Py_XDECREF(table->placeholder);
+    Py_XDECREF(table->keys);
+    PyMem_Free(table);
+    return 0;
+}
+
 static int
 compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
@@ -6462,6 +6562,8 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
+    jump_table *table;
+    RETURN_IF_FALSE(maybe_make_jump_table(c, s, end, &table));
     match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
@@ -6501,6 +6603,11 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
             ADDOP(c, POP_TOP);
+        }
+        if (table) {
+            NEXT_BLOCK(c);
+            // add to table
+            table->values[i] = c->u->u_curblock;
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
