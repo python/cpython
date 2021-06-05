@@ -48,16 +48,15 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
-static int pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
+static int
+pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
 {
-    const char* p;
-    int is_dml = 0;
+    int is_dml = !sqlite3_stmt_readonly(statement);
 
-    is_dml = !sqlite3_stmt_readonly(statement);
     if (is_dml) {
         /* Retain backwards-compatibility, as sqlite3_stmt_readonly will return
          * false for BEGIN [IMMEDIATE|EXCLUSIVE] or DDL statements. */
-        for (p = sql; *p != 0; p++) {
+        for (const char *p = sql; *p != 0; p++) {
             switch (*p) {
                 case ' ':
                 case '\r':
