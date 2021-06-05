@@ -48,7 +48,8 @@ typedef enum {
     TYPE_UNKNOWN
 } parameter_type;
 
-int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql)
+pysqlite_Statement *
+pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 {
     const char* tail;
     int rc;
@@ -56,27 +57,42 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     Py_ssize_t sql_cstr_len;
     const char* p;
 
-    self->st = NULL;
-    self->in_use = 0;
-
     assert(PyUnicode_Check(sql));
 
     sql_cstr = PyUnicode_AsUTF8AndSize(sql, &sql_cstr_len);
     if (sql_cstr == NULL) {
-        rc = PYSQLITE_SQL_WRONG_TYPE;
-        return rc;
-    }
-    if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
-        PyErr_SetString(PyExc_ValueError, "the query contains a null character");
-        return PYSQLITE_SQL_WRONG_TYPE;
+        PyErr_Format(pysqlite_Warning,
+                     "SQL is of wrong type ('%s'). Must be string.",
+                     Py_TYPE(sql)->tp_name);
+        return NULL;
     }
 
-    self->in_weakreflist = NULL;
+    int max_length = sqlite3_limit(connection->db, SQLITE_LIMIT_LENGTH, -1);
+    if (sql_cstr_len >= max_length) {
+        PyErr_SetString(pysqlite_DataError, "query string is too large");
+        return NULL;
+    }
+    if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
+        PyErr_SetString(PyExc_ValueError,
+                        "the query contains a null character");
+        return NULL;
+    }
+
+    pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
+                                               pysqlite_StatementType);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->db = connection->db;
+    self->st = NULL;
     self->sql = Py_NewRef(sql);
+    self->in_use = 0;
+    self->is_dml = 0;
+    self->in_weakreflist = NULL;
 
     /* Determine if the statement is a DML statement.
        SELECT is the only exception. See #9924. */
-    self->is_dml = 0;
     for (p = sql_cstr; *p != 0; p++) {
         switch (*p) {
             case ' ':
@@ -94,22 +110,33 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare_v2(connection->db,
+    rc = sqlite3_prepare_v2(self->db,
                             sql_cstr,
-                            -1,
+                            (int)sql_cstr_len + 1,
                             &self->st,
                             &tail);
     Py_END_ALLOW_THREADS
 
-    self->db = connection->db;
+    PyObject_GC_Track(self);
+
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(self->db);
+        goto error;
+    }
 
     if (rc == SQLITE_OK && pysqlite_check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
         self->st = NULL;
-        rc = PYSQLITE_TOO_MUCH_SQL;
+        PyErr_SetString(pysqlite_Warning,
+                        "You can only execute one statement at a time.");
+        goto error;
     }
 
-    return rc;
+    return self;
+
+error:
+    Py_DECREF(self);
+    return NULL;
 }
 
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
@@ -369,26 +396,35 @@ void pysqlite_statement_mark_dirty(pysqlite_Statement* self)
 }
 
 static void
-pysqlite_statement_dealloc(pysqlite_Statement *self)
+stmt_dealloc(pysqlite_Statement *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-
-    if (self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        sqlite3_finalize(self->st);
-        Py_END_ALLOW_THREADS
-    }
-
-    self->st = NULL;
-
-    Py_XDECREF(self->sql);
-
+    PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
     }
-
+    if (self->st) {
+        sqlite3_finalize(self->st);
+        self->st = 0;
+    }
+    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+stmt_clear(pysqlite_Statement *self)
+{
+    Py_CLEAR(self->sql);
+    return 0;
+}
+
+static int
+stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->sql);
+    return 0;
 }
 
 /*
@@ -467,15 +503,16 @@ static PyMemberDef stmt_members[] = {
 };
 static PyType_Slot stmt_slots[] = {
     {Py_tp_members, stmt_members},
-    {Py_tp_dealloc, pysqlite_statement_dealloc},
-    {Py_tp_new, PyType_GenericNew},
+    {Py_tp_dealloc, stmt_dealloc},
+    {Py_tp_traverse, stmt_traverse},
+    {Py_tp_clear, stmt_clear},
     {0, NULL},
 };
 
 static PyType_Spec stmt_spec = {
     .name = MODULE_NAME ".Statement",
     .basicsize = sizeof(pysqlite_Statement),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = stmt_slots,
 };
 PyTypeObject *pysqlite_StatementType = NULL;

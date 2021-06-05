@@ -134,8 +134,12 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             ...
         async def g2(arg: {ann}) -> None:
             ...
+        class H:
+            var: {ann}
+            object.attr: {ann}
         var: {ann}
         var2: {ann} = None
+        object.attr: {ann}
         """
     )
 
@@ -166,6 +170,14 @@ class AnnotationsFutureTestCase(unittest.TestCase):
             actual = actual.replace("(", "").replace(")", "")
 
         self.assertEqual(actual, expected)
+
+    def _exec_future(self, code):
+        scope = {}
+        exec(
+            "from __future__ import annotations\n"
+            + code, {}, scope
+        )
+        return scope
 
     def test_annotations(self):
         eq = self.assertAnnotationEqual
@@ -306,10 +318,6 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq("f'{x}'")
         eq("f'{x!r}'")
         eq("f'{x!a}'")
-        eq('(yield from outside_of_generator)')
-        eq('(yield)')
-        eq('(yield a + b)')
-        eq('await some.complicated[0].call(with_args=True or 1 is not 1)')
         eq('[x for x in (a if b else c)]')
         eq('[x for x in a if (b if c else d)]')
         eq('f(x for x in a)')
@@ -317,8 +325,6 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('f((x for x in a), 2)')
         eq('(((a)))', 'a')
         eq('(((a, b)))', '(a, b)')
-        eq("(x := 10)")
-        eq("f'{(x := 10):=10}'")
         eq("1 + 2 + 3")
 
     def test_fstring_debug_annotations(self):
@@ -342,6 +348,60 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         self.assertAnnotationEqual("'inf'")
         self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")
         self.assertAnnotationEqual("(1e1000, (1e1000j,))", expected=f"({inf}, ({infj},))")
+
+    def test_annotation_with_complex_target(self):
+        with self.assertRaises(SyntaxError):
+            exec(
+                "from __future__ import annotations\n"
+                "object.__debug__: int"
+            )
+
+    def test_annotations_symbol_table_pass(self):
+        namespace = self._exec_future(dedent("""
+        from __future__ import annotations
+
+        def foo():
+            outer = 1
+            def bar():
+                inner: outer = 1
+            return bar
+        """))
+
+        foo = namespace.pop("foo")
+        self.assertIsNone(foo().__closure__)
+        self.assertEqual(foo.__code__.co_cellvars, ())
+        self.assertEqual(foo().__code__.co_freevars, ())
+
+    def test_annotations_forbidden(self):
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test: (yield)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test.test: (yield a + b)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test[something]: (yield from x)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("def func(test: (yield from outside_of_generator)): pass")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("def test() -> (await y): pass")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("async def test() -> something((a := b)): pass")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test: await some.complicated[0].call(with_args=True or 1 is not 1)")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future("test: f'{(x := 10):=10}'")
+
+        with self.assertRaises(SyntaxError):
+            self._exec_future(dedent("""\
+            def foo():
+                def bar(arg: (yield)): pass
+            """))
 
 
 if __name__ == "__main__":

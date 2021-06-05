@@ -1,1 +1,0 @@
-Adds :data:`resource.RLIMIT_KQUEUES` constant from FreeBSD to the :mod:`resource` module.

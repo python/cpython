@@ -506,6 +506,47 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi2.archive, TEMP_ZIP)
         self.assertEqual(zi2.prefix, TESTPACK + os.sep)
 
+    def testInvalidateCaches(self):
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        files = {packdir + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
+                 packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc),
+                 "spam" + pyc_ext: (NOW, test_pyc)}
+        self.addCleanup(os_helper.unlink, TEMP_ZIP)
+        with ZipFile(TEMP_ZIP, "w") as z:
+            for name, (mtime, data) in files.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
+                z.writestr(zinfo, data)
+
+        zi = zipimport.zipimporter(TEMP_ZIP)
+        self.assertEqual(zi._files.keys(), files.keys())
+        # Check that the file information remains accurate after reloading
+        zi.invalidate_caches()
+        self.assertEqual(zi._files.keys(), files.keys())
+        # Add a new file to the ZIP archive
+        newfile = {"spam2" + pyc_ext: (NOW, test_pyc)}
+        files.update(newfile)
+        with ZipFile(TEMP_ZIP, "a") as z:
+            for name, (mtime, data) in newfile.items():
+                zinfo = ZipInfo(name, time.localtime(mtime))
+                zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
+                z.writestr(zinfo, data)
+        # Check that we can detect the new file after invalidating the cache
+        zi.invalidate_caches()
+        self.assertEqual(zi._files.keys(), files.keys())
+        spec = zi.find_spec('spam2')
+        self.assertIsNotNone(spec)
+        self.assertIsInstance(spec.loader, zipimport.zipimporter)
+        # Check that the cached data is removed if the file is deleted
+        os.remove(TEMP_ZIP)
+        zi.invalidate_caches()
+        self.assertIsNone(zi._files)
+        self.assertIsNone(zipimport._zip_directory_cache.get(zi.archive))
+
     def testZipImporterMethodsInSubDirectory(self):
         packdir = TESTPACK + os.sep
         packdir2 = packdir + TESTPACK2 + os.sep

@@ -1,6 +1,5 @@
-
 #include "Python.h"
-
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "clinic/_operator.c.h"
 
 typedef struct {
@@ -12,7 +11,7 @@ typedef struct {
 static inline _operator_state*
 get_operator_state(PyObject *module)
 {
-    void *state = PyModule_GetState(module);
+    void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (_operator_state *)state;
 }
@@ -1005,12 +1004,19 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)ig;
 }
 
+static int
+itemgetter_clear(itemgetterobject *ig)
+{
+    Py_CLEAR(ig->item);
+    return 0;
+}
+
 static void
 itemgetter_dealloc(itemgetterobject *ig)
 {
     PyTypeObject *tp = Py_TYPE(ig);
     PyObject_GC_UnTrack(ig);
-    Py_XDECREF(ig->item);
+    (void)itemgetter_clear(ig);
     tp->tp_free(ig);
     Py_DECREF(tp);
 }
@@ -1018,6 +1024,7 @@ itemgetter_dealloc(itemgetterobject *ig)
 static int
 itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 {
+    Py_VISIT(Py_TYPE(ig));
     Py_VISIT(ig->item);
     return 0;
 }
@@ -1114,6 +1121,7 @@ static PyType_Slot itemgetter_type_slots[] = {
     {Py_tp_dealloc, itemgetter_dealloc},
     {Py_tp_call, itemgetter_call},
     {Py_tp_traverse, itemgetter_traverse},
+    {Py_tp_clear, itemgetter_clear},
     {Py_tp_methods, itemgetter_methods},
     {Py_tp_new, itemgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1251,12 +1259,19 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)ag;
 }
 
+static int
+attrgetter_clear(attrgetterobject *ag)
+{
+    Py_CLEAR(ag->attr);
+    return 0;
+}
+
 static void
 attrgetter_dealloc(attrgetterobject *ag)
 {
     PyTypeObject *tp = Py_TYPE(ag);
     PyObject_GC_UnTrack(ag);
-    Py_XDECREF(ag->attr);
+    (void)attrgetter_clear(ag);
     tp->tp_free(ag);
     Py_DECREF(tp);
 }
@@ -1265,6 +1280,7 @@ static int
 attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 {
     Py_VISIT(ag->attr);
+    Py_VISIT(Py_TYPE(ag));
     return 0;
 }
 
@@ -1436,6 +1452,7 @@ static PyType_Slot attrgetter_type_slots[] = {
     {Py_tp_dealloc, attrgetter_dealloc},
     {Py_tp_call, attrgetter_call},
     {Py_tp_traverse, attrgetter_traverse},
+    {Py_tp_clear, attrgetter_clear},
     {Py_tp_methods, attrgetter_methods},
     {Py_tp_new, attrgetter_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1506,14 +1523,21 @@ methodcaller_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)mc;
 }
 
+static int
+methodcaller_clear(methodcallerobject *mc)
+{
+    Py_CLEAR(mc->name);
+    Py_CLEAR(mc->args);
+    Py_CLEAR(mc->kwds);
+    return 0;
+}
+
 static void
 methodcaller_dealloc(methodcallerobject *mc)
 {
     PyTypeObject *tp = Py_TYPE(mc);
     PyObject_GC_UnTrack(mc);
-    Py_XDECREF(mc->name);
-    Py_XDECREF(mc->args);
-    Py_XDECREF(mc->kwds);
+    (void)methodcaller_clear(mc);
     tp->tp_free(mc);
     Py_DECREF(tp);
 }
@@ -1521,8 +1545,10 @@ methodcaller_dealloc(methodcallerobject *mc)
 static int
 methodcaller_traverse(methodcallerobject *mc, visitproc visit, void *arg)
 {
+    Py_VISIT(mc->name);
     Py_VISIT(mc->args);
     Py_VISIT(mc->kwds);
+    Py_VISIT(Py_TYPE(mc));
     return 0;
 }
 
@@ -1681,6 +1707,7 @@ static PyType_Slot methodcaller_type_slots[] = {
     {Py_tp_dealloc, methodcaller_dealloc},
     {Py_tp_call, methodcaller_call},
     {Py_tp_traverse, methodcaller_traverse},
+    {Py_tp_clear, methodcaller_clear},
     {Py_tp_methods, methodcaller_methods},
     {Py_tp_new, methodcaller_new},
     {Py_tp_getattro, PyObject_GenericGetAttr},

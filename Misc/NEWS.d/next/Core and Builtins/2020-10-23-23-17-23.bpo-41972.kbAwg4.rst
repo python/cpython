@@ -1,1 +1,0 @@
-Substring search functions such as ``str1 in str2`` and ``str2.find(str1)`` now sometimes use the "Two-Way" string comparison algorithm to avoid quadratic behavior on long strings.

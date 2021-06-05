@@ -1,7 +1,0 @@
-The :data:`types.FunctionType` constructor now inherits the current builtins if
-the *globals* dictionary has no ``"__builtins__"`` key, rather than using
-``{"None": None}`` as builtins: same behavior as :func:`eval` and :func:`exec`
-functions. Defining a function with ``def function(...): ...`` in Python is
-not affected, globals cannot be overriden with this syntax: it also inherits
-the current builtins.
-Patch by Victor Stinner.

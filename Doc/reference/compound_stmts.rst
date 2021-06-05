@@ -254,7 +254,7 @@ is found that matches the exception.  An expression-less except clause, if
 present, must be last; it matches any exception.  For an except clause with an
 expression, that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
-compatible with an exception if it is the class or a base class of the exception
+compatible with an exception if the object is the class or a base class of the exception
 object, or a tuple containing an item that is the class or a base class of
 the exception object.
 
@@ -533,7 +533,7 @@ The match statement is used for pattern matching.  Syntax:
    match_stmt: 'match' `subject_expr` ":" NEWLINE INDENT `case_block`+ DEDENT
    subject_expr: `star_named_expression` "," `star_named_expressions`?
                : | `named_expression`
-   case_block: 'case' `patterns` [`guard`] ':' `block`
+   case_block: 'case' `patterns` [`guard`] ":" `block`
 
 .. note::
    This section uses single quotes to denote
@@ -797,7 +797,7 @@ Syntax:
    capture_pattern: !'_' NAME
 
 A single underscore ``_`` is not a capture pattern (this is what ``!'_'``
-expresses). And is instead treated as a :token:`wildcard_pattern`.
+expresses). It is instead treated as a :token:`wildcard_pattern`.
 
 In a given pattern, a given name can only be bound once.  E.g.
 ``case x, x: ...`` is invalid while ``case [x] | x: ...`` is allowed.
@@ -820,7 +820,9 @@ and binds no name.  Syntax:
 .. productionlist:: python-grammar
    wildcard_pattern: '_'
 
-``_`` is a :ref:`soft keyword <soft-keywords>`.
+``_`` is a :ref:`soft keyword <soft-keywords>` within any pattern,
+but only within patterns.  It is an identifier, as usual, even within
+``match`` subject expressions, ``guard``\ s, and ``case`` blocks.
 
 In simple terms, ``_`` will always succeed.
 
@@ -861,7 +863,7 @@ emphasize the intended grouping.  Otherwise, it has no additional syntax.
 Syntax:
 
 .. productionlist:: python-grammar
-   group_pattern: '(' `pattern` ')'
+   group_pattern: "(" `pattern` ")"
 
 In simple terms ``(P)`` has the same effect as ``P``.
 
@@ -898,8 +900,8 @@ sequence pattern.
 The following is the logical flow for matching a sequence pattern against a
 subject value:
 
-#. If the subject value is not an instance of a
-   :class:`collections.abc.Sequence` the sequence pattern fails.
+#. If the subject value is not a sequence [#]_, the sequence pattern
+   fails.
 
 #. If the subject value is an instance of ``str``, ``bytes`` or ``bytearray``
    the sequence pattern fails.
@@ -941,7 +943,7 @@ subject value:
 In simple terms ``[P1, P2, P3,`` ... ``, P<N>]`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Sequence)``
+* check ``<subject>`` is a sequence
 * ``len(subject) == <N>``
 * ``P1`` matches ``<subject>[0]`` (note that this match can also bind names)
 * ``P2`` matches ``<subject>[1]`` (note that this match can also bind names)
@@ -973,8 +975,7 @@ runtime error and will raise :exc:`ValueError`.)
 The following is the logical flow for matching a mapping pattern against a
 subject value:
 
-#. If the subject value is not an instance of :class:`collections.abc.Mapping`,
-   the mapping pattern fails.
+#. If the subject value is not a mapping [#]_,the mapping pattern fails.
 
 #. If every key given in the mapping pattern is present in the subject mapping,
    and the pattern for each key matches the corresponding item of the subject
@@ -991,7 +992,7 @@ subject value:
 In simple terms ``{KEY1: P1, KEY2: P2, ... }`` matches only if all the following
 happens:
 
-* ``isinstance(<subject>, collections.abc.Mapping)``
+* check ``<subject>`` is a mapping
 * ``KEY1 in <subject>``
 * ``P1`` matches ``<subject>[KEY1]``
 * ... and so on for the corresponding KEY/pattern pair.
@@ -1030,7 +1031,7 @@ subject value:
 
    For a number of built-in types (specified below), a single positional
    subpattern is accepted which will match the entire subject; for these types
-   no keyword patterns are accepted.
+   keyword patterns also work as for other types.
 
    If only keyword patterns are present, they are processed as follows,
    one by one:
@@ -1057,7 +1058,7 @@ subject value:
 
       * If this raises an exception, the exception bubbles up.
 
-      * If the returned value is not a list or tuple, the conversion fails and
+      * If the returned value is not a tuple, the conversion fails and
         :exc:`TypeError` is raised.
 
       * If there are more positional patterns than ``len(cls.__match_args__)``,
@@ -1138,7 +1139,6 @@ A function definition defines a user-defined function object (see section
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
-   dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
@@ -1215,19 +1215,25 @@ e.g.::
        return penguin
 
 .. index::
+   single: / (slash); function definition
    single: * (asterisk); function definition
    single: **; function definition
 
 Function call semantics are described in more detail in section :ref:`calls`. A
 function call always assigns values to all parameters mentioned in the parameter
-list, either from position arguments, from keyword arguments, or from default
+list, either from positional arguments, from keyword arguments, or from default
 values.  If the form "``*identifier``" is present, it is initialized to a tuple
 receiving any excess positional parameters, defaulting to the empty tuple.
 If the form "``**identifier``" is present, it is initialized to a new
 ordered mapping receiving any excess keyword arguments, defaulting to a
 new empty mapping of the same type.  Parameters after "``*``" or
 "``*identifier``" are keyword-only parameters and may only be passed
-used keyword arguments.
+by keyword arguments.  Parameters before "``/``" are positional-only parameters
+and may only be passed by positional arguments.
+
+.. versionchanged:: 3.8
+   The ``/`` function parameter syntax may be used to indicate positional-only
+   parameters. See :pep:`570` for details.
 
 .. index::
    pair: function; annotations
@@ -1239,9 +1245,13 @@ following the parameter name.  Any parameter may have an annotation, even those 
 ``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
-semantics of a function.  The annotation values are available as string values
-in a dictionary keyed by the parameters' names in the :attr:`__annotations__`
-attribute of the function object.
+semantics of a function.  The annotation values are available as values of
+a dictionary keyed by the parameters' names in the :attr:`__annotations__`
+attribute of the function object.  If the ``annotations`` import from
+:mod:`__future__` is used, annotations are preserved as strings at runtime which
+enables postponed evaluation.  Otherwise, they are evaluated when the function
+definition is executed.  In this case annotations may be evaluated in
+a different order than they appear in the source code.
 
 .. index:: pair: lambda; expression
 
@@ -1514,6 +1524,35 @@ body of a coroutine function.
 .. [#] The exception is propagated to the invocation stack unless
    there is a :keyword:`finally` clause which happens to raise another
    exception. That new exception causes the old one to be lost.
+
+.. [#] In pattern matching, a sequence is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Sequence`
+      * a Python class that has been registered as :class:`collections.abc.Sequence`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
+      * a class that inherits from any of the above
+
+   The following standard library classes are sequences:
+
+      * :class:`array.array`
+      * :class:`collections.deque`
+      * :class:`list`
+      * :class:`memoryview`
+      * :class:`range`
+      * :class:`tuple`
+
+   .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
+      do not match sequence patterns.
+
+.. [#] In pattern matching, a mapping is defined as one of the following:
+
+      * a class that inherits from :class:`collections.abc.Mapping`
+      * a Python class that has been registered as :class:`collections.abc.Mapping`
+      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
+      * a class that inherits from any of the above
+
+   The standard library classes :class:`dict` and :class:`types.MappingProxyType`
+   are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
    transformed into the function's ``__doc__`` attribute and therefore the
