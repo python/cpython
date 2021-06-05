@@ -91,8 +91,6 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int cached_statements, int uri)
 /*[clinic end generated code: output=450ac9078b4868bb input=938c5058ce37130a]*/
 {
-    PyObject *result = NULL;
-
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");
         if (isolation_level == NULL) {
@@ -102,34 +100,13 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
     else {
         Py_INCREF(isolation_level);
     }
-
-    PyObject *obj_timeout = PyFloat_FromDouble(timeout);
-    PyObject *obj_detect_types = PyLong_FromLong(detect_types);
-    PyObject *obj_check_same_thread = PyLong_FromLong(check_same_thread);
-    PyObject *obj_cached_statements = PyLong_FromLong(cached_statements);
-    PyObject *obj_uri = PyBool_FromLong(uri);
-    if (obj_timeout == NULL || obj_detect_types == NULL ||
-        obj_check_same_thread == NULL || obj_cached_statements == NULL ||
-        obj_uri == NULL)
-    {
-        goto error;
-    }
-
-    result = PyObject_CallFunctionObjArgs(factory, database, obj_timeout,
-                                          obj_detect_types, isolation_level,
-                                           obj_check_same_thread, factory,
-                                           obj_cached_statements, obj_uri,
-                                           NULL);
-
-error:
+    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
+                                          timeout, detect_types,
+                                          isolation_level, check_same_thread,
+                                          factory, cached_statements, uri);
+    Py_DECREF(database);
     Py_DECREF(isolation_level);
-    Py_XDECREF(database);
-    Py_XDECREF(obj_timeout);
-    Py_XDECREF(obj_detect_types);
-    Py_XDECREF(obj_check_same_thread);
-    Py_XDECREF(obj_cached_statements);
-    Py_XDECREF(obj_uri);
-    return result;
+    return res;
 }
 
 /*[clinic input]
