@@ -63,9 +63,7 @@ pysqlite_get_state(PyObject *Py_UNUSED(module))
     return &pysqlite_global_state;
 }
 
-/* Python seems to have no way of extracting a single keyword-arg at
- * C-level, so this code is redundant with the one in connection_init in
- * connection.c and must always be copied from there ... */
+// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
 /*[clinic input]
 _sqlite3.connect as pysqlite_connect
 
