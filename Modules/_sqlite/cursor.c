@@ -103,11 +103,7 @@ cursor_clear(pysqlite_Cursor *self)
     Py_CLEAR(self->row_cast_map);
     Py_CLEAR(self->lastrowid);
     Py_CLEAR(self->row_factory);
-    if (self->statement) {
-        /* Reset the statement if the user has not closed the cursor */
-        pysqlite_statement_reset(self->statement);
-        Py_CLEAR(self->statement);
-    }
+    Py_CLEAR(self->statement);
     Py_CLEAR(self->next_row);
 
     return 0;
@@ -120,6 +116,10 @@ cursor_dealloc(pysqlite_Cursor *self)
     PyObject_GC_UnTrack(self);
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
+    }
+    /* Reset the statement if the user has not closed the cursor */
+    if (self->statement) {
+        (void)pysqlite_statement_reset(self->statement);
     }
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
