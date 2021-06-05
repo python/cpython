@@ -171,8 +171,7 @@ The :mod:`functools` module defines the following functions:
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
-   *maxsize* and *currsize*.  In a multi-threaded environment, the hits
-   and misses are approximate.
+   *maxsize* and *currsize*.
 
    The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
