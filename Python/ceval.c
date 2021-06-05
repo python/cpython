@@ -3840,6 +3840,40 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        case TARGET(ATTEMPT_SAFE_MATCH): {
+            /* Starting stack: [x, jump_map]
+             * On deoptimize    --> [x]; dispatch normally.
+             * On key found     --> [ ]; jump into case
+             * On key not found --> [ ]; jump outside of match.
+             */
+            PyObject *jump_dict = POP();
+            PyObject *x = TOP();
+            assert(PyDict_CheckExact(jump_dict));
+            if (PyLong_CheckExact(x) ||
+                PyUnicode_CheckExact(x) ||
+                Py_Is(x, Py_None))
+            {
+                PyObject *boxed = PyDict_GetItemWithError(jump_dict, x);
+                Py_DECREF(jump_dict);
+                if (boxed == NULL) {
+                    if (PyErr_Occurred()) {
+                        goto error;
+                    }
+                    else {
+                        JUMPTO(oparg);
+                    }
+                }
+                assert(PyLong_CheckExact(boxed));
+                int target = (int)PyLong_AsLong(boxed);
+                JUMPTO(target);
+            }
+            else {
+                // fall back to general matching code
+                Py_DECREF(jump_dict);
+            }
+            DISPATCH();
+        }
+
         case TARGET(GET_LEN): {
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(TOP());

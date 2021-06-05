@@ -215,4 +215,6 @@ def_op('DICT_MERGE', 164)
 def_op('DICT_UPDATE', 165)
 def_op('CALL_METHOD_KW', 166)
 
+jabs_op('ATTEMPT_SAFE_MATCH', 200)
+
 del def_op, name_op, jrel_op, jabs_op

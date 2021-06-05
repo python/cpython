@@ -135,6 +135,7 @@ extern "C" {
 #define DICT_MERGE              164
 #define DICT_UPDATE             165
 #define CALL_METHOD_KW          166
+#define ATTEMPT_SAFE_MATCH      200
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,
@@ -153,7 +154,7 @@ static uint32_t _PyOpcode_Jump[8] = {
     34586624U,
     0U,
     0U,
-    0U,
+    256U,
     0U,
 };
 #endif /* OPCODE_TABLES */
