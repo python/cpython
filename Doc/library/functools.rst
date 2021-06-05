@@ -181,7 +181,7 @@ The :mod:`functools` module defines the following functions:
    bypassing the cache, or for rewrapping the function with a different cache.
 
    The cache keeps references to the arguments and return values until they age
-   out of cache or until the cache is cleared.
+   out of the cache or until the cache is cleared.
 
    An `LRU (least recently used) cache
    <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
