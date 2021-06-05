@@ -432,7 +432,7 @@ class Obj2ModVisitor(PickleVisitor):
 
     def funcHeader(self, name):
         ctype = get_c_type(name)
-        self.emit("int", 0)
+        self.emit("Py_LOCAL_INLINE(int)", 0)
         self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("int isinstance;", 1)
@@ -514,7 +514,7 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
         ctype = get_c_type(name)
-        self.emit("int", 0)
+        self.emit("Py_LOCAL_INLINE(int)", 0)
         self.emit("obj2ast_%s(struct ast_state *state, PyObject* obj, %s* out, PyArena* arena)" % (name, ctype), 0)
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
@@ -1434,6 +1434,11 @@ def generate_module_def(mod, f, internal_h):
     generate_ast_state(module_state, internal_h)
 
     print(textwrap.dedent("""
+        /* enable more aggressive intra-module optimizations, where available
+           to reduce the stack usage for windows. */
+
+        #define PY_LOCAL_AGGRESSIVE
+
         #include "Python.h"
         #include "pycore_ast.h"
         #include "pycore_ast_state.h"       // struct ast_state
