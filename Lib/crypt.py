@@ -51,12 +51,7 @@ def mksalt(method=None, *, rounds=None):
                 raise ValueError('rounds out of the range 1 to 11')
         else:
             rounds = 5
-        if rounds < 3:
-            s += 'j' + chr(54 + rounds) + '5$'
-        elif rounds < 6:
-            s += 'j' + chr(52 + rounds) + 'T$'
-        elif rounds < 12:
-            s += 'j' + chr(59 + rounds) + 'T$'
+        s += 'j' + ('75', '85', '7T', '8T', '9T', 'AT', 'BT', 'CT', 'DT', 'ET', 'FT')[rounds - 1] + '$'
     elif method.ident and method.ident[0] == '2':  # Blowfish variants
         if rounds is None:
             log_rounds = 12
