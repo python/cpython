@@ -851,7 +851,12 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
 static void _destructor(void* args)
 {
+    // This function may be called without the GIL held, so we need to ensure
+    // that we destroy 'args' with the GIL
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
     Py_DECREF((PyObject*)args);
+    PyGILState_Release(gstate);
 }
 
 /*[clinic input]
