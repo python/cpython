@@ -93,12 +93,7 @@ class CryptTestCase(unittest.TestCase):
     )
     def test_yescrypt_rounds(self):
         for rounds in range(1, 11):
-            if rounds < 3:
-                enc_rounds = 'j' + chr(54 + rounds) + '5'
-            elif rounds < 6:
-                enc_rounds = 'j' + chr(52 + rounds) + 'T'
-            elif rounds < 12:
-                enc_rounds = 'j' + chr(59 + rounds) + 'T'
+            enc_rounds = 'j' + ('75', '85', '7T', '8T', '9T', 'AT', 'BT', 'CT', 'DT', 'ET', 'FT')[rounds - 1]
             salt = crypt.mksalt(crypt.METHOD_YESCRYPT, rounds=rounds)
             self.assertIn('$%s$' % enc_rounds, salt)
             self.assertEqual(len(salt) - crypt.METHOD_YESCRYPT.salt_chars, 7)
