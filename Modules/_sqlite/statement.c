@@ -397,6 +397,10 @@ stmt_dealloc(pysqlite_Statement *self)
     if (self->in_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)self);
     }
+    if (self->st) {
+        sqlite3_finalize(self->st);
+        self->st = 0;
+    }
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -405,13 +409,6 @@ stmt_dealloc(pysqlite_Statement *self)
 static int
 stmt_clear(pysqlite_Statement *self)
 {
-    if (self->st) {
-        Py_BEGIN_ALLOW_THREADS
-        sqlite3_finalize(self->st);
-        Py_END_ALLOW_THREADS
-        self->st = 0;
-    }
-
     Py_CLEAR(self->sql);
     return 0;
 }
