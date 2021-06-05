@@ -29,9 +29,6 @@
 #include "connection.h"
 #include "sqlite3.h"
 
-#define PYSQLITE_TOO_MUCH_SQL (-100)
-#define PYSQLITE_SQL_WRONG_TYPE (-101)
-
 typedef struct
 {
     PyObject_HEAD
@@ -45,7 +42,7 @@ typedef struct
 
 extern PyTypeObject *pysqlite_StatementType;
 
-int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql);
+pysqlite_Statement *pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql);
 
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter);
 void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters);

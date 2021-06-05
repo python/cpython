@@ -34,6 +34,13 @@ class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state_by_type(ty
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=0a4023fe4d198c8d]*/
 
+static int
+simplequeue_clear(simplequeueobject *self)
+{
+    Py_CLEAR(self->lst);
+    return 0;
+}
+
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
@@ -46,7 +53,7 @@ simplequeue_dealloc(simplequeueobject *self)
             PyThread_release_lock(self->lock);
         PyThread_free_lock(self->lock);
     }
-    Py_XDECREF(self->lst);
+    (void)simplequeue_clear(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
     Py_TYPE(self)->tp_free(self);
@@ -57,6 +64,7 @@ static int
 simplequeue_traverse(simplequeueobject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->lst);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -362,6 +370,7 @@ static PyType_Slot simplequeue_slots[] = {
     {Py_tp_dealloc, simplequeue_dealloc},
     {Py_tp_doc, (void *)simplequeue_new__doc__},
     {Py_tp_traverse, simplequeue_traverse},
+    {Py_tp_clear, simplequeue_clear},
     {Py_tp_members, simplequeue_members},
     {Py_tp_methods, simplequeue_methods},
     {Py_tp_new, simplequeue_new},

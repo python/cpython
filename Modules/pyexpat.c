@@ -1182,19 +1182,34 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
     return (PyObject*)self;
 }
 
+static int
+xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
+{
+    for (int i = 0; handler_info[i].name != NULL; i++) {
+        Py_VISIT(op->handlers[i]);
+    }
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
+static int
+xmlparse_clear(xmlparseobject *op)
+{
+    clear_handlers(op, 0);
+    Py_CLEAR(op->intern);
+    return 0;
+}
 
 static void
 xmlparse_dealloc(xmlparseobject *self)
 {
-    int i;
     PyObject_GC_UnTrack(self);
     if (self->itself != NULL)
         XML_ParserFree(self->itself);
     self->itself = NULL;
+    (void)xmlparse_clear(self);
 
     if (self->handlers != NULL) {
-        for (i = 0; handler_info[i].name != NULL; i++)
-            Py_CLEAR(self->handlers[i]);
         PyMem_Free(self->handlers);
         self->handlers = NULL;
     }
@@ -1202,7 +1217,6 @@ xmlparse_dealloc(xmlparseobject *self)
         PyMem_Free(self->buffer);
         self->buffer = NULL;
     }
-    Py_XDECREF(self->intern);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
@@ -1472,23 +1486,6 @@ static PyGetSetDef xmlparse_getsetlist[] = {
 
 #undef XMLPARSE_GETTER_DEF
 #undef XMLPARSE_GETTER_SETTER_DEF
-
-static int
-xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
-{
-    int i;
-    for (i = 0; handler_info[i].name != NULL; i++)
-        Py_VISIT(op->handlers[i]);
-    return 0;
-}
-
-static int
-xmlparse_clear(xmlparseobject *op)
-{
-    clear_handlers(op, 0);
-    Py_CLEAR(op->intern);
-    return 0;
-}
 
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 

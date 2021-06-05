@@ -124,8 +124,7 @@ class ThreadTests(BaseTestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         lock = threading.Lock()
-        tp = type(lock)
-        self.assertRaises(TypeError, tp)
+        test.support.check_disallow_instantiation(self, type(lock))
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
