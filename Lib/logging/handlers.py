@@ -255,6 +255,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             raise ValueError("Invalid rollover interval specified: %s" % self.when)
 
         self.extMatch = re.compile(self.extMatch, re.ASCII)
+        self.file_number = re.compile(r'(\()([0-9])(\))$')
         self.interval = self.interval * interval # multiply by units requested
         # The following line added because the filename passed in could be a
         # path object (see Issue #27493), but self.baseFilename will be a string
@@ -401,8 +402,12 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 timeTuple = time.localtime(t + addend)
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
-        if os.path.exists(dfn):
-            os.remove(dfn)
+        while os.path.exists(dfn):
+            if match := re.search(self.file_number, dfn):
+                name = re.sub(self.file_number, f'({int(match.groups()[1]) + 1})', dfn)
+                dfn = self.rotation_filename(name)
+            else:
+                dfn = self.rotation_filename(self.baseFilename + '.' + time.strftime(self.suffix, timeTuple) + ' (2)')
         self.rotate(self.baseFilename, dfn)
         if self.backupCount > 0:
             for s in self.getFilesToDelete():
