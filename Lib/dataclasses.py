@@ -1038,7 +1038,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
 
     if eq:
-        # Create _eq__ method.  There's no need for a __ne__ method,
+        # Create __eq__ method.  There's no need for a __ne__ method,
         # since python will call __eq__ and negate it.
         flds = [f for f in field_list if f.compare]
         self_tuple = _tuple_str('self', flds)

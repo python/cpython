@@ -172,7 +172,7 @@ These improvements are inspired by previous work in the PyPy interpreter.
 :issue:`40176`.)
 
 :exc:`SyntaxError` exceptions raised by the interpreter will now highlight the
-full error range of the expression that consistutes the syntax error itself,
+full error range of the expression that constitutes the syntax error itself,
 instead of just where the problem is detected. In this way, instead of displaying
 (before Python 3.10):
 
@@ -215,9 +215,9 @@ have been incorporated. Some of the most notable ones:
 
     .. code-block:: python
 
-        >>> {x,y for x,y in range(100)}
+        >>> {x,y for x,y in zip('abcd', '1234')}
           File "<stdin>", line 1
-            {x,y for x,y in range(100)}
+            {x,y for x,y in zip('abcd', '1234')}
              ^
         SyntaxError: did you forget parentheses around the comprehension target?
 
@@ -238,7 +238,7 @@ have been incorporated. Some of the most notable ones:
 
     (Contributed by Pablo Galindo in :issue:`43822`)
 
-* Exception groups without parentheses:
+* Multiple Exception types without parentheses:
 
     .. code-block:: python
 
@@ -248,7 +248,7 @@ have been incorporated. Some of the most notable ones:
           File "<stdin>", line 3
             except NotEnoughScienceError, NotEnoughResourcesError:
                    ^
-        SyntaxError: exception group must be parenthesized
+        SyntaxError: multiple exception types must be parenthesized
 
     (Contributed by Pablo Galindo in :issue:`43149`)
 
@@ -273,6 +273,20 @@ have been incorporated. Some of the most notable ones:
         SyntaxError: ':' expected after dictionary key
 
     (Contributed by Pablo Galindo in :issue:`43823`)
+
+* ``try`` blocks without ``except`` or ``finally`` blocks:
+
+    .. code-block:: python
+
+        >>> try
+        ...     x = 2
+        ... something = 3
+          File "<stdin>", line 3
+            something  = 3
+            ^^^^^^^^^
+        SyntaxError: expected 'except' or 'finally' block
+
+    (Contributed by Pablo Galindo in :issue:`44305`)
 
 * Usage of ``=`` instead of ``==`` in comparisons:
 
@@ -589,7 +603,7 @@ Several other key features:
 
 - Like unpacking assignments, tuple and list patterns have exactly the
   same meaning and actually match arbitrary sequences. Technically,
-  the subject must be an instance of ``collections.abc.Sequence``.
+  the subject must be a sequence.
   Therefore, an important exception is that patterns don't match iterators.
   Also, to prevent a common mistake, sequence patterns don't match strings.
 
@@ -812,6 +826,16 @@ Other Language Changes
   :ref:`annotations-howto`.
   (Contributed by Larry Hastings in :issue:`43901`.)
 
+* Annotations consist of ``yield``, ``yield from``, ``await`` or named expressions
+  are now forbidden under ``from __future__ import annotations`` due to their side
+  effects.
+  (Contributed by Batuhan Taskaya in :issue:`42725`.)
+
+* Usage of unbound variables, ``super()`` and other expressions that might
+  alter the processing of symbol table as annotations are now rendered
+  effectless under ``from __future__ import annotations``.
+  (Contributed by Batuhan Taskaya in :issue:`42725`.)
+
 New Modules
 ===========
 
@@ -1020,14 +1044,23 @@ Terry Jan Reedy in :issue:`37892`.)
 We expect to backport these shell changes to a future 3.9 maintenance
 release.
 
+Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
+:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
+pattern-matching statements. However, this highlighting is not perfect
+and will be incorrect in some rare cases, including some ``_``-s in
+``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
+
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 3.7.
+Feature parity with ``importlib_metadata`` 4.4
+(`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
-:func:`importlib.metadata.entry_points` now provides a nicer experience
+:ref:`importlib.metadata entry points <entry-points>`
+now provides a nicer experience
 for selecting entry points by group and name through a new
-:class:`importlib.metadata.EntryPoints` class.
+:class:`importlib.metadata.EntryPoints` class. See the Compatibility
+Note in the docs for more info on the deprecation and usage.
 
 Added :func:`importlib.metadata.packages_distributions` for resolving
 top-level Python modules and packages to their
@@ -1079,6 +1112,14 @@ Add :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
 and :data:`~os.O_NOFOLLOW_ANY` for macOS.
 (Contributed by Dong-hee Na in :issue:`43106`.)
 
+os.path
+-------
+
+:func:`os.path.realpath` now accepts a *strict* keyword-only argument. When set
+to ``True``, :exc:`OSError` is raised if a path doesn't exist or a symlink loop
+is encountered.
+(Contributed by Barney Gale in :issue:`43757`.)
+
 pathlib
 -------
 
@@ -1094,6 +1135,11 @@ supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
 order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
 
+:meth:`pathlib.Path.stat` and :meth:`~pathlib.Path.chmod` now accept a
+*follow_symlinks* keyword-only argument for consistency with corresponding
+functions in the :mod:`os` module.
+(Contributed by Barney Gale in :issue:`39906`.)
+
 platform
 --------
 
@@ -1104,6 +1150,9 @@ identification from `freedesktop.org os-release
 
 pprint
 ------
+
+:func:`pprint.pprint` now accepts a new ``underscore_numbers`` keyword argument.
+(Contributed by sblondon in :issue:`42914`.)
 
 :mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
 (Contributed by Lewis Gaul in :issue:`43080`.)
@@ -1287,6 +1336,14 @@ and to match the behavior of static type checkers specified in the PEP.
 Add new function :func:`typing.is_typeddict` to introspect if an annotation
 is a :class:`typing.TypedDict`.
 (Contributed by Patrick Reader in :issue:`41792`)
+
+Subclasses of ``typing.Protocol`` which only have data variables declared
+will now raise a ``TypeError`` when checked with ``isinstance`` unless they
+are decorated with :func:`runtime_checkable`.  Previously, these checks
+passed silently.  Users should decorate their
+subclasses with the :func:`runtime_checkable` decorator
+if they want runtime protocols.
+(Contributed by Yurii Karabas in :issue:`38908`)
 
 unittest
 --------
@@ -1538,9 +1595,10 @@ Deprecated
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
 
-* ``cgi.log()`` is deprecated and slated for for removal in Python 3.12.
+* ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
 
+.. _whatsnew310-removed:
 
 Removed
 =======
@@ -1823,6 +1881,10 @@ New Features
   creating type instances.
   (Contributed by Victor Stinner in :issue:`43916`.)
 
+* Add a new :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
+  type objects: type attributes cannot be set nor deleted.
+  (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
+
 Porting to Python 3.10
 ----------------------
 
@@ -1879,6 +1941,16 @@ Porting to Python 3.10
   included in ``Python.h``: :ref:`Include Files <api-includes>`. If they have
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`)
+
+* Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
+  objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
+  object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
+  instead.
+  (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
+
+* The undocumented function ``Py_FrozenMain`` has been removed from the
+  limited API. The function is mainly useful for custom builds of Python.
+  (Contributed by Petr Viktorin in :issue:`26241`)
 
 Deprecated
 ----------

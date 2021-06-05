@@ -6,16 +6,18 @@ name: Tests
 on:
   push:
     branches:
-    - main
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
   pull_request:
     branches:
-    - main
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.10'
+    - '3.9'
+    - '3.8'
+    - '3.7'
 
 jobs:
   check_source:
@@ -148,7 +150,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.5
+      uses: actions/cache@v2.1.6
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
@@ -177,7 +179,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1k, 3.0.0-alpha16]
+        openssl_ver: [1.1.1k, 3.0.0-alpha17]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -196,7 +198,7 @@ jobs:
         echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
     - name: 'Restore OpenSSL build'
       id: cache-openssl
-      uses: actions/cache@v2.1.5
+      uses: actions/cache@v2.1.6
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
         key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}

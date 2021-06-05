@@ -4,6 +4,9 @@ Released on 2021-10-04?
 =========================
 
 
+bpo-44026: Include interpreter's typo fix suggestions in message line
+for NameErrors and AttributeErrors.  Patch by E. Paine.
+
 bpo-37903: Add mouse actions to the shell sidebar.  Left click and
 optional drag selects one or more lines of text, as with the
 editor line number sidebar.  Right click after selecting text lines

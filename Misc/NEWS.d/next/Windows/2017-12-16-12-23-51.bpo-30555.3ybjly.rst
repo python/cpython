@@ -1,2 +1,0 @@
-Fix ``WindowsConsoleIO`` errors in the presence of fd redirection. Patch by
-Segev Finer.

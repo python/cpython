@@ -279,7 +279,8 @@ func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
 static int
 func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
-    Py_ssize_t nfree, nclosure;
+    Py_ssize_t nclosure;
+    int nfree;
 
     /* Not legal to del f.func_code or to set it to anything
      * other than a code object. */
@@ -294,7 +295,7 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    nfree = PyCode_GetNumFree((PyCodeObject *)value);
+    nfree = ((PyCodeObject *)value)->co_nfreevars;
     nclosure = (op->func_closure == NULL ? 0 :
             PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
@@ -538,7 +539,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 /*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
 {
     PyFunctionObject *newfunc;
-    Py_ssize_t nfree, nclosure;
+    Py_ssize_t nclosure;
 
     if (name != Py_None && !PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -550,9 +551,8 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                         "arg 4 (defaults) must be None or tuple");
         return NULL;
     }
-    nfree = PyTuple_GET_SIZE(code->co_freevars);
     if (!PyTuple_Check(closure)) {
-        if (nfree && closure == Py_None) {
+        if (code->co_nfreevars && closure == Py_None) {
             PyErr_SetString(PyExc_TypeError,
                             "arg 5 (closure) must be tuple");
             return NULL;
@@ -566,10 +566,10 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     /* check that the closure is well-formed */
     nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
-    if (nfree != nclosure)
+    if (code->co_nfreevars != nclosure)
         return PyErr_Format(PyExc_ValueError,
                             "%U requires closure of length %zd, not %zd",
-                            code->co_name, nfree, nclosure);
+                            code->co_name, code->co_nfreevars, nclosure);
     if (nclosure) {
         Py_ssize_t i;
         for (i = 0; i < nclosure; i++) {
