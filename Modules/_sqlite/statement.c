@@ -404,7 +404,9 @@ stmt_dealloc(pysqlite_Statement *self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
     if (self->st) {
+        Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
+        Py_END_ALLOW_THREADS
         self->st = 0;
     }
     tp->tp_clear((PyObject *)self);
