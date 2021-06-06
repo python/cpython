@@ -1,11 +1,9 @@
 import array
 import collections
-import contextlib
 import dataclasses
 import enum
 import inspect
 import unittest
-import warnings
 
 
 def no_perf(f):
@@ -3057,6 +3055,215 @@ class TestInheritance(unittest.TestCase):
         for Map in (M1, M2, M3, M4):
             self.assertEqual(f(Map()), "map")
             self.assertEqual(g(Map()), "map")
+
+
+class TestJumpTables(unittest.TestCase):
+
+    def assert_has_jump_tables(self, n):
+        JUMP_TABLE_TYPE = dict
+        def decorator(func):
+            number = sum(type(x) is JUMP_TABLE_TYPE
+                         for x in func.__code__.co_consts)
+            self.assertEqual(number, n)
+            return func
+        return decorator
+
+    def test_no_table(self):
+        """Don't add a jump table where it wouldn't make sense."""
+
+        @self.assert_has_jump_tables(0)
+        def f1(x):
+            match x:
+                case _:
+                    do_stuff()
+
+        @self.assert_has_jump_tables(0)
+        def f2(x):
+            match x:
+                case _:
+                    do_stuff()
+
+        @self.assert_has_jump_tables(0)
+        def f3(x):
+            match x:
+                case 1:
+                    do_stuff()
+
+        @self.assert_has_jump_tables(0)
+        def f4(x):
+            match x:
+                case 1:
+                    do_stuff()
+                case x:
+                    do_stuff()
+
+
+        @self.assert_has_jump_tables(0)
+        def f5(x):
+            match x:
+                case 1:
+                    do_stuff()
+                case (y, z):
+                    do_stuff()
+                case 2:
+                    do_stuff()
+                case int():
+                    do_stuff()
+                case "Python":
+                    do_stuff()
+                case str():
+                    do_stuff()
+                case None:
+                    do_stuff()
+                case None:
+                    do_stuff()
+
+    def test_basic_table_ints(self):
+        @self.assert_has_jump_tables(1)
+        def negate(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+                case 4:
+                    return -4
+                case 5:
+                    return -5
+            return -6
+        results = {x: negate(x) for x in (1, 2, 3, 4, 5, 6)}
+        expected = {x: -x for x in (1, 2, 3, 4, 5, 6)}
+        self.assertEqual(expected, results)
+
+    def test_basic_table_strings_and_None(self):
+        @self.assert_has_jump_tables(1)
+        def f(x):
+            match x:
+                case "1":
+                    y = 1
+                case "2":
+                    y = 2
+                case "3":
+                    y = 3
+                case None:
+                    return None
+            return y
+
+        self.assertEqual(f("1"), 1)
+        self.assertEqual(f("2"), 2)
+        self.assertEqual(f("3"), 3)
+        self.assertEqual(f(None), None)
+
+    def test_basic_table_with_catchall(self):
+        @self.assert_has_jump_tables(1)
+        def negate1(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+                case z:
+                    return -z
+
+        @self.assert_has_jump_tables(1)
+        def negate2(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+                case int(z):
+                    return -z
+
+        @self.assert_has_jump_tables(1)
+        def negate3(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+                case _:
+                    pass
+            return -x
+
+        expected = {x: -x for x in (1, 2, 3, 4)}
+        self.assertEqual({x: negate1(x) for x in (1, 2, 3, 4)}, expected)
+        self.assertEqual({x: negate2(x) for x in (1, 2, 3, 4)}, expected)
+        self.assertEqual({x: negate3(x) for x in (1, 2, 3, 4)}, expected)
+
+
+    def test_multiple_jump_tables_per_function(self):
+        @self.assert_has_jump_tables(3)
+        def f(x):
+            match x:
+                case "1": y = 1
+                case "2": y = 2
+                case "3": y = 3
+            match x:
+                case "4": y = 4
+                case "5": y = 5
+                case "6": y = 6
+            match x:
+                case "7": y = 7
+                case "8": y = 8
+                case "9": y = 9
+            return y
+
+        expected = {str(x): x for x in range(1, 10)}
+        self.assertEqual({x: f(x) for x in expected}, expected)
+
+    def test_nested_jump_tables(self):
+        @self.assert_has_jump_tables(4)
+        def add(x, y):
+            match x:
+                case 1:
+                    match y:
+                        case 1: return 2
+                        case 2: return 3
+                        case 3: return 4
+                case 2:
+                    match y:
+                        case 1: return 3
+                        case 2: return 4
+                        case 3: return 5
+                case 3:
+                    match y:
+                        case 1: return 4
+                        case 2: return 5
+                        case 3: return 6
+        expected = {(x, y): x + y for x in (1, 2, 3) for y in (1, 2, 3)}
+        actual = {(x, y): add(x, y) for x in (1, 2, 3) for y in (1, 2, 3)}
+        self.assertEqual(actual, expected)
+
+    def test_separated_jump_table(self):
+        @self.assert_has_jump_tables(3)
+        def f(x):
+            match x:
+                case [a]: return a
+                case -1: return 1
+                case -2: return 2
+                case -3: return 3
+                case [a, b]: return a + b
+                case -4: return 4
+                case -5: return 5
+                case -6: return 6
+                case [a, b, c]: return a + b + c
+                case -7: return 7
+                case -8: return 8
+                case -9: return 9
+                case [a, b, c, d]: return a + b + c + d
+        expected = ({-x: x for x in range(1, 10)}
+                    | {(1,)*n: n for n in range(1, 5)})
+        actual = {x: f(x) for x in expected}
+        self.assertEqual(actual, expected)
 
 
 class PerfPatma(TestPatma):
