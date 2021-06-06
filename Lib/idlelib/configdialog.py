@@ -77,7 +77,7 @@ class ConfigDialog(Toplevel):
         # The first value of the tuple is the sample area tag name.
         # The second value is the display name list sort index.
         self.create_widgets()
-        self.resizable(height=FALSE, width=FALSE)
+        self.resizable(height=TRUE, width=FALSE)
         self.transient(parent)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.fontpage.fontlist.focus_set()
@@ -112,7 +112,7 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.frame = frame = Frame(self, padding="5px")
-        self.frame.grid(sticky=NSEW)
+        self.frame.pack(side=TOP, expand=TRUE, fill=BOTH)
 
         vscrollables = []
 
@@ -136,7 +136,9 @@ class ConfigDialog(Toplevel):
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
-        self.create_action_buttons().pack(side=BOTTOM)
+        buttons_frame = self.create_action_buttons()
+        buttons_frame.pack(side=BOTTOM, before=note)
+        self.wm_minsize(1, buttons_frame.winfo_reqheight() + 200)
 
         self.bind_all('<MouseWheel>', self.mousewheel_event)
         self.bind_all('<Button-4>', self.mousewheel_event)
