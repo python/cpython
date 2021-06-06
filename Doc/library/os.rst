@@ -3658,7 +3658,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Exit code that means no error occurred.
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
 
 .. data:: EX_USAGE
