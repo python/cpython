@@ -85,7 +85,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     self->st = NULL;
-    self->sql = Py_NewRef(sql);
     self->in_use = 0;
     self->is_dml = 0;
     self->in_weakreflist = NULL;
@@ -408,23 +407,14 @@ stmt_dealloc(pysqlite_Statement *self)
         Py_END_ALLOW_THREADS
         self->st = 0;
     }
-    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
-}
-
-static int
-stmt_clear(pysqlite_Statement *self)
-{
-    Py_CLEAR(self->sql);
-    return 0;
 }
 
 static int
 stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->sql);
     return 0;
 }
 
@@ -506,7 +496,6 @@ static PyType_Slot stmt_slots[] = {
     {Py_tp_members, stmt_members},
     {Py_tp_dealloc, stmt_dealloc},
     {Py_tp_traverse, stmt_traverse},
-    {Py_tp_clear, stmt_clear},
     {0, NULL},
 };
 
