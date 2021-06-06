@@ -41,9 +41,6 @@ typedef struct
      * bitwise combination thereof makes sense */
     int detect_types;
 
-    /* the timeout value in seconds for database locks */
-    double timeout;
-
     /* None for autocommit, otherwise a PyUnicode with the isolation level */
     PyObject* isolation_level;
 
