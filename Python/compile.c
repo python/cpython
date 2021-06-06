@@ -6461,6 +6461,9 @@ case_safe_for_table(match_case_ty m)
 {
     PyObject *val;
     expr_ty e;
+    if (m->guard != NULL) {
+        return 0;
+    }
     switch(m->pattern->kind) {
         case MatchValue_kind:
             e = m->pattern->v.MatchValue.value;

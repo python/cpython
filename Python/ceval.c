@@ -3859,13 +3859,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     if (PyErr_Occurred()) {
                         goto error;
                     }
-                    else {
-                        JUMPTO(oparg);
-                    }
+                    // x not found in jump table, so skip over.
+                    JUMPTO(oparg);
                 }
-                assert(PyLong_CheckExact(boxed));
-                int target = (int)PyLong_AsLong(boxed);
-                JUMPTO(target);
+                else {
+                    // Found! jump to the right case.
+                    assert(PyLong_CheckExact(boxed));
+                    int target = (int)PyLong_AsLong(boxed);
+                    JUMPTO(target);
+                }
+                STACK_SHRINK(1); // POP x
             }
             else {
                 // fall back to general matching code

@@ -2978,6 +2978,45 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f((False, range(-1, -11, -1), True)), alts[3])
         self.assertEqual(f((False, range(10, 20), True)), alts[4])
 
+    def test_patma_294(self):
+        def f(x):
+            y = None
+            match x:
+                case 0: y = (0,)
+                case 1: y = (1,)
+                case 2: y = (2,)
+                case 3: y = (3,)
+                case 4: y = (4,)
+                case 5: y = (5,)
+                case 6: y = (6,)
+                case 7: y = (7,)
+                case 8: y = (8,)
+                case 9: y = (9,)
+                case 10: y = (10,)
+                case 11: y = (11,)
+                case 12: y = (12,)
+                case 13: y = (13,)
+                case 14: y = (14,)
+                case 15: y = (15,)
+                case 16: y = (16,)
+                case 17: y = (17,)
+                case 18: y = (18,)
+                case 19: y = (19,)
+                case 20: y = (20,)
+                case 21: y = (21,)
+                case 22: y = (22,)
+                case 23: y = (23,)
+                case 24: y = (24,)
+                case 25: y = (25,)
+                case 26: y = (26,)
+                case 27: y = (27,)
+                case 28: y = (28,)
+                case 29: y = (29,)
+            return y
+        result = {x: f(x) for x in range(30)}
+        expected = {x: (x,) for x in range(30)}
+        self.assertEqual(result, expected)
+
 
 class TestInheritance(unittest.TestCase):
 
