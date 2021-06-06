@@ -731,7 +731,7 @@ class ThreadTests(unittest.TestCase):
     def test_dont_check_same_thread(self):
         def run(con, err):
             try:
-                cur = con.execute("select 1")
+                con.execute("select 1")
             except sqlite.Error:
                 err.append("multi-threading not allowed")
 
