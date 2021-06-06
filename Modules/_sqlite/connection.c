@@ -172,7 +172,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     }
 
     self->detect_types = detect_types;
-    self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
     self->thread_ident = PyThread_get_thread_ident();
     self->check_same_thread = check_same_thread;
