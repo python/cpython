@@ -448,7 +448,11 @@ class ConfigDialog(Toplevel):
         if self._vscrollables_re.match(event.widget._w):
             return
         page = self._nametowidget(self.note.select())
-        if is_child_widget(event.widget, page.scrollable_frame.canvas):
+        scrollable_frame = getattr(page, 'scrollable_frame', None)
+        if (
+                scrollable_frame is not None and
+                is_child_widget(event.widget, page.scrollable_frame.canvas)
+        ):
             page.scrollable_frame.mousewheel_event(event)
             return "break"
 
