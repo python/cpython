@@ -413,7 +413,7 @@ The following exceptions are the exceptions that are usually raised.
 
    Raised when the parser encounters a syntax error.  This may occur in an
    :keyword:`import` statement, in a call to the built-in functions
-   :func: `compile`, :func:`exec`,
+   :func:`compile`, :func:`exec`,
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
