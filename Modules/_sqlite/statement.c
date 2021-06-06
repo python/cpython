@@ -86,10 +86,9 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     if (pysqlite_check_remaining_sql(tail)) {
-        (void)sqlite3_finalize(stmt);
         PyErr_SetString(pysqlite_Warning,
                         "You can only execute one statement at a time.");
-        return NULL;
+        goto error;
     }
 
     /* Determine if the statement is a DML statement.
@@ -114,7 +113,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
                                                pysqlite_StatementType);
     if (self == NULL) {
-        return NULL;
+        goto error;
     }
 
     self->st = stmt;
@@ -124,6 +123,10 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 
     PyObject_GC_Track(self);
     return self;
+
+error:
+    (void)sqlite3_finalize(stmt);
+    return NULL;
 }
 
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter)
