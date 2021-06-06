@@ -1490,11 +1490,13 @@ class KeysPage(Frame):
 
         # Create widgets:
         # body and section frames.
-        frame_custom = LabelFrame(
-                self, borderwidth=2, relief=GROOVE,
-                text=' Custom Key Bindings ')
-        frame_key_sets = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Key Set ')
+        self.scrollable_frame = VerticalScrolledFrame(self)
+        frame_custom = LabelFrame(self.scrollable_frame.interior,
+                                  borderwidth=2, relief=GROOVE,
+                                  text=' Custom Key Bindings ')
+        frame_key_sets = LabelFrame(self.scrollable_frame.interior,
+                                    borderwidth=2, relief=GROOVE,
+                                    text=' Key Set ')
         # frame_custom.
         frame_target = Frame(frame_custom)
         target_title = Label(frame_target, text='Action - Key(s)')
@@ -1502,6 +1504,7 @@ class KeysPage(Frame):
         scroll_target_x = Scrollbar(frame_target, orient=HORIZONTAL)
         self.bindingslist = Listbox(
                 frame_target, takefocus=FALSE, exportselection=FALSE)
+        vscrollables.extend([self.bindingslist, scroll_target_y])
         self.bindingslist.bind('<ButtonRelease-1>',
                                self.on_bindingslist_select)
         scroll_target_y['command'] = self.bindingslist.yview
@@ -1534,6 +1537,7 @@ class KeysPage(Frame):
 
         # Pack widgets:
         # body.
+        self.scrollable_frame.pack(side=LEFT, expand=TRUE, fill=BOTH)
         frame_custom.pack(side=BOTTOM, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_key_sets.pack(side=BOTTOM, padx=5, pady=5, fill=BOTH)
         # frame_custom.
