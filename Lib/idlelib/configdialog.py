@@ -15,7 +15,8 @@ from tkinter import (Toplevel, Listbox, Scale, Canvas, TclError,
                      StringVar, BooleanVar, IntVar, TRUE, FALSE,
                      TOP, BOTTOM, RIGHT, LEFT, SOLID, GROOVE,
                      NONE, BOTH, X, Y, W, E, EW, NS, NSEW, NW,
-                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END)
+                     HORIZONTAL, VERTICAL, ANCHOR, ACTIVE, END,
+                     DISABLED, Text)
 from tkinter.ttk import (Frame, LabelFrame, Button, Checkbutton, Entry, Label,
                          OptionMenu, Notebook, Radiobutton, Scrollbar, Style)
 from tkinter import colorchooser
@@ -111,7 +112,7 @@ class ConfigDialog(Toplevel):
             activate_config_changes: Tell editors to reload.
         """
         self.frame = frame = Frame(self, padding="5px")
-        self.frame.grid(sticky="nwes")
+        self.frame.grid(sticky=NSEW)
 
         vscrollables = []
 
@@ -881,18 +882,18 @@ class HighPage(Frame):
                 StringVar(self), self.var_changed_highlight_target)
 
         # Create widgets:
+        self.scrollable_frame = VerticalScrolledFrame(self)
+
         # body frame and section frames.
-        frame_custom = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_custom = LabelFrame(self.scrollable_frame.interior,
+                                  borderwidth=2, relief=GROOVE,
                                   text=' Custom Highlighting ')
-        frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        frame_theme = LabelFrame(self.scrollable_frame.interior,
+                                 borderwidth=2, relief=GROOVE,
                                  text=' Highlighting Theme ')
         # frame_custom.
-        sample_frame = ScrollableTextFrame(
-                frame_custom, relief=SOLID, borderwidth=1)
-        text = self.highlight_sample = sample_frame.text
-        text.configure(
-                font=('courier', 12, ''), cursor='hand2', width=1, height=1,
-                takefocus=FALSE, highlightthickness=0, wrap=NONE)
+        text = self.highlight_sample = Text(frame_custom,
+                                            relief=SOLID, borderwidth=1)
         # Prevent perhaps invisible selection of word or slice.
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
@@ -927,7 +928,11 @@ class HighPage(Frame):
                 self.highlight_target.set(elem)
             text.tag_bind(
                     self.theme_elements[element][0], '<ButtonPress-1>', tem)
-        text['state'] = 'disabled'
+        text.configure(
+                font=('courier', 12, ''), cursor='hand2',
+                width=1, height=n_lines,
+                takefocus=FALSE, highlightthickness=0, wrap=NONE,
+                state=DISABLED)
         self.style.configure('frame_color_set.TFrame', borderwidth=1,
                              relief='solid')
         self.frame_color_set = Frame(frame_custom, style='frame_color_set.TFrame')
@@ -964,15 +969,16 @@ class HighPage(Frame):
                 frame_theme, text='Delete Custom Theme',
                 command=self.delete_custom)
         self.theme_message = Label(frame_theme, borderwidth=2)
+
         # Pack widgets:
         # body.
+        self.scrollable_frame.pack(side=LEFT, expand=TRUE, fill=BOTH)
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
         # frame_custom.
         self.frame_color_set.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
-        sample_frame.pack(
-                side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        text.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
         self.targetlist.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
         self.fg_on.pack(side=LEFT, anchor=E)
