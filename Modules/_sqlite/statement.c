@@ -84,7 +84,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
-    self->db = connection->db;
     self->st = NULL;
     self->sql = Py_NewRef(sql);
     self->in_use = 0;
@@ -110,7 +109,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare_v2(self->db,
+    rc = sqlite3_prepare_v2(connection->db,
                             sql_cstr,
                             (int)sql_cstr_len + 1,
                             &self->st,
@@ -120,7 +119,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     PyObject_GC_Track(self);
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db);
+        _pysqlite_seterror(connection->db);
         goto error;
     }
 

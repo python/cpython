@@ -32,7 +32,6 @@
 typedef struct
 {
     PyObject_HEAD
-    sqlite3* db;
     sqlite3_stmt* st;
     PyObject* sql;
     int in_use;
