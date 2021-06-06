@@ -3855,6 +3855,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             {
                 PyObject *boxed = PyDict_GetItemWithError(jump_dict, x);
                 Py_DECREF(jump_dict);
+                STACK_SHRINK(1);
+                Py_DECREF(x);
                 if (boxed == NULL) {
                     if (PyErr_Occurred()) {
                         goto error;
@@ -3868,7 +3870,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     int target = (int)PyLong_AsLong(boxed);
                     JUMPTO(target);
                 }
-                STACK_SHRINK(1); // POP x
             }
             else {
                 // fall back to general matching code
