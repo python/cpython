@@ -1219,22 +1219,34 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def __init__(self):
         self._callbacks = {}
-        self._saved_sighandler = None
+        self._saved_sighandler = {}
+        self._handler_added_loops = []
 
     def is_active(self):
-        return self._saved_sighandler is not None
+        return self._handler_added_loops is not []
 
     def close(self):
         self._callbacks.clear()
-        if self._saved_sighandler is None:
+        if self._handler_added_loops is []:
             return
 
-        handler = signal.getsignal(signal.SIGCHLD)
-        if handler != self._sig_chld:
-            logger.warning("SIGCHLD handler was changed by outside code")
-        else:
-            signal.signal(signal.SIGCHLD, self._saved_sighandler)
-        self._saved_sighandler = None
+        # handler = signal.getsignal(signal.SIGCHLD)
+        # if handler != self._sig_chld:
+        #     logger.warning("SIGCHLD handler was changed by outside code")
+        # else:
+        #     signal.signal(signal.SIGCHLD, self._saved_sighandler)
+        # self._saved_sighandler = None
+
+        if self._handler_added_loops is not [] and self._callbacks:
+            warnings.warn(
+                'Event Loops are being detached '
+                'from a child watcher with pending handlers',
+                RuntimeWarning)
+
+        if self._handler_added_loops is not []:
+            for loop in self._handler_added_loops:
+                loop.remove_signal_handler(signal.SIGCHLD)
+                self._handler_added_loops.remove(loop)
 
     def __enter__(self):
         return self
@@ -1244,6 +1256,9 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
+        if loop not in self._handler_added_loops:
+            self.attach_loop(loop)
+
         self._callbacks[pid] = (loop, callback, args)
 
         # Prevent a race condition in case the child is already terminated.
@@ -1257,21 +1272,30 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
             return False
 
     def attach_loop(self, loop):
-        # Don't save the loop but initialize itself if called first time
-        # The reason to do it here is that attach_loop() is called from
-        # unix policy only for the main thread.
-        # Main thread is required for subscription on SIGCHLD signal
-        if self._saved_sighandler is not None:
-            return
+        # # Don't save the loop but initialize itself if called first time
+        # # The reason to do it here is that attach_loop() is called from
+        # # unix policy only for the main thread.
+        # # Main thread is required for subscription on SIGCHLD signal
+        # if self._saved_sighandler is not None:
+        #     return
 
-        self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-        if self._saved_sighandler is None:
-            logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-                           "restore to default handler on watcher close.")
-            self._saved_sighandler = signal.SIG_DFL
+        # self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
+        # if self._saved_sighandler is None:
+        #     logger.warning("Previous SIGCHLD handler was set by non-Python code, "
+        #                    "restore to default handler on watcher close.")
+        #     self._saved_sighandler = signal.SIG_DFL
 
-        # Set SA_RESTART to limit EINTR occurrences.
-        signal.siginterrupt(signal.SIGCHLD, False)
+        # # Set SA_RESTART to limit EINTR occurrences.
+        # signal.siginterrupt(signal.SIGCHLD, False)
+        assert loop is None or isinstance(loop, events.AbstractEventLoop)
+    
+        if loop is not None:
+            loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
+
+            # Prevent a race condition in case a child terminated
+            # during the switch.
+            self._do_waitpid_all()
+            self._handler_added_loops.append(loop)
 
     def _do_waitpid_all(self):
         for pid in list(self._callbacks):
@@ -1314,7 +1338,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
                                  expected_pid, returncode)
                 loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
-    def _sig_chld(self, signum, frame):
+    def _sig_chld(self):
         try:
             self._do_waitpid_all()
         except (SystemExit, KeyboardInterrupt):
