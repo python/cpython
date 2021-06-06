@@ -44,10 +44,6 @@ typedef struct
     /* the timeout value in seconds for database locks */
     double timeout;
 
-    /* for internal use in the timeout handler: when did the timeout handler
-     * first get called with count=0? */
-    double timeout_started;
-
     /* None for autocommit, otherwise a PyUnicode with the isolation level */
     PyObject* isolation_level;
 
