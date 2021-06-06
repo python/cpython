@@ -1069,7 +1069,7 @@ tok_backup(struct tok_state *tok, int c)
 
 static int
 _syntaxerror_range(struct tok_state *tok, const char *format,
-                   Py_ssize_t col_offset, Py_ssize_t end_col_offset,
+                   int col_offset, int end_col_offset,
                    va_list vargs)
 {
     PyObject *errmsg, *errtext, *args;
@@ -1101,7 +1101,8 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
         goto error;
     }
 
-    args = Py_BuildValue("(O(OiiNii))", errmsg, tok->filename, tok->lineno, col_offset, errtext, tok->lineno, end_col_offset);
+    args = Py_BuildValue("(O(OiiNii))", errmsg, tok->filename, tok->lineno,
+                         col_offset, errtext, tok->lineno, end_col_offset);
     if (args) {
         PyErr_SetObject(PyExc_SyntaxError, args);
         Py_DECREF(args);
@@ -1114,7 +1115,8 @@ error:
 }
 
 static int
-syntaxerror(struct tok_state *tok, const char *format, ...) {
+syntaxerror(struct tok_state *tok, const char *format, ...)
+{
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
@@ -1128,8 +1130,9 @@ syntaxerror(struct tok_state *tok, const char *format, ...) {
 
 static int
 syntaxerror_known_range(struct tok_state *tok,
-                        Py_ssize_t col_offset, Py_ssize_t end_col_offset,
-                        const char *format, ...) {
+                        int col_offset, int end_col_offset,
+                        const char *format, ...)
+{
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
@@ -1582,7 +1585,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     /* Number */
     if (isdigit(c)) {
         if (c == '0') {
-            char* number_start = tok->cur;
+            const char* number_start = tok->cur;
             /* Hex, octal or binary -- maybe. */
             c = tok_nextc(tok);
             if (c == 'x' || c == 'X') {
@@ -1609,14 +1612,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c < '0' || c >= '8') {
-                        tok_backup(tok, c);
                         if (isdigit(c)) {
-                            // Move to the actual current token that is incorrect
-                            tok_nextc(tok);
                             return syntaxerror(tok,
                                     "invalid digit '%c' in octal literal", c);
                         }
                         else {
+                            tok_backup(tok, c);
                             return syntaxerror(tok, "invalid octal literal");
                         }
                     }
