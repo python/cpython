@@ -29,7 +29,7 @@
 #include "sqlite3.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection);
+int pysqlite_step(sqlite3_stmt *statement);
 
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.

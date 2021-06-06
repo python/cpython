@@ -4,7 +4,6 @@
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_code.h"          // CO_FAST_LOCAL, etc.
 
 #include "frameobject.h"          // PyFrameObject
 #include "pycore_frame.h"
@@ -660,9 +659,9 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
 
     /* locals */
-    PyObject **localsplus = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++localsplus) {
-        Py_VISIT(*localsplus);
+    PyObject **fastlocals = f->f_localsptr;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
+        Py_VISIT(*fastlocals);
     }
 
     /* stack */
@@ -685,9 +684,9 @@ frame_tp_clear(PyFrameObject *f)
     Py_CLEAR(f->f_trace);
 
     /* locals */
-    PyObject **localsplus = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++localsplus) {
-        Py_CLEAR(*localsplus);
+    PyObject **fastlocals = f->f_localsptr;
+    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++fastlocals) {
+        Py_CLEAR(*fastlocals);
     }
 
     /* stack */
@@ -918,13 +917,112 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
+/* Convert between "fast" version of locals and dictionary version.
+
+   map and values are input arguments.  map is a tuple of strings.
+   values is an array of PyObject*.  At index i, map[i] is the name of
+   the variable with value values[i].  The function copies the first
+   nmap variable from map/values into dict.  If values[i] is NULL,
+   the variable is deleted from dict.
+
+   If deref is true, then the values being copied are cell variables
+   and the value is extracted from the cell variable before being put
+   in dict.
+ */
+
+static int
+map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
+            int deref)
+{
+    Py_ssize_t j;
+    assert(PyTuple_Check(map));
+    assert(PyDict_Check(dict));
+    assert(PyTuple_Size(map) >= nmap);
+    for (j=0; j < nmap; j++) {
+        PyObject *key = PyTuple_GET_ITEM(map, j);
+        PyObject *value = values[j];
+        assert(PyUnicode_Check(key));
+        if (deref && value != NULL) {
+            assert(PyCell_Check(value));
+            value = PyCell_GET(value);
+        }
+        if (value == NULL) {
+            if (PyObject_DelItem(dict, key) != 0) {
+                if (PyErr_ExceptionMatches(PyExc_KeyError))
+                    PyErr_Clear();
+                else
+                    return -1;
+            }
+        }
+        else {
+            if (PyObject_SetItem(dict, key, value) != 0)
+                return -1;
+        }
+    }
+    return 0;
+}
+
+/* Copy values from the "locals" dict into the fast locals.
+
+   dict is an input argument containing string keys representing
+   variables names and arbitrary PyObject* as values.
+
+   map and values are input arguments.  map is a tuple of strings.
+   values is an array of PyObject*.  At index i, map[i] is the name of
+   the variable with value values[i].  The function copies the first
+   nmap variable from map/values into dict.  If values[i] is NULL,
+   the variable is deleted from dict.
+
+   If deref is true, then the values being copied are cell variables
+   and the value is extracted from the cell variable before being put
+   in dict.  If clear is true, then variables in map but not in dict
+   are set to NULL in map; if clear is false, variables missing in
+   dict are ignored.
+
+   Exceptions raised while modifying the dict are silently ignored,
+   because there is no good way to report them.
+*/
+
+static void
+dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
+            int deref, int clear)
+{
+    Py_ssize_t j;
+    assert(PyTuple_Check(map));
+    assert(PyDict_Check(dict));
+    assert(PyTuple_Size(map) >= nmap);
+    for (j=0; j < nmap; j++) {
+        PyObject *key = PyTuple_GET_ITEM(map, j);
+        PyObject *value = PyObject_GetItem(dict, key);
+        assert(PyUnicode_Check(key));
+        /* We only care about NULLs if clear is true. */
+        if (value == NULL) {
+            PyErr_Clear();
+            if (!clear)
+                continue;
+        }
+        if (deref) {
+            assert(PyCell_Check(values[j]));
+            if (PyCell_GET(values[j]) != value) {
+                if (PyCell_Set(values[j], value) < 0)
+                    PyErr_Clear();
+            }
+        } else if (values[j] != value) {
+            Py_XINCREF(value);
+            Py_XSETREF(values[j], value);
+        }
+        Py_XDECREF(value);
+    }
+}
+
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
     /* Merge fast locals into f->f_locals */
-    PyObject *locals;
+    PyObject *locals, *map;
     PyObject **fast;
     PyCodeObject *co;
+    Py_ssize_t j;
 
     if (f == NULL) {
         PyErr_BadInternalCall();
@@ -937,9 +1035,25 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
             return -1;
     }
     co = f->f_code;
+    map = co->co_varnames;
+    if (!PyTuple_Check(map)) {
+        PyErr_Format(PyExc_SystemError,
+                     "co_varnames must be a tuple, not %s",
+                     Py_TYPE(map)->tp_name);
+        return -1;
+    }
     fast = f->f_localsptr;
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
+    j = PyTuple_GET_SIZE(map);
+    if (j > co->co_nlocals)
+        j = co->co_nlocals;
+    if (co->co_nlocals) {
+        if (map_to_dict(map, j, locals, fast, 0) < 0)
+            return -1;
+    }
+    if (co->co_ncellvars || co->co_nfreevars) {
+        if (map_to_dict(co->co_cellvars, co->co_ncellvars,
+                        locals, fast + co->co_nlocals, 1))
+            return -1;
 
         /* If the namespace is unoptimized, then one of the
            following cases applies:
@@ -949,42 +1063,10 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
            We don't want to accidentally copy free variables
            into the locals dict used by the class.
         */
-        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
-            continue;
-        }
-
-        /* Some args are also cells.  For now each of those variables
-           has two indices in the fast array, with both marked as cells
-           but only one marked as an arg.  That one is always set
-           to NULL in _PyEval_MakeFrameVector() and the other index
-           gets the cell holding the arg value.  So we ignore the
-           former here and will later use the cell for the variable.
-        */
-        if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
-            assert(fast[i] == NULL);
-            continue;
-        }
-
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = fast[i];
-        if (kind & (CO_FAST_CELL | CO_FAST_FREE) && value != NULL) {
-            assert(PyCell_Check(value));
-            value = PyCell_GET(value);
-        }
-        if (value == NULL) {
-            if (PyObject_DelItem(locals, name) != 0) {
-                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-                    PyErr_Clear();
-                }
-                else {
-                    return -1;
-                }
-            }
-        }
-        else {
-            if (PyObject_SetItem(locals, name, value) != 0) {
+        if (co->co_flags & CO_OPTIMIZED) {
+            if (map_to_dict(co->co_freevars, co->co_nfreevars, locals,
+                            fast + co->co_nlocals + co->co_ncellvars, 1) < 0)
                 return -1;
-            }
         }
     }
     return 0;
@@ -1006,51 +1088,36 @@ void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
     /* Merge locals into fast locals */
-    PyObject *locals;
+    PyObject *locals, *map;
     PyObject **fast;
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
+    Py_ssize_t j;
     if (f == NULL)
         return;
     locals = _PyFrame_Specials(f)[FRAME_SPECIALS_LOCALS_OFFSET];
+    co = f->f_code;
+    map = co->co_varnames;
     if (locals == NULL)
         return;
-    fast = f->f_localsptr;
-    co = f->f_code;
-
+    if (!PyTuple_Check(map))
+        return;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocalsPlusKind kind = co->co_localspluskinds[i];
-
+    fast = f->f_localsptr;
+    j = PyTuple_GET_SIZE(map);
+    if (j > co->co_nlocals)
+        j = co->co_nlocals;
+    if (co->co_nlocals)
+        dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
+    if (co->co_ncellvars || co->co_nfreevars) {
+        dict_to_map(co->co_cellvars, co->co_ncellvars,
+                    locals, fast + co->co_nlocals, 1, clear);
         /* Same test as in PyFrame_FastToLocals() above. */
-        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
-            continue;
+        if (co->co_flags & CO_OPTIMIZED) {
+            dict_to_map(co->co_freevars, co->co_nfreevars, locals,
+                        fast + co->co_nlocals + co->co_ncellvars, 1,
+                        clear);
         }
-        /* Same test as in PyFrame_FastToLocals() above. */
-        if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
-            continue;
-        }
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = PyObject_GetItem(locals, name);
-        /* We only care about NULLs if clear is true. */
-        if (value == NULL) {
-            PyErr_Clear();
-            if (!clear) {
-                continue;
-            }
-        }
-        if (kind & (CO_FAST_CELL | CO_FAST_FREE)) {
-            assert(PyCell_Check(fast[i]));
-            if (PyCell_GET(fast[i]) != value) {
-                if (PyCell_Set(fast[i], value) < 0) {
-                    PyErr_Clear();
-                }
-            }
-        } else if (fast[i] != value) {
-            Py_XINCREF(value);
-            Py_XSETREF(fast[i], value);
-        }
-        Py_XDECREF(value);
     }
     PyErr_Restore(error_type, error_value, error_traceback);
 }

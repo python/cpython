@@ -172,7 +172,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     }
 
     self->detect_types = detect_types;
-    self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
     self->thread_ident = PyThread_get_thread_ident();
     self->check_same_thread = check_same_thread;
@@ -432,7 +431,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self)
             goto error;
         }
 
-        rc = pysqlite_step(statement, self);
+        rc = pysqlite_step(statement);
         if (rc != SQLITE_DONE) {
             _pysqlite_seterror(self->db);
         }
@@ -482,7 +481,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self)
             goto error;
         }
 
-        rc = pysqlite_step(statement, self);
+        rc = pysqlite_step(statement);
         if (rc != SQLITE_DONE) {
             _pysqlite_seterror(self->db);
         }
@@ -550,7 +549,6 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
     int i;
     sqlite3_value* cur_value;
     PyObject* cur_py_value;
-    const char* val_str;
 
     args = PyTuple_New(argc);
     if (!args) {
@@ -566,15 +564,19 @@ _pysqlite_build_py_params(sqlite3_context *context, int argc,
             case SQLITE_FLOAT:
                 cur_py_value = PyFloat_FromDouble(sqlite3_value_double(cur_value));
                 break;
-            case SQLITE_TEXT:
-                val_str = (const char*)sqlite3_value_text(cur_value);
-                cur_py_value = PyUnicode_FromString(val_str);
-                /* TODO: have a way to show errors here */
-                if (!cur_py_value) {
-                    PyErr_Clear();
-                    cur_py_value = Py_NewRef(Py_None);
+            case SQLITE_TEXT: {
+                sqlite3 *db = sqlite3_context_db_handle(context);
+                const char *text = (const char *)sqlite3_value_text(cur_value);
+
+                if (text == NULL && sqlite3_errcode(db) == SQLITE_NOMEM) {
+                    PyErr_NoMemory();
+                    goto error;
                 }
+
+                Py_ssize_t size = sqlite3_value_bytes(cur_value);
+                cur_py_value = PyUnicode_FromStringAndSize(text, size);
                 break;
+            }
             case SQLITE_BLOB: {
                 sqlite3 *db = sqlite3_context_db_handle(context);
                 const void *blob = sqlite3_value_blob(cur_value);
@@ -822,7 +824,12 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
 static void _destructor(void* args)
 {
+    // This function may be called without the GIL held, so we need to ensure
+    // that we destroy 'args' with the GIL
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
     Py_DECREF((PyObject*)args);
+    PyGILState_Release(gstate);
 }
 
 /*[clinic input]

@@ -1058,23 +1058,16 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LOAD_CLOSURE (i)
 
-   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
-   storage.  The name of the variable is ``co_fastlocalnames[i]``.
-
-   Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
-   It exists to keep bytecode a little more readable.
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+   Pushes a reference to the cell contained in slot *i* of the cell and free
+   variable storage.  The name of the variable is ``co_cellvars[i]`` if *i* is
+   less than the length of *co_cellvars*.  Otherwise it is ``co_freevars[i -
+   len(co_cellvars)]``.
 
 
 .. opcode:: LOAD_DEREF (i)
 
-   Loads the cell contained in slot ``i`` of the "fast locals" storage.
+   Loads the cell contained in slot *i* of the cell and free variable storage.
    Pushes a reference to the object the cell contains on the stack.
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_CLASSDEREF (i)
@@ -1085,28 +1078,19 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
-
 
 .. opcode:: STORE_DEREF (i)
 
-   Stores TOS into the cell contained in slot ``i`` of the "fast locals"
+   Stores TOS into the cell contained in slot *i* of the cell and free variable
    storage.
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: DELETE_DEREF (i)
 
-   Empties the cell contained in slot ``i`` of the "fast locals" storage.
+   Empties the cell contained in slot *i* of the cell and free variable storage.
    Used by the :keyword:`del` statement.
 
    .. versionadded:: 3.2
-
-   .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: RAISE_VARARGS (argc)
