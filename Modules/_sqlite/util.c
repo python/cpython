@@ -24,7 +24,8 @@
 #include "module.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
+int
+pysqlite_step(sqlite3_stmt *statement)
 {
     int rc;
 
