@@ -343,9 +343,14 @@ Python Docs
 Turtle Demo
    Run the turtledemo module with example Python code and turtle drawings.
 
-Additional help sources may be added here with the Configure IDLE dialog under
-the General tab. See the :ref:`Help sources <help-sources>` subsection below
-for more on Help menu choices.
+Additional help sources
+   Menu items for display here are added on the General tab of Options =>
+   Configure IDLE.  Menu entries should be unique (new in 3.9) and will be
+   sorted.  Documents can be located either on the current machine or on the
+   internet.  The allowed file types may depend on the system.  Local file
+   paths are checked when submitted; internet addresses are not.  See the
+   :ref:`Help sources <help-sources>` subsection below for more on Help menu
+   choices.
 
 .. index::
    single: Cut

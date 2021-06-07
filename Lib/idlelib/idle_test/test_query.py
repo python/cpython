@@ -247,10 +247,14 @@ class HelpsourceEntryokTest(unittest.TestCase):
         entry_ok = query.HelpSource.entry_ok
         entry_error = {}
         path_error = {}
+        def __init__(self, used_names={}):
+            self.used_names = used_names
         def item_ok(self):
             return self.name
         def path_ok(self):
             return self.path
+        def showerror(self, message):
+            self.entry_error['text'] = message
 
     def test_entry_ok_helpsource(self):
         dialog = self.Dummy_HelpSource()
@@ -261,6 +265,13 @@ class HelpsourceEntryokTest(unittest.TestCase):
             with self.subTest():
                 dialog.name, dialog.path = name, path
                 self.assertEqual(dialog.entry_ok(), result)
+
+    def test_entry_ok_helpsource_duplicate(self):
+        name = 'help1'
+        dialog = self.Dummy_HelpSource({name})
+        dialog.name, dialog.path = name, 'doc.txt'
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('in use', dialog.entry_error['text'])
 
 
 # 2 CustomRun test classes each test one method.
