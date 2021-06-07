@@ -230,6 +230,9 @@ special_module_load_attr(
     PyObject *attr, *getattr;
     _Py_IDENTIFIER(__getattr__);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
+    if (dict == NULL) {
+        return -1;
+    }
     getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
     if (PyErr_Occurred()) {
         PyErr_Clear();
