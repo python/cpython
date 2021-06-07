@@ -8884,9 +8884,10 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         /* The first argument might be a cell. */
         for (i = 0; i < co->co_ncellvars; i++) {
             if (co->co_cell2arg[i] == 0) {
-                PyObject *cell = f->f_localsptr[co->co_nlocals + i];
+                int celloffset = co->co_nlocals + i;
+                PyObject *cell = f->f_localsptr[celloffset];
                 if (PyCell_Check(cell) &&
-                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, 0)) {
+                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, celloffset)) {
                     obj = PyCell_GET(cell);
                 }
                 break;
