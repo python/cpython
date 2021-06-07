@@ -165,8 +165,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
                 # Use bundled wheel package
                 wheel_name = package.wheel_name
                 wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
-                with wheel_path.open("rb") as fp:
-                    whl = fp.read()
+                whl = wheel_path.read_bytes()
             else:
                 # Use the wheel package directory
                 with open(package.wheel_path, "rb") as fp:
