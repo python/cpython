@@ -1,20 +1,20 @@
-Fix a race condition in `MultiLoopChildWatcher`. The patch does the
+Fix a race condition in ``MultiLoopChildWatcher``. The patch does the
 following -
 
 1) Creates a list that will keep track of the event loops where the handler
-has been installed by `MultiLoopChildWatcher`.
+has been installed by ``MultiLoopChildWatcher``.
 
-2) In `attach_loop` and `add_child_handler`, the handler is installed for the
-loop using `add_signal_handler` and the event loop instance is also added to
+2) In ``attach_loop`` and ``add_child_handler``, the handler is installed for the
+loop using ``add_signal_handler`` and the event loop instance is also added to
 the list.
 
-3) In `remove_child_handler`, the `remove_signal_handler` is called on the
+3) In ``remove_child_handler``, the ``remove_signal_handler`` is called on the
 loop the provided pid is attached to.
 
-4) In `close`, the `remove_signal_handler` is called on every loop and the
+4) In ``close``, the ``remove_signal_handler`` is called on every loop and the
 loop is removed from the list.
 
-The patch changes the behavior of `MultiLoopChildWatcher`. `MultiLoopChildWatcher`
+The patch changes the behavior of ``MultiLoopChildWatcher``. ``MultiLoopChildWatcher``
 can now only be used in the main thread.
 
 Patch by Shreyan Avigyan
