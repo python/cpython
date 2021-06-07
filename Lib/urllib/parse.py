@@ -622,8 +622,8 @@ def unquote_to_bytes(string):
     bits = string.split(b'%')
     if len(bits) == 1:
         return string
-    res = [bits[0]]
-    append = res.append
+    res = bytearray(bits[0])
+    append = res.extend
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     global _hextobyte
@@ -637,7 +637,7 @@ def unquote_to_bytes(string):
         except KeyError:
             append(b'%')
             append(item)
-    return b''.join(res)
+    return res
 
 _asciire = re.compile('([\x00-\x7f]+)')
 
