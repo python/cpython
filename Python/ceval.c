@@ -1343,6 +1343,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
+/* Get opcode and oparg from original instructions, not quickened form. */
+#define TRACING_NEXTOPARG() do { \
+        _Py_CODEUNIT word = ((_Py_CODEUNIT *)PyBytes_AS_STRING(co->co_code))[INSTR_OFFSET()]; \
+        opcode = _Py_OPCODE(word); \
+        oparg = _Py_OPARG(word); \
+        next_instr++; \
+    } while (0)
+
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,
@@ -1644,15 +1652,23 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     if (PyDTrace_FUNCTION_ENTRY_ENABLED())
         dtrace_function_entry(f);
 
+    /* Increment the warmup counter and quicken if warm enough
+     * _Py_Quicken is idempotent so we don't worry about overflow */
+    if (!PyCodeObject_IsWarmedUp(co)) {
+        PyCodeObject_IncrementWarmup(co);
+        if (PyCodeObject_IsWarmedUp(co)) {
+            if (_Py_Quicken(co)) {
+                goto exit_eval_frame;
+            }
+        }
+    }
+
+
     names = co->co_names;
     consts = co->co_consts;
     fastlocals = f->f_localsptr;
+    first_instr = co->co_firstinstr;
     freevars = f->f_localsptr + co->co_nlocals;
-    assert(PyBytes_Check(co->co_code));
-    assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
-    assert(PyBytes_GET_SIZE(co->co_code) % sizeof(_Py_CODEUNIT) == 0);
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), sizeof(_Py_CODEUNIT)));
-    first_instr = (_Py_CODEUNIT *) PyBytes_AS_STRING(co->co_code);
     /*
        f->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -1757,7 +1773,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
     tracing_dispatch:
         f->f_lasti = INSTR_OFFSET();
-        NEXTOPARG();
+        TRACING_NEXTOPARG();
 
         if (PyDTrace_LINE_ENABLED())
             maybe_dtrace_line(f, &trace_info);

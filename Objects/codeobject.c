@@ -211,6 +211,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     Py_INCREF(con->code);
     co->co_code = con->code;
+    co->co_firstinstr = (_Py_CODEUNIT *)PyBytes_AS_STRING(con->code);
     co->co_firstlineno = con->firstlineno;
     Py_INCREF(con->linetable);
     co->co_linetable = con->linetable;
@@ -250,6 +251,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_opcache = NULL;
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
+    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
+    co->co_quickened = NULL;
 }
 
 /* The caller is responsible for ensuring that the given data is valid. */
@@ -376,7 +379,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     if (_PyCode_Validate(&con) < 0) {
         return NULL;
     }
-
+    assert(PyBytes_GET_SIZE(code) % sizeof(_Py_CODEUNIT) == 0);
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(code), sizeof(_Py_CODEUNIT)));
     if (nlocals != PyTuple_GET_SIZE(varnames)) {
         PyErr_SetString(PyExc_ValueError,
                         "code: co_nlocals != len(co_varnames)");
@@ -1039,6 +1043,10 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co->co_cell2arg);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
+    if (co->co_quickened) {
+        PyMem_Free(co->co_quickened);
+        _Py_QuickenedCount--;
+    }
     PyObject_Free(co);
 }
 
