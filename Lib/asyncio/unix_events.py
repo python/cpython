@@ -1230,12 +1230,6 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         if self._handler_added_loops is []:
             return
 
-        if self._handler_added_loops is not [] and self._callbacks:
-            warnings.warn(
-                'Event Loops are being detached '
-                'from a child watcher with pending handlers',
-                RuntimeWarning)
-
         # Remove handler from every event loop we registered the handler
         # on previously
         if self._handler_added_loops is not []:
