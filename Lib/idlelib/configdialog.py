@@ -116,11 +116,13 @@ class ConfigDialog(Toplevel):
         self.fontpage = FontPage(note, self.highpage)
         self.keyspage = KeysPage(note)
         self.genpage = GenPage(note)
+        self.startpage = StartPage(note)
         self.extpage = self.create_page_extensions()
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
         note.add(self.genpage, text=' General ')
+        note.add(self.startpage, text=' Startup ')
         note.add(self.extpage, text='Extensions')
         note.enable_traversal()
         note.pack(side=TOP, expand=TRUE, fill=BOTH)
@@ -2194,6 +2196,176 @@ class GenPage(Frame):
             changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
+
+
+class StartPage(Frame):
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.create_page_startup()
+        self.load_startup_cfg()
+
+    def create_page_startup(self):
+        """Return frame of widgets for Startup tab.
+
+        Enable users to provisionally change startup options. Function
+        load_startup_cfg intializes tk variables using idleConf.
+        Radiobuttons startup_shell_on and startup_editor_on
+        set var startup_edit.  Entry boxes win_width_int and win_height_int
+        set var win_width and win_height.  Setting var_name invokes the
+        default callback that adds option to changes.
+
+        Widgets for StartupPage(Frame):  (*) widgets bound to self
+            frame_window: LabelFrame
+                frame_run: Frame
+                    startup_title: Label
+                    (*)startup_editor_on: Radiobutton - startup_edit
+                    (*)startup_shell_on: Radiobutton - startup_edit
+                frame_win_size: Frame
+                    win_size_title: Label
+                    win_width_title: Label
+                    (*)win_width_int: Entry - win_width
+                    win_height_title: Label
+                    (*)win_height_int: Entry - win_height
+                frame_code: Frame
+                    frame_code_shell: Frame
+                        (*)shell_startup_toggle: Checkbutton - startup_code_on
+                        (*)shell_restart_toggle: Checkbutton - restart_code_on
+                        (*)shell_startup_text: Text
+                    frame_code_editor: Frame
+                        (*)editor_template_text: Text
+        """
+        # Integer values need StringVar because int('') raises.
+        self.startup_edit = tracers.add(
+                IntVar(self), ('main', 'General', 'editor-on-startup'))
+        self.win_width = tracers.add(
+                StringVar(self), ('main', 'EditorWindow', 'width'))
+        self.win_height = tracers.add(
+                StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.startup_code_on = tracers.add(
+                BooleanVar(self), ('main', 'ShellWindow', 'startup-code-on'))
+        self.restart_code_on = tracers.add(
+                BooleanVar(self), ('main', 'ShellWindow', 'restart-code-on'))
+
+        # Create widgets:
+        # Section frames.
+        frame_window = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Window Preferences')
+        frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                 text=' Shell Startup Code ')
+        frame_editor = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Editor Template Code ')
+
+        # Frame_window.
+        frame_run = Frame(frame_window, borderwidth=0)
+        startup_title = Label(frame_run, text='At Startup')
+        self.startup_editor_on = Radiobutton(
+                frame_run, variable=self.startup_edit, value=1,
+                text="Open Edit Window")
+        self.startup_shell_on = Radiobutton(
+                frame_run, variable=self.startup_edit, value=0,
+                text='Open Shell Window')
+
+        frame_win_size = Frame(frame_window, borderwidth=0)
+        win_size_title = Label(
+                frame_win_size, text='Initial Window Size  (in characters)')
+        win_width_title = Label(frame_win_size, text='Width')
+        self.win_width_int = Entry(
+                frame_win_size, textvariable=self.win_width, width=3)
+        win_height_title = Label(frame_win_size, text='Height')
+        self.win_height_int = Entry(
+                frame_win_size, textvariable=self.win_height, width=3)
+
+        # Frame_shell.
+        frame_shell_toggle = Frame(frame_shell)
+        self.shell_startup_toggle = Checkbutton(frame_shell_toggle,
+                                                variable=self.startup_code_on,
+                                                onvalue=True, offvalue=False,
+                                                text='Run code on startup')
+        self.shell_restart_toggle = Checkbutton(frame_shell_toggle,
+                                                variable=self.restart_code_on,
+                                                onvalue=True, offvalue=False,
+                                                text='Run code on restart')
+        self.shell_startup_text = Text(frame_shell, width=20, height=10)
+        scroll_shell = Scrollbar(frame_shell)
+        scroll_shell['command'] = self.shell_startup_text.yview
+        self.shell_startup_text['yscrollcommand'] = scroll_shell.set
+
+        # Frame_editor.
+        self.editor_template_text = Text(frame_editor, width=20, height=10)
+        scroll_editor = Scrollbar(frame_editor)
+        scroll_editor['command'] = self.editor_template_text.yview
+        self.editor_template_text['yscrollcommand'] = scroll_editor.set
+
+        # Pack widgets:
+        # Body.
+        frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        # frame_run.
+        frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
+        startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.startup_shell_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        self.startup_editor_on.pack(side=RIGHT, anchor=W, padx=5, pady=5)
+        # frame_win_size.
+        frame_win_size.pack(side=TOP, padx=5, pady=0, fill=X)
+        win_size_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.win_height_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_height_title.pack(side=RIGHT, anchor=E, pady=5)
+        self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
+        win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # Frame_shell.
+        frame_shell.pack(side='top', padx=5, pady=5, expand=True, fill='both')
+        frame_shell_toggle.pack(side='top')
+        self.shell_startup_toggle.pack(side='left', padx=2, pady=2)
+        self.shell_restart_toggle.pack(side='right', padx=2, pady=2)
+        scroll_shell.pack(side='right', anchor='w', fill='y')
+        self.shell_startup_text.pack(fill='x')
+        # Frame_editor.
+        frame_editor.pack(side='top', padx=5, pady=0, fill='x')
+        scroll_editor.pack(side='right', anchor='w', fill='y')
+        self.editor_template_text.pack(fill='x')
+
+    def load_startup_cfg(self):
+        "Load current configuration settings for the startup options."
+        # Set variables for all windows.
+        self.startup_edit.set(idleConf.GetOption(
+                'main', 'General', 'editor-on-startup', type='bool'))
+        self.win_width.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'width', type='int'))
+        self.win_height.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'height', type='int'))
+
+        self.startup_code_on.set(idleConf.GetOption(
+                'main', 'ShellWindow', 'startup-code-on', type='bool'))
+        self.restart_code_on.set(idleConf.GetOption(
+                'main', 'ShellWindow', 'restart-code-on', type='bool'))
+        shell_code = idleConf.GetOption(
+                'main', 'ShellWindow', 'shell-startup-code')
+        self.shell_startup_text.insert('end', shell_code or '')
+        self.shell_startup_text.edit_modified(False)
+        # Text widgets don't have trace methods, but instead set a
+        # modified flag on inserts or deletes.
+        self.shell_startup_text.bind('<<Modified>>',
+                                     self.var_changed_shell_text)
+
+        editor_template = idleConf.GetOption(
+                'main', 'EditorWindow', 'editor-template-code')
+        self.editor_template_text.insert('end', editor_template or '')
+        self.editor_template_text.edit_modified(False)
+        self.editor_template_text.bind('<<Modified>>',
+                                       self.var_changed_editor_template)
+
+    def var_changed_shell_text(self, *params):
+        "Store changes to shell startup text."
+        value = self.shell_startup_text.get('1.0', 'end-1c')
+        changes.add_option('main', 'ShellWindow', 'shell-startup-code', value)
+        self.shell_startup_text.edit_modified(False)
+
+    def var_changed_editor_template(self, *params):
+        "Store changes to editor template text."
+        value = self.editor_template_text.get('1.0', 'end-1c')
+        changes.add_option('main', 'EditorWindow',
+                           'editor-template-code', value)
+        self.editor_template_text.edit_modified(False)
 
 
 class VarTrace:

@@ -366,8 +366,15 @@ class EditorWindow:
         self.width = pixel_width // zero_char_width
 
     def new_callback(self, event):
+        """Create a new editor window.
+
+        A new editor is created with default template text.
+        """
         dirname, basename = self.io.defaultfilename()
-        self.flist.new(dirname)
+        editor = self.flist.new(dirname)
+        template = idleConf.GetOption('main', 'EditorWindow',
+                                      'editor-template-code')
+        editor.text.insert('end', template or '')
         return "break"
 
     def home_callback(self, event):

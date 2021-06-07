@@ -2,6 +2,7 @@
 
 Half the class creates dialog, half works with user customizations.
 """
+import os
 from idlelib import configdialog
 from test.support import requires
 requires('gui')
@@ -1232,18 +1233,12 @@ class GenPageTest(unittest.TestCase):
         # Set to wrong values, load, check right values.
         eq = self.assertEqual
         d = self.page
-        d.startup_edit.set(1)
         d.autosave.set(1)
-        d.win_width.set(1)
-        d.win_height.set(1)
         d.helplist.insert('end', 'bad')
         d.user_helplist = ['bad', 'worse']
         idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
         d.load_general_cfg()
-        eq(d.startup_edit.get(), 0)
         eq(d.autosave.get(), 0)
-        eq(d.win_width.get(), '80')
-        eq(d.win_height.get(), '40')
         eq(d.helplist.get(0, 'end'), ('name',))
         eq(d.user_helplist, [('name', 'file', '1')])
 
@@ -1439,6 +1434,110 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage['HelpFiles'],
                          {'1': 'name1;file1', '2': 'name2;file2'})
         d.update_help_changes = Func()
+
+
+class StartPageTest(unittest.TestCase):
+    """Test that startup tab widgets enable users to make changes.
+
+    Test that widget actions set vars and that var changes add
+    options.
+    """
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.startpage
+        dialog.note.select(page)
+
+    @classmethod
+    def tearDownClass(cls):
+        page = cls.page
+
+    def setUp(self):
+        changes.clear()
+
+    def test_load_startup_cfg(self):
+        # Set to wrong values, load, check right values.
+        eq = self.assertEqual
+        d = self.page
+        d.startup_edit.set(1)
+        d.win_width.set(1)
+        d.win_height.set(1)
+        d.startup_code_on.set(1)
+        d.restart_code_on.set(1)
+        d.shell_startup_text.insert('end', 'shell spam')
+        d.editor_template_text.insert('end', 'editor spam')
+        d.load_startup_cfg()
+        eq(d.startup_edit.get(), 0)
+        eq(d.win_width.get(), '80')
+        eq(d.win_height.get(), '40')
+        eq(d.startup_code_on.get(), False)
+        eq(d.restart_code_on.get(), False)
+        self.assertNotIn('spam', d.shell_startup_text.get('1.0'))
+        self.assertNotIn('spam', d.editor_template_text.get('1.0'))
+
+    def test_startup(self):
+        d = self.page
+        d.startup_editor_on.invoke()
+        self.assertEqual(mainpage,
+                         {'General': {'editor-on-startup': '1'}})
+        changes.clear()
+        d.startup_shell_on.invoke()
+        self.assertEqual(mainpage,
+                         {'General': {'editor-on-startup': '0'}})
+
+    def test_editor_size(self):
+        d = self.page
+        d.win_height_int.delete(0, 'end')
+        d.win_height_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'height': '11'}})
+        changes.clear()
+        d.win_width_int.delete(0, 'end')
+        d.win_width_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
+
+    def test_startup_code_on(self):
+        d = self.page
+        d.shell_startup_toggle.invoke()
+        self.assertEqual(mainpage,
+                         {'ShellWindow': {'startup-code-on': 'True'}})
+        changes.clear()
+        d.shell_startup_toggle.invoke()
+        self.assertEqual(mainpage,
+                         {'ShellWindow': {'startup-code-on': 'False'}})
+
+    def test_restart_code_on(self):
+        d = self.page
+        d.shell_restart_toggle.invoke()
+        self.assertEqual(mainpage,
+                         {'ShellWindow': {'restart-code-on': 'True'}})
+        changes.clear()
+        d.shell_restart_toggle.invoke()
+        self.assertEqual(mainpage,
+                         {'ShellWindow': {'restart-code-on': 'False'}})
+
+    def test_shell_startup_text(self):
+        d = self.page
+        d.shell_startup_text.delete('1.0', 'end')
+        text = f'import os{os.linesep}import re'
+        d.shell_startup_text.insert('end', text)
+        self.assertEqual(mainpage,
+                         {'ShellWindow': {'shell-startup-code': text}})
+        changes.clear()
+        d.shell_startup_text.delete('1.0', 'end')
+        self.assertEqual(mainpage,
+                         {'ShellWindow': {'shell-startup-code': ''}})
+
+    def test_editor_template_text(self):
+        d = self.page
+        d.editor_template_text.delete('1.0', 'end')
+        text = f'# This is a comment.{os.linesep}# Second line'
+        d.editor_template_text.insert('end', text)
+        self.assertEqual(
+                mainpage,
+                {'EditorWindow': {'editor-template-code': text}})
+        changes.clear()
+        d.editor_template_text.delete('1.0', 'end')
+        self.assertEqual(mainpage,
+                         {'EditorWindow': {'editor-template-code': ''}})
 
 
 class VarTraceTest(unittest.TestCase):

@@ -669,6 +669,23 @@ If there are arguments:
 * Otherwise, arguments are files opened for editing and
   ``sys.argv`` reflects the arguments passed to IDLE itself.
 
+
+Optional Startup Code Execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In addition to the ``-``, ``-s``, ``-c``, and ``-r`` command line options for
+executing Python code upon startup, code can be entered using the IDLE
+Configuration Dialog under the ``Startup`` tab.  The code entered here will
+be executed if the appropriate check box is selected for running on
+startup and if command line options ``-``, ``-c``, and ``-r`` were not used.
+Those options take precedence and preclude the configuration code from running.
+However, the configuration-level code will be executed before the ``-s``
+option file is run.
+
+Note that the configuration code isn't checked for errors.  If it can't be
+executed, then the shell may show errors upon starting.
+
+
 Startup failure
 ^^^^^^^^^^^^^^^
 

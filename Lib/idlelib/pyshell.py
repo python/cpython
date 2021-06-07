@@ -530,6 +530,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
         self.compile.compiler.flags = self.original_compiler_flags
+        if idleConf.GetOption('main', 'ShellWindow',
+                              'restart-code-on', type='bool'):
+            config_startup = idleConf.GetOption(
+                    'main', 'ShellWindow', 'shell-startup-code')
+            self.execsource(config_startup)
         self.restarting = False
         return self.rpcclt
 
@@ -1533,6 +1538,7 @@ def main():
     debug = False
     cmd = None
     script = None
+    config_startup = None
     startup = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
@@ -1596,11 +1602,16 @@ def main():
         dir = os.getcwd()
         if dir not in sys.path:
             sys.path.insert(0, dir)
-    # check the IDLE settings configuration (but command line overrides)
+    # Check the IDLE settings configuration (but command line overrides).
     edit_start = idleConf.GetOption('main', 'General',
                                     'editor-on-startup', type='bool')
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
+    if idleConf.GetOption('main', 'ShellWindow',
+                          'startup-code-on', type='bool'):
+        config_startup = idleConf.GetOption(
+                'main', 'ShellWindow', 'shell-startup-code')
+        sys.argv = ['-c'] + [config_startup]
 
     # Setup root.  Don't break user code run in IDLE process.
     # Don't change environment when testing.
@@ -1666,7 +1677,7 @@ def main():
                    os.environ.get("PYTHONSTARTUP")
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
-    if cmd or script:
+    if cmd or script or config_startup:
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = %r
@@ -1677,6 +1688,8 @@ def main():
         elif script:
             shell.interp.prepend_syspath(script)
             shell.interp.execfile(script)
+        elif config_startup:
+            shell.interp.execsource(config_startup)
     elif shell:
         # If there is a shell window and no cmd or script in progress,
         # check for problematic issues and print warning message(s) in
