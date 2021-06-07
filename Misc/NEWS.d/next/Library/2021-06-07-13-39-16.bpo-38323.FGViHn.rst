@@ -6,7 +6,7 @@ has been installed by `MultiLoopChildWatcher`.
 
 2) In `attach_loop` and `add_child_handler`, the handler is installed for the
 loop using `add_signal_handler` and the event loop instance is also added to
- the list.
+the list.
 
 3) In `remove_child_handler`, the `remove_signal_handler` is called on the
 loop the provided pid is attached to.
@@ -15,6 +15,6 @@ loop the provided pid is attached to.
 loop is removed from the list.
 
 The patch changes the behavior of `MultiLoopChildWatcher`. `MultiLoopChildWatcher`
- can now only be used in the main thread.
+can now only be used in the main thread.
 
 Patch by Shreyan Avigyan

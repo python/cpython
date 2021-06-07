@@ -1215,7 +1215,7 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
     # The class keeps compatibility with AbstractChildWatcher ABC
     # It retrieves the current loop by get_running_loop() and installs
     # handler on it using add_child_handler()/remove_child_handler()
-    
+
 
     def __init__(self):
         self._callbacks = {}
@@ -1266,18 +1266,18 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
             return False
 
     def attach_loop(self, loop):
-        # Install the handler on the loop and save it in a list. 
+        # Install the handler on the loop and save it in a list.
         # The reason to do it here is to avoid a race condition by
         # indirectly calling set_wakeup_fd. Previously attach_loop
         # installed the handler globally. See bpo-38323 for more
         # details.
         # Main thread is required for installing SIGCHLD handler
-        # on the event loop therefore attach_loop is only callable 
+        # on the event loop therefore attach_loop is only callable
         # from the main thread.
 
 
         assert loop is None or isinstance(loop, events.AbstractEventLoop)
-    
+
         if loop is not None:
             loop.add_signal_handler(signal.SIGCHLD, self._sig_chld)
 
