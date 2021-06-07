@@ -1,1 +1,1 @@
-`ensurepip` now uses `importlib.resources.files()` traversable APIs
+``ensurepip`` now uses ``importlib.resources.files()`` traversable APIs
