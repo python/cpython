@@ -676,7 +676,7 @@ class _Environ(MutableMapping):
             value = self._data[self.encodekey(key)]
         except KeyError:
             # raise KeyError with the original key value
-            raise KeyError("Environment variable '{}' was requested, but not found.".format(key)) from None
+            raise KeyError(f"Environment variable '{repr(key)}' requested but not provided.") from None
         return self.decodevalue(value)
 
     def __setitem__(self, key, value):
@@ -692,7 +692,7 @@ class _Environ(MutableMapping):
             del self._data[encodedkey]
         except KeyError:
             # raise KeyError with the original key value
-            raise KeyError("Environment variable '{}' was requested, but not found.".format(key)) from None
+            raise KeyError(key) from None
 
     def __iter__(self):
         # list() from dict object is an atomic operation
