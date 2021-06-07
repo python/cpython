@@ -1360,16 +1360,23 @@ fi
 
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [enable Link-Time-Optimization in any build (default is no)]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto@<:@=no|thin@:>@], [enable Link-Time-Optimization in any build (default is no)]),
+
 [
-if test "$withval" != no
-then
-  Py_LTO='true'
-  AC_MSG_RESULT(yes);
-else
-  Py_LTO='false'
-  AC_MSG_RESULT(no);
-fi],
+  LTO_ARG=''
+  if test "$withval" = no
+  then
+    Py_LTO='false'
+    AC_MSG_RESULT(no);
+  elif test "$withval" = yes
+  then
+    Py_LTO='true'
+    AC_MSG_RESULT(yes);
+  else
+    Py_LTO='true'
+    AC_MSG_RESULT("$withval");
+    LTO_ARG="=$withval"
+  fi],
 [AC_MSG_RESULT(no)])
 if test "$Py_LTO" = 'true' ; then
   case $CC in
@@ -1405,11 +1412,11 @@ if test "$Py_LTO" = 'true' ; then
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          LTOCFLAGS="-flto"
+          LTOFLAGS="-flto$LTO_ARG -Wl,-export_dynamic"
+          LTOCFLAGS="-flto$LTO_ARG"
           ;;
         *)
-          LTOFLAGS="-flto"
+          LTOFLAGS="-flto$LTO_ARG"
           ;;
       esac
       ;;

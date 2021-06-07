@@ -1545,7 +1545,7 @@ Optional Packages:
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
   --with-assertions       build with C assertions enabled (default is no)
-  --with-lto              enable Link-Time-Optimization in any build (default
+  --with-lto[=no|thin]    enable Link-Time-Optimization in any build (default
                           is no)
   --with-hash-algorithm=[fnv|siphash24]
                           select hash algorithm for use in Python/pyhash.c
@@ -6585,16 +6585,23 @@ $as_echo_n "checking for --with-lto... " >&6; }
 # Check whether --with-lto was given.
 if test "${with_lto+set}" = set; then :
   withval=$with_lto;
-if test "$withval" != no
-then
-  Py_LTO='true'
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-else
-  Py_LTO='false'
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  LTO_ARG=''
+  if test "$withval" = no
+  then
+    Py_LTO='false'
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; };
-fi
+  elif test "$withval" = yes
+  then
+    Py_LTO='true'
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+  else
+    Py_LTO='true'
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"$withval\"" >&5
+$as_echo "\"$withval\"" >&6; };
+    LTO_ARG="=$withval"
+  fi
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -6732,11 +6739,11 @@ $as_echo "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
       case $ac_sys_system in
         Darwin*)
           # Any changes made here should be reflected in the GCC+Darwin case below
-          LTOFLAGS="-flto -Wl,-export_dynamic"
-          LTOCFLAGS="-flto"
+          LTOFLAGS="-flto$LTO_ARG -Wl,-export_dynamic"
+          LTOCFLAGS="-flto$LTO_ARG"
           ;;
         *)
-          LTOFLAGS="-flto"
+          LTOFLAGS="-flto$LTO_ARG"
           ;;
       esac
       ;;
