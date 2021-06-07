@@ -2,7 +2,7 @@
 .. _using-on-mac:
 
 ***************************
-Using Python on a Macintosh
+Using Python on a Mac
 ***************************
 
 :Author: Bob Savage <bobsavage@mac.com>
