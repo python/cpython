@@ -148,6 +148,7 @@ PyCodeObject_IsWarmedUp(PyCodeObject * co)
 
 int _Py_Quicken(PyCodeObject *code);
 
+extern Py_ssize_t _Py_QuickenedCount;
 
 struct _PyCodeConstructor {
     /* metadata */

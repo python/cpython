@@ -1045,6 +1045,7 @@ code_dealloc(PyCodeObject *co)
         PyObject_ClearWeakRefs((PyObject*)co);
     if (co->co_quickened) {
         PyMem_Free(co->co_quickened);
+        _Py_QuickenedCount--;
     }
     PyObject_Free(co);
 }

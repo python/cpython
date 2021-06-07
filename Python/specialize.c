@@ -28,6 +28,8 @@
  <instr N-1>
 */
 
+Py_ssize_t _Py_QuickenedCount = 0;
+
 static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
 {
@@ -42,6 +44,7 @@ allocate(int cache_count, int instruction_count)
         PyErr_NoMemory();
         return NULL;
     }
+    _Py_QuickenedCount++;
     array[0].entry.zero.cache_count = cache_count;
     return array;
 }
