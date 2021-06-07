@@ -113,10 +113,11 @@ extern "C" {
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132
 #define BUILD_SLICE             133
-#define LOAD_CLOSURE            135
-#define LOAD_DEREF              136
-#define STORE_DEREF             137
-#define DELETE_DEREF            138
+#define MAKE_CELL               135
+#define LOAD_CLOSURE            136
+#define LOAD_DEREF              137
+#define STORE_DEREF             138
+#define DELETE_DEREF            139
 #define CALL_FUNCTION_KW        141
 #define CALL_FUNCTION_EX        142
 #define EXTENDED_ARG            144
