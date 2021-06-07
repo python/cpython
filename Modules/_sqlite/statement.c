@@ -73,9 +73,9 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
-    int rc;
-    const char *tail;
     sqlite3_stmt *stmt;
+    const char *tail;
+    int rc;
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_prepare_v2(db, sql_cstr, (int)size + 1, &stmt, &tail);
     Py_END_ALLOW_THREADS
