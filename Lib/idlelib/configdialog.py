@@ -1850,6 +1850,9 @@ class GenPage(Frame):
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
+                frame_strip_trailing_space_save: Frame
+                    strip_trailing_space_save_title: Label
+                    (*)strip_trailing_space_save_bool: Checkbutton - strip_trailing_space_save
             frame_shell: LabelFrame
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
@@ -1893,6 +1896,9 @@ class GenPage(Frame):
                 ('main', 'EditorWindow', 'line-numbers-default'))
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
+        self.strip_trailing_space_save = tracers.add(
+                BooleanVar(self),
+                ('main', 'EditorWindow', 'strip-trailing-whitespace-on-save'))
 
         # Create widgets:
         # Section frames.
@@ -1989,6 +1995,14 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
+        frame_strip_trailing_space_save = Frame(frame_editor, borderwidth=0)
+        strip_trailing_space_save_title = Label(
+                frame_strip_trailing_space_save,
+                text='Strip Trailing Whitespace on Save')
+        self.strip_trailing_space_save_bool = Checkbutton(
+                frame_strip_trailing_space_save,
+                variable=self.strip_trailing_space_save, width=1)
+
         # Frame_shell.
         frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
         auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
@@ -2071,6 +2085,11 @@ class GenPage(Frame):
         frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
+        # frame_strip_trailing_space_save.
+        frame_strip_trailing_space_save.pack(side=TOP, padx=5, pady=0, fill=X)
+        strip_trailing_space_save_title.pack(
+                side=LEFT, anchor=W,padx=5, pady=5)
+        self.strip_trailing_space_save_bool.pack(side=LEFT, padx=5, pady=5)
 
         # frame_auto_squeeze_min_lines
         frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
@@ -2115,6 +2134,9 @@ class GenPage(Frame):
                 'main', 'EditorWindow', 'line-numbers-default', type='bool'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
+        self.strip_trailing_space_save.set(
+                idleConf.GetOption('main', 'EditorWindow',
+                    'strip-trailing-whitespace-on-save', type='bool'))
 
         # Set variables for shell windows.
         self.auto_squeeze_min_lines.set(idleConf.GetOption(

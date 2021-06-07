@@ -1271,6 +1271,11 @@ class GenPageTest(unittest.TestCase):
         self.page.cursor_blink_bool.invoke()
         self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 'False'}})
 
+    def test_strip_trailing_space_on_save(self):
+        self.page.strip_trailing_space_save_bool.invoke()
+        name = 'strip-trailing-whitespace-on-save'
+        self.assertEqual(mainpage, {'EditorWindow': {name: 'False'}})
+
     def test_autocomplete_wait(self):
         self.page.auto_wait_int.delete(0, 'end')
         self.page.auto_wait_int.insert(0, '11')

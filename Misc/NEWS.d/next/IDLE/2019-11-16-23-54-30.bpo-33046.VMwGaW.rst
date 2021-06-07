@@ -1,0 +1,2 @@
+Add an option to IDLE to automatically strip trailing whitespace when saving
+a file.  The option is enabled by default.

@@ -240,6 +240,11 @@ class IOBinding:
         return "break"
 
     def writefile(self, filename):
+        strip = idleConf.GetOption(
+                'main', 'EditorWindow',
+                'strip-trailing-whitespace-on-save', type='bool')
+        if strip:
+            self.editwin.Rstrip(self.editwin).do_rstrip()
         text = self.fixnewlines()
         chars = self.encode(text)
         try:
