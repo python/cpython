@@ -167,16 +167,14 @@ extern Py_ssize_t _Py_QuickenedCount;
  * "free" kind is mutually exclusive with both.
  */
 
-// We would use an enum if C let us specify the storage type.
-typedef unsigned char _PyLocalsPlusKind;
+// For now _PyLocalsPlusKind and _PyLocalsPlusKinds are defined
+// in Include/cpython/code.h.
 /* Note that these all fit within _PyLocalsPlusKind, as do combinations. */
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
-
-typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
 
 static inline int
 _PyCode_InitLocalsPlusKinds(int num, _PyLocalsPlusKinds *pkinds)
