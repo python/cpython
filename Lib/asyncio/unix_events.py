@@ -1265,7 +1265,8 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def remove_child_handler(self, pid):
         try:
-            del self._callbacks[pid]
+            loop, callback, args = self._callbacks.pop(pid)
+            loop.remove_signal_handler(signal.SIGCHLD)
             return True
         except KeyError:
             return False
