@@ -32,7 +32,7 @@ modules.
 
 The module provides a lot of functionality and flexibility.  If you are
 unfamiliar with logging, the best way to get to grips with it is to see the
-tutorials (see the links on the right).
+tutorials (see the links on the left).
 
 The basic classes defined by the module, together with their functions, are
 listed below.
