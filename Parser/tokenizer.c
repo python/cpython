@@ -1084,11 +1084,11 @@ _syntaxerror_range(struct tok_state *tok, const char *format,
         goto error;
     }
 
-    if (col_offset == 0) {
+    if (col_offset == -1) {
         col_offset = (int)PyUnicode_GET_LENGTH(errtext);
     }
-    if (end_col_offset == 0) {
-        col_offset = col_offset;
+    if (end_col_offset == -1) {
+        end_col_offset = col_offset;
     }
 
     Py_ssize_t line_len = strcspn(tok->line_start, "\n");
@@ -1123,7 +1123,7 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
 #else
     va_start(vargs);
 #endif
-    int ret = _syntaxerror_range(tok, format, 0, 0, vargs);
+    int ret = _syntaxerror_range(tok, format, -1, -1, vargs);
     va_end(vargs);
     return ret;
 }
@@ -1585,7 +1585,6 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
     /* Number */
     if (isdigit(c)) {
         if (c == '0') {
-            const char* number_start = tok->cur;
             /* Hex, octal or binary -- maybe. */
             c = tok_nextc(tok);
             if (c == 'x' || c == 'X') {
@@ -1638,14 +1637,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                         c = tok_nextc(tok);
                     }
                     if (c != '0' && c != '1') {
-                        tok_backup(tok, c);
                         if (isdigit(c)) {
-                            // Move to the actual current token that is incorrect
-                            tok_nextc(tok);
                             return syntaxerror(tok,
                                     "invalid digit '%c' in binary literal", c);
                         }
                         else {
+                            tok_backup(tok, c);
                             return syntaxerror(tok, "invalid binary literal");
                         }
                     }
@@ -1697,7 +1694,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                     /* Old-style octal: now disallowed. */
                     tok_backup(tok, c);
                     return syntaxerror_known_range(
-                            tok, (int)(number_start - tok->line_start),
+                            tok, (int)(tok->start + 1 - tok->line_start),
                             zeros_end - tok->line_start,
                             "leading zeros in decimal integer "
                             "literals are not permitted; "
