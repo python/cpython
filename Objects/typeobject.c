@@ -8879,7 +8879,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     PyObject *obj = f->f_localsptr[0];
-    Py_ssize_t i;
+    int i;
     if (obj == NULL && co->co_cell2arg) {
         /* The first argument might be a cell. */
         for (i = 0; i < co->co_ncellvars; i++) {
