@@ -26,7 +26,6 @@ typedef uint16_t _Py_CODEUNIT;
 typedef struct _PyOpcache _PyOpcache;
 
 
-// These are duplicated from pycore_code.h.
 typedef unsigned char _PyLocalsPlusKind;
 typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
 
