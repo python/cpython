@@ -1697,7 +1697,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                     /* Old-style octal: now disallowed. */
                     tok_backup(tok, c);
                     return syntaxerror_known_range(
-                            tok, number_start - tok->line_start,
+                            tok, (int)(number_start - tok->line_start),
                             zeros_end - tok->line_start,
                             "leading zeros in decimal integer "
                             "literals are not permitted; "
