@@ -1256,8 +1256,10 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
-        if loop not in self._handler_added_loops:
-            self.attach_loop(loop)
+        for handler_added_loop in self._handler_added_loops:
+            if loop is handler_added_loop:
+                self.attach_loop(loop)
+                break
 
         self._callbacks[pid] = (loop, callback, args)
 
