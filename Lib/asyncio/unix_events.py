@@ -1201,9 +1201,10 @@ class FastChildWatcher(BaseChildWatcher):
 class MultiLoopChildWatcher(AbstractChildWatcher):
     """A watcher that doesn't require running loop in the main thread.
 
-    This implementation registers a SIGCHLD signal handler on
-    instantiation (which may conflict with other code that
-    install own handler for this signal).
+    This implementation registers a SIGCHLD signal handler on every event loop
+    subprocesses are created from (which may conflict with other code that
+    install own handler for this signal). This implementation can only be used
+    in the main thread.
 
     The solution is safe but it has a significant overhead when
     handling a big number of processes (*O(n)* each time a
@@ -1212,10 +1213,9 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     # Implementation note:
     # The class keeps compatibility with AbstractChildWatcher ABC
-    # To achieve this it has empty attach_loop() method
-    # and doesn't accept explicit loop argument
-    # for add_child_handler()/remove_child_handler()
-    # but retrieves the current loop by get_running_loop()
+    # It retrieves the current loop by get_running_loop() and installs
+    # handler on it using add_child_handler()/remove_child_handler()
+    
 
     def __init__(self):
         self._callbacks = {}
@@ -1230,19 +1230,14 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         if self._handler_added_loops is []:
             return
 
-        # handler = signal.getsignal(signal.SIGCHLD)
-        # if handler != self._sig_chld:
-        #     logger.warning("SIGCHLD handler was changed by outside code")
-        # else:
-        #     signal.signal(signal.SIGCHLD, self._saved_sighandler)
-        # self._saved_sighandler = None
-
         if self._handler_added_loops is not [] and self._callbacks:
             warnings.warn(
                 'Event Loops are being detached '
                 'from a child watcher with pending handlers',
                 RuntimeWarning)
 
+        # Remove handler from every event loop we registered the handler
+        # on previously
         if self._handler_added_loops is not []:
             for loop in self._handler_added_loops:
                 loop.remove_signal_handler(signal.SIGCHLD)
@@ -1255,6 +1250,8 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
         pass
 
     def add_child_handler(self, pid, callback, *args):
+        # Retreives the current running loop and installs the handler
+        # on it. Can only be called from the main thread.
         loop = events.get_running_loop()
         for handler_added_loop in self._handler_added_loops:
             if loop is handler_added_loop:
@@ -1274,21 +1271,16 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
             return False
 
     def attach_loop(self, loop):
-        # # Don't save the loop but initialize itself if called first time
-        # # The reason to do it here is that attach_loop() is called from
-        # # unix policy only for the main thread.
-        # # Main thread is required for subscription on SIGCHLD signal
-        # if self._saved_sighandler is not None:
-        #     return
+        # Install the handler on the loop and save it in a list. 
+        # The reason to do it here is to avoid a race condition by
+        # indirectly calling set_wakeup_fd. Previously attach_loop
+        # installed the handler globally. See bpo-38323 for more
+        # details.
+        # Main thread is required for installing SIGCHLD handler
+        # on the event loop therefore attach_loop is only callable 
+        # from the main thread.
 
-        # self._saved_sighandler = signal.signal(signal.SIGCHLD, self._sig_chld)
-        # if self._saved_sighandler is None:
-        #     logger.warning("Previous SIGCHLD handler was set by non-Python code, "
-        #                    "restore to default handler on watcher close.")
-        #     self._saved_sighandler = signal.SIG_DFL
 
-        # # Set SA_RESTART to limit EINTR occurrences.
-        # signal.siginterrupt(signal.SIGCHLD, False)
         assert loop is None or isinstance(loop, events.AbstractEventLoop)
     
         if loop is not None:
