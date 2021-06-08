@@ -1854,14 +1854,7 @@ class GenPage(Frame):
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
                     (*)auto_squeeze_min_lines_int: Entry - auto_squeeze_min_lines
-            frame_help: LabelFrame
-                frame_helplist: Frame
-                    frame_helplist_buttons: Frame
-                        (*)button_helplist_edit
-                        (*)button_helplist_add
-                        (*)button_helplist_remove
-                    (*)helplist: ListBox
-                    scroll_helplist: Scrollbar
+            (*)frame_help: HelpFrame(LabelFrame)
         """
         # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
@@ -1902,7 +1895,7 @@ class GenPage(Frame):
                                   text=' Editor Preferences')
         frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Shell Preferences')
-        frame_help = LabelFrame(self, borderwidth=2, relief=GROOVE,
+        self.frame_help = HelpFrame(self, borderwidth=2, relief=GROOVE,
                                 text=' Additional Help Sources ')
         # Frame_window.
         frame_run = Frame(frame_window, borderwidth=0)
@@ -1999,32 +1992,12 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
-        # frame_help.
-        frame_helplist = Frame(frame_help)
-        frame_helplist_buttons = Frame(frame_helplist)
-        self.helplist = Listbox(
-                frame_helplist, height=5, takefocus=True,
-                exportselection=FALSE)
-        scroll_helplist = Scrollbar(frame_helplist)
-        scroll_helplist['command'] = self.helplist.yview
-        self.helplist['yscrollcommand'] = scroll_helplist.set
-        self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
-        self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state='disabled',
-                width=8, command=self.helplist_item_edit)
-        self.button_helplist_add = Button(
-                frame_helplist_buttons, text='Add',
-                width=8, command=self.helplist_item_add)
-        self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state='disabled',
-                width=8, command=self.helplist_item_remove)
-
         # Pack widgets:
         # Body.
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        self.frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
         frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2077,20 +2050,11 @@ class GenPage(Frame):
         auto_squeeze_min_lines_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.auto_squeeze_min_lines_int.pack(side=TOP, padx=5, pady=5)
 
-        # frame_help.
-        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
-        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
-        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
-        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
-        self.button_helplist_add.pack(side=TOP, anchor=W)
-        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
-
     def load_general_cfg(self):
         "Load current configuration settings for the general options."
         self.load_windows_cfg()
         self.load_shelled_cfg()
-        self.load_helplist()
+        self.frame_help.load_helplist()
 
     def load_windows_cfg(self):
         # Set variables for all windows.
@@ -2126,13 +2090,62 @@ class GenPage(Frame):
         self.auto_squeeze_min_lines.set(idleConf.GetOption(
                 'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
 
-    def load_helplist(self):
-        # Set additional help sources.
-        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
-        self.helplist.delete(0, 'end')
-        for help_item in self.user_helplist:
-            self.helplist.insert(END, help_item[0])
-        self.set_add_delete_state()
+
+class HelpFrame(LabelFrame):
+
+    def __init__(self, master, **cfg):
+        super().__init__(master, **cfg)
+        self.create_frame_helplist()
+        self.load_helplist()
+
+    def create_frame_helplist(self):
+        """Create LabelFrame for additional help menu sources.
+
+        load_helplist loads list user_helplist with
+        name, position pairs and copies names to listbox helplist.
+        Clicking a name invokes help_source selected. Clicking
+        button_helplist_name invokes helplist_item_name, which also
+        changes user_helplist.  These functions all call
+        set_add_delete_state. All but load call update_help_changes to
+        rewrite changes['main']['HelpFiles'].
+
+        Widgets for HelpFrame(LabelFrame):  (*) widgets bound to self
+            frame_helplist: Frame
+                frame_helplist_buttons: Frame
+                    (*)button_helplist_edit
+                    (*)button_helplist_add
+                    (*)button_helplist_remove
+                (*)helplist: ListBox
+                scroll_helplist: Scrollbar
+        """
+        # self = frame_help in GenPage
+        frame_helplist = Frame(self)
+        frame_helplist_buttons = Frame(frame_helplist)
+        self.helplist = Listbox(
+                frame_helplist, height=5, takefocus=True,
+                exportselection=FALSE)
+        scroll_helplist = Scrollbar(frame_helplist)
+        scroll_helplist['command'] = self.helplist.yview
+        self.helplist['yscrollcommand'] = scroll_helplist.set
+        self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
+        self.button_helplist_edit = Button(
+                frame_helplist_buttons, text='Edit', state='disabled',
+                width=8, command=self.helplist_item_edit)
+        self.button_helplist_add = Button(
+                frame_helplist_buttons, text='Add',
+                width=8, command=self.helplist_item_add)
+        self.button_helplist_remove = Button(
+                frame_helplist_buttons, text='Remove', state='disabled',
+                width=8, command=self.helplist_item_remove)
+
+        # Pack frame_help.
+        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
+        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
+        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
+        self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
+        self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
+        self.button_helplist_add.pack(side=TOP, anchor=W)
+        self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
 
     def help_source_selected(self, event):
         "Handle event for selecting additional help."
@@ -2201,6 +2214,14 @@ class GenPage(Frame):
             changes.add_option(
                     'main', 'HelpFiles', str(num),
                     ';'.join(self.user_helplist[num-1][:2]))
+
+    def load_helplist(self):
+        # Set additional help sources.
+        self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
+        self.helplist.delete(0, 'end')
+        for help_item in self.user_helplist:
+            self.helplist.insert(END, help_item[0])
+        self.set_add_delete_state()
 
 
 class VarTrace:

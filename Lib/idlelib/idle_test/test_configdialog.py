@@ -1306,38 +1306,38 @@ class HelpSrcTest(unittest.TestCase):
     """Test that the help source list works correctly."""
     @classmethod
     def setUpClass(cls):
-        page = cls.page = dialog.genpage
-        dialog.note.select(page)
-        page.set = page.set_add_delete_state = Func()
-        page.upc = page.update_help_changes = Func()
-        page.update()
+        dialog.note.select(dialog.genpage)
+        frame = cls.frame = dialog.genpage.frame_help
+        frame.set = frame.set_add_delete_state = Func()
+        frame.upc = frame.update_help_changes = Func()
+        frame.update()
 
     @classmethod
     def tearDownClass(cls):
-        page = cls.page
-        del page.set, page.set_add_delete_state
-        del page.upc, page.update_help_changes
-        page.helplist.delete(0, 'end')
-        page.user_helplist.clear()
+        frame = cls.frame
+        del frame.set, frame.set_add_delete_state
+        del frame.upc, frame.update_help_changes
+        frame.helplist.delete(0, 'end')
+        frame.user_helplist.clear()
 
     def setUp(self):
         changes.clear()
 
     def test_load_helplist(self):
         eq = self.assertEqual
-        d = self.page
-        d.helplist.insert('end', 'bad')
-        d.user_helplist = ['bad', 'worse']
+        fr = self.frame
+        fr.helplist.insert('end', 'bad')
+        fr.user_helplist = ['bad', 'worse']
         idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
-        d.load_helplist()
-        eq(d.helplist.get(0, 'end'), ('name',))
-        eq(d.user_helplist, [('name', 'file', '1')])
+        fr.load_helplist()
+        eq(fr.helplist.get(0, 'end'), ('name',))
+        eq(fr.user_helplist, [('name', 'file', '1')])
 
     def test_source_selected(self):
-        d = self.page
-        d.set = d.set_add_delete_state
-        d.upc = d.update_help_changes
-        helplist = d.helplist
+        fr = self.frame
+        fr.set = fr.set_add_delete_state
+        fr.upc = fr.update_help_changes
+        helplist = fr.helplist
         dex = 'end'
         helplist.insert(dex, 'source')
         helplist.activate(dex)
@@ -1348,38 +1348,38 @@ class HelpSrcTest(unittest.TestCase):
         x, y, dx, dy = helplist.bbox(dex)
         x += dx // 2
         y += dy // 2
-        d.set.called = d.upc.called = 0
+        fr.set.called = fr.upc.called = 0
         helplist.event_generate('<Enter>', x=0, y=0)
         helplist.event_generate('<Motion>', x=x, y=y)
         helplist.event_generate('<Button-1>', x=x, y=y)
         helplist.event_generate('<ButtonRelease-1>', x=x, y=y)
         self.assertEqual(helplist.get('anchor'), 'source')
-        self.assertTrue(d.set.called)
-        self.assertFalse(d.upc.called)
+        self.assertTrue(fr.set.called)
+        self.assertFalse(fr.upc.called)
 
     def test_set_add_delete_state(self):
         # Call with 0 items, 1 unselected item, 1 selected item.
         eq = self.assertEqual
-        d = self.page
-        del d.set_add_delete_state  # Unmask method.
-        sad = d.set_add_delete_state
-        h = d.helplist
+        fr = self.frame
+        del fr.set_add_delete_state  # Unmask method.
+        sad = fr.set_add_delete_state
+        h = fr.helplist
 
         h.delete(0, 'end')
         sad()
-        eq(d.button_helplist_edit.state(), ('disabled',))
-        eq(d.button_helplist_remove.state(), ('disabled',))
+        eq(fr.button_helplist_edit.state(), ('disabled',))
+        eq(fr.button_helplist_remove.state(), ('disabled',))
 
         h.insert(0, 'source')
         sad()
-        eq(d.button_helplist_edit.state(), ('disabled',))
-        eq(d.button_helplist_remove.state(), ('disabled',))
+        eq(fr.button_helplist_edit.state(), ('disabled',))
+        eq(fr.button_helplist_remove.state(), ('disabled',))
 
         h.selection_set(0)
         sad()
-        eq(d.button_helplist_edit.state(), ())
-        eq(d.button_helplist_remove.state(), ())
-        d.set_add_delete_state = Func()  # Mask method.
+        eq(fr.button_helplist_edit.state(), ())
+        eq(fr.button_helplist_remove.state(), ())
+        fr.set_add_delete_state = Func()  # Mask method.
 
     def test_helplist_item_add(self):
         # Call without and twice with HelpSource result.
@@ -1387,25 +1387,25 @@ class HelpSrcTest(unittest.TestCase):
         eq = self.assertEqual
         orig_helpsource = configdialog.HelpSource
         hs = configdialog.HelpSource = Func(return_self=True)
-        d = self.page
-        d.helplist.delete(0, 'end')
-        d.user_helplist.clear()
-        d.set.called = d.upc.called = 0
+        fr = self.frame
+        fr.helplist.delete(0, 'end')
+        fr.user_helplist.clear()
+        fr.set.called = fr.upc.called = 0
 
         hs.result = ''
-        d.helplist_item_add()
-        self.assertTrue(list(d.helplist.get(0, 'end')) ==
-                        d.user_helplist == [])
-        self.assertFalse(d.upc.called)
+        fr.helplist_item_add()
+        self.assertTrue(list(fr.helplist.get(0, 'end')) ==
+                        fr.user_helplist == [])
+        self.assertFalse(fr.upc.called)
 
         hs.result = ('name1', 'file1')
-        d.helplist_item_add()
+        fr.helplist_item_add()
         hs.result = ('name2', 'file2')
-        d.helplist_item_add()
-        eq(d.helplist.get(0, 'end'), ('name1', 'name2'))
-        eq(d.user_helplist, [('name1', 'file1'), ('name2', 'file2')])
-        eq(d.upc.called, 2)
-        self.assertFalse(d.set.called)
+        fr.helplist_item_add()
+        eq(fr.helplist.get(0, 'end'), ('name1', 'name2'))
+        eq(fr.user_helplist, [('name1', 'file1'), ('name2', 'file2')])
+        eq(fr.upc.called, 2)
+        self.assertFalse(fr.set.called)
 
         configdialog.HelpSource = orig_helpsource
 
@@ -1414,58 +1414,58 @@ class HelpSrcTest(unittest.TestCase):
         eq = self.assertEqual
         orig_helpsource = configdialog.HelpSource
         hs = configdialog.HelpSource = Func(return_self=True)
-        d = self.page
-        d.helplist.delete(0, 'end')
-        d.helplist.insert(0, 'name1')
-        d.helplist.selection_set(0)
-        d.helplist.selection_anchor(0)
-        d.user_helplist.clear()
-        d.user_helplist.append(('name1', 'file1'))
-        d.set.called = d.upc.called = 0
+        fr = self.frame
+        fr.helplist.delete(0, 'end')
+        fr.helplist.insert(0, 'name1')
+        fr.helplist.selection_set(0)
+        fr.helplist.selection_anchor(0)
+        fr.user_helplist.clear()
+        fr.user_helplist.append(('name1', 'file1'))
+        fr.set.called = fr.upc.called = 0
 
         hs.result = ''
-        d.helplist_item_edit()
+        fr.helplist_item_edit()
         hs.result = ('name1', 'file1')
-        d.helplist_item_edit()
-        eq(d.helplist.get(0, 'end'), ('name1',))
-        eq(d.user_helplist, [('name1', 'file1')])
-        self.assertFalse(d.upc.called)
+        fr.helplist_item_edit()
+        eq(fr.helplist.get(0, 'end'), ('name1',))
+        eq(fr.user_helplist, [('name1', 'file1')])
+        self.assertFalse(fr.upc.called)
 
         hs.result = ('name2', 'file2')
-        d.helplist_item_edit()
-        eq(d.helplist.get(0, 'end'), ('name2',))
-        eq(d.user_helplist, [('name2', 'file2')])
-        self.assertTrue(d.upc.called == d.set.called == 1)
+        fr.helplist_item_edit()
+        eq(fr.helplist.get(0, 'end'), ('name2',))
+        eq(fr.user_helplist, [('name2', 'file2')])
+        self.assertTrue(fr.upc.called == fr.set.called == 1)
 
         configdialog.HelpSource = orig_helpsource
 
     def test_helplist_item_remove(self):
         eq = self.assertEqual
-        d = self.page
-        d.helplist.delete(0, 'end')
-        d.helplist.insert(0, 'name1')
-        d.helplist.selection_set(0)
-        d.helplist.selection_anchor(0)
-        d.user_helplist.clear()
-        d.user_helplist.append(('name1', 'file1'))
-        d.set.called = d.upc.called = 0
+        fr = self.frame
+        fr.helplist.delete(0, 'end')
+        fr.helplist.insert(0, 'name1')
+        fr.helplist.selection_set(0)
+        fr.helplist.selection_anchor(0)
+        fr.user_helplist.clear()
+        fr.user_helplist.append(('name1', 'file1'))
+        fr.set.called = fr.upc.called = 0
 
-        d.helplist_item_remove()
-        eq(d.helplist.get(0, 'end'), ())
-        eq(d.user_helplist, [])
-        self.assertTrue(d.upc.called == d.set.called == 1)
+        fr.helplist_item_remove()
+        eq(fr.helplist.get(0, 'end'), ())
+        eq(fr.user_helplist, [])
+        self.assertTrue(fr.upc.called == fr.set.called == 1)
 
     def test_update_help_changes(self):
-        d = self.page
-        del d.update_help_changes
-        d.user_helplist.clear()
-        d.user_helplist.append(('name1', 'file1'))
-        d.user_helplist.append(('name2', 'file2'))
+        fr = self.frame
+        del fr.update_help_changes
+        fr.user_helplist.clear()
+        fr.user_helplist.append(('name1', 'file1'))
+        fr.user_helplist.append(('name2', 'file2'))
 
-        d.update_help_changes()
+        fr.update_help_changes()
         self.assertEqual(mainpage['HelpFiles'],
                          {'1': 'name1;file1', '2': 'name2;file2'})
-        d.update_help_changes = Func()
+        fr.update_help_changes = Func()
 
 
 class VarTraceTest(unittest.TestCase):
