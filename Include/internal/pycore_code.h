@@ -260,8 +260,6 @@ PyAPI_FUNC(PyCodeObject *) _PyCode_New(struct _PyCodeConstructor *);
 
 /* Private API */
 
-int _PyCode_InitOpcache(PyCodeObject *co);
-
 /* Getters for internal PyCodeObject data. */
 PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);

@@ -13,7 +13,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_call.h"          // _PyObject_FastCallDictTstate()
 #include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
-#include "pycore_code.h"          // _PyCode_InitOpcache()
+#include "pycore_code.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_moduleobject.h"
@@ -1448,108 +1448,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
                                      GETLOCAL(i) = value; \
                                      Py_XDECREF(tmp); } while (0)
 
-    /* macros for opcode cache */
-#define OPCACHE_CHECK() \
-    do { \
-        co_opcache = NULL; \
-        if (co->co_opcache != NULL) { \
-            unsigned char co_opcache_offset = \
-                co->co_opcache_map[next_instr - first_instr]; \
-            if (co_opcache_offset > 0) { \
-                assert(co_opcache_offset <= co->co_opcache_size); \
-                co_opcache = &co->co_opcache[co_opcache_offset - 1]; \
-                assert(co_opcache != NULL); \
-            } \
-        } \
-    } while (0)
-
-#define OPCACHE_DEOPT() \
-    do { \
-        if (co_opcache != NULL) { \
-            co_opcache->optimized = -1; \
-            unsigned char co_opcache_offset = \
-                co->co_opcache_map[next_instr - first_instr]; \
-            assert(co_opcache_offset <= co->co_opcache_size); \
-            co->co_opcache_map[co_opcache_offset] = 0; \
-            co_opcache = NULL; \
-        } \
-    } while (0)
-
-#define OPCACHE_DEOPT_LOAD_ATTR() \
-    do { \
-        if (co_opcache != NULL) { \
-            OPCACHE_STAT_ATTR_DEOPT(); \
-            OPCACHE_DEOPT(); \
-        } \
-    } while (0)
-
-#define OPCACHE_MAYBE_DEOPT_LOAD_ATTR() \
-    do { \
-        if (co_opcache != NULL && --co_opcache->optimized <= 0) { \
-            OPCACHE_DEOPT_LOAD_ATTR(); \
-        } \
-    } while (0)
-
-#if OPCACHE_STATS
-
-#define OPCACHE_STAT_GLOBAL_HIT() \
-    do { \
-        if (co->co_opcache != NULL) opcache_global_hits++; \
-    } while (0)
-
-#define OPCACHE_STAT_GLOBAL_MISS() \
-    do { \
-        if (co->co_opcache != NULL) opcache_global_misses++; \
-    } while (0)
-
-#define OPCACHE_STAT_GLOBAL_OPT() \
-    do { \
-        if (co->co_opcache != NULL) opcache_global_opts++; \
-    } while (0)
-
-#define OPCACHE_STAT_ATTR_HIT() \
-    do { \
-        if (co->co_opcache != NULL) opcache_attr_hits++; \
-    } while (0)
-
-#define OPCACHE_STAT_ATTR_MISS() \
-    do { \
-        if (co->co_opcache != NULL) opcache_attr_misses++; \
-    } while (0)
-
-#define OPCACHE_STAT_ATTR_OPT() \
-    do { \
-        if (co->co_opcache!= NULL) opcache_attr_opts++; \
-    } while (0)
-
-#define OPCACHE_STAT_ATTR_DEOPT() \
-    do { \
-        if (co->co_opcache != NULL) opcache_attr_deopts++; \
-    } while (0)
-
-#define OPCACHE_STAT_ATTR_TOTAL() \
-    do { \
-        if (co->co_opcache != NULL) opcache_attr_total++; \
-    } while (0)
-
-#else /* OPCACHE_STATS */
-
-#define OPCACHE_STAT_GLOBAL_HIT()
-#define OPCACHE_STAT_GLOBAL_MISS()
-#define OPCACHE_STAT_GLOBAL_OPT()
-
-#define OPCACHE_STAT_ATTR_HIT()
-#define OPCACHE_STAT_ATTR_MISS()
-#define OPCACHE_STAT_ATTR_OPT()
-#define OPCACHE_STAT_ATTR_DEOPT()
-#define OPCACHE_STAT_ATTR_TOTAL()
-
 #define JUMP_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 #define GET_CACHE() \
     _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
 
-#endif
 
 #define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
@@ -1582,7 +1485,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
-    _PyOpcache *co_opcache;
 
 #ifdef LLTRACE
     _Py_IDENTIFIER(__ltrace__);
@@ -1689,21 +1591,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
      */
     f->f_stackdepth = -1;
     f->f_state = FRAME_EXECUTING;
-
-    if (co->co_opcache_flag < opcache_min_runs) {
-        co->co_opcache_flag++;
-        if (co->co_opcache_flag == opcache_min_runs) {
-            if (_PyCode_InitOpcache(co) < 0) {
-                goto exit_eval_frame;
-            }
-#if OPCACHE_STATS
-            opcache_code_objects_extra_mem +=
-                PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT) +
-                sizeof(_PyOpcache) * co->co_opcache_size;
-            opcache_code_objects++;
-#endif
-        }
-    }
 
 #ifdef LLTRACE
     {
