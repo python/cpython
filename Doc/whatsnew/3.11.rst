@@ -97,7 +97,7 @@ math
 
 * The behaviour of two :func:`math.pow` corner cases was changed, for
   consistency with the IEEE 754 specification. The operations
-  ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -inf)`` now return
+  ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
   ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
   Dickinson in :issue:`44339`.)
 
