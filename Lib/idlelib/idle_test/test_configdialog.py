@@ -1207,7 +1207,7 @@ class GenPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
-    options to changes and that helplist works correctly.
+    options to changes.
     """
     @classmethod
     def setUpClass(cls):
@@ -1222,8 +1222,6 @@ class GenPageTest(unittest.TestCase):
         page = cls.page
         del page.set, page.set_add_delete_state
         del page.upc, page.update_help_changes
-        page.helplist.delete(0, 'end')
-        page.user_helplist.clear()
 
     def setUp(self):
         changes.clear()
@@ -1236,16 +1234,11 @@ class GenPageTest(unittest.TestCase):
         d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
-        d.helplist.insert('end', 'bad')
-        d.user_helplist = ['bad', 'worse']
-        idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
         d.load_general_cfg()
         eq(d.startup_edit.get(), 0)
         eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
         eq(d.win_height.get(), '40')
-        eq(d.helplist.get(0, 'end'), ('name',))
-        eq(d.user_helplist, [('name', 'file', '1')])
 
     def test_startup(self):
         d = self.page
@@ -1305,6 +1298,38 @@ class GenPageTest(unittest.TestCase):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
         self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
+
+
+class HelpSrcTest(unittest.TestCase):
+    """Test that the help source list works correctly."""
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.genpage
+        dialog.note.select(page)
+        page.set = page.set_add_delete_state = Func()
+        page.upc = page.update_help_changes = Func()
+        page.update()
+
+    @classmethod
+    def tearDownClass(cls):
+        page = cls.page
+        del page.set, page.set_add_delete_state
+        del page.upc, page.update_help_changes
+        page.helplist.delete(0, 'end')
+        page.user_helplist.clear()
+
+    def setUp(self):
+        changes.clear()
+
+    def test_load_helplist(self):
+        eq = self.assertEqual
+        d = self.page
+        d.helplist.insert('end', 'bad')
+        d.user_helplist = ['bad', 'worse']
+        idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
+        d.load_general_cfg()
+        eq(d.helplist.get(0, 'end'), ('name',))
+        eq(d.user_helplist, [('name', 'file', '1')])
 
     def test_source_selected(self):
         d = self.page
