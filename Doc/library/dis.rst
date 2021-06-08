@@ -1056,14 +1056,6 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
-.. opcode:: MAKE_CELL (i)
-
-   Creates a new cell in slot ``i``.  If that slot is empty then
-   that value is stored into the new cell.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
