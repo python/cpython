@@ -276,7 +276,7 @@ connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
         int rc = sqlite3_close_v2(self->db);
-        assert(rc == SQLITE_OK);
+        assert(rc == SQLITE_OK), (void)rc;
         self->db = NULL;
     }
 }

@@ -7192,6 +7192,7 @@ compute_localsplus_info(struct compiler *c,
                         PyObject *names, _PyLocalsPlusKinds kinds)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(names);
+    (void)nlocalsplus; // Avoid compiler errors for unused variable
 
     PyObject *k, *v;
     Py_ssize_t pos = 0;
