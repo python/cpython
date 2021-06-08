@@ -3583,8 +3583,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     set = ~opts & new_opts;
 
     if ((set & opt_no) != 0) {
-        if (_ssl_deprecated("Setting OP_NO_SSL* or SSL_NO_TLS* options is "
-                            "deprecated", 2) < 0) {
+        if (_ssl_deprecated("Setting OP_NO_SSL* or SSL_NO_TLS* options", 2) < 0) {
             return -1;
         }
     }
