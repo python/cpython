@@ -81,14 +81,9 @@ pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
 pysqlite_Statement *
 pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 {
-    const char* tail;
-    int rc;
-    const char* sql_cstr;
-    Py_ssize_t sql_cstr_len;
-
     assert(PyUnicode_Check(sql));
-
-    sql_cstr = PyUnicode_AsUTF8AndSize(sql, &sql_cstr_len);
+    Py_ssize_t size;
+    const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
     if (sql_cstr == NULL) {
         PyErr_Format(pysqlite_Warning,
                      "SQL is of wrong type ('%s'). Must be string.",
@@ -96,59 +91,52 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         return NULL;
     }
 
-    int max_length = sqlite3_limit(connection->db, SQLITE_LIMIT_LENGTH, -1);
-    if (sql_cstr_len >= max_length) {
+    sqlite3 *db = connection->db;
+    int max_length = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
+    if (size >= max_length) {
         PyErr_SetString(pysqlite_DataError, "query string is too large");
         return NULL;
     }
-    if (strlen(sql_cstr) != (size_t)sql_cstr_len) {
+    if (strlen(sql_cstr) != (size_t)size) {
         PyErr_SetString(PyExc_ValueError,
                         "the query contains a null character");
         return NULL;
     }
 
-    pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
-                                               pysqlite_StatementType);
-    if (self == NULL) {
+    sqlite3_stmt *stmt;
+    const char *tail;
+    int rc;
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_prepare_v2(db, sql_cstr, (int)size + 1, &stmt, &tail);
+    Py_END_ALLOW_THREADS
+
+    if (rc != SQLITE_OK) {
+        _pysqlite_seterror(db);
         return NULL;
     }
 
-    self->db = connection->db;
-    self->st = NULL;
-    self->sql = Py_NewRef(sql);
-    self->in_use = 0;
-    self->is_dml = 0;
-    self->in_weakreflist = NULL;
-
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_prepare_v2(self->db,
-                            sql_cstr,
-                            (int)sql_cstr_len + 1,
-                            &self->st,
-                            &tail);
-    Py_END_ALLOW_THREADS
-
-    self->is_dml = pysqlite_statement_is_dml(self->st, sql_cstr);
-
-    PyObject_GC_Track(self);
-
-    if (rc != SQLITE_OK) {
-        _pysqlite_seterror(self->db);
-        goto error;
-    }
-
-    if (rc == SQLITE_OK && pysqlite_check_remaining_sql(tail)) {
-        (void)sqlite3_finalize(self->st);
-        self->st = NULL;
+    if (pysqlite_check_remaining_sql(tail)) {
         PyErr_SetString(pysqlite_Warning,
                         "You can only execute one statement at a time.");
         goto error;
     }
 
+    pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
+                                               pysqlite_StatementType);
+    if (self == NULL) {
+        goto error;
+    }
+
+    self->st = stmt;
+    self->in_use = 0;
+    self->is_dml = pysqlite_statement_is_dml(stmt, sql_cstr);
+    self->in_weakreflist = NULL;
+
+    PyObject_GC_Track(self);
     return self;
 
 error:
-    Py_DECREF(self);
+    (void)sqlite3_finalize(stmt);
     return NULL;
 }
 
@@ -417,26 +405,19 @@ stmt_dealloc(pysqlite_Statement *self)
         PyObject_ClearWeakRefs((PyObject*)self);
     }
     if (self->st) {
+        Py_BEGIN_ALLOW_THREADS
         sqlite3_finalize(self->st);
+        Py_END_ALLOW_THREADS
         self->st = 0;
     }
-    tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);
-}
-
-static int
-stmt_clear(pysqlite_Statement *self)
-{
-    Py_CLEAR(self->sql);
-    return 0;
 }
 
 static int
 stmt_traverse(pysqlite_Statement *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    Py_VISIT(self->sql);
     return 0;
 }
 
@@ -518,7 +499,6 @@ static PyType_Slot stmt_slots[] = {
     {Py_tp_members, stmt_members},
     {Py_tp_dealloc, stmt_dealloc},
     {Py_tp_traverse, stmt_traverse},
-    {Py_tp_clear, stmt_clear},
     {0, NULL},
 };
 

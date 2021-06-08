@@ -172,7 +172,6 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     }
 
     self->detect_types = detect_types;
-    self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
     self->thread_ident = PyThread_get_thread_ident();
     self->check_same_thread = check_same_thread;
@@ -277,7 +276,7 @@ connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
         int rc = sqlite3_close_v2(self->db);
-        assert(rc == SQLITE_OK);
+        assert(rc == SQLITE_OK), (void)rc;
         self->db = NULL;
     }
 }
@@ -825,7 +824,12 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 
 static void _destructor(void* args)
 {
+    // This function may be called without the GIL held, so we need to ensure
+    // that we destroy 'args' with the GIL
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
     Py_DECREF((PyObject*)args);
+    PyGILState_Release(gstate);
 }
 
 /*[clinic input]
