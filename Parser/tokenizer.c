@@ -1121,6 +1121,113 @@ indenterror(struct tok_state *tok)
     return ERRORTOKEN;
 }
 
+static int
+parser_warn(struct tok_state *tok, const char *format, ...)
+{
+    PyObject *errmsg;
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    errmsg = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
+    if (!errmsg) {
+        goto error;
+    }
+
+    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, errmsg, tok->filename,
+                                 tok->lineno, NULL, NULL) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            /* Replace the DeprecationWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
+            syntaxerror(tok, "%U", errmsg);
+        }
+        goto error;
+    }
+    Py_DECREF(errmsg);
+    return 0;
+
+error:
+    Py_XDECREF(errmsg);
+    tok->done = E_ERROR;
+    return -1;
+}
+
+static int
+lookahead(struct tok_state *tok, const char *test)
+{
+    const char *s = test;
+    int res = 0;
+    while (1) {
+        int c = tok_nextc(tok);
+        if (*s == 0) {
+            res = !is_potential_identifier_char(c);
+        }
+        else if (c == *s) {
+            s++;
+            continue;
+        }
+
+        tok_backup(tok, c);
+        while (s != test) {
+            tok_backup(tok, *--s);
+        }
+        return res;
+    }
+}
+
+static int
+verify_end_of_number(struct tok_state *tok, int c, const char *kind)
+{
+    /* Emit a deprecation warning only if the numeric literal is immediately
+     * followed by one of keywords which can occurr after a numeric literal
+     * in valid code: "and", "else", "for", "if", "in", "is" and "or".
+     * It allows to gradually deprecate existing valid code without adding
+     * warning before error in most cases of invalid numeric literal (which
+     * would be confusiong and break existing tests).
+     * Raise a syntax error with slighly better message than plain
+     * "invalid syntax" if the numeric literal is immediately followed by
+     * other keyword or identifier.
+     */
+    int r = 0;
+    if (c == 'a') {
+        r = lookahead(tok, "nd");
+    }
+    else if (c == 'e') {
+        r = lookahead(tok, "lse");
+    }
+    else if (c == 'f') {
+        r = lookahead(tok, "or");
+    }
+    else if (c == 'i') {
+        int c2 = tok_nextc(tok);
+        if (c2 == 'f' || c2 == 'n' || c2 == 's') {
+            r = 1;
+        }
+        tok_backup(tok, c2);
+    }
+    else if (c == 'o') {
+        r = lookahead(tok, "r");
+    }
+    if (r) {
+        tok_backup(tok, c);
+        if (parser_warn(tok, "invalid %s literal", kind)) {
+            return 0;
+        }
+        tok_nextc(tok);
+    }
+    else /* In future releases, only error will remain. */
+    if (is_potential_identifier_char(c)) {
+        tok_backup(tok, c);
+        syntaxerror(tok, "invalid %s literal", kind);
+        return 0;
+    }
+    return 1;
+}
+
 /* Verify that the identifier follows PEP 3131.
    All identifier strings are guaranteed to be "ready" unicode objects.
  */
@@ -1569,6 +1676,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                         c = tok_nextc(tok);
                     } while (isxdigit(c));
                 } while (c == '_');
+                if (!verify_end_of_number(tok, c, "hexadecimal")) {
+                    return ERRORTOKEN;
+                }
             }
             else if (c == 'o' || c == 'O') {
                 /* Octal */
@@ -1595,6 +1705,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                     return syntaxerror(tok,
                             "invalid digit '%c' in octal literal", c);
                 }
+                if (!verify_end_of_number(tok, c, "octal")) {
+                    return ERRORTOKEN;
+                }
             }
             else if (c == 'b' || c == 'B') {
                 /* Binary */
@@ -1620,6 +1733,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                 if (isdigit(c)) {
                     return syntaxerror(tok,
                             "invalid digit '%c' in binary literal", c);
+                }
+                if (!verify_end_of_number(tok, c, "binary")) {
+                    return ERRORTOKEN;
                 }
             }
             else {
@@ -1664,6 +1780,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                                        "literals are not permitted; "
                                        "use an 0o prefix for octal integers");
                 }
+                if (!verify_end_of_number(tok, c, "decimal")) {
+                    return ERRORTOKEN;
+                }
             }
         }
         else {
@@ -1699,6 +1818,9 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                         }
                     } else if (!isdigit(c)) {
                         tok_backup(tok, c);
+                        if (!verify_end_of_number(tok, e, "decimal")) {
+                            return ERRORTOKEN;
+                        }
                         tok_backup(tok, e);
                         *p_start = tok->start;
                         *p_end = tok->cur;
@@ -1713,6 +1835,12 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                     /* Imaginary part */
         imaginary:
                     c = tok_nextc(tok);
+                    if (!verify_end_of_number(tok, c, "imaginary")) {
+                        return ERRORTOKEN;
+                    }
+                }
+                else if (!verify_end_of_number(tok, c, "decimal")) {
+                    return ERRORTOKEN;
                 }
             }
         }
