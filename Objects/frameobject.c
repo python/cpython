@@ -1092,7 +1092,8 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         }
         PyObject *oldvalue = fast[i];
         int cellargoffset = CO_CELL_NOT_AN_ARG;
-        if (co->co_cell2arg != NULL) {
+        if (kind & CO_FAST_CELL && co->co_cell2arg != NULL) {
+            assert(i >= co->co_nlocals);
             cellargoffset = co->co_cell2arg[i - co->co_nlocals];
         }
         PyObject *cell = NULL;
