@@ -2095,10 +2095,10 @@ class HelpFrame(LabelFrame):
 
     def __init__(self, master, **cfg):
         super().__init__(master, **cfg)
-        self.create_frame_helplist()
+        self.create_frame_help()
         self.load_helplist()
 
-    def create_frame_helplist(self):
+    def create_frame_help(self):
         """Create LabelFrame for additional help menu sources.
 
         load_helplist loads list user_helplist with
@@ -2111,16 +2111,15 @@ class HelpFrame(LabelFrame):
 
         Widgets for HelpFrame(LabelFrame):  (*) widgets bound to self
             frame_helplist: Frame
-                frame_helplist_buttons: Frame
-                    (*)button_helplist_edit
-                    (*)button_helplist_add
-                    (*)button_helplist_remove
                 (*)helplist: ListBox
                 scroll_helplist: Scrollbar
+            frame_buttons: Frame
+                (*)button_helplist_edit
+                (*)button_helplist_add
+                (*)button_helplist_remove
         """
         # self = frame_help in GenPage
         frame_helplist = Frame(self)
-        frame_helplist_buttons = Frame(frame_helplist)
         self.helplist = Listbox(
                 frame_helplist, height=5, takefocus=True,
                 exportselection=FALSE)
@@ -2128,21 +2127,23 @@ class HelpFrame(LabelFrame):
         scroll_helplist['command'] = self.helplist.yview
         self.helplist['yscrollcommand'] = scroll_helplist.set
         self.helplist.bind('<ButtonRelease-1>', self.help_source_selected)
+
+        frame_buttons = Frame(self)
         self.button_helplist_edit = Button(
-                frame_helplist_buttons, text='Edit', state='disabled',
+                frame_buttons, text='Edit', state='disabled',
                 width=8, command=self.helplist_item_edit)
         self.button_helplist_add = Button(
-                frame_helplist_buttons, text='Add',
+                frame_buttons, text='Add',
                 width=8, command=self.helplist_item_add)
         self.button_helplist_remove = Button(
-                frame_helplist_buttons, text='Remove', state='disabled',
+                frame_buttons, text='Remove', state='disabled',
                 width=8, command=self.helplist_item_remove)
 
         # Pack frame_help.
-        frame_helplist_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
-        frame_helplist.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
+        frame_helplist.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.helplist.pack(side=LEFT, anchor=E, expand=TRUE, fill=BOTH)
+        scroll_helplist.pack(side=RIGHT, anchor=W, fill=Y)
+        frame_buttons.pack(side=RIGHT, padx=5, pady=5, fill=Y)
         self.button_helplist_edit.pack(side=TOP, anchor=W, pady=5)
         self.button_helplist_add.pack(side=TOP, anchor=W)
         self.button_helplist_remove.pack(side=TOP, anchor=W, pady=5)
