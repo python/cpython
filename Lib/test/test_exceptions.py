@@ -211,6 +211,7 @@ class ExceptionTests(unittest.TestCase):
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 2, 2)
+        check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)

@@ -409,14 +409,16 @@ The following exceptions are the exceptions that are usually raised.
 
    .. versionadded:: 3.5
 
-.. exception:: SyntaxError
+.. exception:: SyntaxError(message, details)
 
    Raised when the parser encounters a syntax error.  This may occur in an
-   :keyword:`import` statement, in a call to the built-in functions :func:`exec`
+   :keyword:`import` statement, in a call to the built-in functions
+   :func:`compile`, :func:`exec`,
    or :func:`eval`, or when reading the initial script or standard input
    (also interactively).
 
    The :func:`str` of the exception instance returns only the error message.
+   Details is a tuple whose members are also available as separate attributes.
 
    .. attribute:: filename
 
@@ -445,6 +447,11 @@ The following exceptions are the exceptions that are usually raised.
 
       The column in the end line where the error occurred finishes. This is
       1-indexed: the first character in the line has an ``offset`` of 1.
+
+   For errors in f-string fields, the message is prefixed by "f-string: "
+   and the offsets are offsets in a text constructed from the replacement
+   expression.  For example, compiling f'Bad {a b} field' results in this
+   args attribute: ('f-string: ...', ('', 1, 2, '(a b)\n', 1, 5)).
 
    .. versionchanged:: 3.10
       Added the :attr:`end_lineno` and :attr:`end_offset` attributes.
