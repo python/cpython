@@ -3156,6 +3156,66 @@ class TestJumpTables(unittest.TestCase):
         self.assertEqual(f("3"), 3)
         self.assertEqual(f(None), None)
 
+    def test_deopt(self):
+        """Fall back onto case-by-case search when jumping isn't safe."""
+
+        @self.assert_has_jump_tables(1)
+        def f1(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+                case _:
+                    return "else"
+
+        @self.assert_has_jump_tables(1)
+        def f2(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+            return "else"
+
+        for f in f1, f2:
+            with self.subTest(f=f.__name__):
+
+                self.assertEqual(f(1), -1)
+                self.assertEqual(f(2), -2)
+                self.assertEqual(f(3), -3)
+                self.assertEqual(f([]), "else")
+                self.assertEqual(f({}), "else")
+                self.assertEqual(f(set()), "else")
+                self.assertEqual(f(lambda: None), "else")
+
+                class A:
+                    pass
+                self.assertEqual(f(A), "else")
+                self.assertEqual(f(A()), "else")
+
+                class UnhashableInt(int):
+                    def __hash__(self):
+                        self.fail("Shouldn't hash subclasses.")
+
+                self.assertEqual(f(UnhashableInt(1)), -1)
+                self.assertEqual(f(UnhashableInt(2)), -2)
+                self.assertEqual(f(UnhashableInt(3)), -3)
+                self.assertEqual(f(UnhashableInt(4)), "else")
+
+                class Two():
+                    def __eq__(self, other):
+                        return 2 == other
+
+                self.assertEqual(f(Two()), -2)
+
+
+
+
     def test_basic_table_with_catchall(self):
         @self.assert_has_jump_tables(1)
         def negate1(x):
@@ -3194,10 +3254,25 @@ class TestJumpTables(unittest.TestCase):
                     pass
             return -x
 
+        @self.assert_has_jump_tables(1)
+        def negate4(x):
+            match x:
+                case 1:
+                    return -1
+                case 2:
+                    return -2
+                case 3:
+                    return -3
+                case int() as z:
+                    return -z
+                case _:
+                    raise TypeError()
+
         expected = {x: -x for x in (1, 2, 3, 4)}
         self.assertEqual({x: negate1(x) for x in (1, 2, 3, 4)}, expected)
         self.assertEqual({x: negate2(x) for x in (1, 2, 3, 4)}, expected)
         self.assertEqual({x: negate3(x) for x in (1, 2, 3, 4)}, expected)
+        self.assertEqual({x: negate4(x) for x in (1, 2, 3, 4)}, expected)
 
 
     def test_multiple_jump_tables_per_function(self):
@@ -3243,6 +3318,7 @@ class TestJumpTables(unittest.TestCase):
         actual = {(x, y): add(x, y) for x in (1, 2, 3) for y in (1, 2, 3)}
         self.assertEqual(actual, expected)
 
+    @unittest.skip("Not yet implemented.")
     def test_separated_jump_table(self):
         @self.assert_has_jump_tables(3)
         def f(x):
