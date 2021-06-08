@@ -314,6 +314,22 @@ def _EndRecData(fpin):
     # Unable to find a valid end of central directory structure
     return None
 
+def _sanitize_filename(filename):
+    """Terminate the file name at the first null byte and
+    ensure paths always use forward slashes as the directory separator."""
+    
+    # Terminate the file name at the first null byte.  Null bytes in file
+    # names are used as tricks by viruses in archives.
+    null_byte = filename.find(chr(0))
+    if null_byte >= 0:
+        filename = filename[0:null_byte]
+    # This is used to ensure paths in generated ZIP files always use
+    # forward slashes as the directory separator, as required by the
+    # ZIP format specification.
+    if os.sep != "/" and os.sep in filename:
+        filename = filename.replace(os.sep, "/")
+    return filename
+
 
 class ZipInfo (object):
     """Class with attributes describing each file in the ZIP archive."""
@@ -345,16 +361,9 @@ class ZipInfo (object):
     def __init__(self, filename="NoName", date_time=(1980,1,1,0,0,0)):
         self.orig_filename = filename   # Original file name in archive
 
-        # Terminate the file name at the first null byte.  Null bytes in file
-        # names are used as tricks by viruses in archives.
-        null_byte = filename.find(chr(0))
-        if null_byte >= 0:
-            filename = filename[0:null_byte]
-        # This is used to ensure paths in generated ZIP files always use
-        # forward slashes as the directory separator, as required by the
-        # ZIP format specification.
-        if os.sep != "/" and os.sep in filename:
-            filename = filename.replace(os.sep, "/")
+        # Terminate the file name at the first null byte and
+        # ensure paths always use forward slashes as the directory separator.
+        filename = _sanitize_filename(filename)
 
         self.filename = filename        # Normalized file name
         self.date_time = date_time      # year, month, day, hour, min, sec
@@ -493,7 +502,7 @@ class ZipInfo (object):
                     if up_version == 1 and up_name_crc == self.orig_filename_crc:
                         up_unicode_name = data[5:].decode('utf-8')
                         if up_unicode_name:
-                            self.filename = up_unicode_name
+                            self.filename = _sanitize_filename(up_unicode_name)
                         else:
                             raise BadZipFile("Empty unicode path extra field (0x7075)")
                 except struct.error:
