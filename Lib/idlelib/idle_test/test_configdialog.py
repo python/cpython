@@ -1213,15 +1213,7 @@ class GenPageTest(unittest.TestCase):
     def setUpClass(cls):
         page = cls.page = dialog.genpage
         dialog.note.select(page)
-        page.set = page.set_add_delete_state = Func()
-        page.upc = page.update_help_changes = Func()
         page.update()
-
-    @classmethod
-    def tearDownClass(cls):
-        page = cls.page
-        del page.set, page.set_add_delete_state
-        del page.upc, page.update_help_changes
 
     def setUp(self):
         changes.clear()
@@ -1234,9 +1226,7 @@ class GenPageTest(unittest.TestCase):
         d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
-        d.load_helplist = Func()
         d.load_general_cfg()
-        del d.load_helplist
         eq(d.startup_edit.get(), 0)
         eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
