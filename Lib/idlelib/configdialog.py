@@ -268,8 +268,6 @@ class ConfigDialog(Toplevel):
             set_extension_value: Set in userCfg['extensions'].
             save_all_changed_extensions: Call extension page Save().
         """
-        parent = self.parent
-        frame = Frame(self.note)
         self.ext_defaultCfg = idleConf.defaultCfg['extensions']
         self.ext_userCfg = idleConf.userCfg['extensions']
         self.is_int = self.register(is_int)
@@ -277,18 +275,21 @@ class ConfigDialog(Toplevel):
         # Create widgets - a listbox shows all available extensions, with the
         # controls for the extension selected in the listbox to the right.
         self.extension_names = StringVar(self)
-        frame.rowconfigure(0, weight=1)
-        frame.columnconfigure(2, weight=1)
-        self.extension_list = Listbox(frame, listvariable=self.extension_names,
+        frame = Frame(self.note)
+        frame_ext = LabelFrame(frame, borderwidth=2, relief=GROOVE,
+                               text=' Feature Extensions ')
+        frame_ext.rowconfigure(0, weight=1)
+        frame_ext.columnconfigure(2, weight=1)
+        self.extension_list = Listbox(frame_ext, listvariable=self.extension_names,
                                       selectmode='browse')
         self.extension_list.bind('<<ListboxSelect>>', self.extension_selected)
-        scroll = Scrollbar(frame, command=self.extension_list.yview)
+        scroll = Scrollbar(frame_ext, command=self.extension_list.yview)
         self.extension_list.yscrollcommand=scroll.set
-        self.details_frame = LabelFrame(frame, width=250, height=250)
+        self.details_frame = LabelFrame(frame_ext, width=250, height=250)
         self.extension_list.grid(column=0, row=0, sticky='nws')
         scroll.grid(column=1, row=0, sticky='ns')
         self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
-        frame.configure(padding=10)
+        frame_ext.configure(padding=10)
         self.config_frame = {}
         self.current_extension = None
 
@@ -303,6 +304,13 @@ class ConfigDialog(Toplevel):
         self.extension_names.set(ext_names)
         self.extension_list.selection_set(0)
         self.extension_selected(None)
+
+
+        self.frame_help = HelpFrame(frame, borderwidth=2, relief=GROOVE,
+                                    text=' Help Menu Extensions ')
+        frame_ext.grid(row=0, column=0, sticky='nsew')
+        Label(frame).grid(row=1, column=0)
+        self.frame_help.grid(row=2, column=0, sticky='sew')
 
         return frame
 
@@ -1854,7 +1862,6 @@ class GenPage(Frame):
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
                     (*)auto_squeeze_min_lines_int: Entry - auto_squeeze_min_lines
-            (*)frame_help: HelpFrame(LabelFrame)
         """
         # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
@@ -1895,8 +1902,6 @@ class GenPage(Frame):
                                   text=' Editor Preferences')
         frame_shell = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Shell Preferences')
-        self.frame_help = HelpFrame(self, borderwidth=2, relief=GROOVE,
-                                text=' Additional Help Sources ')
         # Frame_window.
         frame_run = Frame(frame_window, borderwidth=0)
         startup_title = Label(frame_run, text='At Startup')
@@ -1997,7 +2002,6 @@ class GenPage(Frame):
         frame_window.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_editor.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_shell.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
-        self.frame_help.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         # frame_run.
         frame_run.pack(side=TOP, padx=5, pady=0, fill=X)
         startup_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2054,7 +2058,6 @@ class GenPage(Frame):
         "Load current configuration settings for the general options."
         self.load_windows_cfg()
         self.load_shelled_cfg()
-        self.frame_help.load_helplist()
 
     def load_windows_cfg(self):
         # Set variables for all windows.
@@ -2118,7 +2121,7 @@ class HelpFrame(LabelFrame):
                 (*)button_helplist_add
                 (*)button_helplist_remove
         """
-        # self = frame_help in GenPage
+        # self = frame_help in dialog (until ExtPage class).
         frame_helplist = Frame(self)
         self.helplist = Listbox(
                 frame_helplist, height=5, takefocus=True,
