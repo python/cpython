@@ -1097,7 +1097,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
-            // The cell was cell by _PyEval_MakeFrameVector() from
+            // The cell was set by _PyEval_MakeFrameVector() from
             // the function's closure.
             assert(oldvalue != NULL && PyCell_Check(oldvalue));
             cell = oldvalue;
