@@ -221,8 +221,8 @@ _Py_Quicken(PyCodeObject *code) {
     return 0;
 }
 
-int
-special_module_load_attr(
+static int
+specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
     _PyAdaptiveEntry *cache0, _PyLoadAttrCache *cache1)
 {
@@ -267,7 +267,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
     if (PyModule_CheckExact(owner)) {
-        int err = special_module_load_attr(owner, instr, name, cache0, cache1);
+        int err = specialize_module_load_attr(owner, instr, name, cache0, cache1);
         if (err) {
             goto fail;
         }
@@ -346,12 +346,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         if (hint != (uint32_t)hint) {
             goto fail;
         }
-        cache0->index = (uint16_t)hint;
+        cache1->dk_version_or_hint = (uint32_t)hint;
         cache1->tp_version = type->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
         goto success;
-
     }
+
 fail:
     assert(!PyErr_Occurred());
     cache_backoff(cache0);

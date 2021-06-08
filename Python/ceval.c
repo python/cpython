@@ -3540,9 +3540,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(dict == NULL, LOAD_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, cache0->original_oparg);
-            uint16_t hint = cache0->index;
+            uint32_t hint = cache1->dk_version_or_hint;
             DEOPT_IF(hint > dict->ma_keys->dk_nentries, LOAD_ATTR);
-            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + (size_t)hint;
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name, LOAD_ATTR);
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
