@@ -2689,7 +2689,7 @@ elif os.name == 'nt':
                             address = 'socks://' + address
                     proxies[protocol] = address
                 # Use SOCKS proxy for HTTP(S) protocols
-                if proxies['socks']:
+                if proxies.get('socks'):
                     # The default SOCKS proxy type of Windows is SOCKS4
                     address = re.sub(r'^socks://', 'socks4://', proxies['socks'])
                     proxies['http'] = proxies['http'] or address
