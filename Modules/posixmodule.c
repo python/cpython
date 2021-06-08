@@ -21,6 +21,9 @@
       FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
 #  include <windows.h>
 #  include <pathcch.h>
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
 #define EX_OK EXIT_SUCCESS
 #endif
 
