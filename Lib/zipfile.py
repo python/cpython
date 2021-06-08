@@ -317,7 +317,7 @@ def _EndRecData(fpin):
 def _sanitize_filename(filename):
     """Terminate the file name at the first null byte and
     ensure paths always use forward slashes as the directory separator."""
-    
+
     # Terminate the file name at the first null byte.  Null bytes in file
     # names are used as tricks by viruses in archives.
     null_byte = filename.find(chr(0))
