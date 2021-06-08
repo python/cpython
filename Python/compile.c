@@ -365,6 +365,7 @@ static void clean_basic_block(basicblock *bb);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
+
 #define CAPSULE_NAME "compile.c compiler unit"
 
 PyObject *
@@ -1272,7 +1273,7 @@ stack_effect(int opcode, int oparg, int jump)
         case ROT_N:
             return 0;
         case ATTEMPT_SAFE_MATCH:
-            return jump > 0 ? -2 : -1;
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -6496,47 +6497,52 @@ case_get_safe_value(match_case_ty m)
 #define MIN_CASES_FOR_JUMP_TABLE 2
 
 static int
-maybe_make_jump_table(struct compiler *c, stmt_ty s, basicblock *end,
-                      jump_table **result)
+maybe_make_jump_table(struct compiler *c, stmt_ty s,
+                      jump_table **result, Py_ssize_t *simple_cases,
+                      basicblock **first_nonsimple)
 {
     // Determine whether to use a table
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
-    if (cases < MIN_CASES_FOR_JUMP_TABLE) {
-        *result = NULL;
-        return 1;
-    }
-    for (Py_ssize_t i = 0; i < cases; i++) {
-        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+    Py_ssize_t simple;
+    for (simple = 0; simple < cases; simple++) {
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, simple);
         if (!case_safe_for_table(m)) {
-            *result = NULL;
-            return 1;
+            break;
         }
+    }
+    if (simple < MIN_CASES_FOR_JUMP_TABLE) {
+        *simple_cases = 0;
+        *result = NULL;
+        *first_nonsimple = NULL;
+        return 1;
     }
     // allocate and initialize table
     jump_table *table;
     RETURN_IF_FALSE(table = PyMem_Calloc(1, sizeof(jump_table)));
-    if (!(table->keys = PyList_New(cases))) {
+    if (!(table->keys = PyList_New(simple))) {
         goto error;
     }
     if (!(table->placeholder
           = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type))) {
         goto error;
     }
-    if (!(table->values = PyMem_Calloc(cases, sizeof(basicblock *)))) {
+    if (!(table->values = PyMem_Calloc(simple, sizeof(basicblock *)))) {
         goto error;
     }
     // Initialize keys
-    for (Py_ssize_t i = 0; i < cases; i++) {
+    for (Py_ssize_t i = 0; i < simple; i++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         PyObject *val = case_get_safe_value(m);
         PyList_SET_ITEM(table->keys, i, val);
     }
+    // Block to jump to for keys not in table
+    RETURN_IF_FALSE(*first_nonsimple = compiler_new_block(c));
     // Add the LOAD_COST and ATTEMPT_SAFE_MATCH opcodes
     SET_LOC(c, asdl_seq_GET(s->v.Match.cases, 0)->pattern);
     if (!compiler_addop_load_const(c, table->placeholder)) {
         goto error;
     }
-    if (!compiler_addop_j(c, ATTEMPT_SAFE_MATCH, end)) {
+    if (!compiler_addop_j(c, ATTEMPT_SAFE_MATCH, *first_nonsimple)) {
         goto error;
     }
     if (!compiler_next_block(c)) {
@@ -6546,6 +6552,7 @@ maybe_make_jump_table(struct compiler *c, stmt_ty s, basicblock *end,
     table->previous = c->c_jump_table_tail;
     c->c_jump_table_tail = table;
     *result = table;
+    *simple_cases = simple;
     return 1;
   error:
     if (table->values) {
@@ -6566,14 +6573,24 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
     jump_table *table;
-    RETURN_IF_FALSE(maybe_make_jump_table(c, s, end, &table));
-    match_case_ty m = asdl_seq_GET(s->v.Match.cases, cases - 1);
-    int has_default = WILDCARD_CHECK(m->pattern) && 1 < cases;
+    basicblock *first_nonsimple;
+    Py_ssize_t num_simple_cases;
+    RETURN_IF_FALSE(maybe_make_jump_table(c, s, &table,
+                                          &num_simple_cases,
+                                          &first_nonsimple));
+    match_case_ty last = asdl_seq_GET(s->v.Match.cases, cases - 1);
+    int has_default = WILDCARD_CHECK(last->pattern) &&
+                      1 < cases &&
+                      table == NULL;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
-        m = asdl_seq_GET(s->v.Match.cases, i);
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        if (table && i == num_simple_cases) {
+            compiler_use_next_block(c, first_nonsimple);
+        }
         SET_LOC(c, m->pattern);
-        // Only copy the subject if we're *not* on the last case:
-        if (i != cases - has_default - 1) {
+        // Only copy the subject if we're *not* on the last case,
+        // or if using a table.
+        if (table || i != cases - has_default - 1) {
             ADDOP(c, DUP_TOP);
         }
         RETURN_IF_FALSE(pc->stores = PyList_New(0));
@@ -6604,10 +6621,10 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
-        if (i != cases - has_default - 1) {
+        if (table || i != cases - has_default - 1) {
             ADDOP(c, POP_TOP);
         }
-        if (table) {
+        if (table && i < num_simple_cases) {
             NEXT_BLOCK(c);
             // add to table
             table->values[i] = c->u->u_curblock;
@@ -6621,15 +6638,31 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             // No matches. Done with the subject:
             ADDOP(c, POP_TOP);
         }
-        // A trailing "case _" is common, and lets us save a bit of redundant
-        // pushing and popping in the loop above:
-        m = asdl_seq_GET(s->v.Match.cases, cases - 1);
-        SET_LOC(c, m->pattern);
-        if (m->guard) {
-            RETURN_IF_FALSE(compiler_jump_if(c, m->guard, end, 0));
+        // A trailing "case _" is common, and lets us save a bit of
+        // redundant pushing and popping in the loop above.
+        // Don't do this elimination if there's a preceeding jump
+        // table, since ATTEMPT_SAFE_MATCH leaves the subject on the
+        // stack upon missing key, and so this requires a POP_TOP.
+        SET_LOC(c, last->pattern);
+        if (last->guard) {
+            RETURN_IF_FALSE(compiler_jump_if(c, last->guard, end, 0));
         }
-        VISIT_SEQ(c, stmt, m->body);
+        VISIT_SEQ(c, stmt, last->body);
     }
+    if (table && num_simple_cases == cases) {
+        if (has_default) {
+            // Don't optimize away
+            ADDOP_JUMP(c, JUMP_ABSOLUTE, end);
+        }
+        // ATTEMPT_SAFE_MATCH leaves the subject on the stack.
+        // Remove it now.
+        compiler_use_next_block(c, first_nonsimple);
+        ADDOP(c, POP_TOP);
+    }
+    // if present. first_nonsimple should get used.
+    assert(first_nonsimple == NULL ||
+           first_nonsimple->b_next != NULL ||
+           first_nonsimple == c->u->u_curblock);
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -6672,6 +6705,9 @@ struct assembler {
 Py_LOCAL_INLINE(void)
 stackdepth_push(basicblock ***sp, basicblock *b, int depth)
 {
+    // All codepaths to this block must give the same stack startdepth.
+    // If a codepath to this block has already been traversed,
+    // assert that the current traversal arrives at the same depth.
     assert(b->b_startdepth < 0 || b->b_startdepth == depth);
     if (b->b_startdepth < depth && b->b_startdepth < 100) {
         assert(b->b_startdepth < 0);
@@ -6694,7 +6730,7 @@ stackdepth(struct compiler *c)
         entryblock = b;
         nblocks++;
     }
-    assert(entryblock!= NULL);
+    assert(entryblock != NULL);
     stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
     if (!stack) {
         PyErr_NoMemory();
@@ -7523,8 +7559,8 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 static void
 dump_instr(const struct instr *i)
 {
-    const char *jrel = (is_relative_jump(instr)) ? "jrel " : "";
-    const char *jabs = (is_jump(instr) && !is_relative_jump(instr))? "jabs " : "";
+    const char *jrel = (is_relative_jump(i)) ? "jrel " : "";
+    const char *jabs = (is_jump(i) && !is_relative_jump(i))? "jabs " : "";
     char arg[128];
 
     *arg = '\0';

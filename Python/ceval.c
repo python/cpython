@@ -3841,10 +3841,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(ATTEMPT_SAFE_MATCH): {
-            /* Starting stack: [x, jump_map]
-             * On deoptimize    --> [x]; dispatch normally.
-             * On key found     --> [ ]; jump into case
-             * On key not found --> [ ]; jump outside of match.
+            /* Starting stack: [subject, jump_map]
+             * On deoptimize    --> [subject];
+             *    Dispatch normally.
+             * On key found     --> [];
+             *    Jump into the correct case.
+             * On key not found --> [subject]
+             *    Jump to after the last simple case.
              */
             PyObject *jump_dict = POP();
             PyObject *x = TOP();
@@ -3855,8 +3858,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             {
                 PyObject *boxed = PyDict_GetItemWithError(jump_dict, x);
                 Py_DECREF(jump_dict);
-                STACK_SHRINK(1);
-                Py_DECREF(x);
                 if (boxed == NULL) {
                     if (PyErr_Occurred()) {
                         goto error;
@@ -3865,14 +3866,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     JUMPTO(oparg);
                 }
                 else {
-                    // Found! jump to the right case.
+                    // Found! Jump to the right case.
+                    STACK_SHRINK(1);
+                    Py_DECREF(x);
                     assert(PyLong_CheckExact(boxed));
                     int target = (int)PyLong_AsLong(boxed);
                     JUMPTO(target);
                 }
             }
             else {
-                // fall back to general matching code
+                // Fall back to general matching code.
                 Py_DECREF(jump_dict);
             }
             DISPATCH();
