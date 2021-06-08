@@ -2129,15 +2129,6 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
 };
 PyObject *PyExc_UnicodeEncodeError = (PyObject *)&_PyExc_UnicodeEncodeError;
 
-PyObject *
-PyUnicodeEncodeError_Create(
-    const char *encoding, const Py_UNICODE *object, Py_ssize_t length,
-    Py_ssize_t start, Py_ssize_t end, const char *reason)
-{
-    return PyObject_CallFunction(PyExc_UnicodeEncodeError, "su#nns",
-                                 encoding, object, length, start, end, reason);
-}
-
 
 /*
  *    UnicodeDecodeError extends UnicodeError
@@ -2341,16 +2332,6 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
     (initproc)UnicodeTranslateError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeTranslateError = (PyObject *)&_PyExc_UnicodeTranslateError;
-
-/* Deprecated. */
-PyObject *
-PyUnicodeTranslateError_Create(
-    const Py_UNICODE *object, Py_ssize_t length,
-    Py_ssize_t start, Py_ssize_t end, const char *reason)
-{
-    return PyObject_CallFunction(PyExc_UnicodeTranslateError, "u#nns",
-                                 object, length, start, end, reason);
-}
 
 PyObject *
 _PyUnicodeTranslateError_Create(

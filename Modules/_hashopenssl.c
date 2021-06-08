@@ -588,7 +588,7 @@ static PyType_Spec EVPtype_spec = {
     "_hashlib.HASH",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     EVPtype_slots
 };
 
@@ -737,7 +737,7 @@ static PyType_Spec EVPXOFtype_spec = {
     "_hashlib.HASHXOF",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     EVPXOFtype_slots
 };
 
@@ -1496,9 +1496,11 @@ _hmac_update(HMACobject *self, PyObject *obj)
     }
 
     if (self->lock != NULL) {
-        ENTER_HASHLIB(self);
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
-        LEAVE_HASHLIB(self);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
     } else {
         r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
     }
@@ -1729,7 +1731,7 @@ static PyType_Slot HMACtype_slots[] = {
 PyType_Spec HMACtype_spec = {
     "_hashlib.HMAC",    /* name */
     sizeof(HMACobject),     /* basicsize */
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACtype_slots,
 };
 
@@ -2093,20 +2095,25 @@ hashlib_init_constructors(PyObject *module)
         }
         func  = PyObject_GetAttrString(module, fdef->ml_name);
         if (func == NULL) {
+            Py_DECREF(name_obj);
             return -1;
         }
-        if (PyDict_SetItem(state->constructs, func, name_obj) < 0) {
-            return -1;
-        }
+        int rc = PyDict_SetItem(state->constructs, func, name_obj);
         Py_DECREF(func);
         Py_DECREF(name_obj);
+        if (rc < 0) {
+            return -1;
+        }
     }
 
     proxy = PyDictProxy_New(state->constructs);
     if (proxy == NULL) {
         return -1;
     }
-    if (PyModule_AddObjectRef(module, "_constructors", proxy) < 0) {
+
+    int rc = PyModule_AddObjectRef(module, "_constructors", proxy);
+    Py_DECREF(proxy);
+    if (rc < 0) {
         return -1;
     }
     return 0;

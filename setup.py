@@ -227,11 +227,11 @@ def macosx_sdk_specified():
 
 def is_macosx_sdk_path(path):
     """
-    Returns True if 'path' can be located in an OSX SDK
+    Returns True if 'path' can be located in a macOS SDK
     """
     return ( (path.startswith('/usr/') and not path.startswith('/usr/local'))
-                or path.startswith('/System/')
-                or path.startswith('/Library/') )
+                or path.startswith('/System/Library')
+                or path.startswith('/System/iOSSupport') )
 
 
 def grep_headers_for(function, headers):
@@ -1578,7 +1578,7 @@ class PyBuildExt(build_ext):
                 sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
 
         if sqlite_incdir and sqlite_libdir:
-            sqlite_srcs = ['_sqlite/cache.c',
+            sqlite_srcs = [
                 '_sqlite/connection.c',
                 '_sqlite/cursor.c',
                 '_sqlite/microprotocols.c',

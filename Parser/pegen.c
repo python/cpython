@@ -217,7 +217,7 @@ _PyPegen_get_expr_name(expr_ty e)
                 return "True";
             }
             if (value == Py_Ellipsis) {
-                return "Ellipsis";
+                return "ellipsis";
             }
             return "literal";
         }
@@ -1222,7 +1222,7 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->known_err_token = NULL;
     p->level = 0;
     p->call_invalid_rules = 0;
-
+    p->in_raw_rule = 0;
     return p;
 }
 
@@ -1234,6 +1234,9 @@ reset_parser_state(Parser *p)
     }
     p->mark = 0;
     p->call_invalid_rules = 1;
+    // Don't try to get extra tokens in interactive mode when trying to
+    // raise specialized errors in the second pass.
+    p->tok->interactive_underflow = IUNDERFLOW_STOP;
 }
 
 static int
@@ -1259,6 +1262,7 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {
+                        PyErr_Clear();
                         raise_unclosed_parentheses_error(p);
                         return -1;
                     }
@@ -1280,9 +1284,15 @@ _PyPegen_run_parser(Parser *p)
 {
     void *res = _PyPegen_parse(p);
     if (res == NULL) {
+        Token *last_token = p->tokens[p->fill - 1];
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
+            // Prioritize tokenizer errors to custom syntax errors raised
+            // on the second phase only if the errors come from the parser.
+            if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+                _PyPegen_check_tokenizer_errors(p);
+            }
             return NULL;
         }
         if (p->fill == 0) {
@@ -1303,7 +1313,11 @@ _PyPegen_run_parser(Parser *p)
                 RAISE_INDENTATION_ERROR("unexpected unindent");
             }
             else {
-                RAISE_SYNTAX_ERROR("invalid syntax");
+                // Use the last token we found on the first pass to avoid reporting
+                // incorrect locations for generic syntax errors just because we reached
+                // further away when trying to find specific syntax errors in the second
+                // pass.
+                RAISE_SYNTAX_ERROR_KNOWN_LOCATION(last_token, "invalid syntax");
                 // _PyPegen_check_tokenizer_errors will override the existing
                 // generic SyntaxError we just raised if errors are found.
                 _PyPegen_check_tokenizer_errors(p);
