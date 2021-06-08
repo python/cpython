@@ -2105,6 +2105,22 @@ class SyntaxErrorTests(unittest.TestCase):
                         sys.__excepthook__(*sys.exc_info())
                     the_exception = exc
 
+    def test_encodings(self):
+        source = (
+            '# -*- coding: cp437 -*-\n'
+            '"┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))\n'
+        )
+        try:
+            with open(TESTFN, 'w', encoding='cp437') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
+            self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        finally:
+            unlink(TESTFN)
+
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)
         the_exception = SyntaxError("bad bad", args)

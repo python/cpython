@@ -456,10 +456,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
+    // PyErr_ProgramTextObject assumes that the text is utf-8 so we cannot call it with a file
+    // with an arbitrary encoding or otherwise we could get some badly decoded text.
+    int uses_utf8_codec = (!p->tok->encoding || strcmp(p->tok->encoding, "utf-8") == 0);
     if (p->tok->fp_interactive) {
         error_line = get_error_line(p, lineno);
     }
-    else if (p->start_rule == Py_file_input) {
+    else if (uses_utf8_codec && p->start_rule == Py_file_input) {
         error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
@@ -471,7 +474,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            we're actually parsing from a file, which has an E_EOF SyntaxError and in that case
            `PyErr_ProgramTextObject` fails because lineno points to last_file_line + 1, which
            does not physically exist */
-        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
+        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF || !uses_utf8_codec);
 
         if (p->tok->lineno <= lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
