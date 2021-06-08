@@ -3499,6 +3499,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
             res = dict->ma_values[cache0->index];
             DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
             record_cache_hit(cache0);
             STAT_INC(loadattr_hit);
             Py_INCREF(res);
@@ -3519,6 +3520,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
             record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
@@ -3546,6 +3548,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(ep->me_key != name, LOAD_ATTR);
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
             record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
@@ -3565,6 +3568,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             char *addr = (char *)owner + cache0->index;
             res = *(PyObject **)addr;
             DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
             record_cache_hit(cache0);
             Py_INCREF(res);
             SET_TOP(res);
@@ -4455,10 +4459,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
 LOAD_ATTR_miss:
     {
+        STAT_INC(loadattr_miss);
         _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive;
         record_cache_miss(cache);
         if (too_many_cache_misses(cache)) {
             next_instr[-1] = _Py_MAKECODEUNIT(LOAD_ATTR_ADAPTIVE, _Py_OPARG(next_instr[-1]));
+            STAT_INC(loadattr_deopt);
             cache_backoff(cache);
         }
         oparg = cache->original_oparg;

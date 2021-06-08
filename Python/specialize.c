@@ -353,10 +353,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
 
 fail:
+    STAT_INC(specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
+    STAT_INC(specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
