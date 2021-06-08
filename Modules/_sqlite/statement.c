@@ -49,7 +49,7 @@ typedef enum {
 } parameter_type;
 
 static int
-pysqlite_statement_is_dml(sqlite3_stmt *statement, const char *sql)
+statement_is_dml(sqlite3_stmt *statement, const char *sql)
 {
     int is_dml = !sqlite3_stmt_readonly(statement);
 
@@ -129,7 +129,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 
     self->st = stmt;
     self->in_use = 0;
-    self->is_dml = pysqlite_statement_is_dml(stmt, sql_cstr);
+    self->is_dml = statement_is_dml(stmt, sql_cstr);
     self->in_weakreflist = NULL;
 
     PyObject_GC_Track(self);
