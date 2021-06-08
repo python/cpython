@@ -1779,8 +1779,8 @@ PEP 652: Maintaining the Stable ABI
 
 The Stable ABI (Application Binary Interface) for extension modules or
 embedding Python is now explicitly defined.
-C API and ABI stability guarantees and best practices for using the Stable ABI
-are described in :ref:`stable`.
+:ref:`stable` describes C API and ABI stability guarantees along with best
+practices for using the Stable ABI.
 
 (Contributed by Petr Viktorin in :pep:`652` and :issue:`43795`.)
 
