@@ -3850,25 +3850,25 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
              *    Jump to after the last simple case.
              */
             PyObject *jump_dict = POP();
-            PyObject *x = TOP();
+            PyObject *subject = TOP();
             assert(PyDict_CheckExact(jump_dict));
-            if (PyLong_CheckExact(x) ||
-                PyUnicode_CheckExact(x) ||
-                Py_Is(x, Py_None))
+            if (PyLong_CheckExact(subject) ||
+                PyUnicode_CheckExact(subject) ||
+                Py_Is(subject, Py_None))
             {
-                PyObject *boxed = PyDict_GetItemWithError(jump_dict, x);
+                PyObject *boxed = PyDict_GetItemWithError(jump_dict, subject);
                 Py_DECREF(jump_dict);
                 if (boxed == NULL) {
                     if (PyErr_Occurred()) {
                         goto error;
                     }
-                    // x not found in jump table, so skip over.
+                    // subject not found in jump table, so skip over.
                     JUMPTO(oparg);
                 }
                 else {
                     // Found! Jump to the right case.
                     STACK_SHRINK(1);
-                    Py_DECREF(x);
+                    Py_DECREF(subject);
                     assert(PyLong_CheckExact(boxed));
                     int target = (int)PyLong_AsLong(boxed);
                     JUMPTO(target);
