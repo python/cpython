@@ -181,16 +181,14 @@ def_op('CALL_FUNCTION', 131)    # #args
 def_op('MAKE_FUNCTION', 132)    # Flags
 def_op('BUILD_SLICE', 133)      # Number of items
 
-def_op('MAKE_CELL', 135)
+def_op('LOAD_CLOSURE', 135)
 hasfree.append(135)
-def_op('LOAD_CLOSURE', 136)
+def_op('LOAD_DEREF', 136)
 hasfree.append(136)
-def_op('LOAD_DEREF', 137)
+def_op('STORE_DEREF', 137)
 hasfree.append(137)
-def_op('STORE_DEREF', 138)
+def_op('DELETE_DEREF', 138)
 hasfree.append(138)
-def_op('DELETE_DEREF', 139)
-hasfree.append(139)
 
 def_op('CALL_FUNCTION_KW', 141)  # #args + #kwargs
 def_op('CALL_FUNCTION_EX', 142)  # Flags
