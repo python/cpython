@@ -1982,3 +1982,13 @@ def skip_if_broken_multiprocessing_synchronize():
             synchronize.Lock(ctx=None)
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
+
+
+@contextlib.contextmanager
+def infinite_recursion(max_depth=75):
+    original_depth = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(max_depth)
+        yield
+    finally:
+        sys.setrecursionlimit(original_depth)
