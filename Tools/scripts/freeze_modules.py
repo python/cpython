@@ -37,9 +37,18 @@ FROZEN = [
         ]),
     ('stdlib', [
         # without site (python -S)
-        # ...
+        'abc',
+        'codecs',
+        '<encodings.*>',
+        'io',
         # with site
-        # ...
+        '_collections_abc',
+        '_sitebuiltins',
+        'genericpath',
+        'ntpath' if os.name == 'nt' else 'posixpath',
+        'os',
+        'site',
+        'stat',
         ]),
     ('Test module', [
         'hello : __hello__ = ' + os.path.join(TOOLS_DIR, 'freeze', 'flag.py'),
