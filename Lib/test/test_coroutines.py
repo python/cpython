@@ -91,6 +91,10 @@ class AsyncBadSyntaxTest(unittest.TestCase):
                 pass
             """,
 
+            """async def foo(a:await something()):
+                pass
+            """,
+
             """async def foo():
                 def bar():
                  [i async for i in els]
@@ -292,6 +296,10 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             """await a()""",
 
             """async def foo(a=await b):
+                   pass
+            """,
+
+            """async def foo(a:await b):
                    pass
             """,
 

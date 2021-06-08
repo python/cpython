@@ -97,6 +97,15 @@ Type Objects
    from a type's base class.  Return ``0`` on success, or return ``-1`` and sets an
    exception on error.
 
+   .. note::
+       If some of the base classes implements the GC protocol and the provided
+       type does not include the :const:`Py_TPFLAGS_HAVE_GC` in its flags, then
+       the GC protocol will be automatically implemented from its parents. On
+       the contrary, if the type being created does include
+       :const:`Py_TPFLAGS_HAVE_GC` in its flags then it **must** implement the
+       GC protocol itself by at least implementing the
+       :c:member:`~PyTypeObject.tp_traverse` handle.
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
@@ -111,7 +120,7 @@ Type Objects
 
    .. versionchanged:: 3.10
       :c:func:`PyType_GetSlot` can now accept all types.
-      Previously, it was limited to heap types.
+      Previously, it was limited to :ref:`heap types <heap-types>`.
 
 .. c:function:: PyObject* PyType_GetModule(PyTypeObject *type)
 
@@ -153,7 +162,7 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
 
-   Creates and returns a heap type object from the *spec*
+   Creates and returns a :ref:`heap type <heap-types>` from the *spec*
    (:const:`Py_TPFLAGS_HEAPTYPE`).
 
    The *bases* argument can be used to specify base classes; it can either

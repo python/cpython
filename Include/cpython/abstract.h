@@ -119,7 +119,7 @@ static inline PyObject *
 PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
                      size_t nargsf, PyObject *kwnames)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_Get();
     return _PyObject_VectorcallTstate(tstate, callable,
                                       args, nargsf, kwnames);
 }
@@ -155,7 +155,7 @@ _PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func, PyObject *const 
 static inline PyObject *
 _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_Get();
     return _PyObject_FastCallTstate(tstate, func, args, nargs);
 }
 
@@ -164,7 +164,7 @@ _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
    PyObject_CallNoArgs(). */
 static inline PyObject *
 _PyObject_CallNoArg(PyObject *func) {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = PyThreadState_Get();
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
@@ -179,7 +179,7 @@ PyObject_CallOneArg(PyObject *func, PyObject *arg)
     assert(arg != NULL);
     args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
     args[0] = arg;
-    tstate = PyThreadState_GET();
+    tstate = PyThreadState_Get();
     nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
@@ -324,12 +324,6 @@ PyAPI_FUNC(int) PyBuffer_FillInfo(Py_buffer *view, PyObject *o, void *buf,
 
 /* Releases a Py_buffer obtained from getbuffer ParseTuple's "s*". */
 PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
-
-/* ==== Iterators ================================================ */
-
-#define PyIter_Check(obj) \
-    (Py_TYPE(obj)->tp_iternext != NULL && \
-     Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
 /* === Sequence protocol ================================================ */
 

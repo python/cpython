@@ -40,9 +40,9 @@ we've considered:
 
 The approach with the least performance impact (time and space) is #2,
 mirroring the key order of dict's dk_entries with an array of node pointers.
-While lookdict() and friends (dk_lookup) don't give us the index into the
-array, we make use of pointer arithmetic to get that index.  An alternative
-would be to refactor lookdict() to provide the index, explicitly exposing
+While _Py_dict_lookup() does not give us the index into the array,
+we make use of pointer arithmetic to get that index.  An alternative would
+be to refactor _Py_dict_lookup() to provide the index, explicitly exposing
 the implementation detail.  We could even just use a custom lookup function
 for OrderedDict that facilitates our need.  However, both approaches are
 significantly more complicated than just using pointer arithmetic.
@@ -535,7 +535,7 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
     Py_ssize_t ix;
 
-    ix = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value);
+    ix = _Py_dict_lookup((PyDictObject *)od, key, hash, &value);
     if (ix == DKIX_EMPTY) {
         return keys->dk_nentries;  /* index of new entry */
     }
@@ -545,6 +545,8 @@ _odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
     return ix;
 }
 
+#define ONE ((Py_ssize_t)1)
+
 /* Replace od->od_fast_nodes with a new table matching the size of dict's. */
 static int
 _odict_resize(PyODictObject *od)
@@ -553,7 +555,7 @@ _odict_resize(PyODictObject *od)
     _ODictNode **fast_nodes, *node;
 
     /* Initialize a new "fast nodes" table. */
-    size = ((PyDictObject *)od)->ma_keys->dk_size;
+    size = ONE << (((PyDictObject *)od)->ma_keys->dk_log2_size);
     fast_nodes = PyMem_NEW(_ODictNode *, size);
     if (fast_nodes == NULL) {
         PyErr_NoMemory();
@@ -592,7 +594,7 @@ _odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
 
     /* Ensure od_fast_nodes and dk_entries are in sync. */
     if (od->od_resize_sentinel != keys ||
-        od->od_fast_nodes_size != keys->dk_size) {
+        od->od_fast_nodes_size != (ONE << (keys->dk_log2_size))) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;

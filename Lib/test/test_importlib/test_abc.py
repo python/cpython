@@ -55,7 +55,7 @@ class InheritanceTests:
 
 
 class MetaPathFinder(InheritanceTests):
-    superclass_names = ['Finder']
+    superclass_names = []
     subclass_names = ['BuiltinImporter', 'FrozenImporter', 'PathFinder',
                       'WindowsRegistryFinder']
 
@@ -66,7 +66,7 @@ class MetaPathFinder(InheritanceTests):
 
 
 class PathEntryFinder(InheritanceTests):
-    superclass_names = ['Finder']
+    superclass_names = []
     subclass_names = ['FileFinder']
 
 
@@ -220,12 +220,14 @@ class LoaderDefaultsTests(ABCTestHarness):
 
     def test_module_repr(self):
         mod = types.ModuleType('blah')
-        with self.assertRaises(NotImplementedError):
-            self.ins.module_repr(mod)
-        original_repr = repr(mod)
-        mod.__loader__ = self.ins
-        # Should still return a proper repr.
-        self.assertTrue(repr(mod))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with self.assertRaises(NotImplementedError):
+                self.ins.module_repr(mod)
+            original_repr = repr(mod)
+            mod.__loader__ = self.ins
+            # Should still return a proper repr.
+            self.assertTrue(repr(mod))
 
 
 (Frozen_LDefaultTests,
@@ -338,7 +340,9 @@ class ResourceReaderDefaultsTests(ABCTestHarness):
             self.ins.is_resource('dummy_file')
 
     def test_contents(self):
-        self.assertEqual([], list(self.ins.contents()))
+        with self.assertRaises(FileNotFoundError):
+            self.ins.contents()
+
 
 (Frozen_RRDefaultTests,
  Source_RRDefaultsTests

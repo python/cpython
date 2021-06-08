@@ -13,6 +13,7 @@
 #include "code.h"
 #include "marshal.h"
 #include "pycore_hashtable.h"
+#include "pycore_code.h"        // _PyCode_New()
 
 /*[clinic input]
 module marshal
@@ -512,19 +513,18 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_long(co->co_argcount, p);
         w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
-        w_long(co->co_nlocals, p);
         w_long(co->co_stacksize, p);
         w_long(co->co_flags, p);
         w_object(co->co_code, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
-        w_object(co->co_varnames, p);
-        w_object(co->co_freevars, p);
-        w_object(co->co_cellvars, p);
+        w_object(co->co_localsplusnames, p);
+        w_string(co->co_localspluskinds, co->co_nlocalsplus, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
         w_object(co->co_linetable, p);
+        w_object(co->co_exceptiontable, p);
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown bytes-like objects as a bytes object */
@@ -1300,19 +1300,18 @@ r_object(RFILE *p)
             int argcount;
             int posonlyargcount;
             int kwonlyargcount;
-            int nlocals;
             int stacksize;
             int flags;
             PyObject *code = NULL;
             PyObject *consts = NULL;
             PyObject *names = NULL;
-            PyObject *varnames = NULL;
-            PyObject *freevars = NULL;
-            PyObject *cellvars = NULL;
+            PyObject *localsplusnames = NULL;
+            _PyLocalsPlusKinds localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
             PyObject *linetable = NULL;
+            PyObject *exceptiontable = NULL;
 
             idx = r_ref_reserve(flag, p);
             if (idx < 0)
@@ -1331,9 +1330,6 @@ r_object(RFILE *p)
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
-            nlocals = (int)r_long(p);
-            if (PyErr_Occurred())
-                goto code_error;
             stacksize = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
@@ -1349,15 +1345,22 @@ r_object(RFILE *p)
             names = r_object(p);
             if (names == NULL)
                 goto code_error;
-            varnames = r_object(p);
-            if (varnames == NULL)
+            localsplusnames = r_object(p);
+            if (localsplusnames == NULL)
                 goto code_error;
-            freevars = r_object(p);
-            if (freevars == NULL)
-                goto code_error;
-            cellvars = r_object(p);
-            if (cellvars == NULL)
-                goto code_error;
+
+            assert(PyTuple_GET_SIZE(localsplusnames) < INT_MAX);
+            int nlocalsplus = (int)PyTuple_GET_SIZE(localsplusnames);
+            if (nlocalsplus) {
+                if (_PyCode_InitLocalsPlusKinds(nlocalsplus,
+                                               &localspluskinds) < 0) {
+                    goto code_error;
+                }
+                for (int i = 0; i < nlocalsplus; i++) {
+                    localspluskinds[i] = r_byte(p);
+                }
+            }
+
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
@@ -1370,31 +1373,64 @@ r_object(RFILE *p)
             linetable = r_object(p);
             if (linetable == NULL)
                 goto code_error;
+            exceptiontable = r_object(p);
+            if (exceptiontable == NULL)
+                goto code_error;
 
             if (PySys_Audit("code.__new__", "OOOiiiiii",
                             code, filename, name, argcount, posonlyargcount,
-                            kwonlyargcount, nlocals, stacksize, flags) < 0) {
+                            kwonlyargcount, nlocalsplus, stacksize,
+                            flags) < 0) {
                 goto code_error;
             }
 
-            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
-                            argcount, posonlyargcount, kwonlyargcount,
-                            nlocals, stacksize, flags,
-                            code, consts, names, varnames,
-                            freevars, cellvars, filename, name,
-                            firstlineno, linetable);
+            struct _PyCodeConstructor con = {
+                .filename = filename,
+                .name = name,
+                .flags = flags,
+
+                .code = code,
+                .firstlineno = firstlineno,
+                .linetable = linetable,
+
+                .consts = consts,
+                .names = names,
+
+                .localsplusnames = localsplusnames,
+                .localspluskinds = localspluskinds,
+
+                .argcount = argcount,
+                .posonlyargcount = posonlyargcount,
+                .kwonlyargcount = kwonlyargcount,
+
+                .stacksize = stacksize,
+
+                .exceptiontable = exceptiontable,
+            };
+
+            if (_PyCode_Validate(&con) < 0) {
+                goto code_error;
+            }
+
+            v = (PyObject *)_PyCode_New(&con);
+            if (v == NULL) {
+                goto code_error;
+            }
+
+            localspluskinds = NULL;  // This keeps it from getting freed below.
+
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
             Py_XDECREF(code);
             Py_XDECREF(consts);
             Py_XDECREF(names);
-            Py_XDECREF(varnames);
-            Py_XDECREF(freevars);
-            Py_XDECREF(cellvars);
+            Py_XDECREF(localsplusnames);
+            _PyCode_ClearLocalsPlusKinds(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(linetable);
+            Py_XDECREF(exceptiontable);
         }
         retval = v;
         break;

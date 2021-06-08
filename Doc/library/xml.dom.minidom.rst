@@ -174,7 +174,7 @@ module documentation.  This section lists the differences between the API and
       The :meth:`toxml` method now preserves the attribute order specified
       by the user.
 
-.. method:: Node.toprettyxml(indent="\t", newl="\n", encoding=None, \
+.. method:: Node.toprettyxml(indent="\\t", newl="\\n", encoding=None, \
                              standalone=None)
 
    Return a pretty-printed version of the document. *indent* specifies the

@@ -928,7 +928,15 @@ The :mod:`test.support` module defines the following functions:
    .. versionadded:: 3.10
 
 
+.. function:: check_disallow_instantiation(test_case, tp, *args, **kwds)
+
+   Assert that type *tp* cannot be instantiated using *args* and *kwds*.
+
+   .. versionadded:: 3.11
+
+
 The :mod:`test.support` module defines the following classes:
+
 
 .. class:: SuppressCrashReport()
 

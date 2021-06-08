@@ -158,7 +158,7 @@ def _parse(srclines, anon_name):
     source = _iter_source(srclines)
     #source = _iter_source(srclines, showtext=True)
     for result in parse_globals(source, anon_name):
-        # XXX Handle blocks here insted of in parse_globals().
+        # XXX Handle blocks here instead of in parse_globals().
         yield result
 
 

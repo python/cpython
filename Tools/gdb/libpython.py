@@ -730,7 +730,7 @@ class PyDictObjectPtr(PyObjectPtr):
 
     def _get_entries(self, keys):
         dk_nentries = int(keys['dk_nentries'])
-        dk_size = int(keys['dk_size'])
+        dk_size = 1<<int(keys['dk_log2_size'])
         try:
             # <= Python 3.5
             return keys['dk_entries'], dk_size
@@ -854,6 +854,8 @@ class PyNoneStructPtr(PyObjectPtr):
     def proxyval(self, visited):
         return None
 
+FRAME_SPECIALS_GLOBAL_OFFSET = 0
+FRAME_SPECIALS_BUILTINS_OFFSET = 1
 
 class PyFrameObjectPtr(PyObjectPtr):
     _typename = 'PyFrameObject'
@@ -869,7 +871,8 @@ class PyFrameObjectPtr(PyObjectPtr):
             self.f_lineno = int_from_int(self.field('f_lineno'))
             self.f_lasti = int_from_int(self.field('f_lasti'))
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
-            self.co_varnames = PyTupleObjectPtr.from_pyobject_ptr(self.co.field('co_varnames'))
+            pnames = self.co.field('co_localsplusnames')
+            self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
 
     def iter_locals(self):
         '''
@@ -879,12 +882,19 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return
 
-        f_localsplus = self.field('f_localsplus')
+        f_localsplus = self.field('f_localsptr')
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(f_localsplus[i])
-            if not pyop_value.is_null():
-                pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_varnames[i])
-                yield (pyop_name, pyop_value)
+            if pyop_value.is_null():
+                continue
+            pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
+            yield (pyop_name, pyop_value)
+
+    def _f_globals(self):
+        f_localsplus = self.field('f_localsptr')
+        nlocalsplus = int_from_int(self.co.field('co_nlocalsplus'))
+        index = nlocalsplus + FRAME_SPECIALS_GLOBAL_OFFSET
+        return PyObjectPtr.from_pyobject_ptr(f_localsplus[index])
 
     def iter_globals(self):
         '''
@@ -894,8 +904,14 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return ()
 
-        pyop_globals = self.pyop_field('f_globals')
+        pyop_globals = self._f_globals()
         return pyop_globals.iteritems()
+
+    def _f_builtins(self):
+        f_localsplus = self.field('f_localsptr')
+        nlocalsplus = int_from_int(self.co.field('co_nlocalsplus'))
+        index = nlocalsplus + FRAME_SPECIALS_BUILTINS_OFFSET
+        return PyObjectPtr.from_pyobject_ptr(f_localsplus[index])
 
     def iter_builtins(self):
         '''
@@ -905,7 +921,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         if self.is_optimized_out():
             return ()
 
-        pyop_builtins = self.pyop_field('f_builtins')
+        pyop_builtins = self._f_builtins()
         return pyop_builtins.iteritems()
 
     def get_var_by_name(self, name):
@@ -947,7 +963,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             return self.f_lineno
 
         try:
-            return self.co.addr2line(self.f_lasti)
+            return self.co.addr2line(self.f_lasti*2)
         except Exception:
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if

@@ -97,9 +97,8 @@ PyObject _Py_EllipsisObject = {
 /* Slice object implementation */
 
 
-void _PySlice_Fini(PyThreadState *tstate)
+void _PySlice_Fini(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = tstate->interp;
     PySliceObject *obj = interp->slice_cache;
     if (obj != NULL) {
         interp->slice_cache = NULL;

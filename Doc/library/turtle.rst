@@ -662,7 +662,7 @@ Tell Turtle's state
 
    Return the angle between the line from turtle position to position specified
    by (x,y), the vector or the other turtle.  This depends on the turtle's start
-   orientation which depends on the mode - "standard"/"world" or "logo").
+   orientation which depends on the mode - "standard"/"world" or "logo".
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1105,7 +1105,7 @@ More drawing control
    :param font: a triple (fontname, fontsize, fonttype)
 
    Write text - the string representation of *arg* - at the current turtle
-   position according to *align* ("left", "center" or right") and with the given
+   position according to *align* ("left", "center" or "right") and with the given
    font.  If *move* is true, the pen is moved to the bottom-right corner of the
    text.  By default, *move* is ``False``.
 
@@ -1192,7 +1192,7 @@ Appearance
      :func:`shapesize`.
    - "noresize": no adaption of the turtle's appearance takes place.
 
-   resizemode("user") is called by :func:`shapesize` when used with arguments.
+   ``resizemode("user")`` is called by :func:`shapesize` when used with arguments.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1330,7 +1330,7 @@ Appearance
    matrix as a tuple of 4 elements.
    Otherwise set the given elements and transform the turtleshape
    according to the matrix consisting of first row t11, t12 and
-   second row t21, 22. The determinant t11 * t22 - t12 * t21 must not be
+   second row t21, t22. The determinant t11 * t22 - t12 * t21 must not be
    zero, otherwise an error is raised.
    Modify stretchfactor, shearfactor and tiltangle according to the
    given matrix.
@@ -1513,7 +1513,7 @@ Special Turtle methods
 
    :param size: an integer or ``None``
 
-   Set or disable undobuffer.  If *size* is an integer an empty undobuffer of
+   Set or disable undobuffer.  If *size* is an integer, an empty undobuffer of
    given size is installed.  *size* gives the maximum number of turtle actions
    that can be undone by the :func:`undo` method/function.  If *size* is
    ``None``, the undobuffer is disabled.
@@ -1821,7 +1821,7 @@ Using screen events
    existing bindings are removed.
 
    Example for a TurtleScreen instance named ``screen`` and a Turtle instance
-   named turtle:
+   named ``turtle``:
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1894,7 +1894,7 @@ Input methods
    Pop up a dialog window for input of a number. title is the title of the
    dialog window, prompt is a text mostly describing what numerical information
    to input. default: default value, minval: minimum value for input,
-   maxval: maximum value for input
+   maxval: maximum value for input.
    The number input must be in the range minval .. maxval if these are
    given. If not, a hint is issued and the dialog remains open for
    correction.
@@ -1938,7 +1938,7 @@ Settings and special methods
    :param cmode: one of the values 1.0 or 255
 
    Return the colormode or set it to 1.0 or 255.  Subsequently *r*, *g*, *b*
-   values of color triples have to be in the range 0..\ *cmode*.
+   values of color triples have to be in the range 0..*cmode*.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -2002,7 +2002,7 @@ Settings and special methods
 
           >>> screen.register_shape("triangle", ((5,-3), (0,5), (-5,-3)))
 
-   (3) *name* is an arbitrary string and shape is a (compound) :class:`Shape`
+   (3) *name* is an arbitrary string and *shape* is a (compound) :class:`Shape`
        object: Install the corresponding compound shape.
 
    Add a turtle shape to TurtleScreen's shapelist.  Only thusly registered
@@ -2048,7 +2048,7 @@ Methods specific to Screen, not inherited from TurtleScreen
 
 .. function:: exitonclick()
 
-   Bind bye() method to mouse clicks on the Screen.
+   Bind ``bye()`` method to mouse clicks on the Screen.
 
 
    If the value "using_IDLE" in the configuration dictionary is ``False``
@@ -2349,12 +2349,12 @@ Short explanation of selected entries:
   auto``.
 - If you set e.g. ``language = italian`` the docstringdict
   :file:`turtle_docstringdict_italian.py` will be loaded at import time (if
-  present on the import path, e.g. in the same directory as :mod:`turtle`.
+  present on the import path, e.g. in the same directory as :mod:`turtle`).
 - The entries *exampleturtle* and *examplescreen* define the names of these
   objects as they occur in the docstrings.  The transformation of
   method-docstrings to function-docstrings will delete these names from the
   docstrings.
-- *using_IDLE*: Set this to ``True`` if you regularly work with IDLE and its -n
+- *using_IDLE*: Set this to ``True`` if you regularly work with IDLE and its ``-n``
   switch ("no subprocess").  This will prevent :func:`exitonclick` to enter the
   mainloop.
 

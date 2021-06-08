@@ -12,7 +12,7 @@ static int
 warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char, Token *t)
 {
     PyObject *msg =
-        PyUnicode_FromFormat("invalid escape sequence \\%c", first_invalid_escape_char);
+        PyUnicode_FromFormat("invalid escape sequence '\\%c'", first_invalid_escape_char);
     if (msg == NULL) {
         return -1;
     }
@@ -27,7 +27,7 @@ warn_invalid_escape_sequence(Parser *p, unsigned char first_invalid_escape_char,
                since _PyPegen_raise_error uses p->tokens[p->fill - 1] for the
                error location, if p->known_err_token is not set. */
             p->known_err_token = t;
-            RAISE_SYNTAX_ERROR("invalid escape sequence \\%c", first_invalid_escape_char);
+            RAISE_SYNTAX_ERROR("invalid escape sequence '\\%c'", first_invalid_escape_char);
         }
         Py_DECREF(msg);
         return -1;
@@ -797,10 +797,11 @@ fstring_find_expr(Parser *p, const char **str, const char *end, int raw, int rec
     /* And now create the FormattedValue node that represents this
        entire expression with the conversion and format spec. */
     //TODO: Fix this
-    *expression = FormattedValue(simple_expression, conversion,
-                                 format_spec, first_token->lineno,
-                                 first_token->col_offset, last_token->end_lineno,
-                                 last_token->end_col_offset, p->arena);
+    *expression = _PyAST_FormattedValue(simple_expression, conversion,
+                                        format_spec, first_token->lineno,
+                                        first_token->col_offset,
+                                        last_token->end_lineno,
+                                        last_token->end_col_offset, p->arena);
     if (!*expression) {
         goto error;
     }
@@ -1031,7 +1032,7 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
     PyObject *kind = NULL;
     *str = NULL;
     assert(PyUnicode_CheckExact(s));
-    if (PyArena_AddPyObject(p->arena, s) < 0) {
+    if (_PyArena_AddPyObject(p->arena, s) < 0) {
         Py_DECREF(s);
         return NULL;
     }
@@ -1044,8 +1045,9 @@ make_str_node_and_del(Parser *p, PyObject **str, Token* first_token, Token *last
         return NULL;
     }
 
-    return Constant(s, kind, first_token->lineno, first_token->col_offset,
-                    last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _PyAST_Constant(s, kind, first_token->lineno, first_token->col_offset,
+                           last_token->end_lineno, last_token->end_col_offset,
+                           p->arena);
 
 }
 
@@ -1204,8 +1206,9 @@ _PyPegen_FstringParser_Finish(Parser *p, FstringParser *state, Token* first_toke
         goto error;
     }
 
-    return _Py_JoinedStr(seq, first_token->lineno, first_token->col_offset,
-                         last_token->end_lineno, last_token->end_col_offset, p->arena);
+    return _PyAST_JoinedStr(seq, first_token->lineno, first_token->col_offset,
+                            last_token->end_lineno, last_token->end_col_offset,
+                            p->arena);
 
 error:
     _PyPegen_FstringParser_Dealloc(state);

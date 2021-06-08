@@ -323,8 +323,11 @@ class ErrorHandlerTest(unittest.TestCase):
         self.check_result(handled=True)
 
     def test_threading_not_handled(self):
-        ThreadingErrorTestServer(SystemExit)
-        self.check_result(handled=False)
+        with threading_helper.catch_threading_exception() as cm:
+            ThreadingErrorTestServer(SystemExit)
+            self.check_result(handled=False)
+
+            self.assertIs(cm.exc_type, SystemExit)
 
     @requires_forking
     def test_forking_handled(self):

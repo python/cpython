@@ -3,49 +3,101 @@
 #endif
 
 typedef uint16_t _Py_CODEUNIT;
+// Each oparg must fit in the second half of _Py_CODEUNIT, hence 8 bits.
+#define _Py_MAX_OPARG 255
 
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
 #  define _Py_OPARG(word) ((word) & 255)
+#  define _Py_MAKECODEUNIT(opcode, oparg) (((opcode)<<8)|(oparg))
 #else
 #  define _Py_OPCODE(word) ((word) & 255)
 #  define _Py_OPARG(word) ((word) >> 8)
+#  define _Py_MAKECODEUNIT(opcode, oparg) ((opcode)|((oparg)<<8))
 #endif
 
 typedef struct _PyOpcache _PyOpcache;
 
+
+typedef unsigned char _PyLocalsPlusKind;
+typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
+
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
+
+    /* Note only the following fields are used in hash and/or comparisons
+     *
+     * - co_name
+     * - co_argcount
+     * - co_posonlyargcount
+     * - co_kwonlyargcount
+     * - co_nlocals
+     * - co_stacksize
+     * - co_flags
+     * - co_firstlineno
+     * - co_code
+     * - co_consts
+     * - co_names
+     * - co_varnames
+     * - co_freevars
+     * - co_cellvars
+     *
+     * This is done to preserve the name and line number for tracebacks
+     * and debuggers; otherwise, constant de-duplication would collapse
+     * identical functions/lambdas defined on different lines.
+     */
+
+    /* These fields are set with provided values on new code objects. */
+
+    // The hottest fields (in the eval loop) are grouped here at the top.
+    PyObject *co_consts;        /* list (constants used) */
+    PyObject *co_names;         /* list of strings (names used) */
+    _Py_CODEUNIT *co_firstinstr; /* Pointer to first instruction, used for quickening.
+                                    Unlike the other "hot" fields, this one is
+                                    actually derived from co_code. */
+    PyObject *co_exceptiontable; /* Byte string encoding exception handling table */
+    int co_flags;               /* CO_..., see below */
+    int co_warmup;              /* Warmup counter for quickening */
+
+    // The rest are not so impactful on performance.
     int co_argcount;            /* #arguments, except *args */
     int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
-    int co_nlocals;             /* #local variables */
     int co_stacksize;           /* #entries needed for evaluation stack */
-    int co_flags;               /* CO_..., see below */
     int co_firstlineno;         /* first source line number */
     PyObject *co_code;          /* instruction opcodes */
-    PyObject *co_consts;        /* list (constants used) */
-    PyObject *co_names;         /* list of strings (names used) */
-    PyObject *co_varnames;      /* tuple of strings (local variable names) */
-    PyObject *co_freevars;      /* tuple of strings (free variable names) */
-    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
-    /* The rest aren't used in either hash or comparisons, except for co_name,
-       used in both. This is done to preserve the name and line number
-       for tracebacks and debuggers; otherwise, constant de-duplication
-       would collapse identical functions/lambdas defined on different lines.
-    */
-    Py_ssize_t *co_cell2arg;    /* Maps cell vars which are arguments. */
+    PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
+    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
-    void *co_zombieframe;       /* for optimization only (see frameobject.c) */
+
+    /* These fields are set with computed values on new code objects. */
+
+    int *co_cell2arg;           /* Maps cell vars which are arguments. */
+    // redundant values (derived from co_localsplusnames and co_localspluskinds)
+    int co_nlocalsplus;         /* number of local + cell + free variables */
+    int co_nlocals;             /* number of local variables */
+    int co_ncellvars;           /* number of cell variables */
+    int co_nfreevars;           /* number of free variables */
+    // lazily-computed values
+    PyObject *co_varnames;      /* tuple of strings (local variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
+    PyObject *co_freevars;      /* tuple of strings (free variable names) */
+
+    /* The remaining fields are zeroed out on new code objects. */
+
     PyObject *co_weakreflist;   /* to support weakrefs to code objects */
     /* Scratch space for extra data relating to the code object.
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
+    /* Quickened instructions and cache, or NULL
+     This should be treated as opaque by all code except the specializer and
+     interpreter. */
+    union _cache_or_instruction *co_quickened;
 
     /* Per opcodes just-in-time cache
      *
@@ -111,18 +163,18 @@ struct PyCodeObject {
 PyAPI_DATA(PyTypeObject) PyCode_Type;
 
 #define PyCode_Check(op) Py_IS_TYPE(op, &PyCode_Type)
-#define PyCode_GetNumFree(op) (PyTuple_GET_SIZE((op)->co_freevars))
+#define PyCode_GetNumFree(op) ((op)->co_nfreevars)
 
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *);
+        PyObject *, PyObject *, int, PyObject *, PyObject *);
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *);
+        PyObject *, PyObject *, int, PyObject *, PyObject *);
         /* same as struct above */
 
 /* Creates a new empty code object with the specified source location. */
@@ -135,12 +187,17 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
+struct _opaque {
+    int computed_line;
+    char *lo_next;
+    char *limit;
+};
+
 typedef struct _line_offsets {
     int ar_start;
     int ar_end;
     int ar_line;
-    int ar_computed_line;
-    char *lo_next;
+    struct _opaque opaque;
 } PyCodeAddressRange;
 
 /* Update *bounds to describe the first and one-past-the-last instructions in the
@@ -170,7 +227,7 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the line number table. */
-void PyLineTable_InitAddressRange(char *linetable, int firstlineno, PyCodeAddressRange *range);
+void PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);

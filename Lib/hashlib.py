@@ -173,6 +173,7 @@ try:
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
 except ImportError:
+    _hashlib = None
     new = __py_new
     __get_hash = __get_builtin_constructor
 
@@ -180,6 +181,7 @@ try:
     # OpenSSL's PKCS5_PBKDF2_HMAC requires OpenSSL 1.0+ with HMAC and SHA
     from _hashlib import pbkdf2_hmac
 except ImportError:
+    from warnings import warn as _warn
     _trans_5C = bytes((x ^ 0x5C) for x in range(256))
     _trans_36 = bytes((x ^ 0x36) for x in range(256))
 
@@ -190,6 +192,11 @@ except ImportError:
         as OpenSSL's PKCS5_PBKDF2_HMAC for short passwords and much faster
         for long passwords.
         """
+        _warn(
+            "Python implementation of pbkdf2_hmac() is deprecated.",
+            category=DeprecationWarning,
+            stacklevel=2
+        )
         if not isinstance(hash_name, str):
             raise TypeError(hash_name)
 

@@ -24,19 +24,14 @@
 #include "module.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
+int
+pysqlite_step(sqlite3_stmt *statement)
 {
     int rc;
 
-    if (statement == NULL) {
-        /* this is a workaround for SQLite 3.5 and later. it now apparently
-         * returns NULL for "no-operation" statements */
-        rc = SQLITE_OK;
-    } else {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_step(statement);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_step(statement);
+    Py_END_ALLOW_THREADS
 
     return rc;
 }
@@ -45,7 +40,8 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
+int
+_pysqlite_seterror(sqlite3 *db)
 {
     int errorcode = sqlite3_errcode(db);
 
