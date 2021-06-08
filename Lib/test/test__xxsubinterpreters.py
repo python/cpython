@@ -42,7 +42,11 @@ def _run_output(interp, request, shared=None):
 @contextlib.contextmanager
 def _running(interp):
     r, w = os.pipe()
+    # bpo-37224: Using threading.Event to make sure
+    # the thread is running already.
+    done = threading.Event()
     def run():
+        done.set()
         interpreters.run_string(interp, dedent(f"""
             # wait for "signal"
             with open({r}, encoding="utf-8") as rpipe:
@@ -51,6 +55,7 @@ def _running(interp):
 
     t = threading.Thread(target=run)
     t.start()
+    done.wait()
 
     yield
 
