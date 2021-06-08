@@ -2088,6 +2088,11 @@ class GenPage(Frame):
 
     def load_general_cfg(self):
         "Load current configuration settings for the general options."
+        self.load_windows_cfg()
+        self.load_shelled_cfg()
+        self.load_helplist()
+
+    def load_windows_cfg(self):
         # Set variables for all windows.
         self.startup_edit.set(idleConf.GetOption(
                 'main', 'General', 'editor-on-startup', type='bool'))
@@ -2106,6 +2111,7 @@ class GenPage(Frame):
         self.paren_bell.set(idleConf.GetOption(
                 'extensions', 'ParenMatch', 'bell'))
 
+    def load_shelled_cfg(self):
         # Set variables for editor windows.
         self.autosave.set(idleConf.GetOption(
                 'main', 'General', 'autosave', default=0, type='bool'))
@@ -2120,6 +2126,7 @@ class GenPage(Frame):
         self.auto_squeeze_min_lines.set(idleConf.GetOption(
                 'main', 'PyShell', 'auto-squeeze-min-lines', type='int'))
 
+    def load_helplist(self):
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
         self.helplist.delete(0, 'end')

@@ -1234,7 +1234,9 @@ class GenPageTest(unittest.TestCase):
         d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
+        d.load_helplist = Func()
         d.load_general_cfg()
+        del d.load_helplist
         eq(d.startup_edit.get(), 0)
         eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
@@ -1327,7 +1329,7 @@ class HelpSrcTest(unittest.TestCase):
         d.helplist.insert('end', 'bad')
         d.user_helplist = ['bad', 'worse']
         idleConf.SetOption('main', 'HelpFiles', '1', 'name;file')
-        d.load_general_cfg()
+        d.load_helplist()
         eq(d.helplist.get(0, 'end'), ('name',))
         eq(d.user_helplist, [('name', 'file', '1')])
 
