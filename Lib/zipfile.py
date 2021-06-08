@@ -488,10 +488,18 @@ class ZipInfo (object):
             elif tp == 0x7075:
                 data = extra[4:ln+4]
                 # Unicode Path Extra Field
-                up_version, up_name_crc = unpack('<BL', data[:5])
-                up_unicode_name = data[5:].decode('utf-8')
-                if up_version == 1 and up_name_crc == self.orig_filename_crc:
-                    self.filename = up_unicode_name
+                try:
+                    up_version, up_name_crc = unpack('<BL', data[:5])
+                    if up_version == 1 and up_name_crc == self.orig_filename_crc:
+                        up_unicode_name = data[5:].decode('utf-8')
+                        if up_unicode_name:
+                            self.filename = up_unicode_name
+                        else:
+                            raise BadZipFile("Empty unicode path extra field (0x7075)")
+                except struct.error:
+                    raise BadZipFile("Corrupt unicode path extra field (0x7075)")
+                except UnicodeDecodeError:
+                    raise BadZipFile("Corrupt unicode path extra field (0x7075) - invalid unicode bytes")
 
             extra = extra[ln+4:]
 
