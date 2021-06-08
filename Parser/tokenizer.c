@@ -1695,7 +1695,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
                     tok_backup(tok, c);
                     return syntaxerror_known_range(
                             tok, (int)(tok->start + 1 - tok->line_start),
-                            zeros_end - tok->line_start,
+                            (int)(zeros_end - tok->line_start),
                             "leading zeros in decimal integer "
                             "literals are not permitted; "
                             "use an 0o prefix for octal integers");
