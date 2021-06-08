@@ -227,26 +227,27 @@ specialize_module_load_attr(
     _PyAdaptiveEntry *cache0, _PyLoadAttrCache *cache1)
 {
     PyModuleObject *m = (PyModuleObject *)owner;
-    PyObject *attr, *getattr;
+    PyObject *value = NULL;
+    PyObject *getattr;
     _Py_IDENTIFIER(__getattr__);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         return -1;
     }
-    getattr = _PyDict_GetItemIdWithError(m->md_dict, &PyId___getattr__);
-    if (PyErr_Occurred()) {
+    if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        return -1;
+    }
+    getattr = _PyUnicode_FromId(&PyId___getattr__); /* borrowed */
+    if (getattr == NULL) {
         PyErr_Clear();
         return -1;
     }
-    if (getattr != NULL) {
+    Py_ssize_t index = _PyDict_GetItemHint(dict, getattr, -1,  &value);
+    assert(index != DKIX_ERROR);
+    if (index != DKIX_EMPTY) {
         return -1;
     }
-    Py_hash_t hash = PyObject_Hash(name);
-    if (hash == -1) {
-        PyErr_Clear();
-        return -1;
-    }
-    Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &attr);
+    index = _PyDict_GetItemHint(dict, name, -1, &value);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         return -1;
