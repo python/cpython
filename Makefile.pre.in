@@ -765,13 +765,19 @@ regen-importlib: Programs/_freeze_module
 regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/scripts/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.txt
 
+############################################################################
+# Frozen stdlib
+
+.PHONY: regen-frozen-stdlib
+regen-frozen-stdlib: Programs/_freeze_importlib
+	$(PYTHON_FOR_REGEN) ./Tools/scripts/freeze_stdlib.py
 
 ############################################################################
 # Regenerate all generated files
 
 regen-all: regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-importlib clinic \
-	regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
+	regen-token regen-ast regen-keyword regen-importlib regen-frozen-stdlib \
+	clinic regen-pegen-metaparser regen-pegen regen-frozen regen-test-frozenmain
 	@echo
 	@echo "Note: make regen-stdlib-module-names and autoconf should be run manually"
 
