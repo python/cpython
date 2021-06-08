@@ -71,8 +71,6 @@ struct _dictkeysobject {
        see the DK_ENTRIES() macro */
 };
 
-#define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
-
 #define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
 #if SIZEOF_VOID_P > 4
 #define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
