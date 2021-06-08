@@ -126,10 +126,18 @@ get_mmap_state(PyObject *module)
     return state;
 }
 
+static int
+mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(m_obj));
+    return 0;
+}
+
 static void
 mmap_object_dealloc(mmap_object *m_obj)
 {
     PyTypeObject *tp = Py_TYPE(m_obj);
+    PyObject_GC_UnTrack(m_obj);
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
@@ -1085,15 +1093,14 @@ To map anonymous memory, pass -1 as the fileno (both versions).");
 
 static PyType_Slot mmap_object_slots[] = {
     {Py_tp_new, new_mmap_object},
-    {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_dealloc, mmap_object_dealloc},
-    {Py_tp_free, PyObject_Del},
     {Py_tp_repr, mmap__repr__method},
     {Py_tp_doc, (void *)mmap_doc},
     {Py_tp_methods, mmap_object_methods},
     {Py_tp_members, mmap_object_members},
     {Py_tp_getset, mmap_object_getset},
     {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, mmap_object_traverse},
 
     /* as sequence */
     {Py_sq_length, mmap_length},
@@ -1114,7 +1121,7 @@ static PyType_Slot mmap_object_slots[] = {
 static PyType_Spec mmap_object_spec = {
     .name = "mmap.mmap",
     .basicsize = sizeof(mmap_object),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = mmap_object_slots,
 };
 

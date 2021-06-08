@@ -731,6 +731,13 @@ profiler_clear(ProfilerObject *pObj, PyObject* noarg)
     Py_RETURN_NONE;
 }
 
+static int
+profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
 static void
 profiler_dealloc(ProfilerObject *op)
 {
@@ -798,16 +805,14 @@ static PyType_Slot _lsprof_profiler_type_spec_slots[] = {
     {Py_tp_methods, profiler_methods},
     {Py_tp_dealloc, profiler_dealloc},
     {Py_tp_init, profiler_init},
-    {Py_tp_alloc, PyType_GenericAlloc},
-    {Py_tp_new, PyType_GenericNew},
-    {Py_tp_free, PyObject_Del},
+    {Py_tp_traverse, profiler_traverse},
     {0, 0}
 };
 
 static PyType_Spec _lsprof_profiler_type_spec = {
     .name = "_lsprof.Profiler",
     .basicsize = sizeof(ProfilerObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = _lsprof_profiler_type_spec_slots,
 };
 

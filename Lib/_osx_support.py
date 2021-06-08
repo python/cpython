@@ -525,10 +525,10 @@ def get_platform_osx(_config_vars, osname, release, machine):
             try:
                 macrelease = tuple(int(i) for i in macrelease.split('.')[0:2])
             except ValueError:
-                macrelease = (10, 0)
+                macrelease = (10, 3)
         else:
             # assume no universal support
-            macrelease = (10, 0)
+            macrelease = (10, 3)
 
         if (macrelease >= (10, 4)) and '-arch' in cflags.strip():
             # The universal build will build fat binaries, but not on

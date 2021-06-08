@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "pycore_ast.h"           // identifier, stmt_ty
-#include "pycore_compile.h"       // _Py_Mangle()
+#include "pycore_compile.h"       // _Py_Mangle(), _PyFuture_FromAST()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
@@ -44,6 +44,10 @@
 
 #define NAMED_EXPR_COMP_ITER_EXPR \
 "assignment expression cannot be used in a comprehension iterable expression"
+
+#define ANNOTATION_NOT_ALLOWED \
+"'%s' can not be used within an annotation"
+
 
 static PySTEntryObject *
 ste_new(struct symtable *st, identifier name, _Py_block_ty block,
@@ -209,17 +213,19 @@ static int symtable_visit_alias(struct symtable *st, alias_ty);
 static int symtable_visit_comprehension(struct symtable *st, comprehension_ty);
 static int symtable_visit_keyword(struct symtable *st, keyword_ty);
 static int symtable_visit_params(struct symtable *st, asdl_arg_seq *args);
+static int symtable_visit_annotation(struct symtable *st, expr_ty annotation);
 static int symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args);
 static int symtable_implicit_arg(struct symtable *st, int pos);
-static int symtable_visit_annotations(struct symtable *st, arguments_ty, expr_ty);
+static int symtable_visit_annotations(struct symtable *st, stmt_ty, arguments_ty, expr_ty);
 static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 static int symtable_visit_match_case(struct symtable *st, match_case_ty m);
 static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
+static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
     listcomp = NULL, setcomp = NULL, dictcomp = NULL,
-    __class__ = NULL;
+    __class__ = NULL, _annotation = NULL;
 
 #define GET_IDENTIFIER(VAR) \
     ((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
@@ -987,8 +993,17 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     /* The entry is owned by the stack. Borrow it for st_cur. */
     Py_DECREF(ste);
     st->st_cur = ste;
+
+    /* Annotation blocks shouldn't have any affect on the symbol table since in
+     * the compilation stage, they will all be transformed to strings. They are
+     * only created if future 'annotations' feature is activated. */
+    if (block == AnnotationBlock) {
+        return 1;
+    }
+
     if (block == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
+
     if (prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
             return 0;
@@ -1190,7 +1205,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
         if (s->v.FunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
-        if (!symtable_visit_annotations(st, s->v.FunctionDef.args,
+        if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
                                         s->v.FunctionDef.returns))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.decorator_list)
@@ -1273,7 +1288,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         else {
             VISIT(st, expr, s->v.AnnAssign.target);
         }
-        VISIT(st, expr, s->v.AnnAssign.annotation);
+        if (!symtable_visit_annotation(st, s->v.AnnAssign.annotation)) {
+            VISIT_QUIT(st, 0);
+        }
+
         if (s->v.AnnAssign.value) {
             VISIT(st, expr, s->v.AnnAssign.value);
         }
@@ -1422,7 +1440,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.AsyncFunctionDef.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr,
                                 s->v.AsyncFunctionDef.args->kw_defaults);
-        if (!symtable_visit_annotations(st, s->v.AsyncFunctionDef.args,
+        if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns))
             VISIT_QUIT(st, 0);
         if (s->v.AsyncFunctionDef.decorator_list)
@@ -1564,6 +1582,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     }
     switch (e->kind) {
     case NamedExpr_kind:
+        if (!symtable_raise_if_annotation_block(st, "named expression", e)) {
+            VISIT_QUIT(st, 0);
+        }
         if(!symtable_handle_namedexpr(st, e))
             VISIT_QUIT(st, 0);
         break;
@@ -1624,15 +1645,24 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_QUIT(st, 0);
         break;
     case Yield_kind:
+        if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
+            VISIT_QUIT(st, 0);
+        }
         if (e->v.Yield.value)
             VISIT(st, expr, e->v.Yield.value);
         st->st_cur->ste_generator = 1;
         break;
     case YieldFrom_kind:
+        if (!symtable_raise_if_annotation_block(st, "yield expression", e)) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, e->v.YieldFrom.value);
         st->st_cur->ste_generator = 1;
         break;
     case Await_kind:
+        if (!symtable_raise_if_annotation_block(st, "await expression", e)) {
+            VISIT_QUIT(st, 0);
+        }
         VISIT(st, expr, e->v.Await.value);
         st->st_cur->ste_coroutine = 1;
         break;
@@ -1781,6 +1811,24 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 }
 
 static int
+symtable_visit_annotation(struct symtable *st, expr_ty annotation)
+{
+    int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
+    if (future_annotations &&
+        !symtable_enter_block(st, GET_IDENTIFIER(_annotation), AnnotationBlock,
+                              (void *)annotation, annotation->lineno,
+                              annotation->col_offset, annotation->end_lineno,
+                              annotation->end_col_offset)) {
+        VISIT_QUIT(st, 0);
+    }
+    VISIT(st, expr, annotation);
+    if (future_annotations && !symtable_exit_block(st)) {
+        VISIT_QUIT(st, 0);
+    }
+    return 1;
+}
+
+static int
 symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 {
     int i;
@@ -1798,8 +1846,15 @@ symtable_visit_argannotations(struct symtable *st, asdl_arg_seq *args)
 }
 
 static int
-symtable_visit_annotations(struct symtable *st, arguments_ty a, expr_ty returns)
+symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_ty returns)
 {
+    int future_annotations = st->st_future->ff_features & CO_FUTURE_ANNOTATIONS;
+    if (future_annotations &&
+        !symtable_enter_block(st, GET_IDENTIFIER(_annotation), AnnotationBlock,
+                              (void *)o, o->lineno, o->col_offset, o->end_lineno,
+                              o->end_col_offset)) {
+        VISIT_QUIT(st, 0);
+    }
     if (a->posonlyargs && !symtable_visit_argannotations(st, a->posonlyargs))
         return 0;
     if (a->args && !symtable_visit_argannotations(st, a->args))
@@ -1810,8 +1865,12 @@ symtable_visit_annotations(struct symtable *st, arguments_ty a, expr_ty returns)
         VISIT(st, expr, a->kwarg->annotation);
     if (a->kwonlyargs && !symtable_visit_argannotations(st, a->kwonlyargs))
         return 0;
-    if (returns)
-        VISIT(st, expr, returns);
+    if (future_annotations && !symtable_exit_block(st)) {
+        VISIT_QUIT(st, 0);
+    }
+    if (returns && !symtable_visit_annotation(st, returns)) {
+        VISIT_QUIT(st, 0);
+    }
     return 1;
 }
 
@@ -2033,6 +2092,21 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
                                          e->v.DictComp.value);
 }
 
+static int
+symtable_raise_if_annotation_block(struct symtable *st, const char *name, expr_ty e)
+{
+    if (st->st_cur->ste_type != AnnotationBlock) {
+        return 1;
+    }
+
+    PyErr_Format(PyExc_SyntaxError, ANNOTATION_NOT_ALLOWED, name);
+    PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                     e->lineno,
+                                     e->col_offset + 1,
+                                     e->end_lineno,
+                                     e->end_col_offset + 1);
+    return 0;
+}
 
 struct symtable *
 _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
@@ -2051,7 +2125,14 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    st = _PySymtable_Build(mod, filename, 0);
+    PyFutureFeatures *future = _PyFuture_FromAST(mod, filename);
+    if (future == NULL) {
+        _PyArena_Free(arena);
+        return NULL;
+    }
+    future->ff_features |= flags->cf_flags;
+    st = _PySymtable_Build(mod, filename, future);
+    PyObject_Free((void *)future);
     _PyArena_Free(arena);
     return st;
 }

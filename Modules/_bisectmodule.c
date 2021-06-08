@@ -73,8 +73,8 @@ _bisect.bisect_right -> Py_ssize_t
 Return the index where to insert item x in list a, assuming a is sorted.
 
 The return value i is such that all e in a[:i] have e <= x, and all e in
-a[i:] have e > x.  So if x already appears in the list, i points just
-beyond the rightmost x already there
+a[i:] have e > x.  So if x already appears in the list, a.insert(i, x) will
+insert just after the rightmost x already there.
 
 Optional args lo (default 0) and hi (default len(a)) bound the
 slice of a to be searched.
@@ -83,7 +83,7 @@ slice of a to be searched.
 static Py_ssize_t
 _bisect_bisect_right_impl(PyObject *module, PyObject *a, PyObject *x,
                           Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=3a4bc09cc7c8a73d input=1313e9ca20c8bc3c]*/
+/*[clinic end generated code: output=3a4bc09cc7c8a73d input=40fcc5afa06ae593]*/
 {
     return internal_bisect_right(a, x, lo, hi, key);
 }
@@ -199,8 +199,8 @@ _bisect.bisect_left -> Py_ssize_t
 Return the index where to insert item x in list a, assuming a is sorted.
 
 The return value i is such that all e in a[:i] have e < x, and all e in
-a[i:] have e >= x.  So if x already appears in the list, i points just
-before the leftmost x already there.
+a[i:] have e >= x.  So if x already appears in the list, a.insert(i, x) will
+insert just before the leftmost x already there.
 
 Optional args lo (default 0) and hi (default len(a)) bound the
 slice of a to be searched.
@@ -209,7 +209,7 @@ slice of a to be searched.
 static Py_ssize_t
 _bisect_bisect_left_impl(PyObject *module, PyObject *a, PyObject *x,
                          Py_ssize_t lo, Py_ssize_t hi, PyObject *key)
-/*[clinic end generated code: output=70749d6e5cae9284 input=3cbeec690f2f6c6e]*/
+/*[clinic end generated code: output=70749d6e5cae9284 input=90dd35b50ceb05e3]*/
 {
     return internal_bisect_left(a, x, lo, hi, key);
 }

@@ -1,3 +1,0 @@
-Prevented crashes in the AST validator and optimizer when compiling some
-absurdly long expressions like ``"+0"*1000000``. :exc:`RecursionError` is
-now raised instead.

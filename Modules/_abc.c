@@ -467,6 +467,10 @@ _abc__abc_init(PyObject *module, PyObject *self)
                 if (val == -1 && PyErr_Occurred()) {
                     return NULL;
                 }
+                if ((val & COLLECTION_FLAGS) == COLLECTION_FLAGS) {
+                    PyErr_SetString(PyExc_TypeError, "__abc_tpflags__ cannot be both Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING");
+                    return NULL;
+                }
                 ((PyTypeObject *)self)->tp_flags |= (val & COLLECTION_FLAGS);
             }
             if (_PyDict_DelItemId(cls->tp_dict, &PyId___abc_tpflags__) < 0) {
@@ -527,9 +531,12 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     /* Invalidate negative cache */
     get_abc_state(module)->abc_invalidation_counter++;
 
-    if (PyType_Check(subclass) && PyType_Check(self) &&
-        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE))
+    /* Set Py_TPFLAGS_SEQUENCE  or Py_TPFLAGS_MAPPING flag */
+    if (PyType_Check(self) &&
+        !PyType_HasFeature((PyTypeObject *)subclass, Py_TPFLAGS_IMMUTABLETYPE) &&
+        ((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS)
     {
+        ((PyTypeObject *)subclass)->tp_flags &= ~COLLECTION_FLAGS;
         ((PyTypeObject *)subclass)->tp_flags |= (((PyTypeObject *)self)->tp_flags & COLLECTION_FLAGS);
     }
     Py_INCREF(subclass);

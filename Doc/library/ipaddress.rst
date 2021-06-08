@@ -104,8 +104,7 @@ write code that handles both IP versions correctly.  Address objects are
    1. A string in decimal-dot notation, consisting of four decimal integers in
       the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less than 8 (as there is no ambiguity
-      between the decimal and octal interpretations of such strings).
+      not tolerated to prevent confusion with octal notation.
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
       significant octet first).
@@ -116,6 +115,22 @@ write code that handles both IP versions correctly.  Address objects are
    IPv4Address('192.168.0.1')
    >>> ipaddress.IPv4Address(b'\xC0\xA8\x00\x01')
    IPv4Address('192.168.0.1')
+
+   .. versionchanged:: 3.8
+
+      Leading zeros are tolerated, even in ambiguous cases that look like
+      octal notation.
+
+   .. versionchanged:: 3.10
+
+      Leading zeros are no longer tolerated and are treated as an error.
+      IPv4 address strings are now parsed as strict as glibc
+      :func:`~socket.inet_pton`.
+
+   .. versionchanged:: 3.9.5
+
+      The above change was also included in Python 3.9 starting with
+      version 3.9.5.
 
    .. attribute:: version
 

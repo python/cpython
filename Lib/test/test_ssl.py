@@ -345,6 +345,21 @@ class BasicSocketTests(unittest.TestCase):
         ssl.OP_NO_TLSv1_2
         self.assertEqual(ssl.PROTOCOL_TLS, ssl.PROTOCOL_SSLv23)
 
+    def test_ssl_types(self):
+        ssl_types = [
+            _ssl._SSLContext,
+            _ssl._SSLSocket,
+            _ssl.MemoryBIO,
+            _ssl.Certificate,
+            _ssl.SSLSession,
+            _ssl.SSLError,
+        ]
+        for ssl_type in ssl_types:
+            with self.subTest(ssl_type=ssl_type):
+                with self.assertRaisesRegex(TypeError, "immutable type"):
+                    ssl_type.value = None
+        support.check_disallow_instantiation(self, _ssl.Certificate)
+
     def test_private_init(self):
         with self.assertRaisesRegex(TypeError, "public constructor"):
             with socket.socket() as s:
@@ -2568,8 +2583,8 @@ class ThreadedEchoServer(threading.Thread):
         threading.Thread.start(self)
 
     def run(self):
-        self.sock.settimeout(0.05)
-        self.sock.listen()
+        self.sock.settimeout(1.0)
+        self.sock.listen(5)
         self.active = True
         if self.flag:
             # signal an event
@@ -2583,8 +2598,9 @@ class ThreadedEchoServer(threading.Thread):
                 handler = self.ConnectionHandler(self, newconn, connaddr)
                 handler.start()
                 handler.join()
-            except TimeoutError:
-                pass
+            except TimeoutError as e:
+                if support.verbose:
+                    sys.stdout.write(f' connection timeout {e!r}\n')
             except KeyboardInterrupt:
                 self.stop()
             except BaseException as e:
@@ -2592,7 +2608,12 @@ class ThreadedEchoServer(threading.Thread):
                     sys.stdout.write(
                         ' connection handling failed: ' + repr(e) + '\n')
 
-        self.sock.close()
+        self.close()
+
+    def close(self):
+        if self.sock is not None:
+            self.sock.close()
+            self.sock = None
 
     def stop(self):
         self.active = False
@@ -3169,30 +3190,18 @@ class ThreadedTests(unittest.TestCase):
         )
         with server, \
              client_context.wrap_socket(socket.socket(),
-                                        server_hostname=hostname) as s:
-            # TLS 1.3 perform client cert exchange after handshake
+                                        server_hostname=hostname,
+                                        suppress_ragged_eofs=False) as s:
             s.connect((HOST, server.port))
-            try:
+            with self.assertRaisesRegex(
+                ssl.SSLError,
+                'alert unknown ca|EOF occurred'
+            ):
+                # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
                 s.read(1000)
                 s.write(b'should have failed already')
                 s.read(1000)
-            except ssl.SSLError as e:
-                if support.verbose:
-                    sys.stdout.write("\nSSLError is %r\n" % e)
-            except OSError as e:
-                if e.errno != errno.ECONNRESET:
-                    raise
-                if support.verbose:
-                    sys.stdout.write("\nsocket.error is %r\n" % e)
-            else:
-                if sys.platform == "win32":
-                    self.skipTest(
-                        "Ignoring failed test_wrong_cert_tls13 test case. "
-                        "The test is flaky on Windows, see bpo-43921."
-                    )
-                else:
-                    self.fail("Use of invalid cert should have failed!")
 
     def test_rude_shutdown(self):
         """A brutal shutdown of an SSL server should raise an OSError
@@ -4429,7 +4438,8 @@ class TestPostHandshakeAuth(unittest.TestCase):
         server = ThreadedEchoServer(context=server_context, chatty=True)
         with server:
             with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+                                            server_hostname=hostname,
+                                            suppress_ragged_eofs=False) as s:
                 s.connect((HOST, server.port))
                 s.write(b'PHA')
                 # test sometimes fails with EOF error. Test passes as long as
@@ -4439,9 +4449,12 @@ class TestPostHandshakeAuth(unittest.TestCase):
                     '(certificate required|EOF occurred)'
                 ):
                     # receive CertificateRequest
-                    self.assertEqual(s.recv(1024), b'OK\n')
+                    data = s.recv(1024)
+                    self.assertEqual(data, b'OK\n')
+
                     # send empty Certificate + Finish
                     s.write(b'HASCERT')
+
                     # receive alert
                     s.recv(1024)
 

@@ -531,7 +531,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     f"_PyPegen_update_memo(p, _mark, {node.name}_type, _res)", "_res"
                 )
                 self.print("p->mark = _mark;")
+                self.print("p->in_raw_rule++;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
+                self.print("p->in_raw_rule--;")
                 self.print("if (p->error_indicator)")
                 with self.indent():
                     self.print("return NULL;")

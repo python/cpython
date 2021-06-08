@@ -182,6 +182,18 @@ def is_python_build(check_home=False):
 
 _PYTHON_BUILD = is_python_build(True)
 
+if _PYTHON_BUILD:
+    for scheme in ('posix_prefix', 'posix_home'):
+        # On POSIX-y platofrms, Python will:
+        # - Build from .h files in 'headers' (which is only added to the
+        #   scheme when building CPython)
+        # - Install .h files to 'include'
+        scheme = _INSTALL_SCHEMES[scheme]
+        scheme['headers'] = scheme['include']
+        scheme['include'] = '{srcdir}/Include'
+        scheme['platinclude'] = '{projectbase}/.'
+
+
 def _subst_vars(s, local_vars):
     try:
         return s.format(**local_vars)

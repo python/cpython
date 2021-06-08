@@ -513,7 +513,6 @@ def _default_mime_types():
         '.tif'    : 'image/tiff',
         '.ico'    : 'image/vnd.microsoft.icon',
         '.ras'    : 'image/x-cmu-raster',
-        '.bmp'    : 'image/x-ms-bmp',
         '.pnm'    : 'image/x-portable-anymap',
         '.pbm'    : 'image/x-portable-bitmap',
         '.pgm'    : 'image/x-portable-graymap',

@@ -1967,6 +1967,12 @@ class TestCollectionABCs(ABCTestCase):
         self.assertEqual(len(mss), len(mss2))
         self.assertEqual(list(mss), list(mss2))
 
+    def test_illegal_patma_flags(self):
+        with self.assertRaises(TypeError):
+            class Both(Collection):
+                __abc_tpflags__ = (Sequence.__flags__ | Mapping.__flags__)
+
+
 
 ################################################################################
 ### Counter
@@ -2059,6 +2065,10 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, 42)
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
+
+    def test_total(self):
+        c = Counter(a=10, b=5, c=0)
+        self.assertEqual(c.total(), 15)
 
     def test_order_preservation(self):
         # Input order dictates items() order
