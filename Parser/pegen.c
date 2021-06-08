@@ -1251,8 +1251,13 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         return 0;
     }
 
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+
     Token *current_token = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t current_err_line = current_token->lineno;
+
+    int ret = 0;
 
     for (;;) {
         const char *start;
@@ -1262,9 +1267,9 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {
-                        PyErr_Clear();
                         raise_unclosed_parentheses_error(p);
-                        return -1;
+                        ret = -1;
+                        goto exit;
                     }
                 }
                 break;
@@ -1276,7 +1281,16 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         break;
     }
 
-    return 0;
+
+exit:
+    if (PyErr_Occurred()) {
+        Py_XDECREF(value);
+        Py_XDECREF(type);
+        Py_XDECREF(traceback);
+    } else {
+        PyErr_Restore(type, value, traceback);
+    }
+    return ret;
 }
 
 void *
@@ -1288,7 +1302,9 @@ _PyPegen_run_parser(Parser *p)
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            // Prioritize tokenizer errors to custom syntax errors raised
+            // on the second phase only if the errors come from the parser.
+            if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;

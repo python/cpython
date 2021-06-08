@@ -3,7 +3,7 @@ from idlelib import colorizer
 from test.support import requires
 import unittest
 from unittest import mock
-from .tkinter_testing_utils import run_in_tk_mainloop
+from idlelib.idle_test.tkinter_testing_utils import run_in_tk_mainloop
 
 from functools import partial
 import textwrap
