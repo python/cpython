@@ -1101,7 +1101,8 @@ Module(
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
         e.operand = e
         with self.assertRaises(RecursionError):
-            compile(ast.Expression(e), "<test>", "eval")
+            with support.infinite_recursion():
+                compile(ast.Expression(e), "<test>", "eval")
 
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
@@ -1109,7 +1110,8 @@ Module(
         e.operand = f
         f.operand = e
         with self.assertRaises(RecursionError):
-            compile(ast.Expression(e), "<test>", "eval")
+            with support.infinite_recursion():
+                compile(ast.Expression(e), "<test>", "eval")
 
 
 class ASTValidatorTests(unittest.TestCase):
