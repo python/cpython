@@ -3526,7 +3526,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        case TARGET(LOAD_ATTR_COMBINED_KEYS): {
+        case TARGET(LOAD_ATTR_WITH_HINT): {
             PyObject *owner = TOP();
             PyObject *res;
             PyTypeObject *tp = Py_TYPE(owner);

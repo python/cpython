@@ -139,7 +139,7 @@ extern "C" {
 #define JUMP_ABSOLUTE_QUICK       7
 #define LOAD_ATTR_ADAPTIVE        8
 #define LOAD_ATTR_SPLIT_KEYS     13
-#define LOAD_ATTR_COMBINED_KEYS  14
+#define LOAD_ATTR_WITH_HINT      14
 #define LOAD_ATTR_SLOT           18
 #define LOAD_ATTR_MODULE         21
 #ifdef NEED_OPCODE_JUMP_TABLES

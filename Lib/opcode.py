@@ -223,7 +223,7 @@ _specialized_instructions = [
     "JUMP_ABSOLUTE_QUICK",
     "LOAD_ATTR_ADAPTIVE",
     "LOAD_ATTR_SPLIT_KEYS",
-    "LOAD_ATTR_COMBINED_KEYS",
+    "LOAD_ATTR_WITH_HINT",
     "LOAD_ATTR_SLOT",
     "LOAD_ATTR_MODULE",
 ]

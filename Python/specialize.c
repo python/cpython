@@ -348,7 +348,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         }
         cache0->index = (uint16_t)hint;
         cache1->tp_version = type->tp_version_tag;
-        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_COMBINED_KEYS, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
         goto success;
 
     }
