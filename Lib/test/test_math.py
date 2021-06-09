@@ -382,7 +382,7 @@ class MathTests(unittest.TestCase):
         self.ftest('cbrt(0)', math.cbrt(0), 0)
         self.ftest('cbrt(1)', math.cbrt(1), 1)
         self.ftest('cbrt(8)', math.cbrt(8), 2)
-        self.ftest('cbrt(-0.0)', math.cbrt(0.0), 0.0)
+        self.ftest('cbrt(0.0)', math.cbrt(0.0), 0.0)
         self.ftest('cbrt(-0.0)', math.cbrt(-0.0), -0.0)
         self.ftest('cbrt(1.2)', math.cbrt(1.2), 1.062658569182611)
         self.ftest('cbrt(-2.6)', math.cbrt(-2.6), -1.375068867074141)
