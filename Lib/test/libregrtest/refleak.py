@@ -73,7 +73,6 @@ def dash_R(ns, test_name, test_func):
     alloc_deltas = [0] * repcount
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
-    getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
     _getquickenedcount = sys._getquickenedcount
     fd_count = os_helper.fd_count
