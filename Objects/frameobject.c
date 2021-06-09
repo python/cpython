@@ -1092,12 +1092,13 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         }
         PyObject *oldvalue = fast[i];
         int cellargoffset = CO_CELL_NOT_AN_ARG;
-        if (co->co_cell2arg != NULL) {
+        if (kind & CO_FAST_CELL && co->co_cell2arg != NULL) {
+            assert(i >= co->co_nlocals);
             cellargoffset = co->co_cell2arg[i - co->co_nlocals];
         }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
-            // The cell was cell by _PyEval_MakeFrameVector() from
+            // The cell was set by _PyEval_MakeFrameVector() from
             // the function's closure.
             assert(oldvalue != NULL && PyCell_Check(oldvalue));
             cell = oldvalue;

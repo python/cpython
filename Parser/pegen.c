@@ -456,10 +456,13 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         goto error;
     }
 
+    // PyErr_ProgramTextObject assumes that the text is utf-8 so we cannot call it with a file
+    // with an arbitrary encoding or otherwise we could get some badly decoded text.
+    int uses_utf8_codec = (!p->tok->encoding || strcmp(p->tok->encoding, "utf-8") == 0);
     if (p->tok->fp_interactive) {
         error_line = get_error_line(p, lineno);
     }
-    else if (p->start_rule == Py_file_input) {
+    else if (uses_utf8_codec && p->start_rule == Py_file_input) {
         error_line = PyErr_ProgramTextObject(p->tok->filename, (int) lineno);
     }
 
@@ -471,7 +474,7 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
            we're actually parsing from a file, which has an E_EOF SyntaxError and in that case
            `PyErr_ProgramTextObject` fails because lineno points to last_file_line + 1, which
            does not physically exist */
-        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF);
+        assert(p->tok->fp == NULL || p->tok->fp == stdin || p->tok->done == E_EOF || !uses_utf8_codec);
 
         if (p->tok->lineno <= lineno) {
             Py_ssize_t size = p->tok->inp - p->tok->buf;
@@ -1251,8 +1254,13 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         return 0;
     }
 
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
+
     Token *current_token = p->known_err_token != NULL ? p->known_err_token : p->tokens[p->fill - 1];
     Py_ssize_t current_err_line = current_token->lineno;
+
+    int ret = 0;
 
     for (;;) {
         const char *start;
@@ -1262,9 +1270,9 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
                 if (p->tok->level != 0) {
                     int error_lineno = p->tok->parenlinenostack[p->tok->level-1];
                     if (current_err_line > error_lineno) {
-                        PyErr_Clear();
                         raise_unclosed_parentheses_error(p);
-                        return -1;
+                        ret = -1;
+                        goto exit;
                     }
                 }
                 break;
@@ -1276,7 +1284,16 @@ _PyPegen_check_tokenizer_errors(Parser *p) {
         break;
     }
 
-    return 0;
+
+exit:
+    if (PyErr_Occurred()) {
+        Py_XDECREF(value);
+        Py_XDECREF(type);
+        Py_XDECREF(traceback);
+    } else {
+        PyErr_Restore(type, value, traceback);
+    }
+    return ret;
 }
 
 void *
@@ -1288,7 +1305,9 @@ _PyPegen_run_parser(Parser *p)
         reset_parser_state(p);
         _PyPegen_parse(p);
         if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            // Prioritize tokenizer errors to custom syntax errors raised
+            // on the second phase only if the errors come from the parser.
+            if (p->tok->done != E_ERROR && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
                 _PyPegen_check_tokenizer_errors(p);
             }
             return NULL;

@@ -1444,6 +1444,17 @@ Optimizations
 Deprecated
 ==========
 
+* Currently Python accepts numeric literals immediately followed by keywords,
+  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
+  and ambigious expressions like ``[0x1for x in y]`` (which can be
+  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  Starting in
+  this release, a deprecation warning is raised if the numeric literal is
+  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
+  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
+  If future releases it will be changed to syntax warning, and finally to
+  syntax error.
+  (Contributed by Serhiy Storchaka in :issue:`43833`).
+
 * Starting in this release, there will be a concerted effort to begin
   cleaning up old import semantics that were kept for Python 2.7
   compatibility. Specifically,
@@ -1670,6 +1681,18 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
 
+Changes in the Python syntax
+----------------------------
+
+* Deprecation warning is now emitted when compiling previously valid syntax
+  if the numeric literal is immediately followed by a keyword (like in ``0in x``).
+  If future releases it will be changed to syntax warning, and finally to a
+  syntax error.  To get rid of the warning and make the code compatible with
+  future releases just add a space between the numeric literal and the
+  following keyword.
+  (Contributed by Serhiy Storchaka in :issue:`43833`).
+
+
 Changes in the Python API
 -------------------------
 
@@ -1790,6 +1813,16 @@ Build Changes
 
 C API Changes
 =============
+
+PEP 652: Maintaining the Stable ABI
+-----------------------------------
+
+The Stable ABI (Application Binary Interface) for extension modules or
+embedding Python is now explicitly defined.
+:ref:`stable` describes C API and ABI stability guarantees along with best
+practices for using the Stable ABI.
+
+(Contributed by Petr Viktorin in :pep:`652` and :issue:`43795`.)
 
 New Features
 ------------
