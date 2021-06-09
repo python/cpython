@@ -3517,6 +3517,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(cache0->index < dict->ma_keys->dk_nentries);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
             res = ep->me_value;
@@ -3544,7 +3545,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(names, cache0->original_oparg);
             uint32_t hint = cache1->dk_version_or_hint;
-            DEOPT_IF(hint > dict->ma_keys->dk_nentries, LOAD_ATTR);
+            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_ATTR);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
             DEOPT_IF(ep->me_key != name, LOAD_ATTR);
             res = ep->me_value;
