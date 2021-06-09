@@ -1,0 +1,1 @@
+Add non integral tests for `sqrt()` function.
