@@ -386,18 +386,14 @@ _Py_Specialize_LoadGlobal(
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyLoadGlobalCache *cache1 = &cache[-1].load_global;
     assert(PyUnicode_CheckExact(name));
-    Py_hash_t hash = PyObject_Hash(name);
-    if (hash == -1) {
-        return -1;
-    }
     if (!PyDict_CheckExact(globals)) {
         goto fail;
     }
-    if (((PyDictObject *)globals)->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
+    if (((PyDictObject *)globals)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
         goto fail;
     }
-    PyObject *value;
-    Py_ssize_t index = _Py_dict_lookup((PyDictObject *)globals, name, hash, &value);
+    PyObject *value = NULL;
+    Py_ssize_t index = _PyDict_GetItemHint((PyDictObject *)globals, name, -1, &value);
     assert (index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
         if (index != (uint16_t)index) {
@@ -415,10 +411,10 @@ _Py_Specialize_LoadGlobal(
     if (!PyDict_CheckExact(builtins)) {
         goto fail;
     }
-    if (((PyDictObject *)builtins)->ma_keys->dk_kind == DICT_KEYS_SPLIT) {
+    if (((PyDictObject *)builtins)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
         goto fail;
     }
-    index = _Py_dict_lookup((PyDictObject *)builtins, name, hash, &value);
+    index = _PyDict_GetItemHint((PyDictObject *)builtins, name, -1, &value);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         goto fail;
