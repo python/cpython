@@ -345,7 +345,7 @@ Power and logarithmic functions
 
    Return the cube root of *x*.
 
-   .. versionadded:: 3.10
+   .. versionadded:: 3.11
 
 .. function:: exp(x)
 
