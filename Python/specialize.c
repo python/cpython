@@ -257,7 +257,7 @@ specialize_module_load_attr(
         return -1;
     }
     cache1->dk_version_or_hint = keys_version;
-    cache0->index = index;
+    cache0->index = (uint16_t)index;
     *instr = _Py_MAKECODEUNIT(LOAD_ATTR_MODULE, _Py_OPARG(*instr));
     return 0;
 }
@@ -298,8 +298,11 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             goto fail;
         }
         Py_ssize_t offset = dmem->offset;
+        if (offset != (uint16_t)offset) {
+            goto fail;
+        }
         assert(offset > 0);
-        cache0->index = offset;
+        cache0->index = (uint16_t)offset;
         cache1->tp_version = type->tp_version_tag;
         *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
         goto success;
@@ -336,7 +339,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         }
         cache1->dk_version_or_hint = keys_version;
         cache1->tp_version = type->tp_version_tag;
-        cache0->index = index;
+        cache0->index = (uint16_t)index;
         *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
         goto success;
     }
