@@ -3517,6 +3517,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            assert(cache0->index < dict->ma_keys->dk_nentries);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
             res = ep->me_value;
             DEOPT_IF(res == NULL, LOAD_ATTR);
