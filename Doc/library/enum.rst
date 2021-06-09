@@ -543,7 +543,7 @@ Data Types
          ...     CRIMSON = 1
          Traceback (most recent call last):
          ...
-         TypeError: aliases found in <enum 'Color'>: CRIMSON -> RED
+         ValueError: aliases found in <enum 'Color'>: CRIMSON -> RED
 
 
    .. attribute:: CONTINUOUS
@@ -559,7 +559,7 @@ Data Types
          ...     BLUE = 5
          Traceback (most recent call last):
          ...
-         TypeError: invalid enum 'Color': missing values 3, 4
+         ValueError: invalid enum 'Color': missing values 3, 4
 
    .. attribute:: NAMED_FLAGS
 
@@ -576,7 +576,7 @@ Data Types
          ...     NEON = 31
          Traceback (most recent call last):
          ...
-         TypeError: invalid Flag 'Color': 'WHITE' is missing a named flag for value 8; 'NEON' is missing named flags for values 8, 16
+         ValueError: invalid Flag 'Color': 'WHITE' is missing a named flag for value 8; 'NEON' is missing named flags for values 8, 16
 
 .. note::
 
