@@ -112,11 +112,11 @@ class ConfigDialog(Toplevel):
         self.frame = frame = Frame(self, padding="5px")
         self.frame.grid(sticky="nwes")
         self.note = note = Notebook(frame)
-        self.highpage = HighPage(note)
+        self.extpage = ExtPage(note)
+        self.highpage = HighPage(note, self.extpage)
         self.fontpage = FontPage(note, self.highpage)
-        self.keyspage = KeysPage(note)
+        self.keyspage = KeysPage(note, self.extpage)
         self.genpage = GenPage(note)
-        self.extpage = self.create_page_extensions()
         note.add(self.fontpage, text='Fonts/Tabs')
         note.add(self.highpage, text='Highlights')
         note.add(self.keyspage, text=' Keys ')
@@ -244,40 +244,47 @@ class ConfigDialog(Toplevel):
         for klass in reloadables:
             klass.reload()
 
+
+class ExtPage(Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.ext_defaultCfg = idleConf.defaultCfg['extensions']
+        self.ext_userCfg = idleConf.userCfg['extensions']
+        self.is_int = self.register(is_int)
+        self.load_extensions()
+        self.create_page_extensions()  # Requires extension names.
+
     def create_page_extensions(self):
-        """Part of the config dialog used for configuring IDLE extensions.
+        """Configure IDLE feature extensions and help menu extensions.
 
-        This code is generic - it works for any and all IDLE extensions.
+        List the feature extensions and a configuration box for the
+        selected extension.  Help menu extensions are in a HelpFrame.
 
-        IDLE extensions save their configuration options using idleConf.
-        This code reads the current configuration using idleConf, supplies a
-        GUI interface to change the configuration values, and saves the
-        changes using idleConf.
+        This code reads the current configuration using idleConf,
+        supplies a GUI interface to change the configuration values,
+        and saves the changes using idleConf.
 
-        Not all changes take effect immediately - some may require restarting IDLE.
-        This depends on each extension's implementation.
+        Some changes may require restarting IDLE.  This depends on each
+        extension's implementation.
 
-        All values are treated as text, and it is up to the user to supply
-        reasonable values. The only exception to this are the 'enable*' options,
-        which are boolean, and can be toggled with a True/False button.
+        All values are treated as text, and it is up to the user to
+        supply reasonable values. The only exception to this are the
+        'enable*' options, which are boolean, and can be toggled with a
+        True/False button.
 
         Methods:
-            load_extensions:
             extension_selected: Handle selection from list.
             create_extension_frame: Hold widgets for one extension.
             set_extension_value: Set in userCfg['extensions'].
             save_all_changed_extensions: Call extension page Save().
         """
-        self.ext_defaultCfg = idleConf.defaultCfg['extensions']
-        self.ext_userCfg = idleConf.userCfg['extensions']
-        self.is_int = self.register(is_int)
-        self.load_extensions()
-        # Create widgets - a listbox shows all available extensions, with the
-        # controls for the extension selected in the listbox to the right.
         self.extension_names = StringVar(self)
-        frame = Frame(self.note)
-        frame_ext = LabelFrame(frame, borderwidth=2, relief=GROOVE,
+
+        frame_ext = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                text=' Feature Extensions ')
+        self.frame_help = HelpFrame(self, borderwidth=2, relief=GROOVE,
+                               text=' Help Menu Extensions ')
+
         frame_ext.rowconfigure(0, weight=1)
         frame_ext.columnconfigure(2, weight=1)
         self.extension_list = Listbox(frame_ext, listvariable=self.extension_names,
@@ -306,13 +313,9 @@ class ConfigDialog(Toplevel):
         self.extension_selected(None)
 
 
-        self.frame_help = HelpFrame(frame, borderwidth=2, relief=GROOVE,
-                                    text=' Help Menu Extensions ')
         frame_ext.grid(row=0, column=0, sticky='nsew')
-        Label(frame).grid(row=1, column=0)
+        Label(self).grid(row=1, column=0)  # Spacer.  Replace with config?
         self.frame_help.grid(row=2, column=0, sticky='sew')
-
-        return frame
 
     def load_extensions(self):
         "Fill self.extensions with data from the default and user configs."
@@ -695,8 +698,9 @@ class FontPage(Frame):
 
 class HighPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, extpage):
         super().__init__(master)
+        self.extpage = extpage
         self.cd = master.winfo_toplevel()
         self.style = Style(master)
         self.create_page_highlight()
@@ -1347,15 +1351,16 @@ class HighPage(Frame):
         self.builtin_name.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
-        self.cd.save_all_changed_extensions()
+        self.extpage.save_all_changed_extensions()
         self.cd.activate_config_changes()
         self.set_theme_type()
 
 
 class KeysPage(Frame):
 
-    def __init__(self, master):
+    def __init__(self, master, extpage):
         super().__init__(master)
+        self.extpage = extpage
         self.cd = master.winfo_toplevel()
         self.create_page_keys()
         self.load_key_cfg()
@@ -1779,7 +1784,7 @@ class KeysPage(Frame):
                               or idleConf.default_keys())
         # User can't back out of these changes, they must be applied now.
         changes.save_all()
-        self.cd.save_all_changed_extensions()
+        self.extpage.save_all_changed_extensions()
         self.cd.activate_config_changes()
         self.set_keys_type()
 
