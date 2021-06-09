@@ -1203,7 +1203,7 @@ class KeysPageTest(unittest.TestCase):
         del d.askyesno
 
 
-class GenPageTest(unittest.TestCase):
+class WinPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
@@ -1211,24 +1211,22 @@ class GenPageTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        page = cls.page = dialog.genpage
+        page = cls.page = dialog.winpage
         dialog.note.select(page)
         page.update()
 
     def setUp(self):
         changes.clear()
 
-    def test_load_general_cfg(self):
+    def test_load_windows_cfg(self):
         # Set to wrong values, load, check right values.
         eq = self.assertEqual
         d = self.page
         d.startup_edit.set(1)
-        d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
-        d.load_general_cfg()
+        d.load_windows_cfg()
         eq(d.startup_edit.get(), 0)
-        eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
         eq(d.win_height.get(), '40')
 
@@ -1274,17 +1272,41 @@ class GenPageTest(unittest.TestCase):
         d.bell_on.invoke()
         eq(extpage, {'ParenMatch': {'bell': 'False'}})
 
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+
+class GenPageTest(unittest.TestCase):
+    """Test that shed tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes.
+    """
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.shedpage
+        dialog.note.select(page)
+        page.update()
+
+    def setUp(self):
+        changes.clear()
+
+    def test_load_shelled_cfg(self):
+        # Set to wrong values, load, check right values.
+        eq = self.assertEqual
+        d = self.page
+        d.autosave.set(1)
+        d.load_shelled_cfg()
+        eq(d.autosave.get(), 0)
+
     def test_autosave(self):
         d = self.page
         d.save_auto_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '1'}})
         d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
-
-    def test_paragraph(self):
-        self.page.format_width_int.delete(0, 'end')
-        self.page.format_width_int.insert(0, '11')
-        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
 
     def test_context(self):
         self.page.context_int.delete(0, 'end')
