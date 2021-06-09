@@ -92,6 +92,13 @@ fractions
 Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
 string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
 
+
+Removed
+=======
+* :class:`smtpd.MailmanProxy` is now removed as it is unusable without
+  an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+
+
 Optimizations
 =============
 
