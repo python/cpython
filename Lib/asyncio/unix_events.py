@@ -1219,7 +1219,6 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
     def __init__(self):
         self._callbacks = {}
-        self._saved_sighandler = {}
         self._handler_added_loops = []
 
     def is_active(self):
