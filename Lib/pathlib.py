@@ -428,24 +428,23 @@ class _WildcardSelector(_Selector):
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
             with scandir(parent_path) as scandir_it:
-                entries = list(scandir_it)
-            for entry in entries:
-                if self.dironly:
-                    try:
-                        # "entry.is_dir()" can raise PermissionError
-                        # in some cases (see bpo-38894), which is not
-                        # among the errors ignored by _ignore_error()
-                        if not entry.is_dir():
+                for entry in scandir_it:
+                    if self.dironly:
+                        try:
+                            # "entry.is_dir()" can raise PermissionError
+                            # in some cases (see bpo-38894), which is not
+                            # among the errors ignored by _ignore_error()
+                            if not entry.is_dir():
+                                continue
+                        except OSError as e:
+                            if not _ignore_error(e):
+                                raise
                             continue
-                    except OSError as e:
-                        if not _ignore_error(e):
-                            raise
-                        continue
-                name = entry.name
-                if self.match(name):
-                    path = parent_path._make_child_relpath(name)
-                    for p in self.successor._select_from(path, is_dir, exists, scandir):
-                        yield p
+                    name = entry.name
+                    if self.match(name):
+                        path = parent_path._make_child_relpath(name)
+                        for p in self.successor._select_from(path, is_dir, exists, scandir):
+                            yield p
         except PermissionError:
             return
 
@@ -459,18 +458,17 @@ class _RecursiveWildcardSelector(_Selector):
         yield parent_path
         try:
             with scandir(parent_path) as scandir_it:
-                entries = list(scandir_it)
-            for entry in entries:
-                entry_is_dir = False
-                try:
-                    entry_is_dir = entry.is_dir()
-                except OSError as e:
-                    if not _ignore_error(e):
-                        raise
-                if entry_is_dir and not entry.is_symlink():
-                    path = parent_path._make_child_relpath(entry.name)
-                    for p in self._iterate_directories(path, is_dir, scandir):
-                        yield p
+                for entry in scandir_it:
+                    entry_is_dir = False
+                    try:
+                        entry_is_dir = entry.is_dir()
+                    except OSError as e:
+                        if not _ignore_error(e):
+                            raise
+                    if entry_is_dir and not entry.is_symlink():
+                        path = parent_path._make_child_relpath(entry.name)
+                        for p in self._iterate_directories(path, is_dir, scandir):
+                            yield p
         except PermissionError:
             return
 
