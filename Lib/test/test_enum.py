@@ -9,7 +9,7 @@ import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, StrEnum, EnumType, Flag, IntFlag, unique, auto
 from enum import STRICT, CONFORM, EJECT, KEEP, _simple_enum, _test_simple_enum
-from enum import verify, UNIQUE, CONTINUOUS, COMPOSITE
+from enum import verify, UNIQUE, CONTINUOUS, NAMED_FLAGS
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
@@ -3503,7 +3503,7 @@ class TestVerify(unittest.TestCase):
             THIRD = 5
             FORTH = 6
         #
-        with self.assertRaisesRegex(TypeError, 'invalid enum .Missing.: missing values 5, 6, 7, 8, 9, 10, 12'):
+        with self.assertRaisesRegex(ValueError, 'invalid enum .Missing.: missing values 5, 6, 7, 8, 9, 10, 12'):
             @verify(CONTINUOUS)
             class Missing(Enum):
                 FIRST = 3
@@ -3511,7 +3511,7 @@ class TestVerify(unittest.TestCase):
                 THIRD = 11
                 FORTH = 13
         #
-        with self.assertRaisesRegex(TypeError, 'invalid flag .Incomplete.: missing values 32'):
+        with self.assertRaisesRegex(ValueError, 'invalid flag .Incomplete.: missing values 32'):
             @verify(CONTINUOUS)
             class Incomplete(Flag):
                 FIRST = 4
@@ -3519,7 +3519,7 @@ class TestVerify(unittest.TestCase):
                 THIRD = 16
                 FORTH = 64
         #
-        with self.assertRaisesRegex(TypeError, 'invalid flag .StillIncomplete.: missing values 16'):
+        with self.assertRaisesRegex(ValueError, 'invalid flag .StillIncomplete.: missing values 16'):
             @verify(CONTINUOUS)
             class StillIncomplete(Flag):
                 FIRST = 4
@@ -3538,10 +3538,10 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.c.value, 4)
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
-                TypeError,
+                ValueError,
                 "invalid Flag 'Bizarre': 'b' is missing named flags for values 1, 2; 'd' is missing a named flag for value 2",
             ):
-            @verify(COMPOSITE)
+            @verify(NAMED_FLAGS)
             class Bizarre(Flag):
                 b = 3
                 c = 4
@@ -3556,10 +3556,10 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.c.value, 4)
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
-                TypeError,
+                ValueError,
                 "invalid Flag 'Bizarre': 'b' is missing named flags for values 1, 2; 'd' is missing a named flag for value 2",
             ):
-            @verify(COMPOSITE)
+            @verify(NAMED_FLAGS)
             class Bizarre(IntFlag):
                 b = 3
                 c = 4
@@ -3579,14 +3579,14 @@ class TestVerify(unittest.TestCase):
             triple = 3
 
     def test_unique_dirty(self):
-        with self.assertRaisesRegex(TypeError, 'tres.*one'):
+        with self.assertRaisesRegex(ValueError, 'tres.*one'):
             @verify(UNIQUE)
             class Dirty(Enum):
                 one = 1
                 two = 'dos'
                 tres = 1
         with self.assertRaisesRegex(
-                TypeError,
+                ValueError,
                 'double.*single.*turkey.*triple',
                 ):
             @verify(UNIQUE)

@@ -9,7 +9,7 @@ __all__ = [
         'auto', 'unique', 'property', 'verify',
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_enum',
-        'EnumCheck', 'COMPOSITE', 'CONTINUOUS', 'UNIQUE',
+        'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
         ]
 
 
@@ -1566,10 +1566,10 @@ class EnumCheck:
     """
     various conditions to check an enumeration for
     """
-    COMPOSITE = "multi-flag aliases may not contain unnamed flags"
     CONTINUOUS = "no skipped integer values"
+    NAMED_FLAGS = "multi-flag aliases may not contain unnamed flags"
     UNIQUE = "one name per value"
-COMPOSITE, CONTINUOUS, UNIQUE = EnumCheck
+CONTINUOUS, NAMED_FLAGS, UNIQUE = EnumCheck
 
 
 class verify:
@@ -1597,7 +1597,7 @@ class verify:
                 if duplicates:
                     alias_details = ', '.join(
                             ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
-                    raise TypeError('aliases found in %r: %s' %
+                    raise ValueError('aliases found in %r: %s' %
                             (enumeration, alias_details))
             elif check is CONTINUOUS:
                 values = set(e.value for e in enumeration)
@@ -1618,10 +1618,10 @@ class verify:
                 else:
                     raise Exception('verify: unknown type %r' % enum_type)
                 if missing:
-                    raise TypeError('invalid %s %r: missing values %s' % (
+                    raise ValueError('invalid %s %r: missing values %s' % (
                             enum_type, cls_name, ', '.join((str(m) for m in missing)))
                             )
-            elif check is COMPOSITE:
+            elif check is NAMED_FLAGS:
                 # examine each alias and check for unnamed flags
                 member_names = enumeration._member_names_
                 member_values = [m.value for m in enumeration]
@@ -1640,7 +1640,7 @@ class verify:
                                 ', '.join(str(v) for v in missed)
                                 ))
                 if missing:
-                    raise TypeError(
+                    raise ValueError(
                             'invalid Flag %r: %s'
                             % (cls_name, '; '.join(missing))
                             )
