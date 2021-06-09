@@ -5948,8 +5948,7 @@ static PyObject *
 trace_call_function(PyThreadState *tstate,
                     PyObject *func,
                     PyObject **args, Py_ssize_t nargs,
-                    PyObject *kwnames
-                   )
+                    PyObject *kwnames)
 {
     int use_tracing = 1;
     PyObject *x;
@@ -6589,8 +6588,7 @@ dtrace_function_return(PyFrameObject *f)
 static void
 maybe_dtrace_line(PyFrameObject *frame,
                   PyTraceInfo *trace_info,
-                  int instr_prev
-                 )
+                  int instr_prev)
 {
     const char *co_filename, *co_name;
 
