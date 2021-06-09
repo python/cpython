@@ -1292,12 +1292,22 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
 
+#unittest.skip("Nothing here yet TODO")
+class ExtPageTest(unittest.TestCase):
+    """Test that the help source list works correctly."""
+    @classmethod
+    def setUpClass(cls):
+        page = dialog.extpage
+        dialog.note.select(page)
+
+
 class HelpSourceTest(unittest.TestCase):
     """Test that the help source list works correctly."""
     @classmethod
     def setUpClass(cls):
-        dialog.note.select(dialog.extpage)
-        frame = cls.frame = dialog.frame_help
+        page = dialog.extpage
+        dialog.note.select(page)
+        frame = cls.frame = page.frame_help
         frame.set = frame.set_add_delete_state = Func()
         frame.upc = frame.update_help_changes = Func()
         frame.update()
