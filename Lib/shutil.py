@@ -509,8 +509,8 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
     """Recursively copy a directory tree and return the destination directory.
 
-    dirs_exist_ok dictates whether to raise an exception in case dst or any
-    missing parent directory already exists.
+    If dirs_exist_ok is False (the default), a FileExistsError is
+    raised if dst already exists.
 
     If exception(s) occur, an Error is raised with a list of reasons.
 

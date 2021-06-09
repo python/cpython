@@ -230,9 +230,9 @@ Directory and files operations
               dirs_exist_ok=False)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
-   named *dst* and return the destination directory. *dirs_exist_ok* dictates
-   whether to raise an exception in case *dst* or any missing parent directory
-   already exists.
+   named *dst* and return the destination directory. If *dirs_exist_ok* is
+   False (the default), a :exc:`FileExistsError` is raised if *dst* already
+   exists.
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
