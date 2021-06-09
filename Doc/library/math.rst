@@ -341,6 +341,11 @@ necessarily has no fractional bits.
 
 Power and logarithmic functions
 -------------------------------
+.. function:: cbrt(x)
+
+   Return the cube root of *x*.
+
+   .. versionadded:: 3.10
 
 .. function:: exp(x)
 

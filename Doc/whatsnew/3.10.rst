@@ -1093,6 +1093,12 @@ linecache
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
+math
+----
+
+Add :func:`math.cbrt()`: return the cube root of x.
+(Contributed by Ajith Ramachandran in :issue:`44357`.)
+
 os
 --
 
