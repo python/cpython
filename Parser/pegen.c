@@ -936,10 +936,9 @@ _PyPegen_get_last_nonnwhitespace_token(Parser *p)
     return token;
 }
 
-expr_ty
-_PyPegen_name_token(Parser *p)
+static expr_ty
+_PyPegen_name_from_token(Parser *p, Token* t)
 {
-    Token *t = _PyPegen_expect_token(p, NAME);
     if (t == NULL) {
         return NULL;
     }
@@ -955,6 +954,14 @@ _PyPegen_name_token(Parser *p)
     }
     return _PyAST_Name(id, Load, t->lineno, t->col_offset, t->end_lineno,
                        t->end_col_offset, p->arena);
+}
+
+
+expr_ty
+_PyPegen_name_token(Parser *p)
+{
+    Token *t = _PyPegen_expect_token(p, NAME);
+    return _PyPegen_name_from_token(p, t);
 }
 
 void *
@@ -974,7 +981,7 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p) {
     PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
     for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
         if (strncmp(*keyword, the_token, size) == 0) {
-            return _PyPegen_name_token(p);
+            return _PyPegen_name_from_token(p, t);
         }
     }
     return NULL;
