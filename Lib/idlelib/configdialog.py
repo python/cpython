@@ -102,8 +102,9 @@ class ConfigDialog(Toplevel):
             highpage: HighPage
             fontpage: FontPage
             keyspage: KeysPage
-            genpage: GenPage
-            extpage: self.create_page_extensions
+            winpage: WinPage
+            shedpage: ShedPage
+            extpage: ExtPage
 
         Methods:
             create_action_buttons
@@ -300,12 +301,12 @@ class FontPage(Frame):
     def __init__(self, master, highpage):
         super().__init__(master)
         self.highlight_sample = highpage.highlight_sample
-        self.create_page_font_tab()
+        self.create_page_font()
         self.load_font_cfg()
         self.load_tab_cfg()
 
-    def create_page_font_tab(self):
-        """Return frame of widgets for Font/Tabs tab.
+    def create_page_font(self):
+        """Return frame of widgets for Font tab.
 
         Fonts: Enable users to provisionally change font face, size, or
         boldness and to see the consequence of proposed choices.  Each
@@ -328,11 +329,6 @@ class FontPage(Frame):
         adds all 3 font options to changes and calls set_samples.
         Set_samples applies a new font constructed from the font vars to
         font_sample and to highlight_sample on the highlight page.
-
-        Tabs: Enable users to change spaces entered for indent tabs.
-        Changing indent_chooser value with the mouse sets Var space_num,
-        which invokes the default callback to add an entry to
-        changes.  Load_tab_cfg initializes space_num to default.
 
         Widgets for FontPage(Frame):  (*) widgets bound to self
             frame_font: LabelFrame
@@ -522,7 +518,7 @@ class HighPage(Frame):
         self.load_theme_cfg()
 
     def create_page_highlight(self):
-        """Return frame of widgets for Highlighting tab.
+        """Return frame of widgets for Highlights tab.
 
         Enable users to provisionally change foreground and background
         colors applied to textual tags.  Color mappings are stored in
@@ -1624,40 +1620,42 @@ class WinPage(Frame):
         """Return frame of widgets for Windows tab.
 
         Enable users to provisionally change general window options.
-        Function load_windows_cfg initializes tk variables idleConf.
+        Function load_windows_cfg initializes tk variable idleConf.
         Radiobuttons startup_shell_on and startup_editor_on set var
         startup_edit. Entry boxes win_width_int and win_height_int set var
         win_width and win_height.  Setting var_name invokes the default
         callback that adds option to changes.
 
-        Widgets for WinPage(Frame):  (*) widgets bound to self
+        Widgets for WinPage(Frame):  > vars, bound to self
             frame_window: LabelFrame
                 frame_run: Frame
                     startup_title: Label
-                    (*)startup_editor_on: Radiobutton - startup_edit
-                    (*)startup_shell_on: Radiobutton - startup_edit
+                    startup_editor_on: Radiobutton > startup_edit
+                    startup_shell_on: Radiobutton > startup_edit
                 frame_win_size: Frame
                     win_size_title: Label
                     win_width_title: Label
-                    (*)win_width_int: Entry - win_width
+                    win_width_int: Entry > win_width
                     win_height_title: Label
-                    (*)win_height_int: Entry - win_height
-                frame_cursor_blink: Frame
-                    cursor_blink_title: Label
-                    (*)cursor_blink_bool: Checkbutton - cursor_blink
+                    win_height_int: Entry > win_height
+                frame_cursor: Frame
+                    indent_title: Label
+                    indent_chooser: Spinbox (Combobox < 8.5.9) > indent_spaces
+                    blink_on: Checkbutton > cursor_blink
+
                 frame_autocomplete: Frame
                     auto_wait_title: Label
-                    (*)auto_wait_int: Entry - autocomplete_wait
+                    auto_wait_int: Entry > autocomplete_wait
                 frame_paren1: Frame
                     paren_style_title: Label
-                    (*)paren_style_type: OptionMenu - paren_style
+                    paren_style_type: OptionMenu > paren_style
                 frame_paren2: Frame
                     paren_time_title: Label
-                    (*)paren_flash_time: Entry - flash_delay
-                    (*)bell_on: Checkbutton - paren_bell
+                    paren_flash_time: Entry > flash_delay
+                    bell_on: Checkbutton > paren_bell
                 frame_format: Frame
                     format_width_title: Label
-                    (*)format_width_int: Entry - format_width
+                    format_width_int: Entry > format_width
         """
         # Integer values need StringVar because int('') raises.
         self.startup_edit = tracers.add(
