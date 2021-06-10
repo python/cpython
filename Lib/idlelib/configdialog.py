@@ -1659,7 +1659,8 @@ class WinPage(Frame):
         try:
             self.indent_chooser = Spinbox(
                     frame_cursor, textvariable=self.indent_spaces,
-                    from_=1, to=11, width=2)
+                    from_=1, to=10, width=2,
+                    validatecommand=self.digits_only, validate='key')
         except TclError:
             self.indent_chooser = Combobox(
                     frame_cursor, textvariable=self.indent_spaces,
@@ -1670,11 +1671,10 @@ class WinPage(Frame):
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
-                               text='Completions Popup Wait (milliseconds)')
-        self.auto_wait_int = Entry(frame_autocomplete, width=6,
-                                   textvariable=self.autocomplete_wait,
-                                   validatecommand=self.digits_only,
-                                   validate='key')
+                                text='Completions Popup Wait (milliseconds)')
+        self.auto_wait_int = Entry(
+                frame_autocomplete, textvariable=self.autocomplete_wait,
+                width=6, validatecommand=self.digits_only, validate='key')
 
         frame_paren1 = Frame(frame_window, borderwidth=0)
         paren_style_title = Label(frame_paren1, text='Paren Match Style')
@@ -1686,7 +1686,8 @@ class WinPage(Frame):
                 frame_paren2, text='Time Match Displayed (milliseconds)\n'
                                   '(0 is until next input)')
         self.paren_flash_time = Entry(
-                frame_paren2, textvariable=self.flash_delay, width=6)
+                frame_paren2, textvariable=self.flash_delay, width=6,
+                validatecommand=self.digits_only, validate='key')
         self.bell_on = Checkbutton(
                 frame_paren2, text="Bell on Mismatch", variable=self.paren_bell)
         frame_format = Frame(frame_window, borderwidth=0)
