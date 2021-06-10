@@ -1499,6 +1499,10 @@ class MathTests(unittest.TestCase):
     def testSqrt(self):
         self.assertRaises(TypeError, math.sqrt)
         self.ftest('sqrt(0)', math.sqrt(0), 0)
+        self.ftest('sqrt(0)', math.sqrt(0.0), 0.0)
+        self.ftest('sqrt(2.5)', math.sqrt(2.5), 1.5811388300841898)
+        self.ftest('sqrt(0.25)', math.sqrt(0.25), 0.5)
+        self.ftest('sqrt(25.25)', math.sqrt(25.25), 5.024937810560445)
         self.ftest('sqrt(1)', math.sqrt(1), 1)
         self.ftest('sqrt(4)', math.sqrt(4), 2)
         self.assertEqual(math.sqrt(INF), INF)
