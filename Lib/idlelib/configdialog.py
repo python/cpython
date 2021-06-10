@@ -1656,14 +1656,14 @@ class WinPage(Frame):
         frame_cursor = Frame(frame_window, borderwidth=0)
         indent_title = Label(frame_cursor,
                              text='Indent spaces (4 is standard)')
-##        try:
-##            self.indent_chooser = Spinbox(
-##                    frame_cursor, textvariable=self.indent_spaces,
-##                    state="readonly", from_=1, to=11, width=2)
-##        except TclError:
-        self.indent_chooser = Combobox(
-                frame_cursor, textvariable=self.indent_spaces,
-                state="readonly", values=list(range(1,11)), width=2)
+        try:
+            self.indent_chooser = Spinbox(
+                    frame_cursor, textvariable=self.indent_spaces,
+                    state="readonly", from_=1, to=11, width=2)
+        except TclError:
+            self.indent_chooser = Combobox(
+                    frame_cursor, textvariable=self.indent_spaces,
+                    state="readonly", values=list(range(1,11)), width=2)
         cursor_blink_title = Label(frame_cursor, text='Cursor Blink')
         self.cursor_blink_bool = Checkbutton(frame_cursor, text="Cursor blink",
                                              variable=self.cursor_blink)
