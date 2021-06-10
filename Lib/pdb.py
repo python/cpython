@@ -1181,7 +1181,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             val = self._getval(arg)
         except:
-            return
+            return  # _getval() has displayed the error
         try:
             self.message(func(val))
         except:
