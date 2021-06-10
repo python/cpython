@@ -2144,6 +2144,53 @@ class TestEnum(unittest.TestCase):
                 return member
         self.assertEqual(Fee.TEST, 2)
 
+    def test_miltuple_mixin_with_common_data_type(self):
+        class CaseInsensitiveStrEnum(str, Enum):
+            @classmethod
+            def _missing_(cls, value):
+                for member in cls._member_map_.values():
+                    if member._value_.lower() == value.lower():
+                        return member
+                return super()._missing_(value)
+        #
+        class LenientStrEnum(str, Enum):
+            def __init__(self, *args):
+                self._valid = True
+            @classmethod
+            def _missing_(cls, value):
+                # encountered an unknown value!
+                # Luckily I'm a LenientStrEnum, so I won't crash just yet.
+                # You might want to add a new case though.
+                unknown = cls._member_type_.__new__(cls, value)
+                unknown._valid = False
+                unknown._name_ = value.upper()
+                unknown._value_ = value
+                cls._member_map_[value] = unknown
+                return unknown
+            @property
+            def valid(self):
+                return self._valid
+        #
+        class JobStatus(CaseInsensitiveStrEnum, LenientStrEnum):
+            ACTIVE = "active"
+            PENDING = "pending"
+            TERMINATED = "terminated"
+        #
+        JS = JobStatus
+        self.assertEqual(list(JobStatus), [JS.ACTIVE, JS.PENDING, JS.TERMINATED])
+        self.assertEqual(JS.ACTIVE, 'active')
+        self.assertEqual(JS.ACTIVE.value, 'active')
+        self.assertIs(JS('Active'), JS.ACTIVE)
+        self.assertTrue(JS.ACTIVE.valid)
+        missing = JS('missing')
+        self.assertEqual(list(JobStatus), [JS.ACTIVE, JS.PENDING, JS.TERMINATED])
+        self.assertEqual(JS.ACTIVE, 'active')
+        self.assertEqual(JS.ACTIVE.value, 'active')
+        self.assertIs(JS('Active'), JS.ACTIVE)
+        self.assertTrue(JS.ACTIVE.valid)
+        self.assertTrue(isinstance(missing, JS))
+        self.assertFalse(missing.valid)
+
     def test_empty_globals(self):
         # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
         # when using compile and exec because f_globals is empty

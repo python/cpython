@@ -819,7 +819,7 @@ class EnumType(type):
             return object, Enum
 
         def _find_data_type(bases):
-            data_types = []
+            data_types = set()
             for chain in bases:
                 candidate = None
                 for base in chain.__mro__:
@@ -827,19 +827,19 @@ class EnumType(type):
                         continue
                     elif issubclass(base, Enum):
                         if base._member_type_ is not object:
-                            data_types.append(base._member_type_)
+                            data_types.add(base._member_type_)
                             break
                     elif '__new__' in base.__dict__:
                         if issubclass(base, Enum):
                             continue
-                        data_types.append(candidate or base)
+                        data_types.add(candidate or base)
                         break
                     else:
                         candidate = base
             if len(data_types) > 1:
                 raise TypeError('%r: too many data types: %r' % (class_name, data_types))
             elif data_types:
-                return data_types[0]
+                return data_types.pop()
             else:
                 return None
 
