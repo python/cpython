@@ -264,10 +264,10 @@ Directory and files operations
    as arguments. By default, :func:`~shutil.copy2` is used, but any function
    that supports the same signature (like :func:`~shutil.copy`) can be used.
 
-   If *dirs_exist_ok* is `False` (the default), a :exc:`FileExistsError` is
-   raised if *dst* already exists. Furthermore, any parent directory in the
-   path to *dst* will be created if they do not exist when the *dirs_exist_ok*
-   flag is `True`.
+   If *dirs_exist_ok* is false (the default), a :exc:`FileExistsError` is
+   raised if *dst* already exists. Conversely, *dst* as well as any any parent
+   directory in the path to *dst* will be created if they do not exist when
+   the *dirs_exist_ok* flag is true.
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
