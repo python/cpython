@@ -16,6 +16,7 @@
 #include "pycore_code.h"          // _PyCode_InitOpcache()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_moduleobject.h"
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -24,6 +25,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include "code.h"
+#include "pycore_dict.h"
 #include "dictobject.h"
 #include "frameobject.h"
 #include "pycore_frame.h"
@@ -33,14 +35,6 @@
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 #include <ctype.h>
-
-typedef struct {
-    PyCodeObject *code; // The code object for the bounds. May be NULL.
-    int instr_prev;  // Only valid if code != NULL.
-    PyCodeAddressRange bounds; // Only valid if code != NULL.
-    CFrame cframe;
-} PyTraceInfo;
-
 
 #ifdef Py_DEBUG
 /* For debugging the interpreter: */
@@ -56,11 +50,11 @@ _Py_IDENTIFIER(__name__);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(
-    PyThreadState *tstate, PyTraceInfo *, PyObject ***pp_stack,
-    Py_ssize_t oparg, PyObject *kwnames);
+    PyThreadState *tstate, PyObject ***pp_stack,
+    Py_ssize_t oparg, PyObject *kwnames, int use_tracing);
 static PyObject * do_call_core(
-    PyThreadState *tstate, PyTraceInfo *, PyObject *func,
-    PyObject *callargs, PyObject *kwdict);
+    PyThreadState *tstate, PyObject *func,
+    PyObject *callargs, PyObject *kwdict, int use_tracing);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -68,19 +62,15 @@ static int prtrace(PyThreadState *, PyObject *, const char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
                       PyThreadState *, PyFrameObject *,
-                      PyTraceInfo *,
                       int, PyObject *);
 static int call_trace_protected(Py_tracefunc, PyObject *,
                                 PyThreadState *, PyFrameObject *,
-                                PyTraceInfo *,
                                 int, PyObject *);
 static void call_exc_trace(Py_tracefunc, PyObject *,
-                           PyThreadState *, PyFrameObject *,
-                           PyTraceInfo *trace_info);
+                           PyThreadState *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
-                                 PyThreadState *, PyFrameObject *,
-                                 PyTraceInfo *);
-static void maybe_dtrace_line(PyFrameObject *, PyTraceInfo *);
+                                 PyThreadState *, PyFrameObject *, int);
+static void maybe_dtrace_line(PyFrameObject *, PyTraceInfo *, int);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
 
@@ -1308,7 +1298,7 @@ eval_frame_handle_pending(PyThreadState *tstate)
 
 #define DISPATCH() \
     { \
-        if (trace_info.cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
+        if (cframe.use_tracing OR_DTRACE_LINE OR_LLTRACE) { \
             goto tracing_dispatch; \
         } \
         f->f_lasti = INSTR_OFFSET(); \
@@ -1554,7 +1544,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define OPCACHE_STAT_ATTR_DEOPT()
 #define OPCACHE_STAT_ATTR_TOTAL()
 
+#define JUMP_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+
+#define GET_CACHE() \
+    _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
+
 #endif
+
+#define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
 #define GLOBALS() specials[FRAME_SPECIALS_GLOBALS_OFFSET]
 #define BUILTINS() specials[FRAME_SPECIALS_BUILTINS_OFFSET]
@@ -1574,7 +1571,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     int lastopcode = 0;
 #endif
     PyObject **stack_pointer;  /* Next free slot in value stack */
-    const _Py_CODEUNIT *next_instr;
+    _Py_CODEUNIT *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject **localsplus, **specials;
@@ -1582,7 +1579,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
     PyCodeObject *co;
 
-    const _Py_CODEUNIT *first_instr;
+    _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
     _PyOpcache *co_opcache;
@@ -1595,25 +1592,23 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         return NULL;
     }
 
-    PyTraceInfo trace_info;
-    /* Mark trace_info as uninitialized */
-    trace_info.code = NULL;
+    CFrame cframe;
 
     /* WARNING: Because the CFrame lives on the C stack,
      * but can be accessed from a heap allocated object (tstate)
      * strict stack discipline must be maintained.
      */
     CFrame *prev_cframe = tstate->cframe;
-    trace_info.cframe.use_tracing = prev_cframe->use_tracing;
-    trace_info.cframe.previous = prev_cframe;
-    tstate->cframe = &trace_info.cframe;
+    cframe.use_tracing = prev_cframe->use_tracing;
+    cframe.previous = prev_cframe;
+    tstate->cframe = &cframe;
 
     /* push frame */
     tstate->frame = f;
     specials = f->f_valuestack - FRAME_SPECIALS_SIZE;
     co = f->f_code;
 
-    if (trace_info.cframe.use_tracing) {
+    if (cframe.use_tracing) {
         if (tstate->c_tracefunc != NULL) {
             /* tstate->c_tracefunc, if defined, is a
                function that will be called on *every* entry
@@ -1630,7 +1625,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                whenever an exception is detected. */
             if (call_trace_protected(tstate->c_tracefunc,
                                      tstate->c_traceobj,
-                                     tstate, f, &trace_info,
+                                     tstate, f,
                                      PyTrace_CALL, Py_None)) {
                 /* Trace function raised an error */
                 goto exit_eval_frame;
@@ -1641,7 +1636,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                return itself and isn't called for "line" events */
             if (call_trace_protected(tstate->c_profilefunc,
                                      tstate->c_profileobj,
-                                     tstate, f, &trace_info,
+                                     tstate, f,
                                      PyTrace_CALL, Py_None)) {
                 /* Profile function raised an error */
                 goto exit_eval_frame;
@@ -1771,15 +1766,17 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
     tracing_dispatch:
+    {
+        int instr_prev = f->f_lasti;
         f->f_lasti = INSTR_OFFSET();
         TRACING_NEXTOPARG();
 
         if (PyDTrace_LINE_ENABLED())
-            maybe_dtrace_line(f, &trace_info);
+            maybe_dtrace_line(f, &tstate->trace_info, instr_prev);
 
         /* line-by-line tracing support */
 
-        if (trace_info.cframe.use_tracing &&
+        if (cframe.use_tracing &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
             /* see maybe_call_line_trace()
@@ -1788,8 +1785,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
-                                        tstate, f,
-                                        &trace_info);
+                                        tstate, f, instr_prev);
             if (err) {
                 /* trace function raised an exception */
                 goto error;
@@ -1800,6 +1796,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             f->f_stackdepth = -1;
             NEXTOPARG();
         }
+    }
 
 #ifdef LLTRACE
         /* Instruction tracing */
@@ -2577,7 +2574,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 if (retval == NULL) {
                     if (tstate->c_tracefunc != NULL
                             && _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f, &trace_info);
+                        call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
                     if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                         gen_status = PYGEN_RETURN;
                     }
@@ -3443,196 +3440,129 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(LOAD_ATTR): {
+            PREDICTED(LOAD_ATTR);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
-
-            PyTypeObject *type = Py_TYPE(owner);
-            PyObject *res;
-            PyObject **dictptr;
-            PyObject *dict;
-            _PyOpCodeOpt_LoadAttr *la;
-
-            OPCACHE_STAT_ATTR_TOTAL();
-
-            OPCACHE_CHECK();
-            if (co_opcache != NULL && PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
-            {
-                if (co_opcache->optimized > 0) {
-                    // Fast path -- cache hit makes LOAD_ATTR ~30% faster.
-                    la = &co_opcache->u.la;
-                    if (la->type == type && la->tp_version_tag == type->tp_version_tag)
-                    {
-                        // Hint >= 0 is a dict index; hint == -1 is a dict miss.
-                        // Hint < -1 is an inverted slot offset: offset is strictly > 0,
-                        // so ~offset is strictly < -1 (assuming 2's complement).
-                        if (la->hint < -1) {
-                            // Even faster path -- slot hint.
-                            Py_ssize_t offset = ~la->hint;
-                            // fprintf(stderr, "Using hint for offset %zd\n", offset);
-                            char *addr = (char *)owner + offset;
-                            res = *(PyObject **)addr;
-                            if (res != NULL) {
-                                Py_INCREF(res);
-                                SET_TOP(res);
-                                Py_DECREF(owner);
-                                DISPATCH();
-                            }
-                            // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
-                            // Don't DEOPT, since the slot is still there.
-                        } else {
-                            // Fast path for dict.
-                            assert(type->tp_dict != NULL);
-                            assert(type->tp_dictoffset > 0);
-
-                            dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-                            dict = *dictptr;
-                            if (dict != NULL && PyDict_CheckExact(dict)) {
-                                Py_ssize_t hint = la->hint;
-                                Py_INCREF(dict);
-                                res = NULL;
-                                assert(!_PyErr_Occurred(tstate));
-                                la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
-                                if (res != NULL) {
-                                    assert(la->hint >= 0);
-                                    if (la->hint == hint && hint >= 0) {
-                                        // Our hint has helped -- cache hit.
-                                        OPCACHE_STAT_ATTR_HIT();
-                                    } else {
-                                        // The hint we provided didn't work.
-                                        // Maybe next time?
-                                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
-                                    }
-
-                                    Py_INCREF(res);
-                                    SET_TOP(res);
-                                    Py_DECREF(owner);
-                                    Py_DECREF(dict);
-                                    DISPATCH();
-                                }
-                                else {
-                                    _PyErr_Clear(tstate);
-                                    // This attribute can be missing sometimes;
-                                    // we don't want to optimize this lookup.
-                                    OPCACHE_DEOPT_LOAD_ATTR();
-                                    Py_DECREF(dict);
-                                }
-                            }
-                            else {
-                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
-                                OPCACHE_DEOPT_LOAD_ATTR();
-                            }
-                        }
-                    }
-                    else {
-                        // The type of the object has either been updated,
-                        // or is different.  Maybe it will stabilize?
-                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
-                    }
-                    OPCACHE_STAT_ATTR_MISS();
-                }
-
-                if (co_opcache != NULL && // co_opcache can be NULL after a DEOPT() call.
-                    type->tp_getattro == PyObject_GenericGetAttr)
-                {
-                    if (type->tp_dict == NULL) {
-                        if (PyType_Ready(type) < 0) {
-                            Py_DECREF(owner);
-                            SET_TOP(NULL);
-                            goto error;
-                        }
-                    }
-                    PyObject *descr = _PyType_Lookup(type, name);
-                    if (descr != NULL) {
-                        // We found an attribute with a data-like descriptor.
-                        PyTypeObject *dtype = Py_TYPE(descr);
-                        if (dtype == &PyMemberDescr_Type) {  // It's a slot
-                            PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
-                            struct PyMemberDef *dmem = member->d_member;
-                            if (dmem->type == T_OBJECT_EX) {
-                                Py_ssize_t offset = dmem->offset;
-                                assert(offset > 0);  // 0 would be confused with dict hint == -1 (miss).
-
-                                if (co_opcache->optimized == 0) {
-                                    // First time we optimize this opcode.
-                                    OPCACHE_STAT_ATTR_OPT();
-                                    co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
-                                    // fprintf(stderr, "Setting hint for %s, offset %zd\n", dmem->name, offset);
-                                }
-
-                                la = &co_opcache->u.la;
-                                la->type = type;
-                                la->tp_version_tag = type->tp_version_tag;
-                                la->hint = ~offset;
-
-                                char *addr = (char *)owner + offset;
-                                res = *(PyObject **)addr;
-                                if (res != NULL) {
-                                    Py_INCREF(res);
-                                    Py_DECREF(owner);
-                                    SET_TOP(res);
-
-                                    DISPATCH();
-                                }
-                                // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
-                            }
-                            // Else it's a slot of a different type.  We don't handle those.
-                        }
-                        // Else it's some other kind of descriptor that we don't handle.
-                        OPCACHE_DEOPT_LOAD_ATTR();
-                    }
-                    else if (type->tp_dictoffset > 0) {
-                        // We found an instance with a __dict__.
-                        dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-                        dict = *dictptr;
-
-                        if (dict != NULL && PyDict_CheckExact(dict)) {
-                            Py_INCREF(dict);
-                            res = NULL;
-                            assert(!_PyErr_Occurred(tstate));
-                            Py_ssize_t hint = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
-                            if (res != NULL) {
-                                Py_INCREF(res);
-                                Py_DECREF(dict);
-                                Py_DECREF(owner);
-                                SET_TOP(res);
-
-                                if (co_opcache->optimized == 0) {
-                                    // First time we optimize this opcode.
-                                    OPCACHE_STAT_ATTR_OPT();
-                                    co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
-                                }
-
-                                la = &co_opcache->u.la;
-                                la->type = type;
-                                la->tp_version_tag = type->tp_version_tag;
-                                assert(hint >= 0);
-                                la->hint = hint;
-
-                                DISPATCH();
-                            }
-                            else {
-                                _PyErr_Clear(tstate);
-                            }
-                            Py_DECREF(dict);
-                        } else {
-                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
-                            OPCACHE_DEOPT_LOAD_ATTR();
-                        }
-                    } else {
-                        // The object's class does not have a tp_dictoffset we can use.
-                        OPCACHE_DEOPT_LOAD_ATTR();
-                    }
-                } else if (type->tp_getattro != PyObject_GenericGetAttr) {
-                    OPCACHE_DEOPT_LOAD_ATTR();
-                }
+            PyObject *res = PyObject_GetAttr(owner, name);
+            if (res == NULL) {
+                goto error;
             }
-
-            // Slow path.
-            res = PyObject_GetAttr(owner, name);
             Py_DECREF(owner);
             SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_ADAPTIVE): {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *owner = TOP();
+                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+                next_instr--;
+                if (_Py_Specialize_LoadAttr(owner, next_instr, name, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(loadattr_deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(LOAD_ATTR);
+            }
+        }
+
+        case TARGET(LOAD_ATTR_SPLIT_KEYS): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, LOAD_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            res = dict->ma_values[cache0->index];
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            STAT_INC(loadattr_hit);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_MODULE): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+            assert(cache0->index < dict->ma_keys->dk_nentries);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
+            res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_WITH_HINT): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, LOAD_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            PyObject *name = GETITEM(names, cache0->original_oparg);
+            uint32_t hint = cache1->dk_version_or_hint;
+            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_ATTR);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+            DEOPT_IF(ep->me_key != name, LOAD_ATTR);
+            res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_SLOT): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            char *addr = (char *)owner + cache0->index;
+            res = *(PyObject **)addr;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
             DISPATCH();
         }
 
@@ -3879,6 +3809,27 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(JUMP_ABSOLUTE): {
             PREDICTED(JUMP_ABSOLUTE);
+            if (oparg < INSTR_OFFSET()) {
+                /* Increment the warmup counter and quicken if warm enough
+                * _Py_Quicken is idempotent so we don't worry about overflow */
+                if (!PyCodeObject_IsWarmedUp(co)) {
+                    PyCodeObject_IncrementWarmup(co);
+                    if (PyCodeObject_IsWarmedUp(co)) {
+                        if (_Py_Quicken(co)) {
+                            goto error;
+                        }
+                        int nexti = INSTR_OFFSET();
+                        first_instr = co->co_firstinstr;
+                        next_instr = first_instr + nexti;
+                    }
+                }
+            }
+            JUMPTO(oparg);
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
+        case TARGET(JUMP_ABSOLUTE_QUICK): {
             JUMPTO(oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
@@ -4044,7 +3995,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     goto error;
                 }
                 else if (tstate->c_tracefunc != NULL) {
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f, &trace_info);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
                 }
                 _PyErr_Clear(tstate);
             }
@@ -4235,7 +4186,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                make it accept the `self` as a first argument.
             */
             meth_found = (PEEK(oparg + 2) != NULL);
-            res = call_function(tstate, &trace_info, &sp, oparg + meth_found, NULL);
+            res = call_function(tstate, &sp, oparg + meth_found, NULL, cframe.use_tracing);
             stack_pointer = sp;
 
             STACK_SHRINK(1 - meth_found);
@@ -4257,7 +4208,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
             sp = stack_pointer;
             meth_found = (PEEK(oparg + 2) != NULL);
-            res = call_function(tstate, &trace_info, &sp, oparg + meth_found, names);
+            res = call_function(tstate, &sp, oparg + meth_found, names, cframe.use_tracing);
             stack_pointer = sp;
 
             STACK_SHRINK(1 - meth_found);
@@ -4273,7 +4224,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PREDICTED(CALL_FUNCTION);
             PyObject **sp, *res;
             sp = stack_pointer;
-            res = call_function(tstate, &trace_info, &sp, oparg, NULL);
+            res = call_function(tstate, &sp, oparg, NULL, cframe.use_tracing);
             stack_pointer = sp;
             PUSH(res);
             if (res == NULL) {
@@ -4291,7 +4242,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             assert(PyTuple_GET_SIZE(names) <= oparg);
             /* We assume without checking that names contains only strings */
             sp = stack_pointer;
-            res = call_function(tstate, &trace_info, &sp, oparg, names);
+            res = call_function(tstate, &sp, oparg, names, cframe.use_tracing);
             stack_pointer = sp;
             PUSH(res);
             Py_DECREF(names);
@@ -4337,7 +4288,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
             assert(PyTuple_CheckExact(callargs));
 
-            result = do_call_core(tstate, &trace_info, func, callargs, kwargs);
+            result = do_call_core(tstate, func, callargs, kwargs, cframe.use_tracing);
             Py_DECREF(func);
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
@@ -4494,6 +4445,22 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
            or goto error. */
         Py_UNREACHABLE();
 
+/* Cache misses */
+
+LOAD_ATTR_miss:
+    {
+        STAT_INC(loadattr_miss);
+        _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive;
+        record_cache_miss(cache);
+        if (too_many_cache_misses(cache)) {
+            next_instr[-1] = _Py_MAKECODEUNIT(LOAD_ATTR_ADAPTIVE, _Py_OPARG(next_instr[-1]));
+            STAT_INC(loadattr_deopt);
+            cache_backoff(cache);
+        }
+        oparg = cache->original_oparg;
+        JUMP_TO_INSTRUCTION(LOAD_ATTR);
+    }
+
 error:
         /* Double-check exception status. */
 #ifdef NDEBUG
@@ -4513,8 +4480,9 @@ error:
             assert(f->f_state == FRAME_EXECUTING);
             f->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
-                           tstate, f, &trace_info);
+                           tstate, f);
         }
+
 exception_unwind:
         f->f_state = FRAME_UNWINDING;
         /* We can't use f->f_lasti here, as RERAISE may have set it */
@@ -4556,9 +4524,6 @@ exception_unwind:
         PUSH(val);
         PUSH(exc);
         JUMPTO(handler);
-        if (trace_info.cframe.use_tracing) {
-            trace_info.instr_prev = INT_MAX;
-        }
         /* Resume normal execution */
         f->f_state = FRAME_EXECUTING;
         f->f_lasti = handler;
@@ -4577,16 +4542,16 @@ exception_unwind:
     f->f_stackdepth = 0;
     f->f_state = FRAME_RAISED;
 exiting:
-    if (trace_info.cframe.use_tracing) {
+    if (cframe.use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
-                                     tstate, f, &trace_info, PyTrace_RETURN, retval)) {
+                                     tstate, f, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
         }
         if (tstate->c_profilefunc) {
             if (call_trace_protected(tstate->c_profilefunc, tstate->c_profileobj,
-                                     tstate, f, &trace_info, PyTrace_RETURN, retval)) {
+                                     tstate, f, PyTrace_RETURN, retval)) {
                 Py_CLEAR(retval);
             }
         }
@@ -4595,8 +4560,8 @@ exiting:
     /* pop frame */
 exit_eval_frame:
     /* Restore previous cframe */
-    tstate->cframe = trace_info.cframe.previous;
-    tstate->cframe->use_tracing = trace_info.cframe.use_tracing;
+    tstate->cframe = cframe.previous;
+    tstate->cframe->use_tracing = cframe.use_tracing;
 
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
@@ -5535,8 +5500,7 @@ prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self,
                PyThreadState *tstate,
-               PyFrameObject *f,
-               PyTraceInfo *trace_info)
+               PyFrameObject *f)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
@@ -5552,7 +5516,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
         _PyErr_Restore(tstate, type, value, orig_traceback);
         return;
     }
-    err = call_trace(func, self, tstate, f, trace_info, PyTrace_EXCEPTION, arg);
+    err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
     Py_DECREF(arg);
     if (err == 0) {
         _PyErr_Restore(tstate, type, value, orig_traceback);
@@ -5567,13 +5531,12 @@ call_exc_trace(Py_tracefunc func, PyObject *self,
 static int
 call_trace_protected(Py_tracefunc func, PyObject *obj,
                      PyThreadState *tstate, PyFrameObject *frame,
-                     PyTraceInfo *trace_info,
                      int what, PyObject *arg)
 {
     PyObject *type, *value, *traceback;
     int err;
     _PyErr_Fetch(tstate, &type, &value, &traceback);
-    err = call_trace(func, obj, tstate, frame, trace_info, what, arg);
+    err = call_trace(func, obj, tstate, frame, what, arg);
     if (err == 0)
     {
         _PyErr_Restore(tstate, type, value, traceback);
@@ -5592,7 +5555,6 @@ initialize_trace_info(PyTraceInfo *trace_info, PyFrameObject *frame)
 {
     if (trace_info->code != frame->f_code) {
         trace_info->code = frame->f_code;
-        trace_info->instr_prev = -1;
         _PyCode_InitAddressRange(frame->f_code, &trace_info->bounds);
     }
 }
@@ -5600,7 +5562,6 @@ initialize_trace_info(PyTraceInfo *trace_info, PyFrameObject *frame)
 static int
 call_trace(Py_tracefunc func, PyObject *obj,
            PyThreadState *tstate, PyFrameObject *frame,
-           PyTraceInfo *trace_info,
            int what, PyObject *arg)
 {
     int result;
@@ -5612,8 +5573,8 @@ call_trace(Py_tracefunc func, PyObject *obj,
         frame->f_lineno = frame->f_code->co_firstlineno;
     }
     else {
-        initialize_trace_info(trace_info, frame);
-        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
+        initialize_trace_info(&tstate->trace_info, frame);
+        frame->f_lineno = _PyCode_CheckLineNumber(frame->f_lasti*2, &tstate->trace_info.bounds);
     }
     result = func(obj, frame, what, arg);
     frame->f_lineno = 0;
@@ -5643,8 +5604,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 /* See Objects/lnotab_notes.txt for a description of how tracing works. */
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
-                      PyThreadState *tstate, PyFrameObject *frame,
-                      PyTraceInfo *trace_info)
+                      PyThreadState *tstate, PyFrameObject *frame, int instr_prev)
 {
     int result = 0;
 
@@ -5652,22 +5612,21 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        represents a jump backwards, update the frame's line number and
        then call the trace function if we're tracing source lines.
     */
-    initialize_trace_info(trace_info, frame);
-    int lastline = trace_info->bounds.ar_line;
-    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &trace_info->bounds);
+    initialize_trace_info(&tstate->trace_info, frame);
+    int lastline = _PyCode_CheckLineNumber(instr_prev*2, &tstate->trace_info.bounds);
+    int line = _PyCode_CheckLineNumber(frame->f_lasti*2, &tstate->trace_info.bounds);
     if (line != -1 && frame->f_trace_lines) {
         /* Trace backward edges or first instruction of a new line */
-        if (frame->f_lasti < trace_info->instr_prev ||
-            (line != lastline && frame->f_lasti*2 == trace_info->bounds.ar_start))
+        if (frame->f_lasti < instr_prev ||
+            (line != lastline && frame->f_lasti*2 == tstate->trace_info.bounds.ar_start))
         {
-            result = call_trace(func, obj, tstate, frame, trace_info, PyTrace_LINE, Py_None);
+            result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
         }
     }
     /* Always emit an opcode event if we're tracing all opcodes. */
     if (frame->f_trace_opcodes) {
-        result = call_trace(func, obj, tstate, frame, trace_info, PyTrace_OPCODE, Py_None);
+        result = call_trace(func, obj, tstate, frame, PyTrace_OPCODE, Py_None);
     }
-    trace_info->instr_prev = frame->f_lasti;
     return result;
 }
 
@@ -5934,9 +5893,9 @@ PyEval_GetFuncDesc(PyObject *func)
 }
 
 #define C_TRACE(x, call) \
-if (trace_info->cframe.use_tracing && tstate->c_profilefunc) { \
+if (use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->frame, trace_info, \
+        tstate, tstate->frame, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -5946,13 +5905,13 @@ if (trace_info->cframe.use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, trace_info, \
+                    tstate, tstate->frame, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, trace_info, \
+                    tstate, tstate->frame, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
@@ -5967,11 +5926,11 @@ if (trace_info->cframe.use_tracing && tstate->c_profilefunc) { \
 
 static PyObject *
 trace_call_function(PyThreadState *tstate,
-                    PyTraceInfo *trace_info,
                     PyObject *func,
                     PyObject **args, Py_ssize_t nargs,
                     PyObject *kwnames)
 {
+    int use_tracing = 1;
     PyObject *x;
     if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
@@ -6003,10 +5962,10 @@ trace_call_function(PyThreadState *tstate,
    to reduce the stack consumption. */
 Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
 call_function(PyThreadState *tstate,
-              PyTraceInfo *trace_info,
               PyObject ***pp_stack,
               Py_ssize_t oparg,
-              PyObject *kwnames)
+              PyObject *kwnames,
+              int use_tracing)
 {
     PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *func = *pfunc;
@@ -6015,8 +5974,8 @@ call_function(PyThreadState *tstate,
     Py_ssize_t nargs = oparg - nkwargs;
     PyObject **stack = (*pp_stack) - nargs - nkwargs;
 
-    if (trace_info->cframe.use_tracing) {
-        x = trace_call_function(tstate, trace_info, func, stack, nargs, kwnames);
+    if (use_tracing) {
+        x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
     else {
         x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
@@ -6035,10 +5994,11 @@ call_function(PyThreadState *tstate,
 
 static PyObject *
 do_call_core(PyThreadState *tstate,
-             PyTraceInfo *trace_info,
              PyObject *func,
              PyObject *callargs,
-             PyObject *kwdict)
+             PyObject *kwdict,
+             int use_tracing
+            )
 {
     PyObject *result;
 
@@ -6048,7 +6008,7 @@ do_call_core(PyThreadState *tstate,
     }
     else if (Py_IS_TYPE(func, &PyMethodDescr_Type)) {
         Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
-        if (nargs > 0 && trace_info->cframe.use_tracing) {
+        if (nargs > 0 && use_tracing) {
             /* We need to create a temporary bound method as argument
                for profiling.
 
@@ -6607,7 +6567,8 @@ dtrace_function_return(PyFrameObject *f)
 /* DTrace equivalent of maybe_call_line_trace. */
 static void
 maybe_dtrace_line(PyFrameObject *frame,
-                  PyTraceInfo *trace_info)
+                  PyTraceInfo *trace_info,
+                  int instr_prev)
 {
     const char *co_filename, *co_name;
 
@@ -6619,7 +6580,7 @@ maybe_dtrace_line(PyFrameObject *frame,
     /* If the last instruction falls at the start of a line or if
        it represents a jump backwards, update the frame's line
        number and call the trace function. */
-    if (line != frame->f_lineno || frame->f_lasti < trace_info->instr_prev) {
+    if (line != frame->f_lineno || frame->f_lasti < instr_prev) {
         if (line != -1) {
             frame->f_lineno = line;
             co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
@@ -6631,7 +6592,6 @@ maybe_dtrace_line(PyFrameObject *frame,
             PyDTrace_LINE(co_filename, co_name, line);
         }
     }
-    trace_info->instr_prev = frame->f_lasti;
 }
 
 
