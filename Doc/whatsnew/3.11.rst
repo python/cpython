@@ -93,6 +93,13 @@ Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
 string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
 
 
+math
+----
+
+Add :func:`math.cbrt()`: return the cube root of x.
+(Contributed by Ajith Ramachandran in :issue:`44357`.)
+
+
 Removed
 =======
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without
