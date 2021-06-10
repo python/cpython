@@ -1612,7 +1612,7 @@ class WinPage(Frame):
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
         self.indent_spaces = tracers.add(
-                IntVar(self), ('main', 'Indent', 'num-spaces'))
+                StringVar(self), ('main', 'Indent', 'num-spaces'))
         self.cursor_blink = tracers.add(
                 BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
         self.autocomplete_wait = tracers.add(
@@ -1659,11 +1659,11 @@ class WinPage(Frame):
         try:
             self.indent_chooser = Spinbox(
                     frame_cursor, textvariable=self.indent_spaces,
-                    state="readonly", from_=1, to=11, width=2)
+                    from_=1, to=11, width=2)
         except TclError:
             self.indent_chooser = Combobox(
                     frame_cursor, textvariable=self.indent_spaces,
-                    state="readonly", values=list(range(1,11)), width=2)
+                    state="readonly", values=list(range(1,11)), width=3)
         cursor_blink_title = Label(frame_cursor, text='Cursor Blink')
         self.cursor_blink_bool = Checkbutton(frame_cursor, text="Cursor blink",
                                              variable=self.cursor_blink)

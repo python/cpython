@@ -1232,7 +1232,7 @@ class WinPageTest(unittest.TestCase):
     def test_indent_spaces(self):
         d = self.page
         d.indent_chooser.set(6)
-        self.assertEqual(d.indent_spaces.get(), 6)
+        self.assertEqual(d.indent_spaces.get(), '6')
         self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
 
     def test_cursor_blink(self):
