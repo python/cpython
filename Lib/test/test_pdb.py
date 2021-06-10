@@ -1771,6 +1771,18 @@ def bœr():
             '(Pdb) ',
         ])
 
+    def test_issue34266(self):
+        '''do_run handles exceptions from parsing its arg'''
+        commands = "\n".join([
+            'run \\',
+            'q',
+        ])
+        stdout, _ = self.run_pdb_script('pass', commands + '\n')
+        self.assertEqual(stdout.splitlines()[1:], [
+            '-> pass',
+            '(Pdb) *** Cannot run: \\',
+            '(Pdb) ',
+        ])
 
     def test_issue42384(self):
         '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''
