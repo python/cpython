@@ -16,6 +16,7 @@
 #include "pycore_code.h"          // _PyCode_InitOpcache()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_moduleobject.h"
 #include "pycore_pyerrors.h"      // _PyErr_Fetch()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
@@ -24,6 +25,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 #include "code.h"
+#include "pycore_dict.h"
 #include "dictobject.h"
 #include "frameobject.h"
 #include "pycore_frame.h"
@@ -1554,7 +1556,14 @@ eval_frame_handle_pending(PyThreadState *tstate)
 #define OPCACHE_STAT_ATTR_DEOPT()
 #define OPCACHE_STAT_ATTR_TOTAL()
 
+#define JUMP_TO_INSTRUCTION(op) goto PREDICT_ID(op)
+
+#define GET_CACHE() \
+    _GetSpecializedCacheEntryForInstruction(first_instr, INSTR_OFFSET(), oparg)
+
 #endif
+
+#define DEOPT_IF(cond, instname) if (cond) { goto instname ## _miss; }
 
 #define GLOBALS() specials[FRAME_SPECIALS_GLOBALS_OFFSET]
 #define BUILTINS() specials[FRAME_SPECIALS_BUILTINS_OFFSET]
@@ -1574,7 +1583,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     int lastopcode = 0;
 #endif
     PyObject **stack_pointer;  /* Next free slot in value stack */
-    const _Py_CODEUNIT *next_instr;
+    _Py_CODEUNIT *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     PyObject **localsplus, **specials;
@@ -1582,7 +1591,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     _Py_atomic_int * const eval_breaker = &tstate->interp->ceval.eval_breaker;
     PyCodeObject *co;
 
-    const _Py_CODEUNIT *first_instr;
+    _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
     _PyOpcache *co_opcache;
@@ -3443,196 +3452,129 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(LOAD_ATTR): {
+            PREDICTED(LOAD_ATTR);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
-
-            PyTypeObject *type = Py_TYPE(owner);
-            PyObject *res;
-            PyObject **dictptr;
-            PyObject *dict;
-            _PyOpCodeOpt_LoadAttr *la;
-
-            OPCACHE_STAT_ATTR_TOTAL();
-
-            OPCACHE_CHECK();
-            if (co_opcache != NULL && PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
-            {
-                if (co_opcache->optimized > 0) {
-                    // Fast path -- cache hit makes LOAD_ATTR ~30% faster.
-                    la = &co_opcache->u.la;
-                    if (la->type == type && la->tp_version_tag == type->tp_version_tag)
-                    {
-                        // Hint >= 0 is a dict index; hint == -1 is a dict miss.
-                        // Hint < -1 is an inverted slot offset: offset is strictly > 0,
-                        // so ~offset is strictly < -1 (assuming 2's complement).
-                        if (la->hint < -1) {
-                            // Even faster path -- slot hint.
-                            Py_ssize_t offset = ~la->hint;
-                            // fprintf(stderr, "Using hint for offset %zd\n", offset);
-                            char *addr = (char *)owner + offset;
-                            res = *(PyObject **)addr;
-                            if (res != NULL) {
-                                Py_INCREF(res);
-                                SET_TOP(res);
-                                Py_DECREF(owner);
-                                DISPATCH();
-                            }
-                            // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
-                            // Don't DEOPT, since the slot is still there.
-                        } else {
-                            // Fast path for dict.
-                            assert(type->tp_dict != NULL);
-                            assert(type->tp_dictoffset > 0);
-
-                            dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-                            dict = *dictptr;
-                            if (dict != NULL && PyDict_CheckExact(dict)) {
-                                Py_ssize_t hint = la->hint;
-                                Py_INCREF(dict);
-                                res = NULL;
-                                assert(!_PyErr_Occurred(tstate));
-                                la->hint = _PyDict_GetItemHint((PyDictObject*)dict, name, hint, &res);
-                                if (res != NULL) {
-                                    assert(la->hint >= 0);
-                                    if (la->hint == hint && hint >= 0) {
-                                        // Our hint has helped -- cache hit.
-                                        OPCACHE_STAT_ATTR_HIT();
-                                    } else {
-                                        // The hint we provided didn't work.
-                                        // Maybe next time?
-                                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
-                                    }
-
-                                    Py_INCREF(res);
-                                    SET_TOP(res);
-                                    Py_DECREF(owner);
-                                    Py_DECREF(dict);
-                                    DISPATCH();
-                                }
-                                else {
-                                    _PyErr_Clear(tstate);
-                                    // This attribute can be missing sometimes;
-                                    // we don't want to optimize this lookup.
-                                    OPCACHE_DEOPT_LOAD_ATTR();
-                                    Py_DECREF(dict);
-                                }
-                            }
-                            else {
-                                // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
-                                OPCACHE_DEOPT_LOAD_ATTR();
-                            }
-                        }
-                    }
-                    else {
-                        // The type of the object has either been updated,
-                        // or is different.  Maybe it will stabilize?
-                        OPCACHE_MAYBE_DEOPT_LOAD_ATTR();
-                    }
-                    OPCACHE_STAT_ATTR_MISS();
-                }
-
-                if (co_opcache != NULL && // co_opcache can be NULL after a DEOPT() call.
-                    type->tp_getattro == PyObject_GenericGetAttr)
-                {
-                    if (type->tp_dict == NULL) {
-                        if (PyType_Ready(type) < 0) {
-                            Py_DECREF(owner);
-                            SET_TOP(NULL);
-                            goto error;
-                        }
-                    }
-                    PyObject *descr = _PyType_Lookup(type, name);
-                    if (descr != NULL) {
-                        // We found an attribute with a data-like descriptor.
-                        PyTypeObject *dtype = Py_TYPE(descr);
-                        if (dtype == &PyMemberDescr_Type) {  // It's a slot
-                            PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
-                            struct PyMemberDef *dmem = member->d_member;
-                            if (dmem->type == T_OBJECT_EX) {
-                                Py_ssize_t offset = dmem->offset;
-                                assert(offset > 0);  // 0 would be confused with dict hint == -1 (miss).
-
-                                if (co_opcache->optimized == 0) {
-                                    // First time we optimize this opcode.
-                                    OPCACHE_STAT_ATTR_OPT();
-                                    co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
-                                    // fprintf(stderr, "Setting hint for %s, offset %zd\n", dmem->name, offset);
-                                }
-
-                                la = &co_opcache->u.la;
-                                la->type = type;
-                                la->tp_version_tag = type->tp_version_tag;
-                                la->hint = ~offset;
-
-                                char *addr = (char *)owner + offset;
-                                res = *(PyObject **)addr;
-                                if (res != NULL) {
-                                    Py_INCREF(res);
-                                    Py_DECREF(owner);
-                                    SET_TOP(res);
-
-                                    DISPATCH();
-                                }
-                                // Else slot is NULL.  Fall through to slow path to raise AttributeError(name).
-                            }
-                            // Else it's a slot of a different type.  We don't handle those.
-                        }
-                        // Else it's some other kind of descriptor that we don't handle.
-                        OPCACHE_DEOPT_LOAD_ATTR();
-                    }
-                    else if (type->tp_dictoffset > 0) {
-                        // We found an instance with a __dict__.
-                        dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-                        dict = *dictptr;
-
-                        if (dict != NULL && PyDict_CheckExact(dict)) {
-                            Py_INCREF(dict);
-                            res = NULL;
-                            assert(!_PyErr_Occurred(tstate));
-                            Py_ssize_t hint = _PyDict_GetItemHint((PyDictObject*)dict, name, -1, &res);
-                            if (res != NULL) {
-                                Py_INCREF(res);
-                                Py_DECREF(dict);
-                                Py_DECREF(owner);
-                                SET_TOP(res);
-
-                                if (co_opcache->optimized == 0) {
-                                    // First time we optimize this opcode.
-                                    OPCACHE_STAT_ATTR_OPT();
-                                    co_opcache->optimized = OPCODE_CACHE_MAX_TRIES;
-                                }
-
-                                la = &co_opcache->u.la;
-                                la->type = type;
-                                la->tp_version_tag = type->tp_version_tag;
-                                assert(hint >= 0);
-                                la->hint = hint;
-
-                                DISPATCH();
-                            }
-                            else {
-                                _PyErr_Clear(tstate);
-                            }
-                            Py_DECREF(dict);
-                        } else {
-                            // There is no dict, or __dict__ doesn't satisfy PyDict_CheckExact.
-                            OPCACHE_DEOPT_LOAD_ATTR();
-                        }
-                    } else {
-                        // The object's class does not have a tp_dictoffset we can use.
-                        OPCACHE_DEOPT_LOAD_ATTR();
-                    }
-                } else if (type->tp_getattro != PyObject_GenericGetAttr) {
-                    OPCACHE_DEOPT_LOAD_ATTR();
-                }
+            PyObject *res = PyObject_GetAttr(owner, name);
+            if (res == NULL) {
+                goto error;
             }
-
-            // Slow path.
-            res = PyObject_GetAttr(owner, name);
             Py_DECREF(owner);
             SET_TOP(res);
-            if (res == NULL)
-                goto error;
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_ADAPTIVE): {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *owner = TOP();
+                PyObject *name = GETITEM(names, cache->adaptive.original_oparg);
+                next_instr--;
+                if (_Py_Specialize_LoadAttr(owner, next_instr, name, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(loadattr_deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(LOAD_ATTR);
+            }
+        }
+
+        case TARGET(LOAD_ATTR_SPLIT_KEYS): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, LOAD_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            res = dict->ma_values[cache0->index];
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            STAT_INC(loadattr_hit);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_MODULE): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+            assert(cache0->index < dict->ma_keys->dk_nentries);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
+            res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_WITH_HINT): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            assert(tp->tp_dictoffset > 0);
+            PyDictObject *dict = *(PyDictObject **)(((char *)owner) + tp->tp_dictoffset);
+            DEOPT_IF(dict == NULL, LOAD_ATTR);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            PyObject *name = GETITEM(names, cache0->original_oparg);
+            uint32_t hint = cache1->dk_version_or_hint;
+            DEOPT_IF(hint >= dict->ma_keys->dk_nentries, LOAD_ATTR);
+            PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+            DEOPT_IF(ep->me_key != name, LOAD_ATTR);
+            res = ep->me_value;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
+            DISPATCH();
+        }
+
+        case TARGET(LOAD_ATTR_SLOT): {
+            PyObject *owner = TOP();
+            PyObject *res;
+            PyTypeObject *tp = Py_TYPE(owner);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
+            assert(cache1->tp_version != 0);
+            DEOPT_IF(tp->tp_version_tag != cache1->tp_version, LOAD_ATTR);
+            char *addr = (char *)owner + cache0->index;
+            res = *(PyObject **)addr;
+            DEOPT_IF(res == NULL, LOAD_ATTR);
+            STAT_INC(loadattr_hit);
+            record_cache_hit(cache0);
+            Py_INCREF(res);
+            SET_TOP(res);
+            Py_DECREF(owner);
             DISPATCH();
         }
 
@@ -3879,6 +3821,27 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(JUMP_ABSOLUTE): {
             PREDICTED(JUMP_ABSOLUTE);
+            if (oparg < INSTR_OFFSET()) {
+                /* Increment the warmup counter and quicken if warm enough
+                * _Py_Quicken is idempotent so we don't worry about overflow */
+                if (!PyCodeObject_IsWarmedUp(co)) {
+                    PyCodeObject_IncrementWarmup(co);
+                    if (PyCodeObject_IsWarmedUp(co)) {
+                        if (_Py_Quicken(co)) {
+                            goto error;
+                        }
+                        int nexti = INSTR_OFFSET();
+                        first_instr = co->co_firstinstr;
+                        next_instr = first_instr + nexti;
+                    }
+                }
+            }
+            JUMPTO(oparg);
+            CHECK_EVAL_BREAKER();
+            DISPATCH();
+        }
+
+        case TARGET(JUMP_ABSOLUTE_QUICK): {
             JUMPTO(oparg);
             CHECK_EVAL_BREAKER();
             DISPATCH();
@@ -4494,6 +4457,22 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
            or goto error. */
         Py_UNREACHABLE();
 
+/* Cache misses */
+
+LOAD_ATTR_miss:
+    {
+        STAT_INC(loadattr_miss);
+        _PyAdaptiveEntry *cache = &GET_CACHE()->adaptive;
+        record_cache_miss(cache);
+        if (too_many_cache_misses(cache)) {
+            next_instr[-1] = _Py_MAKECODEUNIT(LOAD_ATTR_ADAPTIVE, _Py_OPARG(next_instr[-1]));
+            STAT_INC(loadattr_deopt);
+            cache_backoff(cache);
+        }
+        oparg = cache->original_oparg;
+        JUMP_TO_INSTRUCTION(LOAD_ATTR);
+    }
+
 error:
         /* Double-check exception status. */
 #ifdef NDEBUG
@@ -4515,6 +4494,7 @@ error:
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, f, &trace_info);
         }
+
 exception_unwind:
         f->f_state = FRAME_UNWINDING;
         /* We can't use f->f_lasti here, as RERAISE may have set it */
