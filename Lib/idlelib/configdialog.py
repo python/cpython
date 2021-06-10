@@ -172,26 +172,15 @@ class ConfigDialog(Toplevel):
         return outer
 
     def ok(self):
-        """Apply config changes, then dismiss dialog.
-
-        Methods:
-            apply
-            destroy: inherited
-        """
+        """Apply config changes, then dismiss dialog."""
         self.apply()
         self.destroy()
 
     def apply(self):
-        """Apply config changes and leave dialog open.
-
-        Methods:
-            deactivate_current_config
-            save_all_changed_extensions
-            activate_config_changes
-        """
+        """Apply config changes and leave dialog open."""
         self.deactivate_current_config()
         changes.save_all()
-        self.save_all_changed_extensions()
+        self.extpage.save_all_changed_extensions()
         self.activate_config_changes()
 
     def cancel(self):
@@ -303,7 +292,6 @@ class FontPage(Frame):
         self.highlight_sample = highpage.highlight_sample
         self.create_page_font()
         self.load_font_cfg()
-        self.load_tab_cfg()
 
     def create_page_font(self):
         """Return frame of widgets for Font tab.
@@ -342,23 +330,16 @@ class FontPage(Frame):
                     (*)bold_toggle: Checkbutton - font_bold
             frame_sample: LabelFrame
                 (*)font_sample: Label
-            frame_indent: LabelFrame
-                    indent_title: Label
-                    (*)indent_chooser: Spinbox (Combobox on Tk < 8.5.9) - space_num
         """
         self.font_name = tracers.add(StringVar(self), self.var_changed_font)
         self.font_size = tracers.add(StringVar(self), self.var_changed_font)
         self.font_bold = tracers.add(BooleanVar(self), self.var_changed_font)
-        self.space_num = tracers.add(IntVar(self), self.var_changed_space_num)
 
         # Define frames and widgets.
-        frame_font = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Shell/Editor Font ')
-        frame_sample = LabelFrame(
-                self, borderwidth=2, relief=GROOVE,
-                text=' Font Sample (Editable) ')
-        frame_indent = LabelFrame(
-                self, borderwidth=2, relief=GROOVE, text=' Indentation Width ')
+        frame_font = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                text=' Shell/Editor Font ')
+        frame_sample = LabelFrame(self, borderwidth=2, relief=GROOVE,
+                                  text=' Font Sample (Editable) ')
         # frame_font.
         frame_font_name = Frame(frame_font)
         frame_font_param = Frame(frame_font)
@@ -382,18 +363,6 @@ class FontPage(Frame):
         self.font_sample = font_sample_frame.text
         self.font_sample.config(wrap=NONE, width=1, height=1)
         self.font_sample.insert(END, font_sample_text)
-        # frame_indent.
-        indent_title = Label(
-                frame_indent, justify=LEFT,
-                text='Python Standard: 4 Spaces!')
-        try:
-            self.indent_chooser = Spinbox(
-                    frame_indent, textvariable=self.space_num,
-                    state="readonly", from_=2, to=16)
-        except TclError:
-            self.indent_chooser = Combobox(
-                    frame_indent, textvariable=self.space_num,
-                    state="readonly", values=list(range(2,17)))
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
@@ -401,7 +370,6 @@ class FontPage(Frame):
         frame_font.grid(row=0, column=0, padx=5, pady=5)
         frame_sample.grid(row=0, column=1, rowspan=3, padx=5, pady=5,
                           sticky='nsew')
-        frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
         frame_font_name.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_font_param.pack(side=TOP, padx=5, pady=5, fill=X)
@@ -413,9 +381,6 @@ class FontPage(Frame):
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         # frame_sample.
         font_sample_frame.pack(expand=TRUE, fill=BOTH)
-        # frame_indent.
-        indent_title.pack(side=TOP, anchor=W, padx=5)
-        self.indent_chooser.pack(side=TOP, padx=5, fill=X)
 
     def load_font_cfg(self):
         """Load current configuration settings for the font options.
@@ -488,23 +453,6 @@ class FontPage(Frame):
         new_font = (font_name, self.font_size.get(), font_weight)
         self.font_sample['font'] = new_font
         self.highlight_sample['font'] = new_font
-
-    def load_tab_cfg(self):
-        """Load current configuration settings for the tab options.
-
-        Attributes updated:
-            space_num: Set to value from idleConf.
-        """
-        # Set indent sizes.
-        space_num = idleConf.GetOption(
-            'main', 'Indent', 'num-spaces', default=4, type='int')
-        self.space_num.set(space_num)
-
-    def var_changed_space_num(self, *params):
-        "Store change to indentation size."
-        value = self.space_num.get()
-        changes.add_option('main', 'Indent', 'num-spaces', value)
-        self.after_idle(self.indent_chooser.selection_clear)
 
 
 class HighPage(Frame):
@@ -1642,7 +1590,6 @@ class WinPage(Frame):
                     indent_title: Label
                     indent_chooser: Spinbox (Combobox < 8.5.9) > indent_spaces
                     blink_on: Checkbutton > cursor_blink
-
                 frame_autocomplete: Frame
                     auto_wait_title: Label
                     auto_wait_int: Entry > autocomplete_wait
@@ -1664,6 +1611,8 @@ class WinPage(Frame):
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.indent_spaces = tracers.add(
+                IntVar(self), ('main', 'Indent', 'num-spaces'))
         self.cursor_blink = tracers.add(
                 BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
         self.autocomplete_wait = tracers.add(
@@ -1704,10 +1653,20 @@ class WinPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
-        frame_cursor_blink = Frame(frame_window, borderwidth=0)
-        cursor_blink_title = Label(frame_cursor_blink, text='Cursor Blink')
-        self.cursor_blink_bool = Checkbutton(frame_cursor_blink,
-                variable=self.cursor_blink, width=1)
+        frame_cursor = Frame(frame_window, borderwidth=0)
+        indent_title = Label(frame_cursor,
+                             text='Indent spaces (4 is standard)')
+##        try:
+##            self.indent_chooser = Spinbox(
+##                    frame_cursor, textvariable=self.indent_spaces,
+##                    state="readonly", from_=1, to=11, width=2)
+##        except TclError:
+        self.indent_chooser = Combobox(
+                frame_cursor, textvariable=self.indent_spaces,
+                state="readonly", values=list(range(1,11)), width=2)
+        cursor_blink_title = Label(frame_cursor, text='Cursor Blink')
+        self.cursor_blink_bool = Checkbutton(frame_cursor, text="Cursor blink",
+                                             variable=self.cursor_blink)
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
@@ -1752,10 +1711,11 @@ class WinPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
-        # frame_cursor_blink.
-        frame_cursor_blink.pack(side=TOP, padx=5, pady=0, fill=X)
-        cursor_blink_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.cursor_blink_bool.pack(side=LEFT, padx=5, pady=5)
+        # frame_cursor.
+        frame_cursor.pack(side=TOP, padx=5, pady=0, fill=X)
+        indent_title.pack(side=LEFT, anchor=W, padx=5)
+        self.indent_chooser.pack(side=LEFT, anchor=W, padx=10)
+        self.cursor_blink_bool.pack(side=RIGHT, anchor=E, padx=15, pady=5)
         # frame_autocomplete.
         frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
         auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -1781,6 +1741,8 @@ class WinPage(Frame):
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
+        self.indent_spaces.set(idleConf.GetOption(
+                'main', 'Indent', 'num-spaces', type='int'))
         self.cursor_blink.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'cursor-blink', type='bool'))
         self.autocomplete_wait.set(idleConf.GetOption(
