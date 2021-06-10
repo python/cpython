@@ -19,17 +19,19 @@
 
 static const struct _frozen _PyImport_FrozenModules[] = {
     /* importlib */
-    {"_frozen_importlib", _Py_M__importlib_bootstrap,
-        (int)sizeof(_Py_M__importlib_bootstrap)},
-    {"_frozen_importlib_external", _Py_M__importlib_bootstrap_external,
-        (int)sizeof(_Py_M__importlib_bootstrap_external)},
+    {"_frozen_importlib", _Py_M__importlib__bootstrap,
+        (int)sizeof(_Py_M__importlib__bootstrap)},
+    {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external,
+        (int)sizeof(_Py_M__importlib__bootstrap_external)},
     {"zipimport", _Py_M__zipimport,
         (int)sizeof(_Py_M__zipimport)},
+
     /* Test module */
     {"__hello__", _Py_M__hello, SIZE},
     /* Test package (negative size indicates package-ness) */
     {"__phello__", _Py_M__hello, -SIZE},
     {"__phello__.spam", _Py_M__hello, SIZE},
+
     {0, 0, 0} /* sentinel */
 };
 
