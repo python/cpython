@@ -106,7 +106,6 @@ Removed
   an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
 
 
-
 Optimizations
 =============
 
