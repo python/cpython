@@ -981,7 +981,9 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyObject *value = fast[i];
         if (f->f_state != FRAME_CLEARED) {
             int cellargoffset = CO_CELL_NOT_AN_ARG;
-            if (co->co_cell2arg != NULL) {
+            if (kind & CO_FAST_CELL && co->co_cell2arg != NULL) {
+                assert(i - co->co_nlocals >= 0);
+                assert(i - co->co_nlocals < co->co_ncellvars);
                 cellargoffset = co->co_cell2arg[i - co->co_nlocals];
             }
             if (kind & CO_FAST_FREE) {
@@ -1093,7 +1095,8 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         PyObject *oldvalue = fast[i];
         int cellargoffset = CO_CELL_NOT_AN_ARG;
         if (kind & CO_FAST_CELL && co->co_cell2arg != NULL) {
-            assert(i >= co->co_nlocals);
+            assert(i - co->co_nlocals >= 0);
+            assert(i - co->co_nlocals < co->co_ncellvars);
             cellargoffset = co->co_cell2arg[i - co->co_nlocals];
         }
         PyObject *cell = NULL;
