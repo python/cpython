@@ -30,18 +30,20 @@ class WindowsLoadTracker():
 
         self._values = []
         self._load = None
-        self._event = _overlapped.CreateEvent(None, True, False, None)
+        self._running = _overlapped.CreateEvent(None, True, False, None)
+        self._stopped = _overlapped.CreateEvent(None, True, False, None)
 
         _thread.start_new_thread(self._update_load, (), {})
 
     def _update_load(self,
                     # localize module access to prevent shutdown errors
                      _wait=_winapi.WaitForSingleObject,
-                     _close=_winapi.CloseHandle):
-        while _wait(self._event, 1000):
+                     _signal=_overlapped.SetEvent):
+        # run until signaled to stop
+        while _wait(self._running, 1000):
             self._calculate_load()
-        _close(self._event)
-        self._event = None
+        # notify stopped
+        _signal(self._stopped)
 
     def _calculate_load(self,
                         # localize module access to prevent shutdown errors
@@ -105,9 +107,18 @@ class WindowsLoadTracker():
 
     def __del__(self,
                 # localize module access to prevent shutdown errors
+                _wait=_winapi.WaitForSingleObject,
+                _close=_winapi.CloseHandle,
                 _signal=_overlapped.SetEvent):
-        if self._event is not None:
-            _signal(self._event)
+        if self._running is not None:
+            # tell the update thread to quit
+            _signal(self._running)
+            # wait for the update thread to signal done
+            _wait(self._stopped, -1)
+            # cleanup events
+            _close(self._running)
+            _close(self._stopped)
+            self._running = self._stopped = None
 
     def getloadavg(self):
         return self._load
