@@ -509,9 +509,6 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
     """Recursively copy a directory tree and return the destination directory.
 
-    If dirs_exist_ok is False (the default), a FileExistsError is
-    raised if dst already exists.
-
     If exception(s) occur, an Error is raised with a list of reasons.
 
     If the optional symlinks flag is true, symbolic links in the
@@ -541,6 +538,11 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     to copy each file. It will be called with the source path and the
     destination path as arguments. By default, copy2() is used, but any
     function that supports the same signature (like copy()) can be used.
+
+    If dirs_exist_ok is False (the default), a FileExistsError is
+    raised if dst already exists. Furthermore, any parent directory in the
+    path to dst will be created if they do not exist when the dirs_exist_ok
+    flag is True.
 
     """
     sys.audit("shutil.copytree", src, dst)
