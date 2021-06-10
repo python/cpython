@@ -2,9 +2,16 @@
 #  error "this header file must not be included directly"
 #endif
 
+/* Each instruction in a code object is a fixed-width value,
+ * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
+ * opcode allows for larger values but the current limit is 3 uses
+ * of EXTENDED_ARG (see Python/wordcode_helpers.h), for a maximum
+ * 32-bit value.  This aligns with the note in Python/compile.c
+ * (compiler_addop_i_line) indicating that the max oparg value is
+ * 2**32 - 1, rather than INT_MAX.
+ */
+
 typedef uint16_t _Py_CODEUNIT;
-// Each oparg must fit in the second half of _Py_CODEUNIT, hence 8 bits.
-#define _Py_MAX_OPARG 255
 
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)

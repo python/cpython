@@ -1185,6 +1185,8 @@ stack_effect(int opcode, int oparg, int jump)
                 return -1;
 
         /* Closures */
+        case MAKE_CELL:
+            return 0;
         case LOAD_CLOSURE:
             return 1;
         case LOAD_DEREF:
@@ -7374,15 +7376,47 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 static int
 ensure_exits_have_lineno(struct compiler *c);
 
+static inline int
+insert_instruction(basicblock *block, int pos, struct instr *instr) {
+    if (compiler_next_instr(block) < 0) {
+        return -1;
+    }
+    for (int i = block->b_iused-1; i > pos; i--) {
+        block->b_instr[i] = block->b_instr[i-1];
+    }
+    block->b_instr[pos] = *instr;
+    return 0;
+}
+
 static int
-insert_generator_prefix(struct compiler *c, basicblock *entryblock) {
+insert_prefix_instructions(struct compiler *c, basicblock *entryblock) {
 
     int flags = compute_code_flags(c);
     if (flags < 0) {
         return -1;
     }
-    int kind;
+
+    /* Set up cells for any variable that escapes, to be put in a closure. */
+    PyObject *k, *v;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
+        assert(PyLong_AS_LONG(v) < INT_MAX);
+        int cellindex = (int)PyLong_AS_LONG(v);
+        struct instr make_cell = {
+            .i_opcode = MAKE_CELL,
+            // This will get fixed in offset_derefs().
+            .i_oparg = cellindex,
+            .i_lineno = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, (int)(pos - 1), &make_cell) < 0) {
+            return -1;
+        }
+    }
+
+    /* Add the generator prefix instructions. */
     if (flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR)) {
+        int kind;
         if (flags & CO_COROUTINE) {
             kind = 1;
         }
@@ -7392,20 +7426,18 @@ insert_generator_prefix(struct compiler *c, basicblock *entryblock) {
         else {
             kind = 0;
         }
+
+        struct instr gen_start = {
+            .i_opcode = GEN_START,
+            .i_oparg = kind,
+            .i_lineno = -1,
+            .i_target = NULL,
+        };
+        if (insert_instruction(entryblock, 0, &gen_start) < 0) {
+            return -1;
+        }
     }
-    else {
-        return 0;
-    }
-    if (compiler_next_instr(entryblock) < 0) {
-        return -1;
-    }
-    for (int i = entryblock->b_iused-1; i > 0; i--) {
-        entryblock->b_instr[i] = entryblock->b_instr[i-1];
-    }
-    entryblock->b_instr[0].i_opcode = GEN_START;
-    entryblock->b_instr[0].i_oparg = kind;
-    entryblock->b_instr[0].i_lineno = -1;
-    entryblock->b_instr[0].i_target = NULL;
+
     return 0;
 }
 
@@ -7438,12 +7470,15 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
 }
 
 static void
-offset_derefs(basicblock *entryblock, int nlocals)
+fix_cell_offsets(struct compiler *c, basicblock *entryblock)
 {
+    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
             switch(inst->i_opcode) {
+                case MAKE_CELL:
                 case LOAD_CLOSURE:
                 case LOAD_DEREF:
                 case STORE_DEREF:
@@ -7493,7 +7528,7 @@ assemble(struct compiler *c, int addNone)
     }
     assert(entryblock != NULL);
 
-    if (insert_generator_prefix(c, entryblock)) {
+    if (insert_prefix_instructions(c, entryblock)) {
         goto error;
     }
 
@@ -7510,8 +7545,7 @@ assemble(struct compiler *c, int addNone)
     a.a_entry = entryblock;
     a.a_nblocks = nblocks;
 
-    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
-    offset_derefs(entryblock, (int)PyDict_GET_SIZE(c->u->u_varnames));
+    fix_cell_offsets(c, entryblock);
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {

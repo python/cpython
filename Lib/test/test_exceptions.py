@@ -215,6 +215,7 @@ class ExceptionTests(unittest.TestCase):
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
         check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
+        check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
@@ -2104,6 +2105,22 @@ class SyntaxErrorTests(unittest.TestCase):
                     with support.captured_stderr() as err:
                         sys.__excepthook__(*sys.exc_info())
                     the_exception = exc
+
+    def test_encodings(self):
+        source = (
+            '# -*- coding: cp437 -*-\n'
+            '"┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))\n'
+        )
+        try:
+            with open(TESTFN, 'w', encoding='cp437') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
+            self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        finally:
+            unlink(TESTFN)
 
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)
