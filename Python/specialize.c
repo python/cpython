@@ -419,12 +419,16 @@ _Py_Specialize_LoadGlobal(
     if (index != (uint16_t)index) {
         goto fail;
     }
-    cache1->module_keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
-    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
-    if (keys_version == 0) {
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+    if (globals_version == 0) {
         goto fail;
     }
-    cache1->builtin_keys_version = keys_version;
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
+    if (builtins_version == 0) {
+        goto fail;
+    }
+    cache1->module_keys_version = globals_version;
+    cache1->builtin_keys_version = builtins_version;
     cache0->index = index;
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
