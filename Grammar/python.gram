@@ -811,11 +811,6 @@ del_t_atom[expr_ty]:
     | '(' a=[del_targets] ')' { _PyAST_Tuple(a, Del, EXTRA) }
     | '[' a=[del_targets] ']' { _PyAST_List(a, Del, EXTRA) }
 
-targets[asdl_expr_seq*]: a[asdl_expr_seq*]=','.target+ [','] { a }
-target[expr_ty] (memo):
-    | a=t_primary '.' b=NAME !t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Store, EXTRA) }
-    | a=t_primary '[' b=slices ']' !t_lookahead { _PyAST_Subscript(a, b, Store, EXTRA) }
-    | t_atom
 t_primary[expr_ty]:
     | a=t_primary '.' b=NAME &t_lookahead { _PyAST_Attribute(a, b->v.Name.id, Load, EXTRA) }
     | a=t_primary '[' b=slices ']' &t_lookahead { _PyAST_Subscript(a, b, Load, EXTRA) }
@@ -828,12 +823,6 @@ t_primary[expr_ty]:
                  EXTRA) }
     | a=atom &t_lookahead { a }
 t_lookahead: '(' | '[' | '.'
-t_atom[expr_ty]:
-    | a=NAME { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' a=target ')' { _PyPegen_set_expr_context(p, a, Store) }
-    | '(' b=[targets] ')' { _PyAST_Tuple(b, Store, EXTRA) }
-    | '[' b=[targets] ']' { _PyAST_List(b, Store, EXTRA) }
-
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
