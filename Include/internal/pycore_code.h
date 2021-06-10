@@ -42,6 +42,12 @@ typedef struct {
     uint16_t index;
 } _PyAdaptiveEntry;
 
+
+typedef struct {
+    uint32_t tp_version;
+    uint32_t dk_version_or_hint;
+} _PyLoadAttrCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -55,6 +61,7 @@ typedef struct {
 typedef union {
     _PyEntryZero zero;
     _PyAdaptiveEntry adaptive;
+    _PyLoadAttrCache load_attr;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -253,6 +260,83 @@ int _PyCode_InitOpcache(PyCodeObject *co);
 PyAPI_FUNC(PyObject *) _PyCode_GetVarnames(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetCellvars(PyCodeObject *);
 PyAPI_FUNC(PyObject *) _PyCode_GetFreevars(PyCodeObject *);
+
+
+/* Cache hits and misses */
+
+static inline uint8_t
+saturating_increment(uint8_t c)
+{
+    return c<<1;
+}
+
+static inline uint8_t
+saturating_decrement(uint8_t c)
+{
+    return (c>>1) + 128;
+}
+
+static inline uint8_t
+saturating_zero(void)
+{
+    return 255;
+}
+
+/* Starting value for saturating counter.
+ * Technically this should be 1, but that is likely to
+ * cause a bit of thrashing when we optimize then get an immediate miss.
+ * We want to give the counter a change to stabilize, so we start at 3.
+ */
+static inline uint8_t
+saturating_start(void)
+{
+    return saturating_zero()<<3;
+}
+
+static inline void
+record_cache_hit(_PyAdaptiveEntry *entry) {
+    entry->counter = saturating_increment(entry->counter);
+}
+
+static inline void
+record_cache_miss(_PyAdaptiveEntry *entry) {
+    entry->counter = saturating_decrement(entry->counter);
+}
+
+static inline int
+too_many_cache_misses(_PyAdaptiveEntry *entry) {
+    return entry->counter == saturating_zero();
+}
+
+#define BACKOFF 64
+
+static inline void
+cache_backoff(_PyAdaptiveEntry *entry) {
+    entry->counter = BACKOFF;
+}
+
+/* Specialization functions */
+
+int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+
+#define SPECIALIZATION_STATS 0
+#if SPECIALIZATION_STATS
+
+typedef struct _specialization_stats {
+    uint64_t specialization_success;
+    uint64_t specialization_failure;
+    uint64_t loadattr_hit;
+    uint64_t loadattr_deferred;
+    uint64_t loadattr_miss;
+    uint64_t loadattr_deopt;
+} SpecializationStats;
+
+extern SpecializationStats _specialization_stats;
+#define STAT_INC(name) _specialization_stats.name++
+void _Py_PrintSpecializationStats(void);
+#else
+#define STAT_INC(name) ((void)0)
+#endif
 
 
 #ifdef __cplusplus
