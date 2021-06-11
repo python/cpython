@@ -1323,7 +1323,7 @@ def test_pdb_issue_20766():
     """
 
 def test_pdb_issue_43318():
-    """issue-43318:pdb can't output the prompt message when successfully clear breakpoints by filename:lineno
+    """echo breakpoints cleared with  filename:lineno
 
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
