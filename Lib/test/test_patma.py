@@ -3398,6 +3398,61 @@ class TestJumpTables(unittest.TestCase):
         actual = {x: f(x) for x in expected}
         self.assertEqual(expected, actual)
 
+    def test_or_patterns1(self):
+        @self.assert_has_jump_tables(1)
+        def f(x):
+            match x:
+                case 1 | 2 | 3 | 4 | "apple":
+                    y = True
+                case 5 | 6 | 7 | 8 | "banana":
+                    y = False
+                case _:
+                    raise ValueError()
+            return y
+        expected = {1: True, 2: True, 3: True, 4: True, "apple": True,
+                    5: False, 6: False, 7: False, 8: False, "banana": False}
+        actual = {x: f(x) for x in expected}
+        self.assertEqual(expected, actual)
+
+    def test_or_patterns2(self):
+        @self.assert_has_jump_tables(1)
+        def f(x):
+            y = False
+            match x:
+                case 1 | 2 | 3 | 4 | "apple":
+                    y = True
+            return y
+        expected = {1: True, 2: True, 3: True, 4: True, "apple": True,
+                    5: False, 6: False, 7: False, 8: False, "banana": False}
+        actual = {x: f(x) for x in expected}
+        self.assertEqual(expected, actual)
+
+    def test_or_patterns3(self):
+        @self.assert_has_jump_tables(2)
+        def f(x):
+            match x:
+                case (a, b):
+                    return "a"
+                case 1 | 2 | 3:
+                    return "b"
+                case (a, b, c):
+                    return "c"
+                case None:
+                    return "d"
+                case 4 | 5 | 6:
+                    return "e"
+                case x:
+                    return "f"
+        expected = {(0, 0): "a",
+                    1: "b", 2: "b", 3: "b",
+                    (0, 0, 0):
+                    "c", None:
+                    "d", 4: "e", 5: "e", 6: "e",
+                    17: "f"}
+        actual = {x: f(x) for x in expected}
+        self.assertEqual(expected, actual)
+
+
 class PerfPatma(TestPatma):
 
     def assertEqual(*_, **__):
