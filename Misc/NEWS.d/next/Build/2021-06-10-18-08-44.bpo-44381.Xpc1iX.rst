@@ -1,0 +1,2 @@
+The Windows build now accepts :envvar:`EnableControlFlowGuard` set to
+``guard`` to enable CFG.
