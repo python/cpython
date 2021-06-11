@@ -3342,6 +3342,7 @@ class TestJumpTables(unittest.TestCase):
         self.assertEqual(actual, expected)
 
 
+
 class PerfPatma(TestPatma):
 
     def assertEqual(*_, **__):

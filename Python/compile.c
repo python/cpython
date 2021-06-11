@@ -365,6 +365,8 @@ static void clean_basic_block(basicblock *bb);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
+static void dump_instr(const struct instr *i);
+static void dump_basicblock(const basicblock *b);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -6497,15 +6499,15 @@ case_get_safe_value(match_case_ty m)
 #define MIN_CASES_FOR_JUMP_TABLE 2
 
 static int
-maybe_make_jump_table(struct compiler *c, stmt_ty s,
+maybe_make_jump_table(struct compiler *c, stmt_ty s, Py_ssize_t start,
                       jump_table **result, Py_ssize_t *simple_cases,
                       basicblock **first_nonsimple)
 {
     // Determine whether to use a table
-    Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
+    Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases) - start;
     Py_ssize_t simple;
     for (simple = 0; simple < cases; simple++) {
-        match_case_ty m = asdl_seq_GET(s->v.Match.cases, simple);
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, start + simple);
         if (!case_safe_for_table(m)) {
             break;
         }
@@ -6531,14 +6533,14 @@ maybe_make_jump_table(struct compiler *c, stmt_ty s,
     }
     // Initialize keys
     for (Py_ssize_t i = 0; i < simple; i++) {
-        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, start + i);
         PyObject *val = case_get_safe_value(m);
         PyList_SET_ITEM(table->keys, i, val);
     }
     // Block to jump to for keys not in table
     RETURN_IF_FALSE(*first_nonsimple = compiler_new_block(c));
     // Add the LOAD_COST and ATTEMPT_SAFE_MATCH opcodes
-    SET_LOC(c, asdl_seq_GET(s->v.Match.cases, 0)->pattern);
+    SET_LOC(c, asdl_seq_GET(s->v.Match.cases, start)->pattern);
     if (!compiler_addop_load_const(c, table->placeholder)) {
         goto error;
     }
@@ -6572,25 +6574,29 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     RETURN_IF_FALSE(end = compiler_new_block(c));
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
-    jump_table *table;
+    jump_table *table = NULL;
     basicblock *first_nonsimple;
-    Py_ssize_t num_simple_cases;
-    RETURN_IF_FALSE(maybe_make_jump_table(c, s, &table,
-                                          &num_simple_cases,
-                                          &first_nonsimple));
     match_case_ty last = asdl_seq_GET(s->v.Match.cases, cases - 1);
-    int has_default = WILDCARD_CHECK(last->pattern) &&
-                      1 < cases &&
-                      table == NULL;
+    int has_default = WILDCARD_CHECK(last->pattern) && 1 < cases;
+    Py_ssize_t table_end = -1;
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
-        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
-        if (table && i == num_simple_cases) {
+        if (i == table_end) {
             compiler_use_next_block(c, first_nonsimple);
+            table = NULL;
+            first_nonsimple = NULL;
         }
+        else if (i == table_end + 1) {
+            Py_ssize_t num_simple_cases;
+            RETURN_IF_FALSE(maybe_make_jump_table(c, s, i, &table,
+                                                  &num_simple_cases,
+                                                  &first_nonsimple));
+            table_end = i + num_simple_cases;
+        }
+        match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
         // Only copy the subject if we're *not* on the last case,
         // or if using a table.
-        if (table || i != cases - has_default - 1) {
+        if ((table && i == table_end) || i != cases - has_default - 1) {
             ADDOP(c, DUP_TOP);
         }
         RETURN_IF_FALSE(pc->stores = PyList_New(0));
@@ -6621,19 +6627,25 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
-        if (table || i != cases - has_default - 1) {
+        if ((table && i == table_end) || i != cases - has_default - 1) {
             ADDOP(c, POP_TOP);
         }
-        if (table && i < num_simple_cases) {
+        if (table) {
             NEXT_BLOCK(c);
             // add to table
-            table->values[i] = c->u->u_curblock;
+            Py_ssize_t table_start = table_end - PyList_GET_SIZE(table->keys);
+            table->values[i - table_start] = c->u->u_curblock;
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
         RETURN_IF_FALSE(emit_and_reset_fail_pop(c, pc));
     }
     if (has_default) {
+        if (table) {
+            compiler_use_next_block(c, first_nonsimple);
+            table = NULL;
+            first_nonsimple = NULL;
+        }
         if (cases == 1) {
             // No matches. Done with the subject:
             ADDOP(c, POP_TOP);
@@ -6649,11 +6661,9 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         }
         VISIT_SEQ(c, stmt, last->body);
     }
-    if (table && num_simple_cases == cases) {
-        if (has_default) {
-            // Don't optimize away
-            ADDOP_JUMP(c, JUMP_ABSOLUTE, end);
-        }
+    if (table) {
+        // skip over the extra pop that follows.
+        ADDOP_JUMP(c, JUMP_ABSOLUTE, end);
         // ATTEMPT_SAFE_MATCH leaves the subject on the stack.
         // Remove it now.
         compiler_use_next_block(c, first_nonsimple);
@@ -6676,6 +6686,8 @@ compiler_match(struct compiler *c, stmt_ty s)
     PyObject_Free(pc.fail_pop);
     return result;
 }
+
+#define DEBUG_BASICBLOCKS 0
 
 #undef WILDCARD_CHECK
 #undef WILDCARD_STAR_CHECK
@@ -6708,6 +6720,10 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
     // All codepaths to this block must give the same stack startdepth.
     // If a codepath to this block has already been traversed,
     // assert that the current traversal arrives at the same depth.
+#if DEBUG_BASICBLOCKS
+    printf("pushing %d\n", ((unsigned int)(void *)b) % 997);
+    printf("Existing depth: %d, proposed depth: %d\n", b->b_startdepth, depth);
+#endif
     assert(b->b_startdepth < 0 || b->b_startdepth == depth);
     if (b->b_startdepth < depth && b->b_startdepth < 100) {
         assert(b->b_startdepth < 0);
@@ -6726,6 +6742,10 @@ stackdepth(struct compiler *c)
     basicblock **stack, **sp;
     int nblocks = 0, maxdepth = 0;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
+#if DEBUG_BASICBLOCKS
+        printf("Block %d\n", ((unsigned int)(void *)b) % 997);
+        dump_basicblock(b);
+#endif
         b->b_startdepth = INT_MIN;
         entryblock = b;
         nblocks++;
@@ -6746,6 +6766,10 @@ stackdepth(struct compiler *c)
     while (sp != stack) {
         b = *--sp;
         int depth = b->b_startdepth;
+#if DEBUG_BASICBLOCKS
+        printf("\n\nvisiting %d\n", ((unsigned int)(void *)b) % 997);
+        dump_basicblock(b);
+#endif
         assert(depth >= 0);
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
@@ -7555,7 +7579,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#if 0
+#if 1
 static void
 dump_instr(const struct instr *i)
 {
