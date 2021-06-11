@@ -1296,13 +1296,50 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # UNC paths are never reserved.
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
 
-class PurePathTest(_BasePurePathTest, unittest.TestCase):
+
+class _PathPurePathCommonTest:
+    def assertClassProperties(self, instances, correct_cls):
+        _instances = instances if hasattr(instances, '__iter__') else [instances]
+        for instance in _instances:
+            self.assertEqual(instance.__class__, correct_cls)
+            self.assertEqual(
+                instance.__repr__(),
+                f"{correct_cls.__name__}('{instance.as_posix()}')"
+            )
+            self.assertTrue(isinstance(instance, correct_cls))
+            self.assertTrue(isinstance(instance, self.cls))
+            self.assertTrue(issubclass(instance.__class__, correct_cls))
+            self.assertTrue(issubclass(instance.__class__, self.cls))
+            self.assertTrue(type(instance), correct_cls)
+
+    def assertNonIONewInstancesClassProperties(self, instance, correct_cls):
+        self.assertClassProperties(instance.with_name('new_name'), correct_cls)
+        self.assertClassProperties(instance.with_stem('new_name2'),
+                                   correct_cls)
+        self.assertClassProperties(instance.with_suffix('.ext'), correct_cls)
+        self.assertClassProperties(
+            instance.relative_to(instance.drive, instance.root), correct_cls
+        )
+        self.assertClassProperties(instance.joinpath('.'), correct_cls)
+        self.assertClassProperties(instance.parents, correct_cls)
+        self.assertClassProperties(instance / "subdir", correct_cls)
+        self.assertClassProperties("" / instance, correct_cls)
+
+
+class PurePathTest(
+    _BasePurePathTest, _PathPurePathCommonTest, unittest.TestCase
+):
     cls = pathlib.PurePath
 
-    def test_concrete_class(self):
-        p = self.cls('a')
-        self.assertIs(type(p),
-            pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath)
+    def _get_class_to_generate(self):
+        is_posix = os.name == 'posix'
+        return pathlib.PurePosixPath if is_posix else pathlib.PureWindowsPath
+
+    def test_instance_class_properties(self):
+        p = self.cls('placeholder')
+        correct_cls = self._get_class_to_generate()
+        self.assertClassProperties(p, correct_cls)
+        self.assertNonIONewInstancesClassProperties(p, correct_cls)
 
     def test_different_flavours_unequal(self):
         p = pathlib.PurePosixPath('a')
@@ -2414,16 +2451,37 @@ class _BasePathTest(object):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
 
-class PathTest(_BasePathTest, unittest.TestCase):
+class PathTest(_BasePathTest, _PathPurePathCommonTest, unittest.TestCase):
     cls = pathlib.Path
+
+    def _get_class_to_generate(self):
+        is_posix = os.name == 'posix'
+        return pathlib.PosixPath if is_posix else pathlib.WindowsPath
+
+    def assertIONoLinkNewInstancesClassProperties(self, instance, correct_cls):
+        self.assertClassProperties(instance.cwd(), correct_cls)
+        self.assertClassProperties(instance.home(), correct_cls)
+        self.assertClassProperties(instance.iterdir(), correct_cls)
+        self.assertClassProperties(instance.glob('*'), correct_cls)
+        self.assertClassProperties(instance.rglob('*'), correct_cls)
+        self.assertClassProperties(instance.absolute(), correct_cls)
+        self.assertClassProperties(instance.resolve(strict=False), correct_cls)
+        self.assertClassProperties(instance.expanduser(), correct_cls)
+        self.assertClassProperties(instance.replace(BASE), correct_cls)
+
+    def test_instance_class_properties(self):
+        P = self.cls
+        p = P(BASE)
+        correct_cls = self._get_class_to_generate()
+        self.assertClassProperties(p, correct_cls)
+        self.assertNonIONewInstancesClassProperties(p, correct_cls)
+        self.assertIONoLinkNewInstancesClassProperties(p, correct_cls)
+        if os_helper.can_symlink():
+            link = P(BASE, "linkA")
+            self.assertClassProperties(link.readlink(), correct_cls)
 
     def test_class_getitem(self):
         self.assertIs(self.cls[str], self.cls)
-
-    def test_concrete_class(self):
-        p = self.cls('a')
-        self.assertIs(type(p),
-            pathlib.WindowsPath if os.name == 'nt' else pathlib.PosixPath)
 
     def test_unsupported_flavour(self):
         if os.name == 'nt':
