@@ -1322,6 +1322,35 @@ def test_pdb_issue_20766():
     pdb 2: <built-in function default_int_handler>
     """
 
+def test_pdb_issue_43318():
+    """echo breakpoints cleared with filename:lineno
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_43318[0]>(3)test_function()
+    -> print(1)
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    (Pdb) clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    (Pdb) continue
+    1
+    2
+    3
+    4
+    """
+
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
