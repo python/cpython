@@ -4241,6 +4241,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 
     i = Py_SIZE(b);
     digit bi = i ? b->ob_digit[i-1] : 0;
+    digit bit;
     if (i <= 1 && bi <= 3) {
         /* exponent <= 3 - just do straight multiplies. Note that the multiply
          * 1 * a -> z serves a purpose when bi is 1: if `a` is of an int
@@ -4259,19 +4260,19 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          * because we're primarily trying to cut overhead for small powers.
          */
         assert(bi);  /* else there is no significant bit */
-        for (j = 2; ; j <<= 1) {
-            if (j > bi) { /* found the first bit */
-                assert((bi & j) == 0);
-                j >>= 1;
+        for (bit = 2; ; bit <<= 1) {
+            if (bit > bi) { /* found the first bit */
+                assert((bi & bit) == 0);
+                bit >>= 1;
                 MULT(z, a, z);
                 break;
             }
         }
-        assert(bi & j);
-        for (--i, j >>= 1;;) {
-            for (; j != 0; j >>= 1) {
+        assert(bi & bit);
+        for (--i, bit >>= 1;;) {
+            for (; bit != 0; bit >>= 1) {
                 MULT(z, z, z);
-                if (bi & j) {
+                if (bi & bit) {
                     MULT(z, a, z);
                 }
             }
@@ -4279,7 +4280,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 break;
             }
             bi = b->ob_digit[i];
-            j = (digit)1 << (PyLong_SHIFT-1);
+            bit = (digit)1 << (PyLong_SHIFT-1);
         }
     }
     else {
