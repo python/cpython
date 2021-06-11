@@ -141,7 +141,9 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    return Py_TYPE(ob) == type;
+    // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
+    // object.
+    return ob->ob_type == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
