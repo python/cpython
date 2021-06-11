@@ -2879,7 +2879,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(dict->ma_keys->dk_version != cache1->module_keys_version, LOAD_GLOBAL);
             PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + cache0->index;
             PyObject *res = ep->me_value;
-            DEOPT_IF(res == NULL, LOAD_ATTR);
+            DEOPT_IF(res == NULL, LOAD_GLOBAL);
             record_cache_hit(cache0);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
@@ -2899,7 +2899,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(bdict->ma_keys->dk_version != cache1->builtin_keys_version, LOAD_GLOBAL);
             PyDictKeyEntry *ep = DK_ENTRIES(bdict->ma_keys) + cache0->index;
             PyObject *res = ep->me_value;
-            DEOPT_IF(res == NULL, LOAD_ATTR);
+            DEOPT_IF(res == NULL, LOAD_GLOBAL);
             record_cache_hit(cache0);
             STAT_INC(LOAD_GLOBAL, hit);
             Py_INCREF(res);
