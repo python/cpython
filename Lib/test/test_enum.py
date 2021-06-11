@@ -2166,9 +2166,6 @@ class TestEnum(unittest.TestCase):
                 self._valid = True
             @classmethod
             def _missing_(cls, value):
-                # encountered an unknown value!
-                # Luckily I'm a LenientStrEnum, so I won't crash just yet.
-                # You might want to add a new case though.
                 unknown = cls._member_type_.__new__(cls, value)
                 unknown._valid = False
                 unknown._name_ = value.upper()
@@ -3594,7 +3591,7 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
                 ValueError,
-                "invalid Flag 'Bizarre': 'b' is missing named flags for values 1, 2; 'd' is missing a named flag for value 2",
+                "invalid Flag 'Bizarre': aliases b and d are missing combined values of 0x3 .use `enum.show_flag_values.value.` for details.",
             ):
             @verify(NAMED_FLAGS)
             class Bizarre(Flag):
@@ -3602,6 +3599,7 @@ class TestVerify(unittest.TestCase):
                 c = 4
                 d = 6
         #
+        self.assertEqual(enum.show_flag_values(3), [1, 2])
         class Bizarre(IntFlag):
             b = 3
             c = 4
@@ -3612,13 +3610,13 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
                 ValueError,
-                "invalid Flag 'Bizarre': 'b' is missing named flags for values 1, 2; 'd' is missing a named flag for value 2",
+                "invalid Flag 'Bizarre': alias d is missing value 0x2 .use `enum.show_flag_values.value.` for details.",
             ):
             @verify(NAMED_FLAGS)
             class Bizarre(IntFlag):
-                b = 3
                 c = 4
                 d = 6
+        self.assertEqual(enum.show_flag_values(2), [2])
 
     def test_unique_clean(self):
         @verify(UNIQUE)
@@ -3885,7 +3883,7 @@ class TestStdLib(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin'})
+        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
 
 
 # These are unordered here on purpose to ensure that declaration order
