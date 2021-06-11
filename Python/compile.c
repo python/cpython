@@ -6662,7 +6662,6 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             RETURN_IF_FALSE(compiler_jump_if(c, last->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, last->body);
-        ADDOP_JUMP(c, JUMP_FORWARD, end);
     }
     else if (table) {
         // The last cases were simple.
