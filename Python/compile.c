@@ -6459,30 +6459,56 @@ compiler_pattern(struct compiler *c, pattern_ty p, pattern_context *pc)
     return compiler_error(c, e, p->kind);
 }
 
-static inline int
-case_safe_for_table(match_case_ty m)
+// Number of jump-table-safe constants in this pattern
+static int
+pattern_num_safe_values(pattern_ty p)
 {
-    PyObject *val;
-    expr_ty e;
-    if (m->guard != NULL) {
-        return 0;
-    }
-    switch(m->pattern->kind) {
-        case MatchValue_kind:
-            e = m->pattern->v.MatchValue.value;
+    switch (p->kind) {
+        case MatchValue_kind: {
+            expr_ty e = p->v.MatchValue.value;
             if (e->kind != Constant_kind) {
                 return 0;
             }
-            val = e->v.Constant.value;
+            PyObject *val = e->v.Constant.value;
             return PyLong_CheckExact(val) || PyUnicode_CheckExact(val);
-        case MatchSingleton_kind:
-            val = m->pattern->v.MatchSingleton.value;
+        }
+        case MatchSingleton_kind: {
+            PyObject *val = p->v.MatchSingleton.value;
             return Py_Is(val, Py_None);
-        default:
+        }
+        case MatchOr_kind: {
+            asdl_pattern_seq *patterns;
+            Py_ssize_t i, n;
+            patterns = p->v.MatchOr.patterns;
+            n = asdl_seq_LEN(patterns);
+            int sum = 0;
+            // All sub-patterns must be safe.
+            for (i = 0; i < n; i++) {
+                pattern_ty p1 = asdl_seq_GET(patterns, i);
+                int safe = pattern_num_safe_values(p1);
+                if (!safe) {
+                    return 0;
+                }
+                sum += safe;
+            }
+            return sum;
+        }
+        default: {
             return 0;
+        }
     }
 }
 
+static inline int
+case_num_safe_values(match_case_ty m)
+{
+    if (m->guard) {
+        return 0;
+    }
+    return pattern_num_safe_values(m->pattern);
+}
+
+/*
 static inline PyObject *
 case_get_safe_value(match_case_ty m)
 {
@@ -6495,6 +6521,66 @@ case_get_safe_value(match_case_ty m)
             Py_UNREACHABLE();
     }
 }
+*/
+
+static void
+add_keys_to_table(pattern_ty p, jump_table *table, Py_ssize_t *j)
+{
+    switch (p->kind) {
+        case MatchValue_kind: {
+            PyObject *key = p->v.MatchValue.value->v.Constant.value;
+            Py_INCREF(key);
+            PyList_SET_ITEM(table->keys, *j, key);
+            (*j)++;
+            return;
+        }
+        case MatchSingleton_kind: {
+            PyObject *key = p->v.MatchSingleton.value;
+            Py_INCREF(key);
+            PyList_SET_ITEM(table->keys, *j, key);
+            (*j)++;
+            return;
+        }
+        case MatchOr_kind: {
+            asdl_pattern_seq *patterns = p->v.MatchOr.patterns;
+            Py_ssize_t n = asdl_seq_LEN(patterns);
+            for (Py_ssize_t k = 0; k < n; k++) {
+                pattern_ty p1 = asdl_seq_GET(patterns, k);
+                add_keys_to_table(p1, table, j);
+            }
+            return;
+        }
+        default: {
+            Py_UNREACHABLE();
+        }
+    }
+}
+
+static void
+add_block_to_table(pattern_ty p, jump_table *table,
+                   Py_ssize_t *j, basicblock *b)
+{
+    switch (p->kind) {
+        case MatchValue_kind:
+        case MatchSingleton_kind: {
+            table->values[*j] = b;
+            (*j)++;
+            return;
+        }
+        case MatchOr_kind: {
+            asdl_pattern_seq *patterns = p->v.MatchOr.patterns;
+            Py_ssize_t n = asdl_seq_LEN(patterns);
+            for (Py_ssize_t k = 0; k < n; k++) {
+                pattern_ty p1 = asdl_seq_GET(patterns, k);
+                add_block_to_table(p1, table, j, b);
+            }
+            return;
+        }
+        default: {
+            Py_UNREACHABLE();
+        }
+    }
+}
 
 #define MIN_CASES_FOR_JUMP_TABLE 2
 
@@ -6505,14 +6591,16 @@ maybe_make_jump_table(struct compiler *c, stmt_ty s, Py_ssize_t start,
 {
     // Determine whether to use a table
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases) - start;
-    Py_ssize_t simple;
+    Py_ssize_t simple, num_keys = 0;
     for (simple = 0; simple < cases; simple++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, start + simple);
-        if (!case_safe_for_table(m)) {
+        Py_ssize_t safe_children = case_num_safe_values(m);
+        if (!safe_children) {
             break;
         }
+        num_keys += safe_children;
     }
-    if (simple < MIN_CASES_FOR_JUMP_TABLE) {
+    if (num_keys < MIN_CASES_FOR_JUMP_TABLE) {
         *simple_cases = 0;
         *result = NULL;
         *first_nonsimple = NULL;
@@ -6521,21 +6609,21 @@ maybe_make_jump_table(struct compiler *c, stmt_ty s, Py_ssize_t start,
     // allocate and initialize table
     jump_table *table;
     RETURN_IF_FALSE(table = PyMem_Calloc(1, sizeof(jump_table)));
-    if (!(table->keys = PyList_New(simple))) {
+    if (!(table->keys = PyList_New(num_keys))) {
         goto error;
     }
     if (!(table->placeholder
           = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type))) {
         goto error;
     }
-    if (!(table->values = PyMem_Calloc(simple, sizeof(basicblock *)))) {
+    if (!(table->values = PyMem_Calloc(num_keys, sizeof(basicblock *)))) {
         goto error;
     }
     // Initialize keys
+    Py_ssize_t j = 0;
     for (Py_ssize_t i = 0; i < simple; i++) {
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, start + i);
-        PyObject *val = case_get_safe_value(m);
-        PyList_SET_ITEM(table->keys, i, val);
+        add_keys_to_table(m->pattern, table, &j);
     }
     // Block to jump to for keys not in table
     RETURN_IF_FALSE(*first_nonsimple = compiler_new_block(c));
@@ -6581,8 +6669,10 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     match_case_ty last = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(last->pattern) && 1 < cases;
     Py_ssize_t table_end = -1;
+    Py_ssize_t j; // current fill of table->values
     for (Py_ssize_t i = 0; i < cases - has_default; i++) {
         if (i == table_end) {
+            assert(j == PyList_GET_SIZE(table->keys));
             compiler_use_next_block(c, first_nonsimple);
             table = NULL;
             first_nonsimple = NULL;
@@ -6593,6 +6683,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
                                                   &num_simple_cases,
                                                   &first_nonsimple));
             table_end = i + num_simple_cases;
+            j = 0;
         }
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
@@ -6637,8 +6728,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         if (table) {
             NEXT_BLOCK(c);
             // add to table
-            Py_ssize_t table_start = table_end - PyList_GET_SIZE(table->keys);
-            table->values[i - table_start] = c->u->u_curblock;
+            add_block_to_table(m->pattern, table, &j, c->u->u_curblock);
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, JUMP_FORWARD, end);
