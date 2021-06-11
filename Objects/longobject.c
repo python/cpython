@@ -4240,48 +4240,47 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     } while(0)
 
     i = Py_SIZE(b);
-    if (i <= FIVEARY_CUTOFF) {
-        if (i > 0) {
-            /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
-            /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
-            --i;
-            digit bi = b->ob_digit[i];
-            /* Find the first significant exponent bit. Search right to left
-             * because we're primarily trying to cut overhead for small
-             * exponents, like 2 and 3.
-             */
-            assert(bi);  /* else there is no significant bit */
-            for (j = 2; ; j <<=  1) {
-                if (j > bi) {
-                    assert((bi & j) == 0);
-                    j >>= 1;
-                    /* Found the first bit. We would like to simply set z to
-                     * `a` now. But, if we do, and b is 1, pow() will return
-                     * `a` then. Which is of a wrong type if `a` is an instance
-                     * of an int subclass. test_bool actually griped about
-                     * that, demanding that, e.g., pow(False, 1) is not False.
-                     * The seemingly useless multiplication by 1 is done
-                     * solely to worm around that.
-                     */
+    digit bi = i ? b->ob_digit[i-1] : 0;
+    if (i <= 1 && bi <= 3) {
+        /* exponent <= 3 - just do straight multiplies. Note that the multiply
+         * 1 * a -> z serves a purpose when bi is 1: if `a` is of an int
+         * subclass, it ensures the result is an int. For example, that
+         * pow(False, 1) returns 0 instead of False.
+         */
+        while (bi-- > 0) {
+             MULT(z, a, z);
+        }
+    }
+    else if (i <= FIVEARY_CUTOFF) {
+        /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
+        /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
+
+        /* Find the first significant exponent bit. Search right to left
+         * because we're primarily trying to cut overhead for small powers.
+         */
+        assert(bi);  /* else there is no significant bit */
+        for (j = 2; ; j <<= 1) {
+            if (j > bi) { /* found the first bit */
+                assert((bi & j) == 0);
+                j >>= 1;
+                MULT(z, a, z);
+                break;
+            }
+        }
+        assert(bi & j);
+        for (--i, j >>= 1;;) {
+            for (; j != 0; j >>= 1) {
+                MULT(z, z, z);
+                if (bi & j) {
                     MULT(z, a, z);
-                    break;
                 }
             }
-            assert(bi & j);
-            for (j >>= 1;;) {
-                for (; j != 0; j >>= 1) {
-                    MULT(z, z, z);
-                    if (bi & j) {
-                        MULT(z, a, z);
-                    }
-                }
-                if (--i < 0) {
-                    break;
-                }
-                bi = b->ob_digit[i];
-                j = (digit)1 << (PyLong_SHIFT-1);
+            if (--i < 0) {
+                break;
             }
-        }/* if (i > 0); else b is 0, and z=1 is correct */
+            bi = b->ob_digit[i];
+            j = (digit)1 << (PyLong_SHIFT-1);
+        }
     }
     else {
         /* Left-to-right 5-ary exponentiation (HAC Algorithm 14.82) */
