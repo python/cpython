@@ -978,16 +978,6 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
 
     Py_BEGIN_ALLOW_THREADS
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-
-    /* issue11395 there is an unspecified upper bound on how many bytes
-       can be written at once. We cap at 32k - the caller will have to
-       handle partial writes.
-       Since we don't know how many input bytes are being ignored, we
-       have to reduce and recalculate. */
-    while (wlen > 32766 / sizeof(wchar_t)) {
-        len /= 2;
-        wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-    }
     Py_END_ALLOW_THREADS
 
     if (!wlen)
@@ -998,6 +988,11 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, Py_buffer *b)
     Py_BEGIN_ALLOW_THREADS
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, wbuf, wlen);
     if (wlen) {
+        /* Note that it's possible that this would fail to print big strings
+         * on Windows 7 (before Windows 8 LPC-based pseudo-files were used
+         * for I/O and would be limited to a 64 KiB heap).
+         * As Windows 7 is currently unsupported, that's Ok.
+         */
         res = WriteConsoleW(handle, wbuf, wlen, &n, NULL);
         if (res && n < wlen) {
             /* Wrote fewer characters than expected, which means our

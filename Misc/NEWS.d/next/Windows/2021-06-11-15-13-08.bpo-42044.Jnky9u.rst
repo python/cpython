@@ -1,0 +1,2 @@
+When the io is flushed in unbuffered mode in Windows, all bytes are now
+properly written to the console.
