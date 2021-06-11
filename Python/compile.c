@@ -365,8 +365,6 @@ static void clean_basic_block(basicblock *bb);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
-static void dump_instr(const struct instr *i);
-static void dump_basicblock(const basicblock *b);
 
 #define CAPSULE_NAME "compile.c compiler unit"
 
@@ -6654,8 +6652,6 @@ maybe_make_jump_table(struct compiler *c, stmt_ty s, Py_ssize_t start,
     return 0;
 }
 
-#define DEBUG_BASICBLOCKS 0
-
 static int
 compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
@@ -6762,11 +6758,6 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         compiler_use_next_block(c, first_nonsimple);
         ADDOP(c, POP_TOP);
     }
-
-#if DEBUG_BASICBLOCKS
-    printf("first_nonsimple: %d\n", ((unsigned int)(void *)first_nonsimple) % 997);
-    printf("end: %d\n", ((unsigned int)(void *)end) % 997);
-#endif
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -6812,10 +6803,6 @@ stackdepth_push(basicblock ***sp, basicblock *b, int depth)
     // All codepaths to this block must give the same stack startdepth.
     // If a codepath to this block has already been traversed,
     // assert that the current traversal arrives at the same depth.
-#if DEBUG_BASICBLOCKS
-    printf("pushing %d\n", ((unsigned int)(void *)b) % 997);
-    printf("Existing depth: %d, proposed depth: %d\n", b->b_startdepth, depth);
-#endif
     assert(b->b_startdepth < 0 || b->b_startdepth == depth);
     if (b->b_startdepth < depth && b->b_startdepth < 100) {
         assert(b->b_startdepth < 0);
@@ -6834,17 +6821,10 @@ stackdepth(struct compiler *c)
     basicblock **stack, **sp;
     int nblocks = 0, maxdepth = 0;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
-#if DEBUG_BASICBLOCKS
-        printf("Block %d\n", ((unsigned int)(void *)b) % 997);
-        dump_basicblock(b);
-#endif
         b->b_startdepth = INT_MIN;
         entryblock = b;
         nblocks++;
     }
-#if DEBUG_BASICBLOCKS
-    printf("\n--------------------\n\n");
-#endif
     assert(entryblock != NULL);
     stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
     if (!stack) {
@@ -6861,10 +6841,6 @@ stackdepth(struct compiler *c)
     while (sp != stack) {
         b = *--sp;
         int depth = b->b_startdepth;
-#if DEBUG_BASICBLOCKS
-        printf("\n\nvisiting %d\n", ((unsigned int)(void *)b) % 997);
-        dump_basicblock(b);
-#endif
         assert(depth >= 0);
         basicblock *next = b->b_next;
         for (int i = 0; i < b->b_iused; i++) {
@@ -7674,7 +7650,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
 
 
 /* For debugging purposes only */
-#if 1
+#if 0
 static void
 dump_instr(const struct instr *i)
 {
