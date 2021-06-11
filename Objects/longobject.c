@@ -4250,10 +4250,15 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             /* Find the first significant exponent bit. */
             for (j = (digit)1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
                 if (bi & j) {
-                    Py_INCREF(a);
-                    Py_DECREF(z); /* z is currently 1 */
-                    z = a;
-                    REDUCE(z);
+                    /* Found the first bit. We would like to simply set z to
+                     * `a` now. But, if we do, and b is 1, pow() will return
+                     * `a` then. Which is of a wrong type if `a` is an instance
+                     * of an int subclass. test_bool actually griped about
+                     * that, demanding that, e.g., pos(False, 1) is not False.
+                     * The seemingly useless multiplication by 1 is done
+                     * solely to worm around that.
+                     */
+                    MULT(z, a, z);
                     break;
                 }
             }
