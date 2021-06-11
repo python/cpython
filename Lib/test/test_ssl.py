@@ -1750,7 +1750,7 @@ class ContextTests(unittest.TestCase):
 
         with ctx.wrap_socket(socket.socket(), server_side=True) as sock:
             self.assertIsInstance(sock, MySSLSocket)
-        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(), server_side=True)
         self.assertIsInstance(obj, MySSLObject)
 
     def test_num_tickest(self):
@@ -2884,24 +2884,29 @@ class ThreadedTests(unittest.TestCase):
                                    server_context=client_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception)
+            )
 
         with self.subTest(client=ssl.PROTOCOL_TLS_SERVER, server=ssl.PROTOCOL_TLS_SERVER):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
                                    server_context=server_context,
                                    chatty=True, connectionchatty=True)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception)
+            )
 
         with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_CLIENT):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
                                    server_context=client_context,
                                    chatty=True, connectionchatty=True)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception))
 
     def test_getpeercert(self):
         if support.verbose:

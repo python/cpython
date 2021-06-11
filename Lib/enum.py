@@ -1,5 +1,7 @@
 import sys
 from types import MappingProxyType, DynamicClassAttribute
+from operator import or_ as _or_
+from functools import reduce
 from builtins import property as _bltin_property, bin as _bltin_bin
 
 
@@ -96,6 +98,9 @@ def _iter_bits_lsb(num):
         b = num & (~num + 1)
         yield b
         num ^= b
+
+def show_flag_values(value):
+    return list(_iter_bits_lsb(value))
 
 def bin(num, max_bits=None):
     """
@@ -456,23 +461,6 @@ class EnumType(type):
         classdict['_all_bits_'] = 2 ** ((flag_mask).bit_length()) - 1
         classdict['_inverted_'] = None
         #
-        # If a custom type is mixed into the Enum, and it does not know how
-        # to pickle itself, pickle.dumps will succeed but pickle.loads will
-        # fail.  Rather than have the error show up later and possibly far
-        # from the source, sabotage the pickle protocol for this class so
-        # that pickle.dumps also fails.
-        #
-        # However, if the new class implements its own __reduce_ex__, do not
-        # sabotage -- it's on them to make sure it works correctly.  We use
-        # __reduce_ex__ instead of any of the others as it is preferred by
-        # pickle over __reduce__, and it handles all pickle protocols.
-        if '__reduce_ex__' not in classdict:
-            if member_type is not object:
-                methods = ('__getnewargs_ex__', '__getnewargs__',
-                        '__reduce_ex__', '__reduce__')
-                if not any(m in member_type.__dict__ for m in methods):
-                    _make_class_unpicklable(classdict)
-        #
         # create a default docstring if one has not been provided
         if '__doc__' not in classdict:
             classdict['__doc__'] = 'An enumeration.'
@@ -792,7 +780,7 @@ class EnumType(type):
         body['__module__'] = module
         tmp_cls = type(name, (object, ), body)
         cls = _simple_enum(etype=cls, boundary=boundary or KEEP)(tmp_cls)
-        cls.__reduce_ex__ = _reduce_ex_by_name
+        cls.__reduce_ex__ = _reduce_ex_by_global_name
         global_enum(cls)
         module_globals[name] = cls
         return cls
@@ -835,7 +823,7 @@ class EnumType(type):
                         data_types.add(candidate or base)
                         break
                     else:
-                        candidate = base
+                        candidate = candidate or base
             if len(data_types) > 1:
                 raise TypeError('%r: too many data types: %r' % (class_name, data_types))
             elif data_types:
@@ -1030,7 +1018,7 @@ class Enum(metaclass=EnumType):
         return hash(self._name_)
 
     def __reduce_ex__(self, proto):
-        return self.__class__, (self._value_, )
+        return getattr, (self.__class__, self._name_)
 
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
@@ -1091,7 +1079,7 @@ class StrEnum(str, Enum):
         return name.lower()
 
 
-def _reduce_ex_by_name(self, proto):
+def _reduce_ex_by_global_name(self, proto):
     return self.name
 
 class FlagBoundary(StrEnum):
@@ -1618,14 +1606,16 @@ class verify:
                 else:
                     raise Exception('verify: unknown type %r' % enum_type)
                 if missing:
-                    raise ValueError('invalid %s %r: missing values %s' % (
+                    raise ValueError(('invalid %s %r: missing values %s' % (
                             enum_type, cls_name, ', '.join((str(m) for m in missing)))
-                            )
+                            )[:256])
+                            # limit max length to protect against DOS attacks
             elif check is NAMED_FLAGS:
                 # examine each alias and check for unnamed flags
                 member_names = enumeration._member_names_
                 member_values = [m.value for m in enumeration]
-                missing = []
+                missing_names = []
+                missing_value = 0
                 for name, alias in enumeration._member_map_.items():
                     if name in member_names:
                         # not an alias
@@ -1633,16 +1623,22 @@ class verify:
                     values = list(_iter_bits_lsb(alias.value))
                     missed = [v for v in values if v not in member_values]
                     if missed:
-                        plural = ('', 's')[len(missed) > 1]
-                        a =  ('a ', '')[len(missed) > 1]
-                        missing.append('%r is missing %snamed flag%s for value%s %s' % (
-                                name, a, plural, plural,
-                                ', '.join(str(v) for v in missed)
-                                ))
-                if missing:
+                        missing_names.append(name)
+                        missing_value |= reduce(_or_, missed)
+                if missing_names:
+                    if len(missing_names) == 1:
+                        alias = 'alias %s is missing' % missing_names[0]
+                    else:
+                        alias = 'aliases %s and %s are missing' % (
+                                ', '.join(missing_names[:-1]), missing_names[-1]
+                                )
+                    if _is_single_bit(missing_value):
+                        value = 'value 0x%x' % missing_value
+                    else:
+                        value = 'combined values of 0x%x' % missing_value
                     raise ValueError(
-                            'invalid Flag %r: %s'
-                            % (cls_name, '; '.join(missing))
+                            'invalid Flag %r: %s %s [use `enum.show_flag_values(value)` for details]'
+                            % (cls_name, alias, value)
                             )
         return enumeration
 
@@ -1795,6 +1791,6 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         # unless some values aren't comparable, in which case sort by name
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
-    cls.__reduce_ex__ = _reduce_ex_by_name
+    cls.__reduce_ex__ = _reduce_ex_by_global_name
     cls.__repr__ = global_enum_repr
     return cls
