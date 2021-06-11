@@ -6566,6 +6566,8 @@ maybe_make_jump_table(struct compiler *c, stmt_ty s, Py_ssize_t start,
     return 0;
 }
 
+#define DEBUG_BASICBLOCKS 0
+
 static int
 compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
 {
@@ -6594,9 +6596,11 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
         }
         match_case_ty m = asdl_seq_GET(s->v.Match.cases, i);
         SET_LOC(c, m->pattern);
-        // Only copy the subject if we're *not* on the last case,
-        // or if using a table.
-        if ((table && i == table_end) || i != cases - has_default - 1) {
+        // Only copy the subject if we're *not* on the last case.
+        // Or to let a "_" case be first_nonsimple and begin with POP_TOP
+        int copy_subject = (i < cases - has_default - 1) ||
+                           (table && has_default && i == cases - 2);
+        if (copy_subject) {
             ADDOP(c, DUP_TOP);
         }
         RETURN_IF_FALSE(pc->stores = PyList_New(0));
@@ -6627,7 +6631,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             RETURN_IF_FALSE(compiler_jump_if(c, m->guard, pc->fail_pop[0], 0));
         }
         // Success! Pop the subject off, we're done with it:
-        if ((table && i == table_end) || i != cases - has_default - 1) {
+        if (copy_subject) {
             ADDOP(c, POP_TOP);
         }
         if (table) {
@@ -6645,34 +6649,35 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
             compiler_use_next_block(c, first_nonsimple);
             table = NULL;
             first_nonsimple = NULL;
+            ADDOP(c, POP_TOP);
         }
-        if (cases == 1) {
+        else if (cases == 1) {
             // No matches. Done with the subject:
             ADDOP(c, POP_TOP);
         }
         // A trailing "case _" is common, and lets us save a bit of
         // redundant pushing and popping in the loop above.
-        // Don't do this elimination if there's a preceeding jump
-        // table, since ATTEMPT_SAFE_MATCH leaves the subject on the
-        // stack upon missing key, and so this requires a POP_TOP.
         SET_LOC(c, last->pattern);
         if (last->guard) {
             RETURN_IF_FALSE(compiler_jump_if(c, last->guard, end, 0));
         }
         VISIT_SEQ(c, stmt, last->body);
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
     }
-    if (table) {
-        // skip over the extra pop that follows.
-        ADDOP_JUMP(c, JUMP_ABSOLUTE, end);
+    else if (table) {
+        // The last cases were simple.
+        // Skip over the extra pop that follows.
+        ADDOP_JUMP(c, JUMP_FORWARD, end);
         // ATTEMPT_SAFE_MATCH leaves the subject on the stack.
         // Remove it now.
         compiler_use_next_block(c, first_nonsimple);
         ADDOP(c, POP_TOP);
     }
-    // if present. first_nonsimple should get used.
-    assert(first_nonsimple == NULL ||
-           first_nonsimple->b_next != NULL ||
-           first_nonsimple == c->u->u_curblock);
+
+#if DEBUG_BASICBLOCKS
+    printf("first_nonsimple: %d\n", ((unsigned int)(void *)first_nonsimple) % 997);
+    printf("end: %d\n", ((unsigned int)(void *)end) % 997);
+#endif
     compiler_use_next_block(c, end);
     return 1;
 }
@@ -6686,8 +6691,6 @@ compiler_match(struct compiler *c, stmt_ty s)
     PyObject_Free(pc.fail_pop);
     return result;
 }
-
-#define DEBUG_BASICBLOCKS 0
 
 #undef WILDCARD_CHECK
 #undef WILDCARD_STAR_CHECK
@@ -6750,6 +6753,9 @@ stackdepth(struct compiler *c)
         entryblock = b;
         nblocks++;
     }
+#if DEBUG_BASICBLOCKS
+    printf("\n--------------------\n\n");
+#endif
     assert(entryblock != NULL);
     stack = (basicblock **)PyObject_Malloc(sizeof(basicblock *) * nblocks);
     if (!stack) {

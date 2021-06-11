@@ -3115,7 +3115,7 @@ class TestJumpTables(unittest.TestCase):
                     do_stuff()
                 case None:
                     do_stuff()
-                case None:
+                case _:
                     do_stuff()
 
     def test_basic_table_ints(self):
