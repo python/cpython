@@ -91,8 +91,8 @@ static uint8_t adaptive_opcodes[256] = {
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2,
-    [LOAD_GLOBAL] = 2,
+    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
+    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -407,7 +407,7 @@ _Py_Specialize_LoadGlobal(
             goto fail;
         }
         cache1->module_keys_version = keys_version;
-        cache0->index = index;
+        cache0->index = (uint16_t)index;
         *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_MODULE, _Py_OPARG(*instr));
         goto success;
     }
@@ -432,7 +432,7 @@ _Py_Specialize_LoadGlobal(
     }
     cache1->module_keys_version = globals_version;
     cache1->builtin_keys_version = builtins_version;
-    cache0->index = index;
+    cache0->index = (uint16_t)index;
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
