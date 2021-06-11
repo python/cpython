@@ -3213,7 +3213,50 @@ class TestJumpTables(unittest.TestCase):
 
                 self.assertEqual(f(Two()), -2)
 
+    def test_deopt2(self):
+        """Can't use jump tables on subclasses"""
 
+        class ComparisonRecorder(int):
+            def __new__(cls, val):
+                obj = super().__new__(cls, val)
+                obj.compares = []
+                return obj
+            def __eq__(self, other):
+                self.compares.append(other)
+                return super().__eq__(other)
+
+        @self.assert_has_jump_tables(1)
+        def get_compares1(x):
+            c = ComparisonRecorder(x)
+            match c:
+                case 1: pass
+                case 2: pass
+                case 3: pass
+                case 4: pass
+                case 5: pass
+            return c.compares
+
+        @self.assert_has_jump_tables(1)
+        def get_compares2(x):
+            c = ComparisonRecorder(x)
+            match c:
+                case []: pass
+                case 1: pass
+                case 2: pass
+                case 3: pass
+                case 4: pass
+                case 5: pass
+                case _: pass
+            return c.compares
+
+        for get_compares in get_compares1, get_compares2:
+            with self.subTest(get_compares.__name__):
+                self.assertEqual(get_compares(1), [1])
+                self.assertEqual(get_compares(2), [1, 2])
+                self.assertEqual(get_compares(3), [1, 2, 3])
+                self.assertEqual(get_compares(4), [1, 2, 3, 4])
+                self.assertEqual(get_compares(5), [1, 2, 3, 4, 5])
+                self.assertEqual(get_compares(6), [1, 2, 3, 4, 5])
 
 
     def test_basic_table_with_catchall(self):
@@ -3318,7 +3361,6 @@ class TestJumpTables(unittest.TestCase):
         actual = {(x, y): add(x, y) for x in (1, 2, 3) for y in (1, 2, 3)}
         self.assertEqual(actual, expected)
 
-    @unittest.skip("Not yet implemented.")
     def test_separated_jump_table(self):
         @self.assert_has_jump_tables(3)
         def f(x):
@@ -3341,7 +3383,20 @@ class TestJumpTables(unittest.TestCase):
         actual = {x: f(x) for x in expected}
         self.assertEqual(actual, expected)
 
-
+    def test_separated_jump_table2(self):
+        @self.assert_has_jump_tables(2)
+        def f(x):
+            match x:
+                case "a": return "A"
+                case "b": return "B"
+                case "c": return "C"
+                case (): return "tuple"
+                case "A": return "a"
+                case "B": return "b"
+                case "C": return "c"
+        expected = dict(zip("abcABC", "ABCabc"))
+        actual = {x: f(x) for x in expected}
+        self.assertEqual(expected, actual)
 
 class PerfPatma(TestPatma):
 
