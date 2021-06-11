@@ -1,0 +1,2 @@
+[Enum] Be more robust in searching for pickle support before making an enum
+class unpicklable.
