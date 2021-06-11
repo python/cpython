@@ -1323,7 +1323,7 @@ def test_pdb_issue_20766():
     """
 
 def test_pdb_issue_43318():
-    """echo breakpoints cleared with  filename:lineno
+    """echo breakpoints cleared with filename:lineno
 
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
