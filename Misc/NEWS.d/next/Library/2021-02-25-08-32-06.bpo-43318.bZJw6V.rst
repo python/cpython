@@ -1,1 +1,1 @@
-Fix the bug that pdb can't output prompt message when breakpoints are successfully cleared by "filename:lineno".
+Fix a bug where :mod:`pdb` does not always echo cleared breakpoints.
