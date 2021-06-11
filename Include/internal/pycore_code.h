@@ -327,26 +327,20 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 #define SPECIALIZATION_STATS 0
 #if SPECIALIZATION_STATS
 
-typedef struct _specialization_stats {
-    uint64_t loadattr_specialization_success;
-    uint64_t loadattr_specialization_failure;
-    uint64_t loadattr_hit;
-    uint64_t loadattr_deferred;
-    uint64_t loadattr_miss;
-    uint64_t loadattr_deopt;
-    uint64_t loadglobal_specialization_success;
-    uint64_t loadglobal_specialization_failure;
-    uint64_t loadglobal_hit;
-    uint64_t loadglobal_deferred;
-    uint64_t loadglobal_miss;
-    uint64_t loadglobal_deopt;
+typedef struct _stats {
+    uint64_t specialization_success;
+    uint64_t specialization_failure;
+    uint64_t hit;
+    uint64_t deferred;
+    uint64_t miss;
+    uint64_t deopt;
 } SpecializationStats;
 
-extern SpecializationStats _specialization_stats;
-#define STAT_INC(name) _specialization_stats.name++
+extern SpecializationStats _specialization_stats[256];
+#define STAT_INC(opname, name) _specialization_stats[opname].name++
 void _Py_PrintSpecializationStats(void);
 #else
-#define STAT_INC(name) ((void)0)
+#define STAT_INC(opname, name) ((void)0)
 #endif
 
 

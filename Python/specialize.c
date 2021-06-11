@@ -33,24 +33,27 @@
 
 Py_ssize_t _Py_QuickenedCount = 0;
 #if SPECIALIZATION_STATS
-SpecializationStats _specialization_stats = { 0 };
+SpecializationStats _specialization_stats[256] = { 0 };
 
-#define PRINT_STAT(name) fprintf(stderr, #name " : %" PRIu64" \n", _specialization_stats.name);
+#define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
+
+static void
+print_stats(SpecializationStats *stats, const char *name)
+{
+    PRINT_STAT(name, specialization_success);
+    PRINT_STAT(name, specialization_failure);
+    PRINT_STAT(name, hit);
+    PRINT_STAT(name, deferred);
+    PRINT_STAT(name, miss);
+    PRINT_STAT(name, deopt);
+}
+
 void
 _Py_PrintSpecializationStats(void)
 {
-    PRINT_STAT(loadattr_specialization_success);
-    PRINT_STAT(loadattr_specialization_failure);
-    PRINT_STAT(loadattr_hit);
-    PRINT_STAT(loadattr_deferred);
-    PRINT_STAT(loadattr_miss);
-    PRINT_STAT(loadattr_deopt);
-    PRINT_STAT(loadglobal_specialization_success);
-    PRINT_STAT(loadglobal_specialization_failure);
-    PRINT_STAT(loadglobal_hit);
-    PRINT_STAT(loadglobal_deferred);
-    PRINT_STAT(loadglobal_miss);
-    PRINT_STAT(loadglobal_deopt);
+    printf("Specialization stats:\n");
+    print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
+    print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
 }
 
 #endif
@@ -365,12 +368,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
 
 fail:
-    STAT_INC(loadattr_specialization_failure);
+    STAT_INC(LOAD_ATTR, specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(loadattr_specialization_success);
+    STAT_INC(LOAD_ATTR, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
@@ -433,12 +436,12 @@ _Py_Specialize_LoadGlobal(
     *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
     goto success;
 fail:
-    STAT_INC(loadglobal_specialization_failure);
+    STAT_INC(LOAD_GLOBAL, specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(loadglobal_specialization_success);
+    STAT_INC(LOAD_GLOBAL, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
