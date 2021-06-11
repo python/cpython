@@ -1214,18 +1214,11 @@ The ssl module has preliminary support for OpenSSL 3.0.0 and new option
 :issue:`43789`, and :issue:`43811`.)
 
 Deprecated function and use of deprecated constants now result in
-a :exc:`DeprecationWarning`. The following features have been deprecated
-since Python 3.6, Python 3.7, or OpenSSL 1.1.0:
-:data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
-:data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`,
-:data:`~ssl.OP_NO_TLSv1_3`, :data:`~ssl.PROTOCOL_SSLv2`,
-:data:`~ssl.PROTOCOL_SSLv3`, :data:`~ssl.PROTOCOL_SSLv23`,
-:data:`~ssl.PROTOCOL_TLSv1`, :data:`~ssl.PROTOCOL_TLSv1_1`,
-:data:`~ssl.PROTOCOL_TLSv1_2`, :data:`~ssl.PROTOCOL_TLS`,
-:func:`~ssl.wrap_socket`, :func:`~ssl.match_hostname`,
-:func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`,
-:meth:`ssl.SSLSocket.selected_npn_protocol`,
-:meth:`ssl.SSLContext.set_npn_protocols`.
+a :exc:`DeprecationWarning`. :attr:`ssl.SSLContext.options` has
+:data:`~ssl.OP_NO_SSLv2` and :data:`~ssl.OP_NO_SSLv3` set by default and
+therefore cannot warn about setting the flag again. The
+:ref:`deprecation section <whatsnew310-deprecated>` has a list of deprecated
+features.
 (Contributed by Christian Heimes in :issue:`43880`.)
 
 The ssl module now has more secure default settings. Ciphers without forward
@@ -1441,6 +1434,8 @@ Optimizations
   readers or writers, just like its equivalent classes in :mod:`gzip` and
   :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
 
+.. _whatsnew310-deprecated:
+
 Deprecated
 ==========
 
@@ -1608,6 +1603,30 @@ Deprecated
 
 * ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
+
+* The following :mod:`ssl` features have been deprecated since Python 3.6,
+  Python 3.7, or OpenSSL 1.1.0 and will be removed in 3.11:
+
+  * :data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
+    :data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`, and
+    :data:`~ssl.OP_NO_TLSv1_3` are replaced by
+    :attr:`sslSSLContext.minimum_version` and
+    :attr:`sslSSLContext.maximum_version`.
+
+  * :data:`~ssl.PROTOCOL_SSLv2`, :data:`~ssl.PROTOCOL_SSLv3`,
+    :data:`~ssl.PROTOCOL_SSLv23`, :data:`~ssl.PROTOCOL_TLSv1`,
+    :data:`~ssl.PROTOCOL_TLSv1_1`, :data:`~ssl.PROTOCOL_TLSv1_2`, and
+    :data:`~ssl.PROTOCOL_TLS` are deprecated in favor of
+    :data:`~ssl.PROTOCOL_TLS_CLIENT` and :data:`~ssl.PROTOCOL_TLS_SERVER`
+
+  * :func:`~ssl.wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
+
+  * :func:`~ssl.match_hostname`
+
+  * :func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`
+
+  * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
+    :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
 
 .. _whatsnew310-removed:
 
