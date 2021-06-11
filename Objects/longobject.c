@@ -4185,6 +4185,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 goto Error;
             Py_DECREF(a);
             a = temp;
+            temp = NULL;
         }
 
         /* Reduce base by modulus in some cases:
@@ -4239,18 +4240,38 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         REDUCE(result);                         \
     } while(0)
 
-    if (Py_SIZE(b) <= FIVEARY_CUTOFF) {
-        /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
-        /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
-        for (i = Py_SIZE(b) - 1; i >= 0; --i) {
+    i = Py_SIZE(b);
+    if (i <= FIVEARY_CUTOFF) {
+        if (i > 0) {
+            /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
+            /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
+            --i;
             digit bi = b->ob_digit[i];
-
+            /* Find the first significant exponent bit. */
             for (j = (digit)1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
-                MULT(z, z, z);
-                if (bi & j)
-                    MULT(z, a, z);
+                if (bi & j) {
+                    Py_INCREF(a);
+                    Py_DECREF(z); /* z is currently 1 */
+                    z = a;
+                    REDUCE(z);
+                    break;
+                }
             }
-        }
+            assert(j);  /* else we never found a bit set */
+            for (j >>= 1;;) {
+                for (; j != 0; j >>= 1) {
+                    MULT(z, z, z);
+                    if (bi & j) {
+                        MULT(z, a, z);
+                    }
+                }
+                if (--i < 0) {
+                    break;
+                }
+                bi = b->ob_digit[i];
+                j = (digit)1 << (PyLong_SHIFT-1);
+            }
+        }/* if (i > 0); else b is 0, and z=1 is correct */
     }
     else {
         /* Left-to-right 5-ary exponentiation (HAC Algorithm 14.82) */
