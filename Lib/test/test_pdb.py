@@ -1350,6 +1350,7 @@ def test_pdb_issue_43318():
     3
     4
     """
+    
 
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
