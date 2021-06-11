@@ -2009,14 +2009,15 @@ _asyncio.Task.__init__
     *
     loop: object = None
     name: object = None
+    context: object = None
 
 A coroutine wrapped in a Future.
 [clinic start generated code]*/
 
 static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
-                            PyObject *name)
-/*[clinic end generated code: output=88b12b83d570df50 input=352a3137fe60091d]*/
+                            PyObject *name, PyObject *context)
+/*[clinic end generated code: output=49ac96fe33d0e5c7 input=924522490c8ce825]*/
 {
     if (future_init((FutureObj*)self, loop)) {
         return -1;
@@ -2034,9 +2035,14 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
         return -1;
     }
 
-    Py_XSETREF(self->task_context, PyContext_CopyCurrent());
-    if (self->task_context == NULL) {
-        return -1;
+    if (context == Py_None) {
+        Py_XSETREF(self->task_context, PyContext_CopyCurrent());
+        if (self->task_context == NULL) {
+            return -1;
+        }
+    } else {
+        Py_INCREF(context);
+        Py_XSETREF(self->task_context, context);
     }
 
     Py_CLEAR(self->task_fut_waiter);
@@ -2379,6 +2385,33 @@ _asyncio_Task_set_name(TaskObj *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_asyncio.Task._set_context
+
+    context: object
+
+Set the context associated with the task.
+
+This does not change the current thread context and only affects the thread
+context of later callbacks. Returns the previously context attached to the task.
+[clinic start generated code]*/
+
+static PyObject *
+_asyncio_Task__set_context_impl(TaskObj *self, PyObject *context)
+/*[clinic end generated code: output=46ac5ea28ccfac3b input=36a0652ac2b5f671]*/
+{
+    if (context == Py_None) {
+        PyErr_SetString(
+            PyExc_RuntimeError, "expected valid context");
+        return NULL;
+    }
+
+    PyObject *prev_context = self->task_context;
+    Py_INCREF(context);
+    self->task_context = context;
+    return prev_context;
+}
+
 static void
 TaskObj_finalize(TaskObj *task)
 {
@@ -2471,6 +2504,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK__REPR_INFO_METHODDEF
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
+    _ASYNCIO_TASK__SET_CONTEXT_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
     {"__class_getitem__", task_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */

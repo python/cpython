@@ -310,28 +310,29 @@ _asyncio_Future__repr_info(FutureObj *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_asyncio_Task___init____doc__,
-"Task(coro, *, loop=None, name=None)\n"
+"Task(coro, *, loop=None, name=None, context=None)\n"
 "--\n"
 "\n"
 "A coroutine wrapped in a Future.");
 
 static int
 _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
-                            PyObject *name);
+                            PyObject *name, PyObject *context);
 
 static int
 _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
-    static const char * const _keywords[] = {"coro", "loop", "name", NULL};
+    static const char * const _keywords[] = {"coro", "loop", "name", "context", NULL};
     static _PyArg_Parser _parser = {NULL, _keywords, "Task", 0};
-    PyObject *argsbuf[3];
+    PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *coro;
     PyObject *loop = Py_None;
     PyObject *name = Py_None;
+    PyObject *context = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
     if (!fastargs) {
@@ -347,9 +348,15 @@ _asyncio_Task___init__(PyObject *self, PyObject *args, PyObject *kwargs)
             goto skip_optional_kwonly;
         }
     }
-    name = fastargs[2];
+    if (fastargs[2]) {
+        name = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    context = fastargs[3];
 skip_optional_kwonly:
-    return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop, name);
+    return_value = _asyncio_Task___init___impl((TaskObj *)self, coro, loop, name, context);
 
 exit:
     return return_value;
@@ -611,6 +618,41 @@ PyDoc_STRVAR(_asyncio_Task_set_name__doc__,
 #define _ASYNCIO_TASK_SET_NAME_METHODDEF    \
     {"set_name", (PyCFunction)_asyncio_Task_set_name, METH_O, _asyncio_Task_set_name__doc__},
 
+PyDoc_STRVAR(_asyncio_Task__set_context__doc__,
+"_set_context($self, /, context)\n"
+"--\n"
+"\n"
+"Set the context associated with the task.\n"
+"\n"
+"This does not change the current thread context and only affects the thread\n"
+"context of later callbacks. Returns the previously context attached to the task.");
+
+#define _ASYNCIO_TASK__SET_CONTEXT_METHODDEF    \
+    {"_set_context", (PyCFunction)(void(*)(void))_asyncio_Task__set_context, METH_FASTCALL|METH_KEYWORDS, _asyncio_Task__set_context__doc__},
+
+static PyObject *
+_asyncio_Task__set_context_impl(TaskObj *self, PyObject *context);
+
+static PyObject *
+_asyncio_Task__set_context(TaskObj *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"context", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_set_context", 0};
+    PyObject *argsbuf[1];
+    PyObject *context;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    context = args[0];
+    return_value = _asyncio_Task__set_context_impl(self, context);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
 "_get_running_loop($module, /)\n"
 "--\n"
@@ -871,4 +913,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0d127162ac92e0c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02e21cc39188c337 input=a9049054013a1b77]*/

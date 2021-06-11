@@ -108,8 +108,8 @@ class BaseTaskTests:
     Task = None
     Future = None
 
-    def new_task(self, loop, coro, name='TestTask'):
-        return self.__class__.Task(coro, loop=loop, name=name)
+    def new_task(self, loop, coro, name='TestTask', context=None):
+        return self.__class__.Task(coro, loop=loop, name=name, context=context)
 
     def new_future(self, loop):
         return self.__class__.Future(loop=loop)
@@ -2859,6 +2859,72 @@ class BaseTaskTests:
             loop.close()
 
         self.assertEqual(cvar.get(), -1)
+
+    def test_context_4(self):
+        # Test specifying context
+        cvar = contextvars.ContextVar('cvar', default='nope')
+
+        context = contextvars.Context()
+        context.run(cvar.set, 'maybe')
+
+        async def sub(expect, update):
+            self.assertEqual(cvar.get(), expect)
+            cvar.set(update)
+
+        async def main():
+            self.assertEqual(cvar.get(), 'maybe')
+
+            await sub('maybe', 'always')
+            self.assertEqual(cvar.get(), 'always')
+
+            await self.new_task(loop, sub('always', 'never'))
+            self.assertEqual(cvar.get(), 'always')
+
+            await self.new_task(loop, sub('always', 'never'), context=context)
+            self.assertEqual(cvar.get(), 'never')
+
+        loop = asyncio.new_event_loop()
+        try:
+            task = self.new_task(loop, main(), context=context)
+            loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+        self.assertEqual(cvar.get(), 'nope')
+        self.assertEqual(context.run(cvar.get), 'never')
+
+    def test_run_in_context(self):
+        # Test run_in_context behavior
+        cvar = contextvars.ContextVar('cvar', default='nope')
+
+        context = contextvars.Context()
+        context.run(cvar.set, 'maybe')
+
+        async def sub(update, parent_task):
+            self.assertIs(parent_task, asyncio.current_task())
+            value = cvar.get()
+            cvar.set(update)
+            return value
+            
+
+        async def main():
+            self.assertEqual(cvar.get(), 'maybe')
+            sub_context = context.copy()
+
+            cvar.set('never')
+            self.assertEqual(await asyncio.run_in_context(sub_context, sub('always', asyncio.current_task())), 'maybe')
+            self.assertEqual(cvar.get(), 'never')
+            self.assertEqual(sub_context.run(cvar.get), 'always')
+
+        loop = asyncio.new_event_loop()
+        try:
+            task = self.new_task(loop, main(), context=context)
+            loop.run_until_complete(task)
+        finally:
+            loop.close()
+
+        self.assertEqual(cvar.get(), 'nope')
+        self.assertEqual(context.run(cvar.get), 'never')
 
     def test_get_coro(self):
         loop = asyncio.new_event_loop()

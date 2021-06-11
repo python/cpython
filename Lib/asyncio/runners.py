@@ -5,7 +5,7 @@ from . import events
 from . import tasks
 
 
-def run(main, *, debug=None):
+def run(main, *, debug=None, **task_kwargs):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -41,7 +41,7 @@ def run(main, *, debug=None):
         events.set_event_loop(loop)
         if debug is not None:
             loop.set_debug(debug)
-        return loop.run_until_complete(main)
+        return loop.run_until_complete(tasks.Task(main, loop=loop, **task_kwargs))
     finally:
         try:
             _cancel_all_tasks(loop)

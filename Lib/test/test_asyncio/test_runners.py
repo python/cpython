@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import unittest
 
 from unittest import mock
@@ -180,3 +181,28 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+    def test_asyncio_run_task_creation(self):
+        cvar = contextvars.ContextVar('cvar', default='nope')
+
+        context = contextvars.Context()
+        context.run(cvar.set, 'maybe')
+
+        async def check_explicit(name_expect, var_expect, var_update):
+            self.assertEqual(name_expect, asyncio.current_task().get_name())
+            self.assertEqual(var_expect, cvar.get())
+            cvar.set(var_update)
+
+        # Verify name and context passed to task
+        asyncio.run(check_explicit('my-task', 'maybe', 'sometimes'), name='my-task', context=context)
+        self.assertEqual(context.run(cvar.get), 'sometimes')
+
+        async def check_default(var_expect, var_update):
+            self.assertTrue(asyncio.current_task().get_name().startswith("Task-"))
+            self.assertEqual(var_expect, cvar.get())
+            cvar.set(var_update)
+
+        # Verify default name and context (copy of current context) used otherwise
+        cvar.set('seldom')
+        asyncio.run(check_default('seldom', 'often'))
+        self.assertEqual(cvar.get(), 'seldom')

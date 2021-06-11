@@ -847,9 +847,10 @@ Task Object
    APIs except :meth:`Future.set_result` and
    :meth:`Future.set_exception`.
 
-   Tasks support the :mod:`contextvars` module.  When a Task
-   is created it copies the current context and later runs its
-   coroutine in the copied context.
+   Tasks support the :mod:`contextvars` module.  Tasks can be run under
+   any context, defaulting to a copy of the context that created them. This
+   context will later be used to run its coroutines.  The context associated
+   with a task can be modified using `:meth:`asyncio.run_in_context`.
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.

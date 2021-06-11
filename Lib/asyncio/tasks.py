@@ -5,7 +5,7 @@ __all__ = (
     'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
     'wait', 'wait_for', 'as_completed', 'sleep',
     'gather', 'shield', 'ensure_future', 'run_coroutine_threadsafe',
-    'current_task', 'all_tasks',
+    'current_task', 'all_tasks', 'run_in_context',
     '_register_task', '_unregister_task', '_enter_task', '_leave_task',
 )
 
@@ -71,6 +71,24 @@ def _set_task_name(task, name):
             set_name(name)
 
 
+async def run_in_context(context, coro):
+    """Run the coroutine coro in the passed context.
+
+    This method can be used to run coro in an alternate context within the
+    calling Task.  This is the asyncio analog of contextvars.Context.run.
+    """
+    task = current_task()
+    if task is None:
+        raise RuntimeError("No running task")
+    prev_context = task._set_context(context)
+    await __sleep0()
+    try:
+        return await coro
+    finally:
+        task._set_context(prev_context)
+        await __sleep0()
+
+
 class Task(futures._PyFuture):  # Inherit Python Task implementation
                                 # from a Python Future implementation.
 
@@ -89,7 +107,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # status is still pending
     _log_destroy_pending = True
 
-    def __init__(self, coro, *, loop=None, name=None):
+    def __init__(self, coro, *, loop=None, name=None, context=None):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
@@ -107,7 +125,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         self._must_cancel = False
         self._fut_waiter = None
         self._coro = coro
-        self._context = contextvars.copy_context()
+
+        if context is None:
+            self._context = contextvars.copy_context()
+        else:
+            self._context = context
 
         self._loop.call_soon(self.__step, context=self._context)
         _register_task(self)
@@ -128,6 +150,11 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
+
+    def _set_context(self, context):
+        prev_context = self._context
+        self._context = context
+        return prev_context
 
     def get_coro(self):
         return self._coro
