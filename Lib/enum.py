@@ -818,7 +818,7 @@ class EnumType(type):
                         data_types.add(candidate or base)
                         break
                     else:
-                        candidate = base
+                        candidate = candidate or base
             if len(data_types) > 1:
                 raise TypeError('%r: too many data types: %r' % (class_name, data_types))
             elif data_types:
