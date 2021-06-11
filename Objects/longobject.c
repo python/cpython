@@ -4185,7 +4185,6 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                 goto Error;
             Py_DECREF(a);
             a = temp;
-            temp = NULL;
         }
 
         /* Reduce base by modulus in some cases:
@@ -4247,9 +4246,15 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             /* http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf    */
             --i;
             digit bi = b->ob_digit[i];
-            /* Find the first significant exponent bit. */
-            for (j = (digit)1 << (PyLong_SHIFT-1); j != 0; j >>= 1) {
-                if (bi & j) {
+            /* Find the first significant exponent bit. Search right to left
+             * because we're primarily trying to cut overhead for small
+             * exponents, like 2 and 3.
+             */
+            assert(bi);  /* else there is no significant bit */
+            for (j = 2; ; j <<=  1) {
+                if (j > bi) {
+                    assert((bi & j) == 0);
+                    j >>= 1;
                     /* Found the first bit. We would like to simply set z to
                      * `a` now. But, if we do, and b is 1, pow() will return
                      * `a` then. Which is of a wrong type if `a` is an instance
@@ -4262,7 +4267,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                     break;
                 }
             }
-            assert(j);  /* else we never found a bit set */
+            assert(bi & j);
             for (j >>= 1;;) {
                 for (; j != 0; j >>= 1) {
                     MULT(z, z, z);
