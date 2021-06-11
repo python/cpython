@@ -4254,7 +4254,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
                      * `a` now. But, if we do, and b is 1, pow() will return
                      * `a` then. Which is of a wrong type if `a` is an instance
                      * of an int subclass. test_bool actually griped about
-                     * that, demanding that, e.g., pos(False, 1) is not False.
+                     * that, demanding that, e.g., pow(False, 1) is not False.
                      * The seemingly useless multiplication by 1 is done
                      * solely to worm around that.
                      */
