@@ -1540,6 +1540,15 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         }
     }
 
+    if (pathconfig->stdlib_dir == NULL) {
+        if (calculate->prefix_found) {
+            pathconfig->stdlib_dir = _PyMem_RawWcsdup(calculate->prefix);
+            if (pathconfig->stdlib_dir == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
+        }
+    }
+
     if (pathconfig->prefix == NULL) {
         status = calculate_set_prefix(calculate, pathconfig);
         if (_PyStatus_EXCEPTION(status)) {

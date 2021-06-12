@@ -398,6 +398,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'module_search_paths': GET_DEFAULT_CONFIG,
         'module_search_paths_set': 1,
         'platlibdir': sys.platlibdir,
+        'stdlib_dir': GET_DEFAULT_CONFIG,
 
         'site_import': 1,
         'bytes_warning': 0,
@@ -507,6 +508,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'exec_prefix',
         'program_name',
         'home',
+        'stdlib_dir',
         # program_full_path and module_search_path are copied indirectly from
         # the core configuration in check_path_config().
     ]

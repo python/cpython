@@ -674,6 +674,7 @@ PyConfig_Clear(PyConfig *config)
     _PyWideStringList_Clear(&config->xoptions);
     _PyWideStringList_Clear(&config->module_search_paths);
     config->module_search_paths_set = 0;
+    CLEAR(config->stdlib_dir);
 
     CLEAR(config->executable);
     CLEAR(config->base_executable);
@@ -914,6 +915,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(xoptions);
     COPY_WSTRLIST(module_search_paths);
     COPY_ATTR(module_search_paths_set);
+    COPY_WSTR_ATTR(stdlib_dir);
 
     COPY_WSTR_ATTR(executable);
     COPY_WSTR_ATTR(base_executable);
@@ -1024,6 +1026,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_INT(module_search_paths_set);
     SET_ITEM_WSTRLIST(module_search_paths);
+    SET_ITEM_WSTR(stdlib_dir);
     SET_ITEM_WSTR(executable);
     SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
@@ -1351,6 +1354,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     // Path configuration output
     GET_UINT(module_search_paths_set);
     GET_WSTRLIST(module_search_paths);
+    GET_WSTR_OPT(stdlib_dir);
     GET_WSTR_OPT(executable);
     GET_WSTR_OPT(base_executable);
     GET_WSTR_OPT(prefix);
@@ -3118,6 +3122,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  environment = %i\n", config->use_environment);
     PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
     PySys_WriteStderr("  import site = %i\n", config->site_import);
+    DUMP_CONFIG("stdlib dir", stdlib_dir);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \
