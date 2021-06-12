@@ -384,9 +384,9 @@ def urlparse(url, scheme='', allow_fragments=True):
     Note that % escapes are not expanded.
     """
     if not isinstance(url, (str, bytes, bytearray)):
-        raise TypeError(f'Expected string or bytes: got {type(url)}')
+        raise TypeError(f'Expected a string or bytes object: got {type(url)}')
     if not isinstance(scheme, (str, bytes, bytearray)):
-        raise TypeError(f'Expected string or bytes: got {type(scheme)}')
+        raise TypeError(f'Expected a string or bytes object: got {type(scheme)}')
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
@@ -456,9 +456,9 @@ def urlsplit(url, scheme='', allow_fragments=True):
     Note that % escapes are not expanded.
     """
     if not isinstance(url, (str, bytes, bytearray)):
-        raise TypeError(f'Expected string or bytes: got {type(url)}')
+        raise TypeError(f'Expected a string or bytes object: got {type(url)}')
     if not isinstance(scheme, (str, bytes, bytearray)):
-        raise TypeError(f'Expected string or bytes: got {type(scheme)}')
+        raise TypeError(f'Expected a string or bytes object: got {type(scheme)}')
 
     url, scheme, _coerce_result = _coerce_args(url, scheme)
 
@@ -523,9 +523,9 @@ def urljoin(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
     if not isinstance(base, (str, bytes, bytearray)):
-        raise TypeError(f'Expected string or bytes: got {type(base)}')
+        raise TypeError(f'Expected a string or bytes object: got {type(base)}')
     if not isinstance(url, (str, bytes, bytearray)):
-        raise TypeError(f'Expected string or bytes: got {type(url)}')
+        raise TypeError(f'Expected a string or bytes object: got {type(url)}')
 
     if not base:
         return url

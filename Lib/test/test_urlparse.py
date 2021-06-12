@@ -850,27 +850,27 @@ class UrlParseTestCase(unittest.TestCase):
     def test_forbidden_types(self):
         with self.assertRaisesRegex(
                 TypeError,
-                "Expected string or bytes: got <class 'list'>"):
+                "Expected a string or bytes object: got <class 'list'>"):
             urllib.parse.urljoin('http://www.python.org', [])
         with self.assertRaisesRegex(
                 TypeError,
-                "Expected string or bytes: got <class 'list'>"):
+                "Expected a string or bytes object: got <class 'list'>"):
             urllib.parse.urljoin([], b'docs')
         with self.assertRaisesRegex(
                 TypeError,
-                "Expected string or bytes: got <class 'NoneType'>"):
+                "Expected a string or bytes object: got <class 'NoneType'>"):
             urllib.parse.urlparse(b'www.python.org', None)
         with self.assertRaisesRegex(
                 TypeError,
-                "Expected string or bytes: got <class 'dict'>"):
+                "Expected a string or bytes object: got <class 'dict'>"):
             urllib.parse.urlparse({}, '')
         with self.assertRaisesRegex(
                 TypeError,
-                "Expected string or bytes: got <class 'int'>"):
+                "Expected a string or bytes object: got <class 'int'>"):
             urllib.parse.urlsplit(0, 'http')
         with self.assertRaisesRegex(
                 TypeError,
-                "Expected string or bytes: got <class 'NoneType'>"):
+                "Expected a string or bytes object: got <class 'NoneType'>"):
             urllib.parse.urlsplit('http://www.python.org', None)
 
     def _check_result_type(self, str_type):
