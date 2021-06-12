@@ -3060,9 +3060,8 @@ class TestInheritance(unittest.TestCase):
 class TestJumpTables(unittest.TestCase):
 
     def assert_has_jump_tables(self, n):
-        JUMP_TABLE_TYPE = dict
         def decorator(func):
-            number = sum(type(x) is JUMP_TABLE_TYPE
+            number = sum(type(x).__name__ == "jump_table"
                          for x in func.__code__.co_consts)
             self.assertEqual(number, n)
             return func

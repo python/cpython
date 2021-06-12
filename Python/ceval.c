@@ -22,6 +22,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_jumptable.h"     // _PyJumpTable_Get()
 
 #include "code.h"
 #include "dictobject.h"
@@ -3849,19 +3850,18 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
              * On key not found --> [subject]
              *    Jump to after the last simple case.
              */
-            PyObject *jump_dict = POP();
+            PyObject *jump_map = POP();
             PyObject *subject = TOP();
-            assert(PyDict_CheckExact(jump_dict));
             if (PyLong_CheckExact(subject) ||
                 PyUnicode_CheckExact(subject) ||
                 Py_Is(subject, Py_None))
             {
-                PyObject *boxed = PyDict_GetItemWithError(jump_dict, subject);
-                Py_DECREF(jump_dict);
-                if (boxed == NULL) {
-                    if (PyErr_Occurred()) {
-                        goto error;
-                    }
+                int target = _PyJumpTable_Get(jump_map, subject);
+                if (target == -2) {
+                    assert(PyErr_Occurred());
+                    goto error;
+                }
+                else if (target == -1) {
                     // subject not found in jump table, so skip over.
                     JUMPTO(oparg);
                 }
@@ -3869,14 +3869,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                     // Found! Jump to the right case.
                     STACK_SHRINK(1);
                     Py_DECREF(subject);
-                    assert(PyLong_CheckExact(boxed));
-                    int target = (int)PyLong_AsLong(boxed);
                     JUMPTO(target);
                 }
             }
             else {
                 // Fall back to general matching code.
-                Py_DECREF(jump_dict);
+                Py_DECREF(jump_map);
             }
             DISPATCH();
         }

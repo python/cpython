@@ -197,6 +197,7 @@
     <ClInclude Include="..\Include\internal\pycore_import.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
+    <ClInclude Include="..\Include\internal\pycore_jumptable.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
@@ -406,6 +407,7 @@
     <ClCompile Include="..\Objects\genobject.c" />
     <ClCompile Include="..\Objects\interpreteridobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
+    <ClCompile Include="..\Objects\jumptable.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />
     <ClCompile Include="..\Objects\memoryobject.c" />

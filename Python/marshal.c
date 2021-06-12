@@ -14,6 +14,8 @@
 #include "marshal.h"
 #include "pycore_hashtable.h"
 #include "pycore_code.h"        // _PyCode_New()
+// _PyJumpTable_Check(), _PyJumpTable_New(), _PyJumpTable_DictCopy()
+#include "pycore_jumptable.h"
 
 /*[clinic input]
 module marshal
@@ -60,6 +62,7 @@ module marshal
 #define TYPE_TUPLE              '('
 #define TYPE_LIST               '['
 #define TYPE_DICT               '{'
+#define TYPE_JUMP_TABLE         'd'
 #define TYPE_CODE               'c'
 #define TYPE_UNICODE            'u'
 #define TYPE_UNKNOWN            '?'
@@ -490,6 +493,18 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             w_object(key, p);
             w_object(value, p);
         }
+        w_object((PyObject *)NULL, p);
+    }
+    else if (_PyJumpTable_Check(v)) {
+        PyObject *vv = _PyJumpTable_DictCopy(v);
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        W_TYPE(TYPE_JUMP_TABLE, p);
+        while (PyDict_Next(vv, &pos, &key, &value)) {
+            w_object(key, p);
+            w_object(value, p);
+        }
+        // NULL-terminated
         w_object((PyObject *)NULL, p);
     }
     else if (PyAnySet_CheckExact(v)) {
@@ -1209,6 +1224,7 @@ r_object(RFILE *p)
         break;
 
     case TYPE_DICT:
+    case TYPE_JUMP_TABLE:
         v = PyDict_New();
         R_REF(v);
         if (v == NULL)
@@ -1234,6 +1250,9 @@ r_object(RFILE *p)
         if (PyErr_Occurred()) {
             Py_DECREF(v);
             v = NULL;
+        }
+        else if (type == TYPE_JUMP_TABLE) {
+            Py_SETREF(v, _PyJumpTable_New(v));
         }
         retval = v;
         break;

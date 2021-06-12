@@ -28,6 +28,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_jumptable.h"     // _PyJumpTable_New()
 
 #define NEED_OPCODE_JUMP_TABLES
 #include "opcode.h"               // EXTENDED_ARG
@@ -7340,17 +7341,15 @@ build_jump_tables(struct compiler *c, PyObject *consts)
         // The placeholder objects are guaranteed to be in the same order as the
         // jump tables. Again, that means *reverse* order. Find this one:
         while (PyList_GET_ITEM(consts, --i) != table->placeholder);
-        // XXX: Use a _frozendict or something here:
         PyObject *dict = _PyDict_NewPresized(PyList_GET_SIZE(table->keys));
         if (!dict) {
             return 1;
         }
-        PyList_SET_ITEM(consts, i, dict);
-        Py_DECREF(table->placeholder);
         for (Py_ssize_t j = 0; j < PyList_GET_SIZE(table->keys); j++) {
             PyObject *key = PyList_GET_ITEM(table->keys, j);
             PyObject *value = PyLong_FromLong(table->values[j]->b_offset);
             if (value == NULL) {
+                Py_DECREF(dict);
                 return 1;
             }
             // PyDict_SetDefault is used here because if we have two or more
@@ -7363,10 +7362,20 @@ build_jump_tables(struct compiler *c, PyObject *consts)
             //     case 42+0j: ...
             if (PyDict_SetDefault(dict, key, value) == NULL) {
                 Py_DECREF(value);
+                Py_DECREF(dict);
                 return 1;
             }
             Py_DECREF(value);
         }
+        PyObject *frozen_table = _PyJumpTable_New(dict);
+        Py_DECREF(dict);
+        if (!frozen_table) {
+            return 1;
+        }
+        assert(PyList_GET_ITEM(consts, i) == table->placeholder);
+        PyList_SET_ITEM(consts, i, frozen_table);
+        Py_DECREF(table->placeholder);
+
         c->c_jump_table_tail = table->previous;
         Py_DECREF(table->placeholder);
         Py_DECREF(table->keys);
