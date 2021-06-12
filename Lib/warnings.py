@@ -176,6 +176,7 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
+    assert isinstance(category, type), "category must be a class"
     _add_filter(action, None, category, None, lineno, append=append)
 
 def _add_filter(*item, append):

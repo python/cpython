@@ -342,6 +342,13 @@ class FilterTests(BaseTest):
                 "the beginning of list"
             )
 
+    def test_simplefilter_invalid_category(self):
+        with original_warnings.catch_warnings(record=True, module=self.module):
+            invalid_category = 'spam'
+            with self.assertRaises(AssertionError) as cm:
+                self.module.simplefilter("once", invalid_category)
+            self.assertEqual(str(cm.exception), "category must be a class")
+
     def test_simplefilter_duplicate_filters(self):
         with original_warnings.catch_warnings(module=self.module):
             self.module.resetwarnings()
