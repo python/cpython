@@ -6649,7 +6649,7 @@ compiler_match_inner(struct compiler *c, stmt_ty s, pattern_context *pc)
     Py_ssize_t cases = asdl_seq_LEN(s->v.Match.cases);
     assert(cases > 0);
     jump_table *table = NULL;
-    basicblock *first_nonsimple;
+    basicblock *first_nonsimple = NULL;
     match_case_ty last = asdl_seq_GET(s->v.Match.cases, cases - 1);
     int has_default = WILDCARD_CHECK(last->pattern) && 1 < cases;
     Py_ssize_t table_end = -1;
