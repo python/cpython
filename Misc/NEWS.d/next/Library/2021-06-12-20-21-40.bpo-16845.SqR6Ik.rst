@@ -1,0 +1,1 @@
+add category type check to warnings.simplefilter
