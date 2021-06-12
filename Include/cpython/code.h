@@ -137,8 +137,8 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 /* for internal use only */
 struct _opaque {
     int computed_line;
-    char *lo_next;
-    char *limit;
+    const char *lo_next;
+    const char *limit;
 };
 
 typedef struct _line_offsets {
@@ -175,7 +175,7 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the line number table. */
-void PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
+void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
