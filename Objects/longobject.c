@@ -4243,14 +4243,21 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     digit bi = i ? b->ob_digit[i-1] : 0;
     digit bit;
     if (i <= 1 && bi <= 3) {
-        /* exponent <= 3 - just do straight multiplies. Note that the multiply
-         * 1 * a -> z serves a purpose when bi is 1: if `a` is of an int
-         * subclass, it ensures the result is an int. For example, that
-         * pow(False, 1) returns 0 instead of False.
-         */
-        while (bi-- > 0) {
-             MULT(z, a, z);
+        /* aim for minimal overhead */
+        if (bi >= 2) {
+            MULT(a, a, z);
+            if (bi == 3) {
+                MULT(z, a, z);
+            }
         }
+        else if (bi == 1) {
+            /* Multiplying by 1 serves two purposes: if `a` is of an int
+             * subclass, makes the result an int (e.g., pow(False, 1) returns
+             * 0 instead of False), and potetially reduces `a` by the modulus.
+             */
+            MULT(a, z, z);
+        }
+        /* else bi is 0, and z==1 is correct */
     }
     else if (i <= FIVEARY_CUTOFF) {
         /* Left-to-right binary exponentiation (HAC Algorithm 14.79) */
@@ -4260,15 +4267,17 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
          * because we're primarily trying to cut overhead for small powers.
          */
         assert(bi);  /* else there is no significant bit */
+        Py_INCREF(a);
+        Py_DECREF(z);
+        z = a;
         for (bit = 2; ; bit <<= 1) {
             if (bit > bi) { /* found the first bit */
                 assert((bi & bit) == 0);
                 bit >>= 1;
-                MULT(z, a, z);
+                assert(bi & bit);
                 break;
             }
         }
-        assert(bi & bit);
         for (--i, bit >>= 1;;) {
             for (; bit != 0; bit >>= 1) {
                 MULT(z, z, z);
