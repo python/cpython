@@ -267,7 +267,14 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
        a long running assumption in ceval.c and many parts of
        the interpreter. */
     if (PyBytes_GET_SIZE(con->code) > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "co_code larger than INT_MAX");
+        PyErr_SetString(PyExc_OverflowError,
+                        "code: co_code larger than INT_MAX");
+        return -1;
+    }
+    if (PyBytes_GET_SIZE(con->code) % sizeof(_Py_CODEUNIT) != 0 ||
+        !_Py_IS_ALIGNED(PyBytes_AS_STRING(con->code), sizeof(_Py_CODEUNIT))
+        ) {
+        PyErr_SetString(PyExc_ValueError, "code: co_code is malformed");
         return -1;
     }
 
@@ -283,7 +290,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
                        ((con->flags & CO_VARARGS) != 0) -
                        ((con->flags & CO_VARKEYWORDS) != 0);
     if (nplainlocals < 0) {
-        PyErr_SetString(PyExc_ValueError, "code: varnames is too small");
+        PyErr_SetString(PyExc_ValueError, "code: co_varnames is too small");
         return -1;
     }
 
@@ -306,6 +313,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     Py_INCREF(con->code);
     co->co_code = con->code;
+    co->co_firstinstr = (_Py_CODEUNIT *)PyBytes_AS_STRING(con->code);
     co->co_firstlineno = con->firstlineno;
     Py_INCREF(con->linetable);
     co->co_linetable = con->linetable;
@@ -346,6 +354,8 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_opcache = NULL;
     co->co_opcache_flag = 0;
     co->co_opcache_size = 0;
+    co->co_warmup = QUICKENING_INITIAL_WARMUP_VALUE;
+    co->co_quickened = NULL;
 }
 
 /* The caller is responsible for ensuring that the given data is valid. */
@@ -507,6 +517,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     if (_PyCode_Validate(&con) < 0) {
         goto error;
     }
+    assert(PyBytes_GET_SIZE(code) % sizeof(_Py_CODEUNIT) == 0);
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(code), sizeof(_Py_CODEUNIT)));
     if (nlocals != PyTuple_GET_SIZE(varnames)) {
         PyErr_SetString(PyExc_ValueError,
                         "code: co_nlocals != len(co_varnames)");
@@ -615,7 +627,7 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 }
 
 void
-PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range)
+PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range)
 {
     range->opaque.lo_next = linetable;
     range->opaque.limit = range->opaque.lo_next + length;
@@ -628,7 +640,7 @@ PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno
 int
 _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds)
 {
-    char *linetable = PyBytes_AS_STRING(co->co_linetable);
+    const char *linetable = PyBytes_AS_STRING(co->co_linetable);
     Py_ssize_t length = PyBytes_GET_SIZE(co->co_linetable);
     PyLineTable_InitAddressRange(linetable, length, co->co_firstlineno, bounds);
     return bounds->ar_line;
@@ -914,7 +926,7 @@ _PyCode_InitOpcache(PyCodeObject *co)
         return -1;
     }
 
-    _Py_CODEUNIT *opcodes = (_Py_CODEUNIT*)PyBytes_AS_STRING(co->co_code);
+    const _Py_CODEUNIT *opcodes = (const _Py_CODEUNIT*)PyBytes_AS_STRING(co->co_code);
     Py_ssize_t opts = 0;
 
     for (Py_ssize_t i = 0; i < co_size;) {
@@ -1031,6 +1043,7 @@ PyObject *
 _PyCode_GetVarnames(PyCodeObject *co)
 {
     if (co->co_varnames == NULL) {
+        // PyCodeObject owns this reference.
         co->co_varnames = get_localsplus_names(co, CO_FAST_LOCAL,
                                                co->co_nlocals);
         if (co->co_varnames == NULL) {
@@ -1045,6 +1058,7 @@ PyObject *
 _PyCode_GetCellvars(PyCodeObject *co)
 {
     if (co->co_cellvars == NULL) {
+        // PyCodeObject owns this reference.
         co->co_cellvars = get_localsplus_names(co, CO_FAST_CELL,
                                                co->co_ncellvars);
         if (co->co_cellvars == NULL) {
@@ -1059,6 +1073,7 @@ PyObject *
 _PyCode_GetFreevars(PyCodeObject *co)
 {
     if (co->co_freevars == NULL) {
+        // PyCodeObject owns this reference.
         co->co_freevars = get_localsplus_names(co, CO_FAST_FREE,
                                                co->co_nfreevars);
         if (co->co_freevars == NULL) {
@@ -1232,6 +1247,10 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co->co_cell2arg);
     if (co->co_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject*)co);
+    if (co->co_quickened) {
+        PyMem_Free(co->co_quickened);
+        _Py_QuickenedCount--;
+    }
     PyObject_Free(co);
 }
 
@@ -1501,6 +1520,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         return NULL;
     }
 
+    PyCodeObject *co = NULL;
     PyObject *varnames = NULL;
     PyObject *cellvars = NULL;
     PyObject *freevars = NULL;
@@ -1526,21 +1546,17 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
         co_freevars = freevars;
     }
 
-    PyCodeObject *co = PyCode_NewWithPosOnlyArgs(
+    co = PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,
         co_varnames, co_freevars, co_cellvars, co_filename, co_name,
         co_firstlineno, (PyObject*)co_linetable, (PyObject*)co_exceptiontable);
-    if (co == NULL) {
-        goto error;
-    }
-    return (PyObject *)co;
 
 error:
     Py_XDECREF(varnames);
     Py_XDECREF(cellvars);
     Py_XDECREF(freevars);
-    return NULL;
+    return (PyObject *)co;
 }
 
 /*[clinic input]

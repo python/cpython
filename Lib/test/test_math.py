@@ -377,6 +377,22 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.atan2(NAN, INF)))
         self.assertTrue(math.isnan(math.atan2(NAN, NAN)))
 
+    def testCbrt(self):
+        self.assertRaises(TypeError, math.cbrt)
+        self.ftest('cbrt(0)', math.cbrt(0), 0)
+        self.ftest('cbrt(1)', math.cbrt(1), 1)
+        self.ftest('cbrt(8)', math.cbrt(8), 2)
+        self.ftest('cbrt(0.0)', math.cbrt(0.0), 0.0)
+        self.ftest('cbrt(-0.0)', math.cbrt(-0.0), -0.0)
+        self.ftest('cbrt(1.2)', math.cbrt(1.2), 1.062658569182611)
+        self.ftest('cbrt(-2.6)', math.cbrt(-2.6), -1.375068867074141)
+        self.ftest('cbrt(27)', math.cbrt(27), 3)
+        self.ftest('cbrt(-1)', math.cbrt(-1), -1)
+        self.ftest('cbrt(-27)', math.cbrt(-27), -3)
+        self.assertEqual(math.cbrt(INF), INF)
+        self.assertEqual(math.cbrt(NINF), NINF)
+        self.assertTrue(math.isnan(math.cbrt(NAN)))
+
     def testCeil(self):
         self.assertRaises(TypeError, math.ceil)
         self.assertEqual(int, type(math.ceil(0.5)))
@@ -1214,7 +1230,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, 0., -2.)
         self.assertRaises(ValueError, math.pow, 0., -2.3)
         self.assertRaises(ValueError, math.pow, 0., -3.)
-        self.assertRaises(ValueError, math.pow, 0., NINF)
+        self.assertEqual(math.pow(0., NINF), INF)
         self.assertTrue(math.isnan(math.pow(0., NAN)))
 
         # pow(INF, x)
@@ -1240,7 +1256,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, -0., -2.)
         self.assertRaises(ValueError, math.pow, -0., -2.3)
         self.assertRaises(ValueError, math.pow, -0., -3.)
-        self.assertRaises(ValueError, math.pow, -0., NINF)
+        self.assertEqual(math.pow(-0., NINF), INF)
         self.assertTrue(math.isnan(math.pow(-0., NAN)))
 
         # pow(NINF, x)
@@ -1499,6 +1515,10 @@ class MathTests(unittest.TestCase):
     def testSqrt(self):
         self.assertRaises(TypeError, math.sqrt)
         self.ftest('sqrt(0)', math.sqrt(0), 0)
+        self.ftest('sqrt(0)', math.sqrt(0.0), 0.0)
+        self.ftest('sqrt(2.5)', math.sqrt(2.5), 1.5811388300841898)
+        self.ftest('sqrt(0.25)', math.sqrt(0.25), 0.5)
+        self.ftest('sqrt(25.25)', math.sqrt(25.25), 5.024937810560445)
         self.ftest('sqrt(1)', math.sqrt(1), 1)
         self.ftest('sqrt(4)', math.sqrt(4), 2)
         self.assertEqual(math.sqrt(INF), INF)

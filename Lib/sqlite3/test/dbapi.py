@@ -555,6 +555,17 @@ class CursorTests(unittest.TestCase):
         ]
         self.assertEqual(results, expected)
 
+    def test_column_count(self):
+        # Check that column count is updated correctly for cached statements
+        select = "select * from test"
+        res = self.cu.execute(select)
+        old_count = len(res.description)
+        # Add a new column and execute the cached select query again
+        self.cu.execute("alter table test add newcol")
+        res = self.cu.execute(select)
+        new_count = len(res.description)
+        self.assertEqual(new_count - old_count, 1)
+
 
 class ThreadTests(unittest.TestCase):
     def setUp(self):
