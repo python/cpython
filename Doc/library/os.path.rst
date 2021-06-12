@@ -332,16 +332,24 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: normpath(path)
+.. function:: normpath(path, *, strict=False)
 
-   Normalize a pathname by collapsing redundant separators and up-level
-   references so that ``A//B``, ``A/B/``, ``A/./B`` and ``A/foo/../B`` all
-   become ``A/B``.  This string manipulation may change the meaning of a path
-   that contains symbolic links.  On Windows, it converts forward slashes to
-   backward slashes. To normalize case, use :func:`normcase`.
+   Normalize a pathname by collapsing redundant separators so that ``A//B``,
+   ``A/B/`` and ``A/./B`` all become ``A/B``.
+
+   In non-strict mode (the default), up-level references are collapsed so that
+   ``A/foo/../B`` also becomes ``A/B``.  This string manipulation may change
+   the meaning of a path that contains symbolic links. In strict mode, ``..``
+   entries are retained, and so the path's meaning is always preserved.
+
+   On Windows, this function converts forward slashes to backward slashes. To
+   normalize case, use :func:`normcase`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.11
+      The *strict* parameter was added.
 
 
 .. function:: realpath(path, *, strict=False)

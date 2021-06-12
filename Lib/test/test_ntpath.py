@@ -236,6 +236,33 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\.\\NUL')", r'\\.\NUL')
         tester("ntpath.normpath('\\\\?\\D:/XY\\Z')", r'\\?\D:/XY\Z')
 
+    def test_normpath_strict(self):
+        tester("ntpath.normpath('A//////././//.//B', strict=True)", r'A\B')
+        tester("ntpath.normpath('A/./B', strict=True)", r'A\B')
+        tester("ntpath.normpath('A/foo/../B', strict=True)", r'A\foo\..\B')
+        tester("ntpath.normpath('C:A//B', strict=True)", r'C:A\B')
+        tester("ntpath.normpath('D:A/./B', strict=True)", r'D:A\B')
+        tester("ntpath.normpath('e:A/foo/../B', strict=True)", r'e:A\foo\..\B')
+
+        tester("ntpath.normpath('C:///A//B', strict=True)", r'C:\A\B')
+        tester("ntpath.normpath('D:///A/./B', strict=True)", r'D:\A\B')
+        tester("ntpath.normpath('e:///A/foo/../B', strict=True)", r'e:\A\foo\..\B')
+
+        tester("ntpath.normpath('..', strict=True)", r'..')
+        tester("ntpath.normpath('.', strict=True)", r'.')
+        tester("ntpath.normpath('', strict=True)", r'.')
+        tester("ntpath.normpath('/', strict=True)", '\\')
+        tester("ntpath.normpath('c:/', strict=True)", 'c:\\')
+        tester("ntpath.normpath('/../.././..', strict=True)", '\\..\\..\\..')
+        tester("ntpath.normpath('c:/../../..', strict=True)", 'c:\\..\\..\\..')
+        tester("ntpath.normpath('../.././..', strict=True)", r'..\..\..')
+        tester("ntpath.normpath('K:../.././..', strict=True)", r'K:..\..\..')
+        tester("ntpath.normpath('C:////a/b', strict=True)", r'C:\a\b')
+        tester("ntpath.normpath('//machine/share//a/b', strict=True)", r'\\machine\share\a\b')
+
+        tester("ntpath.normpath('\\\\.\\NUL', strict=True)", r'\\.\NUL')
+        tester("ntpath.normpath('\\\\?\\D:/XY\\Z', strict=True)", r'\\?\D:/XY\Z')
+
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
         tester("ntpath.realpath('.')", expected)

@@ -324,6 +324,35 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.normpath(b"///..//./foo/.//bar"),
                          b"/foo/bar")
 
+    def test_normpath_strict(self):
+        self.assertEqual(posixpath.normpath("", strict=True), ".")
+        self.assertEqual(posixpath.normpath("/", strict=True), "/")
+        self.assertEqual(posixpath.normpath("//", strict=True), "//")
+        self.assertEqual(posixpath.normpath("///", strict=True), "/")
+        self.assertEqual(posixpath.normpath(
+            "///foo/.//bar//", strict=True),
+            "/foo/bar")
+        self.assertEqual(posixpath.normpath(
+            "///foo/.//bar//.//..//.//baz", strict=True),
+            "/foo/bar/../baz")
+        self.assertEqual(posixpath.normpath(
+            "///..//./foo/.//bar", strict=True),
+            "/../foo/bar")
+
+        self.assertEqual(posixpath.normpath(b"", strict=True), b".")
+        self.assertEqual(posixpath.normpath(b"/", strict=True), b"/")
+        self.assertEqual(posixpath.normpath(b"//", strict=True), b"//")
+        self.assertEqual(posixpath.normpath(b"///", strict=True), b"/")
+        self.assertEqual(posixpath.normpath(
+            b"///foo/.//bar//", strict=True),
+            b"/foo/bar")
+        self.assertEqual(posixpath.normpath(
+            b"///foo/.//bar//.//..//.//baz", strict=True),
+            b"/foo/bar/../baz")
+        self.assertEqual(posixpath.normpath(
+            b"///..//./foo/.//bar", strict=True),
+            b"/../foo/bar")
+
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_curdir(self):
         self.assertEqual(realpath('.'), os.getcwd())
