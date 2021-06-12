@@ -71,7 +71,8 @@ _PyJumpTable_Check(PyObject *x)
 }
 
 PyObject *
-_PyJumpTable_DictCopy(PyObject *mapping) {
+_PyJumpTable_DictCopy(PyObject *mapping)
+{
     assert(Py_IS_TYPE(mapping, &JumpTable_Type));
     return PyDict_Copy(((jump_table *)mapping)->mapping);
 }
