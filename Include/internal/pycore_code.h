@@ -79,7 +79,7 @@ typedef union _cache_or_instruction {
  * The zeroth entry immediately precedes the instructions.
  */
 static inline SpecializedCacheEntry *
-_GetSpecializedCacheEntry(_Py_CODEUNIT *first_instr, Py_ssize_t n)
+_GetSpecializedCacheEntry(const _Py_CODEUNIT *first_instr, Py_ssize_t n)
 {
     SpecializedCacheOrInstruction *last_cache_plus_one = (SpecializedCacheOrInstruction *)first_instr;
     assert(&last_cache_plus_one->code[0] == first_instr);
@@ -126,7 +126,7 @@ offset_from_oparg_and_nexti(int oparg, int nexti)
  * nexti is used as it corresponds to the instruction pointer in the interpreter.
  * This doesn't check that an entry has been allocated for that instruction. */
 static inline SpecializedCacheEntry *
-_GetSpecializedCacheEntryForInstruction(_Py_CODEUNIT *first_instr, int nexti, int oparg)
+_GetSpecializedCacheEntryForInstruction(const _Py_CODEUNIT *first_instr, int nexti, int oparg)
 {
     return _GetSpecializedCacheEntry(
         first_instr,
