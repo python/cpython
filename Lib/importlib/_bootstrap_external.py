@@ -1178,7 +1178,7 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         return hash(self.name) ^ hash(self.path)
 
     def create_module(self, spec):
-        """Create an unitialized extension module"""
+        """Create an uninitialized extension module"""
         module = _bootstrap._call_with_frames_removed(
             _imp.create_dynamic, spec)
         _bootstrap._verbose_message('extension module {!r} loaded from {!r}',
