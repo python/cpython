@@ -1230,7 +1230,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, 0., -2.)
         self.assertRaises(ValueError, math.pow, 0., -2.3)
         self.assertRaises(ValueError, math.pow, 0., -3.)
-        self.assertRaises(ValueError, math.pow, 0., NINF)
+        self.assertEqual(math.pow(0., NINF), INF)
         self.assertTrue(math.isnan(math.pow(0., NAN)))
 
         # pow(INF, x)
@@ -1256,7 +1256,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, math.pow, -0., -2.)
         self.assertRaises(ValueError, math.pow, -0., -2.3)
         self.assertRaises(ValueError, math.pow, -0., -3.)
-        self.assertRaises(ValueError, math.pow, -0., NINF)
+        self.assertEqual(math.pow(-0., NINF), INF)
         self.assertTrue(math.isnan(math.pow(-0., NAN)))
 
         # pow(NINF, x)
