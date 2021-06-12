@@ -365,7 +365,6 @@ static void clean_basic_block(basicblock *bb);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 
-
 #define CAPSULE_NAME "compile.c compiler unit"
 
 PyObject *
@@ -6505,21 +6504,6 @@ case_num_safe_values(match_case_ty m)
     }
     return pattern_num_safe_values(m->pattern);
 }
-
-/*
-static inline PyObject *
-case_get_safe_value(match_case_ty m)
-{
-    switch(m->pattern->kind) {
-        case MatchValue_kind:
-            return Py_NewRef(m->pattern->v.MatchValue.value->v.Constant.value);
-        case MatchSingleton_kind:
-            return Py_NewRef(m->pattern->v.MatchValue.value);
-        default:
-            Py_UNREACHABLE();
-    }
-}
-*/
 
 static void
 add_keys_to_table(pattern_ty p, jump_table *table, Py_ssize_t *j)

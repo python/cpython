@@ -3452,6 +3452,19 @@ class TestJumpTables(unittest.TestCase):
         actual = {x: f(x) for x in expected}
         self.assertEqual(expected, actual)
 
+    def test_or_pattern_nested(self):
+        @self.assert_has_jump_tables(1)
+        def f(x):
+            match x:
+                case (0 | 1) | (2 | 3):
+                    return 0
+                case ((4 | 5) | 6) | 7:
+                    return 1
+                case 8 | (9 | (10 | 11)):
+                    return 2
+        expected = {x: x//4 for x in range(12)}
+        actual = {x: f(x) for x in expected}
+        self.assertEqual(expected, actual)
 
 class PerfPatma(TestPatma):
 
