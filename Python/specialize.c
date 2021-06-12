@@ -1,7 +1,10 @@
 
 #include "Python.h"
 #include "pycore_code.h"
+#include "pycore_dict.h"
+#include "pycore_moduleobject.h"
 #include "opcode.h"
+#include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
 
 
 /* We layout the quickened data as a bi-directional array:
@@ -29,6 +32,22 @@
 */
 
 Py_ssize_t _Py_QuickenedCount = 0;
+#if SPECIALIZATION_STATS
+SpecializationStats _specialization_stats = { 0 };
+
+#define PRINT_STAT(name) fprintf(stderr, #name " : %" PRIu64" \n", _specialization_stats.name);
+void
+_Py_PrintSpecializationStats(void)
+{
+    PRINT_STAT(specialization_success);
+    PRINT_STAT(specialization_failure);
+    PRINT_STAT(loadattr_hit);
+    PRINT_STAT(loadattr_deferred);
+    PRINT_STAT(loadattr_miss);
+    PRINT_STAT(loadattr_deopt);
+}
+
+#endif
 
 static SpecializedCacheOrInstruction *
 allocate(int cache_count, int instruction_count)
@@ -56,10 +75,14 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 
 /* Map from opcode to adaptive opcode.
   Values of zero are ignored. */
-static uint8_t adaptive_opcodes[256] = { 0 };
+static uint8_t adaptive_opcodes[256] = {
+    [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
+};
 
 /* The number of cache entries required for a "family" of instructions. */
-static uint8_t cache_requirements[256] = { 0 };
+static uint8_t cache_requirements[256] = {
+    [LOAD_ATTR] = 2,
+};
 
 /* Return the oparg for the cache_offset and instruction index.
  *
@@ -158,6 +181,9 @@ optimize(SpecializedCacheOrInstruction *quickened, int len)
             /* Super instructions don't use the cache,
              * so no need to update the offset. */
             switch (opcode) {
+                case JUMP_ABSOLUTE:
+                    instructions[i] = _Py_MAKECODEUNIT(JUMP_ABSOLUTE_QUICK, oparg);
+                    break;
                 /* Insert superinstructions here
                  E.g.
                 case LOAD_FAST:
@@ -192,6 +218,153 @@ _Py_Quicken(PyCodeObject *code) {
     optimize(quickened, instr_count);
     code->co_quickened = quickened;
     code->co_firstinstr = new_instructions;
+    return 0;
+}
+
+static int
+specialize_module_load_attr(
+    PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
+    _PyAdaptiveEntry *cache0, _PyLoadAttrCache *cache1)
+{
+    PyModuleObject *m = (PyModuleObject *)owner;
+    PyObject *value = NULL;
+    PyObject *getattr;
+    _Py_IDENTIFIER(__getattr__);
+    PyDictObject *dict = (PyDictObject *)m->md_dict;
+    if (dict == NULL) {
+        return -1;
+    }
+    if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        return -1;
+    }
+    getattr = _PyUnicode_FromId(&PyId___getattr__); /* borrowed */
+    if (getattr == NULL) {
+        PyErr_Clear();
+        return -1;
+    }
+    Py_ssize_t index = _PyDict_GetItemHint(dict, getattr, -1,  &value);
+    assert(index != DKIX_ERROR);
+    if (index != DKIX_EMPTY) {
+        return -1;
+    }
+    index = _PyDict_GetItemHint(dict, name, -1, &value);
+    assert (index != DKIX_ERROR);
+    if (index != (uint16_t)index) {
+        return -1;
+    }
+    uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+    if (keys_version == 0) {
+        return -1;
+    }
+    cache1->dk_version_or_hint = keys_version;
+    cache0->index = (uint16_t)index;
+    *instr = _Py_MAKECODEUNIT(LOAD_ATTR_MODULE, _Py_OPARG(*instr));
+    return 0;
+}
+
+int
+_Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyLoadAttrCache *cache1 = &cache[-1].load_attr;
+    if (PyModule_CheckExact(owner)) {
+        int err = specialize_module_load_attr(owner, instr, name, cache0, cache1);
+        if (err) {
+            goto fail;
+        }
+        goto success;
+    }
+    PyTypeObject *type = Py_TYPE(owner);
+    if (type->tp_getattro != PyObject_GenericGetAttr) {
+        goto fail;
+    }
+    if (type->tp_dict == NULL) {
+        if (PyType_Ready(type) < 0) {
+            return -1;
+        }
+    }
+    PyObject *descr = _PyType_Lookup(type, name);
+    if (descr != NULL) {
+        // We found an attribute with a data-like descriptor.
+        PyTypeObject *dtype = Py_TYPE(descr);
+        if (dtype != &PyMemberDescr_Type) {
+            goto fail;
+        }
+        // It's a slot
+        PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
+        struct PyMemberDef *dmem = member->d_member;
+        if (dmem->type != T_OBJECT_EX) {
+            // It's a slot of a different type.  We don't handle those.
+            goto fail;
+        }
+        Py_ssize_t offset = dmem->offset;
+        if (offset != (uint16_t)offset) {
+            goto fail;
+        }
+        assert(offset > 0);
+        cache0->index = (uint16_t)offset;
+        cache1->tp_version = type->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
+        goto success;
+    }
+    // No desciptor
+    if (type->tp_dictoffset <= 0) {
+        // No dictionary, or computed offset dictionary
+        goto fail;
+    }
+    PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+    if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+        goto fail;
+    }
+    // We found an instance with a __dict__.
+    PyDictObject *dict = (PyDictObject *)*dictptr;
+    if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+        && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+    ) {
+        // Keys are shared
+        assert(PyUnicode_CheckExact(name));
+        Py_hash_t hash = PyObject_Hash(name);
+        if (hash == -1) {
+            return -1;
+        }
+        PyObject *value;
+        Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+        assert (index != DKIX_ERROR);
+        if (index != (uint16_t)index) {
+            goto fail;
+        }
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+        if (keys_version == 0) {
+            goto fail;
+        }
+        cache1->dk_version_or_hint = keys_version;
+        cache1->tp_version = type->tp_version_tag;
+        cache0->index = (uint16_t)index;
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
+        goto success;
+    }
+    else {
+        PyObject *value = NULL;
+        Py_ssize_t hint =
+            _PyDict_GetItemHint(dict, name, -1, &value);
+        if (hint != (uint32_t)hint) {
+            goto fail;
+        }
+        cache1->dk_version_or_hint = (uint32_t)hint;
+        cache1->tp_version = type->tp_version_tag;
+        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
+        goto success;
+    }
+
+fail:
+    STAT_INC(specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
     return 0;
 }
 
