@@ -638,7 +638,7 @@ SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
 static int
 ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", "path", 0};
+    static const char *kwlist[] = {"name", "path", 0};
     PyObject *empty_tuple;
     PyObject *msg = NULL;
     PyObject *name = NULL;
@@ -1330,7 +1330,7 @@ SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
 static int
 NameError_init(PyNameErrorObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", NULL};
+    static const char *kwlist[] = {"name", NULL};
     PyObject *name = NULL;
 
     if (BaseException_init((PyBaseExceptionObject *)self, args, NULL) == -1) {
@@ -1404,7 +1404,7 @@ MiddlingExtendsException(PyExc_NameError, UnboundLocalError, NameError,
 static int
 AttributeError_init(PyAttributeErrorObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"name", "obj", NULL};
+    static const char *kwlist[] = {"name", "obj", NULL};
     PyObject *name = NULL;
     PyObject *obj = NULL;
 
