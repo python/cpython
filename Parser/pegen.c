@@ -7,7 +7,7 @@
 #include "string_parser.h"
 
 PyObject *
-_PyPegen_new_type_comment(Parser *p, char *s)
+_PyPegen_new_type_comment(Parser *p, const char *s)
 {
     PyObject *res = PyUnicode_DecodeUTF8(s, strlen(s), NULL);
     if (res == NULL) {
@@ -26,7 +26,7 @@ _PyPegen_add_type_comment_to_arg(Parser *p, arg_ty a, Token *tc)
     if (tc == NULL) {
         return a;
     }
-    char *bytes = PyBytes_AsString(tc->bytes);
+    const char *bytes = PyBytes_AsString(tc->bytes);
     if (bytes == NULL) {
         return NULL;
     }
@@ -66,7 +66,7 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
     assert(t->bytes != NULL);
     assert(t->type == NOTEQUAL);
 
-    char* tok_str = PyBytes_AS_STRING(t->bytes);
+    const char* tok_str = PyBytes_AS_STRING(t->bytes);
     if (p->flags & PyPARSE_BARRY_AS_BDFL && strcmp(tok_str, "<>") != 0) {
         RAISE_SYNTAX_ERROR("with Barry as BDFL, use '<>' instead of '!='");
         return -1;
@@ -78,7 +78,7 @@ _PyPegen_check_barry_as_flufl(Parser *p, Token* t) {
 }
 
 PyObject *
-_PyPegen_new_identifier(Parser *p, char *n)
+_PyPegen_new_identifier(Parser *p, const char *n)
 {
     PyObject *id = PyUnicode_DecodeUTF8(n, strlen(n), NULL);
     if (!id) {
@@ -911,7 +911,7 @@ _PyPegen_expect_soft_keyword(Parser *p, const char *keyword)
     if (t->type != NAME) {
         return NULL;
     }
-    char *s = PyBytes_AsString(t->bytes);
+    const char *s = PyBytes_AsString(t->bytes);
     if (!s) {
         p->error_indicator = 1;
         return NULL;
@@ -942,7 +942,7 @@ _PyPegen_name_from_token(Parser *p, Token* t)
     if (t == NULL) {
         return NULL;
     }
-    char* s = PyBytes_AsString(t->bytes);
+    const char *s = PyBytes_AsString(t->bytes);
     if (!s) {
         p->error_indicator = 1;
         return NULL;
@@ -1068,7 +1068,7 @@ _PyPegen_number_token(Parser *p)
         return NULL;
     }
 
-    char *num_raw = PyBytes_AsString(t->bytes);
+    const char *num_raw = PyBytes_AsString(t->bytes);
     if (num_raw == NULL) {
         p->error_indicator = 1;
         return NULL;

@@ -120,7 +120,7 @@ oparg_from_instruction_and_update_offset(int index, int opcode, int original_opa
 }
 
 static int
-entries_needed(_Py_CODEUNIT *code, int len)
+entries_needed(const _Py_CODEUNIT *code, int len)
 {
     int cache_offset = 0;
     int previous_opcode = -1;
