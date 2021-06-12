@@ -2810,8 +2810,6 @@ math_pow_impl(PyObject *module, double x, double y)
                 r = y;
             else if (y < 0. && fabs(x) < 1.0) {
                 r = -y; /* result is +inf */
-                if (x == 0.) /* 0**-inf: divide-by-zero */
-                    errno = EDOM;
             }
             else
                 r = 0.;

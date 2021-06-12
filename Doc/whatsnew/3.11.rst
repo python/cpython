@@ -96,8 +96,14 @@ string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
 math
 ----
 
-Add :func:`math.cbrt()`: return the cube root of x.
-(Contributed by Ajith Ramachandran in :issue:`44357`.)
+* Add :func:`math.cbrt`: return the cube root of x.
+  (Contributed by Ajith Ramachandran in :issue:`44357`.)
+
+* The behaviour of two :func:`math.pow` corner cases was changed, for
+  consistency with the IEEE 754 specification. The operations
+  ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
+  ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
+  Dickinson in :issue:`44339`.)
 
 
 Removed
