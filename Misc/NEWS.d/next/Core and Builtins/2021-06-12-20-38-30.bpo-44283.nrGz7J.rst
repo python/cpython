@@ -1,0 +1,3 @@
+Added a dictionary-based jump table for expected constant-time
+performance on simple match-case statements with ``int``, ``str``,
+and ``None`` patterns, as well as or-patterns of these.
