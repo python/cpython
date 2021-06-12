@@ -4253,7 +4253,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
         else if (bi == 1) {
             /* Multiplying by 1 serves two purposes: if `a` is of an int
              * subclass, makes the result an int (e.g., pow(False, 1) returns
-             * 0 instead of False), and potetially reduces `a` by the modulus.
+             * 0 instead of False), and potentially reduces `a` by the modulus.
              */
             MULT(a, z, z);
         }
