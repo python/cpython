@@ -3225,7 +3225,6 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(
             hash(inspect.signature(foo)), hash(inspect.signature(bar)))
 
-    @unittest.skip("We're (temporarily) hacking dict to be hashable!")  # XXX
     def test_signature_hashable(self):
         S = inspect.Signature
         P = inspect.Parameter

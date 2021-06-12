@@ -450,7 +450,6 @@ x = (
                             ])
         self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
-    @unittest.skip("We're (temporarily) hacking dict to be hashable!")  # XXX
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
         self.assertEqual(f'a{{', 'a{')

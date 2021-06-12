@@ -153,7 +153,6 @@ class RegressionTests(unittest.TestCase):
         msg = "Could not decode to UTF-8 column 'colname' with text 'xxx"
         self.assertIn(msg, str(cm.exception))
 
-    @unittest.skip("We're (temporarily) hacking dict to be hashable!")  # XXX
     def test_register_adapter(self):
         """
         See issue 3312.

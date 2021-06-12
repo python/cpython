@@ -3409,13 +3409,6 @@ dict_iter(PyDictObject *dict)
     return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
-// XXX: We're (temporarily) hacking dict to be hashable!
-static Py_hash_t
-dict_hash(PyObject *Py_UNUSED(dict))
-{
-    return -3;
-}
-
 PyDoc_STRVAR(dictionary_doc,
 "dict() -> new empty dictionary\n"
 "dict(mapping) -> new dictionary initialized from a mapping object's\n"
@@ -3441,8 +3434,7 @@ PyTypeObject PyDict_Type = {
     &dict_as_number,                            /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
-    // XXX: We're (temporarily) hacking dict to be hashable!
-    dict_hash,                                  /* tp_hash */
+    PyObject_HashNotImplemented,                /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */

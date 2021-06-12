@@ -3610,7 +3610,6 @@ order (MRO) for bases """
         except TypeError: pass
         else: self.fail("invalid del() didn't raise TypeError")
 
-    @unittest.skip("We're (temporarily) hacking dict to be hashable!")  # XXX
     def test_hash_inheritance(self):
         # Testing hash of mutable subclasses...
 

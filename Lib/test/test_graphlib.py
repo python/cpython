@@ -187,7 +187,6 @@ class TestTopologicalSort(unittest.TestCase):
         ts.done(1)
         self.assertFalse(ts.is_active())
 
-    @unittest.skip("We're (temporarily) hacking dict to be hashable!")  # XXX
     def test_not_hashable_nodes(self):
         ts = graphlib.TopologicalSorter()
         self.assertRaises(TypeError, ts.add, dict(), 1)

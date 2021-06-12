@@ -879,7 +879,6 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertFalse(isinstance(CoroLike(), Coroutine))
         self.assertFalse(issubclass(CoroLike, Coroutine))
 
-    @unittest.skip("We're (temporarily) hacking dict to be hashable!")  # XXX
     def test_Hashable(self):
         # Check some non-hashables
         non_samples = [bytearray(), list(), set(), dict()]
