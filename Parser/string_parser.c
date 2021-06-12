@@ -87,7 +87,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         if (*s & 0x80) {
             PyObject *w;
             int kind;
-            void *data;
+            const void *data;
             Py_ssize_t w_len;
             Py_ssize_t i;
             w = decode_utf8(&s, end);
@@ -288,17 +288,17 @@ fstring_find_expr_location(Token *parent, char *expr_str, int *p_lines, int *p_c
     *p_lines = 0;
     *p_cols = 0;
     if (parent && parent->bytes) {
-        char *parent_str = PyBytes_AsString(parent->bytes);
+        const char *parent_str = PyBytes_AsString(parent->bytes);
         if (!parent_str) {
             return false;
         }
-        char *substr = strstr(parent_str, expr_str);
+        const char *substr = strstr(parent_str, expr_str);
         if (substr) {
             // The following is needed, in order to correctly shift the column
             // offset, in the case that (disregarding any whitespace) a newline
             // immediately follows the opening curly brace of the fstring expression.
             bool newline_after_brace = 1;
-            char *start = substr + 1;
+            const char *start = substr + 1;
             while (start && *start != '}' && *start != '\n') {
                 if (*start != ' ' && *start != '\t' && *start != '\f') {
                     newline_after_brace = 0;
@@ -318,7 +318,7 @@ fstring_find_expr_location(Token *parent, char *expr_str, int *p_lines, int *p_c
             }
             /* adjust the start based on the number of newlines encountered
                before the f-string expression */
-            for (char* p = parent_str; p < substr; p++) {
+            for (const char *p = parent_str; p < substr; p++) {
                 if (*p == '\n') {
                     (*p_lines)++;
                 }
