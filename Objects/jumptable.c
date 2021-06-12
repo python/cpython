@@ -149,7 +149,7 @@ static PyMappingMethods jump_table_as_mapping = {
     .mp_subscript = (binaryfunc)jump_table_getitem,
 };
 
-PyTypeObject JumpTable_Type = {
+static PyTypeObject JumpTable_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "jump_table",
     .tp_basicsize = sizeof(jump_table),
