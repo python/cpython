@@ -847,6 +847,32 @@ class UrlParseTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "Cannot mix str"):
             urllib.parse.urljoin(b"http://python.org", "http://python.org")
 
+    def test_forbidden_types(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected string or bytes: got <class 'list'>"):
+            urllib.parse.urljoin('http://www.python.org', [])
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected string or bytes: got <class 'list'>"):
+            urllib.parse.urljoin([], b'docs')
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected string or bytes: got <class 'NoneType'>"):
+            urllib.parse.urlparse(b'www.python.org', None)
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected string or bytes: got <class 'dict'>"):
+            urllib.parse.urlparse({}, '')
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected string or bytes: got <class 'int'>"):
+            urllib.parse.urlsplit(0, 'http')
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected string or bytes: got <class 'NoneType'>"):
+            urllib.parse.urlsplit('http://www.python.org', None)
+
     def _check_result_type(self, str_type):
         num_args = len(str_type._fields)
         bytes_type = str_type._encoded_counterpart

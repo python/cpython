@@ -1,0 +1,3 @@
+Raised ``TypeError`` when providing anything but a string or bytes
+object to :func:`urllib.parse.urljoin`, :func:`urllib.parse.urlparse`,
+or :func:`urllib.parse.urlsplit`.
