@@ -424,7 +424,7 @@ OBJECT_OBJS=	\
 		Objects/funcobject.o \
 		Objects/interpreteridobject.o \
 		Objects/iterobject.o \
-		Object/jumptable.o \
+		Objects/jumptable.o \
 		Objects/listobject.o \
 		Objects/longobject.o \
 		Objects/dictobject.o \
