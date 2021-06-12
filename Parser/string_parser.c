@@ -87,7 +87,7 @@ decode_unicode_with_escapes(Parser *parser, const char *s, size_t len, Token *t)
         if (*s & 0x80) {
             PyObject *w;
             int kind;
-            void *data;
+            const void *data;
             Py_ssize_t w_len;
             Py_ssize_t i;
             w = decode_utf8(&s, end);
