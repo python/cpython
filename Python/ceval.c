@@ -3857,6 +3857,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 Py_Is(subject, Py_None))
             {
                 int target = _PyJumpTable_Get(jump_map, subject);
+                Py_DECREF(jump_map);
                 if (target == -2) {
                     assert(PyErr_Occurred());
                     goto error;
