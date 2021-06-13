@@ -1128,6 +1128,9 @@ class IMAP4:
                 # Read trailer - possibly containing another literal
 
                 dat = self._get_line()
+                # ignore blank line some servers send after the counted data
+                if dat == b'':
+                    dat = self._get_line()
 
             self._append_untagged(typ, dat)
 
