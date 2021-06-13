@@ -25,7 +25,7 @@ pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *isolation_level = NULL;
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)pysqlite_ConnectionType;
-    int cached_statements = 100;
+    int cached_statements = 128;
     int uri = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
@@ -811,4 +811,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=8332a2d5e3236bb3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eb6b4eda33d396f1 input=a9049054013a1b77]*/

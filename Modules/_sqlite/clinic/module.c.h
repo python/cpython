@@ -5,7 +5,7 @@ preserve
 PyDoc_STRVAR(pysqlite_connect__doc__,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
 "        isolation_level=<unrepresentable>, check_same_thread=True,\n"
-"        factory=ConnectionType, cached_statements=100, uri=False)\n"
+"        factory=ConnectionType, cached_statements=128, uri=False)\n"
 "--\n"
 "\n"
 "Opens a connection to the SQLite database file database.\n"
@@ -36,7 +36,7 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *isolation_level = NULL;
     int check_same_thread = 1;
     PyObject *factory = (PyObject*)pysqlite_ConnectionType;
-    int cached_statements = 100;
+    int cached_statements = 128;
     int uri = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, argsbuf);
@@ -331,4 +331,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c0ef08ee13444be8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9f2160e2d092db1e input=a9049054013a1b77]*/

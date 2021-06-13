@@ -87,7 +87,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                       int detect_types, PyObject *isolation_level,
                       int check_same_thread, PyObject *factory,
                       int cached_statements, int uri)
-/*[clinic end generated code: output=450ac9078b4868bb input=938c5058ce37130a]*/
+/*[clinic end generated code: output=450ac9078b4868bb input=9d37b2ca6a07ed70]*/
 {
     if (isolation_level == NULL) {
         isolation_level = PyUnicode_FromString("");

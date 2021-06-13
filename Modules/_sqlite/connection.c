@@ -95,7 +95,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                               int detect_types, PyObject *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri)
-/*[clinic end generated code: output=dc19df1c0e2b7b77 input=933dc59875f687ee]*/
+/*[clinic end generated code: output=dc19df1c0e2b7b77 input=3706141ad7f68f73]*/
 {
     int rc;
 
