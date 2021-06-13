@@ -305,7 +305,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # issued by the interpreter when handling a subgenerator run with
         # 'yield from' or a generator controlled by a for loop. No exception has
         # actually occurred in this case. The debugger uses this debug event to
-        # stop when the debuggee is returning from such generators.
+        # stop when the debugger is returning from such generators.
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
         self.message('%s%s' % (prefix,
