@@ -85,7 +85,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     isolation_level: object = NULL
     check_same_thread: bool(accept={int}) = True
     factory: object(c_default='(PyObject*)pysqlite_ConnectionType') = ConnectionType
-    cached_statements: int = 100
+    cached_statements: int = 128
     uri: bool = False
 [clinic start generated code]*/
 
