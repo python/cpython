@@ -2086,7 +2086,7 @@ class Popen:
             try:
                 os.kill(self.pid, sig)
             except ProcessLookupError:
-                # Supress the race condition error; bpo-40550.
+                # Suppress the race condition error; bpo-40550.
                 pass
 
         def terminate(self):
