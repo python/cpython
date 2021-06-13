@@ -1334,7 +1334,7 @@ class _Unparser(NodeVisitor):
         operator_precedence = self.unop_precedence[operator]
         with self.require_parens(operator_precedence, node):
             self.write(operator)
-            # factor prefixes (+, -, ~) shouldn't be seperated
+            # factor prefixes (+, -, ~) shouldn't be separated
             # from the value they belong, (e.g: +1 instead of + 1)
             if operator_precedence is not _Precedence.FACTOR:
                 self.write(" ")
