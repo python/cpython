@@ -1,1 +1,1 @@
-Add category type check to `warnings.simplefilter`.
+Add category type check to warnings.simplefilter.
