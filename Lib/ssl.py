@@ -368,7 +368,7 @@ def _ipaddress_match(cert_ipaddress, host_ip):
     (section 1.7.2 - "Out of Scope").
     """
     # OpenSSL may add a trailing newline to a subjectAltName's IP address,
-    # commonly woth IPv6 addresses. Strip off trailing \n.
+    # commonly with IPv6 addresses. Strip off trailing \n.
     ip = _inet_paton(cert_ipaddress.rstrip())
     return ip == host_ip
 
