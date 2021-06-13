@@ -977,11 +977,11 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   ``action='store_const'`` or ``action='append_const'``.  These actions add the
   ``const`` value to one of the attributes of the object returned by
   :meth:`~ArgumentParser.parse_args`. See the action_ description for examples.
-  If ``const`` is not provided to `~ArgumentParser.add_argument`, it will
-  receive a default value of ``None``.
+  If ``const`` is not provided to :meth:`~ArgumentParser.add_argument`, it
+  will receive a default value of ``None``.
 
    .. versionchanged:: 3.10
-      ``const`` recieves default value of ``None``.
+      ``const=None`` by default.
 
 * When :meth:`~ArgumentParser.add_argument` is called with option strings
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
