@@ -872,6 +872,22 @@ class UrlParseTestCase(unittest.TestCase):
                 TypeError,
                 "Expected a string or bytes object: got <class 'NoneType'>"):
             urllib.parse.urlsplit('http://www.python.org', None)
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected a string or bytes object: got <class 'tuple'>"):
+            urllib.parse.urldefrag(())
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected a string or bytes object: got <class 'NoneType'>"):
+            urllib.parse.urlunparse([None, './Python','x-newscheme://foo.com/stuff','x://y','x:/y','x:/','/',])
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected a string or bytes object: got <class 'int'>"):
+            urllib.parse.urlunsplit(['http', 0, '', '', ''])
+        with self.assertRaisesRegex(
+                TypeError,
+                "Expected a string or bytes object: got <class 'NoneType'>"):
+            urllib.parse.parse_qsl(None, encoding='latin-1')
 
     def _check_result_type(self, str_type):
         num_args = len(str_type._fields)

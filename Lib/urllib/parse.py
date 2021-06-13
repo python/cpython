@@ -113,6 +113,9 @@ def _coerce_args(*args):
     # an appropriate result coercion function
     #   - noop for str inputs
     #   - encoding function otherwise
+    for arg in args:
+        if not isinstance(arg, (str, bytes, bytearray)):
+            raise TypeError(f'Expected a string or bytes object: got {type(arg)}')
     str_input = isinstance(args[0], str)
     for arg in args[1:]:
         # We special-case the empty string to support the
@@ -383,10 +386,6 @@ def urlparse(url, scheme='', allow_fragments=True):
 
     Note that % escapes are not expanded.
     """
-    if not isinstance(url, (str, bytes, bytearray)):
-        raise TypeError(f'Expected a string or bytes object: got {type(url)}')
-    if not isinstance(scheme, (str, bytes, bytearray)):
-        raise TypeError(f'Expected a string or bytes object: got {type(scheme)}')
     url, scheme, _coerce_result = _coerce_args(url, scheme)
     splitresult = urlsplit(url, scheme, allow_fragments)
     scheme, netloc, url, query, fragment = splitresult
@@ -455,10 +454,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     Note that % escapes are not expanded.
     """
-    if not isinstance(url, (str, bytes, bytearray)):
-        raise TypeError(f'Expected a string or bytes object: got {type(url)}')
-    if not isinstance(scheme, (str, bytes, bytearray)):
-        raise TypeError(f'Expected a string or bytes object: got {type(scheme)}')
 
     url, scheme, _coerce_result = _coerce_args(url, scheme)
 
@@ -522,17 +517,12 @@ def urlunsplit(components):
 def urljoin(base, url, allow_fragments=True):
     """Join a base URL and a possibly relative URL to form an absolute
     interpretation of the latter."""
-    if not isinstance(base, (str, bytes, bytearray)):
-        raise TypeError(f'Expected a string or bytes object: got {type(base)}')
-    if not isinstance(url, (str, bytes, bytearray)):
-        raise TypeError(f'Expected a string or bytes object: got {type(url)}')
-
-    if not base:
-        return url
-    if not url:
-        return base
-
     base, url, _coerce_result = _coerce_args(base, url)
+    if not base:
+        return _coerce_result(url)
+    if not url:
+        return _coerce_result(base)
+
     bscheme, bnetloc, bpath, bparams, bquery, bfragment = \
             urlparse(base, '', allow_fragments)
     scheme, netloc, path, params, query, fragment = \
