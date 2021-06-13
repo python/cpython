@@ -3587,7 +3587,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     long new_opts, opts, set, clear;
     long opt_no = (
         SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
-        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2
+        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
     if (!PyArg_Parse(arg, "l", &new_opts))
