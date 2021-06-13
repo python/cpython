@@ -1,3 +1,5 @@
 Raised ``TypeError`` when providing anything but a string or bytes
 object to :func:`urllib.parse.urljoin`, :func:`urllib.parse.urlparse`,
-or :func:`urllib.parse.urlsplit`.
+:func:`urllib.parse.urlsplit`, :func:`urllib.parse.urldefrag`, or
+:func:`urllib.parse.parse_qsl`, or when providing the same in an iterable
+passed to :func:`urllib.parse.urlunparse` or :func:`urllib.parse.urlunsplit`.
