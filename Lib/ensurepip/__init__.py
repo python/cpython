@@ -8,7 +8,6 @@ import tempfile
 from importlib import resources
 
 
-
 __all__ = ["version", "bootstrap"]
 _PACKAGE_NAMES = ('setuptools', 'pip')
 _SETUPTOOLS_VERSION = "56.0.0"
@@ -79,8 +78,8 @@ _PACKAGES = None
 
 
 def _run_pip(args, additional_paths=None):
-    # Run the bootstraping in a subprocess to avoid leaking any state that happens
-    # after pip has executed. Particulary, this avoids the case when pip holds onto
+    # Run the bootstrapping in a subprocess to avoid leaking any state that happens
+    # after pip has executed. Particularly, this avoids the case when pip holds onto
     # the files in *additional_paths*, preventing us to remove them at the end of the
     # invocation.
     code = f"""
@@ -164,9 +163,9 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         for name, package in _get_packages().items():
             if package.wheel_name:
                 # Use bundled wheel package
-                from ensurepip import _bundled
                 wheel_name = package.wheel_name
-                whl = resources.read_binary(_bundled, wheel_name)
+                wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
+                whl = wheel_path.read_bytes()
             else:
                 # Use the wheel package directory
                 with open(package.wheel_path, "rb") as fp:

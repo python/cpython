@@ -24,16 +24,16 @@ Name                    methods, members, getsets
 ==============================================================================
 
 PyCStructType_Type              __new__(), from_address(), __mul__(), from_param()
-UnionType_Type          __new__(), from_address(), __mul__(), from_param()
-PyCPointerType_Type     __new__(), from_address(), __mul__(), from_param(), set_type()
+UnionType_Type                  __new__(), from_address(), __mul__(), from_param()
+PyCPointerType_Type             __new__(), from_address(), __mul__(), from_param(), set_type()
 PyCArrayType_Type               __new__(), from_address(), __mul__(), from_param()
 PyCSimpleType_Type              __new__(), from_address(), __mul__(), from_param()
 
 PyCData_Type
-  Struct_Type           __new__(), __init__()
+  Struct_Type                   __new__(), __init__()
   PyCPointer_Type               __new__(), __init__(), _as_parameter_, contents
-  PyCArray_Type         __new__(), __init__(), _as_parameter_, __get/setitem__(), __len__()
-  Simple_Type           __new__(), __init__(), _as_parameter_
+  PyCArray_Type                 __new__(), __init__(), _as_parameter_, __get/setitem__(), __len__()
+  Simple_Type                   __new__(), __init__(), _as_parameter_
 
 PyCField_Type
 PyCStgDict_Type

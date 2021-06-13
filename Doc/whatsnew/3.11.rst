@@ -86,11 +86,36 @@ New Modules
 Improved Modules
 ================
 
+fractions
+---------
+
+Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
+string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
+
+
+math
+----
+
+* Add :func:`math.cbrt`: return the cube root of x.
+  (Contributed by Ajith Ramachandran in :issue:`44357`.)
+
+* The behaviour of two :func:`math.pow` corner cases was changed, for
+  consistency with the IEEE 754 specification. The operations
+  ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
+  ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
+  Dickinson in :issue:`44339`.)
+
+
+Removed
+=======
+* :class:`smtpd.MailmanProxy` is now removed as it is unusable without
+  an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+
 
 Optimizations
 =============
 
-* Compiler optimizes now simple C-style formatting with literal format
+* Compiler now optimizes simple C-style formatting with literal format
   containing only format codes ``%s``, ``%r`` and ``%a`` and makes it as
   fast as corresponding f-string expression.
   (Contributed by Serhiy Storchaka in :issue:`28307`.)
@@ -98,6 +123,20 @@ Optimizations
 * "Zero-cost" exceptions are implemented. The cost of ``try`` statements is
   almost eliminated when no exception is raised.
   (Contributed by Mark Shannon in :issue:`40222`.)
+
+* Method calls with keywords are now faster due to bytecode
+  changes which avoid creating bound method instances. Previously, this
+  optimization was applied only to method calls with purely positional
+  arguments.
+  (Contributed by Ken Jin and Mark Shannon in :issue:`26110`, based on ideas
+  implemented in PyPy.)
+
+CPython bytecode changes
+========================
+
+* Added a new :opcode:`CALL_METHOD_KW` opcode.  Calls a method in a similar
+  fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.  Works
+  in tandem with :opcode:`LOAD_METHOD`.
 
 
 Build Changes
@@ -130,6 +169,11 @@ New Features
 Porting to Python 3.11
 ----------------------
 
+* The :c:func:`PyType_Ready` function now raises an error if a type is defined
+  with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
+  (:c:member:`PyTypeObject.tp_traverse`).
+  (Contributed by Victor Stinner in :issue:`44263`.)
+
 Deprecated
 ----------
 
@@ -155,3 +199,15 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
   (Contributed by Victor Stinner in :issue:`44113`.)
+
+* The following deprecated functions and methods are removed in the :mod:`gettext`
+  module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
+  :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
+
+  Function :func:`~gettext.bind_textdomain_codeset`, methods
+  :meth:`~gettext.NullTranslations.output_charset` and
+  :meth:`~gettext.NullTranslations.set_output_charset`, and the *codeset*
+  parameter of functions :func:`~gettext.translation` and
+  :func:`~gettext.install` are also removed, since they are only used for
+  the ``l*gettext()`` functions.
+  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)

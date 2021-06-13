@@ -172,7 +172,7 @@ These improvements are inspired by previous work in the PyPy interpreter.
 :issue:`40176`.)
 
 :exc:`SyntaxError` exceptions raised by the interpreter will now highlight the
-full error range of the expression that consistutes the syntax error itself,
+full error range of the expression that constitutes the syntax error itself,
 instead of just where the problem is detected. In this way, instead of displaying
 (before Python 3.10):
 
@@ -273,6 +273,20 @@ have been incorporated. Some of the most notable ones:
         SyntaxError: ':' expected after dictionary key
 
     (Contributed by Pablo Galindo in :issue:`43823`)
+
+* ``try`` blocks without ``except`` or ``finally`` blocks:
+
+    .. code-block:: python
+
+        >>> try
+        ...     x = 2
+        ... something = 3
+          File "<stdin>", line 3
+            something  = 3
+            ^^^^^^^^^
+        SyntaxError: expected 'except' or 'finally' block
+
+    (Contributed by Pablo Galindo in :issue:`44305`)
 
 * Usage of ``=`` instead of ``==`` in comparisons:
 
@@ -1030,14 +1044,23 @@ Terry Jan Reedy in :issue:`37892`.)
 We expect to backport these shell changes to a future 3.9 maintenance
 release.
 
+Highlight the new :ref:`soft keywords <soft-keywords>` :keyword:`match`,
+:keyword:`case <match>`, and :keyword:`_ <wildcard-patterns>` in
+pattern-matching statements. However, this highlighting is not perfect
+and will be incorrect in some rare cases, including some ``_``-s in
+``case`` patterns.  (Contributed by Tal Einat in bpo-44010.)
+
 importlib.metadata
 ------------------
 
-Feature parity with ``importlib_metadata`` 3.7.
+Feature parity with ``importlib_metadata`` 4.4
+(`history <https://importlib-metadata.readthedocs.io/en/latest/history.html>`_).
 
-:func:`importlib.metadata.entry_points` now provides a nicer experience
+:ref:`importlib.metadata entry points <entry-points>`
+now provides a nicer experience
 for selecting entry points by group and name through a new
-:class:`importlib.metadata.EntryPoints` class.
+:class:`importlib.metadata.EntryPoints` class. See the Compatibility
+Note in the docs for more info on the deprecation and usage.
 
 Added :func:`importlib.metadata.packages_distributions` for resolving
 top-level Python modules and packages to their
@@ -1128,6 +1151,9 @@ identification from `freedesktop.org os-release
 pprint
 ------
 
+:func:`pprint.pprint` now accepts a new ``underscore_numbers`` keyword argument.
+(Contributed by sblondon in :issue:`42914`.)
+
 :mod:`pprint` can now pretty-print :class:`dataclasses.dataclass` instances.
 (Contributed by Lewis Gaul in :issue:`43080`.)
 
@@ -1188,18 +1214,11 @@ The ssl module has preliminary support for OpenSSL 3.0.0 and new option
 :issue:`43789`, and :issue:`43811`.)
 
 Deprecated function and use of deprecated constants now result in
-a :exc:`DeprecationWarning`. The following features have been deprecated
-since Python 3.6, Python 3.7, or OpenSSL 1.1.0:
-:data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
-:data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`,
-:data:`~ssl.OP_NO_TLSv1_3`, :data:`~ssl.PROTOCOL_SSLv2`,
-:data:`~ssl.PROTOCOL_SSLv3`, :data:`~ssl.PROTOCOL_SSLv23`,
-:data:`~ssl.PROTOCOL_TLSv1`, :data:`~ssl.PROTOCOL_TLSv1_1`,
-:data:`~ssl.PROTOCOL_TLSv1_2`, :data:`~ssl.PROTOCOL_TLS`,
-:func:`~ssl.wrap_socket`, :func:`~ssl.match_hostname`,
-:func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`,
-:meth:`ssl.SSLSocket.selected_npn_protocol`,
-:meth:`ssl.SSLContext.set_npn_protocols`.
+a :exc:`DeprecationWarning`. :attr:`ssl.SSLContext.options` has
+:data:`~ssl.OP_NO_SSLv2` and :data:`~ssl.OP_NO_SSLv3` set by default and
+therefore cannot warn about setting the flag again. The
+:ref:`deprecation section <whatsnew310-deprecated>` has a list of deprecated
+features.
 (Contributed by Christian Heimes in :issue:`43880`.)
 
 The ssl module now has more secure default settings. Ciphers without forward
@@ -1311,6 +1330,14 @@ Add new function :func:`typing.is_typeddict` to introspect if an annotation
 is a :class:`typing.TypedDict`.
 (Contributed by Patrick Reader in :issue:`41792`)
 
+Subclasses of ``typing.Protocol`` which only have data variables declared
+will now raise a ``TypeError`` when checked with ``isinstance`` unless they
+are decorated with :func:`runtime_checkable`.  Previously, these checks
+passed silently.  Users should decorate their
+subclasses with the :func:`runtime_checkable` decorator
+if they want runtime protocols.
+(Contributed by Yurii Karabas in :issue:`38908`)
+
 unittest
 --------
 
@@ -1407,8 +1434,21 @@ Optimizations
   readers or writers, just like its equivalent classes in :mod:`gzip` and
   :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
 
+.. _whatsnew310-deprecated:
+
 Deprecated
 ==========
+
+* Currently Python accepts numeric literals immediately followed by keywords,
+  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
+  and ambigious expressions like ``[0x1for x in y]`` (which can be
+  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  Starting in
+  this release, a deprecation warning is raised if the numeric literal is
+  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
+  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
+  If future releases it will be changed to syntax warning, and finally to
+  syntax error.
+  (Contributed by Serhiy Storchaka in :issue:`43833`).
 
 * Starting in this release, there will be a concerted effort to begin
   cleaning up old import semantics that were kept for Python 2.7
@@ -1561,9 +1601,34 @@ Deprecated
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
 
-* ``cgi.log()`` is deprecated and slated for for removal in Python 3.12.
+* ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
 
+* The following :mod:`ssl` features have been deprecated since Python 3.6,
+  Python 3.7, or OpenSSL 1.1.0 and will be removed in 3.11:
+
+  * :data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
+    :data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`, and
+    :data:`~ssl.OP_NO_TLSv1_3` are replaced by
+    :attr:`sslSSLContext.minimum_version` and
+    :attr:`sslSSLContext.maximum_version`.
+
+  * :data:`~ssl.PROTOCOL_SSLv2`, :data:`~ssl.PROTOCOL_SSLv3`,
+    :data:`~ssl.PROTOCOL_SSLv23`, :data:`~ssl.PROTOCOL_TLSv1`,
+    :data:`~ssl.PROTOCOL_TLSv1_1`, :data:`~ssl.PROTOCOL_TLSv1_2`, and
+    :data:`~ssl.PROTOCOL_TLS` are deprecated in favor of
+    :data:`~ssl.PROTOCOL_TLS_CLIENT` and :data:`~ssl.PROTOCOL_TLS_SERVER`
+
+  * :func:`~ssl.wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
+
+  * :func:`~ssl.match_hostname`
+
+  * :func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`
+
+  * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
+    :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
+
+.. _whatsnew310-removed:
 
 Removed
 =======
@@ -1633,6 +1698,18 @@ Porting to Python 3.10
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+Changes in the Python syntax
+----------------------------
+
+* Deprecation warning is now emitted when compiling previously valid syntax
+  if the numeric literal is immediately followed by a keyword (like in ``0in x``).
+  If future releases it will be changed to syntax warning, and finally to a
+  syntax error.  To get rid of the warning and make the code compatible with
+  future releases just add a space between the numeric literal and the
+  following keyword.
+  (Contributed by Serhiy Storchaka in :issue:`43833`).
 
 
 Changes in the Python API
@@ -1755,6 +1832,16 @@ Build Changes
 
 C API Changes
 =============
+
+PEP 652: Maintaining the Stable ABI
+-----------------------------------
+
+The Stable ABI (Application Binary Interface) for extension modules or
+embedding Python is now explicitly defined.
+:ref:`stable` describes C API and ABI stability guarantees along with best
+practices for using the Stable ABI.
+
+(Contributed by Petr Viktorin in :pep:`652` and :issue:`43795`.)
 
 New Features
 ------------
@@ -1912,6 +1999,10 @@ Porting to Python 3.10
   object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
   instead.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
+
+* The undocumented function ``Py_FrozenMain`` has been removed from the
+  limited API. The function is mainly useful for custom builds of Python.
+  (Contributed by Petr Viktorin in :issue:`26241`)
 
 Deprecated
 ----------

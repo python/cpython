@@ -4,7 +4,7 @@ Tests for the threading module.
 
 import test.support
 from test.support import threading_helper
-from test.support import verbose, cpython_only
+from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
@@ -19,6 +19,7 @@ import os
 import subprocess
 import signal
 import textwrap
+import traceback
 
 from unittest import mock
 from test import lock_tests
@@ -123,8 +124,7 @@ class ThreadTests(BaseTestCase):
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         lock = threading.Lock()
-        tp = type(lock)
-        self.assertRaises(TypeError, tp)
+        test.support.check_disallow_instantiation(self, type(lock))
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
@@ -1344,6 +1344,22 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertIsInstance(thread.exc, RuntimeError)
         # explicitly break the reference cycle to not leak a dangling thread
         thread.exc = None
+
+    def test_multithread_modify_file_noerror(self):
+        # See issue25872
+        def modify_file():
+            with open(os_helper.TESTFN, 'w', encoding='utf-8') as fp:
+                fp.write(' ')
+                traceback.format_stack()
+
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        threads = [
+            threading.Thread(target=modify_file)
+            for i in range(100)
+        ]
+        for t in threads:
+            t.start()
+            t.join()
 
 
 class ThreadRunFail(threading.Thread):
