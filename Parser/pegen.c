@@ -283,6 +283,8 @@ static void
 raise_tokenizer_init_error(PyObject *filename)
 {
     if (!(PyErr_ExceptionMatches(PyExc_LookupError)
+          || PyErr_ExceptionMatches(PyExc_SyntaxError)
+          || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)
           || PyErr_ExceptionMatches(PyExc_ValueError)
           || PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))) {
         return;
