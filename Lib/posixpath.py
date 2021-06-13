@@ -330,12 +330,11 @@ def expandvars(path):
     return path
 
 
-# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B in
-# non-strict mode.
+# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
 # It should be understood that this may change the meaning of the path
 # if it contains symbolic links!
 
-def normpath(path, *, strict=False):
+def normpath(path, *, keep_curdir=False, keep_pardir=False):
     """Normalize path, eliminating double slashes, etc."""
     path = os.fspath(path)
     if isinstance(path, bytes):
@@ -350,8 +349,8 @@ def normpath(path, *, strict=False):
         dotdot = '..'
     if path == empty:
         return dot
-    if strict:
-        dotdot = object()
+    curdir = object() if keep_curdir else dot
+    pardir = object() if keep_pardir else dotdot
     initial_slashes = path.startswith(sep)
     # POSIX allows one or two initial slashes, but treats three or more
     # as single slash.
@@ -361,10 +360,10 @@ def normpath(path, *, strict=False):
     comps = path.split(sep)
     new_comps = []
     for comp in comps:
-        if comp in (empty, dot):
+        if comp in (empty, curdir):
             continue
-        if (comp != dotdot or (not initial_slashes and not new_comps) or
-             (new_comps and new_comps[-1] == dotdot)):
+        if (comp != pardir or (not initial_slashes and not new_comps) or
+             (new_comps and new_comps[-1] == pardir)):
             new_comps.append(comp)
         elif new_comps:
             new_comps.pop()

@@ -1,3 +1,3 @@
-:func:`os.path.normpath` now accepts a *strict* keyword-only argument. When
-set to ``True``, ``..`` entries are retained, which ensures the path's
-meaning is preserved in the presence of symlinks.
+:func:`os.path.normpath` now accepts *keep_curdir* and *keep_pardir*
+keyword-only arguments. When set to ``True``, references to the current or
+parent directory (``.`` or ``..``) are retained respectively.

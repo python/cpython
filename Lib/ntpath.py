@@ -456,23 +456,24 @@ def expandvars(path):
     return res
 
 
-# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A\B in
-# non-strict mode.
+# Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A\B.
+# Previously, this function also truncated pathnames to 8+3 format,
+# but as this module is called "ntpath", that's obviously wrong!
 
-def normpath(path, *, strict=False):
+def normpath(path, *, keep_curdir=False, keep_pardir=False):
     """Normalize path, eliminating double slashes, etc."""
     path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'\\'
         altsep = b'/'
-        curdir = b'.'
-        pardir = b'..'
+        dot = b'.'
+        dotdot = b'..'
         special_prefixes = (b'\\\\.\\', b'\\\\?\\')
     else:
         sep = '\\'
         altsep = '/'
-        curdir = '.'
-        pardir = '..'
+        dot = '.'
+        dotdot = '..'
         special_prefixes = ('\\\\.\\', '\\\\?\\')
     if path.startswith(special_prefixes):
         # in the case of paths with these prefixes:
@@ -481,8 +482,8 @@ def normpath(path, *, strict=False):
         # do not do any normalization, but return the path
         # unchanged apart from the call to os.fspath()
         return path
-    if strict:
-        pardir = object()
+    curdir = object() if keep_curdir else dot
+    pardir = object() if keep_pardir else dotdot
     path = path.replace(altsep, sep)
     prefix, path = splitdrive(path)
 
@@ -508,7 +509,7 @@ def normpath(path, *, strict=False):
             i += 1
     # If the path is now empty, substitute '.'
     if not prefix and not comps:
-        comps.append(curdir)
+        comps.append(dot)
     return prefix + sep.join(comps)
 
 def _abspath_fallback(path):

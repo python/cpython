@@ -324,34 +324,108 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.normpath(b"///..//./foo/.//bar"),
                          b"/foo/bar")
 
-    def test_normpath_strict(self):
-        self.assertEqual(posixpath.normpath("", strict=True), ".")
-        self.assertEqual(posixpath.normpath("/", strict=True), "/")
-        self.assertEqual(posixpath.normpath("//", strict=True), "//")
-        self.assertEqual(posixpath.normpath("///", strict=True), "/")
+    def test_normpath_keep_curdir(self):
+        self.assertEqual(posixpath.normpath("", keep_curdir=True), ".")
+        self.assertEqual(posixpath.normpath("/", keep_curdir=True), "/")
+        self.assertEqual(posixpath.normpath("//", keep_curdir=True), "//")
+        self.assertEqual(posixpath.normpath("///", keep_curdir=True), "/")
         self.assertEqual(posixpath.normpath(
-            "///foo/.//bar//", strict=True),
+            "///foo/.//bar//", keep_curdir=True),
+            "/foo/./bar")
+        self.assertEqual(posixpath.normpath(
+            "///foo/.//bar//.//..//.//baz", keep_curdir=True),
+            "/foo/./bar/./baz")
+        self.assertEqual(posixpath.normpath(
+            "///..//./foo/.//bar", keep_curdir=True),
+            "/./foo/./bar")
+
+        self.assertEqual(posixpath.normpath(b"", keep_curdir=True), b".")
+        self.assertEqual(posixpath.normpath(b"/", keep_curdir=True), b"/")
+        self.assertEqual(posixpath.normpath(b"//", keep_curdir=True), b"//")
+        self.assertEqual(posixpath.normpath(b"///", keep_curdir=True), b"/")
+        self.assertEqual(posixpath.normpath(
+            b"///foo/.//bar//", keep_curdir=True),
+            b"/foo/./bar")
+        self.assertEqual(posixpath.normpath(
+            b"///foo/.//bar//.//..//.//baz", keep_curdir=True),
+            b"/foo/./bar/./baz")
+        self.assertEqual(posixpath.normpath(
+            b"///..//./foo/.//bar", keep_curdir=True),
+            b"/./foo/./bar")
+
+    def test_normpath_keep_pardir(self):
+        self.assertEqual(posixpath.normpath("", keep_pardir=True), ".")
+        self.assertEqual(posixpath.normpath("/", keep_pardir=True), "/")
+        self.assertEqual(posixpath.normpath("//", keep_pardir=True), "//")
+        self.assertEqual(posixpath.normpath("///", keep_pardir=True), "/")
+        self.assertEqual(posixpath.normpath(
+            "///foo/.//bar//", keep_pardir=True),
             "/foo/bar")
         self.assertEqual(posixpath.normpath(
-            "///foo/.//bar//.//..//.//baz", strict=True),
+            "///foo/.//bar//.//..//.//baz", keep_pardir=True),
             "/foo/bar/../baz")
         self.assertEqual(posixpath.normpath(
-            "///..//./foo/.//bar", strict=True),
+            "///..//./foo/.//bar", keep_pardir=True),
             "/../foo/bar")
 
-        self.assertEqual(posixpath.normpath(b"", strict=True), b".")
-        self.assertEqual(posixpath.normpath(b"/", strict=True), b"/")
-        self.assertEqual(posixpath.normpath(b"//", strict=True), b"//")
-        self.assertEqual(posixpath.normpath(b"///", strict=True), b"/")
+        self.assertEqual(posixpath.normpath(b"", keep_pardir=True), b".")
+        self.assertEqual(posixpath.normpath(b"/", keep_pardir=True), b"/")
+        self.assertEqual(posixpath.normpath(b"//", keep_pardir=True), b"//")
+        self.assertEqual(posixpath.normpath(b"///", keep_pardir=True), b"/")
         self.assertEqual(posixpath.normpath(
-            b"///foo/.//bar//", strict=True),
+            b"///foo/.//bar//", keep_pardir=True),
             b"/foo/bar")
         self.assertEqual(posixpath.normpath(
-            b"///foo/.//bar//.//..//.//baz", strict=True),
+            b"///foo/.//bar//.//..//.//baz", keep_pardir=True),
             b"/foo/bar/../baz")
         self.assertEqual(posixpath.normpath(
-            b"///..//./foo/.//bar", strict=True),
+            b"///..//./foo/.//bar", keep_pardir=True),
             b"/../foo/bar")
+
+    def test_normpath_keep_curdir_and_pardir(self):
+        self.assertEqual(posixpath.normpath(
+            "", keep_curdir=True, keep_pardir=True),
+            ".")
+        self.assertEqual(posixpath.normpath(
+            "/", keep_curdir=True, keep_pardir=True),
+            "/")
+        self.assertEqual(posixpath.normpath(
+            "//", keep_curdir=True, keep_pardir=True),
+            "//")
+        self.assertEqual(posixpath.normpath(
+            "///", keep_curdir=True, keep_pardir=True),
+            "/")
+        self.assertEqual(posixpath.normpath(
+            "///foo/.//bar//", keep_curdir=True, keep_pardir=True),
+            "/foo/./bar")
+        self.assertEqual(posixpath.normpath(
+            "///foo/.//bar//.//..//.//baz", keep_curdir=True, keep_pardir=True),
+            "/foo/./bar/./.././baz")
+        self.assertEqual(posixpath.normpath(
+            "///..//./foo/.//bar", keep_curdir=True, keep_pardir=True),
+            "/.././foo/./bar")
+
+        self.assertEqual(posixpath.normpath(
+            b"", keep_curdir=True, keep_pardir=True),
+            b".")
+        self.assertEqual(posixpath.normpath(
+            b"/", keep_curdir=True, keep_pardir=True),
+            b"/")
+        self.assertEqual(posixpath.normpath(
+            b"//", keep_curdir=True, keep_pardir=True),
+            b"//")
+        self.assertEqual(posixpath.normpath(
+            b"///", keep_curdir=True, keep_pardir=True),
+            b"/")
+        self.assertEqual(posixpath.normpath(
+            b"///foo/.//bar//", keep_curdir=True, keep_pardir=True),
+            b"/foo/./bar")
+        self.assertEqual(posixpath.normpath(
+            b"///foo/.//bar//.//..//.//baz", keep_curdir=True, keep_pardir=True),
+            b"/foo/./bar/./.././baz")
+        self.assertEqual(posixpath.normpath(
+            b"///..//./foo/.//bar", keep_curdir=True, keep_pardir=True),
+            b"/.././foo/./bar")
 
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_curdir(self):

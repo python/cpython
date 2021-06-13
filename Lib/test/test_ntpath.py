@@ -236,32 +236,130 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.normpath('\\\\.\\NUL')", r'\\.\NUL')
         tester("ntpath.normpath('\\\\?\\D:/XY\\Z')", r'\\?\D:/XY\Z')
 
-    def test_normpath_strict(self):
-        tester("ntpath.normpath('A//////././//.//B', strict=True)", r'A\B')
-        tester("ntpath.normpath('A/./B', strict=True)", r'A\B')
-        tester("ntpath.normpath('A/foo/../B', strict=True)", r'A\foo\..\B')
-        tester("ntpath.normpath('C:A//B', strict=True)", r'C:A\B')
-        tester("ntpath.normpath('D:A/./B', strict=True)", r'D:A\B')
-        tester("ntpath.normpath('e:A/foo/../B', strict=True)", r'e:A\foo\..\B')
+    def test_normpath_keep_curdir(self):
+        tester("ntpath.normpath('A//////././//.//B', keep_curdir=True)", r'A\.\.\.\B')
+        tester("ntpath.normpath('A/./B', keep_curdir=True)", r'A\.\B')
+        tester("ntpath.normpath('A/foo/../B', keep_curdir=True)", r'A\B')
+        tester("ntpath.normpath('C:A//B', keep_curdir=True)", r'C:A\B')
+        tester("ntpath.normpath('D:A/./B', keep_curdir=True)", r'D:A\.\B')
+        tester("ntpath.normpath('e:A/foo/../B', keep_curdir=True)", r'e:A\B')
 
-        tester("ntpath.normpath('C:///A//B', strict=True)", r'C:\A\B')
-        tester("ntpath.normpath('D:///A/./B', strict=True)", r'D:\A\B')
-        tester("ntpath.normpath('e:///A/foo/../B', strict=True)", r'e:\A\foo\..\B')
+        tester("ntpath.normpath('C:///A//B', keep_curdir=True)", r'C:\A\B')
+        tester("ntpath.normpath('D:///A/./B', keep_curdir=True)", r'D:\A\.\B')
+        tester("ntpath.normpath('e:///A/foo/../B', keep_curdir=True)", r'e:\A\B')
 
-        tester("ntpath.normpath('..', strict=True)", r'..')
-        tester("ntpath.normpath('.', strict=True)", r'.')
-        tester("ntpath.normpath('', strict=True)", r'.')
-        tester("ntpath.normpath('/', strict=True)", '\\')
-        tester("ntpath.normpath('c:/', strict=True)", 'c:\\')
-        tester("ntpath.normpath('/../.././..', strict=True)", '\\..\\..\\..')
-        tester("ntpath.normpath('c:/../../..', strict=True)", 'c:\\..\\..\\..')
-        tester("ntpath.normpath('../.././..', strict=True)", r'..\..\..')
-        tester("ntpath.normpath('K:../.././..', strict=True)", r'K:..\..\..')
-        tester("ntpath.normpath('C:////a/b', strict=True)", r'C:\a\b')
-        tester("ntpath.normpath('//machine/share//a/b', strict=True)", r'\\machine\share\a\b')
+        tester("ntpath.normpath('..', keep_curdir=True)", r'..')
+        tester("ntpath.normpath('.', keep_curdir=True)", r'.')
+        tester("ntpath.normpath('', keep_curdir=True)", r'.')
+        tester("ntpath.normpath('/', keep_curdir=True)", '\\')
+        tester("ntpath.normpath('c:/', keep_curdir=True)", 'c:\\')
+        tester("ntpath.normpath('/../.././..', keep_curdir=True)", '\\')
+        tester("ntpath.normpath('c:/../../..', keep_curdir=True)", 'c:\\')
+        tester("ntpath.normpath('../.././..', keep_curdir=True)", r'..\..')
+        tester("ntpath.normpath('K:../.././..', keep_curdir=True)", r'K:..\..')
+        tester("ntpath.normpath('C:////a/b', keep_curdir=True)", r'C:\a\b')
+        tester("ntpath.normpath('//machine/share//a/b', keep_curdir=True)", r'\\machine\share\a\b')
 
-        tester("ntpath.normpath('\\\\.\\NUL', strict=True)", r'\\.\NUL')
-        tester("ntpath.normpath('\\\\?\\D:/XY\\Z', strict=True)", r'\\?\D:/XY\Z')
+        tester("ntpath.normpath('\\\\.\\NUL', keep_curdir=True)", r'\\.\NUL')
+        tester("ntpath.normpath('\\\\?\\D:/XY\\Z', keep_curdir=True)", r'\\?\D:/XY\Z')
+
+    def test_normpath_keep_pardir(self):
+        tester("ntpath.normpath('A//////././//.//B', keep_pardir=True)", r'A\B')
+        tester("ntpath.normpath('A/./B', keep_pardir=True)", r'A\B')
+        tester("ntpath.normpath('A/foo/../B', keep_pardir=True)", r'A\foo\..\B')
+        tester("ntpath.normpath('C:A//B', keep_pardir=True)", r'C:A\B')
+        tester("ntpath.normpath('D:A/./B', keep_pardir=True)", r'D:A\B')
+        tester("ntpath.normpath('e:A/foo/../B', keep_pardir=True)", r'e:A\foo\..\B')
+
+        tester("ntpath.normpath('C:///A//B', keep_pardir=True)", r'C:\A\B')
+        tester("ntpath.normpath('D:///A/./B', keep_pardir=True)", r'D:\A\B')
+        tester("ntpath.normpath('e:///A/foo/../B', keep_pardir=True)", r'e:\A\foo\..\B')
+
+        tester("ntpath.normpath('..', keep_pardir=True)", r'..')
+        tester("ntpath.normpath('.', keep_pardir=True)", r'.')
+        tester("ntpath.normpath('', keep_pardir=True)", r'.')
+        tester("ntpath.normpath('/', keep_pardir=True)", '\\')
+        tester("ntpath.normpath('c:/', keep_pardir=True)", 'c:\\')
+        tester("ntpath.normpath('/../.././..', keep_pardir=True)", '\\..\\..\\..')
+        tester("ntpath.normpath('c:/../../..', keep_pardir=True)", 'c:\\..\\..\\..')
+        tester("ntpath.normpath('../.././..', keep_pardir=True)", r'..\..\..')
+        tester("ntpath.normpath('K:../.././..', keep_pardir=True)", r'K:..\..\..')
+        tester("ntpath.normpath('C:////a/b', keep_pardir=True)", r'C:\a\b')
+        tester("ntpath.normpath('//machine/share//a/b', keep_pardir=True)", r'\\machine\share\a\b')
+
+        tester("ntpath.normpath('\\\\.\\NUL', keep_pardir=True)", r'\\.\NUL')
+        tester("ntpath.normpath('\\\\?\\D:/XY\\Z', keep_pardir=True)", r'\\?\D:/XY\Z')
+
+    def test_normpath_keep_curdir_and_pardir(self):
+        tester("ntpath.normpath("
+               "'A//////././//.//B', keep_curdir=True, keep_pardir=True)",
+               r'A\.\.\.\B')
+        tester("ntpath.normpath("
+               "'A/./B', keep_curdir=True, keep_pardir=True)",
+               r'A\.\B')
+        tester("ntpath.normpath("
+               "'A/foo/../B', keep_curdir=True, keep_pardir=True)",
+               r'A\foo\..\B')
+        tester("ntpath.normpath("
+               "'C:A//B', keep_curdir=True, keep_pardir=True)",
+               r'C:A\B')
+        tester("ntpath.normpath("
+               "'D:A/./B', keep_curdir=True, keep_pardir=True)",
+               r'D:A\.\B')
+        tester("ntpath.normpath("
+               "'e:A/foo/../B', keep_curdir=True, keep_pardir=True)",
+               r'e:A\foo\..\B')
+
+        tester("ntpath.normpath("
+               "'C:///A//B', keep_curdir=True, keep_pardir=True)",
+               r'C:\A\B')
+        tester("ntpath.normpath("
+               "'D:///A/./B', keep_curdir=True, keep_pardir=True)",
+               r'D:\A\.\B')
+        tester("ntpath.normpath("
+               "'e:///A/foo/../B', keep_curdir=True, keep_pardir=True)",
+               r'e:\A\foo\..\B')
+
+        tester("ntpath.normpath("
+               "'..', keep_curdir=True, keep_pardir=True)",
+               r'..')
+        tester("ntpath.normpath("
+               "'.', keep_curdir=True, keep_pardir=True)",
+               r'.')
+        tester("ntpath.normpath("
+               "'', keep_curdir=True, keep_pardir=True)",
+               r'.')
+        tester("ntpath.normpath("
+               "'/', keep_curdir=True, keep_pardir=True)",
+               '\\')
+        tester("ntpath.normpath("
+               "'c:/', keep_curdir=True, keep_pardir=True)",
+               'c:\\')
+        tester("ntpath.normpath("
+               "'/../.././..', keep_curdir=True, keep_pardir=True)",
+               '\\..\\..\\.\\..')
+        tester("ntpath.normpath("
+               "'c:/../../..', keep_curdir=True, keep_pardir=True)",
+               'c:\\..\\..\\..')
+        tester("ntpath.normpath("
+               "'../.././..', keep_curdir=True, keep_pardir=True)",
+               r'..\..\.\..')
+        tester("ntpath.normpath("
+               "'K:../.././..', keep_curdir=True, keep_pardir=True)",
+               r'K:..\..\.\..')
+        tester("ntpath.normpath("
+               "'C:////a/b', keep_curdir=True, keep_pardir=True)",
+               r'C:\a\b')
+        tester("ntpath.normpath("
+               "'//machine/share//a/b', keep_curdir=True, keep_pardir=True)",
+               r'\\machine\share\a\b')
+
+        tester("ntpath.normpath("
+               "'\\\\.\\NUL', keep_curdir=True, keep_pardir=True)",
+               r'\\.\NUL')
+        tester("ntpath.normpath("
+               "'\\\\?\\D:/XY\\Z', keep_curdir=True, keep_pardir=True)",
+               r'\\?\D:/XY\Z')
 
     def test_realpath_curdir(self):
         expected = ntpath.normpath(os.getcwd())
