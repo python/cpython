@@ -11,7 +11,6 @@ from _collections_abc import Sequence
 from errno import EINVAL, ENOENT, ENOTDIR, EBADF, ELOOP
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
-from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 __all__ = [
@@ -205,18 +204,6 @@ class _WindowsFlavour(_Flavour):
             return False
         return parts[-1].partition('.')[0].upper() in self.reserved_names
 
-    def make_uri(self, path):
-        # Under Windows, file URIs use the UTF-8 encoding.
-        drive = path.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            rest = path.as_posix()[2:].lstrip('/')
-            return 'file:///%s/%s' % (
-                drive, urlquote_from_bytes(rest.encode('utf-8')))
-        else:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
-
 
 class _PosixFlavour(_Flavour):
     sep = '/'
@@ -252,12 +239,6 @@ class _PosixFlavour(_Flavour):
 
     def is_reserved(self, parts):
         return False
-
-    def make_uri(self, path):
-        # We represent the path using the local filesystem encoding,
-        # for portability to other applications.
-        bpath = bytes(path)
-        return 'file://' + urlquote_from_bytes(bpath)
 
 
 _windows_flavour = _WindowsFlavour()
@@ -635,9 +616,7 @@ class PurePath(object):
 
     def as_uri(self):
         """Return the path as a 'file' URI."""
-        if not self.is_absolute():
-            raise ValueError("relative path can't be expressed as a file URI")
-        return self._flavour.make_uri(self)
+        return self._flavour.pathmod.fileuri(str(self))
 
     @property
     def _cparts(self):

@@ -22,6 +22,7 @@ import sys
 import stat
 import genericpath
 from genericpath import *
+from urllib.parse import quote_from_bytes as urlquote
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -29,7 +30,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile", "samestat", "commonpath"]
+           "samefile", "sameopenfile", "samestat", "commonpath", "fileuri"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -796,6 +797,33 @@ def commonpath(paths):
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
+
+
+def fileuri(path):
+    """
+    Return the given path expressed as a ``file://`` URI.
+    """
+
+    # File URIs use the UTF-8 encoding on Windows.
+    path = os.fspath(path)
+    if not isinstance(path, bytes):
+        path = path.encode('utf8')
+
+    # Strip UNC prefixes
+    path = path.replace(b'\\', b'/')
+    if path.startswith(b'//?/UNC/'):
+        path = b'//' + path[8:]
+    elif path.startswith(b'//?/'):
+        path = path[4:]
+
+    if path[1:3] == b':/':
+        # It's a path on a local drive => 'file:///c:/a/b'
+        return 'file:///' + urlquote(path[:1]) + ':' + urlquote(path[2:])
+    elif path[0:2] == b'//':
+        # It's a path on a network drive => 'file://host/share/a/b'
+        return 'file:' + urlquote(path)
+    else:
+        raise ValueError("relative path can't be expressed as a file URI")
 
 
 try:

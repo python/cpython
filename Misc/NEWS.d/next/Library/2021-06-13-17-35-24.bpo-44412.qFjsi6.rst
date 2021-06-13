@@ -1,0 +1,2 @@
+Add :func:`os.path.fileuri` function that represents a file path as a
+``file://`` URI.

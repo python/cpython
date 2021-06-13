@@ -1663,7 +1663,7 @@ class URL2PathNameTests(unittest.TestCase):
         self.assertRaises(IOError, url2pathname, "///\u00e8|/")
 
     def test_roundtrip_url2pathname(self):
-        list_of_paths = ['C:',
+        list_of_paths = ['C:\\',
                          r'\\\C\test\\',
                          r'C:\foo\bar\spam.foo'
                          ]
@@ -1673,16 +1673,13 @@ class URL2PathNameTests(unittest.TestCase):
 class PathName2URLTests(unittest.TestCase):
 
     def test_converting_drive_letter(self):
-        self.assertEqual(pathname2url("C:"), '///C:')
-        self.assertEqual(pathname2url("C:\\"), '///C:')
+        self.assertEqual(pathname2url("C:\\"), '///C:/')
 
     def test_converting_when_no_drive_letter(self):
         self.assertEqual(pathname2url(r"\\\folder\test" "\\"),
-                         '/////folder/test/')
+                         '///folder/test/')
         self.assertEqual(pathname2url(r"\\folder\test" "\\"),
-                         '////folder/test/')
-        self.assertEqual(pathname2url(r"\folder\test" "\\"),
-                         '/folder/test/')
+                         '//folder/test/')
 
     def test_simple_compare(self):
         self.assertEqual(pathname2url(r'C:\foo\bar\spam.foo'),
@@ -1692,8 +1689,8 @@ class PathName2URLTests(unittest.TestCase):
         self.assertRaises(IOError, pathname2url, "XX:\\")
 
     def test_roundtrip_pathname2url(self):
-        list_of_paths = ['///C:',
-                         '/////folder/test/',
+        list_of_paths = ['///C:/',
+                         '//server/folder/test/',
                          '///C:/foo/bar/spam.foo']
         for path in list_of_paths:
             self.assertEqual(pathname2url(url2pathname(path)), path)

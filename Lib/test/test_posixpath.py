@@ -676,6 +676,15 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.commonpath,
                           ['usr/lib/', b'/usr/lib/python3'])
 
+    def test_fileuri(self):
+        self.assertEqual(posixpath.fileuri('/'), 'file:///')
+        self.assertEqual(posixpath.fileuri('/a/b.c'), 'file:///a/b.c')
+        self.assertEqual(posixpath.fileuri('/a/b%#c'), 'file:///a/b%25%23c')
+
+        self.assertEqual(posixpath.fileuri(b'/'), 'file:///')
+        self.assertEqual(posixpath.fileuri(b'/a/b.c'), 'file:///a/b.c')
+        self.assertEqual(posixpath.fileuri(b'/a/b%#c'), 'file:///a/b%25%23c')
+
 
 class PosixCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = posixpath
@@ -752,6 +761,12 @@ class PathLikeTests(unittest.TestCase):
         common_path = self.path.commonpath([self.file_path, self.file_name])
         self.assertEqual(common_path, self.file_name)
 
+    def test_path_fileuri(self):
+        file_name = '/foo/bar'
+        file_path = FakePath(file_name)
+        self.assertEqual(
+            self.path.fileuri(file_name),
+            self.path.fileuri(file_path))
 
 if __name__=="__main__":
     unittest.main()

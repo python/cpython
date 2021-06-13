@@ -27,6 +27,7 @@ import sys
 import stat
 import genericpath
 from genericpath import *
+from urllib.parse import quote_from_bytes as urlquote
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -35,7 +36,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath"]
+           "commonpath", "fileuri"]
 
 
 def _get_sep(path):
@@ -538,3 +539,19 @@ def commonpath(paths):
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
+
+
+def fileuri(path):
+    """
+    Return the given path expressed as a ``file://`` URI.
+    """
+
+    # We represent the path using the local filesystem encoding,
+    # for portability to other applications.
+    path = os.fspath(path)
+    if not isinstance(path, bytes):
+        path = os.fsencode(path)
+    if path[:1] == b'/':
+        return 'file://' + urlquote(path)
+    else:
+        raise ValueError("relative path can't be expressed as a file URI")

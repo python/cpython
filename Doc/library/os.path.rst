@@ -205,6 +205,14 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: fileuri(path):
+
+    Represent the given path as a ``file://`` URI.  :exc:`ValueError` is raised
+    if the path isn't absolute.
+
+   .. versionadded:: 3.11
+
+
 .. function:: getatime(path)
 
    Return the time of last access of *path*.  The return value is a floating point number giving

@@ -786,6 +786,26 @@ class TestNtpath(NtpathTestCase):
             self.assertIsInstance(b_final_path, bytes)
             self.assertGreater(len(b_final_path), 0)
 
+    def test_fileuri(self):
+        fn = ntpath.fileuri
+        self.assertEqual(fn('c:/'), 'file:///c:/')
+        self.assertEqual(fn('c:/a/b.c'), 'file:///c:/a/b.c')
+        self.assertEqual(fn('c:/a/b%#c'), 'file:///c:/a/b%25%23c')
+        self.assertEqual(fn('c:/a/b\xe9'), 'file:///c:/a/b%C3%A9')
+        self.assertEqual(fn('//some/share/'), 'file://some/share/')
+        self.assertEqual(fn('//some/share/a/b.c'), 'file://some/share/a/b.c')
+        self.assertEqual(fn('//some/share/a/b%#c\xe9'),
+                         'file://some/share/a/b%25%23c%C3%A9')
+
+        self.assertEqual(fn(b'c:/'), 'file:///c:/')
+        self.assertEqual(fn(b'c:/a/b.c'), 'file:///c:/a/b.c')
+        self.assertEqual(fn(b'c:/a/b%#c'), 'file:///c:/a/b%25%23c')
+        self.assertEqual(fn(b'c:/a/b\xc3\xa9'), 'file:///c:/a/b%C3%A9')
+        self.assertEqual(fn(b'//some/share/'), 'file://some/share/')
+        self.assertEqual(fn(b'//some/share/a/b.c'), 'file://some/share/a/b.c')
+        self.assertEqual(fn(b'//some/share/a/b%#c\xc3\xa9'),
+                         'file://some/share/a/b%25%23c%C3%A9')
+
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
     attributes = ['relpath']
@@ -864,6 +884,12 @@ class PathLikeTests(NtpathTestCase):
     def test_path_isdir(self):
         self._check_function(self.path.isdir)
 
+    def test_path_fileuri(self):
+        file_name = 'C:\\foo\\bar'
+        file_path = FakePath(file_name)
+        self.assertPathEqual(
+            self.path.fileuri(file_name),
+            self.path.fileuri(file_path))
 
 if __name__ == "__main__":
     unittest.main()
