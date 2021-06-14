@@ -2512,7 +2512,7 @@ class TextIO(IO[str]):
         pass
 
 
-class io:
+class _io:
     """Wrapper namespace for IO generic classes."""
 
     __all__ = ['IO', 'TextIO', 'BinaryIO']
@@ -2521,13 +2521,13 @@ class io:
     BinaryIO = BinaryIO
 
 
-io.__name__ = __name__ + '.io'
-sys.modules[io.__name__] = io
+_io.__name__ = __name__ + '.io'
+sys.modules[_io.__name__] = _io
 
 Pattern = _alias(stdlib_re.Pattern, 1)
 Match = _alias(stdlib_re.Match, 1)
 
-class re:
+class _re:
     """Wrapper namespace for re type aliases."""
 
     __all__ = ['Pattern', 'Match']
@@ -2535,5 +2535,21 @@ class re:
     Match = Match
 
 
-re.__name__ = __name__ + '.re'
-sys.modules[re.__name__] = re
+_re.__name__ = __name__ + '.re'
+sys.modules[_re.__name__] = _re
+
+def __getattr__(name):
+    import warnings
+    if name in ["io", "re"]:
+        warnings.warn(
+            f"typing.{name} module is deprecated, import directly "
+            f"from typing instead. typing.{name} will be removed "
+            "in Python 3.12.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        if name == "io":
+            return _io
+        elif name == "re":
+            return _re
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
