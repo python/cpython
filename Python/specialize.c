@@ -33,18 +33,27 @@
 
 Py_ssize_t _Py_QuickenedCount = 0;
 #if SPECIALIZATION_STATS
-SpecializationStats _specialization_stats = { 0 };
+SpecializationStats _specialization_stats[256] = { 0 };
 
-#define PRINT_STAT(name) fprintf(stderr, #name " : %" PRIu64" \n", _specialization_stats.name);
+#define PRINT_STAT(name, field) fprintf(stderr, "    %s." #field " : %" PRIu64 "\n", name, stats->field);
+
+static void
+print_stats(SpecializationStats *stats, const char *name)
+{
+    PRINT_STAT(name, specialization_success);
+    PRINT_STAT(name, specialization_failure);
+    PRINT_STAT(name, hit);
+    PRINT_STAT(name, deferred);
+    PRINT_STAT(name, miss);
+    PRINT_STAT(name, deopt);
+}
+
 void
 _Py_PrintSpecializationStats(void)
 {
-    PRINT_STAT(specialization_success);
-    PRINT_STAT(specialization_failure);
-    PRINT_STAT(loadattr_hit);
-    PRINT_STAT(loadattr_deferred);
-    PRINT_STAT(loadattr_miss);
-    PRINT_STAT(loadattr_deopt);
+    printf("Specialization stats:\n");
+    print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
+    print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
 }
 
 #endif
@@ -77,11 +86,13 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
   Values of zero are ignored. */
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
+    [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
-    [LOAD_ATTR] = 2,
+    [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
+    [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -357,14 +368,81 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
 
 fail:
-    STAT_INC(specialization_failure);
+    STAT_INC(LOAD_ATTR, specialization_failure);
     assert(!PyErr_Occurred());
     cache_backoff(cache0);
     return 0;
 success:
-    STAT_INC(specialization_success);
+    STAT_INC(LOAD_ATTR, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;
 }
 
+
+int
+_Py_Specialize_LoadGlobal(
+    PyObject *globals, PyObject *builtins,
+    _Py_CODEUNIT *instr, PyObject *name,
+    SpecializedCacheEntry *cache)
+{
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyLoadGlobalCache *cache1 = &cache[-1].load_global;
+    assert(PyUnicode_CheckExact(name));
+    if (!PyDict_CheckExact(globals)) {
+        goto fail;
+    }
+    if (((PyDictObject *)globals)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        goto fail;
+    }
+    PyObject *value = NULL;
+    Py_ssize_t index = _PyDict_GetItemHint((PyDictObject *)globals, name, -1, &value);
+    assert (index != DKIX_ERROR);
+    if (index != DKIX_EMPTY) {
+        if (index != (uint16_t)index) {
+            goto fail;
+        }
+        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+        if (keys_version == 0) {
+            goto fail;
+        }
+        cache1->module_keys_version = keys_version;
+        cache0->index = (uint16_t)index;
+        *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_MODULE, _Py_OPARG(*instr));
+        goto success;
+    }
+    if (!PyDict_CheckExact(builtins)) {
+        goto fail;
+    }
+    if (((PyDictObject *)builtins)->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        goto fail;
+    }
+    index = _PyDict_GetItemHint((PyDictObject *)builtins, name, -1, &value);
+    assert (index != DKIX_ERROR);
+    if (index != (uint16_t)index) {
+        goto fail;
+    }
+    uint32_t globals_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)globals);
+    if (globals_version == 0) {
+        goto fail;
+    }
+    uint32_t builtins_version = _PyDictKeys_GetVersionForCurrentState((PyDictObject *)builtins);
+    if (builtins_version == 0) {
+        goto fail;
+    }
+    cache1->module_keys_version = globals_version;
+    cache1->builtin_keys_version = builtins_version;
+    cache0->index = (uint16_t)index;
+    *instr = _Py_MAKECODEUNIT(LOAD_GLOBAL_BUILTIN, _Py_OPARG(*instr));
+    goto success;
+fail:
+    STAT_INC(LOAD_GLOBAL, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(LOAD_GLOBAL, specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}
