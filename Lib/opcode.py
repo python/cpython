@@ -226,4 +226,7 @@ _specialized_instructions = [
     "LOAD_ATTR_WITH_HINT",
     "LOAD_ATTR_SLOT",
     "LOAD_ATTR_MODULE",
+    "LOAD_GLOBAL_ADAPTIVE",
+    "LOAD_GLOBAL_MODULE",
+    "LOAD_GLOBAL_BUILTIN",
 ]
