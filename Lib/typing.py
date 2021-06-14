@@ -28,6 +28,7 @@ import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
+import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 # Please keep __all__ alphabetized within each category.
@@ -2512,7 +2513,20 @@ class TextIO(IO[str]):
         pass
 
 
-class _io:
+class _DeprecatedType(type):
+    def __getattribute__(cls, name):
+        if name != "__dict__" and name in cls.__dict__:
+            warnings.warn(
+                f"{cls.__name__} is deprecated, import directly "
+                f"from typing instead. {cls.__name__} will be removed "
+                "in Python 3.12.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return super().__getattribute__(name)
+
+
+class io(metaclass=_DeprecatedType):
     """Wrapper namespace for IO generic classes."""
 
     __all__ = ['IO', 'TextIO', 'BinaryIO']
@@ -2521,13 +2535,13 @@ class _io:
     BinaryIO = BinaryIO
 
 
-_io.__name__ = __name__ + '.io'
-sys.modules[_io.__name__] = _io
+io.__name__ = __name__ + '.io'
+sys.modules[io.__name__] = io
 
 Pattern = _alias(stdlib_re.Pattern, 1)
 Match = _alias(stdlib_re.Match, 1)
 
-class _re:
+class re(metaclass=_DeprecatedType):
     """Wrapper namespace for re type aliases."""
 
     __all__ = ['Pattern', 'Match']
@@ -2535,21 +2549,5 @@ class _re:
     Match = Match
 
 
-_re.__name__ = __name__ + '.re'
-sys.modules[_re.__name__] = _re
-
-def __getattr__(name):
-    import warnings
-    if name in ["io", "re"]:
-        warnings.warn(
-            f"typing.{name} module is deprecated, import directly "
-            f"from typing instead. typing.{name} will be removed "
-            "in Python 3.12.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        if name == "io":
-            return _io
-        elif name == "re":
-            return _re
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+re.__name__ = __name__ + '.re'
+sys.modules[re.__name__] = re
