@@ -372,6 +372,8 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
     if (newsize > tok->end - tok->buf) {
         char *newbuf = tok->buf;
         Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
+        Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
+        Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
         newbuf = (char *)PyMem_Realloc(newbuf, newsize);
         if (newbuf == NULL) {
             tok->done = E_NOMEM;
@@ -382,6 +384,8 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         tok->inp = tok->buf + oldsize;
         tok->end = tok->buf + newsize;
         tok->start = start < 0 ? NULL : tok->buf + start;
+        tok->line_start = line_start < 0 ? NULL : tok->buf + line_start;
+        tok->multi_line_start = multi_line_start < 0 ? NULL : tok->buf + multi_line_start;
     }
     return 1;
 }
@@ -1183,12 +1187,12 @@ static int
 verify_end_of_number(struct tok_state *tok, int c, const char *kind)
 {
     /* Emit a deprecation warning only if the numeric literal is immediately
-     * followed by one of keywords which can occurr after a numeric literal
+     * followed by one of keywords which can occur after a numeric literal
      * in valid code: "and", "else", "for", "if", "in", "is" and "or".
      * It allows to gradually deprecate existing valid code without adding
      * warning before error in most cases of invalid numeric literal (which
-     * would be confusiong and break existing tests).
-     * Raise a syntax error with slighly better message than plain
+     * would be confusing and break existing tests).
+     * Raise a syntax error with slightly better message than plain
      * "invalid syntax" if the numeric literal is immediately followed by
      * other keyword or identifier.
      */
@@ -1883,6 +1887,7 @@ tok_get(struct tok_state *tok, const char **p_start, const char **p_end)
         while (end_quote_size != quote_size) {
             c = tok_nextc(tok);
             if (c == EOF || (quote_size == 1 && c == '\n')) {
+                assert(tok->multi_line_start != NULL);
                 // shift the tok_state's location into
                 // the start of string, and report the error
                 // from the initial quote character

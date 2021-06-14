@@ -73,13 +73,13 @@ class ButtonTest(unittest.TestCase):
     def test_click_apply(self):
         d = dialog
         deactivate = d.deactivate_current_config = mock.Mock()
-        save_ext = d.save_all_changed_extensions = mock.Mock()
+        save_ext = d.extpage.save_all_changed_extensions = mock.Mock()
         activate = d.activate_config_changes = mock.Mock()
         d.buttons['Apply'].invoke()
         deactivate.assert_called_once()
         save_ext.assert_called_once()
         activate.assert_called_once()
-        del d.save_all_changed_extensions
+        del d.extpage.save_all_changed_extensions
         del d.activate_config_changes, d.deactivate_current_config
 
     def test_click_cancel(self):
@@ -258,27 +258,6 @@ class FontPageTest(unittest.TestCase):
 
         d.font_sample, d.highlight_sample = orig_samples
         d.set_samples = Func()  # Re-mask for other tests.
-
-
-class IndentTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.page = dialog.fontpage
-        cls.page.update()
-
-    def test_load_tab_cfg(self):
-        d = self.page
-        d.space_num.set(16)
-        d.load_tab_cfg()
-        self.assertEqual(d.space_num.get(), 4)
-
-    def test_indent_scale(self):
-        d = self.page
-        changes.clear()
-        d.indent_scale.set(20)
-        self.assertEqual(d.space_num.get(), 16)
-        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
 class HighPageTest(unittest.TestCase):
@@ -1250,6 +1229,12 @@ class WinPageTest(unittest.TestCase):
         d.win_width_int.insert(0, '11')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
 
+    def test_indent_spaces(self):
+        d = self.page
+        d.indent_chooser.set(6)
+        self.assertEqual(d.indent_spaces.get(), '6')
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
+
     def test_cursor_blink(self):
         self.page.cursor_blink_bool.invoke()
         self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 'False'}})
@@ -1278,7 +1263,7 @@ class WinPageTest(unittest.TestCase):
         self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
 
 
-class GenPageTest(unittest.TestCase):
+class ShedPageTest(unittest.TestCase):
     """Test that shed tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add

@@ -658,6 +658,14 @@ class TestEnum(unittest.TestCase):
             def __repr__(self):
                 return '<%s.%s: %r>' % (self.__class__.__name__, self._name_, self._value_)
         self.assertEqual(repr(MyEnum.A), '<MyEnum.A: 0x1>')
+        #
+        class SillyInt(HexInt):
+            pass
+        class MyOtherEnum(SillyInt, enum.Enum):
+            D = 4
+            E = 5
+            F = 6
+        self.assertIs(MyOtherEnum._member_type_, SillyInt)
 
     def test_too_many_data_types(self):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
@@ -830,7 +838,7 @@ class TestEnum(unittest.TestCase):
         class ReplaceGlobalInt(IntEnum):
             ONE = 1
             TWO = 2
-        ReplaceGlobalInt.__reduce_ex__ = enum._reduce_ex_by_name
+        ReplaceGlobalInt.__reduce_ex__ = enum._reduce_ex_by_global_name
         for proto in range(HIGHEST_PROTOCOL):
             self.assertEqual(ReplaceGlobalInt.TWO.__reduce_ex__(proto), 'TWO')
 
@@ -1527,10 +1535,10 @@ class TestEnum(unittest.TestCase):
         NI5 = NamedInt('test', 5)
         self.assertEqual(NI5, 5)
         self.assertEqual(NEI.y.value, 2)
-        test_pickle_exception(self.assertRaises, TypeError, NEI.x)
-        test_pickle_exception(self.assertRaises, PicklingError, NEI)
+        test_pickle_dump_load(self.assertIs, NEI.y)
+        test_pickle_dump_load(self.assertIs, NEI)
 
-    def test_subclasses_without_direct_pickle_support_using_name(self):
+    def test_subclasses_with_direct_pickle_support(self):
         class NamedInt(int):
             __qualname__ = 'NamedInt'
             def __new__(cls, *args):
@@ -2143,6 +2151,50 @@ class TestEnum(unittest.TestCase):
                 member._value_ = value
                 return member
         self.assertEqual(Fee.TEST, 2)
+
+    def test_miltuple_mixin_with_common_data_type(self):
+        class CaseInsensitiveStrEnum(str, Enum):
+            @classmethod
+            def _missing_(cls, value):
+                for member in cls._member_map_.values():
+                    if member._value_.lower() == value.lower():
+                        return member
+                return super()._missing_(value)
+        #
+        class LenientStrEnum(str, Enum):
+            def __init__(self, *args):
+                self._valid = True
+            @classmethod
+            def _missing_(cls, value):
+                unknown = cls._member_type_.__new__(cls, value)
+                unknown._valid = False
+                unknown._name_ = value.upper()
+                unknown._value_ = value
+                cls._member_map_[value] = unknown
+                return unknown
+            @property
+            def valid(self):
+                return self._valid
+        #
+        class JobStatus(CaseInsensitiveStrEnum, LenientStrEnum):
+            ACTIVE = "active"
+            PENDING = "pending"
+            TERMINATED = "terminated"
+        #
+        JS = JobStatus
+        self.assertEqual(list(JobStatus), [JS.ACTIVE, JS.PENDING, JS.TERMINATED])
+        self.assertEqual(JS.ACTIVE, 'active')
+        self.assertEqual(JS.ACTIVE.value, 'active')
+        self.assertIs(JS('Active'), JS.ACTIVE)
+        self.assertTrue(JS.ACTIVE.valid)
+        missing = JS('missing')
+        self.assertEqual(list(JobStatus), [JS.ACTIVE, JS.PENDING, JS.TERMINATED])
+        self.assertEqual(JS.ACTIVE, 'active')
+        self.assertEqual(JS.ACTIVE.value, 'active')
+        self.assertIs(JS('Active'), JS.ACTIVE)
+        self.assertTrue(JS.ACTIVE.valid)
+        self.assertTrue(isinstance(missing, JS))
+        self.assertFalse(missing.valid)
 
     def test_empty_globals(self):
         # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
@@ -3539,7 +3591,7 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
                 ValueError,
-                "invalid Flag 'Bizarre': 'b' is missing named flags for values 1, 2; 'd' is missing a named flag for value 2",
+                "invalid Flag 'Bizarre': aliases b and d are missing combined values of 0x3 .use `enum.show_flag_values.value.` for details.",
             ):
             @verify(NAMED_FLAGS)
             class Bizarre(Flag):
@@ -3547,6 +3599,7 @@ class TestVerify(unittest.TestCase):
                 c = 4
                 d = 6
         #
+        self.assertEqual(enum.show_flag_values(3), [1, 2])
         class Bizarre(IntFlag):
             b = 3
             c = 4
@@ -3557,13 +3610,13 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
                 ValueError,
-                "invalid Flag 'Bizarre': 'b' is missing named flags for values 1, 2; 'd' is missing a named flag for value 2",
+                "invalid Flag 'Bizarre': alias d is missing value 0x2 .use `enum.show_flag_values.value.` for details.",
             ):
             @verify(NAMED_FLAGS)
             class Bizarre(IntFlag):
-                b = 3
                 c = 4
                 d = 6
+        self.assertEqual(enum.show_flag_values(2), [2])
 
     def test_unique_clean(self):
         @verify(UNIQUE)
@@ -3830,7 +3883,7 @@ class TestStdLib(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin'})
+        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
 
 
 # These are unordered here on purpose to ensure that declaration order

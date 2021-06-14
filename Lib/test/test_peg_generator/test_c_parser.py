@@ -1,7 +1,9 @@
 import sysconfig
 import textwrap
 import unittest
-from distutils.tests.support import TempdirManager
+import os
+import shutil
+import tempfile
 from pathlib import Path
 
 from test import test_tools
@@ -68,20 +70,21 @@ unittest.main()
 """
 
 
-class TestCParser(TempdirManager, unittest.TestCase):
+class TestCParser(unittest.TestCase):
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
         if cmd is not None:
             self.skipTest("The %r command is not found" % cmd)
-        super(TestCParser, self).setUp()
-        self.tmp_path = self.mkdtemp()
+        self.old_cwd = os.getcwd()
+        self.tmp_path = tempfile.mkdtemp()
         change_cwd = os_helper.change_cwd(self.tmp_path)
         change_cwd.__enter__()
         self.addCleanup(change_cwd.__exit__, None, None, None)
 
     def tearDown(self):
-        super(TestCParser, self).tearDown()
+        os.chdir(self.old_cwd)
+        shutil.rmtree(self.tmp_path)
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(self._backup_config_vars)
 
