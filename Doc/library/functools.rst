@@ -154,15 +154,16 @@ The :mod:`functools` module defines the following functions:
 
        @lru_cache
        def count_vowels(sentence):
-           sentence = sentence.casefold()
-           return sum(sentence.count(vowel) for vowel in 'aeiou')
+           return sum(sentence.count(vowel) for vowel in 'AEIOUaeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
-   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
-   as distinct calls with distinct results.
+   cached separately.  For example, ``f(3)`` and ``f(3.0)`` will always be
+   treated as distinct calls with distinct results.  If *typed* is false,
+   the implementation will usually but not always regard them as equivalent
+   calls and only cache a single result.
 
    The wrapped function is instrumented with a :func:`cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
@@ -172,8 +173,7 @@ The :mod:`functools` module defines the following functions:
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
-   *maxsize* and *currsize*.  In a multi-threaded environment, the hits
-   and misses are approximate.
+   *maxsize* and *currsize*.
 
    The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
@@ -181,6 +181,9 @@ The :mod:`functools` module defines the following functions:
    The original underlying function is accessible through the
    :attr:`__wrapped__` attribute.  This is useful for introspection, for
    bypassing the cache, or for rewrapping the function with a different cache.
+
+   The cache keeps references to the arguments and return values until they age
+   out of the cache or until the cache is cleared.
 
    An `LRU (least recently used) cache
    <https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)>`_
