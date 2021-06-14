@@ -22,7 +22,20 @@ when including :file:`Python.h`.
    The ``GenericAlias``\ 's ``__parameters__`` attribute is constructed lazily
    from ``__args__``.
 
+   Here's an example of how most types in the standard library use
+   ``Py_GenericAlias``.  This allows a type to be subscripted::
+
+      static PyMethodDef my_obj_methods[] = {
+          {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, "See PEP 585"}
+      }
+
+   .. seealso:: The data model method :meth:`__class_getitem__`.
+
+   .. versionadded:: 3.9
+
 .. c:var:: PyTypeObject Py_GenericAliasType
 
    The C type of the object returned by :c:func:`Py_GenericAlias`. Equivalent to
    :class:`types.GenericAlias` in Python.
+
+   .. versionadded:: 3.9
