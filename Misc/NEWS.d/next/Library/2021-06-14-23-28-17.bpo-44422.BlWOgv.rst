@@ -1,0 +1,2 @@
+The :func:`threading.enumerate` function now uses a reentrant lock to
+prevent a hang on reentrant call.

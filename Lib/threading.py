@@ -775,8 +775,11 @@ _counter = _count(1).__next__
 def _newname(name_template):
     return name_template % _counter()
 
-# Active thread administration
-_active_limbo_lock = _allocate_lock()
+# Active thread administration.
+#
+# bpo-44422: Use a reentrant lock to allocate reentrant calls to functions like
+# threading.enumerate().
+_active_limbo_lock = RLock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
 _dangling = WeakSet()
