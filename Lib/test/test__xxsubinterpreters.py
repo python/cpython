@@ -44,6 +44,10 @@ def _running(interp):
     r, w = os.pipe()
     def run():
         interpreters.run_string(interp, dedent(f"""
+            # notify interpreter started
+            with open({w}, 'w', encoding="utf-8") as spipe:
+                spipe.write('started')
+
             # wait for "signal"
             with open({r}, encoding="utf-8") as rpipe:
                 rpipe.read()
@@ -51,6 +55,9 @@ def _running(interp):
 
     t = threading.Thread(target=run)
     t.start()
+    with open(r, encoding="utf-8") as rpipe:
+        # wait for signal from interpreter
+        rpipe.read()
 
     yield
 
