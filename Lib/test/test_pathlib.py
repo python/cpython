@@ -1341,6 +1341,30 @@ class PurePathTest(
         self.assertClassProperties(p, correct_cls)
         self.assertNonIONewInstancesClassProperties(p, correct_cls)
 
+    @unittest.expectedFailure
+    def test_direct_subclassing(self):
+        P = self.cls
+        try:
+            class Derived(P):
+                pass
+        except Exception as e:
+            self.fail(f"Failed to subclass {P}: {e}")
+        else:
+            try:
+                derived = Derived('non_empty_pathsegment')
+            except Exception as e:
+                self.fail("Failed to be able to instantiate a class "
+                          f"derived from {P}: {e}")
+            else:
+                # Unlike how PurePath behaves, when instantiated, the
+                # instances of its user-created direct subclass keep
+                # their original class name (instead of becoming a
+                # flavour-named variant). Hence we use Derived here.
+                correct_cls = Derived
+                self.assertClassProperties(derived, correct_cls)
+                self.assertNonIONewInstancesClassProperties(derived,
+                                                            correct_cls)
+
     def test_different_flavours_unequal(self):
         p = pathlib.PurePosixPath('a')
         q = pathlib.PureWindowsPath('a')
@@ -2479,6 +2503,36 @@ class PathTest(_BasePathTest, _PathPurePathCommonTest, unittest.TestCase):
         if os_helper.can_symlink():
             link = P(BASE, "linkA")
             self.assertClassProperties(link.readlink(), correct_cls)
+
+    @unittest.expectedFailure
+    def test_direct_subclassing(self):
+        P = self.cls
+        try:
+            class Derived(P):
+                pass
+        except Exception as e:
+            self.fail(f"Failed to subclass {P}: {e}")
+        else:
+            try:
+                derived_base = Derived(BASE)
+            except Exception as e:
+                self.fail("Failed to be able to instantiate a class "
+                          f"derived from {P}: {e}")
+            else:
+                # Much like in the original version of this method,
+                # we use Derived here because unlike Path, user-created
+                # subclasses of Path keep their names when instantiated
+                # (instead of becoming a flavour-named variant).
+                correct_cls = Derived
+                self.assertClassProperties(derived_base, correct_cls)
+                self.assertNonIONewInstancesClassProperties(derived_base,
+                                                            correct_cls)
+                self.assertIONoLinkNewInstancesClassProperties(derived_base,
+                                                              correct_cls)
+                if os_helper.can_symlink():
+                    derived_link = Derived(BASE, "linkA")
+                    self.assertClassProperties(derived_link.readlink(),
+                                               correct_cls)
 
     def test_class_getitem(self):
         self.assertIs(self.cls[str], self.cls)
