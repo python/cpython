@@ -3997,14 +3997,14 @@ class IOTests(BaseTestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_io_submodule(self):
-        with warnings.catch_warnings() as w:
+        with warnings.catch_warnings(record=True) as w:
             from typing.io import IO, TextIO, BinaryIO, __all__, __name__
             self.assertIs(IO, typing.IO)
             self.assertIs(TextIO, typing.TextIO)
             self.assertIs(BinaryIO, typing.BinaryIO)
             self.assertEqual(set(__all__), set(['IO', 'TextIO', 'BinaryIO']))
             self.assertEqual(__name__, 'typing.io')
-            assert len(w) == 1
+            self.assertEqual(len(w), 1)
 
 
 class RETests(BaseTestCase):
@@ -4051,13 +4051,13 @@ class RETests(BaseTestCase):
         self.assertEqual(repr(Match[bytes]), 'typing.Match[bytes]')
 
     def test_re_submodule(self):
-        with warnings.catch_warnings() as w:
+        with warnings.catch_warnings(record=True) as w:
             from typing.re import Match, Pattern, __all__, __name__
             self.assertIs(Match, typing.Match)
             self.assertIs(Pattern, typing.Pattern)
             self.assertEqual(set(__all__), set(['Match', 'Pattern']))
             self.assertEqual(__name__, 'typing.re')
-            assert len(w) == 1
+            self.assertEqual(len(w), 1)
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError) as ex:
