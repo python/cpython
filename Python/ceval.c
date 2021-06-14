@@ -3337,7 +3337,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(res == NULL, LOAD_ATTR);
             STAT_INC(LOAD_ATTR, hit);
             record_cache_hit(cache0);
-            STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(res);
             SET_TOP(res);
             Py_DECREF(owner);
