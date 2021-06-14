@@ -648,6 +648,8 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_SERIALIZE_API)
+
 PyDoc_STRVAR(serialize__doc__,
 "serialize($self, /, *, schema=\'main\')\n"
 "--\n"
@@ -695,6 +697,10 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_SERIALIZE_API) */
+
+#if defined(HAVE_SERIALIZE_API)
 
 PyDoc_STRVAR(deserialize__doc__,
 "deserialize($self, data, /, *, schema=\'main\')\n"
@@ -746,6 +752,8 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
+
+#endif /* defined(HAVE_SERIALIZE_API) */
 
 PyDoc_STRVAR(pysqlite_connection_enter__doc__,
 "__enter__($self, /)\n"
@@ -809,4 +817,12 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=f0f43cd2277f99fd input=a9049054013a1b77]*/
+
+#ifndef SERIALIZE_METHODDEF
+    #define SERIALIZE_METHODDEF
+#endif /* !defined(SERIALIZE_METHODDEF) */
+
+#ifndef DESERIALIZE_METHODDEF
+    #define DESERIALIZE_METHODDEF
+#endif /* !defined(DESERIALIZE_METHODDEF) */
+/*[clinic end generated code: output=f88e471ed19d47fa input=a9049054013a1b77]*/

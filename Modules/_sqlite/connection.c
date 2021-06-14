@@ -36,6 +36,11 @@
 #define HAVE_TRACE_V2
 #endif
 
+// Opt. feature since 3.32.0, always included since 3.36.0
+#if SQLITE_VERSION_NUMBER >= 3036000
+#define HAVE_SERIALIZE_API
+#endif
+
 #include "clinic/connection.c.h"
 /*[clinic input]
 module _sqlite3
@@ -1789,6 +1794,7 @@ finally:
     return Py_NewRef(Py_None);
 }
 
+#ifdef HAVE_SERIALIZE_API
 /*[clinic input]
 _sqlite3.Connection.serialize as serialize
 
@@ -1884,6 +1890,7 @@ deserialize_impl(pysqlite_Connection *self, PyObject *data,
 
     Py_RETURN_TRUE;
 }
+#endif
 
 
 /*[clinic input]
