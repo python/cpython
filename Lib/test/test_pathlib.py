@@ -1341,7 +1341,6 @@ class PurePathTest(
         self.assertClassProperties(p, correct_cls)
         self.assertNonIONewInstancesClassProperties(p, correct_cls)
 
-    @unittest.expectedFailure
     def test_direct_subclassing(self):
         P = self.cls
         try:
@@ -2504,7 +2503,6 @@ class PathTest(_BasePathTest, _PathPurePathCommonTest, unittest.TestCase):
             link = P(BASE, "linkA")
             self.assertClassProperties(link.readlink(), correct_cls)
 
-    @unittest.expectedFailure
     def test_direct_subclassing(self):
         P = self.cls
         try:

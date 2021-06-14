@@ -548,9 +548,22 @@ class PurePath(object):
         to yield a canonicalized path, which is incorporated into the
         new PurePath object.
         """
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        if not hasattr(cls, '_flavour'):
+            is_posix = os.name == 'posix'
+            cls._flavour = _posix_flavour if is_posix else _windows_flavour
         return cls._from_parts(args)
+
+    def __init__(self, *pathsegments, **kwargs):
+        # __init__ was empty for 8 years, therefore one should avoid
+        # making any assumption below that super().__init__()
+        # will be called outside of the code in pathlib.
+        if self.__class__ is PurePath:
+            self._masquerade()
+
+    def _masquerade(self):
+        is_posix_flavoured = self._flavour.__class__ == _PosixFlavour
+        disguise_cls = PurePosixPath if is_posix_flavoured else PureWindowsPath
+        self.__class__ = disguise_cls
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -942,23 +955,35 @@ class Path(PurePath):
     object. You can also instantiate a PosixPath or WindowsPath directly,
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
+    _flavour = None
     _accessor = _normal_accessor
     __slots__ = ()
 
     def __new__(cls, *args, **kwargs):
-        if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
-        self = cls._from_parts(args)
-        if not self._flavour.is_supported:
+        if not hasattr(cls, '_flavour') or cls._flavour is None:
+            is_posix = os.name == 'posix'
+            cls._flavour = _posix_flavour if is_posix else _windows_flavour
+        if not cls._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
                                       % (cls.__name__,))
-        return self
+        return cls._from_parts(args)
+
+    def __init__(self, *pathsegments, **kwargs):
+        # Similar to PurePath.__init__, avoid assuming that this will be
+        # called via super() outside of pathlib.
+        if self.__class__ is Path:
+            self._masquerade()
 
     def _make_child_relpath(self, part):
         # This is an optimization used for dir walking.  `part` must be
         # a single part relative to this path.
         parts = self._parts + [part]
         return self._from_parsed_parts(self._drv, self._root, parts)
+
+    def _masquerade(self):
+        is_posix_flavoured = self._flavour.__class__ == _PosixFlavour
+        disguise_cls = PosixPath if is_posix_flavoured else WindowsPath
+        self.__class__ = disguise_cls
 
     def __enter__(self):
         return self
@@ -1443,11 +1468,14 @@ class PosixPath(Path, PurePosixPath):
 
     On a POSIX system, instantiating a Path should return this object.
     """
+    _flavour = _posix_flavour
     __slots__ = ()
+
 
 class WindowsPath(Path, PureWindowsPath):
     """Path subclass for Windows systems.
 
     On a Windows system, instantiating a Path should return this object.
     """
+    _flavour = _windows_flavour
     __slots__ = ()
