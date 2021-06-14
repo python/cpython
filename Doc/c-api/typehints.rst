@@ -22,7 +22,7 @@ when including :file:`Python.h`.
    The ``GenericAlias``\ 's ``__parameters__`` attribute is constructed lazily
    from ``__args__``.
 
-.. c:var:: PyTypeObject
+.. c:var:: PyTypeObject Py_GenericAliasType
 
    The C type of the object returned by :c:func:`Py_GenericAlias`. Equivalent to
    :class:`types.GenericAlias` in Python.
