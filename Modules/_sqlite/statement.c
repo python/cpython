@@ -110,8 +110,9 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         break;
     }
 
+    pysqlite_state *state = pysqlite_get_state(NULL);
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
-                                               pysqlite_StatementType);
+                                               state->StatementType);
     if (self == NULL) {
         goto error;
     }
@@ -223,6 +224,7 @@ static int _need_adapt(PyObject* obj)
 
 void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters)
 {
+    pysqlite_state *state = pysqlite_get_state(NULL);
     PyObject* current_param;
     PyObject* adapted;
     const char* binding_name;
@@ -271,7 +273,10 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             if (!_need_adapt(current_param)) {
                 adapted = current_param;
             } else {
-                adapted = pysqlite_microprotocols_adapt(current_param, (PyObject*)pysqlite_PrepareProtocolType, current_param);
+                PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+                adapted = pysqlite_microprotocols_adapt(current_param,
+                                                        protocol,
+                                                        current_param);
                 Py_DECREF(current_param);
                 if (!adapted) {
                     return;
@@ -322,7 +327,10 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             if (!_need_adapt(current_param)) {
                 adapted = current_param;
             } else {
-                adapted = pysqlite_microprotocols_adapt(current_param, (PyObject*)pysqlite_PrepareProtocolType, current_param);
+                PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+                adapted = pysqlite_microprotocols_adapt(current_param,
+                                                        protocol,
+                                                        current_param);
                 Py_DECREF(current_param);
                 if (!adapted) {
                     return;
@@ -497,14 +505,15 @@ static PyType_Spec stmt_spec = {
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = stmt_slots,
 };
-PyTypeObject *pysqlite_StatementType = NULL;
 
 int
 pysqlite_statement_setup_types(PyObject *module)
 {
-    pysqlite_StatementType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
-    if (pysqlite_StatementType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &stmt_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->StatementType = (PyTypeObject *)type;
     return 0;
 }
