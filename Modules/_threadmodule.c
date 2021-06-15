@@ -327,6 +327,14 @@ typedef struct {
     PyObject *in_weakreflist;
 } rlockobject;
 
+static int
+rlock_traverse(rlockobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+
 static void
 rlock_dealloc(rlockobject *self)
 {
@@ -579,13 +587,14 @@ static PyType_Slot rlock_type_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, rlock_new},
     {Py_tp_members, rlock_type_members},
+    {Py_tp_traverse, rlock_traverse},
     {0, 0},
 };
 
 static PyType_Spec rlock_type_spec = {
     .name = "_thread.RLock",
     .basicsize = sizeof(rlockobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = rlock_type_slots,
 };
 
