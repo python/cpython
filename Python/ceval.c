@@ -2922,10 +2922,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(MAKE_CELL): {
+            // "initial" is probably NULL but not if it's an arg (or set
+            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
-            // If "initial" isn't NULL then it is an arg value set
-            // in _PyEval_MakeFrameVector() (likely) or an initial
-            // value set in PyFrame_LocalsToFast() (unlikely).
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 goto error;
