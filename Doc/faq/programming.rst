@@ -1829,9 +1829,10 @@ For example, here is the implementation of
 How do I cache method calls?
 ----------------------------
 
-The two principal tools for caching methods are :functools:`cached_property`
-and :functools:`lru_cache`.  The former stores results at the instance level
-and the latter at the class level.
+The two principal tools for caching methods are
+:func:`functools.cached_property` and :func:`functools.lru_cache`.  The
+former stores results at the instance level and the latter at the class
+level.
 
 The *cached_property* approach only works with methods that do not take
 any arguments.  It does not create a reference to the instance.  The
@@ -1898,9 +1899,9 @@ relevant instance attributes are mutable, the *cached_property* approach
 can't be made to work because it cannot detect changes to the
 attributes.
 
-The *lru_cache* approach can be made to work, but the class needs to
-define the *__eq__* and *__hash__* methods so that the cache can detect
-when relevant attributes have been updated::
+The *lru_cache* approach can be made to work, but the class needs to define the
+*__eq__* and *__hash__* methods so the cache can detect relevant attribute
+updates::
 
     class Weather:
         "Example with a mutable station identifier"
