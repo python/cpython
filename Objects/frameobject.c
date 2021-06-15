@@ -918,7 +918,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
-int
+static int
 _PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
@@ -966,26 +966,9 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
             continue;
         }
 
-        /* Some args are also cells.  For now each of those variables
-           has two indices in the fast array, with both marked as cells
-           but only one marked as an arg.  That one is always set
-           to NULL in _PyEval_MakeFrameVector() and the other index
-           gets the cell holding the arg value.  So we ignore the
-           former here and will later use the cell for the variable.
-        */
-        if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
-            continue;
-        }
-
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
         if (f->f_state != FRAME_CLEARED) {
-            int cellargoffset = CO_CELL_NOT_AN_ARG;
-            if (kind & CO_FAST_CELL && co->co_cell2arg != NULL) {
-                assert(i - co->co_nlocals >= 0);
-                assert(i - co->co_nlocals < co->co_ncellvars);
-                cellargoffset = co->co_cell2arg[i - co->co_nlocals];
-            }
             if (kind & CO_FAST_FREE) {
                 // The cell was set by _PyEval_MakeFrameVector() from
                 // the function's closure.
@@ -1003,20 +986,10 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
                         // (likely) MAKE_CELL must have executed already.
                         value = PyCell_GET(value);
                     }
-                    // (unlikely) Otherwise it must be an initial value set
-                    // by an earlier call to PyFrame_FastToLocals().
-                }
-                else {
-                    // (unlikely) MAKE_CELL hasn't executed yet.
-                    if (cellargoffset != CO_CELL_NOT_AN_ARG) {
-                        // It is an arg that escapes into an inner
-                        // function so we use the initial value that
-                        // was already set by _PyEval_MakeFrameVector().
-                        // Normally the arg value would always be set.
-                        // However, it can be NULL if it was deleted via
-                        // PyFrame_LocalsToFast().
-                        value = fast[cellargoffset];
-                    }
+                    // (likely) Otherwise it it is an arg (kind & CO_FAST_LOCAL),
+                    // with the initial value set by _PyEval_MakeFrameVector()...
+                    // (unlikely) ...or it was set to some initial value by
+                    // an earlier call to PyFrame_LocalsToFast().
                 }
             }
         }
@@ -1079,10 +1052,6 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
             continue;
         }
-        /* Same test as in PyFrame_FastToLocals() above. */
-        if (kind & CO_FAST_LOCAL && kind & CO_FAST_CELL) {
-            continue;
-        }
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = PyObject_GetItem(locals, name);
         /* We only care about NULLs if clear is true. */
@@ -1093,12 +1062,6 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
             }
         }
         PyObject *oldvalue = fast[i];
-        int cellargoffset = CO_CELL_NOT_AN_ARG;
-        if (kind & CO_FAST_CELL && co->co_cell2arg != NULL) {
-            assert(i - co->co_nlocals >= 0);
-            assert(i - co->co_nlocals < co->co_ncellvars);
-            cellargoffset = co->co_cell2arg[i - co->co_nlocals];
-        }
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
             // The cell was set by _PyEval_MakeFrameVector() from
@@ -1107,21 +1070,14 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
             cell = oldvalue;
         }
         else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-            if (cellargoffset != CO_CELL_NOT_AN_ARG) {
+            /* Same test as in PyFrame_FastToLocals() above. */
+            if (PyCell_Check(oldvalue) &&
+                    _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
                 // (likely) MAKE_CELL must have executed already.
-                // It's the cell for an arg.
-                assert(PyCell_Check(oldvalue));
                 cell = oldvalue;
             }
-            else {
-                if (PyCell_Check(oldvalue) &&
-                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
-                    // (likely) MAKE_CELL must have executed already.
-                    cell = oldvalue;
-                }
-                // (unlikely) Otherwise, it must have been set to some
-                // initial value by an earlier call to PyFrame_LocalsToFast().
-            }
+            // (unlikely) Otherwise, it must have been set to some
+            // initial value by an earlier call to PyFrame_LocalsToFast().
         }
         if (cell != NULL) {
             oldvalue = PyCell_GET(cell);
@@ -1131,30 +1087,9 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
                 PyCell_SET(cell, value);
             }
         }
-        else {
-            int offset = i;
-            if (kind & CO_FAST_CELL) {
-                // (unlikely) MAKE_CELL hasn't executed yet.
-                // Note that there is no need to create the cell that
-                // MAKE_CELL would otherwise create later, since no
-                // *_DEREF ops can happen before MAKE_CELL has run.
-                if (cellargoffset != CO_CELL_NOT_AN_ARG) {
-                    // It's the cell for an arg.
-                    // Replace the initial value that was set by
-                    // _PyEval_MakeFrameVector().
-                    // Normally the arg value would always be set.
-                    // However, it can be NULL if it was deleted
-                    // via an earlier PyFrame_LocalsToFast() call.
-                    offset = cellargoffset;
-                    oldvalue = fast[offset];
-                }
-                // Otherwise set an initial value for MAKE_CELL to use
-                // when it runs later.
-            }
-            if (value != oldvalue) {
-                Py_XINCREF(value);
-                Py_XSETREF(fast[offset], value);
-            }
+        else if (value != oldvalue) {
+            Py_XINCREF(value);
+            Py_XSETREF(fast[i], value);
         }
         Py_XDECREF(value);
     }
