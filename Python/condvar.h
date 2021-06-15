@@ -162,13 +162,13 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
 {
     DWORD wait;
     cv->waiting++;
-    PyMUTEX_UNLOCK(cs);
+    PyMUTEX_LOCK(cs);
     /* "lost wakeup bug" would occur if the caller were interrupted here,
      * but we are safe because we are using a semaphore which has an internal
      * count.
      */
     wait = WaitForSingleObjectEx(cv->sem, ms, FALSE);
-    PyMUTEX_LOCK(cs);
+    PyMUTEX_UNLOCK(cs);
     if (wait != WAIT_OBJECT_0)
         --cv->waiting;
         /* Here we have a benign race condition with PyCOND_SIGNAL.
