@@ -43,7 +43,6 @@ module _sqlite3
 
 /* static objects at module-level */
 
-PyObject *pysqlite_InternalError = NULL;
 PyObject *pysqlite_OperationalError = NULL;
 PyObject *pysqlite_ProgrammingError = NULL;
 PyObject *pysqlite_IntegrityError = NULL;
@@ -416,7 +415,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_EXCEPTION(module, "DatabaseError", state->DatabaseError, state->Error);
 
     /* DatabaseError subclasses */
-    ADD_EXCEPTION(module, "InternalError", pysqlite_InternalError,
+    ADD_EXCEPTION(module, "InternalError", state->InternalError,
                   state->DatabaseError);
     ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError,
                   state->DatabaseError);

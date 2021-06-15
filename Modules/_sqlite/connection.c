@@ -196,7 +196,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
     self->DataError             = pysqlite_DataError;
     self->OperationalError      = pysqlite_OperationalError;
     self->IntegrityError        = pysqlite_IntegrityError;
-    self->InternalError         = pysqlite_InternalError;
+    self->InternalError         = state->InternalError;
     self->ProgrammingError      = pysqlite_ProgrammingError;
     self->NotSupportedError     = pysqlite_NotSupportedError;
 

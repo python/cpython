@@ -53,7 +53,7 @@ _pysqlite_seterror(sqlite3 *db)
             break;
         case SQLITE_INTERNAL:
         case SQLITE_NOTFOUND:
-            PyErr_SetString(pysqlite_InternalError, sqlite3_errmsg(db));
+            PyErr_SetString(state->InternalError, sqlite3_errmsg(db));
             break;
         case SQLITE_NOMEM:
             (void)PyErr_NoMemory();
