@@ -79,7 +79,7 @@ def _make_class_unpicklable(obj):
     """
     Make the given obj un-picklable.
 
-    obj should be either a dictionary, on an Enum
+    obj should be either a dictionary, or an Enum
     """
     def _break_on_call_reduce(self, proto):
         raise TypeError('%r cannot be pickled' % self)
