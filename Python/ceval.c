@@ -2922,28 +2922,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         }
 
         case TARGET(MAKE_CELL): {
+            // "initial" is probably NULL but not if it's an arg (or set
+            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
             PyObject *initial = GETLOCAL(oparg);
-            // Normally initial would be NULL.  However, it
-            // might have been set to an initial value during
-            // a call to PyFrame_LocalsToFast().
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 goto error;
-            }
-            /* If it is an arg then copy the arg into the cell. */
-            if (initial == NULL && co->co_cell2arg != NULL) {
-                int argoffset = co->co_cell2arg[oparg - co->co_nlocals];
-                if (argoffset != CO_CELL_NOT_AN_ARG) {
-                    PyObject *arg = GETLOCAL(argoffset);
-                    // It will have been set in initialize_locals() but
-                    // may have been deleted PyFrame_LocalsToFast().
-                    if (arg != NULL) {;
-                        Py_INCREF(arg);
-                        PyCell_SET(cell, arg);
-                        /* Clear the local copy. */
-                        SETLOCAL(argoffset, NULL);
-                    }
-                }
             }
             SETLOCAL(oparg, cell);
             DISPATCH();
@@ -4915,7 +4899,7 @@ initialize_locals(PyThreadState *tstate, PyFrameConstructor *con,
     for (i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(con->fc_closure, i);
         Py_INCREF(o);
-        localsplus[co->co_nlocals + co->co_ncellvars + i] = o;
+        localsplus[co->co_nlocals + co->co_nplaincellvars + i] = o;
     }
 
     return 0;
@@ -6244,7 +6228,7 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate))
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
-    if (oparg < co->co_ncellvars + co->co_nlocals) {
+    if (oparg < co->co_nplaincellvars + co->co_nlocals) {
         format_exc_check_arg(tstate, PyExc_UnboundLocalError,
                              UNBOUNDLOCAL_ERROR_MSG, name);
     } else {
