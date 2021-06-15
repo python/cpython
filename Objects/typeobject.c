@@ -11,7 +11,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
-#include "pycore_frame.h"         // _PyFrame_OpAlreadyRan()
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
@@ -8878,14 +8877,21 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    PyObject *obj = f->f_localsptr[0];
+    PyObject *firstarg = f->f_localsptr[0];
     // The first argument might be a cell.
-    if (obj != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
-        if (PyCell_Check(obj) && _PyFrame_OpAlreadyRan(f, MAKE_CELL, 0)) {
-            obj = PyCell_GET(obj);
-        }
+    if (firstarg != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
+        // The only way firstarg is not a cell is if MAKE_CELL hasn't
+        // run yet, which isn't possible from Python code since "super()"
+        // will always come after MAKE_CELL.  So the only way firstarg
+        // isn't a cell is if super() were called via the C-API, and
+        // execution is at the very beginning of the function.  This is
+        // sufficiently unlikely that we disllow it.  Otherwise we'd
+        // incur the expense of checking to make sure MAKE_CELL ran
+        // already, like we do in PyFrame_FastToLocals().
+        assert(PyCell_Check(firstarg));
+        firstarg = PyCell_GET(firstarg);
     }
-    if (obj == NULL) {
+    if (firstarg == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): arg[0] deleted");
         return -1;
@@ -8928,7 +8934,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     *type_p = type;
-    *obj_p = obj;
+    *obj_p = firstarg;
     return 0;
 }
 
