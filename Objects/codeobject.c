@@ -326,7 +326,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     Py_INCREF(con->localsplusnames);
     co->co_localsplusnames = con->localsplusnames;
-    Py_INCREF(con->localsplusnames);
+    Py_INCREF(con->localspluskinds);
     co->co_localspluskinds = con->localspluskinds;
 
     co->co_argcount = con->argcount;

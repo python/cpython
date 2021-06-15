@@ -192,13 +192,19 @@ typedef unsigned char _PyLocals_Kind;
 static inline _PyLocals_Kind
 _PyLocals_GetKind(PyObject *kinds, int i)
 {
-    return ((_PyLocals_Kind *)PyBytes_AsString(kinds))[i];
+    assert(PyBytes_Check(kinds));
+    assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
+    char *ptr = PyBytes_AS_STRING(kinds);
+    return (_PyLocals_Kind)(ptr[i]);
 }
 
 static inline void
 _PyLocals_SetKind(PyObject *kinds, int i, _PyLocals_Kind kind)
 {
-    ((_PyLocals_Kind *)PyBytes_AsString(kinds))[i] = kind;
+    assert(PyBytes_Check(kinds));
+    assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
+    char *ptr = PyBytes_AS_STRING(kinds);
+    ptr[i] = (char) kind;
 }
 
 
