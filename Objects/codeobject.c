@@ -157,7 +157,7 @@ validate_and_copy_tuple(PyObject *tup)
 // This is also used in compile.c.
 void
 _Py_set_localsplus_info(int offset, PyObject *name, _PyLocals_Kind kind,
-                       PyObject *names, PyObject *kinds)
+                        PyObject *names, PyObject *kinds)
 {
     Py_INCREF(name);
     PyTuple_SET_ITEM(names, offset, name);
