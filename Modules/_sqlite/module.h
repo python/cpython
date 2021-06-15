@@ -31,6 +31,7 @@
 
 typedef struct {
     PyObject *Error;
+    PyObject *Warning;
     PyObject *lru_cache;
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
@@ -47,7 +48,6 @@ pysqlite_get_state(PyObject *Py_UNUSED(module))
     return &pysqlite_global_state;
 }
 
-extern PyObject* pysqlite_Warning;
 extern PyObject* pysqlite_InterfaceError;
 extern PyObject* pysqlite_DatabaseError;
 extern PyObject* pysqlite_InternalError;
