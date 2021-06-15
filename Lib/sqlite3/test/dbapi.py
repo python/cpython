@@ -27,6 +27,7 @@ import threading
 import unittest
 
 from test.support.os_helper import TESTFN, unlink
+from test.support import threading_helper
 
 
 # Helper for tests using TESTFN
@@ -577,152 +578,47 @@ class ThreadTests(unittest.TestCase):
         self.cur.close()
         self.con.close()
 
-    def test_con_cursor(self):
-        def run(con, errors):
+    @threading_helper.reap_threads
+    def _run_test(self, fn, *args, **kwds):
+        def run(err):
             try:
-                cur = con.cursor()
-                errors.append("did not raise ProgrammingError")
-                return
+                fn(*args, **kwds)
+                err.append("did not raise ProgrammingError")
             except sqlite.ProgrammingError:
-                return
+                pass
             except:
-                errors.append("raised wrong exception")
+                err.append("raised wrong exception")
 
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
+        err = []
+        t = threading.Thread(target=run, kwargs={"err": err})
         t.start()
         t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        if err:
+            self.fail("\n".join(err))
+
+    def test_con_cursor(self):
+        self._run_test(lambda: self.con.cursor())
 
     def test_con_commit(self):
-        def run(con, errors):
-            try:
-                con.commit()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.con.commit())
 
     def test_con_rollback(self):
-        def run(con, errors):
-            try:
-                con.rollback()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.con.rollback())
 
     def test_con_close(self):
-        def run(con, errors):
-            try:
-                con.close()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"con": self.con, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.con.close())
 
     def test_cur_implicit_begin(self):
-        def run(cur, errors):
-            try:
-                cur.execute("insert into test(name) values ('a')")
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.cur.execute("insert into test(name) values ('a')"))
 
     def test_cur_close(self):
-        def run(cur, errors):
-            try:
-                cur.close()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.cur.close())
 
     def test_cur_execute(self):
-        def run(cur, errors):
-            try:
-                cur.execute("select name from test")
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        self.cur.execute("insert into test(name) values ('a')")
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.cur.execute("select name from test"))
 
     def test_cur_iter_next(self):
-        def run(cur, errors):
-            try:
-                row = cur.fetchone()
-                errors.append("did not raise ProgrammingError")
-                return
-            except sqlite.ProgrammingError:
-                return
-            except:
-                errors.append("raised wrong exception")
-
-        errors = []
-        self.cur.execute("insert into test(name) values ('a')")
-        self.cur.execute("select name from test")
-        t = threading.Thread(target=run, kwargs={"cur": self.cur, "errors": errors})
-        t.start()
-        t.join()
-        if len(errors) > 0:
-            self.fail("\n".join(errors))
+        self._run_test(lambda: self.cur.fetchone())
 
 class ConstructorTests(unittest.TestCase):
     def test_date(self):
