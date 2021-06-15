@@ -660,12 +660,35 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(repr(MyEnum.A), '<MyEnum.A: 0x1>')
         #
         class SillyInt(HexInt):
+            __qualname__ = 'SillyInt'
             pass
         class MyOtherEnum(SillyInt, enum.Enum):
+            __qualname__ = 'MyOtherEnum'
             D = 4
             E = 5
             F = 6
         self.assertIs(MyOtherEnum._member_type_, SillyInt)
+        globals()['SillyInt'] = SillyInt
+        globals()['MyOtherEnum'] = MyOtherEnum
+        test_pickle_dump_load(self.assertIs, MyOtherEnum.E)
+        test_pickle_dump_load(self.assertIs, MyOtherEnum)
+        #
+        # This did not work in 3.9, but does now with pickling by name
+        class UnBrokenInt(int):
+            __qualname__ = 'UnBrokenInt'
+            def __new__(cls, value):
+                return int.__new__(cls, value)
+        class MyUnBrokenEnum(UnBrokenInt, Enum):
+            __qualname__ = 'MyUnBrokenEnum'
+            G = 7
+            H = 8
+            I = 9
+        self.assertIs(MyUnBrokenEnum._member_type_, UnBrokenInt)
+        self.assertIs(MyUnBrokenEnum(7), MyUnBrokenEnum.G)
+        globals()['UnBrokenInt'] = UnBrokenInt
+        globals()['MyUnBrokenEnum'] = MyUnBrokenEnum
+        test_pickle_dump_load(self.assertIs, MyUnBrokenEnum.I)
+        test_pickle_dump_load(self.assertIs, MyUnBrokenEnum)
 
     def test_too_many_data_types(self):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
