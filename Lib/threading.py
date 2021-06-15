@@ -777,7 +777,7 @@ def _newname(name_template):
 
 # Active thread administration.
 #
-# bpo-44422: Use a reentrant lock to allocate reentrant calls to functions like
+# bpo-44422: Use a reentrant lock to allow reentrant calls to functions like
 # threading.enumerate().
 _active_limbo_lock = RLock()
 _active = {}    # maps thread id to Thread object
