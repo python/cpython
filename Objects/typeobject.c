@@ -11,7 +11,6 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
-#include "pycore_frame.h"         // _PyFrame_OpAlreadyRan
 #include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
@@ -8878,23 +8877,18 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    PyObject *obj = f->f_localsptr[0];
-    int i;
-    if (obj == NULL && co->co_cell2arg) {
-        /* The first argument might be a cell. */
-        for (i = 0; i < co->co_ncellvars; i++) {
-            if (co->co_cell2arg[i] == 0) {
-                int celloffset = co->co_nlocals + i;
-                PyObject *cell = f->f_localsptr[celloffset];
-                if (PyCell_Check(cell) &&
-                        _PyFrame_OpAlreadyRan(f, MAKE_CELL, celloffset)) {
-                    obj = PyCell_GET(cell);
-                }
-                break;
-            }
+    PyObject *firstarg = f->f_localsptr[0];
+    // The first argument might be a cell.
+    if (firstarg != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
+        // "firstarg" is a cell here unless (very unlikely) super()
+        // was called from the C-API before the first MAKE_CELL op.
+        if (f->f_lasti >= 0) {
+            assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL);
+            assert(PyCell_Check(firstarg));
+            firstarg = PyCell_GET(firstarg);
         }
     }
-    if (obj == NULL) {
+    if (firstarg == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): arg[0] deleted");
         return -1;
@@ -8902,9 +8896,9 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 
     // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    i = co->co_nlocals + co->co_ncellvars;
+    int i = co->co_nlocals + co->co_nplaincellvars;
     for (; i < co->co_nlocalsplus; i++) {
-        assert(co->co_localspluskinds[i] & CO_FAST_FREE);
+        assert((co->co_localspluskinds[i] & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
@@ -8936,7 +8930,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     *type_p = type;
-    *obj_p = obj;
+    *obj_p = firstarg;
     return 0;
 }
 
