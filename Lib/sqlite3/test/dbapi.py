@@ -27,6 +27,7 @@ import threading
 import unittest
 
 from test.support.os_helper import TESTFN, unlink
+from test.support import threading_helper
 
 
 # Helper for tests using TESTFN
@@ -728,6 +729,7 @@ class ThreadTests(unittest.TestCase):
         if len(errors) > 0:
             self.fail("\n".join(errors))
 
+    @threading_helper.reap_threads
     def test_dont_check_same_thread(self):
         def run(con, err):
             try:
