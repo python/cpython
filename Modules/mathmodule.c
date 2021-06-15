@@ -1182,6 +1182,9 @@ FUNC2(atan2, m_atan2,
 FUNC1(atanh, m_atanh, 0,
       "atanh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic tangent of x.")
+FUNC1(cbrt, cbrt, 0,
+      "cbrt($module, x, /)\n--\n\n"
+      "Return the cube root of x.")
 
 /*[clinic input]
 math.ceil
@@ -2807,8 +2810,6 @@ math_pow_impl(PyObject *module, double x, double y)
                 r = y;
             else if (y < 0. && fabs(x) < 1.0) {
                 r = -y; /* result is +inf */
-                if (x == 0.) /* 0**-inf: divide-by-zero */
-                    errno = EDOM;
             }
             else
                 r = 0.;
@@ -3550,6 +3551,7 @@ static PyMethodDef math_methods[] = {
     {"atan",            math_atan,      METH_O,         math_atan_doc},
     {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
+    {"cbrt",            math_cbrt,      METH_O,         math_cbrt_doc},
     MATH_CEIL_METHODDEF
     {"copysign",        (PyCFunction)(void(*)(void))math_copysign,  METH_FASTCALL,  math_copysign_doc},
     {"cos",             math_cos,       METH_O,         math_cos_doc},

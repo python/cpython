@@ -2,9 +2,16 @@
 #  error "this header file must not be included directly"
 #endif
 
+/* Each instruction in a code object is a fixed-width value,
+ * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
+ * opcode allows for larger values but the current limit is 3 uses
+ * of EXTENDED_ARG (see Python/wordcode_helpers.h), for a maximum
+ * 32-bit value.  This aligns with the note in Python/compile.c
+ * (compiler_addop_i_line) indicating that the max oparg value is
+ * 2**32 - 1, rather than INT_MAX.
+ */
+
 typedef uint16_t _Py_CODEUNIT;
-// Each oparg must fit in the second half of _Py_CODEUNIT, hence 8 bits.
-#define _Py_MAX_OPARG 255
 
 #ifdef WORDS_BIGENDIAN
 #  define _Py_OPCODE(word) ((word) >> 8)
@@ -99,20 +106,6 @@ struct PyCodeObject {
      interpreter. */
     union _cache_or_instruction *co_quickened;
 
-    /* Per opcodes just-in-time cache
-     *
-     * To reduce cache size, we use indirect mapping from opcode index to
-     * cache object:
-     *   cache = co_opcache[co_opcache_map[next_instr - first_instr] - 1]
-     */
-
-    // co_opcache_map is indexed by (next_instr - first_instr).
-    //  * 0 means there is no cache for this opcode.
-    //  * n > 0 means there is cache in co_opcache[n-1].
-    unsigned char *co_opcache_map;
-    _PyOpcache *co_opcache;
-    int co_opcache_flag;  // used to determine when create a cache.
-    unsigned char co_opcache_size;  // length of co_opcache.
 };
 
 /* Masks for co_flags above */
@@ -189,8 +182,8 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 /* for internal use only */
 struct _opaque {
     int computed_line;
-    char *lo_next;
-    char *limit;
+    const char *lo_next;
+    const char *limit;
 };
 
 typedef struct _line_offsets {
@@ -227,7 +220,7 @@ PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
 int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the line number table. */
-void PyLineTable_InitAddressRange(char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
+void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);
 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);

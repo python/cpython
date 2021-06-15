@@ -323,7 +323,7 @@ class CAPITest(unittest.TestCase):
                         break
         """
         rc, out, err = assert_python_ok('-c', code)
-        self.assertIn(b'MemoryError 1 10', out)
+        self.assertIn(b'MemoryError 1', out)
         self.assertIn(b'MemoryError 2 20', out)
         self.assertIn(b'MemoryError 3 30', out)
 
