@@ -1,0 +1,2 @@
+Fix error location information for tokenizer errors raised on initialization
+of the tokenizer. Patch by Pablo Galindo.

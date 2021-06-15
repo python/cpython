@@ -24,7 +24,8 @@
 #include "module.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
+int
+pysqlite_step(sqlite3_stmt *statement)
 {
     int rc;
 
@@ -39,7 +40,8 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
+int
+_pysqlite_seterror(sqlite3 *db)
 {
     int errorcode = sqlite3_errcode(db);
 

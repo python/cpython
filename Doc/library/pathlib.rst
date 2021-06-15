@@ -1140,6 +1140,15 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+.. method:: Path.hardlink_to(target)
+
+   Make this path a hard link to the same file as *target*.
+
+   .. note::
+      The order of arguments (link, target) is the reverse
+      of :func:`os.link`'s.
+
+   .. versionadded:: 3.10
 
 .. method:: Path.link_to(target)
 
@@ -1149,10 +1158,16 @@ call fails (for example because the path doesn't exist).
 
       This function does not make this path a hard link to *target*, despite
       the implication of the function and argument names. The argument order
-      (target, link) is the reverse of :func:`Path.symlink_to`, but matches
-      that of :func:`os.link`.
+      (target, link) is the reverse of :func:`Path.symlink_to` and
+      :func:`Path.hardlink_to`, but matches that of :func:`os.link`.
 
    .. versionadded:: 3.8
+
+   .. deprecated:: 3.10
+
+      This method is deprecated in favor of :meth:`Path.hardlink_to`, as the
+      argument order of :meth:`Path.link_to`  does not match that of
+      :meth:`Path.symlink_to`.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
@@ -1246,7 +1261,7 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
-:func:`os.link`                        :meth:`Path.link_to`
+:func:`os.link`                        :meth:`Path.hardlink_to`
 :func:`os.symlink`                     :meth:`Path.symlink_to`
 :func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.path.relpath`                :meth:`Path.relative_to` [#]_

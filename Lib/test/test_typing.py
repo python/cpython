@@ -26,6 +26,7 @@ from typing import Pattern, Match
 from typing import Annotated, ForwardRef
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
+from typing import TypeGuard
 import abc
 import typing
 import weakref
@@ -1420,6 +1421,14 @@ class ProtocolTests(BaseTestCase):
 
         class CustomContextManager(typing.ContextManager, Protocol):
             pass
+
+    def test_non_runtime_protocol_isinstance_check(self):
+        class P(Protocol):
+            x: int
+
+        with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
+            isinstance(1, P)
+
 
 class GenericTests(BaseTestCase):
 
@@ -3016,10 +3025,10 @@ class GetTypeHintTests(BaseTestCase):
             {'other': MySet[T], 'return': MySet[T]}
         )
 
-    def test_get_type_hints_classes(self):
+    def test_get_type_hints_classes_str_annotations(self):
         class Foo:
             y = str
-            x: y
+            x: 'y'
         # This previously raised an error under PEP 563.
         self.assertEqual(get_type_hints(Foo), {'x': str})
 
@@ -4350,6 +4359,31 @@ class ParamSpecTests(BaseTestCase):
         self.assertEqual(C1[int, str], Callable[[int], str])
         self.assertEqual(C1[[int, str, dict], float], Callable[[int, str, dict], float])
 
+    def test_no_paramspec_in__parameters__(self):
+        # ParamSpec should not be found in __parameters__
+        # of generics. Usages outside Callable, Concatenate
+        # and Generic are invalid.
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        self.assertNotIn(P, List[P].__parameters__)
+        self.assertIn(T, Tuple[T, P].__parameters__)
+
+        # Test for consistency with builtin generics.
+        self.assertNotIn(P, list[P].__parameters__)
+        self.assertIn(T, tuple[T, P].__parameters__)
+
+    def test_paramspec_in_nested_generics(self):
+        # Although ParamSpec should not be found in __parameters__ of most
+        # generics, they probably should be found when nested in
+        # a valid location.
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        C1 = Callable[P, T]
+        G1 = List[C1]
+        G2 = list[C1]
+        self.assertEqual(G1.__parameters__, (P, T))
+        self.assertEqual(G2.__parameters__, (P, T))
+
 
 class ConcatenateTests(BaseTestCase):
     def test_basics(self):
@@ -4375,6 +4409,45 @@ class ConcatenateTests(BaseTestCase):
         C4 = collections.abc.Callable[Concatenate[int, T, P], T]
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
+
+
+class TypeGuardTests(BaseTestCase):
+    def test_basics(self):
+        TypeGuard[int]  # OK
+
+        def foo(arg) -> TypeGuard[int]: ...
+        self.assertEqual(gth(foo), {'return': TypeGuard[int]})
+
+    def test_repr(self):
+        self.assertEqual(repr(TypeGuard), 'typing.TypeGuard')
+        cv = TypeGuard[int]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[int]')
+        cv = TypeGuard[Employee]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[%s.Employee]' % __name__)
+        cv = TypeGuard[tuple[int]]
+        self.assertEqual(repr(cv), 'typing.TypeGuard[tuple[int]]')
+
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class C(type(TypeGuard)):
+                pass
+        with self.assertRaises(TypeError):
+            class C(type(TypeGuard[int])):
+                pass
+
+    def test_cannot_init(self):
+        with self.assertRaises(TypeError):
+            TypeGuard()
+        with self.assertRaises(TypeError):
+            type(TypeGuard)()
+        with self.assertRaises(TypeError):
+            type(TypeGuard[Optional[int]])()
+
+    def test_no_isinstance(self):
+        with self.assertRaises(TypeError):
+            isinstance(1, TypeGuard[int])
+        with self.assertRaises(TypeError):
+            issubclass(int, TypeGuard)
 
 
 class AllTests(BaseTestCase):

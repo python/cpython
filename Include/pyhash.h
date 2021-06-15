@@ -76,7 +76,6 @@ typedef union {
     } expat;
 } _Py_HashSecret_t;
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
-#endif
 
 #ifdef Py_DEBUG
 PyAPI_DATA(int) _Py_HashSecret_Initialized;
@@ -84,7 +83,6 @@ PyAPI_DATA(int) _Py_HashSecret_Initialized;
 
 
 /* hash function definition */
-#ifndef Py_LIMITED_API
 typedef struct {
     Py_hash_t (*const hash)(const void *, Py_ssize_t);
     const char *name;

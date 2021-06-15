@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import unittest
+import warnings
 from test import support
 from test.support import import_helper
 from contextlib import contextmanager
@@ -84,19 +85,25 @@ class WindowsRegistryFinderTests:
         self.assertIs(spec, None)
 
     def test_find_module_missing(self):
-        loader = self.machinery.WindowsRegistryFinder.find_module('spam')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            loader = self.machinery.WindowsRegistryFinder.find_module('spam')
         self.assertIs(loader, None)
 
     def test_module_found(self):
         with setup_module(self.machinery, self.test_module):
-            loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNot(loader, None)
             self.assertIsNot(spec, None)
 
     def test_module_not_found(self):
         with setup_module(self.machinery, self.test_module, path="."):
-            loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                loader = self.machinery.WindowsRegistryFinder.find_module(self.test_module)
             spec = self.machinery.WindowsRegistryFinder.find_spec(self.test_module)
             self.assertIsNone(loader)
             self.assertIsNone(spec)

@@ -2283,6 +2283,18 @@ class MiscTest(unittest.TestCase):
             'SubsequentHeaderError', 'ExFileObject', 'main'}
         support.check__all__(self, tarfile, not_exported=not_exported)
 
+    def test_useful_error_message_when_modules_missing(self):
+        fname = os.path.join(os.path.dirname(__file__), 'testtar.tar.xz')
+        with self.assertRaises(tarfile.ReadError) as excinfo:
+            error = tarfile.CompressionError('lzma module is not available'),
+            with unittest.mock.patch.object(tarfile.TarFile, 'xzopen', side_effect=error):
+                tarfile.open(fname)
+
+        self.assertIn(
+            "\n- method xz: CompressionError('lzma module is not available')\n",
+            str(excinfo.exception),
+        )
+
 
 class CommandLineTest(unittest.TestCase):
 

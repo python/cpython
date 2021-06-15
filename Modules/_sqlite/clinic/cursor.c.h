@@ -12,15 +12,15 @@ pysqlite_cursor_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int return_value = -1;
     pysqlite_Connection *connection;
 
-    if (Py_IS_TYPE(self, pysqlite_CursorType) &&
+    if (Py_IS_TYPE(self, clinic_state()->CursorType) &&
         !_PyArg_NoKeywords("Cursor", kwargs)) {
         goto exit;
     }
     if (!_PyArg_CheckPositional("Cursor", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), pysqlite_ConnectionType)) {
-        _PyArg_BadArgument("Cursor", "argument 1", (pysqlite_ConnectionType)->tp_name, PyTuple_GET_ITEM(args, 0));
+    if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state()->ConnectionType)) {
+        _PyArg_BadArgument("Cursor", "argument 1", (clinic_state()->ConnectionType)->tp_name, PyTuple_GET_ITEM(args, 0));
         goto exit;
     }
     connection = (pysqlite_Connection *)PyTuple_GET_ITEM(args, 0);
@@ -259,4 +259,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=6a2d4d49784aa686 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3a502bb26aaefa5 input=a9049054013a1b77]*/

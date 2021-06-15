@@ -152,15 +152,27 @@ extern const SSL_METHOD *TLSv1_2_method(void);
   #ifndef PY_SSL_DEFAULT_CIPHER_STRING
      #error "Py_SSL_DEFAULT_CIPHERS 0 needs Py_SSL_DEFAULT_CIPHER_STRING"
   #endif
+  #ifndef PY_SSL_MIN_PROTOCOL
+    #define PY_SSL_MIN_PROTOCOL TLS1_2_VERSION
+  #endif
 #elif PY_SSL_DEFAULT_CIPHERS == 1
 /* Python custom selection of sensible cipher suites
- * DEFAULT: OpenSSL's default cipher list. Since 1.0.2 the list is in sensible order.
+ * @SECLEVEL=2: security level 2 with 112 bits minimum security (e.g. 2048 bits RSA key)
+ * ECDH+*: enable ephemeral elliptic curve Diffie-Hellman
+ * DHE+*: fallback to ephemeral finite field Diffie-Hellman
+ * encryption order: AES AEAD (GCM), ChaCha AEAD, AES CBC
  * !aNULL:!eNULL: really no NULL ciphers
- * !MD5:!3DES:!DES:!RC4:!IDEA:!SEED: no weak or broken algorithms on old OpenSSL versions.
  * !aDSS: no authentication with discrete logarithm DSA algorithm
- * !SRP:!PSK: no secure remote password or pre-shared key authentication
+ * !SHA1: no weak SHA1 MAC
+ * !AESCCM: no CCM mode, it's uncommon and slow
+ *
+ * Based on Hynek's excellent blog post (update 2021-02-11)
+ * https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
  */
-  #define PY_SSL_DEFAULT_CIPHER_STRING "DEFAULT:!aNULL:!eNULL:!MD5:!3DES:!DES:!RC4:!IDEA:!SEED:!aDSS:!SRP:!PSK"
+  #define PY_SSL_DEFAULT_CIPHER_STRING "@SECLEVEL=2:ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES:DHE+AES:!aNULL:!eNULL:!aDSS:!SHA1:!AESCCM"
+  #ifndef PY_SSL_MIN_PROTOCOL
+    #define PY_SSL_MIN_PROTOCOL TLS1_2_VERSION
+  #endif
 #elif PY_SSL_DEFAULT_CIPHERS == 2
 /* Ignored in SSLContext constructor, only used to as _ssl.DEFAULT_CIPHER_STRING */
   #define PY_SSL_DEFAULT_CIPHER_STRING SSL_DEFAULT_CIPHER_LIST
@@ -422,11 +434,10 @@ static PyType_Slot sslerror_type_slots[] = {
 };
 
 static PyType_Spec sslerror_type_spec = {
-    "ssl.SSLError",
-    sizeof(PyOSErrorObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    sslerror_type_slots
+    .name = "ssl.SSLError",
+    .basicsize = sizeof(PyOSErrorObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = sslerror_type_slots
 };
 
 static void
@@ -686,10 +697,9 @@ _setSSLError (_sslmodulestate *state, const char *errstr, int errcode, const cha
 }
 
 static int
-_ssl_deprecated(const char* name, int stacklevel) {
-    return PyErr_WarnFormat(
-        PyExc_DeprecationWarning, stacklevel,
-        "ssl module: %s is deprecated", name
+_ssl_deprecated(const char* msg, int stacklevel) {
+    return PyErr_WarnEx(
+        PyExc_DeprecationWarning, msg, stacklevel
     );
 }
 
@@ -777,7 +787,23 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_CTX *ctx = sslctx->ctx;
     _PySSLError err = { 0 };
 
-    self = PyObject_New(PySSLSocket, get_state_ctx(sslctx)->PySSLSocket_Type);
+    if ((socket_type == PY_SSL_SERVER) &&
+        (sslctx->protocol == PY_SSL_VERSION_TLS_CLIENT)) {
+        _setSSLError(get_state_ctx(sslctx),
+                     "Cannot create a server socket with a "
+                     "PROTOCOL_TLS_CLIENT context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    if ((socket_type == PY_SSL_CLIENT) &&
+        (sslctx->protocol == PY_SSL_VERSION_TLS_SERVER)) {
+        _setSSLError(get_state_ctx(sslctx),
+                     "Cannot create a client socket with a "
+                     "PROTOCOL_TLS_SERVER context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    self = PyObject_GC_New(PySSLSocket,
+                           get_state_ctx(sslctx)->PySSLSocket_Type);
     if (self == NULL)
         return NULL;
 
@@ -884,6 +910,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
             return NULL;
         }
     }
+
+    PyObject_GC_Track(self);
     return self;
 }
 
@@ -1706,6 +1734,9 @@ _certificate_to_der(_sslmodulestate *state, X509 *certificate)
     return retval;
 }
 
+#include "_ssl/misc.c"
+#include "_ssl/cert.c"
+
 /*[clinic input]
 _ssl._test_decode_cert
     path: object(converter="PyUnicode_FSConverter")
@@ -1796,6 +1827,70 @@ _ssl__SSLSocket_getpeercert_impl(PySSLSocket *self, int binary_mode)
     }
     X509_free(peer_cert);
     return result;
+}
+
+/*[clinic input]
+_ssl._SSLSocket.get_verified_chain
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self)
+/*[clinic end generated code: output=802421163cdc3110 input=5fb0714f77e2bd51]*/
+{
+    /* borrowed reference */
+    STACK_OF(X509) *chain = SSL_get0_verified_chain(self->ssl);
+    if (chain == NULL) {
+        Py_RETURN_NONE;
+    }
+    return _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+}
+
+/*[clinic input]
+_ssl._SSLSocket.get_unverified_chain
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self)
+/*[clinic end generated code: output=5acdae414e13f913 input=78c33c360c635cb5]*/
+{
+    PyObject *retval;
+    /* borrowed reference */
+    /* TODO: include SSL_get_peer_certificate() for server-side sockets */
+    STACK_OF(X509) *chain = SSL_get_peer_cert_chain(self->ssl);
+    if (chain == NULL) {
+        Py_RETURN_NONE;
+    }
+    retval = _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+    if (retval == NULL) {
+        return NULL;
+    }
+    /* OpenSSL does not include peer cert for server side connections */
+    if (self->socket_type == PY_SSL_SERVER) {
+        PyObject *peerobj = NULL;
+        X509 *peer = SSL_get_peer_certificate(self->ssl);
+
+        if (peer == NULL) {
+            peerobj = Py_None;
+            Py_INCREF(peerobj);
+        } else {
+            /* consume X509 reference on success */
+            peerobj = _PySSL_CertificateFromX509(self->ctx->state, peer, 0);
+            if (peerobj == NULL) {
+                X509_free(peer);
+                Py_DECREF(retval);
+                return NULL;
+            }
+        }
+        int res = PyList_Insert(retval, 0, peerobj);
+        Py_DECREF(peerobj);
+        if (res < 0) {
+            Py_DECREF(retval);
+            return NULL;
+        }
+    }
+    return retval;
 }
 
 static PyObject *
@@ -2090,6 +2185,7 @@ PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
     Py_VISIT(self->exc_type);
     Py_VISIT(self->exc_value);
     Py_VISIT(self->exc_tb);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -2106,13 +2202,15 @@ static void
 PySSL_dealloc(PySSLSocket *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    if (self->ssl)
+    PyObject_GC_UnTrack(self);
+    if (self->ssl) {
         SSL_free(self->ssl);
+    }
     Py_XDECREF(self->Socket);
     Py_XDECREF(self->ctx);
     Py_XDECREF(self->server_hostname);
     Py_XDECREF(self->owner);
-    PyObject_Free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
@@ -2809,6 +2907,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_COMPRESSION_METHODDEF
     _SSL__SSLSOCKET_SHUTDOWN_METHODDEF
     _SSL__SSLSOCKET_VERIFY_CLIENT_POST_HANDSHAKE_METHODDEF
+    _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
+    _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
     {NULL, NULL}
 };
 
@@ -2822,11 +2922,11 @@ static PyType_Slot PySSLSocket_slots[] = {
 };
 
 static PyType_Spec PySSLSocket_spec = {
-    "_ssl._SSLSocket",
-    sizeof(PySSLSocket),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    PySSLSocket_slots,
+    .name = "_ssl._SSLSocket",
+    .basicsize = sizeof(PySSLSocket),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = PySSLSocket_slots,
 };
 
 /*
@@ -2894,7 +2994,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     switch(proto_version) {
 #if defined(SSL3_VERSION) && !defined(OPENSSL_NO_SSL3)
     case PY_SSL_VERSION_SSL3:
-        PY_SSL_DEPRECATED("PROTOCOL_SSLv3", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_SSLv3 is deprecated", 2, NULL);
         method = SSLv3_method();
         break;
 #endif
@@ -2902,7 +3002,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         !defined(OPENSSL_NO_TLS1) && \
         !defined(OPENSSL_NO_TLS1_METHOD))
     case PY_SSL_VERSION_TLS1:
-        PY_SSL_DEPRECATED("PROTOCOL_TLSv1", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1 is deprecated", 2, NULL);
         method = TLSv1_method();
         break;
 #endif
@@ -2910,7 +3010,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         !defined(OPENSSL_NO_TLS1_1) && \
         !defined(OPENSSL_NO_TLS1_1_METHOD))
     case PY_SSL_VERSION_TLS1_1:
-        PY_SSL_DEPRECATED("PROTOCOL_TLSv1_1", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1_1 is deprecated", 2, NULL);
         method = TLSv1_1_method();
         break;
 #endif
@@ -2918,12 +3018,12 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         !defined(OPENSSL_NO_TLS1_2) && \
         !defined(OPENSSL_NO_TLS1_2_METHOD))
     case PY_SSL_VERSION_TLS1_2:
-        PY_SSL_DEPRECATED("PROTOCOL_TLSv1_2", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLSv1_2 is deprecated", 2, NULL);
         method = TLSv1_2_method();
         break;
 #endif
     case PY_SSL_VERSION_TLS:
-        PY_SSL_DEPRECATED("PROTOCOL_TLS", 2, NULL);
+        PY_SSL_DEPRECATED("ssl.PROTOCOL_TLS is deprecated", 2, NULL);
         method = TLS_method();
         break;
     case PY_SSL_VERSION_TLS_CLIENT:
@@ -3026,8 +3126,25 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         ERR_clear_error();
         PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "No cipher can be selected.");
-        return NULL;
+        goto error;
     }
+#ifdef PY_SSL_MIN_PROTOCOL
+    switch(proto_version) {
+    case PY_SSL_VERSION_TLS:
+    case PY_SSL_VERSION_TLS_CLIENT:
+    case PY_SSL_VERSION_TLS_SERVER:
+        result = SSL_CTX_set_min_proto_version(ctx, PY_SSL_MIN_PROTOCOL);
+        if (result == 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "Failed to set minimum protocol 0x%x",
+                          PY_SSL_MIN_PROTOCOL);
+            goto error;
+        }
+        break;
+    default:
+        break;
+    }
+#endif
 
     /* Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory
        usage for no cost at all. */
@@ -3050,6 +3167,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 #endif
 
     return (PyObject *)self;
+  error:
+    Py_XDECREF(self);
+    ERR_clear_error();
+    return NULL;
 }
 
 static int
@@ -3057,6 +3178,7 @@ context_traverse(PySSLContext *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -3325,13 +3447,13 @@ set_min_max_proto_version(PySSLContext *self, PyObject *arg, int what)
     /* check for deprecations and supported values */
     switch(v) {
         case PY_PROTO_SSLv3:
-            PY_SSL_DEPRECATED("TLSVersion.SSLv3", 2, -1);
+            PY_SSL_DEPRECATED("ssl.TLSVersion.SSLv3 is deprecated", 2, -1);
             break;
         case PY_PROTO_TLSv1:
-            PY_SSL_DEPRECATED("TLSVersion.TLSv1", 2, -1);
+            PY_SSL_DEPRECATED("ssl.TLSVersion.TLSv1 is deprecated", 2, -1);
             break;
         case PY_PROTO_TLSv1_1:
-            PY_SSL_DEPRECATED("TLSVersion.TLSv1_1", 2, -1);
+            PY_SSL_DEPRECATED("ssl.TLSVersion.TLSv1_1 is deprecated", 2, -1);
             break;
         case PY_PROTO_MINIMUM_SUPPORTED:
         case PY_PROTO_MAXIMUM_SUPPORTED:
@@ -3465,7 +3587,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     long new_opts, opts, set, clear;
     long opt_no = (
         SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 |
-        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_2
+        SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
     if (!PyArg_Parse(arg, "l", &new_opts))
@@ -3475,7 +3597,7 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
     set = ~opts & new_opts;
 
     if ((set & opt_no) != 0) {
-        if (_ssl_deprecated("Setting OP_NO_SSL* or SSL_NO_TLS* options is "
+        if (_ssl_deprecated("ssl.OP_NO_SSL*/ssl.SSL_NO_TLS* options are "
                             "deprecated", 2) < 0) {
             return -1;
         }
@@ -3791,7 +3913,7 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
 {
     BIO *biobuf = NULL;
     X509_STORE *store;
-    int retval = 0, err, loaded = 0;
+    int retval = -1, err, loaded = 0;
 
     assert(filetype == SSL_FILETYPE_ASN1 || filetype == SSL_FILETYPE_PEM);
 
@@ -3845,23 +3967,32 @@ _add_ca_certs(PySSLContext *self, const void *data, Py_ssize_t len,
     }
 
     err = ERR_peek_last_error();
-    if ((filetype == SSL_FILETYPE_ASN1) &&
-            (loaded > 0) &&
-            (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
-            (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
+    if (loaded == 0) {
+        const char *msg = NULL;
+        if (filetype == SSL_FILETYPE_PEM) {
+            msg = "no start line: cadata does not contain a certificate";
+        } else {
+            msg = "not enough data: cadata does not contain a certificate";
+        }
+        _setSSLError(get_state_ctx(self), msg, 0, __FILE__, __LINE__);
+        retval = -1;
+    } else if ((filetype == SSL_FILETYPE_ASN1) &&
+                    (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
+                    (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
         /* EOF ASN1 file, not an error */
         ERR_clear_error();
         retval = 0;
     } else if ((filetype == SSL_FILETYPE_PEM) &&
-                   (loaded > 0) &&
                    (ERR_GET_LIB(err) == ERR_LIB_PEM) &&
                    (ERR_GET_REASON(err) == PEM_R_NO_START_LINE)) {
         /* EOF PEM file, not an error */
         ERR_clear_error();
         retval = 0;
-    } else {
+    } else if (err != 0) {
         _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
         retval = -1;
+    } else {
+        retval = 0;
     }
 
     BIO_free(biobuf);
@@ -4530,11 +4661,11 @@ static PyType_Slot PySSLContext_slots[] = {
 };
 
 static PyType_Spec PySSLContext_spec = {
-    "_ssl._SSLContext",
-    sizeof(PySSLContext),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PySSLContext_slots,
+    .name = "_ssl._SSLContext",
+    .basicsize = sizeof(PySSLContext),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = PySSLContext_slots,
 };
 
 
@@ -4578,10 +4709,18 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     return (PyObject *) self;
 }
 
+static int
+memory_bio_traverse(PySSLMemoryBIO *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 memory_bio_dealloc(PySSLMemoryBIO *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
     BIO_free(self->bio);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -4732,15 +4871,16 @@ static PyType_Slot PySSLMemoryBIO_slots[] = {
     {Py_tp_getset, memory_bio_getsetlist},
     {Py_tp_new, _ssl_MemoryBIO},
     {Py_tp_dealloc, memory_bio_dealloc},
+    {Py_tp_traverse, memory_bio_traverse},
     {0, 0},
 };
 
 static PyType_Spec PySSLMemoryBIO_spec = {
-    "_ssl.MemoryBIO",
-    sizeof(PySSLMemoryBIO),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    PySSLMemoryBIO_slots,
+    .name = "_ssl.MemoryBIO",
+    .basicsize = sizeof(PySSLMemoryBIO),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC),
+    .slots = PySSLMemoryBIO_slots,
 };
 
 /*
@@ -4823,6 +4963,7 @@ static int
 PySSLSession_traverse(PySSLSession *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->ctx);
+    Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
@@ -4911,11 +5052,11 @@ static PyType_Slot PySSLSession_slots[] = {
 };
 
 static PyType_Spec PySSLSession_spec = {
-    "_ssl.SSLSession",
-    sizeof(PySSLSession),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    PySSLSession_slots,
+    .name = "_ssl.SSLSession",
+    .basicsize = sizeof(PySSLSession),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = PySSLSession_slots,
 };
 
 
@@ -5019,14 +5160,14 @@ static PyObject *
 _ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
 /*[clinic end generated code: output=b1509e937000e52d input=58312bd53f9bbdd0]*/
 {
-    PY_SSL_DEPRECATED("RAND_pseudo_bytes", 1, NULL);
+    PY_SSL_DEPRECATED("ssl.RAND_pseudo_bytes() is deprecated", 1, NULL);
     return PySSL_RAND(module, n, 1);
 }
 
 /*[clinic input]
 _ssl.RAND_status
 
-Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.
+Returns True if the OpenSSL PRNG has been seeded with enough data and False if not.
 
 It is necessary to seed the PRNG with RAND_add() on some platforms before
 using the ssl() function.
@@ -5034,9 +5175,9 @@ using the ssl() function.
 
 static PyObject *
 _ssl_RAND_status_impl(PyObject *module)
-/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=8a774b02d1dc81f3]*/
+/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=d5ae5aea52f36e01]*/
 {
-    return PyLong_FromLong(RAND_status());
+    return PyBool_FromLong(RAND_status());
 }
 
 /*[clinic input]
@@ -5775,6 +5916,10 @@ sslmodule_init_constants(PyObject *m)
                             X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
 #endif
 
+    /* file types */
+    PyModule_AddIntConstant(m, "ENCODING_PEM", PY_SSL_ENCODING_PEM);
+    PyModule_AddIntConstant(m, "ENCODING_DER", PY_SSL_ENCODING_DER);
+
     /* protocol versions */
     PyModule_AddIntConstant(m, "PROTO_MINIMUM_SUPPORTED",
                             PY_PROTO_MINIMUM_SUPPORTED);
@@ -5977,6 +6122,12 @@ sslmodule_init_types(PyObject *module)
     if (state->PySSLSession_Type == NULL)
         return -1;
 
+    state->PySSLCertificate_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &PySSLCertificate_spec, NULL
+    );
+    if (state->PySSLCertificate_Type == NULL)
+        return -1;
+
     if (PyModule_AddType(module, state->PySSLContext_Type))
         return -1;
     if (PyModule_AddType(module, state->PySSLSocket_Type))
@@ -5985,7 +6136,8 @@ sslmodule_init_types(PyObject *module)
         return -1;
     if (PyModule_AddType(module, state->PySSLSession_Type))
         return -1;
-
+    if (PyModule_AddType(module, state->PySSLCertificate_Type))
+        return -1;
     return 0;
 }
 
@@ -6008,6 +6160,7 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLSocket_Type);
     Py_VISIT(state->PySSLMemoryBIO_Type);
     Py_VISIT(state->PySSLSession_Type);
+    Py_VISIT(state->PySSLCertificate_Type);
     Py_VISIT(state->PySSLErrorObject);
     Py_VISIT(state->PySSLCertVerificationErrorObject);
     Py_VISIT(state->PySSLZeroReturnErrorObject);
@@ -6032,6 +6185,7 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLSocket_Type);
     Py_CLEAR(state->PySSLMemoryBIO_Type);
     Py_CLEAR(state->PySSLSession_Type);
+    Py_CLEAR(state->PySSLCertificate_Type);
     Py_CLEAR(state->PySSLErrorObject);
     Py_CLEAR(state->PySSLCertVerificationErrorObject);
     Py_CLEAR(state->PySSLZeroReturnErrorObject);

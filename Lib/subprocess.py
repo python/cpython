@@ -1003,7 +1003,7 @@ class Popen:
     def __repr__(self):
         obj_repr = (
             f"<{self.__class__.__name__}: "
-            f"returncode: {self.returncode} args: {list(self.args)!r}>"
+            f"returncode: {self.returncode} args: {self.args!r}>"
         )
         if len(obj_repr) > 80:
             obj_repr = obj_repr[:76] + "...>"
@@ -2086,7 +2086,7 @@ class Popen:
             try:
                 os.kill(self.pid, sig)
             except ProcessLookupError:
-                # Supress the race condition error; bpo-40550.
+                # Suppress the race condition error; bpo-40550.
                 pass
 
         def terminate(self):

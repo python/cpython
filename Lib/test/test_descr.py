@@ -4763,12 +4763,14 @@ order (MRO) for bases """
             "elephant"
         X.__doc__ = "banana"
         self.assertEqual(X.__doc__, "banana")
+
         with self.assertRaises(TypeError) as cm:
             type(list).__dict__["__doc__"].__set__(list, "blah")
-        self.assertIn("can't set list.__doc__", str(cm.exception))
+        self.assertIn("cannot set '__doc__' attribute of immutable type 'list'", str(cm.exception))
+
         with self.assertRaises(TypeError) as cm:
             type(X).__dict__["__doc__"].__delete__(X)
-        self.assertIn("can't delete X.__doc__", str(cm.exception))
+        self.assertIn("cannot delete '__doc__' attribute of immutable type 'X'", str(cm.exception))
         self.assertEqual(X.__doc__, "banana")
 
     def test_qualname(self):
@@ -5694,7 +5696,7 @@ class MroTest(unittest.TestCase):
 
     def test_incomplete_extend(self):
         """
-        Extending an unitialized type with type->tp_mro == NULL must
+        Extending an uninitialized type with type->tp_mro == NULL must
         throw a reasonable TypeError exception, instead of failing
         with PyErr_BadInternalCall.
         """

@@ -799,16 +799,12 @@ conflict.
      :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
      the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
 
-   Install debug hooks:
+   Install :ref:`debug hooks <pymem-debug-hooks>`:
 
    * ``debug``: install debug hooks on top of the :ref:`default memory
      allocators <default-memory-allocators>`.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
-
-   See the :ref:`default memory allocators <default-memory-allocators>` and the
-   :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
-   memory allocators).
 
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.

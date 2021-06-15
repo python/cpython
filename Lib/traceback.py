@@ -111,11 +111,8 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     position of the error.
     """
     value, tb = _parse_value_tb(exc, value, tb)
-    if file is None:
-        file = sys.stderr
     te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    for line in te.format(chain=chain):
-        print(line, file=file, end="")
+    te.print(file=file, chain=chain)
 
 
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
@@ -669,3 +666,10 @@ class TracebackException:
                 yield 'Traceback (most recent call last):\n'
                 yield from exc.stack.format()
             yield from exc.format_exception_only()
+
+    def print(self, *, file=None, chain=True):
+        """Print the result of self.format(chain=chain) to 'file'."""
+        if file is None:
+            file = sys.stderr
+        for line in self.format(chain=chain):
+            print(line, file=file, end="")

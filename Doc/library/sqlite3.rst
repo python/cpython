@@ -213,7 +213,7 @@ Module functions and constants
    The :mod:`sqlite3` module internally uses a statement cache to avoid SQL parsing
    overhead. If you want to explicitly set the number of statements that are cached
    for the connection, you can set the *cached_statements* parameter. The currently
-   implemented default is to cache 100 statements.
+   implemented default is to cache 128 statements.
 
    If *uri* is true, *database* is interpreted as a URI. This allows you
    to specify options. For example, to open a database in read-only mode
@@ -225,12 +225,16 @@ Module functions and constants
    be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
+   .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
 
    .. versionchanged:: 3.7
       *database* can now also be a :term:`path-like object`, not only a string.
+
+   .. versionchanged:: 3.10
+      Added the ``sqlite3.connect/handle`` auditing event.
 
 
 .. function:: register_converter(typename, callable)
@@ -513,7 +517,12 @@ Connection Objects
 
       Loadable extensions are disabled by default. See [#f1]_.
 
+      .. audit-event:: sqlite3.enable_load_extension connection,enabled sqlite3.enable_load_extension
+
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.10
+         Added the ``sqlite3.enable_load_extension`` auditing event.
 
       .. literalinclude:: ../includes/sqlite3/load_extension.py
 
@@ -525,7 +534,12 @@ Connection Objects
 
       Loadable extensions are disabled by default. See [#f1]_.
 
+      .. audit-event:: sqlite3.load_extension connection,path sqlite3.load_extension
+
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.10
+         Added the ``sqlite3.load_extension`` auditing event.
 
    .. attribute:: row_factory
 
@@ -680,7 +694,8 @@ Cursor Objects
 
       This is a nonstandard convenience method for executing multiple SQL statements
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
-      gets as a parameter.
+      gets as a parameter.  This method disregards :attr:`isolation_level`; any
+      transation control must be added to *sql_script*.
 
       *sql_script* can be an instance of :class:`str`.
 
@@ -1079,6 +1094,9 @@ setting :attr:`isolation_level` to ``None``.  This will leave the underlying
 ``sqlite3`` library operating in ``autocommit`` mode.  You can then completely
 control the transaction state by explicitly issuing ``BEGIN``, ``ROLLBACK``,
 ``SAVEPOINT``, and ``RELEASE`` statements in your code.
+
+Note that :meth:`~Cursor.executescript` disregards
+:attr:`isolation_level`; any transaction control must be added explicitly.
 
 .. versionchanged:: 3.6
    :mod:`sqlite3` used to implicitly commit an open transaction before DDL
