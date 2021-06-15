@@ -36,12 +36,15 @@
 #define HAVE_TRACE_V2
 #endif
 
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/connection.c.h"
+#undef clinic_state
+
 /*[clinic input]
 module _sqlite3
-class _sqlite3.Connection "pysqlite_Connection *" "pysqlite_ConnectionType"
+class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa796073bd8f69db]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
 _Py_IDENTIFIER(cursor);
 
@@ -339,14 +342,15 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
+    pysqlite_state *state = pysqlite_get_state(NULL);
     if (factory == NULL) {
-        factory = (PyObject*)pysqlite_CursorType;
+        factory = (PyObject *)state->CursorType;
     }
 
     cursor = PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
-    if (!PyObject_TypeCheck(cursor, pysqlite_CursorType)) {
+    if (!PyObject_TypeCheck(cursor, state->CursorType)) {
         PyErr_Format(PyExc_TypeError,
                      "factory must return a cursor, not %.100s",
                      Py_TYPE(cursor)->tp_name);
@@ -1592,7 +1596,7 @@ finally:
 /*[clinic input]
 _sqlite3.Connection.backup as pysqlite_connection_backup
 
-    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
+    target: object(type='pysqlite_Connection *', subclass_of='clinic_state()->ConnectionType')
     *
     pages: int = -1
     progress: object = None
@@ -1607,7 +1611,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
                                 double sleep)
-/*[clinic end generated code: output=306a3e6a38c36334 input=30ae45fc420bfd3b]*/
+/*[clinic end generated code: output=306a3e6a38c36334 input=c759627ab1ad46ff]*/
 {
     int rc;
     int sleep_ms = (int)(sleep * 1000.0);
@@ -1914,14 +1918,14 @@ static PyType_Spec connection_spec = {
     .slots = connection_slots,
 };
 
-PyTypeObject *pysqlite_ConnectionType = NULL;
-
 int
 pysqlite_connection_setup_types(PyObject *module)
 {
-    pysqlite_ConnectionType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &connection_spec, NULL);
-    if (pysqlite_ConnectionType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &connection_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->ConnectionType = (PyTypeObject *)type;
     return 0;
 }
