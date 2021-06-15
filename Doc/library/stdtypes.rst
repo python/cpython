@@ -739,7 +739,7 @@ number, :class:`float`, or :class:`complex`::
        """Compute the hash of a float x."""
 
        if math.isnan(x):
-           return super().__hash__()
+           return object.__hash__(x)
        elif math.isinf(x):
            return sys.hash_info.inf if x > 0 else -sys.hash_info.inf
        else:

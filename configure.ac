@@ -128,21 +128,21 @@ VERSION=PYTHON_VERSION
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
-# The later defininition of _XOPEN_SOURCE disables certain features
+# The later definition of _XOPEN_SOURCE disables certain features
 # on Linux, so we need _GNU_SOURCE to re-enable them (makedev, tm_zone).
 AC_DEFINE(_GNU_SOURCE, 1, [Define on Linux to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on NetBSD, so we need _NETBSD_SOURCE to re-enable
 # them.
 AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
+# The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])

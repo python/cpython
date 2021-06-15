@@ -67,7 +67,7 @@ def co_lines(code):
     table_iter = iter(code.internal_line_table):
     for sdelta, ldelta in table_iter:
         if ldelta == 0: # No change to line number, just accumulate changes to end
-            end += odelta
+            end += sdelta
             continue
         start = end
         end = start + sdelta

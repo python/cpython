@@ -36,12 +36,15 @@
 #define HAVE_TRACE_V2
 #endif
 
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/connection.c.h"
+#undef clinic_state
+
 /*[clinic input]
 module _sqlite3
-class _sqlite3.Connection "pysqlite_Connection *" "pysqlite_ConnectionType"
+class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa796073bd8f69db]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
 _Py_IDENTIFIER(cursor);
 
@@ -84,7 +87,7 @@ _sqlite3.Connection.__init__ as pysqlite_connection_init
     detect_types: int = 0
     isolation_level: object = NULL
     check_same_thread: bool(accept={int}) = True
-    factory: object(c_default='(PyObject*)pysqlite_ConnectionType') = ConnectionType
+    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
     cached_statements: int = 128
     uri: bool = False
 [clinic start generated code]*/
@@ -95,7 +98,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                               int detect_types, PyObject *isolation_level,
                               int check_same_thread, PyObject *factory,
                               int cached_statements, int uri)
-/*[clinic end generated code: output=dc19df1c0e2b7b77 input=3706141ad7f68f73]*/
+/*[clinic end generated code: output=dc19df1c0e2b7b77 input=aa1f21bf12fe907a]*/
 {
     int rc;
 
@@ -166,7 +169,6 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
     }
 
     self->detect_types = detect_types;
-    self->timeout = timeout;
     (void)sqlite3_busy_timeout(self->db, (int)(timeout*1000));
     self->thread_ident = PyThread_get_thread_ident();
     self->check_same_thread = check_same_thread;
@@ -271,7 +273,7 @@ connection_close(pysqlite_Connection *self)
 {
     if (self->db) {
         int rc = sqlite3_close_v2(self->db);
-        assert(rc == SQLITE_OK);
+        assert(rc == SQLITE_OK), (void)rc;
         self->db = NULL;
     }
 }
@@ -334,14 +336,15 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
+    pysqlite_state *state = pysqlite_get_state(NULL);
     if (factory == NULL) {
-        factory = (PyObject*)pysqlite_CursorType;
+        factory = (PyObject *)state->CursorType;
     }
 
     cursor = PyObject_CallOneArg(factory, (PyObject *)self);
     if (cursor == NULL)
         return NULL;
-    if (!PyObject_TypeCheck(cursor, pysqlite_CursorType)) {
+    if (!PyObject_TypeCheck(cursor, state->CursorType)) {
         PyErr_Format(PyExc_TypeError,
                      "factory must return a cursor, not %.100s",
                      Py_TYPE(cursor)->tp_name);
@@ -1587,7 +1590,7 @@ finally:
 /*[clinic input]
 _sqlite3.Connection.backup as pysqlite_connection_backup
 
-    target: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
+    target: object(type='pysqlite_Connection *', subclass_of='clinic_state()->ConnectionType')
     *
     pages: int = -1
     progress: object = None
@@ -1602,7 +1605,7 @@ pysqlite_connection_backup_impl(pysqlite_Connection *self,
                                 pysqlite_Connection *target, int pages,
                                 PyObject *progress, const char *name,
                                 double sleep)
-/*[clinic end generated code: output=306a3e6a38c36334 input=30ae45fc420bfd3b]*/
+/*[clinic end generated code: output=306a3e6a38c36334 input=c759627ab1ad46ff]*/
 {
     int rc;
     int sleep_ms = (int)(sleep * 1000.0);
@@ -1909,14 +1912,14 @@ static PyType_Spec connection_spec = {
     .slots = connection_slots,
 };
 
-PyTypeObject *pysqlite_ConnectionType = NULL;
-
 int
 pysqlite_connection_setup_types(PyObject *module)
 {
-    pysqlite_ConnectionType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &connection_spec, NULL);
-    if (pysqlite_ConnectionType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &connection_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->ConnectionType = (PyTypeObject *)type;
     return 0;
 }

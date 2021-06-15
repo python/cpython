@@ -35,7 +35,7 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int detect_types = 0;
     PyObject *isolation_level = NULL;
     int check_same_thread = 1;
-    PyObject *factory = (PyObject*)pysqlite_ConnectionType;
+    PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
     int cached_statements = 128;
     int uri = 0;
 
@@ -310,7 +310,7 @@ pysqlite_adapt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *obj;
-    PyObject *proto = (PyObject*)pysqlite_PrepareProtocolType;
+    PyObject *proto = (PyObject *)clinic_state()->PrepareProtocolType;
     PyObject *alt = NULL;
 
     if (!_PyArg_CheckPositional("adapt", nargs, 1, 3)) {
@@ -331,4 +331,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9f2160e2d092db1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef03fdbf018d3391 input=a9049054013a1b77]*/
