@@ -8880,16 +8880,13 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     PyObject *firstarg = f->f_localsptr[0];
     // The first argument might be a cell.
     if (firstarg != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
-        // The only way firstarg is not a cell is if MAKE_CELL hasn't
-        // run yet, which isn't possible from Python code since "super()"
-        // will always come after MAKE_CELL.  So the only way firstarg
-        // isn't a cell is if super() were called via the C-API, and
-        // execution is at the very beginning of the function.  This is
-        // sufficiently unlikely that we disllow it.  Otherwise we'd
-        // incur the expense of checking to make sure MAKE_CELL ran
-        // already, like we do in PyFrame_FastToLocals().
-        assert(PyCell_Check(firstarg));
-        firstarg = PyCell_GET(firstarg);
+        // "firstarg" is a cell here unless (very unlikely) super()
+        // was called from the C-API before the first MAKE_CELL op.
+        if (f->f_lasti >= 0) {
+            assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL);
+            assert(PyCell_Check(firstarg));
+            firstarg = PyCell_GET(firstarg);
+        }
     }
     if (firstarg == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
