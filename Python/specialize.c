@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_code.h"
 #include "pycore_dict.h"
+#include "pycore_long.h"
 #include "pycore_moduleobject.h"
 #include "opcode.h"
 #include "structmember.h"         // struct PyMemberDef, T_OFFSET_EX
@@ -46,6 +47,24 @@ print_stats(SpecializationStats *stats, const char *name)
     PRINT_STAT(name, deferred);
     PRINT_STAT(name, miss);
     PRINT_STAT(name, deopt);
+#if SPECIALIZATION_STATS_DETAILED
+    if (stats->miss_types == NULL) {
+        return;
+    }
+    fprintf(stderr, "    %s.fails:\n", name);
+    PyObject *key, *count;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(stats->miss_types, &pos, &key, &count)) {
+        PyObject *type = PyTuple_GetItem(key, 0);
+        PyObject *name = PyTuple_GetItem(key, 1);
+        PyObject *kind = PyTuple_GetItem(key, 2);
+        fprintf(stderr, "        %s.", ((PyTypeObject *)type)->tp_name);
+        PyObject_Print(name, stderr, Py_PRINT_RAW);
+        fprintf(stderr, " (");
+        PyObject_Print(kind, stderr, Py_PRINT_RAW);
+        fprintf(stderr, "): %ld\n", PyLong_AsLong(count));
+    }
+#endif
 }
 
 void
@@ -56,6 +75,57 @@ _Py_PrintSpecializationStats(void)
     print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
 }
 
+#if SPECIALIZATION_STATS_DETAILED
+void
+_Py_IncrementTypeCounter(int opcode, PyObject *type, PyObject *name, const char *kind)
+{
+    PyObject *counter = _specialization_stats[opcode].miss_types;
+    if (counter == NULL) {
+        _specialization_stats[opcode].miss_types = PyDict_New();
+        counter = _specialization_stats[opcode].miss_types;
+        if (counter == NULL) {
+            return;
+        }
+    }
+    PyObject *key = NULL;
+    PyObject *kind_object = _PyUnicode_FromASCII(kind, strlen(kind));
+    if (kind_object == NULL) {
+        PyErr_Clear();
+        goto done;
+    }
+    key = PyTuple_Pack(3, type, name, kind_object);
+    if (key == NULL) {
+        PyErr_Clear();
+        goto done;
+    }
+    PyObject *count = PyDict_GetItem(counter, key);
+    if (count == NULL) {
+        count = _PyLong_GetZero();
+        if (PyDict_SetItem(counter, key, count) < 0) {
+            PyErr_Clear();
+            goto done;
+        }
+    }
+    count = PyNumber_Add(count, _PyLong_GetOne());
+    if (count == NULL) {
+        PyErr_Clear();
+        goto done;
+    }
+    if (PyDict_SetItem(counter, key, count)) {
+        PyErr_Clear();
+    }
+done:
+    Py_XDECREF(kind_object);
+    Py_XDECREF(key);
+}
+
+#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) _Py_IncrementTypeCounter(opcode, (PyObject *)(type), attribute, kind)
+
+#endif
+#endif
+
+#ifndef SPECIALIZATION_FAIL
+#define SPECIALIZATION_FAIL(opcode, type, attribute, kind) ((void)0)
 #endif
 
 static SpecializedCacheOrInstruction *
@@ -243,28 +313,34 @@ specialize_module_load_attr(
     _Py_IDENTIFIER(__getattr__);
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no __dict__");
         return -1;
     }
     if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "non-string keys (or split)");
         return -1;
     }
     getattr = _PyUnicode_FromId(&PyId___getattr__); /* borrowed */
     if (getattr == NULL) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "module.__getattr__ overridden");
         PyErr_Clear();
         return -1;
     }
     Py_ssize_t index = _PyDict_GetItemHint(dict, getattr, -1,  &value);
     assert(index != DKIX_ERROR);
     if (index != DKIX_EMPTY) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "module attribute not found");
         return -1;
     }
     index = _PyDict_GetItemHint(dict, name, -1, &value);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "index out of range");
         return -1;
     }
     uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
     if (keys_version == 0) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no more key versions");
         return -1;
     }
     cache1->dk_version_or_hint = keys_version;
@@ -287,6 +363,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
     PyTypeObject *type = Py_TYPE(owner);
     if (type->tp_getattro != PyObject_GenericGetAttr) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "__getattribute__ overridden");
         goto fail;
     }
     if (type->tp_dict == NULL) {
@@ -299,17 +376,19 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         // We found an attribute with a data-like descriptor.
         PyTypeObject *dtype = Py_TYPE(descr);
         if (dtype != &PyMemberDescr_Type) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "not a member descriptor");
             goto fail;
         }
         // It's a slot
         PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
         struct PyMemberDef *dmem = member->d_member;
         if (dmem->type != T_OBJECT_EX) {
-            // It's a slot of a different type.  We don't handle those.
+            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "non-object slot");
             goto fail;
         }
         Py_ssize_t offset = dmem->offset;
         if (offset != (uint16_t)offset) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "offset out of range");
             goto fail;
         }
         assert(offset > 0);
@@ -320,11 +399,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
     }
     // No desciptor
     if (type->tp_dictoffset <= 0) {
-        // No dictionary, or computed offset dictionary
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no dict or negative offset");
         goto fail;
     }
     PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
     if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no dict or not a dict");
         goto fail;
     }
     // We found an instance with a __dict__.
@@ -342,10 +422,12 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
         assert (index != DKIX_ERROR);
         if (index != (uint16_t)index) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "index out of range");
             goto fail;
         }
         uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
         if (keys_version == 0) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no more key versions");
             goto fail;
         }
         cache1->dk_version_or_hint = keys_version;
@@ -359,6 +441,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         Py_ssize_t hint =
             _PyDict_GetItemHint(dict, name, -1, &value);
         if (hint != (uint32_t)hint) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "hint out of range");
             goto fail;
         }
         cache1->dk_version_or_hint = (uint32_t)hint;
