@@ -44,7 +44,7 @@ class ExceptionClassTests(unittest.TestCase):
             last_depth = 0
             for exc_line in inheritance_tree:
                 exc_line = exc_line.rstrip()
-                depth = exc_line.rindex('-')
+                depth = exc_line.rindex('─')
                 exc_name = exc_line[depth+2:]  # Slice past space
                 if '(' in exc_name:
                     paren_index = exc_name.index('(')

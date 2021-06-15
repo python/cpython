@@ -522,7 +522,7 @@ class Stats:
 class TupleComp:
     """This class provides a generic function for comparing any two tuples.
     Each instance records a list of tuple-indices (from most significant
-    to least significant), and sort direction (ascending or decending) for
+    to least significant), and sort direction (ascending or descending) for
     each tuple-index.  The compare functions can then be used as the function
     argument to the system sort() function when a list of tuples need to be
     sorted in the instances order."""
