@@ -21,6 +21,8 @@
  * objects.
  */
 
+#include <stdbool.h>
+
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_compile.h"       // _PyFuture_FromAST()
@@ -7377,6 +7379,39 @@ optimize_cfg(struct compiler *c, struct assembler *a, PyObject *consts);
 static int
 ensure_exits_have_lineno(struct compiler *c);
 
+static int *
+build_cellfixedoffsets(struct compiler *c)
+{
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(c->u->u_freevars);
+
+    int noffsets = ncellvars + nfreevars;
+    int *fixed = PyMem_New(int, noffsets);
+    if (fixed == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (int i = 0; i < noffsets; i++) {
+        fixed[i] = nlocals + i;
+    }
+
+    PyObject *varname, *cellindex;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(c->u->u_cellvars, &pos, &varname, &cellindex)) {
+        PyObject *varindex = PyDict_GetItem(c->u->u_varnames, varname);
+        if (varindex != NULL) {
+            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
+            assert(PyLong_AS_LONG(varindex) < INT_MAX);
+            int oldindex = (int)PyLong_AS_LONG(cellindex);
+            int argoffset = (int)PyLong_AS_LONG(varindex);
+            fixed[oldindex] = argoffset;
+        }
+    }
+
+    return fixed;
+}
+
 static inline int
 insert_instruction(basicblock *block, int pos, struct instr *instr) {
     if (compiler_next_instr(block) < 0) {
@@ -7390,7 +7425,9 @@ insert_instruction(basicblock *block, int pos, struct instr *instr) {
 }
 
 static int
-insert_prefix_instructions(struct compiler *c, basicblock *entryblock) {
+insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
+                           int *fixed)
+{
 
     int flags = compute_code_flags(c);
     if (flags < 0) {
@@ -7398,21 +7435,38 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock) {
     }
 
     /* Set up cells for any variable that escapes, to be put in a closure. */
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(c->u->u_cellvars, &pos, &k, &v)) {
-        assert(PyLong_AS_LONG(v) < INT_MAX);
-        int cellindex = (int)PyLong_AS_LONG(v);
-        struct instr make_cell = {
-            .i_opcode = MAKE_CELL,
-            // This will get fixed in offset_derefs().
-            .i_oparg = cellindex,
-            .i_lineno = -1,
-            .i_target = NULL,
-        };
-        if (insert_instruction(entryblock, (int)(pos - 1), &make_cell) < 0) {
+    const int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
+    if (ncellvars) {
+        // c->u->u_cellvars has the cells out of order so we sort them
+        // before adding the MAKE_CELL instructions.  Note that we
+        // adjust for arg cells, which come first.
+        const int nvars = ncellvars + (int)PyDict_GET_SIZE(c->u->u_varnames);
+        int *sorted = PyMem_RawCalloc(nvars, sizeof(int));
+        if (sorted == NULL) {
+            PyErr_NoMemory();
             return -1;
         }
+        for (int i = 0; i < ncellvars; i++) {
+            sorted[fixed[i]] = i + 1;
+        }
+        for (int i = 0, ncellsused = 0; ncellsused < ncellvars; i++) {
+            int oldindex = sorted[i] - 1;
+            if (oldindex == -1) {
+                continue;
+            }
+            struct instr make_cell = {
+                .i_opcode = MAKE_CELL,
+                // This will get fixed in offset_derefs().
+                .i_oparg = oldindex,
+                .i_lineno = -1,
+                .i_target = NULL,
+            };
+            if (insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
+                return -1;
+            }
+            ncellsused += 1;
+        }
+        PyMem_RawFree(sorted);
     }
 
     /* Add the generator prefix instructions. */
@@ -7471,42 +7525,16 @@ guarantee_lineno_for_exits(struct assembler *a, int firstlineno) {
 }
 
 static int
-fix_cell_offsets(struct compiler *c, basicblock *entryblock)
+fix_cell_offsets(struct compiler *c, basicblock *entryblock, int *fixedmap)
 {
-    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
-    assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
-    assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
     int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
     int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
     int nfreevars = (int)PyDict_GET_SIZE(c->u->u_freevars);
-    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
-    int nlocalsplus = nlocals + ncellvars + nfreevars;
+    int noffsets = ncellvars + nfreevars;
 
-    int maxoldoffset = ncellvars + nfreevars;
-    int *fixedmap = PyMem_New(int, maxoldoffset + 1);
-    if (fixedmap == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    for (int i = 0; i < maxoldoffset; i++) {
-        fixedmap[i] = nlocals + i;
-    }
-
-    // First map cell vars to args.
-    PyObject *varname, *cellindex;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(c->u->u_cellvars, &pos, &varname, &cellindex)) {
-        PyObject *varindex = PyDict_GetItem(c->u->u_varnames, varname);
-        if (varindex != NULL) {
-            assert(PyLong_AS_LONG(cellindex) < INT_MAX);
-            assert(PyLong_AS_LONG(varindex) < INT_MAX);
-            int oldindex = (int)PyLong_AS_LONG(cellindex);
-            int argoffset = (int)PyLong_AS_LONG(varindex);
-            fixedmap[oldindex] = argoffset;
-        }
-    }
+    // First deal with duplicates (arg cells).
     int numdropped = 0;
-    for (int i = 0; i < maxoldoffset; i++) {
+    for (int i = 0; i < noffsets ; i++) {
         if (fixedmap[i] == i + nlocals) {
             fixedmap[i] -= numdropped;
         }
@@ -7516,7 +7544,7 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock)
         }
     }
 
-    // Then update offsets, either relative to locals or by cell2var.
+    // Then update offsets, either relative to locals or by cell2arg.
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             struct instr *inst = &b->b_instr[i];
@@ -7530,13 +7558,15 @@ fix_cell_offsets(struct compiler *c, basicblock *entryblock)
                 case STORE_DEREF:
                 case DELETE_DEREF:
                 case LOAD_CLASSDEREF:
+                    assert(oldoffset >= 0);
+                    assert(oldoffset < noffsets);
+                    assert(fixedmap[oldoffset] >= 0);
                     inst->i_oparg = fixedmap[oldoffset];
             }
         }
     }
 
-    PyMem_Free(fixedmap);
-    return nlocalsplus - numdropped;
+    return numdropped;
 }
 
 static PyCodeObject *
@@ -7577,8 +7607,22 @@ assemble(struct compiler *c, int addNone)
     }
     assert(entryblock != NULL);
 
+    assert(PyDict_GET_SIZE(c->u->u_varnames) < INT_MAX);
+    assert(PyDict_GET_SIZE(c->u->u_cellvars) < INT_MAX);
+    assert(PyDict_GET_SIZE(c->u->u_freevars) < INT_MAX);
+    int nlocals = (int)PyDict_GET_SIZE(c->u->u_varnames);
+    int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
+    int nfreevars = (int)PyDict_GET_SIZE(c->u->u_freevars);
+    assert(INT_MAX - nlocals - ncellvars > 0);
+    assert(INT_MAX - nlocals - ncellvars - nfreevars > 0);
+    int nlocalsplus = nlocals + ncellvars + nfreevars;
+    int *cellfixedoffsets = build_cellfixedoffsets(c);
+    if (cellfixedoffsets == NULL) {
+        goto error;
+    }
+
     // This must be called before fix_cell_offsets().
-    if (insert_prefix_instructions(c, entryblock)) {
+    if (insert_prefix_instructions(c, entryblock, cellfixedoffsets)) {
         goto error;
     }
 
@@ -7595,10 +7639,13 @@ assemble(struct compiler *c, int addNone)
     a.a_entry = entryblock;
     a.a_nblocks = nblocks;
 
-    int nlocalsplus = fix_cell_offsets(c, entryblock);
-    if (nlocalsplus < 0) {
+    int numdropped = fix_cell_offsets(c, entryblock, cellfixedoffsets);
+    PyMem_Free(cellfixedoffsets);  // At this point we're done with it.
+    cellfixedoffsets = NULL;
+    if (numdropped < 0) {
         goto error;
     }
+    nlocalsplus -= numdropped;
 
     consts = consts_dict_keys_inorder(c->u->u_consts);
     if (consts == NULL) {
@@ -7639,10 +7686,10 @@ assemble(struct compiler *c, int addNone)
     }
 
     if (!assemble_exception_table(&a)) {
-        return 0;
+        goto error;
     }
     if (!assemble_line_range(&a)) {
-        return 0;
+        goto error;
     }
 
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0) {
@@ -7667,6 +7714,9 @@ assemble(struct compiler *c, int addNone)
  error:
     Py_XDECREF(consts);
     assemble_free(&a);
+    if (cellfixedoffsets != NULL) {
+        PyMem_Free(cellfixedoffsets);
+    }
     return co;
 }
 
