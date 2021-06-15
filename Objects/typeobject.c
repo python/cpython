@@ -8904,7 +8904,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     PyTypeObject *type = NULL;
     i = co->co_nlocals + co->co_ncellvars;
     for (; i < co->co_nlocalsplus; i++) {
-        assert(co->co_localspluskinds[i] & CO_FAST_FREE);
+        assert(_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {

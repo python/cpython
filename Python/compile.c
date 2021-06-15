@@ -7184,15 +7184,16 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 // This is in codeobject.c.
-extern void _Py_set_localsplus_info(int, PyObject *, _PyLocalsPlusKind,
-                                   PyObject *, _PyLocalsPlusKinds);
+extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
+                                   PyObject *, PyObject *);
 
-static void
-compute_localsplus_info(struct compiler *c,
-                        PyObject *names, _PyLocalsPlusKinds kinds)
+static PyObject *
+compute_localsplus_info(struct compiler *c, PyObject *names)
 {
     int nlocalsplus = (int)PyTuple_GET_SIZE(names);
-    (void)nlocalsplus; // Avoid compiler errors for unused variable
+    PyObject *kinds = PyBytes_FromStringAndSize(NULL, nlocalsplus);
+    if (kinds == NULL)
+        return NULL;
 
     PyObject *k, *v;
     Py_ssize_t pos = 0;
@@ -7222,6 +7223,8 @@ compute_localsplus_info(struct compiler *c,
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
+
+    return kinds;
 }
 
 static PyCodeObject *
@@ -7232,7 +7235,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *names = NULL;
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
-    _PyLocalsPlusKinds localspluskinds = NULL;
+    PyObject *localspluskinds = NULL;
     PyObject *name = NULL;
 
     names = dict_keys_inorder(c->u->u_names, 0);
@@ -7277,10 +7280,10 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (localsplusnames == NULL) {
         goto error;
     }
-    if (_PyCode_InitLocalsPlusKinds(nlocalsplus, &localspluskinds) < 0) {
+    localspluskinds = compute_localsplus_info(c, localsplusnames);
+    if (localspluskinds == NULL) {
         goto error;
     }
-    compute_localsplus_info(c, localsplusnames, localspluskinds);
 
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
@@ -7311,7 +7314,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     }
 
     if (!merge_const_one(c, &localsplusnames)) {
-        _PyCode_ClearLocalsPlusKinds(con.localspluskinds);
         goto error;
     }
     con.localsplusnames = localsplusnames;
@@ -7321,13 +7323,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    localspluskinds = NULL;  // This keeps it from getting freed below.
-
  error:
     Py_XDECREF(names);
     Py_XDECREF(consts);
     Py_XDECREF(localsplusnames);
-    _PyCode_ClearLocalsPlusKinds(localspluskinds);
+    Py_XDECREF(localspluskinds);
     Py_XDECREF(name);
     return co;
 }

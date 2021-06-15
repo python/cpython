@@ -156,18 +156,18 @@ validate_and_copy_tuple(PyObject *tup)
 
 // This is also used in compile.c.
 void
-_Py_set_localsplus_info(int offset, PyObject *name, _PyLocalsPlusKind kind,
-                       PyObject *names, _PyLocalsPlusKinds kinds)
+_Py_set_localsplus_info(int offset, PyObject *name, _PyLocals_Kind kind,
+                       PyObject *names, PyObject *kinds)
 {
     Py_INCREF(name);
     PyTuple_SET_ITEM(names, offset, name);
-    kinds[offset] = kind;
+    _PyLocals_SetKind(kinds, offset, kind);
 
     if (kind == CO_FAST_CELL) {
         // Cells can overlap with args, so mark those cases.
         int nlocalsplus = (int)PyTuple_GET_SIZE(names);
         for (int i = 0; i < nlocalsplus; i++) {
-            _PyLocalsPlusKind kind = kinds[i];
+            _PyLocals_Kind kind = _PyLocals_GetKind(kinds, i);
             if (kind && !(kind & CO_FAST_LOCAL)) {
                 // We've moved past the locals.
                 break;
@@ -175,7 +175,7 @@ _Py_set_localsplus_info(int offset, PyObject *name, _PyLocalsPlusKind kind,
             PyObject *varname = PyTuple_GET_ITEM(names, i);
             int cmp = PyUnicode_Compare(name, varname);
             if (cmp == 0) {
-                kinds[i] |= CO_FAST_CELL;
+                _PyLocals_SetKind(kinds, i, kind | CO_FAST_CELL);
                 break;
             }
             assert(cmp > 0 || !PyErr_Occurred());
@@ -184,7 +184,7 @@ _Py_set_localsplus_info(int offset, PyObject *name, _PyLocalsPlusKind kind,
 }
 
 static void
-get_localsplus_counts(PyObject *names, _PyLocalsPlusKinds kinds,
+get_localsplus_counts(PyObject *names, PyObject *kinds,
                       int *pnlocals, int *pncellvars,
                       int *pnfreevars)
 {
@@ -194,13 +194,14 @@ get_localsplus_counts(PyObject *names, _PyLocalsPlusKinds kinds,
     int nlocalsplus = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(names),
                                        Py_ssize_t, int);
     for (int i = 0; i < nlocalsplus; i++) {
-        if (kinds[i] & CO_FAST_LOCAL) {
+        _PyLocals_Kind kind = _PyLocals_GetKind(kinds, i);
+        if (kind & CO_FAST_LOCAL) {
             nlocals += 1;
         }
-        else if (kinds[i] & CO_FAST_CELL) {
+        else if (kind & CO_FAST_CELL) {
             ncellvars += 1;
         }
-        else if (kinds[i] & CO_FAST_FREE) {
+        else if (kind & CO_FAST_FREE) {
             nfreevars += 1;
         }
     }
@@ -216,7 +217,7 @@ get_localsplus_counts(PyObject *names, _PyLocalsPlusKinds kinds,
 }
 
 static PyObject *
-get_localsplus_names(PyCodeObject *co, _PyLocalsPlusKind kind, int num)
+get_localsplus_names(PyCodeObject *co, char kind, int num)
 {
     PyObject *names = PyTuple_New(num);
     if (names == NULL) {
@@ -224,11 +225,12 @@ get_localsplus_names(PyCodeObject *co, _PyLocalsPlusKind kind, int num)
     }
     int index = 0;
     for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
-        if ((co->co_localspluskinds[offset] & kind) == 0) {
+        _PyLocals_Kind k = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        if ((k & kind) == 0) {
             continue;
         }
         // For now there may be duplicates, which we ignore.
-        if (kind == CO_FAST_CELL && co->co_localspluskinds[offset] != kind) {
+        if (kind == CO_FAST_CELL && k != kind) {
             continue;
         }
         assert(index < num);
@@ -252,8 +254,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         con->consts == NULL || !PyTuple_Check(con->consts) ||
         con->names == NULL || !PyTuple_Check(con->names) ||
         con->localsplusnames == NULL || !PyTuple_Check(con->localsplusnames) ||
-        (PyTuple_GET_SIZE(con->localsplusnames) && con->localspluskinds == NULL) ||
-        (!PyTuple_GET_SIZE(con->localsplusnames) && con->localspluskinds != NULL) ||
+        con->localspluskinds == NULL || !PyBytes_Check(con->localspluskinds) ||
         con->name == NULL || !PyUnicode_Check(con->name) ||
         con->filename == NULL || !PyUnicode_Check(con->filename) ||
         con->linetable == NULL || !PyBytes_Check(con->linetable) ||
@@ -325,7 +326,7 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
 
     Py_INCREF(con->localsplusnames);
     co->co_localsplusnames = con->localsplusnames;
-    // We take ownership of the kinds array.
+    Py_INCREF(con->localsplusnames);
     co->co_localspluskinds = con->localspluskinds;
 
     co->co_argcount = con->argcount;
@@ -448,7 +449,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 {
     PyCodeObject *co = NULL;
     PyObject *localsplusnames = NULL;
-    _PyLocalsPlusKinds localspluskinds = NULL;
+    PyObject *localspluskinds = NULL;
 
     if (varnames == NULL || !PyTuple_Check(varnames) ||
         cellvars == NULL || !PyTuple_Check(cellvars) ||
@@ -467,7 +468,8 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     if (localsplusnames == NULL) {
         goto error;
     }
-    if (_PyCode_InitLocalsPlusKinds(nlocalsplus, &localspluskinds) < 0) {
+    localspluskinds = PyBytes_FromStringAndSize(NULL, nlocalsplus);
+    if (localspluskinds == NULL) {
         goto error;
     }
     int  offset = 0;
@@ -527,7 +529,6 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         goto error;
     }
 
-    localspluskinds = NULL;  // This keeps it from getting freed below.
     Py_INCREF(varnames);
     co->co_varnames = varnames;
     Py_INCREF(cellvars);
@@ -537,7 +538,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
 
 error:
     Py_XDECREF(localsplusnames);
-    _PyCode_ClearLocalsPlusKinds(localspluskinds);
+    Py_XDECREF(localspluskinds);
     return co;
 }
 
@@ -1174,7 +1175,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);
     Py_XDECREF(co->co_localsplusnames);
-    _PyCode_ClearLocalsPlusKinds(co->co_localspluskinds);
+    Py_XDECREF(co->co_localspluskinds);
     Py_XDECREF(co->co_varnames);
     Py_XDECREF(co->co_freevars);
     Py_XDECREF(co->co_cellvars);
