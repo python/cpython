@@ -43,7 +43,6 @@ module _sqlite3
 
 /* static objects at module-level */
 
-PyObject *pysqlite_Error = NULL;
 PyObject *pysqlite_Warning = NULL;
 PyObject *pysqlite_InterfaceError = NULL;
 PyObject *pysqlite_DatabaseError = NULL;
@@ -411,12 +410,14 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-    ADD_EXCEPTION(module, "Error", pysqlite_Error, PyExc_Exception);
+    ADD_EXCEPTION(module, "Error", state->Error, PyExc_Exception);
     ADD_EXCEPTION(module, "Warning", pysqlite_Warning, PyExc_Exception);
 
     /* Error subclasses */
-    ADD_EXCEPTION(module, "InterfaceError", pysqlite_InterfaceError, pysqlite_Error);
-    ADD_EXCEPTION(module, "DatabaseError", pysqlite_DatabaseError, pysqlite_Error);
+    ADD_EXCEPTION(module, "InterfaceError", pysqlite_InterfaceError,
+                  state->Error);
+    ADD_EXCEPTION(module, "DatabaseError", pysqlite_DatabaseError,
+                  state->Error);
 
     /* pysqlite_DatabaseError subclasses */
     ADD_EXCEPTION(module, "InternalError", pysqlite_InternalError, pysqlite_DatabaseError);

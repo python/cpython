@@ -188,8 +188,9 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         return -1;
     }
 
+    pysqlite_state *state = pysqlite_get_state(NULL);
     self->Warning               = pysqlite_Warning;
-    self->Error                 = pysqlite_Error;
+    self->Error                 = state->Error;
     self->InterfaceError        = pysqlite_InterfaceError;
     self->DatabaseError         = pysqlite_DatabaseError;
     self->DataError             = pysqlite_DataError;
