@@ -1,0 +1,2 @@
+Fix the exported return type of ``Py_GenericAliasType`` for MSVC.  The
+return type is now a variable whereas it was previously a function.
