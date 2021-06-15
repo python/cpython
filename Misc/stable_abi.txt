@@ -42,8 +42,6 @@ struct _frame
     added 3.2
 struct symtable
     added 3.2
-struct _node
-    added 3.2
 struct PyWeakReference
     added 3.2
 struct PyLongObject
