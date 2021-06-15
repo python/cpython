@@ -202,6 +202,22 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+
+class SerializeTests(unittest.TestCase):
+    def test_serialize_deserialize(self):
+        with sqlite.connect(":memory:") as cx:
+            cx.execute("create table t(t)")
+            data, size = cx.serialize()
+        cx.close()
+
+        self.assertEqual(len(data), size)
+
+        cx = sqlite.connect(":memory:")
+        cx.deserialize(data)
+        cx.execute("select t from t")
+        cx.close()
+
+
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
@@ -649,6 +665,23 @@ class ThreadTests(unittest.TestCase):
         if len(errors) > 0:
             self.fail("\n".join(errors))
 
+    def test_con_serialize(self):
+        def run(con, err):
+            try:
+                con.serialize()
+                err.append("did not raise ProgrammingError")
+            except sqlite.ProgrammingError:
+                pass
+            except:
+                err.append("raised wrong exception")
+
+        err = []
+        t = threading.Thread(target=run, kwargs={"con": self.con, "err": err})
+        t.start()
+        t.join()
+        if len(err) > 0:
+            self.fail("\n".join(err))
+
     def test_cur_implicit_begin(self):
         def run(cur, errors):
             try:
@@ -986,6 +1019,7 @@ def suite():
         CursorTests,
         ExtensionTests,
         ModuleTests,
+        SerializeTests,
         SqliteOnConflictTests,
         ThreadTests,
     ]
