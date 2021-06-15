@@ -38,7 +38,7 @@ struct PyThreadState
     added 3.2
 struct PyInterpreterState
     added 3.2
-struct _frame
+struct PyFrameObject
     added 3.2
 struct symtable
     added 3.2
