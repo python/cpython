@@ -32,8 +32,6 @@ _PyFrame_GetBuiltins(PyFrameObject *f)
 
 int _PyFrame_TakeLocals(PyFrameObject *f);
 
-PyAPI_FUNC(int) _PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg);
-
 #ifdef __cplusplus
 }
 #endif

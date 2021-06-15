@@ -918,7 +918,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     return f;
 }
 
-int
+static int
 _PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
