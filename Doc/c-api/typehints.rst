@@ -14,10 +14,13 @@ when including :file:`Python.h`.
 
    Return a :ref:`GenericAlias <types-genericalias>` object on success,
    ``NULL`` on failure.  Equivalent to calling the Python class
-   :class:`types.GenericAlias`.  *origin* and *args* arguments set the
+   :class:`types.GenericAlias`.  The *origin* and *args* arguments set the
    ``GenericAlias``\ 's ``__origin__`` and ``__args__`` attributes respectively.
-   *origin* should be a type, and *args* **must** be a :c:type:`PyTupleObject`.
-   Minimal checking is done on the arguments, so the function will succeed even
+   *origin* should be a :c:type:`PyTypeObject*`, and *args* can be a
+   :c:type:`PyTupleObject*` or any ``PyObject*``.  If *args* passed is
+   not a tuple, a 1-tuple is automatically constructed and ``__args__`` is set
+   to ``(args,)``.
+   Minimal checking is done for the arguments, so the function will succeed even
    if *origin* is not a type.
    The ``GenericAlias``\ 's ``__parameters__`` attribute is constructed lazily
    from ``__args__``.
