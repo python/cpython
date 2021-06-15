@@ -30,6 +30,7 @@
 #define MODULE_NAME "sqlite3"
 
 typedef struct {
+    PyObject *DatabaseError;
     PyObject *Error;
     PyObject *InterfaceError;
     PyObject *Warning;
@@ -49,7 +50,6 @@ pysqlite_get_state(PyObject *Py_UNUSED(module))
     return &pysqlite_global_state;
 }
 
-extern PyObject* pysqlite_DatabaseError;
 extern PyObject* pysqlite_InternalError;
 extern PyObject* pysqlite_OperationalError;
 extern PyObject* pysqlite_ProgrammingError;
