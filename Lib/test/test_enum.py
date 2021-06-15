@@ -658,6 +658,14 @@ class TestEnum(unittest.TestCase):
             def __repr__(self):
                 return '<%s.%s: %r>' % (self.__class__.__name__, self._name_, self._value_)
         self.assertEqual(repr(MyEnum.A), '<MyEnum.A: 0x1>')
+        #
+        class SillyInt(HexInt):
+            pass
+        class MyOtherEnum(SillyInt, enum.Enum):
+            D = 4
+            E = 5
+            F = 6
+        self.assertIs(MyOtherEnum._member_type_, SillyInt)
 
     def test_too_many_data_types(self):
         with self.assertRaisesRegex(TypeError, 'too many data types'):
