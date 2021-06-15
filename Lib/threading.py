@@ -1567,7 +1567,7 @@ def _after_fork():
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
     global _active_limbo_lock, _main_thread
     global _shutdown_locks_lock, _shutdown_locks
-    _active_limbo_lock = _allocate_lock()
+    _active_limbo_lock = RLock()
 
     # fork() only copied the current thread; clear references to others.
     new_active = {}
