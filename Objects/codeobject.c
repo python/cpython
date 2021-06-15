@@ -560,6 +560,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
         .consts = nulltuple,
         .names = nulltuple,
         .localsplusnames = nulltuple,
+        .localspluskinds = emptystring,
         .exceptiontable = emptystring,
     };
     result = _PyCode_New(&con);
