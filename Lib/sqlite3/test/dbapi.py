@@ -572,7 +572,15 @@ class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
         self.cur = self.con.cursor()
-        self.cur.execute("create table test(id integer primary key, name text, bin binary, ratio number, ts timestamp)")
+        self.cur.execute("""
+            create table test(
+                id integer primary key,
+                name text,
+                bin binary,
+                ratio number,
+                ts timestamp
+            )
+        """)
 
     def tearDown(self):
         self.cur.close()
@@ -609,7 +617,9 @@ class ThreadTests(unittest.TestCase):
         self._run_test(lambda: self.con.close())
 
     def test_cur_implicit_begin(self):
-        self._run_test(lambda: self.cur.execute("insert into test(name) values ('a')"))
+        self._run_test(
+            lambda: self.cur.execute("insert into test(name) values('a')")
+        )
 
     def test_cur_close(self):
         self._run_test(lambda: self.cur.close())
@@ -619,6 +629,7 @@ class ThreadTests(unittest.TestCase):
 
     def test_cur_iter_next(self):
         self._run_test(lambda: self.cur.fetchone())
+
 
 class ConstructorTests(unittest.TestCase):
     def test_date(self):
