@@ -616,6 +616,12 @@ class ThreadTests(unittest.TestCase):
     def test_con_close(self):
         self._run_test(lambda: self.con.close())
 
+    def test_con_trace(self):
+        self._run_test(lambda: self.con.set_trace_callback(None))
+
+    def test_con_create_collation(self):
+        self._run_test(lambda: self.con.create_collation("foo", None))
+
     def test_cur_implicit_begin(self):
         self._run_test(
             lambda: self.cur.execute("insert into test(name) values('a')")
