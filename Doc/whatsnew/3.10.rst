@@ -836,6 +836,13 @@ Other Language Changes
   effectless under ``from __future__ import annotations``.
   (Contributed by Batuhan Taskaya in :issue:`42725`.)
 
+* Hashes of NaN values of both :class:`float` type and
+  :class:`decimal.Decimal` type now depend on object identity. Formerly, they
+  always hashed to ``0`` even though NaN values are not equal to one another.
+  This caused potentially quadratic runtime behavior due to excessive hash
+  collisions when creating dictionaries and sets containing multiple NaNs.
+  (Contributed by Raymond Hettinger in :issue:`43475`.)
+
 New Modules
 ===========
 
