@@ -325,6 +325,8 @@ int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 
 #define SPECIALIZATION_STATS 0
+#define SPECIALIZATION_STATS_DETAILED 0
+
 #if SPECIALIZATION_STATS
 
 typedef struct _stats {
@@ -334,6 +336,9 @@ typedef struct _stats {
     uint64_t deferred;
     uint64_t miss;
     uint64_t deopt;
+#if SPECIALIZATION_STATS_DETAILED
+    PyObject *miss_types;
+#endif
 } SpecializationStats;
 
 extern SpecializationStats _specialization_stats[256];
