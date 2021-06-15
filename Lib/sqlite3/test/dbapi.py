@@ -572,15 +572,7 @@ class ThreadTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:")
         self.cur = self.con.cursor()
-        self.cur.execute("""
-            create table test(
-                id integer primary key,
-                name text,
-                bin binary,
-                ratio number,
-                ts timestamp
-            )
-        """)
+        self.cur.execute("create table test(name text)")
 
     def tearDown(self):
         self.cur.close()
