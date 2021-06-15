@@ -8899,10 +8899,9 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
 
     // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    for (int i = co->co_nlocals; i < co->co_nlocalsplus; i++) {
-        if ((co->co_localspluskinds[i] & CO_FAST_FREE) == 0) {
-            continue;
-        }
+    int i = co->co_nlocals + co->co_nplaincellvars;
+    for (; i < co->co_nlocalsplus; i++) {
+        assert((co->co_localspluskinds[i] & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
