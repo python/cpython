@@ -604,37 +604,29 @@ class ThreadTests(unittest.TestCase):
         if err:
             self.fail("\n".join(err))
 
-    def test_con_cursor(self):
-        self._run_test(lambda: self.con.cursor())
+    def test_check_connection_thread(self):
+        fns = [
+            lambda: self.con.cursor(),
+            lambda: self.con.commit(),
+            lambda: self.con.rollback(),
+            lambda: self.con.close(),
+            lambda: self.con.set_trace_callback(None),
+            lambda: self.con.create_collation("foo", None),
+        ]
+        for fn in fns:
+            with self.subTest(fn=fn):
+                self._run_test(fn)
 
-    def test_con_commit(self):
-        self._run_test(lambda: self.con.commit())
-
-    def test_con_rollback(self):
-        self._run_test(lambda: self.con.rollback())
-
-    def test_con_close(self):
-        self._run_test(lambda: self.con.close())
-
-    def test_con_trace(self):
-        self._run_test(lambda: self.con.set_trace_callback(None))
-
-    def test_con_create_collation(self):
-        self._run_test(lambda: self.con.create_collation("foo", None))
-
-    def test_cur_implicit_begin(self):
-        self._run_test(
-            lambda: self.cur.execute("insert into test(name) values('a')")
-        )
-
-    def test_cur_close(self):
-        self._run_test(lambda: self.cur.close())
-
-    def test_cur_execute(self):
-        self._run_test(lambda: self.cur.execute("select name from test"))
-
-    def test_cur_iter_next(self):
-        self._run_test(lambda: self.cur.fetchone())
+    def test_check_cursor_thread(self):
+        fns = [
+            lambda: self.cur.execute("insert into test(name) values('a')"),
+            lambda: self.cur.close(),
+            lambda: self.cur.execute("select name from test"),
+            lambda: self.cur.fetchone(),
+        ]
+        for fn in fns:
+            with self.subTest(fn=fn):
+                self._run_test(fn)
 
 
 class ConstructorTests(unittest.TestCase):
