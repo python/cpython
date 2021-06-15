@@ -1885,12 +1885,12 @@ This example shows the various techniques::
             # Depends on the station_id, date, and units.
 
         def climate(self, category='average_temperature'):
+            "List of daily average temperatures for a full year"
             return self._climate(weakref.proxy(self), category)
 
         @staticmethod
         @lru_cache(maxsize=10)
         def _climate(self_proxy, category):
-            "List of daily average temperatures for a full year"
             # Depends on a weak reference to the instance
             # and on the category parameter.
 
