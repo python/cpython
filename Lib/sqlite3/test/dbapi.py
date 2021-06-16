@@ -225,6 +225,14 @@ class SerializeTests(unittest.TestCase):
         self.assertRaises(TypeError, cx.deserialize, None)
         self.assertRaises(TypeError, cx.deserialize, 1)
 
+    def test_deserialize_corrupt_database(self):
+        cx = sqlite.connect(":memory:")
+        with self.assertRaises(sqlite.DatabaseError):
+            cx.deserialize(b"\0\1\3")
+            # SQLite does not generate an error until you try to query the
+            # deserialized database, so we query the ever present schema table.
+            cx.execute("select * from sqlite_schema")
+
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
