@@ -203,6 +203,8 @@ class ConnectionTests(unittest.TestCase):
             self.cx.in_transaction = True
 
 
+@unittest.skipIf(hasattr(sqlite.Connection, "serialize") == False,
+                 "Serialize API missing")
 class SerializeTests(unittest.TestCase):
     def test_serialize_deserialize(self):
         with sqlite.connect(":memory:") as cx:
@@ -671,6 +673,8 @@ class ThreadTests(unittest.TestCase):
         if len(errors) > 0:
             self.fail("\n".join(errors))
 
+    @unittest.skipIf(hasattr(sqlite.Connection, "serialize") == False,
+                     "Serialize API missing")
     def test_con_serialize(self):
         def run(con, err):
             try:
