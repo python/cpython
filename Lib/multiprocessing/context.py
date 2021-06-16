@@ -1,6 +1,7 @@
 import os
 import sys
 import threading
+import multiprocessing
 
 from . import process
 from . import reduction
@@ -45,6 +46,10 @@ class BaseContext(object):
             raise NotImplementedError('cannot determine number of cpus')
         else:
             return num
+        
+    def multimap(self, function, iterable, workers=self.cpu_count()):
+        with multiprocessing.Pool(workers) as pool:
+            return list(pool.map(function, iterable))
 
     def Manager(self):
         '''Returns a manager associated with a running server process
