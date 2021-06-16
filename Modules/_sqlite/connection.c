@@ -1857,6 +1857,10 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *schema)
 /*[clinic end generated code: output=96b8470aaebf1b25 input=c67fca5dac036eec]*/
 {
+    if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
+        return NULL;
+    }
+
     if (data->len > 9223372036854775807) {
         PyErr_SetString(PyExc_OverflowError, "'data' is too large");
         return NULL;
