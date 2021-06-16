@@ -181,7 +181,7 @@ Now, how about doing something even more useful::
    parser = argparse.ArgumentParser()
    parser.add_argument("square", help="display a square of a given number")
    args = parser.parse_args()
-   print(args.square**2)
+   print(int(args.square)**2)
 
 Following is a result of running the code:
 
