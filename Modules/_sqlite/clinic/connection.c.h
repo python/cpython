@@ -711,7 +711,7 @@ PyDoc_STRVAR(deserialize__doc__,
     {"deserialize", (PyCFunction)(void(*)(void))deserialize, METH_FASTCALL|METH_KEYWORDS, deserialize__doc__},
 
 static PyObject *
-deserialize_impl(pysqlite_Connection *self, PyObject *data,
+deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *schema);
 
 static PyObject *
@@ -722,14 +722,30 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
     static _PyArg_Parser _parser = {NULL, _keywords, "deserialize", 0};
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *data;
+    Py_buffer data = {NULL, NULL};
     const char *schema = "main";
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    data = args[0];
+    if (PyUnicode_Check(args[0])) {
+        Py_ssize_t len;
+        const char *ptr = PyUnicode_AsUTF8AndSize(args[0], &len);
+        if (ptr == NULL) {
+            goto exit;
+        }
+        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+    }
+    else { /* any bytes-like object */
+        if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&data, 'C')) {
+            _PyArg_BadArgument("deserialize", "argument 1", "contiguous buffer", args[0]);
+            goto exit;
+        }
+    }
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -747,9 +763,14 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = deserialize_impl(self, data, schema);
+    return_value = deserialize_impl(self, &data, schema);
 
 exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+
     return return_value;
 }
 
@@ -825,4 +846,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=19c5e77935335c4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b84e5a71dd4a0e61 input=a9049054013a1b77]*/

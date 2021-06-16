@@ -1845,7 +1845,7 @@ reset_all_statements(sqlite3 *db)
 _sqlite3.Connection.deserialize as deserialize
 
 
-    data: object
+    data: Py_buffer(accept={buffer, str})
     /
     *
     schema: str = "main"
@@ -1853,24 +1853,12 @@ _sqlite3.Connection.deserialize as deserialize
 [clinic start generated code]*/
 
 static PyObject *
-deserialize_impl(pysqlite_Connection *self, PyObject *data,
+deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *schema)
-/*[clinic end generated code: output=264709775101cd18 input=fc2cc53bd3736b89]*/
+/*[clinic end generated code: output=96b8470aaebf1b25 input=c67fca5dac036eec]*/
 {
-    if (PyObject_CheckBuffer(data) < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "could not convert 'data' to buffer");
-        return NULL;
-    }
-
-    Py_buffer view;
-    if (PyObject_GetBuffer(data, &view, PyBUF_SIMPLE) < 0) {
-        return NULL;
-    }
-
-    if (view.len > 9223372036854775807) {
+    if (data->len > 9223372036854775807) {
         PyErr_SetString(PyExc_OverflowError, "'data' is too large");
-        PyBuffer_Release(&view);
         return NULL;
     }
 
@@ -1878,15 +1866,13 @@ deserialize_impl(pysqlite_Connection *self, PyObject *data,
         reset_all_statements(self->db);
     }
 
-    Py_ssize_t size = view.len;
-    unsigned char *buf = view.buf;
+    Py_ssize_t size = data->len;
     const unsigned int flags = 0;
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_deserialize(self->db, schema, buf, size, size, flags);
+    rc = sqlite3_deserialize(self->db, schema, data->buf, size, size, flags);
     Py_END_ALLOW_THREADS
 
-    PyBuffer_Release(&view);
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db);
         return NULL;
