@@ -1862,11 +1862,12 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         return NULL;
     }
 
-    Py_ssize_t size = data->len;
+    sqlite3_int64 size = (sqlite3_int64)data->len;
+    unsigned char *buf = (unsigned char *)data->buf;
     const unsigned int flags = 0;
     int rc;
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_deserialize(self->db, schema, data->buf, size, size, flags);
+    rc = sqlite3_deserialize(self->db, schema, buf, size, size, flags);
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
