@@ -47,11 +47,11 @@ class BaseContext(object):
         else:
             return num
         
-    def multimap(self, function, iterable, workers=None):
-        if workers is None:
-            workers = self.cpu_count()
-        with pool.Pool(workers) as p:
-            return list(p.map(function, iterable))
+    def multimap(self, function, iterable, processes=None):
+        if processes is None:
+            processes = self.cpu_count()
+        with pool.Pool(processes) as p:
+            return p.imap(function, iterable)
 
     def Manager(self):
         '''Returns a manager associated with a running server process
