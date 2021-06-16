@@ -956,6 +956,16 @@ Miscellaneous
    .. seealso::
       :func:`os.cpu_count`
 
+.. function:: multimap(function, iterable, workers=None)
+
+   Return an iterator that applies function to every item of iterable, yielding the results.
+   
+   The operation is applied in a multiprocessing pool with the specified number of workers.
+   
+   If *workers* is ``None`` then it will default to the number of CPUs
+   detected on the system.  :exc:`NotImplementedError` is raised if *workers*
+   is not explicitly specified and the CPU count failed to be detected.
+   
 .. function:: current_process()
 
    Return the :class:`Process` object corresponding to the current process.
