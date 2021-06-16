@@ -3614,7 +3614,7 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
                 ValueError,
-                "invalid Flag 'Bizarre': aliases b and d are missing combined values of 0x3 .use `enum.show_flag_values.value.` for details.",
+                "invalid Flag 'Bizarre': aliases b and d are missing combined values of 0x3 .use enum.show_flag_values.value. for details.",
             ):
             @verify(NAMED_FLAGS)
             class Bizarre(Flag):
@@ -3633,7 +3633,7 @@ class TestVerify(unittest.TestCase):
         self.assertEqual(Bizarre.d.value, 6)
         with self.assertRaisesRegex(
                 ValueError,
-                "invalid Flag 'Bizarre': alias d is missing value 0x2 .use `enum.show_flag_values.value.` for details.",
+                "invalid Flag 'Bizarre': alias d is missing value 0x2 .use enum.show_flag_values.value. for details.",
             ):
             @verify(NAMED_FLAGS)
             class Bizarre(IntFlag):
