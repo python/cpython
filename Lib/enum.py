@@ -1637,7 +1637,7 @@ class verify:
                     else:
                         value = 'combined values of 0x%x' % missing_value
                     raise ValueError(
-                            'invalid Flag %r: %s %s [use `enum.show_flag_values(value)` for details]'
+                            'invalid Flag %r: %s %s [use enum.show_flag_values(value) for details]'
                             % (cls_name, alias, value)
                             )
         return enumeration
