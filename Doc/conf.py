@@ -22,6 +22,10 @@ try:
     import _tkinter
 except ImportError:
     _tkinter = None
+from os import name as system_name
+is_posix = system_name == 'posix'
+is_windows = system_name == 'nt'
+del system_name
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'

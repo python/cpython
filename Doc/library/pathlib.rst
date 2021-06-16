@@ -273,7 +273,7 @@ Methods and properties
 
 .. testsetup::
 
-   from pathlib import PurePath, PurePosixPath, PureWindowsPath
+   from pathlib import PurePath, PurePosixPath, PureWindowsPath, Path
 
 Pure paths provide the following methods and properties:
 
@@ -1228,6 +1228,56 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.10
       The *newline* parameter was added.
+
+Subclassing and Extensibility
+-----------------------------
+
+Both :class:`PurePath` and :class:`Path` are directly subclassable and extensible as you
+see fit:
+
+   >>> class MyPath(Path):
+   ...    def my_method(self, *args, **kwargs):
+   ...        ... # Platform agnostic implementation
+
+.. note::
+   Unlike :class:`PurePath` or :class:`Path`, instantiating the derived
+   class will not generate a differently named class:
+
+   .. doctest::
+      :pyversion: > 3.11
+      :skipif: is_windows
+
+      >>> Path('.')  # On POSIX
+      PosixPath('.')
+      >>> MyPath('.')
+      MyPath('.')
+
+   Despite this, the subclass will otherwise match the class that would be
+   returned by the factory on your particular system type. For instance,
+   when instantiated on a POSIX system:
+
+   .. doctest::
+      :pyversion: > 3.11
+      :skipif: is_windows
+
+      >>> [Path('/dir').is_absolute, MyPath('/dir').is_absolute()]
+      [True, True]
+      >>> [Path().home().drive, MyPath().home().drive]
+      ['', '']
+
+   However on Windows, the *same code* will instead return values which
+   apply to that system:
+
+   .. doctest::
+      :pyversion: > 3.11
+      :skipif: is_posix
+
+      >>> [Path('/dir').is_absolute(), MyPath('/dir').is_absolute()]
+      [False, False]
+      >>> [Path().home().drive, MyPath().home().drive]
+      ['C:', 'C:']
+
+.. versionadded:: 3.11
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------

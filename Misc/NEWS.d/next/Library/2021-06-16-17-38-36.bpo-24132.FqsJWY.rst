@@ -1,0 +1,2 @@
+Add a mechanism and support for direct subclassing of :class:`PurePath`
+and :class:`Path` in pathlib.
