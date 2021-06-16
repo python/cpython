@@ -3106,7 +3106,7 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(format(Perm.R | Perm.X, ''), '5')
         #
         class NewPerm(IntFlag):
-            R = 1 << 2  
+            R = 1 << 2
             W = 1 << 1
             X = 1 << 0
             def __str__(self):
