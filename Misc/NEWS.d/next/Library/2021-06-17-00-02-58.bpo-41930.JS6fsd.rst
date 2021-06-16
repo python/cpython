@@ -1,0 +1,3 @@
+Add :meth:`~sqlite3.Connection.serialize` and
+:meth:`~sqlite3.Connection.deserialize` support to :mod:`sqlite3`. Patch by
+Erlend E. Aasland.
