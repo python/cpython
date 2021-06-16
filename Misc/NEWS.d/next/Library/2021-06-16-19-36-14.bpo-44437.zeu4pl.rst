@@ -1,0 +1,24 @@
+`multimap(function, iterable, workers)` can be used identically to `map(function, iterable)`, but an additional argument, workers, may be specified as well, whose value defaults to the CPU count of the device. This function maps `function` onto `iterable` in a multiprocessing pool with the specified number of workers.
+
+It is implemented as follows:
+```python
+def multimap(function, iterable, workers=multiprocessing.cpu_count()):
+    with multiprocessing.Pool(workers) as pool:
+        return list(pool.map(function, iterable))
+```
+
+It is implemented in `BaseContext`, and thus it can be imported like so:
+```python
+from multiprocessing import multimap
+```
+
+It can then be used like this, for example:
+```python
+def function(data):
+    output = ___ # PERFORM SOME OPERATION ON DATA
+    return output
+
+output = multimap(function, range(100))
+# or if specifying the number of workers explicitly
+output = multimap(function, range(100), workers = 4)
+```
