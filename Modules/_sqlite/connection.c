@@ -1822,21 +1822,8 @@ serialize_impl(pysqlite_Connection *self, const char *schema)
     return PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
 }
 
-static void
-reset_all_statements(sqlite3 *db)
-{
-    assert(db != NULL);
-    sqlite3_stmt *stmt = NULL;
-    while ((stmt = sqlite3_next_stmt(db, stmt))) {
-        if (sqlite3_stmt_busy(stmt)) {
-            (void)sqlite3_reset(stmt);
-        }
-    }
-}
-
 /*[clinic input]
 _sqlite3.Connection.deserialize as deserialize
-
 
     data: Py_buffer(accept={buffer, str})
     /
@@ -1848,7 +1835,7 @@ _sqlite3.Connection.deserialize as deserialize
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *schema)
-/*[clinic end generated code: output=96b8470aaebf1b25 input=c67fca5dac036eec]*/
+/*[clinic end generated code: output=96b8470aaebf1b25 input=ed3de6f0e6fe4aa2]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -1858,6 +1845,8 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         PyErr_SetString(PyExc_OverflowError, "'data' is too large");
         return NULL;
     }
+
+    pysqlite_do_all_statements(self, ACTION_RESET, 1);
 
     sqlite3_int64 size = (sqlite3_int64)data->len;
     unsigned char *buf = (unsigned char *)data->buf;
@@ -1870,10 +1859,6 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db);
         return NULL;
-    }
-
-    if (self->db) {
-        reset_all_statements(self->db);
     }
 
     Py_RETURN_TRUE;

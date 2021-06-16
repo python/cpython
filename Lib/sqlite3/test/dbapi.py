@@ -233,6 +233,16 @@ class SerializeTests(unittest.TestCase):
             # deserialized database, so we query the ever present schema table.
             self.cx.execute("select * from sqlite_schema")
 
+    def test_fetch_across_deserialize(self):
+        with self.cx:
+            self.cx.execute("create table t(t)")
+        data = self.cx.serialize()
+        cu = self.cx.execute("select * from sqlite_schema")
+        self.cx.deserialize(data)
+        schema = [('table', 't', 't', 2, 'CREATE TABLE t(t)')]
+        with self.assertRaises(sqlite.InterfaceError):
+            cu.fetchall()
+
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
