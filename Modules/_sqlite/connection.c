@@ -1819,14 +1819,7 @@ serialize_impl(pysqlite_Connection *self, const char *schema)
     const unsigned int flags = 0;
     const char *data = (const char *)sqlite3_serialize(self->db, schema, &size,
                                                        flags);
-
-    PyObject *ret = PyTuple_New(2);
-    if (ret == NULL) {
-        return NULL;
-    }
-    PyTuple_SET_ITEM(ret, 0, PyBytes_FromStringAndSize(data, (Py_ssize_t)size));
-    PyTuple_SET_ITEM(ret, 1, PyLong_FromUnsignedLong(size));
-    return ret;
+    return PyBytes_FromStringAndSize(data, (Py_ssize_t)size);
 }
 
 static void

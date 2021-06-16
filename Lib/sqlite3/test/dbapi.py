@@ -212,8 +212,8 @@ class SerializeTests(unittest.TestCase):
     def test_serialize_deserialize(self):
         with self.cx:
             self.cx.execute("create table t(t)")
-            data, size = self.cx.serialize()
-        self.assertEqual(len(data), size)
+            data = self.cx.serialize()
+        self.assertEqual(len(data), 8192)
 
         # Remove test table, then load the saved database
         with self.cx:
