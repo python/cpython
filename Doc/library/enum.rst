@@ -576,7 +576,7 @@ Data Types
          ...     NEON = 31
          Traceback (most recent call last):
          ...
-         ValueError: invalid Flag 'Color': aliases WHITE and NEON are missing combined values of 0x18 [use `enum.show_flag_values(value)` for details]
+         ValueError: invalid Flag 'Color': aliases WHITE and NEON are missing combined values of 0x18 [use enum.show_flag_values(value) for details]
 
 .. note::
 
