@@ -370,18 +370,6 @@ typedef enum {
     GETATTRIBUTE_OVERRIDDEN /* __getattribute__ has been overridden */
 } DesciptorClassification;
 
-typedef enum {
-    SUCCESS = 0,
-    FAIL = -1
-} ReturnCode;
-
-typedef struct {
-    DesciptorClassification descriptor;
-    uint8_t index; /* The index of the key in the cached dict, or slot offset (if index < 256)  */
-    uint8_t in_dict;
-    PyObject *attribute;
-} AttributeAnalysisResult;
-
 static DesciptorClassification
 analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
 {
