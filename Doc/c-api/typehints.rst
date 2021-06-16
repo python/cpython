@@ -7,7 +7,7 @@ Objects for Type Hinting
 
 Various built-in types for type hinting are provided.  Currently,
 two types exist -- :ref:`GenericAlias <types-genericalias>` and
-:ref:`Union <types-union>`.  Only ``GenericAlias`` objects are exposed in C.
+:ref:`Union <types-union>`.  Only ``GenericAlias`` is exposed to C.
 
 .. c:function:: PyObject* Py_GenericAlias(PyObject *origin, PyObject *args)
 
