@@ -206,32 +206,32 @@ class ConnectionTests(unittest.TestCase):
 @unittest.skipIf(hasattr(sqlite.Connection, "serialize") == False,
                  "Serialize API missing")
 class SerializeTests(unittest.TestCase):
-    def test_serialize_deserialize(self):
-        with sqlite.connect(":memory:") as cx:
-            cx.execute("create table t(t)")
-            data, size = cx.serialize()
-        cx.close()
+    def setUp(self):
+        self.cx = sqlite.connect(":memory:")
 
+    def test_serialize_deserialize(self):
+        with self.cx:
+            self.cx.execute("create table t(t)")
+            data, size = self.cx.serialize()
         self.assertEqual(len(data), size)
 
-        cx = sqlite.connect(":memory:")
-        cx.deserialize(data)
-        cx.execute("select t from t")
-        cx.close()
+        # Remove test table, then load the saved database
+        with self.cx:
+            self.cx.execute("drop table t")
+        self.cx.deserialize(data)
+        self.cx.execute("select t from t")
 
     def test_deserialize_wrong_args(self):
-        cx = sqlite.connect(":memory:")
-        self.assertRaises(TypeError, cx.deserialize, [])
-        self.assertRaises(TypeError, cx.deserialize, None)
-        self.assertRaises(TypeError, cx.deserialize, 1)
+        self.assertRaises(TypeError, self.cx.deserialize, [])
+        self.assertRaises(TypeError, self.cx.deserialize, None)
+        self.assertRaises(TypeError, self.cx.deserialize, 1)
 
     def test_deserialize_corrupt_database(self):
-        cx = sqlite.connect(":memory:")
         with self.assertRaises(sqlite.DatabaseError):
-            cx.deserialize(b"\0\1\3")
+            self.cx.deserialize(b"\0\1\3")
             # SQLite does not generate an error until you try to query the
             # deserialized database, so we query the ever present schema table.
-            cx.execute("select * from sqlite_schema")
+            self.cx.execute("select * from sqlite_schema")
 
 
 class OpenTests(unittest.TestCase):
