@@ -775,8 +775,11 @@ _counter = _count(1).__next__
 def _newname(name_template):
     return name_template % _counter()
 
-# Active thread administration
-_active_limbo_lock = _allocate_lock()
+# Active thread administration.
+#
+# bpo-44422: Use a reentrant lock to allow reentrant calls to functions like
+# threading.enumerate().
+_active_limbo_lock = RLock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
 _dangling = WeakSet()
@@ -1007,13 +1010,7 @@ class Thread:
             except:
                 self._invoke_excepthook(self)
         finally:
-            with _active_limbo_lock:
-                try:
-                    # We don't call self._delete() because it also
-                    # grabs _active_limbo_lock.
-                    del _active[get_ident()]
-                except:
-                    pass
+            self._delete()
 
     def _stop(self):
         # After calling ._stop(), .is_alive() returns False and .join() returns
@@ -1564,7 +1561,7 @@ def _after_fork():
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
     global _active_limbo_lock, _main_thread
     global _shutdown_locks_lock, _shutdown_locks
-    _active_limbo_lock = _allocate_lock()
+    _active_limbo_lock = RLock()
 
     # fork() only copied the current thread; clear references to others.
     new_active = {}
