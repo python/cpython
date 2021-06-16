@@ -217,6 +217,12 @@ class SerializeTests(unittest.TestCase):
         cx.execute("select t from t")
         cx.close()
 
+    def test_deserialize_wrong_args(self):
+        cx = sqlite.connect(":memory:")
+        self.assertRaises(TypeError, cx.deserialize, [])
+        self.assertRaises(TypeError, cx.deserialize, None)
+        self.assertRaises(TypeError, cx.deserialize, 1)
+
 
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
