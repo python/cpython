@@ -336,6 +336,7 @@ typedef struct _stats {
     uint64_t deferred;
     uint64_t miss;
     uint64_t deopt;
+    uint64_t unquickened;
 #if SPECIALIZATION_STATS_DETAILED
     PyObject *miss_types;
 #endif

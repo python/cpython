@@ -47,6 +47,7 @@ print_stats(SpecializationStats *stats, const char *name)
     PRINT_STAT(name, deferred);
     PRINT_STAT(name, miss);
     PRINT_STAT(name, deopt);
+    PRINT_STAT(name, unquickened);
 #if SPECIALIZATION_STATS_DETAILED
     if (stats->miss_types == NULL) {
         return;
