@@ -727,3 +727,53 @@ NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+
+if __name__ == '__main__':
+    """
+    Enables uuid to be called from the command line
+    
+    Example usage:
+
+    python -m uuid
+    > 16fd2706-8baf-433b-82eb-8c7fada847da
+
+    python -m uuid uuid5 NAMESPACE_DNS python.org
+    > 886313e1-3b8a-5372-9b90-0c9aee199e5d
+
+    python -m uuid uuid5 {custom_uuid} mydomain.com
+    > e332bfe2-fed1-4e9c-ad45-db54e087b39e
+    """
+
+    allowed_cmds = ['uuid1', 'uuid3', 'uuid4', 'uuid5']
+    if len(sys.argv) == 1:
+        # By default, print a random uuid.
+        print(uuid4())
+    else:
+        cmd = sys.argv[1]
+        if cmd not in allowed_cmds:
+            raise Exception(f"Command not found: {cmd}. Allowed values are {allowed_cmds}")
+        if cmd == 'uuid1':
+            print(uuid1())
+        if cmd in ['uuid3', 'uuid5']:
+            if len(sys.argv) != 4:
+                raise Exception(f"Incorrect number of arguments. Example usage: \n python -m uuid {cmd} NAMESPACE NAME")
+            else:
+                namespace = sys.argv[2]
+                name      = sys.argv[3]
+                if namespace == "NAMESPACE_DNS":
+                    namespace = NAMESPACE_DNS
+                elif namespace == "NAMESPACE_URL":
+                    namespace = NAMESPACE_URL
+                elif namespace == "NAMESPACE_OID":
+                    namespace = NAMESPACE_OID
+                elif namespace == "NAMESPACE_X500":
+                    namespace = NAMESPACE_X500
+                else:
+                    namespace = UUID(namespace)
+            if cmd == "uuid3":
+                print(uuid3(namespace, name))
+            else:
+                print(uuid5(namespace, name))
+        if cmd == 'uuid4':
+            print(uuid4())
