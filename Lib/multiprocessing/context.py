@@ -4,7 +4,6 @@ import threading
 
 from . import process
 from . import reduction
-from . import pool
 
 __all__ = ()
 
@@ -48,9 +47,10 @@ class BaseContext(object):
             return num
         
     def multimap(self, function, iterable, processes=None):
+        from .pool import Pool
         if processes is None:
             processes = self.cpu_count()
-        with pool.Pool(processes) as p:
+        with Pool(processes) as p:
             return p.imap(function, iterable)
 
     def Manager(self):
