@@ -1862,10 +1862,6 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
         return NULL;
     }
 
-    if (self->db) {
-        reset_all_statements(self->db);
-    }
-
     Py_ssize_t size = data->len;
     const unsigned int flags = 0;
     int rc;
@@ -1876,6 +1872,10 @@ deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db);
         return NULL;
+    }
+
+    if (self->db) {
+        reset_all_statements(self->db);
     }
 
     Py_RETURN_TRUE;
