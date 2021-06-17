@@ -267,7 +267,7 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
 # Make sure soft keywords constructs don't raise specialized
-# errors regarding missing commas
+# errors regarding missing commas or other spezialiced errors
 
 >>> match x:
 ...     y = 3
@@ -277,6 +277,24 @@ SyntaxError: invalid syntax
 >>> match x:
 ...     case y:
 ...        3 $ 3
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match x:
+...     case $:
+...        ...
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match ...:
+...     case {**rest, "key": value}:
+...        ...
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> match ...:
+...     case {**_}:
+...        ...
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
@@ -882,6 +900,14 @@ leading to spurious errors.
    Traceback (most recent call last):
    SyntaxError: cannot assign to attribute here. Maybe you meant '==' instead of '='?
 
+Custom error messages for try blocks that are not followed by except/finally
+
+   >>> try:
+   ...    x = 34
+   ...
+   Traceback (most recent call last):
+   SyntaxError: expected 'except' or 'finally' block
+
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
    Traceback (most recent call last):
@@ -1200,6 +1226,20 @@ Corner-cases that used to crash:
     >>> import ä £
     Traceback (most recent call last):
     SyntaxError: invalid character '£' (U+00A3)
+
+  Invalid pattern matching constructs:
+
+    >>> match ...:
+    ...   case 42 as _:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use '_' as a target
+
+    >>> match ...:
+    ...   case 42 as 1+2+4:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: invalid pattern target
 """
 
 import re

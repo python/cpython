@@ -134,20 +134,16 @@ static inline Py_ssize_t _Py_REFCNT(const PyObject *ob) {
 
 
 // bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* _Py_TYPE(const PyObject *ob) {
-    return ob->ob_type;
-}
-#define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST_CONST(ob))
+#define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t _Py_SIZE(const PyVarObject *ob) {
-    return ob->ob_size;
-}
-#define Py_SIZE(ob) _Py_SIZE(_PyVarObject_CAST_CONST(ob))
+#define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
 
 static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
-    return Py_TYPE(ob) == type;
+    // bpo-44378: Don't use Py_TYPE() since Py_TYPE() requires a non-const
+    // object.
+    return ob->ob_type == type;
 }
 #define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST_CONST(ob), type)
 
