@@ -86,7 +86,7 @@ _context_message = (
 
 class _Sentinel:
     def __repr__(self):
-        return "<optional>"
+        return "<implicit>"
 
 _sentinel = _Sentinel()
 

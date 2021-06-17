@@ -259,17 +259,17 @@ class TracebackCases(unittest.TestCase):
     def test_signatures(self):
         self.assertEqual(
             str(inspect.signature(traceback.print_exception)),
-            ('(exc, /, value=<optional>, tb=<optional>, '
+            ('(exc, /, value=<implicit>, tb=<implicit>, '
              'limit=None, file=None, chain=True)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception)),
-            ('(exc, /, value=<optional>, tb=<optional>, limit=None, '
+            ('(exc, /, value=<implicit>, tb=<implicit>, limit=None, '
              'chain=True)'))
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<optional>)')
+            '(exc, /, value=<implicit>)')
 
 
 class TracebackFormatTests(unittest.TestCase):
