@@ -174,3 +174,7 @@ def reload(module):
             del _RELOADING[name]
         except KeyError:
             pass
+
+
+del sys
+del warnings
