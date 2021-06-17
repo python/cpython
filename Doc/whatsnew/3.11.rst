@@ -86,6 +86,31 @@ New Modules
 Improved Modules
 ================
 
+fractions
+---------
+
+Support :PEP:`515`-style initialization of :class:`~fractions.Fraction` from
+string.  (Contributed by Sergey B Kirpichev in :issue:`44258`.)
+
+
+math
+----
+
+* Add :func:`math.cbrt`: return the cube root of x.
+  (Contributed by Ajith Ramachandran in :issue:`44357`.)
+
+* The behaviour of two :func:`math.pow` corner cases was changed, for
+  consistency with the IEEE 754 specification. The operations
+  ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
+  ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
+  Dickinson in :issue:`44339`.)
+
+
+Removed
+=======
+* :class:`smtpd.MailmanProxy` is now removed as it is unusable without
+  an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+
 
 Optimizations
 =============
@@ -148,34 +173,6 @@ Porting to Python 3.11
   with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
   (:c:member:`PyTypeObject.tp_traverse`).
   (Contributed by Victor Stinner in :issue:`44263`.)
-
-* Since :c:func:`Py_TYPE()` is changed to a inline static function,
-  ``Py_TYPE(obj) = new_type`` must be replaced with
-  ``Py_SET_TYPE(obj, new_type)``: see the :c:func:`Py_SET_TYPE()` function
-  (available since Python 3.9). For backward compatibility, this macro can be
-  used::
-
-      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_TYPE)
-      static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
-      { ob->ob_type = type; }
-      #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
-      #endif
-
-  (Contributed by Victor Stinner in :issue:`39573`.)
-
-* Since :c:func:`Py_SIZE()` is changed to a inline static function,
-  ``Py_SIZE(obj) = new_size`` must be replaced with
-  ``Py_SET_SIZE(obj, new_size)``: see the :c:func:`Py_SET_SIZE()` function
-  (available since Python 3.9). For backward compatibility, this macro can be
-  used::
-
-      #if PY_VERSION_HEX < 0x030900A4 && !defined(Py_SET_SIZE)
-      static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size)
-      { ob->ob_size = size; }
-      #define Py_SET_SIZE(ob, size) _Py_SET_SIZE((PyVarObject*)(ob), size)
-      #endif
-
-  (Contributed by Victor Stinner in :issue:`39573`.)
 
 Deprecated
 ----------

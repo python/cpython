@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_compile.h"       // _Py_Mangle()
 #include "pycore_initconfig.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -10,6 +11,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _Py_Union(), _Py_union_type_or
 #include "frameobject.h"
+#include "opcode.h"               // MAKE_CELL
 #include "structmember.h"         // PyMemberDef
 
 #include <ctype.h>
@@ -2426,41 +2428,26 @@ valid_identifier(PyObject *s)
     return 1;
 }
 
-/* Forward */
-static int
-object_init(PyObject *self, PyObject *args, PyObject *kwds);
-
 static int
 type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 {
-    int res;
-
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
 
-    if (kwds != NULL && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
-        PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) != 0) {
+    if (kwds != NULL && PyTuple_GET_SIZE(args) == 1 &&
+        PyDict_GET_SIZE(kwds) != 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type.__init__() takes no keyword arguments");
         return -1;
     }
 
-    if (args != NULL && PyTuple_Check(args) &&
-        (PyTuple_GET_SIZE(args) != 1 && PyTuple_GET_SIZE(args) != 3)) {
+    if ((PyTuple_GET_SIZE(args) != 1 && PyTuple_GET_SIZE(args) != 3)) {
         PyErr_SetString(PyExc_TypeError,
                         "type.__init__() takes 1 or 3 arguments");
         return -1;
     }
 
-    /* Call object.__init__(self) now. */
-    /* XXX Could call super(type, cls).__init__() but what's the point? */
-    args = PyTuple_GetSlice(args, 0, 0);
-    if (args == NULL) {
-        return -1;
-    }
-    res = object_init(cls, args, NULL);
-    Py_DECREF(args);
-    return res;
+    return 0;
 }
 
 unsigned long
@@ -8875,32 +8862,32 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
         return -1;
     }
 
-    PyObject *obj = f->f_localsptr[0];
-    Py_ssize_t i;
-    if (obj == NULL && co->co_cell2arg) {
-        /* The first argument might be a cell. */
-        for (i = 0; i < co->co_ncellvars; i++) {
-            if (co->co_cell2arg[i] == 0) {
-                PyObject *cell = f->f_localsptr[co->co_nlocals + i];
-                assert(PyCell_Check(cell));
-                obj = PyCell_GET(cell);
-                break;
-            }
+    PyObject *firstarg = f->f_localsptr[0];
+    // The first argument might be a cell.
+    if (firstarg != NULL && (co->co_localspluskinds[0] & CO_FAST_CELL)) {
+        // "firstarg" is a cell here unless (very unlikely) super()
+        // was called from the C-API before the first MAKE_CELL op.
+        if (f->f_lasti >= 0) {
+            assert(_Py_OPCODE(*co->co_firstinstr) == MAKE_CELL);
+            assert(PyCell_Check(firstarg));
+            firstarg = PyCell_GET(firstarg);
         }
     }
-    if (obj == NULL) {
+    if (firstarg == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "super(): arg[0] deleted");
         return -1;
     }
 
+    // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    for (i = 0; i < co->co_nfreevars; i++) {
-        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+    int i = co->co_nlocals + co->co_nplaincellvars;
+    for (; i < co->co_nlocalsplus; i++) {
+        assert((co->co_localspluskinds[i] & CO_FAST_FREE) != 0);
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         assert(PyUnicode_Check(name));
         if (_PyUnicode_EqualToASCIIId(name, &PyId___class__)) {
-            Py_ssize_t index = co->co_nlocals + co->co_ncellvars + i;
-            PyObject *cell = f->f_localsptr[index];
+            PyObject *cell = f->f_localsptr[i];
             if (cell == NULL || !PyCell_Check(cell)) {
                 PyErr_SetString(PyExc_RuntimeError,
                   "super(): bad __class__ cell");
@@ -8928,7 +8915,7 @@ super_init_without_args(PyFrameObject *f, PyCodeObject *co,
     }
 
     *type_p = type;
-    *obj_p = obj;
+    *obj_p = firstarg;
     return 0;
 }
 
