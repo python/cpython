@@ -428,6 +428,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.assertEqual(response.getheader("Content-Length"), "0")
         response = self.request(self.base_url + '/?hi=2')
         self.check_status_and_reason(response, HTTPStatus.OK)
         response = self.request(self.base_url + '?hi=1')

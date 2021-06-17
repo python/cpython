@@ -702,7 +702,8 @@ class AST_Tests(unittest.TestCase):
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
             """Precedence table that originated from python grammar."""
-            TUPLE = enum.auto()
+            NAMED_EXPR = enum.auto()      # <target> := <expr1>
+            TUPLE = enum.auto()           # <expr1>, <expr2>
             YIELD = enum.auto()           # 'yield', 'yield from'
             TEST = enum.auto()            # 'if'-'else', 'lambda'
             OR = enum.auto()              # 'or'
@@ -1096,6 +1097,22 @@ Module(
         ns = {}
         exec(code, ns)
         self.assertIn('sleep', ns)
+
+    def test_recursion_direct(self):
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e.operand = e
+        with self.assertRaises(RecursionError):
+            with support.infinite_recursion():
+                compile(ast.Expression(e), "<test>", "eval")
+
+    def test_recursion_indirect(self):
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e.operand = f
+        f.operand = e
+        with self.assertRaises(RecursionError):
+            with support.infinite_recursion():
+                compile(ast.Expression(e), "<test>", "eval")
 
 
 class ASTValidatorTests(unittest.TestCase):

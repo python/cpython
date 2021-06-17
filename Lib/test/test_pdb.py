@@ -9,6 +9,7 @@ import codecs
 import unittest
 import subprocess
 import textwrap
+import linecache
 
 from contextlib import ExitStack
 from io import StringIO
@@ -389,6 +390,34 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     Deleted breakpoint 3 at ...pdb.py:...
     (Pdb) continue
     """
+
+def test_pdb_pp_repr_exc():
+    """Test that do_p/do_pp do not swallow exceptions.
+
+    >>> class BadRepr:
+    ...     def __repr__(self):
+    ...         raise Exception('repr_exc')
+    >>> obj = BadRepr()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'p obj',
+    ...     'pp obj',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_pp_repr_exc[2]>(2)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p obj
+    *** Exception: repr_exc
+    (Pdb) pp obj
+    *** Exception: repr_exc
+    (Pdb) continue
+    """
+
 
 def do_nothing():
     pass
@@ -1287,10 +1316,39 @@ def test_pdb_issue_20766():
     -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     (Pdb) continue
     pdb 1: <built-in function default_int_handler>
-    > <doctest test.test_pdb.test_pdb_issue_20766[0]>(5)test_function()
-    -> sess.set_trace(sys._getframe())
+    > <doctest test.test_pdb.test_pdb_issue_20766[0]>(6)test_function()
+    -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     (Pdb) continue
     pdb 2: <built-in function default_int_handler>
+    """
+
+def test_pdb_issue_43318():
+    """echo breakpoints cleared with filename:lineno
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(1)
+    ...     print(2)
+    ...     print(3)
+    ...     print(4)
+    >>> reset_Breakpoint()
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 3',
+    ...     'clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_43318[0]>(3)test_function()
+    -> print(1)
+    (Pdb) break 3
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    (Pdb) clear <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_43318[0]>:3
+    (Pdb) continue
+    1
+    2
+    3
+    4
     """
 
 
@@ -1807,10 +1865,47 @@ def bœr():
             self.assertEqual(stdout.split('\n')[6].rstrip('\r'), expected)
 
 
+class ChecklineTests(unittest.TestCase):
+    def setUp(self):
+        linecache.clearcache()  # Pdb.checkline() uses linecache.getline()
+
+    def tearDown(self):
+        os_helper.unlink(os_helper.TESTFN)
+
+    def test_checkline_before_debugging(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
+    def test_checkline_after_reset(self):
+        with open(os_helper.TESTFN, "w") as f:
+            f.write("print(123)")
+        db = pdb.Pdb()
+        db.reset()
+        self.assertEqual(db.checkline(os_helper.TESTFN, 1), 1)
+
+    def test_checkline_is_not_executable(self):
+        with open(os_helper.TESTFN, "w") as f:
+            # Test for comments, docstrings and empty lines
+            s = textwrap.dedent("""
+                # Comment
+                \"\"\" docstring \"\"\"
+                ''' docstring '''
+
+            """)
+            f.write(s)
+        db = pdb.Pdb()
+        num_lines = len(s.splitlines()) + 2  # Test for EOF
+        for lineno in range(num_lines):
+            self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
+
+
 def load_tests(*args):
     from test import test_pdb
     suites = [
         unittest.makeSuite(PdbTestCase),
+        unittest.makeSuite(ChecklineTests),
         doctest.DocTestSuite(test_pdb)
     ]
     return unittest.TestSuite(suites)

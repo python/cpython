@@ -1,2 +1,0 @@
-Use :c:member:`~PyTypeObject.tp_flags` on the class object to determine if the subject is a sequence
-or mapping when pattern matching. Avoids the need to import :mod:`collections.abc` when pattern matching.

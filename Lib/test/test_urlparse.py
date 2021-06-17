@@ -614,32 +614,40 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_urlsplit_remove_unsafe_bytes(self):
         # Remove ASCII tabs and newlines from input
-        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        url = "http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, "http")
         self.assertEqual(p.netloc, "www.python.org")
         self.assertEqual(p.path, "/javascript:alert('msg')/")
-        self.assertEqual(p.query, "")
-        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.query, "query=something")
+        self.assertEqual(p.fragment, "fragment")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, "www.python.org")
         self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/#frag")
+        self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
         # Remove ASCII tabs and newlines from input as bytes.
-        url = b"http://www.python.org/java\nscript:\talert('msg\r\n')/#frag"
+        url = b"http\t://www.python\n.org\t/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         p = urllib.parse.urlsplit(url)
         self.assertEqual(p.scheme, b"http")
         self.assertEqual(p.netloc, b"www.python.org")
         self.assertEqual(p.path, b"/javascript:alert('msg')/")
-        self.assertEqual(p.query, b"")
-        self.assertEqual(p.fragment, b"frag")
+        self.assertEqual(p.query, b"query=something")
+        self.assertEqual(p.fragment, b"fragment")
         self.assertEqual(p.username, None)
         self.assertEqual(p.password, None)
         self.assertEqual(p.hostname, b"www.python.org")
         self.assertEqual(p.port, None)
-        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/#frag")
+        self.assertEqual(p.geturl(), b"http://www.python.org/javascript:alert('msg')/?query=something#fragment")
+
+        # with scheme as cache-key
+        url = "http://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
+        scheme = "ht\ntp"
+        for _ in range(2):
+            p = urllib.parse.urlsplit(url, scheme=scheme)
+            self.assertEqual(p.scheme, "http")
+            self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
@@ -1036,8 +1044,16 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.params, 'phone-context=+1-914-555')
 
     def test_Quoter_repr(self):
-        quoter = urllib.parse.Quoter(urllib.parse._ALWAYS_SAFE)
+        quoter = urllib.parse._Quoter(urllib.parse._ALWAYS_SAFE)
         self.assertIn('Quoter', repr(quoter))
+
+    def test_clear_cache_for_code_coverage(self):
+        urllib.parse.clear_cache()
+
+    def test_urllib_parse_getattr_failure(self):
+        """Test that urllib.parse.__getattr__() fails correctly."""
+        with self.assertRaises(AttributeError):
+            unused = urllib.parse.this_does_not_exist
 
     def test_all(self):
         expected = []
@@ -1045,7 +1061,7 @@ class UrlParseTestCase(unittest.TestCase):
             'splitattr', 'splithost', 'splitnport', 'splitpasswd',
             'splitport', 'splitquery', 'splittag', 'splittype', 'splituser',
             'splitvalue',
-            'Quoter', 'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
+            'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
         }
         for name in dir(urllib.parse):
             if name.startswith('_') or name in undocumented:
@@ -1236,6 +1252,12 @@ class Utility_Tests(unittest.TestCase):
 
 
 class DeprecationTest(unittest.TestCase):
+
+    def test_Quoter_deprecation(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            old_class = urllib.parse.Quoter
+            self.assertIs(old_class, urllib.parse._Quoter)
+        self.assertIn('Quoter will be removed', str(cm.warning))
 
     def test_splittype_deprecation(self):
         with self.assertWarns(DeprecationWarning) as cm:

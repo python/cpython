@@ -1480,6 +1480,25 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         # when Python is initialized multiples times.
         self.run_embedded_interpreter("test_unicode_id_init")
 
+    # See bpo-44133
+    @unittest.skipIf(os.name == 'nt',
+                     'Py_FrozenMain is not exported on Windows')
+    def test_frozenmain(self):
+        env = dict(os.environ)
+        env['PYTHONUNBUFFERED'] = '1'
+        out, err = self.run_embedded_interpreter("test_frozenmain", env=env)
+        executable = os.path.realpath('./argv0')
+        expected = textwrap.dedent(f"""
+            Frozen Hello World
+            sys.argv ['./argv0', '-E', 'arg1', 'arg2']
+            config program_name: ./argv0
+            config executable: {executable}
+            config use_environment: 1
+            config configure_c_stdio: 1
+            config buffered_stdio: 0
+        """).lstrip()
+        self.assertEqual(out, expected)
+
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
@@ -1530,9 +1549,7 @@ class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_disallow_instantiation(self):
         fd = self.get_stdout_fd()
         printer = self.create_printer(fd)
-        PyStdPrinter_Type = type(printer)
-        with self.assertRaises(TypeError):
-            PyStdPrinter_Type(fd)
+        support.check_disallow_instantiation(self, type(printer))
 
 
 if __name__ == "__main__":
