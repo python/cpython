@@ -1,0 +1,3 @@
+Mostly fix completions on macOS when not using tcl/tk 8.6.11 (as with 3.9).
+The added update_idletask call should be harmless and possibly helpful
+otherwise.

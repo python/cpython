@@ -836,6 +836,13 @@ Other Language Changes
   effectless under ``from __future__ import annotations``.
   (Contributed by Batuhan Taskaya in :issue:`42725`.)
 
+* Hashes of NaN values of both :class:`float` type and
+  :class:`decimal.Decimal` type now depend on object identity. Formerly, they
+  always hashed to ``0`` even though NaN values are not equal to one another.
+  This caused potentially quadratic runtime behavior due to excessive hash
+  collisions when creating dictionaries and sets containing multiple NaNs.
+  (Contributed by Raymond Hettinger in :issue:`43475`.)
+
 New Modules
 ===========
 
@@ -1214,18 +1221,11 @@ The ssl module has preliminary support for OpenSSL 3.0.0 and new option
 :issue:`43789`, and :issue:`43811`.)
 
 Deprecated function and use of deprecated constants now result in
-a :exc:`DeprecationWarning`. The following features have been deprecated
-since Python 3.6, Python 3.7, or OpenSSL 1.1.0:
-:data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
-:data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`,
-:data:`~ssl.OP_NO_TLSv1_3`, :data:`~ssl.PROTOCOL_SSLv2`,
-:data:`~ssl.PROTOCOL_SSLv3`, :data:`~ssl.PROTOCOL_SSLv23`,
-:data:`~ssl.PROTOCOL_TLSv1`, :data:`~ssl.PROTOCOL_TLSv1_1`,
-:data:`~ssl.PROTOCOL_TLSv1_2`, :data:`~ssl.PROTOCOL_TLS`,
-:func:`~ssl.wrap_socket`, :func:`~ssl.match_hostname`,
-:func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`,
-:meth:`ssl.SSLSocket.selected_npn_protocol`,
-:meth:`ssl.SSLContext.set_npn_protocols`.
+a :exc:`DeprecationWarning`. :attr:`ssl.SSLContext.options` has
+:data:`~ssl.OP_NO_SSLv2` and :data:`~ssl.OP_NO_SSLv3` set by default and
+therefore cannot warn about setting the flag again. The
+:ref:`deprecation section <whatsnew310-deprecated>` has a list of deprecated
+features.
 (Contributed by Christian Heimes in :issue:`43880`.)
 
 The ssl module now has more secure default settings. Ciphers without forward
@@ -1441,8 +1441,21 @@ Optimizations
   readers or writers, just like its equivalent classes in :mod:`gzip` and
   :mod:`lzma` have always been.  (Contributed by Inada Naoki in :issue:`43785`).
 
+.. _whatsnew310-deprecated:
+
 Deprecated
 ==========
+
+* Currently Python accepts numeric literals immediately followed by keywords,
+  for example ``0in x``, ``1or x``, ``0if 1else 2``.  It allows confusing
+  and ambigious expressions like ``[0x1for x in y]`` (which can be
+  interpreted as ``[0x1 for x in y]`` or ``[0x1f or x in y]``).  Starting in
+  this release, a deprecation warning is raised if the numeric literal is
+  immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
+  :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
+  If future releases it will be changed to syntax warning, and finally to
+  syntax error.
+  (Contributed by Serhiy Storchaka in :issue:`43833`).
 
 * Starting in this release, there will be a concerted effort to begin
   cleaning up old import semantics that were kept for Python 2.7
@@ -1598,6 +1611,30 @@ Deprecated
 * ``cgi.log()`` is deprecated and slated for removal in Python 3.12.
   (Contributed by Inada Naoki in :issue:`41139`.)
 
+* The following :mod:`ssl` features have been deprecated since Python 3.6,
+  Python 3.7, or OpenSSL 1.1.0 and will be removed in 3.11:
+
+  * :data:`~ssl.OP_NO_SSLv2`, :data:`~ssl.OP_NO_SSLv3`, :data:`~ssl.OP_NO_TLSv1`,
+    :data:`~ssl.OP_NO_TLSv1_1`, :data:`~ssl.OP_NO_TLSv1_2`, and
+    :data:`~ssl.OP_NO_TLSv1_3` are replaced by
+    :attr:`sslSSLContext.minimum_version` and
+    :attr:`sslSSLContext.maximum_version`.
+
+  * :data:`~ssl.PROTOCOL_SSLv2`, :data:`~ssl.PROTOCOL_SSLv3`,
+    :data:`~ssl.PROTOCOL_SSLv23`, :data:`~ssl.PROTOCOL_TLSv1`,
+    :data:`~ssl.PROTOCOL_TLSv1_1`, :data:`~ssl.PROTOCOL_TLSv1_2`, and
+    :data:`~ssl.PROTOCOL_TLS` are deprecated in favor of
+    :data:`~ssl.PROTOCOL_TLS_CLIENT` and :data:`~ssl.PROTOCOL_TLS_SERVER`
+
+  * :func:`~ssl.wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
+
+  * :func:`~ssl.match_hostname`
+
+  * :func:`~ssl.RAND_pseudo_bytes`, :func:`~ssl.RAND_egd`
+
+  * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
+    :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
+
 .. _whatsnew310-removed:
 
 Removed
@@ -1668,6 +1705,18 @@ Porting to Python 3.10
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+Changes in the Python syntax
+----------------------------
+
+* Deprecation warning is now emitted when compiling previously valid syntax
+  if the numeric literal is immediately followed by a keyword (like in ``0in x``).
+  If future releases it will be changed to syntax warning, and finally to a
+  syntax error.  To get rid of the warning and make the code compatible with
+  future releases just add a space between the numeric literal and the
+  following keyword.
+  (Contributed by Serhiy Storchaka in :issue:`43833`).
 
 
 Changes in the Python API

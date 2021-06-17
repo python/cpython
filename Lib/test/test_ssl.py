@@ -580,6 +580,54 @@ class BasicSocketTests(unittest.TestCase):
             with test_wrap_socket(s) as ss:
                 self.assertEqual(timeout, ss.gettimeout())
 
+    def test_openssl111_deprecations(self):
+        options = [
+            ssl.OP_NO_TLSv1,
+            ssl.OP_NO_TLSv1_1,
+            ssl.OP_NO_TLSv1_2,
+            ssl.OP_NO_TLSv1_3
+        ]
+        protocols = [
+            ssl.PROTOCOL_TLSv1,
+            ssl.PROTOCOL_TLSv1_1,
+            ssl.PROTOCOL_TLSv1_2,
+            ssl.PROTOCOL_TLS
+        ]
+        versions = [
+            ssl.TLSVersion.SSLv3,
+            ssl.TLSVersion.TLSv1,
+            ssl.TLSVersion.TLSv1_1,
+        ]
+
+        for option in options:
+            with self.subTest(option=option):
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    ctx.options |= option
+                self.assertEqual(
+                    'ssl.OP_NO_SSL*/ssl.OP_NO_TLS* options are deprecated',
+                    str(cm.warning)
+                )
+
+        for protocol in protocols:
+            with self.subTest(protocol=protocol):
+                with self.assertWarns(DeprecationWarning) as cm:
+                    ssl.SSLContext(protocol)
+                self.assertEqual(
+                    f'{protocol!r} is deprecated',
+                    str(cm.warning)
+                )
+
+        for version in versions:
+            with self.subTest(version=version):
+                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                with self.assertWarns(DeprecationWarning) as cm:
+                    ctx.minimum_version = version
+                self.assertEqual(
+                    f'ssl.{version!r} is deprecated',
+                    str(cm.warning)
+                )
+
     @ignore_deprecation
     def test_errors_sslwrap(self):
         sock = socket.socket()
@@ -1750,7 +1798,7 @@ class ContextTests(unittest.TestCase):
 
         with ctx.wrap_socket(socket.socket(), server_side=True) as sock:
             self.assertIsInstance(sock, MySSLSocket)
-        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO())
+        obj = ctx.wrap_bio(ssl.MemoryBIO(), ssl.MemoryBIO(), server_side=True)
         self.assertIsInstance(obj, MySSLObject)
 
     def test_num_tickest(self):
@@ -2884,24 +2932,29 @@ class ThreadedTests(unittest.TestCase):
                                    server_context=client_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception)
+            )
 
         with self.subTest(client=ssl.PROTOCOL_TLS_SERVER, server=ssl.PROTOCOL_TLS_SERVER):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
                                    server_context=server_context,
                                    chatty=True, connectionchatty=True)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception)
+            )
 
         with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_CLIENT):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
                                    server_context=client_context,
                                    chatty=True, connectionchatty=True)
-            self.assertIn('called a function you should not call',
-                          str(e.exception))
+            self.assertIn(
+                'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
+                str(e.exception))
 
     def test_getpeercert(self):
         if support.verbose:
@@ -3062,7 +3115,7 @@ class ThreadedTests(unittest.TestCase):
         client_context.load_verify_locations(SIGNING_CA)
         # TODO: fix TLSv1.3 once SSLContext can restrict signature
         #       algorithms.
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         # only ECDSA certs
         client_context.set_ciphers('ECDHE:ECDSA:!NULL:!aRSA')
         hostname = SIGNED_CERTFILE_ECC_HOSTNAME
@@ -3801,7 +3854,7 @@ class ThreadedTests(unittest.TestCase):
     def test_no_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
         # OpenSSL enables all TLS 1.3 ciphers, enforce TLS 1.2 for test
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         # Force different suites on client and server
         client_context.set_ciphers("AES128")
         server_context.set_ciphers("AES256")
@@ -4016,10 +4069,10 @@ class ThreadedTests(unittest.TestCase):
         # Check we can get a connection with ephemeral Diffie-Hellman
         client_context, server_context, hostname = testing_context()
         # test scenario needs TLS <= 1.2
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         server_context.load_dh_params(DHFILE)
         server_context.set_ciphers("kEDH")
-        server_context.options |= ssl.OP_NO_TLSv1_3
+        server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
@@ -4265,7 +4318,7 @@ class ThreadedTests(unittest.TestCase):
     def test_session(self):
         client_context, server_context, hostname = testing_context()
         # TODO: sessions aren't compatible with TLSv1.3 yet
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         # first connection without session
         stats = server_params_test(client_context, server_context,
@@ -4324,8 +4377,8 @@ class ThreadedTests(unittest.TestCase):
         client_context2, _, _ = testing_context()
 
         # TODO: session reuse does not work with TLSv1.3
-        client_context.options |= ssl.OP_NO_TLSv1_3
-        client_context2.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        client_context2.maximum_version = ssl.TLSVersion.TLSv1_2
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
@@ -4749,7 +4802,7 @@ class TestSSLDebug(unittest.TestCase):
 
     def test_msg_callback_tls12(self):
         client_context, server_context, hostname = testing_context()
-        client_context.options |= ssl.OP_NO_TLSv1_3
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         msg = []
 

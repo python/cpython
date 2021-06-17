@@ -46,9 +46,9 @@ pointers.  This is consistent throughout the API.
    :c:type:`Py_complex` representation.
 
 
-.. c:function:: Py_complex _Py_c_neg(Py_complex complex)
+.. c:function:: Py_complex _Py_c_neg(Py_complex num)
 
-   Return the negation of the complex number *complex*, using the C
+   Return the negation of the complex number *num*, using the C
    :c:type:`Py_complex` representation.
 
 

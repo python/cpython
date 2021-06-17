@@ -1,0 +1,1 @@
+Fix deprecation of :data:`ssl.OP_NO_TLSv1_3`

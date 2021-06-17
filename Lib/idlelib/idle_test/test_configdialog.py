@@ -73,13 +73,13 @@ class ButtonTest(unittest.TestCase):
     def test_click_apply(self):
         d = dialog
         deactivate = d.deactivate_current_config = mock.Mock()
-        save_ext = d.save_all_changed_extensions = mock.Mock()
+        save_ext = d.extpage.save_all_changed_extensions = mock.Mock()
         activate = d.activate_config_changes = mock.Mock()
         d.buttons['Apply'].invoke()
         deactivate.assert_called_once()
         save_ext.assert_called_once()
         activate.assert_called_once()
-        del d.save_all_changed_extensions
+        del d.extpage.save_all_changed_extensions
         del d.activate_config_changes, d.deactivate_current_config
 
     def test_click_cancel(self):
@@ -258,27 +258,6 @@ class FontPageTest(unittest.TestCase):
 
         d.font_sample, d.highlight_sample = orig_samples
         d.set_samples = Func()  # Re-mask for other tests.
-
-
-class IndentTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.page = dialog.fontpage
-        cls.page.update()
-
-    def test_load_tab_cfg(self):
-        d = self.page
-        d.space_num.set(16)
-        d.load_tab_cfg()
-        self.assertEqual(d.space_num.get(), 4)
-
-    def test_indent_scale(self):
-        d = self.page
-        changes.clear()
-        d.indent_scale.set(20)
-        self.assertEqual(d.space_num.get(), 16)
-        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
 
 
 class HighPageTest(unittest.TestCase):
@@ -1203,7 +1182,7 @@ class KeysPageTest(unittest.TestCase):
         del d.askyesno
 
 
-class GenPageTest(unittest.TestCase):
+class WinPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
@@ -1211,24 +1190,22 @@ class GenPageTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        page = cls.page = dialog.genpage
+        page = cls.page = dialog.winpage
         dialog.note.select(page)
         page.update()
 
     def setUp(self):
         changes.clear()
 
-    def test_load_general_cfg(self):
+    def test_load_windows_cfg(self):
         # Set to wrong values, load, check right values.
         eq = self.assertEqual
         d = self.page
         d.startup_edit.set(1)
-        d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
-        d.load_general_cfg()
+        d.load_windows_cfg()
         eq(d.startup_edit.get(), 0)
-        eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
         eq(d.win_height.get(), '40')
 
@@ -1252,6 +1229,12 @@ class GenPageTest(unittest.TestCase):
         d.win_width_int.insert(0, '11')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
 
+    def test_indent_spaces(self):
+        d = self.page
+        d.indent_chooser.set(6)
+        self.assertEqual(d.indent_spaces.get(), '6')
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
+
     def test_cursor_blink(self):
         self.page.cursor_blink_bool.invoke()
         self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 'False'}})
@@ -1274,6 +1257,35 @@ class GenPageTest(unittest.TestCase):
         d.bell_on.invoke()
         eq(extpage, {'ParenMatch': {'bell': 'False'}})
 
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+
+class ShedPageTest(unittest.TestCase):
+    """Test that shed tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes.
+    """
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.shedpage
+        dialog.note.select(page)
+        page.update()
+
+    def setUp(self):
+        changes.clear()
+
+    def test_load_shelled_cfg(self):
+        # Set to wrong values, load, check right values.
+        eq = self.assertEqual
+        d = self.page
+        d.autosave.set(1)
+        d.load_shelled_cfg()
+        eq(d.autosave.get(), 0)
+
     def test_autosave(self):
         d = self.page
         d.save_auto_on.invoke()
@@ -1281,23 +1293,28 @@ class GenPageTest(unittest.TestCase):
         d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
-    def test_paragraph(self):
-        self.page.format_width_int.delete(0, 'end')
-        self.page.format_width_int.insert(0, '11')
-        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
-
     def test_context(self):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
         self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
 
+#unittest.skip("Nothing here yet TODO")
+class ExtPageTest(unittest.TestCase):
+    """Test that the help source list works correctly."""
+    @classmethod
+    def setUpClass(cls):
+        page = dialog.extpage
+        dialog.note.select(page)
+
+
 class HelpSourceTest(unittest.TestCase):
     """Test that the help source list works correctly."""
     @classmethod
     def setUpClass(cls):
-        dialog.note.select(dialog.extpage)
-        frame = cls.frame = dialog.frame_help
+        page = dialog.extpage
+        dialog.note.select(page)
+        frame = cls.frame = page.frame_help
         frame.set = frame.set_add_delete_state = Func()
         frame.upc = frame.update_help_changes = Func()
         frame.update()
