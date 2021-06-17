@@ -732,7 +732,7 @@ NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
 if __name__ == '__main__':
     """
     Enables uuid to be called from the command line
-    
+
     Example usage:
 
     python -m uuid
