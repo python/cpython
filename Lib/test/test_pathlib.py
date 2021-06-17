@@ -1335,6 +1335,10 @@ class PurePathTest(
         is_posix = os.name == 'posix'
         return pathlib.PurePosixPath if is_posix else pathlib.PureWindowsPath
 
+    def _get_anti_system_flavour_class(self):
+        is_posix = os.name == 'posix'
+        return pathlib.PureWindowsPath if is_posix else pathlib.PurePosixPath
+
     def test_instance_class_properties(self):
         p = self.cls('placeholder')
         correct_cls = self._get_class_to_generate()
@@ -1369,9 +1373,15 @@ class PurePathTest(
         q = pathlib.PureWindowsPath('a')
         self.assertNotEqual(p, q)
 
-    def test_different_flavours_unordered(self):
-        p = pathlib.PurePosixPath('a')
-        q = pathlib.PureWindowsPath('a')
+    def test_subclass_different_flavours_unequal(self):
+        class Derived(pathlib.PurePath):
+            pass
+        p = Derived('a')
+        PureAntiFlavourPath = self._get_anti_system_flavour_class()
+        q = PureAntiFlavourPath('a')
+        self.assertNotEqual(p, q)
+
+    def _test_different_flavours_unordered(self, p, q):
         with self.assertRaises(TypeError):
             p < q
         with self.assertRaises(TypeError):
@@ -1380,6 +1390,19 @@ class PurePathTest(
             p > q
         with self.assertRaises(TypeError):
             p >= q
+
+    def test_different_flavours_unordered(self):
+        p = pathlib.PurePosixPath('a')
+        q = pathlib.PureWindowsPath('a')
+        self._test_different_flavours_unordered(p, q)
+
+    def test_subclass_different_flavours_unordered(self):
+        class Derived(pathlib.PurePath):
+            pass
+        p = Derived('a')
+        PureAntiFlavourPath = self._get_anti_system_flavour_class()
+        q = PureAntiFlavourPath('a')
+        self._test_different_flavours_unordered(p, q)
 
 
 #
