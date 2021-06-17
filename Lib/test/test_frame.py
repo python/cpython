@@ -145,18 +145,27 @@ class ClearTest(unittest.TestCase):
 
 class FrameAttrsTest(unittest.TestCase):
 
-    def make_frames(self):
-        def outer():
-            x = 5
-            y = 6
-            def inner():
-                z = x + 2
-                1/0
-                t = 9
-            return inner()
+    @staticmethod
+    def outer():
+        x = 5
+        y = 6
+        def inner():
+            z = x + 2
+            1/0
+            t = 9
+        return inner()
+
+    @staticmethod
+    def generator():
+        def foo():
+            yield
+            assert False
+        list(foo())
+
+    def make_frames(self, func):
         try:
-            outer()
-        except ZeroDivisionError as e:
+            func()
+        except (ZeroDivisionError, AssertionError) as e:
             tb = e.__traceback__
             frames = []
             while tb:
@@ -165,7 +174,7 @@ class FrameAttrsTest(unittest.TestCase):
         return frames
 
     def test_locals(self):
-        f, outer, inner = self.make_frames()
+        f, outer, inner = self.make_frames(self.outer)
         outer_locals = outer.f_locals
         self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
         self.assertEqual(outer_locals, {'x': 5, 'y': 6})
@@ -174,7 +183,7 @@ class FrameAttrsTest(unittest.TestCase):
 
     def test_clear_locals(self):
         # Test f_locals after clear() (issue #21897)
-        f, outer, inner = self.make_frames()
+        f, outer, inner = self.make_frames(self.outer)
         outer.clear()
         inner.clear()
         self.assertEqual(outer.f_locals, {})
@@ -182,7 +191,7 @@ class FrameAttrsTest(unittest.TestCase):
 
     def test_locals_clear_locals(self):
         # Test f_locals before and after clear() (to exercise caching)
-        f, outer, inner = self.make_frames()
+        f, outer, inner = self.make_frames(self.outer)
         outer.f_locals
         inner.f_locals
         outer.clear()
@@ -191,9 +200,13 @@ class FrameAttrsTest(unittest.TestCase):
         self.assertEqual(inner.f_locals, {})
 
     def test_f_lineno_del_segfault(self):
-        f, _, _ = self.make_frames()
+        f, _, _ = self.make_frames(self.outer)
         with self.assertRaises(AttributeError):
             del f.f_lineno
+
+    def test_generator_lineno(self):
+        f, _, generator = self.make_frames(self.generator)
+        self.assertEqual(generator.f_lineno, generator.f_code.co_firstlineno + 2)
 
 
 class ReprTest(unittest.TestCase):

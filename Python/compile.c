@@ -7434,6 +7434,11 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         return -1;
     }
 
+    int lineno = -1;
+    if (entryblock->b_iused > 0) {
+        lineno = entryblock->b_instr[0].i_lineno;
+    }
+
     /* Set up cells for any variable that escapes, to be put in a closure. */
     const int ncellvars = (int)PyDict_GET_SIZE(c->u->u_cellvars);
     if (ncellvars) {
@@ -7485,7 +7490,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
         struct instr gen_start = {
             .i_opcode = GEN_START,
             .i_oparg = kind,
-            .i_lineno = -1,
+            .i_lineno = lineno,
             .i_target = NULL,
         };
         if (insert_instruction(entryblock, 0, &gen_start) < 0) {
