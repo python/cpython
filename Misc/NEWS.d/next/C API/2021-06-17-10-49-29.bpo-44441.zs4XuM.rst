@@ -1,0 +1,2 @@
+Set PyImport_Inittab to default on _PyImport_Fini2
+Fix for re-initialization with embedded modules
