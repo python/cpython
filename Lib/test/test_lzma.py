@@ -1,4 +1,5 @@
 import _compression
+import array
 from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pathlib
@@ -1230,6 +1231,13 @@ class FileTestCase(unittest.TestCase):
         self.assertEqual(len(out2), 11)
         self.assertTrue(d2.eof)
         self.assertEqual(out1 + out2, entire)
+
+    def test_issue44439(self):
+        q = array.array('Q', [1, 2, 3, 4, 5])
+
+        with LZMAFile(BytesIO(), 'w') as f:
+            f.write(q)
+            self.assertEqual(f.tell(), len(q) * q.itemsize)
 
 
 class OpenTestCase(unittest.TestCase):
