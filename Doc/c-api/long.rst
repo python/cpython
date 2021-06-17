@@ -91,7 +91,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    non-zero decimal number raises a :exc:`ValueError`. If *base* is not ``0``,
    it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
    underscores after a base specifier and between digits are ignored.  If there
-   are no digits, :exc:`ValueError` will be raised.
+   are no digits or the digits are not ended by a null byte, :exc:`ValueError`
+   will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicodeObject(PyObject *u, int base)
