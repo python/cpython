@@ -128,7 +128,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     Py_END_ALLOW_THREADS
 
-    Py_DECREF(database_obj);
+    Py_DECREF(database_obj);  // needed bco. the AC FSConverter
 
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db);

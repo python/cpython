@@ -99,7 +99,7 @@ pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
                                           timeout, detect_types,
                                           isolation_level, check_same_thread,
                                           factory, cached_statements, uri);
-    Py_DECREF(database);
+    Py_DECREF(database);  // needed bco. the AC FSConverter
     Py_DECREF(isolation_level);
     return res;
 }
