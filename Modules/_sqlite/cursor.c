@@ -24,20 +24,23 @@
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
+
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/cursor.c.h"
+#undef clinic_state
 
 /*[clinic input]
 module _sqlite3
-class _sqlite3.Cursor "pysqlite_Cursor *" "pysqlite_CursorType"
+class _sqlite3.Cursor "pysqlite_Cursor *" "clinic_state()->CursorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b2072d8db95411d5]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c5b8115c5cf30f1]*/
 
 static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
 /*[clinic input]
 _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 
-    connection: object(type='pysqlite_Connection *', subclass_of='pysqlite_ConnectionType')
+    connection: object(type='pysqlite_Connection *', subclass_of='clinic_state()->ConnectionType')
     /
 
 [clinic start generated code]*/
@@ -45,7 +48,7 @@ _sqlite3.Cursor.__init__ as pysqlite_cursor_init
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
                           pysqlite_Connection *connection)
-/*[clinic end generated code: output=ac59dce49a809ca8 input=a8a4f75ac90999b2]*/
+/*[clinic end generated code: output=ac59dce49a809ca8 input=23d4265b534989fb]*/
 {
     Py_INCREF(connection);
     Py_XSETREF(self->connection, connection);
@@ -1075,18 +1078,19 @@ static PyType_Slot cursor_slots[] = {
 static PyType_Spec cursor_spec = {
     .name = MODULE_NAME ".Cursor",
     .basicsize = sizeof(pysqlite_Cursor),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = cursor_slots,
 };
-
-PyTypeObject *pysqlite_CursorType = NULL;
 
 int
 pysqlite_cursor_setup_types(PyObject *module)
 {
-    pysqlite_CursorType = (PyTypeObject *)PyType_FromModuleAndSpec(module, &cursor_spec, NULL);
-    if (pysqlite_CursorType == NULL) {
+    PyObject *type = PyType_FromModuleAndSpec(module, &cursor_spec, NULL);
+    if (type == NULL) {
         return -1;
     }
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->CursorType = (PyTypeObject *)type;
     return 0;
 }

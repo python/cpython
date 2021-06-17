@@ -99,10 +99,7 @@ the definition of all other Python objects.
 
    Return a :term:`borrowed reference`.
 
-   Use the :c:func:`Py_SET_TYPE` function to set an object type.
-
-   .. versionchanged:: 3.11
-      :c:func:`Py_TYPE()` is changed to an inline static function.
+   The :c:func:`Py_SET_TYPE` function must be used to set an object type.
 
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
@@ -124,10 +121,9 @@ the definition of all other Python objects.
 
    Get the reference count of the Python object *o*.
 
-   Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
-
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
+      Use :c:func:`Py_SET_REFCNT()` to set an object reference count.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
@@ -141,10 +137,7 @@ the definition of all other Python objects.
 
    Get the size of the Python object *o*.
 
-   Use the :c:func:`Py_SET_SIZE` function to set an object size.
-
-   .. versionchanged:: 3.11
-      :c:func:`Py_SIZE()` is changed to an inline static function.
+   The :c:func:`Py_SET_SIZE` function must be used to set an object size.
 
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
