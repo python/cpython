@@ -2252,8 +2252,10 @@ class TestEnum(unittest.TestCase):
             four = b'4', 'latin1', 'strict'
         self.assertEqual(GoodStrEnum.one, '1')
         self.assertEqual(str(GoodStrEnum.one), '1')
+        self.assertEqual('{}'.format(GoodStrEnum.one), '1')
         self.assertEqual(GoodStrEnum.one, str(GoodStrEnum.one))
         self.assertEqual(GoodStrEnum.one, '{}'.format(GoodStrEnum.one))
+        self.assertEqual(repr(GoodStrEnum.one), 'GoodStrEnum.one')
         #
         class DumbMixin:
             def __str__(self):
@@ -2300,6 +2302,132 @@ class TestEnum(unittest.TestCase):
                 two = b'2', sys.getdefaultencoding
         with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
             class ThirdFailedStrEnum(StrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
+
+    @unittest.skipIf(
+            python_version >= (3, 12),
+            'mixin-format now uses member instead of member.value',
+            )
+    def test_custom_strenum_with_warning(self):
+        class CustomStrEnum(str, Enum):
+            pass
+        class OkayEnum(CustomStrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        self.assertEqual(OkayEnum.one, '1')
+        self.assertEqual(str(OkayEnum.one), 'one')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual('{}'.format(OkayEnum.one), '1')
+        self.assertEqual(OkayEnum.one, '{}'.format(OkayEnum.one))
+        self.assertEqual(repr(OkayEnum.one), 'OkayEnum.one')
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, CustomStrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, CustomStrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(str(HelloEnum.eight), 'eight')
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, CustomStrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(str(GoodbyeEnum.nine), 'nine')
+        #
+        class FirstFailedStrEnum(CustomStrEnum):
+            one = 1   # this will become '1'
+            two = '2'
+        class SecondFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2,  # this will become '2'
+            three = '3'
+        class ThirdFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2  # this will become '2'
+        with self.assertRaisesRegex(TypeError, '.encoding. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, '.errors. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
+                one = '1'
+                two = b'2', 'ascii', 9
+
+    @unittest.skipIf(
+            python_version < (3, 12),
+            'mixin-format currently uses member.value',
+            )
+    def test_custom_strenum(self):
+        class CustomStrEnum(str, Enum):
+            pass
+        class OkayEnum(CustomStrEnum):
+            one = '1'
+            two = '2'
+            three = b'3', 'ascii'
+            four = b'4', 'latin1', 'strict'
+        self.assertEqual(OkayEnum.one, '1')
+        self.assertEqual(str(OkayEnum.one), 'one')
+        self.assertEqual('{}'.format(OkayEnum.one), 'one')
+        self.assertEqual(repr(OkayEnum.one), 'OkayEnum.one')
+        #
+        class DumbMixin:
+            def __str__(self):
+                return "don't do this"
+        class DumbStrEnum(DumbMixin, CustomStrEnum):
+            five = '5'
+            six = '6'
+            seven = '7'
+        self.assertEqual(DumbStrEnum.seven, '7')
+        self.assertEqual(str(DumbStrEnum.seven), "don't do this")
+        #
+        class EnumMixin(Enum):
+            def hello(self):
+                print('hello from %s' % (self, ))
+        class HelloEnum(EnumMixin, CustomStrEnum):
+            eight = '8'
+        self.assertEqual(HelloEnum.eight, '8')
+        self.assertEqual(str(HelloEnum.eight), 'eight')
+        #
+        class GoodbyeMixin:
+            def goodbye(self):
+                print('%s wishes you a fond farewell')
+        class GoodbyeEnum(GoodbyeMixin, EnumMixin, CustomStrEnum):
+            nine = '9'
+        self.assertEqual(GoodbyeEnum.nine, '9')
+        self.assertEqual(str(GoodbyeEnum.nine), 'nine')
+        #
+        class FirstFailedStrEnum(CustomStrEnum):
+            one = 1   # this will become '1'
+            two = '2'
+        class SecondFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2,  # this will become '2'
+            three = '3'
+        class ThirdFailedStrEnum(CustomStrEnum):
+            one = '1'
+            two = 2  # this will become '2'
+        with self.assertRaisesRegex(TypeError, '.encoding. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
+                one = '1'
+                two = b'2', sys.getdefaultencoding
+        with self.assertRaisesRegex(TypeError, '.errors. must be str, not '):
+            class ThirdFailedStrEnum(CustomStrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
 
@@ -3096,10 +3224,6 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(repr(~(Open.WO | Open.CE)), 'Open.RW')
         self.assertEqual(repr(Open(~4)), '-5')
 
-    # @unittest.skipUnless(
-    #         python_version < (3, 12),
-    #         'mixin-format now uses member instead of member.value',
-    #         )
     def test_format(self):
         Perm = self.Perm
         self.assertEqual(format(Perm.R, ''), '4')
