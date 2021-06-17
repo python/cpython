@@ -1121,7 +1121,8 @@ static PyType_Slot mmap_object_slots[] = {
 static PyType_Spec mmap_object_spec = {
     .name = "mmap.mmap",
     .basicsize = sizeof(mmap_object),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = mmap_object_slots,
 };
 

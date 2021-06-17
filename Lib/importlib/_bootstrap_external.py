@@ -358,6 +358,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3453 (add co_fastlocalnames and co_fastlocalkinds)
 #     Python 3.11a1 3454 (compute cell offsets relative to locals bpo-43693)
 #     Python 3.11a1 3455 (add MAKE_CELL bpo-43693)
+#     Python 3.11a1 3456 (interleave cell args bpo-43693)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
@@ -367,7 +368,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3455).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3456).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
