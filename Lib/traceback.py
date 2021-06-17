@@ -84,8 +84,11 @@ _context_message = (
     "another exception occurred:\n\n")
 
 
-_sentinel = object()
+class _Sentinel:
+    def __repr__(self):
+        return "<implicit>"
 
+_sentinel = _Sentinel()
 
 def _parse_value_tb(exc, value, tb):
     if (value is _sentinel) != (tb is _sentinel):
