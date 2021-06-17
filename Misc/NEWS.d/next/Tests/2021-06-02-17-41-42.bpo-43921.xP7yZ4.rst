@@ -1,2 +1,0 @@
-Fix test_pha_required_nocert() of test_ssl: catch two more EOF cases (when
-the ``recv()`` method returns an empty string). Patch by Victor Stinner.

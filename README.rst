@@ -1,4 +1,4 @@
-This is Python version 3.10.0 beta 2
+This is Python version 3.10.0 beta 3
 ====================================
 
 .. image:: https://travis-ci.com/python/cpython.svg?branch=master

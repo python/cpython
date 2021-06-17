@@ -1,0 +1,342 @@
+.. bpo: 44409
+.. date: 2021-06-13-23-12-18
+.. nonce: eW4LS-
+.. release date: 2021-06-17
+.. section: Core and Builtins
+
+Fix error location information for tokenizer errors raised on initialization
+of the tokenizer. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 44396
+.. date: 2021-06-11-18-17-42
+.. nonce: Z9EKim
+.. section: Core and Builtins
+
+Fix a possible crash in the tokenizer when raising syntax errors for
+unclosed strings. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 44349
+.. date: 2021-06-08-22-49-06
+.. nonce: xgEgeA
+.. section: Core and Builtins
+
+Fix an edge case when displaying text from files with encoding in syntax
+errors. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 44335
+.. date: 2021-06-08-01-13-47
+.. nonce: GQTTkl
+.. section: Core and Builtins
+
+Fix a regression when identifying incorrect characters in syntax errors.
+Patch by Pablo Galindo
+
+..
+
+.. bpo: 44304
+.. date: 2021-06-05-02-34-57
+.. nonce: _MAoPc
+.. section: Core and Builtins
+
+Fix a crash in the :mod:`sqlite3` module that happened when the garbage
+collector clears :class:`sqlite.Statement` objects. Patch by Pablo Galindo
+
+..
+
+.. bpo: 44305
+.. date: 2021-06-03-22-51-50
+.. nonce: 66dVDG
+.. section: Core and Builtins
+
+Improve error message for ``try`` blocks without ``except`` or ``finally``
+blocks. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 43833
+.. date: 2021-04-18-18-07-33
+.. nonce: oChkCi
+.. section: Core and Builtins
+
+Emit a deprecation warning if the numeric literal is immediately followed by
+one of keywords: and, else, for, if, in, is, or. Raise a syntax error with
+more informative message if it is immediately followed by other keyword or
+identifier.
+
+..
+
+.. bpo: 11105
+.. date: 2020-06-02-13-21-14
+.. nonce: wceryW
+.. section: Core and Builtins
+
+When compiling :class:`ast.AST` objects with recursive references through
+:func:`compile`, the interpreter doesn't crash anymore instead it raises a
+:exc:`RecursionError`.
+
+..
+
+.. bpo: 42972
+.. date: 2021-06-15-13-51-25
+.. nonce: UnyYo1
+.. section: Library
+
+The _thread.RLock type now fully implement the GC protocol: add a traverse
+function and the :const:`Py_TPFLAGS_HAVE_GC` flag. Patch by Victor Stinner.
+
+..
+
+.. bpo: 44422
+.. date: 2021-06-14-23-28-17
+.. nonce: BlWOgv
+.. section: Library
+
+The :func:`threading.enumerate` function now uses a reentrant lock to
+prevent a hang on reentrant call. Patch by Victor Stinner.
+
+..
+
+.. bpo: 44389
+.. date: 2021-06-12-22-58-20
+.. nonce: WTRnoC
+.. section: Library
+
+Fix deprecation of :data:`ssl.OP_NO_TLSv1_3`
+
+..
+
+.. bpo: 44362
+.. date: 2021-06-10-20-07-32
+.. nonce: oVOMfd
+.. section: Library
+
+Improve :mod:`ssl` module's deprecation messages, error reporting, and
+documentation for deprecations.
+
+..
+
+.. bpo: 44342
+.. date: 2021-06-10-15-06-47
+.. nonce: qqkGlj
+.. section: Library
+
+[Enum] Change pickling from by-value to by-name.
+
+..
+
+.. bpo: 44356
+.. date: 2021-06-10-08-35-38
+.. nonce: 6oDFhO
+.. section: Library
+
+[Enum] Allow multiple data-type mixins if they are all the same.
+
+..
+
+.. bpo: 44351
+.. date: 2021-06-10-07-26-12
+.. nonce: rvyf2v
+.. section: Library
+
+Restore back :func:`parse_makefile` in :mod:`distutils.sysconfig` because it
+behaves differently than the similar implementation in :mod:`sysconfig`.
+
+..
+
+.. bpo: 44242
+.. date: 2021-06-07-10-26-14
+.. nonce: MKeMCQ
+.. section: Library
+
+Remove missing flag check from Enum creation and move into a ``verify``
+decorator.
+
+..
+
+.. bpo: 44246
+.. date: 2021-05-31-11-34-56
+.. nonce: yHAkF0
+.. section: Library
+
+In ``importlib.metadata``, restore compatibility in the result from
+``Distribution.entry_points`` (``EntryPoints``) to honor expectations in
+older implementations and issuing deprecation warnings for these cases: A.
+``EntryPoints`` objects are once again mutable, allowing   for ``sort()``
+and other list-based mutation operations.   Avoid deprecation warnings by
+casting to a   mutable sequence (e.g.   ``list(dist.entry_points).sort()``).
+B. ``EntryPoints`` results once again allow   for access by index. To avoid
+deprecation warnings,   cast the result to a Sequence first   (e.g.
+``tuple(dist.entry_points)[0]``).
+
+..
+
+.. bpo: 44246
+.. date: 2021-05-31-11-28-03
+.. nonce: nhmt-v
+.. section: Library
+
+In importlib.metadata.entry_points, de-duplication of distributions no
+longer requires loading the full metadata for PathDistribution objects,
+improving entry point loading performance by ~10x.
+
+..
+
+.. bpo: 43853
+.. date: 2021-04-15-12-02-17
+.. nonce: XXCVAp
+.. section: Library
+
+Improve :mod:`sqlite3` error handling: ``sqlite3_value_text()`` errors that
+set ``SQLITE_NOMEM`` now raise :exc:`MemoryError`. Patch by Erlend E.
+Aasland.
+
+..
+
+.. bpo: 43318
+.. date: 2021-02-25-08-32-06
+.. nonce: bZJw6V
+.. section: Library
+
+Fix a bug where :mod:`pdb` does not always echo cleared breakpoints.
+
+..
+
+.. bpo: 37022
+.. date: 2020-01-25-12-58-20
+.. nonce: FUZI25
+.. section: Library
+
+:mod:`pdb` now displays exceptions from ``repr()`` with its ``p`` and ``pp``
+commands.
+
+..
+
+.. bpo: 44392
+.. date: 2021-06-16-18-09-49
+.. nonce: 6RF1Sc
+.. section: Documentation
+
+Added a new section in the C API documentation for types used in type
+hinting.  Documented ``Py_GenericAlias`` and ``Py_GenericAliasType``.
+
+..
+
+.. bpo: 38291
+.. date: 2021-06-14-09-20-37
+.. nonce: VMYa_Q
+.. section: Documentation
+
+Mark ``typing.io`` and ``typing.re`` as deprecated since Python 3.8 in the
+documentation. They were never properly supported by type checkers.
+
+..
+
+.. bpo: 44322
+.. date: 2021-06-06-14-12-00
+.. nonce: K0PHfE
+.. section: Documentation
+
+Document that SyntaxError args have a details tuple and that details are
+adjusted for errors in f-string field replacement expressions.
+
+..
+
+.. bpo: 44363
+.. date: 2021-06-10-11-19-43
+.. nonce: -K9jD0
+.. section: Tests
+
+Account for address sanitizer in test_capi. test_capi now passes when run
+GCC address sanitizer.
+
+..
+
+.. bpo: 43921
+.. date: 2021-06-03-03-29-34
+.. nonce: nwH1FS
+.. section: Tests
+
+Fix test_ssl.test_wrong_cert_tls13(): use ``suppress_ragged_eofs=False``,
+since ``read()`` can raise :exc:`ssl.SSLEOFError` on Windows. Patch by
+Victor Stinner.
+
+..
+
+.. bpo: 43921
+.. date: 2021-06-02-17-41-42
+.. nonce: xP7yZ4
+.. section: Tests
+
+Fix test_pha_required_nocert() of test_ssl: catch two more EOF cases (when
+the ``recv()`` method returns an empty string). Patch by Victor Stinner.
+
+..
+
+.. bpo: 44381
+.. date: 2021-06-10-18-08-44
+.. nonce: Xpc1iX
+.. section: Build
+
+The Windows build now accepts :envvar:`EnableControlFlowGuard` set to
+``guard`` to enable CFG.
+
+..
+
+.. bpo: 40128
+.. date: 2021-06-11-17-43-39
+.. nonce: 7vDN3U
+.. section: IDLE
+
+Mostly fix completions on macOS when not using tcl/tk 8.6.11 (as with 3.9).
+The added update_idletask call should be harmless and possibly helpful
+otherwise.
+
+..
+
+.. bpo: 33962
+.. date: 2021-06-10-00-50-02
+.. nonce: ikAUNg
+.. section: IDLE
+
+Move the indent space setting from the Font tab to the new Windows tab.
+Patch by Mark Roseman and Terry Jan Reedy.
+
+..
+
+.. bpo: 40468
+.. date: 2021-06-08-03-04-51
+.. nonce: tUCGUb
+.. section: IDLE
+
+Split the settings dialog General tab into Windows and Shell/ED tabs. Move
+help sources, which extend the Help menu, to the Extensions tab. Make space
+for new options and shorten the dialog. The latter makes the dialog better
+fit small screens.
+
+..
+
+.. bpo: 43795
+.. date: 2021-06-15-16-28-18
+.. nonce: fy0AXK
+.. section: C API
+
+The list in :ref:`stable-abi-list` now shows the public name
+:c:struct:`PyFrameObject` rather than ``_frame``. The non-existing entry
+``_node`` no longer appears in the list.
+
+..
+
+.. bpo: 44378
+.. date: 2021-06-10-15-22-31
+.. nonce: jGYakF
+.. section: C API
+
+:c:func:`Py_IS_TYPE` no longer uses :c:func:`Py_TYPE` to avoid a compiler
+warning: no longer cast ``const PyObject*`` to ``PyObject*``. Patch by
+Victor Stinner.

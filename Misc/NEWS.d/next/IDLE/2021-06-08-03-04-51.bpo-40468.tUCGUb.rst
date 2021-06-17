@@ -1,4 +1,0 @@
-Split the settings dialog General tab into Windows and Shell/ED tabs.
-Move help sources, which extend the Help menu, to the Extensions tab.
-Make space for new options and shorten the dialog.
-The latter makes the dialog better fit small screens.
