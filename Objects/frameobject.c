@@ -612,7 +612,7 @@ frame_dealloc(PyFrameObject *f)
     Py_TRASHCAN_SAFE_BEGIN(f)
     PyCodeObject *co = f->f_code;
 
-    /* Kill all local variables */
+    /* Kill all local variables including specials. */
     if (f->f_localsptr) {
         for (int i = 0; i < co->co_nlocalsplus+FRAME_SPECIALS_SIZE; i++) {
             Py_CLEAR(f->f_localsptr[i]);
@@ -683,11 +683,10 @@ frame_tp_clear(PyFrameObject *f)
     f->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
-
+    PyCodeObject *co = f->f_code;
     /* locals */
-    PyObject **localsplus = f->f_localsptr;
-    for (Py_ssize_t i = frame_nslots(f); --i >= 0; ++localsplus) {
-        Py_CLEAR(*localsplus);
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        Py_CLEAR(f->f_localsptr[i]);
     }
 
     /* stack */
