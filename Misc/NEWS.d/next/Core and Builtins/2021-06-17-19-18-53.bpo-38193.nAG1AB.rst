@@ -1,0 +1,1 @@
+Enabled http.client module script to do simple HTTP requests
