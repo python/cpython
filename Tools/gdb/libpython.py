@@ -856,6 +856,8 @@ class PyNoneStructPtr(PyObjectPtr):
 
 FRAME_SPECIALS_GLOBAL_OFFSET = 0
 FRAME_SPECIALS_BUILTINS_OFFSET = 1
+FRAME_SPECIALS_CODE_OFFSET = 3
+FRAME_SPECIALS_SIZE = 4
 
 class PyFrameObjectPtr(PyObjectPtr):
     _typename = 'PyFrameObject'
@@ -864,7 +866,7 @@ class PyFrameObjectPtr(PyObjectPtr):
         PyObjectPtr.__init__(self, gdbval, cast_to)
 
         if not self.is_optimized_out():
-            self.co = PyCodeObjectPtr.from_pyobject_ptr(self.field('f_code'))
+            self.co = self._f_code()
             self.co_name = self.co.pyop_field('co_name')
             self.co_filename = self.co.pyop_field('co_filename')
 
@@ -890,11 +892,18 @@ class PyFrameObjectPtr(PyObjectPtr):
             pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
             yield (pyop_name, pyop_value)
 
+    def _f_specials(self, index, cls=PyObjectPtr):
+        f_valuestack = self.field('f_valuestack')
+        return cls.from_pyobject_ptr(f_valuestack[index - FRAME_SPECIALS_SIZE])
+
     def _f_globals(self):
-        f_localsplus = self.field('f_localsptr')
-        nlocalsplus = int_from_int(self.co.field('co_nlocalsplus'))
-        index = nlocalsplus + FRAME_SPECIALS_GLOBAL_OFFSET
-        return PyObjectPtr.from_pyobject_ptr(f_localsplus[index])
+        return self._f_specials(FRAME_SPECIALS_GLOBAL_OFFSET)
+
+    def _f_builtins(self):
+        return self._f_specials(FRAME_SPECIALS_BUILTINS_OFFSET)
+
+    def _f_code(self):
+        return self._f_specials(FRAME_SPECIALS_CODE_OFFSET, PyCodeObjectPtr)
 
     def iter_globals(self):
         '''
@@ -906,12 +915,6 @@ class PyFrameObjectPtr(PyObjectPtr):
 
         pyop_globals = self._f_globals()
         return pyop_globals.iteritems()
-
-    def _f_builtins(self):
-        f_localsplus = self.field('f_localsptr')
-        nlocalsplus = int_from_int(self.co.field('co_nlocalsplus'))
-        index = nlocalsplus + FRAME_SPECIALS_BUILTINS_OFFSET
-        return PyObjectPtr.from_pyobject_ptr(f_localsplus[index])
 
     def iter_builtins(self):
         '''
