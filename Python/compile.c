@@ -7189,7 +7189,7 @@ merge_const_one(struct compiler *c, PyObject **obj)
 extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
-void
+static void
 compute_localsplus_info(struct compiler *c, int nlocalsplus,
                         PyObject *names, PyObject *kinds)
 {
