@@ -53,24 +53,26 @@ The :mod:`csv` module defines the following functions:
 .. index::
    single: universal newlines; csv.reader function
 
+
 .. function:: reader(csvfile, dialect='excel', **fmtparams)
 
    Return a reader object which will iterate over lines in the given *csvfile*.
-   *csvfile* can be any object which supports the :term:`iterator` protocol and returns a
-   string each time its :meth:`!__next__` method is called --- :term:`file objects
-   <file object>` and list objects are both suitable.   If *csvfile* is a file object,
-   it should be opened with ``newline=''``. [1]_  An optional
-   *dialect* parameter can be given which is used to define a set of parameters
-   specific to a particular CSV dialect.  It may be an instance of a subclass of
-   the :class:`Dialect` class or one of the strings returned by the
-   :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
-   can be given to override individual formatting parameters in the current
-   dialect.  For full details about dialects and formatting parameters, see
-   the :ref:`csv-fmt-params` section.
+   *csvfile* can be any object which supports the :term:`iterator` protocol and
+   returns a string each time its :meth:`!__next__` method is called ---
+   :term:`file objects <file object>` and list objects are both suitable.   If
+   *csvfile* is a file object, it should be opened with ``newline=''``. [1]_
+   An optional *dialect* parameter can be given which is used to define a set
+   of parameters specific to a particular CSV dialect.  It may be an instance
+   of a subclass of the :class:`Dialect` class or one of the strings returned
+   by the :func:`list_dialects` function.  The other optional *fmtparams*
+   keyword arguments can be given to override individual formatting parameters
+   in the current dialect.  For full details about dialects and formatting
+   parameters, see the :ref:`csv-fmt-params` section.
 
    Each row read from the csv file is returned as a list of strings.  No
-   automatic data type conversion is performed unless the ``QUOTE_NONNUMERIC`` format
-   option is specified (in which case unquoted fields are transformed into floats).
+   automatic data type conversion is performed unless the ``QUOTE_NONNUMERIC``
+   format option is specified (in which case unquoted fields are transformed
+   into floats).
 
    A short usage example::
 
@@ -85,22 +87,22 @@ The :mod:`csv` module defines the following functions:
 
 .. function:: writer(csvfile, dialect='excel', **fmtparams)
 
-   Return a writer object responsible for converting the user's data into delimited
-   strings on the given file-like object.  *csvfile* can be any object with a
-   :func:`write` method.  If *csvfile* is a file object, it should be opened with
-   ``newline=''`` [1]_.  An optional *dialect* parameter can be given which is
-   used to define a set of parameters specific to a
+   Return a writer object responsible for converting the user's data into
+   delimited strings on the given file-like object.  *csvfile* can be any
+   object with a :func:`write` method.  If *csvfile* is a file object, it
+   should be opened with ``newline=''`` [1]_.  An optional *dialect* parameter
+   can be given which is used to define a set of parameters specific to a
    particular CSV dialect.  It may be an instance of a subclass of the
    :class:`Dialect` class or one of the strings returned by the
-   :func:`list_dialects` function.  The other optional *fmtparams* keyword arguments
-   can be given to override individual formatting parameters in the current
-   dialect.  For full details about dialects and formatting parameters, see
-   the :ref:`csv-fmt-params` section. To make it
-   as easy as possible to interface with modules which implement the DB API, the
-   value :const:`None` is written as the empty string.  While this isn't a
-   reversible transformation, it makes it easier to dump SQL NULL data values to
-   CSV files without preprocessing the data returned from a ``cursor.fetch*`` call.
-   All other non-string data are stringified with :func:`str` before being written.
+   :func:`list_dialects` function.  The other optional *fmtparams* keyword
+   arguments can be given to override individual formatting parameters in the
+   current dialect.  For full details about dialects and formatting parameters,
+   see the :ref:`csv-fmt-params` section. To make it as easy as possible to
+   interface with modules which implement the DB API, the value :const:`None`
+   is written as the empty string.  While this isn't a reversible
+   transformation, it makes it easier to dump SQL NULL data values to CSV files
+   without preprocessing the data returned from a ``cursor.fetch*`` call.  All
+   other non-string data are stringified with :func:`str` before being written.
 
    A short usage example::
 
@@ -114,9 +116,9 @@ The :mod:`csv` module defines the following functions:
 
 .. function:: register_dialect(name[, dialect[, **fmtparams]])
 
-   Associate *dialect* with *name*.  *name* must be a string. The
-   dialect can be specified either by passing a sub-class of :class:`Dialect`, or
-   by *fmtparams* keyword arguments, or both, with keyword arguments overriding
+   Associate *dialect* with *name*.  *name* must be a string. The dialect can
+   be specified either by passing a sub-class of :class:`Dialect`, or by
+   *fmtparams* keyword arguments, or both, with keyword arguments overriding
    parameters of the dialect. For full details about dialects and formatting
    parameters, see the :ref:`csv-fmt-params` section.
 
@@ -132,6 +134,7 @@ The :mod:`csv` module defines the following functions:
    Return the dialect associated with *name*.  An :exc:`Error` is raised if
    *name* is not a registered dialect name.  This function returns an immutable
    :class:`Dialect`.
+
 
 .. function:: list_dialects()
 
@@ -194,16 +197,14 @@ The :mod:`csv` module defines the following classes:
    Create an object which operates like a regular writer but maps dictionaries
    onto output rows.  The *fieldnames* parameter is a :mod:`sequence
    <collections.abc>` of keys that identify the order in which values in the
-   dictionary passed to the :meth:`writerow` method are written to file
-   *f*.  The optional *restval* parameter specifies the value to be
-   written if the dictionary is missing a key in *fieldnames*.  If the
-   dictionary passed to the :meth:`writerow` method contains a key not found in
-   *fieldnames*, the optional *extrasaction* parameter indicates what action to
-   take.
-   If it is set to ``'raise'``, the default value, a :exc:`ValueError`
-   is raised.
-   If it is set to ``'ignore'``, extra values in the dictionary are ignored.
-   Any other optional or keyword arguments are passed to the underlying
+   dictionary passed to the :meth:`writerow` method are written to file *f*.
+   The optional *restval* parameter specifies the value to be written if the
+   dictionary is missing a key in *fieldnames*.  If the dictionary passed to
+   the :meth:`writerow` method contains a key not found in *fieldnames*, the
+   optional *extrasaction* parameter indicates what action to take.  If it is
+   set to ``'raise'``, the default value, a :exc:`ValueError` is raised.  If it
+   is set to ``'ignore'``, extra values in the dictionary are ignored.  Any
+   other optional or keyword arguments are passed to the underlying
    :class:`writer` instance.
 
    Note that unlike the :class:`DictReader` class, the *fieldnames* parameter
@@ -228,9 +229,9 @@ The :mod:`csv` module defines the following classes:
    The :class:`Dialect` class is a container class whose attributes contain
    information for how to handle doublequotes, whitespace, delimiters, etc.
    Due to the lack of a strict csv specification, different applications
-   produce subtly different csv data.  :class:`Dialect` attributes
-   are used to define the parameters for a specific :class:`reader` or
-   :class:`writer` instance.
+   produce subtly different csv data.  :class:`Dialect` attributes are used to
+   define the parameters for a specific :class:`reader` or :class:`writer`
+   instance.
 
    Register a dialect with a specific :class:`reader` or :class:`writer` with
    the dialect parameter and a dialect name; for example::
@@ -252,15 +253,16 @@ The :mod:`csv` module defines the following classes:
 
 .. class:: excel_tab()
 
-   The :class:`excel_tab` class defines the usual properties of an Excel-generated
-   TAB-delimited file.  It is registered with the dialect name ``'excel-tab'``.
+   The :class:`excel_tab` class defines the usual properties of an
+   Excel-generated TAB-delimited file.  It is registered with the dialect name
+   ``'excel-tab'``.
 
 
 .. class:: unix_dialect()
 
    The :class:`unix_dialect` class defines the usual properties of a CSV file
-   generated on UNIX systems, i.e. using ``'\n'`` as line terminator and quoting
-   all fields.  It is registered with the dialect name ``'unix'``.
+   generated on UNIX systems, i.e. using ``'\n'`` as line terminator and
+   quoting all fields.  It is registered with the dialect name ``'unix'``.
 
    .. versionadded:: 3.2
 
@@ -277,11 +279,11 @@ The :mod:`csv` module defines the following classes:
       is given, it is interpreted as a string containing possible valid
       delimiter characters.
 
-
    .. method:: has_header(sample)
 
       Analyze the sample text (presumed to be in CSV format) and return
       :const:`True` if the first row appears to be a series of column headers.
+
 
 An example for :class:`Sniffer` use::
 
@@ -322,12 +324,14 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`reader` to perform no special processing of quote characters.
 
+
 The :mod:`csv` module defines the following exception:
 
 
 .. exception:: Error
 
    Raised by any of the functions when an error is detected.
+
 
 .. _csv-fmt-params:
 
@@ -346,7 +350,6 @@ encounter.  Instances of :class:`Dialect` subclasses may be passed to a new
 
    :class:`Dialect` is an abstract class; subclass it instead of initializing
    it directly.
-
 
 Dialects support the following attributes:
 
@@ -369,10 +372,11 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.escapechar
 
-   A one-character string used by the writer to escape the *delimiter* if *quoting*
-   is set to :const:`QUOTE_NONE` and the *quotechar* if *doublequote* is
-   :const:`False`. On reading, the *escapechar* removes any special meaning from
-   the following character. It defaults to :const:`None`, which disables escaping.
+   A one-character string used by the writer to escape the *delimiter* if
+   *quoting* is set to :const:`QUOTE_NONE` and the *quotechar* if *doublequote*
+   is :const:`False`. On reading, the *escapechar* removes any special meaning
+   from the following character. It defaults to :const:`None`, which disables
+   escaping.
 
 
 .. attribute:: Dialect.lineterminator
@@ -412,6 +416,7 @@ Dialects support the following attributes:
    When ``True``, raise exception :exc:`Error` on bad CSV input.
    The default is ``False``.
 
+
 Reader Objects
 --------------
 
@@ -435,8 +440,8 @@ Reader objects have the following public attributes:
 
 .. attribute:: csvreader.line_num
 
-   The number of lines read from the source iterator. This is not the same as the
-   number of records returned, as records can span multiple lines.
+   The number of lines read from the source iterator. This is not the same as
+   the number of records returned, as records can span multiple lines.
 
 
 DictReader objects have the following public attribute:
@@ -453,12 +458,12 @@ Writer Objects
 --------------
 
 :class:`Writer` objects (:class:`DictWriter` instances and objects returned by
-the :func:`writer` function) have the following public methods.  A *row* must be
-an iterable of strings or numbers for :class:`Writer` objects and a dictionary
-mapping fieldnames to strings or numbers (by passing them through :func:`str`
-first) for :class:`DictWriter` objects.  Note that complex numbers are written
-out surrounded by parens. This may cause some problems for other programs which
-read CSV files (assuming they support complex numbers at all).
+the :func:`writer` function) have the following public methods.  A *row* must
+be an iterable of strings or numbers for :class:`Writer` objects and a
+dictionary mapping fieldnames to strings or numbers (by passing them through
+:func:`str` first) for :class:`DictWriter` objects.  Note that complex numbers
+are written out surrounded by parens. This may cause some problems for other
+programs which read CSV files (assuming they support complex numbers at all).
 
 
 .. method:: csvwriter.writerow(row)
@@ -476,6 +481,7 @@ read CSV files (assuming they support complex numbers at all).
    above) to the writer's file object, formatted according to the current
    dialect.
 
+
 Writer objects have the following public attribute:
 
 
@@ -489,9 +495,9 @@ DictWriter objects have the following public method:
 
 .. method:: DictWriter.writeheader()
 
-   Write a row with the field names (as specified in the constructor) to
-   the writer's file object, formatted according to the current dialect. Return
-   the return value of the :meth:`csvwriter.writerow` call used internally.
+   Write a row with the field names (as specified in the constructor) to the
+   writer's file object, formatted according to the current dialect. Return the
+   return value of the :meth:`csvwriter.writerow` call used internally.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
@@ -527,10 +533,10 @@ The corresponding simplest possible writing example is::
        writer = csv.writer(f)
        writer.writerows(someiterable)
 
-Since :func:`open` is used to open a CSV file for reading, the file
-will by default be decoded into unicode using the system default
-encoding (see :func:`locale.getpreferredencoding`).  To decode a file
-using a different encoding, use the ``encoding`` argument of open::
+Since :func:`open` is used to open a CSV file for reading, the file will by
+default be decoded into unicode using the system default encoding (see
+:func:`locale.getpreferredencoding`).  To decode a file using a different
+encoding, use the ``encoding`` argument of open::
 
    import csv
    with open('some.csv', newline='', encoding='utf-8') as f:
@@ -570,8 +576,8 @@ done::
 
 .. rubric:: Footnotes
 
-.. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
-   will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
-   on write an extra ``\r`` will be added.  It should always be safe to specify
-   ``newline=''``, since the csv module does its own
-   (:term:`universal <universal newlines>`) newline handling.
+.. [1] If ``newline=''`` is not specified, newlines embedded inside quoted
+   fields will not be interpreted correctly, and on platforms that use ``\r\n``
+   linendings on write an extra ``\r`` will be added.  It should always be safe to
+   specify ``newline=''``, since the csv module does its own (:term:`universal
+   <universal newlines>`) newline handling.
