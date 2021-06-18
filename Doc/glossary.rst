@@ -712,7 +712,7 @@ Glossary
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
       ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
 
-      On Windows, it is is the ANSI code page (ex: ``cp1252``).
+      On Windows, it is the ANSI code page (ex: ``cp1252``).
 
       ``locale.getpreferredencoding(False)`` can be used to get the locale
       encoding.
