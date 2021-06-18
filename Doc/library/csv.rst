@@ -233,8 +233,10 @@ The :mod:`csv` module defines the following classes:
    define the parameters for a specific :class:`reader` or :class:`writer`
    instance.
 
+
+   All available :class:`Dialect` names are returned by :func:`list_dialects`.
    Register a dialect with a specific :class:`reader` or :class:`writer` with
-   the dialect parameter and a dialect name; for example::
+   the *dialect* parameter and a dialect name; for example::
 
        import csv
 
@@ -242,7 +244,6 @@ The :mod:`csv` module defines the following classes:
            writer = csv.writer(csvfile, dialect='unix')
            ...
 
-   All available :class:`Dialect` names are returned by :func:`list_dialects`
 
 
 .. class:: excel()
@@ -285,7 +286,7 @@ The :mod:`csv` module defines the following classes:
       :const:`True` if the first row appears to be a series of column headers.
 
 
-An example for :class:`Sniffer` use::
+An example of :class:`Sniffer` usage::
 
    with open('example.csv', newline='') as csvfile:
        dialect = csv.Sniffer().sniff(csvfile.read(1024))
