@@ -205,7 +205,7 @@ get_localsplus_counts(PyObject *names, PyObject *kinds,
 }
 
 static PyObject *
-get_localsplus_names(PyCodeObject *co, char kind, int num)
+get_localsplus_names(PyCodeObject *co, _PyLocals_Kind kind, int num)
 {
     PyObject *names = PyTuple_New(num);
     if (names == NULL) {
@@ -239,6 +239,8 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
         con->names == NULL || !PyTuple_Check(con->names) ||
         con->localsplusnames == NULL || !PyTuple_Check(con->localsplusnames) ||
         con->localspluskinds == NULL || !PyBytes_Check(con->localspluskinds) ||
+        PyTuple_GET_SIZE(con->localsplusnames)
+            != PyBytes_GET_SIZE(con->localspluskinds) ||
         con->name == NULL || !PyUnicode_Check(con->name) ||
         con->filename == NULL || !PyUnicode_Check(con->filename) ||
         con->linetable == NULL || !PyBytes_Check(con->linetable) ||

@@ -7189,14 +7189,10 @@ merge_const_one(struct compiler *c, PyObject **obj)
 extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
-static PyObject *
-compute_localsplus_info(struct compiler *c, PyObject *names)
+void
+compute_localsplus_info(struct compiler *c, int nlocalsplus,
+                        PyObject *names, PyObject *kinds)
 {
-    Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(names);
-    PyObject *kinds = PyBytes_FromStringAndSize(NULL, nlocalsplus);
-    if (kinds == NULL)
-        return NULL;
-
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(c->u->u_varnames, &pos, &k, &v)) {
@@ -7236,8 +7232,6 @@ compute_localsplus_info(struct compiler *c, PyObject *names)
         assert(offset < nlocalsplus);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
-
-    return kinds;
 }
 
 static PyCodeObject *
@@ -7284,10 +7278,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (localsplusnames == NULL) {
         goto error;
     }
-    localspluskinds = compute_localsplus_info(c, localsplusnames);
+    localspluskinds = PyBytes_FromStringAndSize(NULL, nlocalsplus);
     if (localspluskinds == NULL) {
         goto error;
     }
+    compute_localsplus_info(c, nlocalsplus, localsplusnames, localspluskinds);
 
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
