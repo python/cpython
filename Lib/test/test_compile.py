@@ -795,24 +795,24 @@ if 1:
     def test_imported_load_method(self):
         sources = [
             """\
-            import ast
+            import os
             def foo():
-                return ast.Name('abydos')
+                return os.uname()
             """,
             """\
-            import ast as python_ast
+            import os as operating_system
             def foo():
-                return python_ast.Name('chulak')
+                return operating_system.uname()
             """,
             """\
-            from concurrent import futures
-            def foo():
-                return futures.Executor()
+            from os import path
+            def foo(x):
+                return path.join(x)
             """,
             """\
-            from concurrent import futures as c_futures
-            def foo():
-                return c_futures.Executor()
+            from os import path as os_path
+            def foo(x):
+                return os_path.join(x)
             """
         ]
         for source in sources:
