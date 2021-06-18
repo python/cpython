@@ -345,6 +345,11 @@ raised from:
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
+   .. warning::
+      Notice this won't work if :c:func:`PyErr_Display` is not called to display the error
+      which can happen if some other custom error display function is used. This is a common
+      scenario in some REPLs like IPython.
+
 NameErrors
 ~~~~~~~~~~
 
@@ -361,6 +366,12 @@ was raised from:
     NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
+
+   .. warning::
+      Notice this won't work if :c:func:`PyErr_Display` is not called to display the error,
+      which can happen if some other custom error display function is used. This is a common
+      scenario in some REPLs like IPython.
+
 
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
