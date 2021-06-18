@@ -1,0 +1,2 @@
+On OS X, all ``PyMem*`` allocation methods return ``NULL`` for any request
+over 4TB.

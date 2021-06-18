@@ -73,6 +73,8 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 #  endif
 #endif
 
+#define _Py_OSX_ALLOC_LIMIT 4000000000000  // 4TB; see bpo-40928
+
 /* Forward declaration */
 static void* _PyObject_Malloc(void *ctx, size_t size);
 static void* _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize);
@@ -86,6 +88,17 @@ static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
    library, whereas _Py_NewReference() requires it. */
 struct _PyTraceMalloc_Config _Py_tracemalloc_config = _PyTraceMalloc_Config_INIT;
 
+static inline bool
+pymem_darwin_alloc_limit_exceeded(size_t size)
+{
+    /* bpo-40928: attempts to make very large allocations (in the petabytes)
+       causes darwin systems to print nasty errors to STDERR. Putting a high
+       limit on allocations (currently 4TB) prevents these warnings. */
+    if (size > _Py_OSX_ALLOC_LIMIT) {
+        return true;
+    }
+    return false;
+}
 
 static void *
 _PyMem_RawMalloc(void *ctx, size_t size)
@@ -611,6 +624,9 @@ void PyMem_RawFree(void *ptr)
 void *
 PyMem_Malloc(size_t size)
 {
+#ifdef __APPLE__
+    if (pymem_darwin_alloc_limit_exceeded(size)) return NULL;
+#endif
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
@@ -620,6 +636,9 @@ PyMem_Malloc(size_t size)
 void *
 PyMem_Calloc(size_t nelem, size_t elsize)
 {
+#ifdef __APPLE__
+    if (pymem_darwin_alloc_limit_exceeded(nelem * elsize)) return NULL;
+#endif
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
@@ -629,6 +648,9 @@ PyMem_Calloc(size_t nelem, size_t elsize)
 void *
 PyMem_Realloc(void *ptr, size_t new_size)
 {
+#ifdef __APPLE__
+    if (pymem_darwin_alloc_limit_exceeded(new_size)) return NULL;
+#endif
     /* see PyMem_RawMalloc() */
     if (new_size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
@@ -691,6 +713,9 @@ _PyMem_Strdup(const char *str)
 void *
 PyObject_Malloc(size_t size)
 {
+#ifdef __APPLE__
+    if (pymem_darwin_alloc_limit_exceeded(size)) return NULL;
+#endif
     /* see PyMem_RawMalloc() */
     if (size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
@@ -700,6 +725,9 @@ PyObject_Malloc(size_t size)
 void *
 PyObject_Calloc(size_t nelem, size_t elsize)
 {
+#ifdef __APPLE__
+    if (pymem_darwin_alloc_limit_exceeded(nelem * elsize)) return NULL;
+#endif
     /* see PyMem_RawMalloc() */
     if (elsize != 0 && nelem > (size_t)PY_SSIZE_T_MAX / elsize)
         return NULL;
@@ -709,6 +737,9 @@ PyObject_Calloc(size_t nelem, size_t elsize)
 void *
 PyObject_Realloc(void *ptr, size_t new_size)
 {
+#ifdef __APPLE__
+    if (pymem_darwin_alloc_limit_exceeded(new_size)) return NULL;
+#endif
     /* see PyMem_RawMalloc() */
     if (new_size > (size_t)PY_SSIZE_T_MAX)
         return NULL;
