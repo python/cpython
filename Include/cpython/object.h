@@ -508,8 +508,7 @@ passed as second argument to Py_TRASHCAN_BEGIN().
 PyAPI_FUNC(void) _PyTrash_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_destroy_chain(void);
 
-/* This is the old private API, invoked by the macros before 3.9.
-   Kept for binary compatibility of extensions using the stable ABI. */
+/* The new thread-safe private API, invoked by the macros below. */
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyObject*);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
 
