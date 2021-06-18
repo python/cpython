@@ -892,18 +892,18 @@ class PyFrameObjectPtr(PyObjectPtr):
             pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
             yield (pyop_name, pyop_value)
 
-    def _f_specials(self, index):
+    def _f_specials(self, index, cls=PyObjectPtr):
         f_valuestack = self.field('f_valuestack')
-        return PyObjectPtr.from_pyobject_ptr(f_valuestack[index - FRAME_SPECIALS_SIZE])
-
+        return cls.from_pyobject_ptr(f_valuestack[index - FRAME_SPECIALS_SIZE])
 
     def _f_globals(self):
         return self._f_specials(FRAME_SPECIALS_GLOBAL_OFFSET)
 
+    def _f_builtins(self):
+        return self._f_specials(FRAME_SPECIALS_BUILTINS_OFFSET)
+
     def _f_code(self):
-        f_valuestack = self.field('f_valuestack')
-        code = f_valuestack[FRAME_SPECIALS_CODE_OFFSET - FRAME_SPECIALS_SIZE]
-        return PyCodeObjectPtr.from_pyobject_ptr(code)
+        return self._f_specials(FRAME_SPECIALS_CODE_OFFSET, PyCodeObjectPtr)
 
     def iter_globals(self):
         '''
@@ -915,9 +915,6 @@ class PyFrameObjectPtr(PyObjectPtr):
 
         pyop_globals = self._f_globals()
         return pyop_globals.iteritems()
-
-    def _f_builtins(self):
-        return self._f_specials(FRAME_SPECIALS_BUILTINS_OFFSET)
 
     def iter_builtins(self):
         '''
