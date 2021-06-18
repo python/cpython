@@ -175,7 +175,7 @@ identifier.  Python currently uses eight paths:
    If *expand* is set to ``False``, the path will not be expanded using the
    variables.
 
-   If *name* is not found, return ``None``.
+   If *name* is not found, raise a :exc:`KeyError`.
 
 
 .. function:: get_paths([scheme, [vars, [expand]]])
