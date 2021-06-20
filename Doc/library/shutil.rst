@@ -265,9 +265,7 @@ Directory and files operations
    that supports the same signature (like :func:`~shutil.copy`) can be used.
 
    If *dirs_exist_ok* is false (the default) and *dst* already exists, a
-   :exc:`FileExistsError` is raised. If *dirs_exist_ok* is true, *dst* as well
-   as any parent directory in the path to *dst* will be created if they do
-   not exist already.
+   :exc:`FileExistsError` is raised.
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
