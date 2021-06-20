@@ -1,23 +1,9 @@
 import array
 import collections
-import contextlib
 import dataclasses
 import enum
 import inspect
 import unittest
-import warnings
-
-
-def no_perf(f):
-    f.no_perf = None
-    return f
-
-
-@dataclasses.dataclass
-class MyClass:
-    x: int
-    y: str
-    __match_args__ = ("x", "y")
 
 
 @dataclasses.dataclass
@@ -26,11 +12,58 @@ class Point:
     y: int
 
 
-class TestPatma(unittest.TestCase):
+class TestCompiler(unittest.TestCase):
 
-    def assert_syntax_error(self, code: str):
-        with self.assertRaises(SyntaxError):
-            compile(inspect.cleandoc(code), "<test>", "exec")
+    def test_refleaks(self):
+        # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
+        # just the code under test. This test ensures that if there are leaks in
+        # the pattern compiler, those runs will fail:
+        with open(__file__) as file:
+            compile(file.read(), __file__, "exec")
+
+
+class TestInheritance(unittest.TestCase):
+
+    def test_multiple_inheritance(self):
+        class C:
+            pass
+        class S1(collections.UserList, collections.abc.Mapping):
+            pass
+        class S2(C, collections.UserList, collections.abc.Mapping):
+            pass
+        class S3(list, C, collections.abc.Mapping):
+            pass
+        class S4(collections.UserList, dict, C):
+            pass
+        class M1(collections.UserDict, collections.abc.Sequence):
+            pass
+        class M2(C, collections.UserDict, collections.abc.Sequence):
+            pass
+        class M3(collections.UserDict, C, list):
+            pass
+        class M4(dict, collections.abc.Sequence, C):
+            pass
+        def f(x):
+            match x:
+                case []:
+                    return "seq"
+                case {}:
+                    return "map"
+        def g(x):
+            match x:
+                case {}:
+                    return "map"
+                case []:
+                    return "seq"
+        for Seq in (S1, S2, S3, S4):
+            self.assertEqual(f(Seq()), "seq")
+            self.assertEqual(g(Seq()), "seq")
+        for Map in (M1, M2, M3, M4):
+            self.assertEqual(f(Map()), "map")
+            self.assertEqual(g(Map()), "map")
+
+
+class TestPatma(unittest.TestCase):
 
     def test_patma_000(self):
         match 0:
@@ -1701,7 +1734,6 @@ class TestPatma(unittest.TestCase):
         self.assertIs(http_error("400"), None)
         self.assertIs(http_error(401 | 403 | 404), None)  # 407
 
-    @no_perf
     def test_patma_176(self):
         def whereis(point):
             match point:
@@ -1714,13 +1746,12 @@ class TestPatma(unittest.TestCase):
                 case (x, y):
                     return f"X={x}, Y={y}"
                 case _:
-                    raise ValueError("Not a point")
+                    return "Not a point"
         self.assertEqual(whereis((0, 0)), "Origin")
         self.assertEqual(whereis((0, -1.0)), "Y=-1.0")
         self.assertEqual(whereis(("X", 0)), "X=X")
         self.assertEqual(whereis((None, 1j)), "X=None, Y=1j")
-        with self.assertRaises(ValueError):
-            whereis(42)
+        self.assertEqual(whereis(42), "Not a point")
 
     def test_patma_177(self):
         def whereis(point):
@@ -2179,11 +2210,11 @@ class TestPatma(unittest.TestCase):
     def test_patma_212(self):
         def f(w):
             match w:
-                case MyClass(int(xx), y="hello"):
+                case Point(int(xx), y="hello"):
                     out = locals()
                     del out["w"]
                     return out
-        self.assertEqual(f(MyClass(42, "hello")), {"xx": 42})
+        self.assertEqual(f(Point(42, "hello")), {"xx": 42})
 
     def test_patma_213(self):
         def f(w):
@@ -2225,99 +2256,35 @@ class TestPatma(unittest.TestCase):
                     return locals()
         self.assertEqual(set(f()), {"abc"})
 
-    @no_perf
     def test_patma_218(self):
-        self.assert_syntax_error("""
-        match ...:
-            case "a" | a:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_219(self):
-        self.assert_syntax_error("""
-        match ...:
-            case a | "a":
-                pass
-        """)
-
-    def test_patma_220(self):
         def f():
             match ..., ...:
                 case a, b:
                     return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
-    @no_perf
-    def test_patma_221(self):
-        self.assert_syntax_error("""
-        match ...:
-            case a, a:
-                pass
-        """)
-
-    def test_patma_222(self):
+    def test_patma_219(self):
         def f():
             match {"k": ..., "l": ...}:
                 case {"k": a, "l": b}:
                     return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
-    @no_perf
-    def test_patma_223(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {"k": a, "l": a}:
-                pass
-        """)
-
-    def test_patma_224(self):
+    def test_patma_220(self):
         def f():
-            match MyClass(..., ...):
-                case MyClass(x, y=y):
+            match Point(..., ...):
+                case Point(x, y=y):
                     return locals()
         self.assertEqual(set(f()), {"x", "y"})
 
-    @no_perf
-    def test_patma_225(self):
-        self.assert_syntax_error("""
-        match ...:
-            case MyClass(x, x):
-                pass
-        """)
-
-    @no_perf
-    def test_patma_226(self):
-        self.assert_syntax_error("""
-        match ...:
-            case MyClass(x=x, y=x):
-                pass
-        """)
-
-    @no_perf
-    def test_patma_227(self):
-        self.assert_syntax_error("""
-        match ...:
-            case MyClass(x, y=x):
-                pass
-        """)
-
-    def test_patma_228(self):
+    def test_patma_221(self):
         def f():
             match ...:
                 case b as a:
                     return locals()
         self.assertEqual(set(f()), {"a", "b"})
 
-    @no_perf
-    def test_patma_229(self):
-        self.assert_syntax_error("""
-        match ...:
-            case a as a:
-                pass
-        """)
-
-    def test_patma_230(self):
+    def test_patma_222(self):
         def f(x):
             match x:
                 case _:
@@ -2327,7 +2294,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 0)
         self.assertEqual(f(3), 0)
 
-    def test_patma_231(self):
+    def test_patma_223(self):
         def f(x):
             match x:
                 case 0:
@@ -2337,7 +2304,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(f(2), None)
         self.assertIs(f(3), None)
 
-    def test_patma_232(self):
+    def test_patma_224(self):
         def f(x):
             match x:
                 case 0:
@@ -2349,7 +2316,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 1)
         self.assertEqual(f(3), 1)
 
-    def test_patma_233(self):
+    def test_patma_225(self):
         def f(x):
             match x:
                 case 0:
@@ -2361,7 +2328,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(f(2), None)
         self.assertIs(f(3), None)
 
-    def test_patma_234(self):
+    def test_patma_226(self):
         def f(x):
             match x:
                 case 0:
@@ -2375,7 +2342,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 2)
         self.assertEqual(f(3), 2)
 
-    def test_patma_235(self):
+    def test_patma_227(self):
         def f(x):
             match x:
                 case 0:
@@ -2389,211 +2356,13 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(2), 2)
         self.assertIs(f(3), None)
 
-    @no_perf
-    def test_patma_236(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {**rest, "key": value}:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_237(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {"first": first, **rest, "last": last}:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_238(self):
-        self.assert_syntax_error("""
-        match ...:
-            case *a, b, *c, d, *e:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_239(self):
-        self.assert_syntax_error("""
-        match ...:
-            case a, *b, c, *d, e:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_240(self):
-        self.assert_syntax_error("""
-        match ...:
-            case 0+0:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_241(self):
-        self.assert_syntax_error("""
-        match ...:
-            case f"":
-                pass
-        """)
-
-    @no_perf
-    def test_patma_242(self):
-        self.assert_syntax_error("""
-        match ...:
-            case f"{x}":
-                pass
-        """)
-
-    @no_perf
-    def test_patma_243(self):
-        self.assert_syntax_error("""
-        match 42:
-            case x:
-                pass
-            case y:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_244(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {**_}:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_245(self):
-        self.assert_syntax_error("""
-        match ...:
-            case 42 as _:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_246(self):
-        class Class:
-            __match_args__ = None
-        x = Class()
-        y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y):
-                    z = 0
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_247(self):
-        class Class:
-            __match_args__ = "XYZ"
-        x = Class()
-        y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y):
-                    z = 0
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_248(self):
-        class Class:
-            __match_args__ = (None,)
-        x = Class()
-        y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y):
-                    z = 0
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_249(self):
-        class Class:
-            __match_args__ = ()
-        x = Class()
-        y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y):
-                    z = 0
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_250(self):
-        self.assert_syntax_error("""
-        match ...:
-            case Class(a=_, a=_):
-                pass
-        """)
-
-    @no_perf
-    def test_patma_251(self):
-        x = {"a": 0, "b": 1}
-        w = y = z = None
-        with self.assertRaises(ValueError):
-            match x:
-                case {"a": y, "a": z}:
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_252(self):
-        class Keys:
-            KEY = "a"
-        x = {"a": 0, "b": 1}
-        w = y = z = None
-        with self.assertRaises(ValueError):
-            match x:
-                case {Keys.KEY: y, "a": z}:
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_253(self):
-        class Class:
-            __match_args__ = ("a", "a")
-            a = None
-        x = Class()
-        w = y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y, z):
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_254(self):
-        class Class:
-            __match_args__ = ("a",)
-            a = None
-        x = Class()
-        w = y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y, a=z):
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    def test_patma_255(self):
+    def test_patma_228(self):
         match():
             case():
                 x = 0
         self.assertEqual(x, 0)
 
-    def test_patma_256(self):
+    def test_patma_229(self):
         x = 0
         match(x):
             case(x):
@@ -2601,7 +2370,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, 0)
         self.assertEqual(y, 0)
 
-    def test_patma_257(self):
+    def test_patma_230(self):
         x = 0
         match x:
             case False:
@@ -2611,7 +2380,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, 0)
         self.assertEqual(y, 1)
 
-    def test_patma_258(self):
+    def test_patma_231(self):
         x = 1
         match x:
             case True:
@@ -2621,7 +2390,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, 1)
         self.assertEqual(y, 1)
 
-    def test_patma_259(self):
+    def test_patma_232(self):
         class Eq:
             def __eq__(self, other):
                 return True
@@ -2633,7 +2402,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(x, eq)
         self.assertEqual(y, None)
 
-    def test_patma_260(self):
+    def test_patma_233(self):
         x = False
         match x:
             case False:
@@ -2641,7 +2410,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(x, False)
         self.assertEqual(y, 0)
 
-    def test_patma_261(self):
+    def test_patma_234(self):
         x = True
         match x:
             case True:
@@ -2649,7 +2418,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(x, True)
         self.assertEqual(y, 0)
 
-    def test_patma_262(self):
+    def test_patma_235(self):
         x = None
         match x:
             case None:
@@ -2657,7 +2426,7 @@ class TestPatma(unittest.TestCase):
         self.assertIs(x, None)
         self.assertEqual(y, 0)
 
-    def test_patma_263(self):
+    def test_patma_236(self):
         x = 0
         match x:
             case (0 as w) as z:
@@ -2667,7 +2436,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, 0)
 
-    def test_patma_264(self):
+    def test_patma_237(self):
         x = 0
         match x:
             case (0 as w) as z:
@@ -2677,7 +2446,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, 0)
 
-    def test_patma_265(self):
+    def test_patma_238(self):
         x = ((0, 1), (2, 3))
         match x:
             case ((a as b, c as d) as e) as w, ((f as g, h) as i) as z:
@@ -2696,87 +2465,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, (2, 3))
 
-    @no_perf
-    def test_patma_266(self):
-        self.assert_syntax_error("""
-        match ...:
-            case _ | _:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_267(self):
-        self.assert_syntax_error("""
-        match ...:
-            case (_ as x) | [x]:
-                pass
-        """)
-
-
-    @no_perf
-    def test_patma_268(self):
-        self.assert_syntax_error("""
-        match ...:
-            case _ | _ if condition():
-                pass
-        """)
-
-
-    @no_perf
-    def test_patma_269(self):
-        self.assert_syntax_error("""
-        match ...:
-            case x | [_ as x] if x:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_270(self):
-        self.assert_syntax_error("""
-        match ...:
-            case _:
-                pass
-            case None:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_271(self):
-        self.assert_syntax_error("""
-        match ...:
-            case x:
-                pass
-            case [x] if x:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_272(self):
-        self.assert_syntax_error("""
-        match ...:
-            case x:
-                pass
-            case _:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_273(self):
-        self.assert_syntax_error("""
-        match ...:
-            case (None | _) | _:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_274(self):
-        self.assert_syntax_error("""
-        match ...:
-            case _ | (True | False):
-                pass
-        """)
-
-    def test_patma_275(self):
+    def test_patma_239(self):
         x = collections.UserDict({0: 1, 2: 3})
         match x:
             case {2: 3}:
@@ -2784,7 +2473,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(x, {0: 1, 2: 3})
         self.assertEqual(y, 0)
 
-    def test_patma_276(self):
+    def test_patma_240(self):
         x = collections.UserDict({0: 1, 2: 3})
         match x:
             case {2: 3, **z}:
@@ -2793,7 +2482,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, {0: 1})
 
-    def test_patma_277(self):
+    def test_patma_241(self):
         x = [[{0: 0}]]
         match x:
             case list([({-0-0j: int(real=0+0j, imag=0-0j) | (1) as z},)]):
@@ -2802,7 +2491,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, 0)
 
-    def test_patma_278(self):
+    def test_patma_242(self):
         x = range(3)
         match x:
             case [y, *_, z]:
@@ -2812,7 +2501,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 0)
         self.assertEqual(z, 2)
 
-    def test_patma_279(self):
+    def test_patma_243(self):
         x = range(3)
         match x:
             case [_, *_, y]:
@@ -2821,7 +2510,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 2)
         self.assertEqual(z, 0)
 
-    def test_patma_280(self):
+    def test_patma_244(self):
         x = range(3)
         match x:
             case [*_, y]:
@@ -2830,82 +2519,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 2)
         self.assertEqual(z, 0)
 
-    @no_perf
-    def test_patma_281(self):
-        x = range(10)
-        y = None
-        with self.assertRaises(TypeError):
-            match x:
-                case range(10):
-                    y = 0
-        self.assertEqual(x, range(10))
-        self.assertIs(y, None)
-
-    @no_perf
-    def test_patma_282(self):
-        class Class:
-            __match_args__ = ["spam", "eggs"]
-            spam = 0
-            eggs = 1
-        x = Class()
-        w = y = z = None
-        with self.assertRaises(TypeError):
-            match x:
-                case Class(y, z):
-                    w = 0
-        self.assertIs(w, None)
-        self.assertIs(y, None)
-        self.assertIs(z, None)
-
-    @no_perf
-    def test_patma_283(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {0+0: _}:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_284(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {f"": _}:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_285(self):
-        self.assert_syntax_error("""
-        match ...:
-            case 0j+0:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_286(self):
-        self.assert_syntax_error("""
-        match ...:
-            case 0j+0j:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_287(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {0j+0: _}:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_288(self):
-        self.assert_syntax_error("""
-        match ...:
-            case {0j+0j: _}:
-                pass
-        """)
-
-    def test_patma_289(self):
+    def test_patma_245(self):
         x = {"y": 1}
         match x:
             case {"y": (0 as y) | (1 as y)}:
@@ -2914,23 +2528,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(y, 1)
         self.assertEqual(z, 0)
 
-    @no_perf
-    def test_patma_290(self):
-        self.assert_syntax_error("""
-        match ...:
-            case [a, [b] | [c] | [d]]:
-                pass
-        """)
-
-    @no_perf
-    def test_patma_291(self):
-        # Hunting for leaks using -R doesn't catch leaks in the compiler itself,
-        # just the code under test. This test ensures that if there are leaks in
-        # the pattern compiler, those runs will fail:
-        with open(__file__) as file:
-            compile(file.read(), __file__, "exec")
-
-    def test_patma_292(self):
+    def test_patma_246(self):
         def f(x):
             match x:
                 case ((a, b, c, d, e, f, g, h, i, 9) |
@@ -2954,7 +2552,7 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f(range(-1, -11, -1)), alts[3])
         self.assertEqual(f(range(10, 20)), alts[4])
 
-    def test_patma_293(self):
+    def test_patma_247(self):
         def f(x):
             match x:
                 case [y, (a, b, c, d, e, f, g, h, i, 9) |
@@ -2979,79 +2577,430 @@ class TestPatma(unittest.TestCase):
         self.assertEqual(f((False, range(10, 20), True)), alts[4])
 
 
-class TestInheritance(unittest.TestCase):
+class TestSyntaxErrors(unittest.TestCase):
 
-    def test_multiple_inheritance(self):
-        class C:
-            pass
-        class S1(collections.UserList, collections.abc.Mapping):
-            pass
-        class S2(C, collections.UserList, collections.abc.Mapping):
-            pass
-        class S3(list, C, collections.abc.Mapping):
-            pass
-        class S4(collections.UserList, dict, C):
-            pass
-        class M1(collections.UserDict, collections.abc.Sequence):
-            pass
-        class M2(C, collections.UserDict, collections.abc.Sequence):
-            pass
-        class M3(collections.UserDict, C, list):
-            pass
-        class M4(dict, collections.abc.Sequence, C):
-            pass
-        def f(x):
+    def assert_syntax_error(self, code: str):
+        with self.assertRaises(SyntaxError):
+            compile(inspect.cleandoc(code), "<test>", "exec")
+
+    def test_alternative_patterns_bind_different_names_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case "a" | a:
+                pass
+        """)
+
+    def test_alternative_patterns_bind_different_names_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case [a, [b] | [c] | [d]]:
+                pass
+        """)
+
+
+    def test_attribute_name_repeated_in_class_pattern(self):
+        self.assert_syntax_error("""
+        match ...:
+            case Class(a=_, a=_):
+                pass
+        """)
+
+    def test_imaginary_number_required_in_complex_literal_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0+0:
+                pass
+        """)
+
+    def test_imaginary_number_required_in_complex_literal_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0+0: _}:
+                pass
+        """)
+
+    def test_invalid_syntax_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {**rest, "key": value}:
+                pass
+        """)
+
+    def test_invalid_syntax_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {"first": first, **rest, "last": last}:
+                pass
+        """)
+
+    def test_invalid_syntax_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {**_}:
+                pass
+        """)
+
+    def test_invalid_syntax_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 42 as _:
+                pass
+        """)
+
+    def test_mapping_pattern_keys_may_only_match_literals_and_attribute_lookups(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {f"": _}:
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a, a:
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {"k": a, "l": a}:
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case MyClass(x, x):
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case MyClass(x=x, y=x):
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_4(self):
+        self.assert_syntax_error("""
+        match ...:
+            case MyClass(x, y=x):
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_5(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a as a:
+                pass
+        """)
+
+    def test_multiple_starred_names_in_sequence_pattern_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case *a, b, *c, d, *e:
+                pass
+        """)
+
+    def test_multiple_starred_names_in_sequence_pattern_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a, *b, c, *d, e:
+                pass
+        """)
+
+    def test_name_capture_makes_remaining_patterns_unreachable_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a | "a":
+                pass
+        """)
+
+    def test_name_capture_makes_remaining_patterns_unreachable_1(self):
+        self.assert_syntax_error("""
+        match 42:
+            case x:
+                pass
+            case y:
+                pass
+        """)
+
+    def test_name_capture_makes_remaining_patterns_unreachable_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case x | [_ as x] if x:
+                pass
+        """)
+
+    def test_name_capture_makes_remaining_patterns_unreachable_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case x:
+                pass
+            case [x] if x:
+                pass
+        """)
+
+    def test_name_capture_makes_remaining_patterns_unreachable_4(self):
+        self.assert_syntax_error("""
+        match ...:
+            case x:
+                pass
+            case _:
+                pass
+        """)
+
+    def test_patterns_may_only_match_literals_and_attribute_lookups_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case f"":
+                pass
+        """)
+
+    def test_patterns_may_only_match_literals_and_attribute_lookups_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case f"{x}":
+                pass
+        """)
+
+    def test_real_number_required_in_complex_literal_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0j+0:
+                pass
+        """)
+
+    def test_real_number_required_in_complex_literal_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case 0j+0j:
+                pass
+        """)
+
+    def test_real_number_required_in_complex_literal_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0j+0: _}:
+                pass
+        """)
+
+    def test_real_number_required_in_complex_literal_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case {0j+0j: _}:
+                pass
+        """)
+
+    def test_wildcard_makes_remaining_patterns_unreachable_0(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _ | _:
+                pass
+        """)
+
+    def test_wildcard_makes_remaining_patterns_unreachable_1(self):
+        self.assert_syntax_error("""
+        match ...:
+            case (_ as x) | [x]:
+                pass
+        """)
+
+    def test_wildcard_makes_remaining_patterns_unreachable_2(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _ | _ if condition():
+                pass
+        """)
+
+    def test_wildcard_makes_remaining_patterns_unreachable_3(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _:
+                pass
+            case None:
+                pass
+        """)
+
+    def test_wildcard_makes_remaining_patterns_unreachable_4(self):
+        self.assert_syntax_error("""
+        match ...:
+            case (None | _) | _:
+                pass
+        """)
+
+    def test_wildcard_makes_remaining_patterns_unreachable_5(self):
+        self.assert_syntax_error("""
+        match ...:
+            case _ | (True | False):
+                pass
+        """)
+
+
+class TestTypeErrors(unittest.TestCase):
+
+    def test_accepts_positional_subpatterns_0(self):
+        class Class:
+            __match_args__ = ()
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
             match x:
-                case []:
-                    return "seq"
-                case {}:
-                    return "map"
-        def g(x):
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_accepts_positional_subpatterns_1(self):
+        x = range(10)
+        y = None
+        with self.assertRaises(TypeError):
             match x:
-                case {}:
-                    return "map"
-                case []:
-                    return "seq"
-        for Seq in (S1, S2, S3, S4):
-            self.assertEqual(f(Seq()), "seq")
-            self.assertEqual(g(Seq()), "seq")
-        for Map in (M1, M2, M3, M4):
-            self.assertEqual(f(Map()), "map")
-            self.assertEqual(g(Map()), "map")
+                case range(10):
+                    y = 0
+        self.assertEqual(x, range(10))
+        self.assertIs(y, None)
+
+    def test_got_multiple_subpatterns_for_attribute_0(self):
+        class Class:
+            __match_args__ = ("a", "a")
+            a = None
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_got_multiple_subpatterns_for_attribute_1(self):
+        class Class:
+            __match_args__ = ("a",)
+            a = None
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, a=z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_match_args_elements_must_be_strings(self):
+        class Class:
+            __match_args__ = (None,)
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_match_args_must_be_a_tuple_0(self):
+        class Class:
+            __match_args__ = None
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_match_args_must_be_a_tuple_1(self):
+        class Class:
+            __match_args__ = "XYZ"
+        x = Class()
+        y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y):
+                    z = 0
+        self.assertIs(y, None)
+        self.assertIs(z, None)
+
+    def test_match_args_must_be_a_tuple_2(self):
+        class Class:
+            __match_args__ = ["spam", "eggs"]
+            spam = 0
+            eggs = 1
+        x = Class()
+        w = y = z = None
+        with self.assertRaises(TypeError):
+            match x:
+                case Class(y, z):
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
 
 
-class PerfPatma(TestPatma):
+class TestValueErrors(unittest.TestCase):
 
-    def assertEqual(*_, **__):
-        pass
+    def test_mapping_pattern_checks_duplicate_key_0(self):
+        x = {"a": 0, "b": 1}
+        w = y = z = None
+        with self.assertRaises(ValueError):
+            match x:
+                case {"a": y, "a": z}:
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
 
-    def assertIs(*_, **__):
-        pass
+    def test_mapping_pattern_checks_duplicate_key_1(self):
+        class Keys:
+            KEY = "a"
+        x = {"a": 0, "b": 1}
+        w = y = z = None
+        with self.assertRaises(ValueError):
+            match x:
+                case {Keys.KEY: y, "a": z}:
+                    w = 0
+        self.assertIs(w, None)
+        self.assertIs(y, None)
+        self.assertIs(z, None)
 
-    def assertRaises(*_, **__):
-        assert False, "this test should be decorated with @no_perf!"
 
-    def assertWarns(*_, **__):
-        assert False, "this test should be decorated with @no_perf!"
+if __name__ == "__main__":
+    """
+    # From inside environment using this Python, with pyperf installed:
+    sudo $(which pyperf) system tune && \
+         $(which python) -m test.test_patma --rigorous; \
+    sudo $(which pyperf) system reset
+    """
+    import pyperf
 
-    def run_perf(self):
-        attrs = vars(TestPatma).items()
-        tests = [
-            attr for name, attr in attrs
-            if name.startswith("test_") and not hasattr(attr, "no_perf")
-        ]
-        for _ in range(1 << 8):
+
+    class PerfPatma(TestPatma):
+
+        def assertEqual(*_, **__):
+            pass
+
+        def assertIs(*_, **__):
+            pass
+
+        def assertRaises(*_, **__):
+            assert False, "this test should be a method of a different class!"
+
+        def run_perf(self, count):
+            tests = []
+            for attr in vars(TestPatma):
+                if attr.startswith("test_"):
+                    tests.append(getattr(self, attr))
+            tests *= count
+            start = pyperf.perf_counter()
             for test in tests:
-                test(self)
-
-    @staticmethod
-    def setUpClass():
-        raise unittest.SkipTest("performance testing")
+                test()
+            return pyperf.perf_counter() - start
 
 
-"""
-# From inside venv pointing to this Python, with pyperf installed:
-sudo $(which python) -m pyperf system tune && \
-     $(which python) -m pyperf timeit --rigorous --setup "from test.test_patma import PerfPatma; p = PerfPatma()" "p.run_perf()"; \
-sudo $(which python) -m pyperf system reset
-"""
+    runner = pyperf.Runner()
+    runner.bench_time_func("patma", PerfPatma().run_perf)

@@ -993,9 +993,9 @@ class Enum(metaclass=EnumType):
         # mixed-in Enums should use the mixed-in type's __format__, otherwise
         # we can get strange results with the Enum name showing up instead of
         # the value
-
+        #
         # pure Enum branch, or branch with __str__ explicitly overridden
-        str_overridden = type(self).__str__ not in (Enum.__str__, Flag.__str__)
+        str_overridden = type(self).__str__ not in (Enum.__str__, IntEnum.__str__, Flag.__str__)
         if self._member_type_ is object or str_overridden:
             cls = str
             val = str(self)
@@ -1005,7 +1005,7 @@ class Enum(metaclass=EnumType):
                 import warnings
                 warnings.warn(
                         "in 3.12 format() will use the enum member, not the enum member's value;\n"
-                        "use a format specifier, such as :d for an IntEnum member, to maintain "
+                        "use a format specifier, such as :d for an integer-based Enum, to maintain "
                         "the current display",
                         DeprecationWarning,
                         stacklevel=2,
@@ -1044,6 +1044,22 @@ class IntEnum(int, Enum):
     Enum where members are also (and must be) ints
     """
 
+    def __str__(self):
+        return "%s" % (self._name_, )
+
+    def __format__(self, format_spec):
+        """
+        Returns format using actual value unless __str__ has been overridden.
+        """
+        str_overridden = type(self).__str__ != IntEnum.__str__
+        if str_overridden:
+            cls = str
+            val = str(self)
+        else:
+            cls = self._member_type_
+            val = self._value_
+        return cls.__format__(val, format_spec)
+
 
 class StrEnum(str, Enum):
     """
@@ -1071,6 +1087,8 @@ class StrEnum(str, Enum):
         return member
 
     __str__ = str.__str__
+
+    __format__ = str.__format__
 
     def _generate_next_value_(name, start, count, last_values):
         """
@@ -1299,6 +1317,16 @@ class IntFlag(int, Flag, boundary=EJECT):
     """
     Support for integer-based Flags
     """
+
+    def __format__(self, format_spec):
+        """
+        Returns format using actual value unless __str__ has been overridden.
+        """
+        str_overridden = type(self).__str__ != Flag.__str__
+        value = self
+        if not str_overridden:
+            value = self._value_
+        return int.__format__(value, format_spec)
 
     def __or__(self, other):
         if isinstance(other, self.__class__):
