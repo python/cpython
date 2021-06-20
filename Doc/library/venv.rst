@@ -171,11 +171,11 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: ensure_directories(env_dir)
 
         Creates the environment directory and all necessary subdirectories that
-        don't already exist, and returns a context object.  This is just a
-        holder for attributes (such as paths), for use by the other methods.
-        If the :class:`EnvBuilder` is created with the arg ``clear=True``,
-        contents of the environment directory will be cleared and then all
-        necessary subdirectories will be recreated.
+        don't already exist, and returns a context object.  This context object
+        is just a holder for attributes (such as paths) for use by the other
+        methods.  If the :class:`EnvBuilder` is created with the arg
+        ``clear=True``, contents of the environment directory will be cleared
+        and then all necessary subdirectories will be recreated.
 
     .. method:: create_configuration(context)
 
