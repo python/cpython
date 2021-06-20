@@ -219,7 +219,7 @@ have been incorporated. Some of the most notable ones are as follows:
           File "<stdin>", line 1
             {x,y for x,y in zip('abcd', '1234')}
              ^
-        SyntaxError: did you forget parenthesis around the comprehension target?
+        SyntaxError: did you forget parentheses around the comprehension target?
 
     (Contributed by Pablo Galindo in :issue:`43017`)
 
