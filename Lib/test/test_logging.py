@@ -5335,11 +5335,11 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         # bpo-44186 test that pre-existing files aren't overwritten by rollover
         now = datetime.datetime.now()
         handlers = [
-            logging.handlers.TimedRotatingFileHandler(  
+            logging.handlers.TimedRotatingFileHandler(
                 self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
-            logging.handlers.TimedRotatingFileHandler(  
+            logging.handlers.TimedRotatingFileHandler(
                 self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
-            logging.handlers.TimedRotatingFileHandler(  
+            logging.handlers.TimedRotatingFileHandler(
                 self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
         ]
 
