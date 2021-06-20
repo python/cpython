@@ -7785,6 +7785,48 @@ PyInit__socket(void)
 
     PyModule_AddIntMacro(m, J1939_FILTER_MAX);
 #endif
+#ifdef HAVE_LINUX_CAN_ISOTP_H
+    PyModule_AddIntMacro(m, SOL_CAN_ISOTP);
+
+    /* for socket options affecting the socket (not the global system) */
+    PyModule_AddIntMacro(m, CAN_ISOTP_OPTS);
+    PyModule_AddIntMacro(m, CAN_ISOTP_RECV_FC);
+
+    /* sockopts to force stmin timer values for protocol regression tests */
+    PyModule_AddIntMacro(m, CAN_ISOTP_TX_STMIN);
+    PyModule_AddIntMacro(m, CAN_ISOTP_RX_STMIN);
+    PyModule_AddIntMacro(m, CAN_ISOTP_LL_OPTS);
+
+    /* flags for isotp behaviour */
+    PyModule_AddIntMacro(m, CAN_ISOTP_LISTEN_MODE);
+    PyModule_AddIntMacro(m, CAN_ISOTP_EXTEND_ADDR);
+    PyModule_AddIntMacro(m, CAN_ISOTP_TX_PADDING);
+    PyModule_AddIntMacro(m, CAN_ISOTP_RX_PADDING);
+    PyModule_AddIntMacro(m, CAN_ISOTP_CHK_PAD_LEN);
+    PyModule_AddIntMacro(m, CAN_ISOTP_CHK_PAD_DATA);
+    PyModule_AddIntMacro(m, CAN_ISOTP_HALF_DUPLEX);
+    PyModule_AddIntMacro(m, CAN_ISOTP_FORCE_TXSTMIN);
+    PyModule_AddIntMacro(m, CAN_ISOTP_FORCE_RXSTMIN);
+    PyModule_AddIntMacro(m, CAN_ISOTP_RX_EXT_ADDR);
+    PyModule_AddIntMacro(m, CAN_ISOTP_WAIT_TX_DONE);
+#ifdef CAN_ISOTP_SF_BROADCAST
+    /* This constant is new and not always available */
+    PyModule_AddIntMacro(m, CAN_ISOTP_SF_BROADCAST);
+#endif
+
+    /* default values */
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_FLAGS);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_EXT_ADDRESS);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_PAD_CONTENT);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_FRAME_TXTIME);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_RECV_BS);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_RECV_STMIN);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_RECV_WFTMAX);
+
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_LL_MTU);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_LL_TX_DL);
+    PyModule_AddIntMacro(m, CAN_ISOTP_DEFAULT_LL_TX_FLAGS);
+#endif
 #ifdef SOL_RDS
     PyModule_AddIntMacro(m, SOL_RDS);
 #endif
