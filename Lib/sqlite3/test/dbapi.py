@@ -92,6 +92,11 @@ class ModuleTests(unittest.TestCase):
                 sqlite.enable_shared_cache(enable)
             self.assertIn("dbapi.py", cm.filename)
 
+    def test_disallow_instantiation(self):
+        cx = sqlite.connect(":memory:")
+        tp = type(cx("select 1"))
+        self.assertRaises(TypeError, tp)
+
 
 class ConnectionTests(unittest.TestCase):
 
