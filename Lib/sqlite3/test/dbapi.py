@@ -27,6 +27,7 @@ import threading
 import unittest
 
 from test.support.os_helper import TESTFN, unlink
+from test.support import threading_helper
 
 
 # Helper for tests using TESTFN
@@ -223,6 +224,10 @@ class OpenTests(unittest.TestCase):
         with self.assertRaises(sqlite.OperationalError):
             with managed_connect(f"file:{TESTFN}?mode=ro", uri=True) as cx:
                 cx.execute(self._sql)
+
+    def test_database_keyword(self):
+        with sqlite.connect(database=":memory:") as cx:
+            self.assertEqual(type(cx), sqlite.Connection)
 
 
 class CursorTests(unittest.TestCase):
@@ -723,6 +728,22 @@ class ThreadTests(unittest.TestCase):
         t.join()
         if len(errors) > 0:
             self.fail("\n".join(errors))
+
+    @threading_helper.reap_threads
+    def test_dont_check_same_thread(self):
+        def run(con, err):
+            try:
+                con.execute("select 1")
+            except sqlite.Error:
+                err.append("multi-threading not allowed")
+
+        con = sqlite.connect(":memory:", check_same_thread=False)
+        err = []
+        t = threading.Thread(target=run, kwargs={"con": con, "err": err})
+        t.start()
+        t.join()
+        self.assertEqual(len(err), 0, "\n".join(err))
+
 
 class ConstructorTests(unittest.TestCase):
     def test_date(self):
