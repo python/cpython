@@ -276,7 +276,7 @@ Directory and files operations
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
-      Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
+      Added the *ignore_dangling_symlinks* argument to silence dangling symlinks
       errors when *symlinks* is false.
 
    .. versionchanged:: 3.8
