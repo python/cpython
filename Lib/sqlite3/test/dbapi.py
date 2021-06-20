@@ -25,6 +25,7 @@ import unittest
 import sqlite3 as sqlite
 import sys
 
+from test.support import check_disallow_instantiation
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -91,6 +92,10 @@ class ModuleTests(unittest.TestCase):
             with self.assertWarns(DeprecationWarning) as cm:
                 sqlite.enable_shared_cache(enable)
             self.assertIn("dbapi.py", cm.filename)
+
+    def test_disallow_instantiation(self):
+        cx = sqlite.connect(":memory:")
+        check_disallow_instantiation(self, type(cx("select 1")))
 
 
 class ConnectionTests(unittest.TestCase):
