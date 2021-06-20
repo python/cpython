@@ -197,7 +197,7 @@ now Python 3.10 will display the exception as:
 This improvement was contributed by Pablo Galindo in :issue:`43914`.
 
 A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
-have been incorporated. Some of the most notable ones:
+have been incorporated. Some of the most notable ones are as follows:
 
 * Missing ``:`` before blocks:
 
