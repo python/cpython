@@ -230,7 +230,7 @@ Directory and files operations
               dirs_exist_ok=False)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
-   named *dst* and return the destination directory.
+   named *dst* and return the destination directory.   Make all intermediate directories needed to contain *dst*.
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
