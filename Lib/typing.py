@@ -28,6 +28,7 @@ import operator
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
 import types
+import warnings
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
 
 # Please keep __all__ alphabetized within each category.
@@ -2512,7 +2513,20 @@ class TextIO(IO[str]):
         pass
 
 
-class io:
+class _DeprecatedType(type):
+    def __getattribute__(cls, name):
+        if name != "__dict__" and name in cls.__dict__:
+            warnings.warn(
+                f"{cls.__name__} is deprecated, import directly "
+                f"from typing instead. {cls.__name__} will be removed "
+                "in Python 3.12.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return super().__getattribute__(name)
+
+
+class io(metaclass=_DeprecatedType):
     """Wrapper namespace for IO generic classes."""
 
     __all__ = ['IO', 'TextIO', 'BinaryIO']
@@ -2527,7 +2541,7 @@ sys.modules[io.__name__] = io
 Pattern = _alias(stdlib_re.Pattern, 1)
 Match = _alias(stdlib_re.Match, 1)
 
-class re:
+class re(metaclass=_DeprecatedType):
     """Wrapper namespace for re type aliases."""
 
     __all__ = ['Pattern', 'Match']
