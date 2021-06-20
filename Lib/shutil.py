@@ -541,9 +541,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     function that supports the same signature (like copy()) can be used.
 
     If dirs_exist_ok is false (the default) and dst already exists, a
-    FileExistsError is raised. If dirs_exist_ok is true, dst as well as any
-    parent directory in the path to dst will be created if they do not exist
-    already.
+    FileExistsError is raised.
     """
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
