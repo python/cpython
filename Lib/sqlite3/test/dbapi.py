@@ -25,7 +25,6 @@ import unittest
 import sqlite3 as sqlite
 import sys
 
-from test.support import check_disallow_instantiation
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -95,7 +94,8 @@ class ModuleTests(unittest.TestCase):
 
     def test_disallow_instantiation(self):
         cx = sqlite.connect(":memory:")
-        check_disallow_instantiation(self, type(cx("select 1")))
+        tp = type(cx("select 1"))
+        self.assertRaises(TypeError, tp)
 
 
 class ConnectionTests(unittest.TestCase):
