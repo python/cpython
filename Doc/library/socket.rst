@@ -379,6 +379,9 @@ Constants
       On Windows, ``TCP_KEEPIDLE``, ``TCP_KEEPINTVL`` appear if run-time Windows
       supports.
 
+   .. versionchanged:: 3.10
+      ``IP_RECVTOS`` was added.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
