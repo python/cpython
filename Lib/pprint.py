@@ -141,8 +141,13 @@ class PrettyPrinter:
         self._width = width
         if stream is not None:
             self._stream = stream
-        else:
+        elif _sys.stdout is not None:
             self._stream = _sys.stdout
+        else:
+            class _NullStdout:
+                def write(self, s):
+                    return 0
+            self._stream = _NullStdout()
         self._compact = bool(compact)
         self._sort_dicts = sort_dicts
         self._underscore_numbers = underscore_numbers

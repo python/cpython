@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import contextlib
 import dataclasses
 import io
 import itertools
@@ -159,6 +160,10 @@ class QueryTestCase(unittest.TestCase):
             self.assertTrue(pp.isreadable(safe),
                             "expected isreadable for %r" % (safe,))
 
+    def test_stdout_is_None(self):
+        with contextlib.redirect_stdout(None):
+            pprint.pprint('this should not fail')
+
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
         # Tie a knot.
@@ -241,6 +246,9 @@ class QueryTestCase(unittest.TestCase):
                              .replace('\n', ' '), native)
             self.assertEqual(pprint.pformat(simple, underscore_numbers=True), native)
             self.assertEqual(pprint.saferepr(simple), native)
+            with contextlib.redirect_stdout(None):
+                # smoke test - there is no output to check
+                pprint.pprint(simple)
 
     def test_container_repr_override_called(self):
         N = 1000
