@@ -162,7 +162,10 @@ class QueryTestCase(unittest.TestCase):
 
     def test_stdout_is_None(self):
         with contextlib.redirect_stdout(None):
-            pprint.pprint('this should not fail')
+            # smoke test - there is no output to check
+            value = 'this should not fail'
+            pprint.pprint(value)
+            pprint.PrettyPrinter().pprint(value)
 
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
