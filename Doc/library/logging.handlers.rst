@@ -382,7 +382,8 @@ timed intervals.
    The system will save old log files by appending extensions to the filename.
    The extensions are date-and-time based, using the strftime format
    ``%Y-%m-%d_%H-%M-%S`` or a leading portion thereof, depending on the
-   rollover interval.
+   rollover interval. In the case that an existing file has the same name,
+   a numbered suffix will be added to the new file to prevent overwriting logs.
 
    When computing the next rollover time for the first time (when the handler
    is created), the last modification time of an existing log file, or else
