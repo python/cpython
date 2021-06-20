@@ -8,7 +8,8 @@ enum {
     FRAME_SPECIALS_GLOBALS_OFFSET = 0,
     FRAME_SPECIALS_BUILTINS_OFFSET = 1,
     FRAME_SPECIALS_LOCALS_OFFSET = 2,
-    FRAME_SPECIALS_SIZE = 3
+    FRAME_SPECIALS_CODE_OFFSET = 3,
+    FRAME_SPECIALS_SIZE = 4
 };
 
 static inline PyObject **
@@ -30,9 +31,14 @@ _PyFrame_GetBuiltins(PyFrameObject *f)
     return _PyFrame_Specials(f)[FRAME_SPECIALS_BUILTINS_OFFSET];
 }
 
-int _PyFrame_TakeLocals(PyFrameObject *f);
+/* Returns a *borrowed* reference. */
+static inline PyCodeObject *
+_PyFrame_GetCode(PyFrameObject *f)
+{
+    return (PyCodeObject *)_PyFrame_Specials(f)[FRAME_SPECIALS_CODE_OFFSET];
+}
 
-PyAPI_FUNC(int) _PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg);
+int _PyFrame_TakeLocals(PyFrameObject *f);
 
 #ifdef __cplusplus
 }

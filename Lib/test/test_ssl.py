@@ -605,7 +605,7 @@ class BasicSocketTests(unittest.TestCase):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ctx.options |= option
                 self.assertEqual(
-                    'ssl.OP_NO_SSL*/ssl.SSL_NO_TLS* options are deprecated',
+                    'ssl.OP_NO_SSL*/ssl.OP_NO_TLS* options are deprecated',
                     str(cm.warning)
                 )
 
