@@ -5331,6 +5331,58 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
+    def test_overwrite_rollover(self):
+        # bpo-44186 test that pre-existing files aren't overwritten by rollover
+        now = datetime.datetime.now()
+        handlers = [
+            logging.handlers.TimedRotatingFileHandler(  
+                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
+            logging.handlers.TimedRotatingFileHandler(  
+                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
+            logging.handlers.TimedRotatingFileHandler(  
+                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
+        ]
+
+        # compute the filename
+        t = handlers[0].rolloverAt - handlers[0].interval
+        timeTuple = time.gmtime(t)
+        fn = handlers[0].rotation_filename(
+            handlers[0].baseFilename + '.' + time.strftime(handlers[0].suffix, timeTuple))
+
+        r = logging.makeLogRecord({'msg': 'test msg'})
+
+        for handler in handlers:
+            handler.emit(r)
+            handler.close()
+
+        self.assertLogFile(fn)
+        self.assertLogFile(fn + ' (2)')
+        self.assertLogFile(fn + ' (3)')
+
+    def test_lowest_filename_generated(self):
+        # test that when the filename is generated, the lowest possible suffix is used
+        # e.g. if the files "log.2021-06-19", "log.2021-06-19 (2)", and "log.2021-06-19 (4)" exist
+        # the filename generated should be "log.2021-06-19 (3)"
+        now = datetime.datetime.now()
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1)
+
+        # compute the filename
+        t = fh.rolloverAt - fh.interval
+        timeTuple = time.gmtime(t)
+        fn = fh.rotation_filename(
+            fh.baseFilename + '.' + time.strftime(fh.suffix, timeTuple))
+
+        for filename in [fn, fn + ' (2)', fn + ' (4)']:
+            pathlib.Path(filename).touch()
+            self.rmfiles.append(filename)
+
+        r = logging.makeLogRecord({'msg': 'test msg'})
+        fh.emit(r)
+        fh.close()
+
+        self.assertLogFile(fn + ' (3)')
+
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
