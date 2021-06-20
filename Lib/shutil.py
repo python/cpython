@@ -509,6 +509,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
     """Recursively copy a directory tree and return the destination directory.
 
+    Make all intermediate directories needed to contain *dst*.
     If exception(s) occur, an Error is raised with a list of reasons.
 
     If the optional symlinks flag is true, symbolic links in the
