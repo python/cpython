@@ -5334,30 +5334,25 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
     def test_overwrite_rollover(self):
         # bpo-44186 test that pre-existing files aren't overwritten by rollover
         now = datetime.datetime.now()
-        handlers = [
-            logging.handlers.TimedRotatingFileHandler(
-                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
-            logging.handlers.TimedRotatingFileHandler(
-                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
-            logging.handlers.TimedRotatingFileHandler(
-                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1),
-        ]
+        handler = logging.handlers.TimedRotatingFileHandler(
+                self.fn, 'midnight', atTime=now, encoding='utf-8', backupCount=1)
 
         # compute the filename
-        t = handlers[0].rolloverAt - handlers[0].interval
+        t = handler.rolloverAt - handler.interval
         timeTuple = time.gmtime(t)
-        fn = handlers[0].rotation_filename(
-            handlers[0].baseFilename + '.' + time.strftime(handlers[0].suffix, timeTuple))
+        fn = handler.rotation_filename(
+            handler.baseFilename + '.' + time.strftime(handler.suffix, timeTuple))
+
+        # touch a file with the intended filename
+        pathlib.Path(fn).touch()
+        self.rmfiles.append(fn)
 
         r = logging.makeLogRecord({'msg': 'test msg'})
 
-        for handler in handlers:
-            handler.emit(r)
-            handler.close()
+        handler.emit(r)
+        handler.close()
 
-        self.assertLogFile(fn)
         self.assertLogFile(fn + ' (2)')
-        self.assertLogFile(fn + ' (3)')
 
     def test_lowest_filename_generated(self):
         # test that when the filename is generated, the lowest possible suffix is used
