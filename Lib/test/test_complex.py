@@ -9,6 +9,42 @@ import operator
 
 INF = float("inf")
 NAN = float("nan")
+
+class ComplexSubclass(complex):
+    pass
+
+class OtherComplexSubclass(complex):
+    pass
+
+class MyIndex:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+class MyInt:
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
+class FloatLike:
+    def __init__(self, value):
+        self.value = value
+
+    def __float__(self):
+        return self.value
+
+class ComplexLike:
+    def __init__(self, value):
+        self.value = value
+
+    def __complex__(self):
+        return self.value
+
+
 # These tests ensure that complex math does the right thing
 
 ZERO_DIVISION = (
@@ -257,19 +293,11 @@ class ComplexTest(unittest.TestCase):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
-        class OS:
-            def __init__(self, value): self.value = value
-            def __complex__(self): return self.value
-        class NS(object):
-            def __init__(self, value): self.value = value
-            def __complex__(self): return self.value
-        self.assertEqual(complex(OS(1+10j)), 1+10j)
-        self.assertEqual(complex(NS(1+10j)), 1+10j)
-        self.assertRaises(TypeError, complex, OS(None))
-        self.assertRaises(TypeError, complex, NS(None))
+        self.assertEqual(complex(ComplexLike(1+10j)), 1+10j)
+        self.assertRaises(TypeError, complex, ComplexLike(None))
         self.assertRaises(TypeError, complex, {})
-        self.assertRaises(TypeError, complex, NS(1.5))
-        self.assertRaises(TypeError, complex, NS(1))
+        self.assertRaises(TypeError, complex, ComplexLike(1.5))
+        self.assertRaises(TypeError, complex, ComplexLike(1))
 
         self.assertAlmostEqual(complex("1+10j"), 1+10j)
         self.assertAlmostEqual(complex(10), 10+0j)
@@ -316,8 +344,7 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex('-1e-500j'), 0.0 - 0.0j)
         self.assertAlmostEqual(complex('-1e-500+1e-500j'), -0.0 + 0.0j)
 
-        class complex2(complex): pass
-        self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
+        self.assertAlmostEqual(complex(ComplexSubclass(1+1j)), 1+1j)
         self.assertAlmostEqual(complex(real=17, imag=23), 17+23j)
         self.assertAlmostEqual(complex(real=17+23j), 17+23j)
         self.assertAlmostEqual(complex(real=17+23j, imag=23), 17+46j)
@@ -399,33 +426,17 @@ class ComplexTest(unittest.TestCase):
 
         self.assertRaises(EvilExc, complex, evilcomplex())
 
-        class float2:
-            def __init__(self, value):
-                self.value = value
-            def __float__(self):
-                return self.value
-
-        self.assertAlmostEqual(complex(float2(42.)), 42)
-        self.assertAlmostEqual(complex(real=float2(17.), imag=float2(23.)), 17+23j)
-        self.assertRaises(TypeError, complex, float2(None))
-
-        class MyIndex:
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
+        self.assertAlmostEqual(complex(FloatLike(42.)), 42)
+        self.assertAlmostEqual(complex(real=FloatLike(17.), imag=FloatLike(23.)), 17+23j)
+        self.assertRaises(TypeError, complex, FloatLike(None))
 
         self.assertAlmostEqual(complex(MyIndex(42)), 42.0+0.0j)
         self.assertAlmostEqual(complex(123, MyIndex(42)), 123.0+42.0j)
         self.assertRaises(OverflowError, complex, MyIndex(2**2000))
         self.assertRaises(OverflowError, complex, 123, MyIndex(2**2000))
 
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, complex, MyInt())
-        self.assertRaises(TypeError, complex, 123, MyInt())
+        self.assertRaises(TypeError, complex, MyInt(42))
+        self.assertRaises(TypeError, complex, 123, MyInt(42))
 
         class complex0(complex):
             """Test usage of __complex__() when inheriting from 'complex'"""
@@ -452,24 +463,22 @@ class ComplexTest(unittest.TestCase):
 
     @support.requires_IEEE_754
     def test_constructor_special_numbers(self):
-        class complex2(complex):
-            pass
         for x in 0.0, -0.0, INF, -INF, NAN:
             for y in 0.0, -0.0, INF, -INF, NAN:
                 with self.subTest(x=x, y=y):
                     z = complex(x, y)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
-                    z = complex2(x, y)
-                    self.assertIs(type(z), complex2)
+                    z = ComplexSubclass(x, y)
+                    self.assertIs(type(z), ComplexSubclass)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
-                    z = complex(complex2(x, y))
+                    z = complex(ComplexSubclass(x, y))
                     self.assertIs(type(z), complex)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
-                    z = complex2(complex(x, y))
-                    self.assertIs(type(z), complex2)
+                    z = ComplexSubclass(complex(x, y))
+                    self.assertIs(type(z), ComplexSubclass)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)
 
@@ -484,6 +493,35 @@ class ComplexTest(unittest.TestCase):
                 continue
             if not any(ch in lit for ch in 'xXoObB'):
                 self.assertRaises(ValueError, complex, lit)
+
+    def test_from_number(self, cls=complex):
+        def eq(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertIs(type(actual), cls)
+
+        eq(cls.from_number(3.14), 3.14+0j)
+        eq(cls.from_number(3.14j), 3.14j)
+        eq(cls.from_number(314), 314.0+0j)
+        eq(cls.from_number(OtherComplexSubclass(3.14, 2.72)), 3.14+2.72j)
+        eq(cls.from_number(ComplexLike(3.14+2.72j)), 3.14+2.72j)
+        eq(cls.from_number(FloatLike(3.14)), 3.14+0j)
+        eq(cls.from_number(MyIndex(314)), 314.0+0j)
+
+        cNAN = complex(NAN, NAN)
+        x = cls.from_number(cNAN)
+        self.assertTrue(x != x)
+        self.assertIs(type(x), cls)
+        if cls is complex:
+            self.assertIs(cls.from_number(cNAN), cNAN)
+
+        self.assertRaises(TypeError, cls.from_number, '3.14')
+        self.assertRaises(TypeError, cls.from_number, b'3.14')
+        self.assertRaises(TypeError, cls.from_number, MyInt(314))
+        self.assertRaises(TypeError, cls.from_number, {})
+        self.assertRaises(TypeError, cls.from_number)
+
+    def test_from_number_subclass(self):
+        self.test_from_number(ComplexSubclass)
 
     def test_hash(self):
         for x in range(-30, 30):
