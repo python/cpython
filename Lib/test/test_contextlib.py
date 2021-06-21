@@ -672,11 +672,11 @@ class TestBaseExitStack:
                 pass
 
         with self.exit_stack() as stack:
-            with self.assertRaisesRegex(TypeError, 'context manager'):
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
                 stack.enter_context(LacksEnterAndExit())
-            with self.assertRaisesRegex(TypeError, 'context manager'):
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
                 stack.enter_context(LacksEnter())
-            with self.assertRaisesRegex(TypeError, 'context manager'):
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
                 stack.enter_context(LacksExit())
             self.assertFalse(stack._exit_callbacks)
 
@@ -908,7 +908,7 @@ class TestBaseExitStack:
         cm.__enter__ = object()
         cm.__exit__ = object()
         stack = self.exit_stack()
-        with self.assertRaisesRegex(TypeError, "context manager"):
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
             stack.enter_context(cm)
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1][1], cm)

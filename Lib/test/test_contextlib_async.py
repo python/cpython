@@ -563,7 +563,7 @@ class TestAsyncExitStack(TestBaseExitStack, unittest.TestCase):
         cm.__aenter__ = object()
         cm.__aexit__ = object()
         stack = self.exit_stack()
-        with self.assertRaisesRegex(TypeError, "asynchronous context manager"):
+        with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
             await stack.enter_async_context(cm)
         stack.push_async_exit(cm)
         self.assertIs(stack._exit_callbacks[-1][1], cm)
