@@ -22,12 +22,11 @@ typedef signed char PyFrameState;
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
-    PyObject **f_valuestack;    /* points after the last local */
+    struct _py_frame_specials *f_specials; /* points to the specials */
     PyObject *f_trace;          /* Trace function */
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
     int f_stackdepth;           /* Depth of value stack */
-    int f_lasti;                /* Last instruction if called */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     PyFrameState f_state;       /* What state the frame is in */
     char f_trace_lines;         /* Emit per-line trace events? */

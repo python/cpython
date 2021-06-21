@@ -6,6 +6,7 @@
 #include "code.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
+#include "pycore_frame.h"
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
 #ifdef HAVE_FCNTL_H
@@ -234,7 +235,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_lasti*2,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_specials->lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 

@@ -854,11 +854,6 @@ class PyNoneStructPtr(PyObjectPtr):
     def proxyval(self, visited):
         return None
 
-FRAME_SPECIALS_GLOBAL_OFFSET = 0
-FRAME_SPECIALS_BUILTINS_OFFSET = 1
-FRAME_SPECIALS_CODE_OFFSET = 3
-FRAME_SPECIALS_SIZE = 4
-
 class PyFrameObjectPtr(PyObjectPtr):
     _typename = 'PyFrameObject'
 
@@ -871,7 +866,7 @@ class PyFrameObjectPtr(PyObjectPtr):
             self.co_filename = self.co.pyop_field('co_filename')
 
             self.f_lineno = int_from_int(self.field('f_lineno'))
-            self.f_lasti = int_from_int(self.field('f_lasti'))
+            self.f_lasti = self._f_lasti()
             self.co_nlocals = int_from_int(self.co.field('co_nlocals'))
             pnames = self.co.field('co_localsplusnames')
             self.co_localsplusnames = PyTupleObjectPtr.from_pyobject_ptr(pnames)
@@ -892,18 +887,22 @@ class PyFrameObjectPtr(PyObjectPtr):
             pyop_name = PyObjectPtr.from_pyobject_ptr(self.co_localsplusnames[i])
             yield (pyop_name, pyop_value)
 
-    def _f_specials(self, index, cls=PyObjectPtr):
-        f_valuestack = self.field('f_valuestack')
-        return cls.from_pyobject_ptr(f_valuestack[index - FRAME_SPECIALS_SIZE])
+    def _f_special(self, name, convert=PyObjectPtr.from_pyobject_ptr):
+        f_specials = self.field('f_specials')
+        return convert(f_specials[name])
 
     def _f_globals(self):
-        return self._f_specials(FRAME_SPECIALS_GLOBAL_OFFSET)
+        return self._f_special("globals")
 
     def _f_builtins(self):
-        return self._f_specials(FRAME_SPECIALS_BUILTINS_OFFSET)
+        return self._f_special("builtins")
 
     def _f_code(self):
-        return self._f_specials(FRAME_SPECIALS_CODE_OFFSET, PyCodeObjectPtr)
+        return self._f_special("code", PyCodeObjectPtr.from_pyobject_ptr)
+
+    def _f_lasti(self):
+        return self._f_special("lasti", int_from_int)
+
 
     def iter_globals(self):
         '''
