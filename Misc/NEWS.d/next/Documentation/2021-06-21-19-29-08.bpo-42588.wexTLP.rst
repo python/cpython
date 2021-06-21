@@ -1,0 +1,1 @@
+Updated and clarified :meth:`graphlib.TopologicalSorter.static_order` docs.
