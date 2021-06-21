@@ -127,10 +127,10 @@ Intermezzo: Errors and Exceptions
 
 An important convention throughout the Python interpreter is the following: when
 a function fails, it should set an exception condition and return an error value
-(usually a ``NULL`` pointer).  Exceptions are stored in a static global variable
-inside the interpreter; if this variable is ``NULL`` no exception has occurred.  A
-second global variable stores the "associated value" of the exception (the
-second argument to :keyword:`raise`).  A third variable contains the stack
+(usually a ``NULL`` pointer).  Exception information is stored in 3 static
+global variables inside the interpreter.  The first is the exception type,
+or ``NULL`` if no exception has occurred.  The second is the exception
+instance.  The third variable contains the stack
 traceback in case the error originated in Python code.  These three variables
 are the C equivalents of the result in Python of :meth:`sys.exc_info` (see the
 section on module :mod:`sys` in the Python Library Reference).  It is important
