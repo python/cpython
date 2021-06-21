@@ -267,7 +267,8 @@ Directory and files operations
 
    If *dirs_exist_ok* is true, existing directories along the path to *dst*
    will be overwritten.  If *dirs_exist_ok* is false (the default) and *dst*
-   already exists, a :exc:`FileExistsError` is raised.
+   already exists, a :exc:`FileExistsError` is raised. Internally, this
+   parameter is passed directly to :func:`os.makedirs`.
 
    .. note::
 
