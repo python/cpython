@@ -1,0 +1,2 @@
+The private ``PyDictObject`` field ``ma_version_tag`` has been removed. It
+is no longer used internally.
