@@ -33,6 +33,28 @@ class FloatSubclass(float):
 class OtherFloatSubclass(float):
     pass
 
+class MyIndex:
+    def __init__(self, value):
+        self.value = value
+
+    def __index__(self):
+        return self.value
+
+class MyInt:
+    def __init__(self, value):
+        self.value = value
+
+    def __int__(self):
+        return self.value
+
+class FloatLike:
+    def __init__(self, value):
+        self.value = value
+
+    def __float__(self):
+        return self.value
+
+
 class GeneralFloatCases(unittest.TestCase):
 
     def test_float(self):
@@ -182,10 +204,6 @@ class GeneralFloatCases(unittest.TestCase):
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
-        class Foo1(object):
-            def __float__(self):
-                return 42.
-
         class Foo2(float):
             def __float__(self):
                 return 42.
@@ -207,45 +225,29 @@ class GeneralFloatCases(unittest.TestCase):
             def __float__(self):
                 return float(str(self)) + 1
 
-        self.assertEqual(float(Foo1()), 42.)
+        self.assertEqual(float(FloatLike(42.)), 42.)
         self.assertEqual(float(Foo2()), 42.)
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(float(Foo3(21)), 42.)
         self.assertRaises(TypeError, float, Foo4(42))
         self.assertEqual(float(FooStr('8')), 9.)
 
-        class Foo5:
-            def __float__(self):
-                return ""
-        self.assertRaises(TypeError, time.sleep, Foo5())
+        self.assertRaises(TypeError, time.sleep, FloatLike(""))
 
         # Issue #24731
-        class F:
-            def __float__(self):
-                return OtherFloatSubclass(42.)
+        f = FloatLike(OtherFloatSubclass(42.))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(F()), 42.)
+            self.assertEqual(float(f), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(float(F())), float)
+            self.assertIs(type(float(f)), float)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(FloatSubclass(F()), 42.)
+            self.assertEqual(FloatSubclass(f), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(FloatSubclass(F())), FloatSubclass)
-
-        class MyIndex:
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
+            self.assertIs(type(FloatSubclass(f)), FloatSubclass)
 
         self.assertEqual(float(MyIndex(42)), 42.0)
         self.assertRaises(OverflowError, float, MyIndex(2**2000))
-
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, float, MyInt())
+        self.assertRaises(TypeError, float, MyInt(42))
 
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
