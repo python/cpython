@@ -199,10 +199,6 @@ class CodeTest(unittest.TestCase):
         class_ref = function.__closure__[0].cell_contents
         self.assertIs(class_ref, List)
 
-        # Ensure the code correctly indicates it accesses a free variable
-        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE,
-                         hex(function.__code__.co_flags))
-
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
