@@ -1,2 +1,2 @@
-Clarify the meaning of *dirs_exist_ok*, a kwarg passed to the shutil.copytree
-function.
+Clarify the meaning of *dirs_exist_ok*, a kwarg passed to the
+:func:`shutil.copytree` function.

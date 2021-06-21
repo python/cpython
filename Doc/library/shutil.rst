@@ -230,7 +230,8 @@ Directory and files operations
               dirs_exist_ok=False)
 
    Recursively copy an entire directory tree rooted at *src* to a directory
-   named *dst* and return the destination directory.   Make all intermediate directories needed to contain *dst*.
+   named *dst* and return the destination directory.   All intermediate
+   directories needed to contain *dst* will also be created.
 
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
@@ -264,8 +265,38 @@ Directory and files operations
    as arguments. By default, :func:`~shutil.copy2` is used, but any function
    that supports the same signature (like :func:`~shutil.copy`) can be used.
 
-   If *dirs_exist_ok* is false (the default) and *dst* already exists, a
-   :exc:`FileExistsError` is raised.
+   If *dirs_exist_ok* is true, existing directories along the path to *dst*
+   will be overwritten.  If *dirs_exist_ok* is false (the default) and *dst*
+   already exists, a :exc:`FileExistsError` is raised.
+
+   .. note::
+
+      *dirs_exist_ok* specifically refers to whether *already existing*
+      directories should be overwritten. However, the copytree function will
+      always create paths if they do not exist. For example, consider the
+      following file tree::
+
+         root
+         |-- source
+         |  |-- foo.txt
+         |  |-- bar
+         |     |-- baz.txt
+         |     |-- buzz.py
+         |
+         |-- neighbor
+            |-- cat.png
+
+      Calling :func:`shutil.copytree` like this::
+
+         shutil.copytree('source', 'these/all/do/not/exist/yet')
+
+      Will create all those intermediary folders, even if *dirs_exist_ok* is
+      false.
+
+      However, this would cause a :exc:`FileExistsError`, because it represents
+      an attempt to overwrite ``neighbor/cat.png``::
+
+         shutil.copytree('source', 'neighbor')
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
