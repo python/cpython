@@ -4799,6 +4799,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     {
         goto error;
     }
+    SET_LOC(c, e);
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
