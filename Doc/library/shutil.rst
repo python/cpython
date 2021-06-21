@@ -276,7 +276,6 @@ Directory and files operations
       always create paths if they do not exist. For example, consider the
       following file tree::
 
-         root
          |-- source
          |  |-- foo.txt
          |  |-- bar
