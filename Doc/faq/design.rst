@@ -712,7 +712,7 @@ Why don't generators support the with statement?
 ------------------------------------------------
 
 For technical reasons, a generator used directly as a context manager
-would not work right.  When, as is most common, a generator is used as
+would not work correctly.  When, as is most common, a generator is used as
 an iterator run to completion, no closing is needed.  When it is, wrap
 is as "contextlib.closing(generator)" in the 'with' statment.
 
