@@ -11,9 +11,9 @@
 
 --------------
 
-The :mod:`subprocess` module allows you to spawn new processes, connect to
-their input/output/error pipes, and obtain their return codes.  This module
-intends to replace several older modules and functions::
+The :mod:`subprocess` module allows you to spawn new processes, connect to their
+input/output/error pipes, and obtain their return codes.  This module intends to
+replace several older modules and functions::
 
    os.system
    os.spawn*
@@ -39,8 +39,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. function:: run(args, *, stdin=None, input=None, stdout=None, stderr=None,\
                   capture_output=False, shell=False, cwd=None, timeout=None, \
-                  check=False, encoding=None, errors=None, text=None, \
-                  env=None, universal_newlines=None, **other_popen_kwargs)
+                  check=False, encoding=None, errors=None, text=None, env=None, \
+                  universal_newlines=None, **other_popen_kwargs)
 
    Run the command described by *args*.  Wait for command to complete, then
    return a :class:`CompletedProcess` instance.
@@ -52,15 +52,15 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    this function are passed through to that interface. (*timeout*,  *input*,
    *check*, and *capture_output* are not.)
 
-   If *capture_output* is true, stdout and stderr will be captured.  When used,
-   the internal :class:`Popen` object is automatically created with
+   If *capture_output* is true, stdout and stderr will be captured.
+   When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.  If you wish to
-   capture and combine both streams into one, use ``stdout=PIPE`` and
-   ``stderr=STDOUT`` instead of *capture_output*.
+   not be supplied at the same time as *capture_output*.  If you wish to capture
+   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
+   instead of *capture_output*.
 
-   The *timeout* argument is passed to :meth:`Popen.communicate`. If the
-   timeout expires, the child process will be killed and waited for.  The
+   The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
+   expires, the child process will be killed and waited for.  The
    :exc:`TimeoutExpired` exception will be re-raised after the child process
    has terminated.
 
@@ -75,16 +75,16 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    exception hold the arguments, the exit code, and stdout and stderr if they
    were captured.
 
-   If *encoding* or *errors* are specified, or *text* is true, file objects for
-   stdin, stdout and stderr are opened in text mode using the specified
-   *encoding* and *errors* or the :class:`io.TextIOWrapper` default.  The
-   *universal_newlines* argument is equivalent  to *text* and is provided for
-   backwards compatibility. By default, file objects are opened in binary mode.
+   If *encoding* or *errors* are specified, or *text* is true,
+   file objects for stdin, stdout and stderr are opened in text mode using the
+   specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
+   The *universal_newlines* argument is equivalent  to *text* and is provided
+   for backwards compatibility. By default, file objects are opened in binary mode.
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
-   behavior of inheriting the current process' environment. It is passed
-   directly to :class:`Popen`.
+   behavior of inheriting the current process' environment. It is passed directly
+   to :class:`Popen`.
 
    Examples::
 
@@ -167,8 +167,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
 .. data:: STDOUT
 
-   Special value that can be used as the *stderr* argument to :class:`Popen`
-   and indicates that standard error should go into the same handle as standard
+   Special value that can be used as the *stderr* argument to :class:`Popen` and
+   indicates that standard error should go into the same handle as standard
    output.
 
 
@@ -261,16 +261,16 @@ default values. The arguments that are most commonly needed are:
    the string must simply name the program to be executed without specifying
    any arguments.
 
-   *stdin*, *stdout* and *stderr* specify the executed program's standard
-   input, standard output and standard error file handles, respectively.  Valid
-   values are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
-   positive integer), an existing file object, and ``None``.  :data:`PIPE`
-   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
-   indicates that the special file :data:`os.devnull` will be used.  With the
-   default settings of ``None``, no redirection will occur; the child's file
-   handles will be inherited from the parent.  Additionally, *stderr* can be
-   :data:`STDOUT`, which indicates that the stderr data from the child process
-   should be captured into the same file handle as for *stdout*.
+   *stdin*, *stdout* and *stderr* specify the executed program's standard input,
+   standard output and standard error file handles, respectively.  Valid values
+   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
+   integer), an existing file object, and ``None``.  :data:`PIPE` indicates
+   that a new pipe to the child should be created.  :data:`DEVNULL` indicates
+   that the special file :data:`os.devnull` will be used.  With the default
+   settings of ``None``, no redirection will occur; the child's file handles
+   will be inherited from the parent.  Additionally, *stderr* can be
+   :data:`STDOUT`, which indicates that the stderr data from the child
+   process should be captured into the same file handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -386,9 +386,9 @@ functions.
 
    .. note::
 
-      It may not be obvious how to break a shell command into a sequence of
-      arguments, especially in complex cases. :meth:`shlex.split` can
-      illustrate how to determine the correct tokenization for *args*::
+      It may not be obvious how to break a shell command into a sequence of arguments,
+      especially in complex cases. :meth:`shlex.split` can illustrate how to
+      determine the correct tokenization for *args*::
 
          >>> import shlex, subprocess
          >>> command_line = input()
@@ -398,11 +398,11 @@ functions.
          ['/bin/vikings', '-input', 'eggs.txt', '-output', 'spam spam.txt', '-cmd', "echo '$MONEY'"]
          >>> p = subprocess.Popen(args) # Success!
 
-      Note in particular that options (such as *-input*) and arguments (such as
-      *eggs.txt*) that are separated by whitespace in the shell go in separate
-      list elements, while arguments that need quoting or backslash escaping
-      when used in the shell (such as filenames containing spaces or the *echo*
-      command shown above) are single list elements.
+      Note in particular that options (such as *-input*) and arguments (such
+      as *eggs.txt*) that are separated by whitespace in the shell go in separate
+      list elements, while arguments that need quoting or backslash escaping when
+      used in the shell (such as filenames containing spaces or the *echo* command
+      shown above) are single list elements.
 
    On Windows, if *args* is a sequence, it will be converted to a string in a
    manner described in :ref:`converting-argument-sequence`.  This is because
@@ -422,13 +422,13 @@ functions.
    recommended to pass *args* as a string rather than as a sequence.
 
    On POSIX with ``shell=True``, the shell defaults to :file:`/bin/sh`.  If
-   *args* is a string, the string specifies the command to execute through the
-   shell.  This means that the string must be formatted exactly as it would be
-   when typed at the shell prompt.  This includes, for example, quoting or
-   backslash escaping filenames with spaces in them.  If *args* is a sequence,
-   the first item specifies the command string, and any additional items will
-   be treated as additional arguments to the shell itself.  That is to say,
-   :class:`Popen` does the equivalent of::
+   *args* is a string, the string specifies the command
+   to execute through the shell.  This means that the string must be
+   formatted exactly as it would be when typed at the shell prompt.  This
+   includes, for example, quoting or backslash escaping filenames with spaces in
+   them.  If *args* is a sequence, the first item specifies the command string, and
+   any additional items will be treated as additional arguments to the shell
+   itself.  That is to say, :class:`Popen` does the equivalent of::
 
       Popen(['/bin/sh', '-c', args[0], args[1], ...])
 
@@ -479,19 +479,20 @@ functions.
       *executable* parameter accepts a bytes and :term:`path-like object`
       on Windows.
 
-   *stdin*, *stdout* and *stderr* specify the executed program's standard
-   input, standard output and standard error file handles, respectively.  Valid
-   values are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
-   positive integer), an existing :term:`file object`, and ``None``.
-   :data:`PIPE` indicates that a new pipe to the child should be created.
-   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will be
-   used. With the default settings of ``None``, no redirection will occur; the
-   child's file handles will be inherited from the parent.  Additionally,
-   *stderr* can be :data:`STDOUT`, which indicates that the stderr data from
-   the applications should be captured into the same file handle as for stdout.
+   *stdin*, *stdout* and *stderr* specify the executed program's standard input,
+   standard output and standard error file handles, respectively.  Valid values
+   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
+   integer), an existing :term:`file object`, and ``None``.  :data:`PIPE`
+   indicates that a new pipe to the child should be created.  :data:`DEVNULL`
+   indicates that the special file :data:`os.devnull` will be used. With the
+   default settings of ``None``, no redirection will occur; the child's file
+   handles will be inherited from the parent.  Additionally, *stderr* can be
+   :data:`STDOUT`, which indicates that the stderr data from the applications
+   should be captured into the same file handle as for stdout.
 
-   If *preexec_fn* is set to a callable object, this object will be called in
-   the child process just before the child is executed.  (POSIX only)
+   If *preexec_fn* is set to a callable object, this object will be called in the
+   child process just before the child is executed.
+   (POSIX only)
 
    .. warning::
 
@@ -515,10 +516,10 @@ functions.
       :exc:`RuntimeError`. The new restriction may affect applications that
       are deployed in mod_wsgi, uWSGI, and other embedded environments.
 
-   If *close_fds* is true, all file descriptors except :const:`0`, :const:`1`
-   and :const:`2` will be closed before the child process is executed.
-   Otherwise when *close_fds* is false, file descriptors obey their inheritable
-   flag as described in :ref:`fd_inheritance`.
+   If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
+   :const:`2` will be closed before the child process is executed.  Otherwise
+   when *close_fds* is false, file descriptors obey their inheritable flag
+   as described in :ref:`fd_inheritance`.
 
    On Windows, if *close_fds* is true then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
@@ -555,10 +556,10 @@ functions.
    .. versionchanged:: 3.8
       *cwd* parameter accepts a bytes object on Windows.
 
-   If *restore_signals* is true (the default) all signals that Python has set
-   to SIG_IGN are restored to SIG_DFL in the child process before the exec.
-   Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.  (POSIX
-   only)
+   If *restore_signals* is true (the default) all signals that Python has set to
+   SIG_IGN are restored to SIG_DFL in the child process before the exec.
+   Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.
+   (POSIX only)
 
    .. versionchanged:: 3.2
       *restore_signals* was added.
@@ -608,18 +609,17 @@ functions.
 
    .. note::
 
-      If specified, *env* must provide any variables required for the program
-      to execute.  On Windows, in order to run a `side-by-side assembly`_ the
+      If specified, *env* must provide any variables required for the program to
+      execute.  On Windows, in order to run a `side-by-side assembly`_ the
       specified *env* **must** include a valid :envvar:`SystemRoot`.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
    If *encoding* or *errors* are specified, or *text* is true, the file objects
    *stdin*, *stdout* and *stderr* are opened in text mode with the specified
-   encoding and *errors*, as described above in
-   :ref:`frequently-used-arguments`.  The *universal_newlines* argument is
-   equivalent  to *text* and is provided for backwards compatibility. By
-   default, file objects are opened in binary mode.
+   encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
+   The *universal_newlines* argument is equivalent  to *text* and is provided
+   for backwards compatibility. By default, file objects are opened in binary mode.
 
    .. versionadded:: 3.6
       *encoding* and *errors* were added.
@@ -644,17 +644,16 @@ functions.
       * :data:`CREATE_DEFAULT_ERROR_MODE`
       * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
-   *pipesize* can be used to change the size of the pipe when :data:`PIPE` is
-   used for *stdin*, *stdout* or *stderr*. The size of the pipe is only changed
-   on platforms that support this (only Linux at this time of writing). Other
-   platforms will ignore this parameter.
+   *pipesize* can be used to change the size of the pipe when
+   :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
+   is only changed on platforms that support this (only Linux at this time of
+   writing). Other platforms will ignore this parameter.
 
    .. versionadded:: 3.10
       The ``pipesize`` parameter was added.
 
-   Popen objects are supported as context managers via the :keyword:`with`
-   statement: on exit, standard file descriptors are closed, and the process is
-   waited for.
+   Popen objects are supported as context managers via the :keyword:`with` statement:
+   on exit, standard file descriptors are closed, and the process is waited for.
    ::
 
       with Popen(["ifconfig"], stdout=PIPE) as proc:
@@ -765,29 +764,29 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.communicate(input=None, timeout=None)
 
-   Interact with process: Send data to stdin.  Read data from stdout and
-   stderr, until end-of-file is reached.  Wait for process to terminate and set
-   the :attr:`~Popen.returncode` attribute.  The optional *input* argument
-   should be data to be sent to the child process, or ``None``, if no data
-   should be sent to the child.  If streams were opened in text mode, *input*
-   must be a string.  Otherwise, it must be bytes.
+   Interact with process: Send data to stdin.  Read data from stdout and stderr,
+   until end-of-file is reached.  Wait for process to terminate and set the
+   :attr:`~Popen.returncode` attribute.  The optional *input* argument should be
+   data to be sent to the child process, or ``None``, if no data should be sent
+   to the child.  If streams were opened in text mode, *input* must be a string.
+   Otherwise, it must be bytes.
 
    :meth:`communicate` returns a tuple ``(stdout_data, stderr_data)``.
    The data will be strings if streams were opened in text mode; otherwise,
    bytes.
 
-   Note that if you want to send data to the process's stdin, you need to
-   create the Popen object with ``stdin=PIPE``.  Similarly, to get anything
-   other than ``None`` in the result tuple, you need to give ``stdout=PIPE``
-   and/or ``stderr=PIPE`` too.
+   Note that if you want to send data to the process's stdin, you need to create
+   the Popen object with ``stdin=PIPE``.  Similarly, to get anything other than
+   ``None`` in the result tuple, you need to give ``stdout=PIPE`` and/or
+   ``stderr=PIPE`` too.
 
    If the process does not terminate after *timeout* seconds, a
    :exc:`TimeoutExpired` exception will be raised.  Catching this exception and
    retrying communication will not lose any output.
 
    The child process is not killed if the timeout expires, so in order to
-   cleanup properly a well-behaved application should kill the child process
-   and finish communication::
+   cleanup properly a well-behaved application should kill the child process and
+   finish communication::
 
       proc = subprocess.Popen(...)
       try:
@@ -798,8 +797,8 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      The data read is buffered in memory, so do not use this method if the
-      data size is large or unlimited.
+      The data read is buffered in memory, so do not use this method if the data
+      size is large or unlimited.
 
    .. versionchanged:: 3.3
       *timeout* was added.
@@ -820,9 +819,9 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On POSIX OSs the method sends SIGTERM to the child. On
-   Windows the Win32 API function :c:func:`TerminateProcess` is called to stop
-   the child.
+   Stop the child. On POSIX OSs the method sends SIGTERM to the
+   child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
+   to stop the child.
 
 
 .. method:: Popen.kill()
@@ -870,10 +869,10 @@ The following attributes are also available:
 
 .. warning::
 
-   Use :meth:`~Popen.communicate` rather than :attr:`.stdin.write
-   <Popen.stdin>`, :attr:`.stdout.read <Popen.stdout>` or :attr:`.stderr.read
-   <Popen.stderr>` to avoid deadlocks due to any of the other OS pipe buffers
-   filling up and blocking the child process.
+   Use :meth:`~Popen.communicate` rather than :attr:`.stdin.write <Popen.stdin>`,
+   :attr:`.stdout.read <Popen.stdout>` or :attr:`.stderr.read <Popen.stderr>` to avoid
+   deadlocks due to any of the other OS pipe buffers filling up and blocking the
+   child process.
 
 
 .. attribute:: Popen.pid
@@ -1065,11 +1064,11 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: REALTIME_PRIORITY_CLASS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will have realtime priority.  You should almost never use
-   REALTIME_PRIORITY_CLASS, because this interrupts system threads that manage
-   mouse input, keyboard input, and background disk flushing. This class can be
-   appropriate for applications that "talk" directly to hardware or that
-   perform brief tasks that should have limited interruptions.
+   will have realtime priority.
+   You should almost never use REALTIME_PRIORITY_CLASS, because this interrupts
+   system threads that manage mouse input, keyboard input, and background disk
+   flushing. This class can be appropriate for applications that "talk" directly
+   to hardware or that perform brief tasks that should have limited interruptions.
 
    .. versionadded:: 3.7
 
