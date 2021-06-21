@@ -197,7 +197,7 @@ now Python 3.10 will display the exception as:
 This improvement was contributed by Pablo Galindo in :issue:`43914`.
 
 A considerable amount of new specialized messages for :exc:`SyntaxError` exceptions
-have been incorporated. Some of the most notable ones:
+have been incorporated. Some of the most notable ones are as follows:
 
 * Missing ``:`` before blocks:
 
@@ -345,6 +345,11 @@ raised from:
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
 
+   .. warning::
+      Notice this won't work if :c:func:`PyErr_Display` is not called to display the error
+      which can happen if some other custom error display function is used. This is a common
+      scenario in some REPLs like IPython.
+
 NameErrors
 ~~~~~~~~~~
 
@@ -361,6 +366,12 @@ was raised from:
     NameError: name 'schwarschild_black_hole' is not defined. Did you mean: schwarzschild_black_hole?
 
 (Contributed by Pablo Galindo in :issue:`38530`.)
+
+   .. warning::
+      Notice this won't work if :c:func:`PyErr_Display` is not called to display the error,
+      which can happen if some other custom error display function is used. This is a common
+      scenario in some REPLs like IPython.
+
 
 PEP 626: Precise line numbers for debugging and other tools
 -----------------------------------------------------------
@@ -992,6 +1003,13 @@ Add *encoding* and *errors* parameters in :func:`fileinput.input` and
 when *mode* is "r" and file is compressed, like uncompressed files.
 (Contributed by Inada Naoki in :issue:`5758`.)
 
+faulthandler
+------------
+
+The :mod:`faulthandler` module now detects if a fatal error occurs during a
+garbage collector collection.
+(Contributed by Victor Stinner in :issue:`44466`.)
+
 gc
 --
 
@@ -1207,6 +1225,9 @@ The exception :exc:`socket.timeout` is now an alias of :exc:`TimeoutError`.
 
 Add option to create MPTCP sockets with ``IPPROTO_MPTCP``
 (Contributed by Rui Cunha in :issue:`43571`.)
+
+Add ``IP_RECVTOS`` option to receive the type of service (ToS) or DSCP/ECN fields
+(Contributed by Georg Sauthoff in :issue:`44077`.)
 
 ssl
 ---

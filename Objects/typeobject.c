@@ -2428,41 +2428,26 @@ valid_identifier(PyObject *s)
     return 1;
 }
 
-/* Forward */
-static int
-object_init(PyObject *self, PyObject *args, PyObject *kwds);
-
 static int
 type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 {
-    int res;
-
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
 
-    if (kwds != NULL && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
-        PyDict_Check(kwds) && PyDict_GET_SIZE(kwds) != 0) {
+    if (kwds != NULL && PyTuple_GET_SIZE(args) == 1 &&
+        PyDict_GET_SIZE(kwds) != 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type.__init__() takes no keyword arguments");
         return -1;
     }
 
-    if (args != NULL && PyTuple_Check(args) &&
-        (PyTuple_GET_SIZE(args) != 1 && PyTuple_GET_SIZE(args) != 3)) {
+    if ((PyTuple_GET_SIZE(args) != 1 && PyTuple_GET_SIZE(args) != 3)) {
         PyErr_SetString(PyExc_TypeError,
                         "type.__init__() takes 1 or 3 arguments");
         return -1;
     }
 
-    /* Call object.__init__(self) now. */
-    /* XXX Could call super(type, cls).__init__() but what's the point? */
-    args = PyTuple_GetSlice(args, 0, 0);
-    if (args == NULL) {
-        return -1;
-    }
-    res = object_init(cls, args, NULL);
-    Py_DECREF(args);
-    return res;
+    return 0;
 }
 
 unsigned long
