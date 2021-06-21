@@ -136,7 +136,7 @@ class FailureTestCase(unittest.TestCase):
         def fooLacksExit():
             foo = LacksExit()
             with foo: pass
-        self.assertRaisesRegex(TypeError, 'context manager', fooLacksExit)
+        self.assertRaisesRegex(TypeError, 'context manager.*__exit__', fooLacksExit)
 
     def assertRaisesSyntaxError(self, codestr):
         def shouldRaiseSyntaxError(s):

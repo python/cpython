@@ -1210,7 +1210,7 @@ class CoroutineTest(unittest.TestCase):
             async with CM():
                 body_executed = True
 
-        with self.assertRaisesRegex(TypeError, 'asynchronous context manager'):
+        with self.assertRaisesRegex(TypeError, 'asynchronous context manager.*__aexit__'):
             run_async(foo())
         self.assertFalse(body_executed)
 

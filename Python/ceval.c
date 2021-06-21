@@ -3856,7 +3856,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol",
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
@@ -3893,7 +3894,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   "'%.200s' object does not support the "
-                                  "context manager protocol",
+                                  "context manager protocol "
+                                  "(missed __exit__ method)",
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
