@@ -26,9 +26,6 @@ typedef uint16_t _Py_CODEUNIT;
 typedef struct _PyOpcache _PyOpcache;
 
 
-typedef unsigned char _PyLocalsPlusKind;
-typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
-
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
@@ -75,7 +72,7 @@ struct PyCodeObject {
     int co_firstlineno;         /* first source line number */
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
-    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
+    PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -221,5 +218,4 @@ void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-
 
