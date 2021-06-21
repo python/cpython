@@ -366,7 +366,7 @@ typedef enum {
     NON_DESCRIPTOR, /* Is not a descriptor, and is an instance of an immutable class */
     MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
     ABSENT, /* Attribute is not present on the class */
-    __CLASS__, /* __class__ attribute */
+    DUNDER_CLASS, /* __class__ attribute */
     GETATTRIBUTE_OVERRIDDEN /* __getattribute__ has been overridden */
 } DesciptorClassification;
 
@@ -400,7 +400,7 @@ analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
         }
         if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
             if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
-                return __CLASS__;
+                return DUNDER_CLASS;
             }
         }
         return OVERRIDING;
@@ -460,7 +460,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
             *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
             goto success;
         }
-        case __CLASS__:
+        case DUNDER_CLASS:
         {
             Py_ssize_t offset = offsetof(PyObject, ob_type);
             assert(offset == (uint16_t)offset);
