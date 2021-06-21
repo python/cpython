@@ -16,7 +16,7 @@
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
- * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
+ * Executed via 'EmbeddingTests' in Lib/test/test_embed.py
  *********************************************************/
 
 /* Use path starting with "./" avoids a search along the PATH */
@@ -94,6 +94,60 @@ static int test_repeated_init_and_subinterpreters(void)
         Py_Finalize();
     }
     return 0;
+}
+
+/* bpo-36225: Implicitly tear down subinterpreters with Py_Finalize() */
+static int test_finalize_subinterps(void)
+{
+    PyThreadState *mainstate;
+    PyThreadState *interp_tstate;
+    PyGILState_STATE gilstate;
+    int i;
+
+    _testembed_Py_Initialize();
+    mainstate = PyThreadState_Get();
+
+    PyEval_ReleaseThread(mainstate);
+
+    gilstate = PyGILState_Ensure();
+    print_subinterp();
+    PyThreadState_Swap(NULL);
+
+    // Create 3 subinterpreters and destroy the last one.
+    for (i=0; i<3; i++) {
+        interp_tstate = Py_NewInterpreter();
+        print_subinterp();
+    }
+    PyThreadState_Swap(interp_tstate);
+    Py_EndInterpreter(interp_tstate);
+
+    // Switch back to the main interpreter and finalize the runtime.
+    PyThreadState_Swap(mainstate);
+    print_subinterp();
+    PyGILState_Release(gilstate);
+
+    PyEval_RestoreThread(mainstate);
+    Py_Finalize();
+
+    return 0;
+}
+
+/* bpo-38865: Py_Finalize() should not be called from a subinterpreter */
+static int test_finalize_from_subinterp(void)
+{
+    PyThreadState *subinterp_tstate;
+    int rc;
+
+    _testembed_Py_Initialize();
+    PyGILState_Ensure();
+    PyThreadState_Swap(NULL);
+
+    subinterp_tstate = Py_NewInterpreter();
+    PyThreadState_Swap(subinterp_tstate);
+
+    rc = Py_FinalizeEx();
+
+    return rc;
 }
 
 /*****************************************************
@@ -1208,10 +1262,14 @@ static int test_audit_subinterpreter(void)
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_Initialize();
 
+    PyThreadState *mainstate = PyThreadState_Get();
+
     Py_NewInterpreter();
     Py_NewInterpreter();
     Py_NewInterpreter();
 
+    // Currently unable to call Py_Finalize from subinterpreter thread, see bpo-37776.
+    PyThreadState_Swap(mainstate);
     Py_Finalize();
 
     switch (_audit_subinterpreter_interpreter_count) {
@@ -1812,6 +1870,8 @@ struct TestCase
 static struct TestCase TestCases[] = {
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
+    {"test_finalize_subinterps", test_finalize_subinterps},
+    {"test_finalize_from_subinterp", test_finalize_from_subinterp},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},

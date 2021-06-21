@@ -101,6 +101,7 @@ _PyRuntime_Initialize(void)
         return _PyStatus_OK();
     }
     runtime_initialized = 1;
+    _PyRuntime.interpreters.allow_new = 0;
 
     return _PyRuntimeState_Init(&_PyRuntime);
 }
@@ -1072,6 +1073,7 @@ init_interp_main(PyThreadState *tstate)
          */
         if (is_main_interp) {
             interp->runtime->initialized = 1;
+            interp->runtime->interpreters.allow_new = 1;
         }
         return _PyStatus_OK();
     }
@@ -1143,6 +1145,7 @@ init_interp_main(PyThreadState *tstate)
         }
 
         interp->runtime->initialized = 1;
+        interp->runtime->interpreters.allow_new = 1;
     }
 
     if (config->site_import) {
@@ -1706,6 +1709,42 @@ Py_FinalizeEx(void)
 
     /* Get current thread state and interpreter pointer */
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = tstate->interp;
+
+    /* Check we're running in the main interpreter (not yet supported to call
+     * from any interpreter).
+     */
+    if (interp != PyInterpreterState_Main()) {
+        Py_FatalError("must be called from the main interpreter\n");
+    }
+
+    // Finalize sub-interpreters.
+    PyThread_acquire_lock(runtime->interpreters.mutex, WAIT_LOCK);
+    runtime->interpreters.allow_new = 0;
+    PyThread_release_lock(runtime->interpreters.mutex);
+    PyInterpreterState *curr_interp = PyInterpreterState_Head();
+    PyInterpreterState *next_interp;
+    int64_t num_destroyed = 0;
+    while (curr_interp != NULL) {
+        next_interp = PyInterpreterState_Next(curr_interp);
+        if (curr_interp != interp) {
+            PyThreadState_Swap(curr_interp->tstate_head);
+            Py_EndInterpreter(curr_interp->tstate_head);
+            num_destroyed++;
+        }
+        curr_interp = next_interp;
+    }
+    PyThreadState_Swap(tstate);
+
+    if (num_destroyed > 0) {
+        /* Sub-interpreters were still running, but should have be finalized
+         * before finalizing the runtime.
+         */
+        if (PyErr_ResourceWarning(NULL, 1,
+                                  "extra %zd interpreters", num_destroyed)) {
+            _PyErr_WriteUnraisableMsg("in PyFinalizeEx", NULL);
+        }
+    }
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
@@ -1728,13 +1767,13 @@ Py_FinalizeEx(void)
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
-    int show_ref_count = tstate->interp->config.show_ref_count;
+    int show_ref_count = interp->config.show_ref_count;
 #endif
 #ifdef Py_TRACE_REFS
-    int dump_refs = tstate->interp->config.dump_refs;
+    int dump_refs = interp->config.dump_refs;
 #endif
 #ifdef WITH_PYMALLOC
-    int malloc_stats = tstate->interp->config.malloc_stats;
+    int malloc_stats = interp->config.malloc_stats;
 #endif
 
     /* Remaining daemon threads will automatically exit
@@ -1890,8 +1929,10 @@ new_interpreter(PyThreadState **tstate_p, int isolated_subinterpreter)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (!runtime->initialized) {
-        return _PyStatus_ERR("Py_Initialize must be called first");
+    if (!runtime->interpreters.allow_new) {
+        return _PyStatus_ERR(
+            "New interpreters cannot currently be created - Py_Initialize must "
+            "be called first, and Py_Finalize must not have been called");
     }
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple

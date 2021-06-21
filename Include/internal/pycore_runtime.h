@@ -91,6 +91,7 @@ typedef struct pyruntimestate {
            If that becomes a problem later then we can adjust, e.g. by
            using a Python int. */
         int64_t next_id;
+        int allow_new;
     } interpreters;
     // XXX Remove this field once we have a tp_* slot.
     struct _xidregistry {

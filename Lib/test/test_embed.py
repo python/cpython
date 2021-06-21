@@ -194,6 +194,27 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.assertNotEqual(sub.tstate, main.tstate)
                 self.assertNotEqual(sub.modules, main.modules)
 
+    def test_finalize_subinterps(self):
+        """
+        bpo-36225: Subinterpreters should implicitly be torn down by
+        Py_Finalize().
+        """
+        _, err = self.run_embedded_interpreter("test_finalize_subinterps")
+        if support.verbose > 1:
+            print()
+            print(err)
+        self.assertIn("ResourceWarning: extra 2 interpreters", err)
+
+    def test_finalize_from_subinterp(self):
+        """
+        bpo-38865: Py_Finalize() should not be called from a subinterpreter.
+        """
+        _, err = self.run_embedded_interpreter("test_finalize_from_subinterp",
+                                               returncode=-6)
+        self.assertIn(
+            "Fatal Python error: Py_FinalizeEx: must be called from the main interpreter",
+            err)
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
