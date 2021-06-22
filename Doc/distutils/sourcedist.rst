@@ -4,6 +4,8 @@
 Creating a Source Distribution
 ******************************
 
+.. include:: ./_setuptools_disclaimer.rst
+
 As shown in section :ref:`distutils-simple-example`, you use the :command:`sdist` command
 to create a source distribution.  In the simplest case, ::
 

@@ -3,37 +3,42 @@
    Uses the mechanism of the python binhex module
    Based on an original test by Roger E. Masse.
 """
-import binhex
 import unittest
 from test import support
+from test.support import import_helper
+from test.support import os_helper
+from test.support import warnings_helper
+
+
+with warnings_helper.check_warnings(('', DeprecationWarning)):
+    binhex = import_helper.import_fresh_module('binhex')
 
 
 class BinHexTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.fname1 = support.TESTFN + "1"
-        self.fname2 = support.TESTFN + "2"
-        self.fname3 = support.TESTFN + "very_long_filename__very_long_filename__very_long_filename__very_long_filename__"
+        # binhex supports only file names encodable to Latin1
+        self.fname1 = os_helper.TESTFN_ASCII + "1"
+        self.fname2 = os_helper.TESTFN_ASCII + "2"
+        self.fname3 = os_helper.TESTFN_ASCII + "very_long_filename__very_long_filename__very_long_filename__very_long_filename__"
 
     def tearDown(self):
-        support.unlink(self.fname1)
-        support.unlink(self.fname2)
-        support.unlink(self.fname3)
+        os_helper.unlink(self.fname1)
+        os_helper.unlink(self.fname2)
+        os_helper.unlink(self.fname3)
 
     DATA = b'Jack is my hero'
 
     def test_binhex(self):
-        f = open(self.fname1, 'wb')
-        f.write(self.DATA)
-        f.close()
+        with open(self.fname1, 'wb') as f:
+            f.write(self.DATA)
 
         binhex.binhex(self.fname1, self.fname2)
 
         binhex.hexbin(self.fname2, self.fname1)
 
-        f = open(self.fname1, 'rb')
-        finish = f.readline()
-        f.close()
+        with open(self.fname1, 'rb') as f:
+            finish = f.readline()
 
         self.assertEqual(self.DATA, finish)
 
@@ -46,6 +51,18 @@ class BinHexTestCase(unittest.TestCase):
         f3.close()
 
         self.assertRaises(binhex.Error, binhex.binhex, self.fname3, self.fname2)
+
+    def test_binhex_line_endings(self):
+        # bpo-29566: Ensure the line endings are those for macOS 9
+        with open(self.fname1, 'wb') as f:
+            f.write(self.DATA)
+
+        binhex.binhex(self.fname1, self.fname2)
+
+        with open(self.fname2, 'rb') as fp:
+            contents = fp.read()
+
+        self.assertNotIn(b'\n', contents)
 
 def test_main():
     support.run_unittest(BinHexTestCase)

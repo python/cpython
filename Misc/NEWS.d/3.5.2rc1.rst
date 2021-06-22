@@ -568,9 +568,9 @@ string.  Original fix by Ján Janech.
 .. section: Library
 
 The "urllib.request" module now percent-encodes non-ASCII bytes found in
-redirect target URLs.  Some servers send Location header fields with non-
-ASCII bytes, but "http.client" requires the request target to be ASCII-
-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
+redirect target URLs.  Some servers send Location header fields with
+non-ASCII bytes, but "http.client" requires the request target to be
+ASCII-encodable, otherwise a UnicodeEncodeError is raised.  Based on patch by
 Christian Heimes.
 
 ..
@@ -678,7 +678,6 @@ Fixed the comparison of plistlib.Data with other types.
 .. section: Library
 
 Fix an uninitialized variable in `ctypes.util`.
-
 The bug only occurs on SunOS when the ctypes implementation searches for the
 `crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
@@ -1952,10 +1951,10 @@ Fix linking extension modules for cross builds. Patch by Xavier de Gaye.
 .. nonce: HDjM4s
 .. section: Build
 
-Disable the rules for running _freeze_importlib and pgen when cross-
-compiling.  The output of these programs is normally saved with the source
-code anyway, and is still regenerated when doing a native build. Patch by
-Xavier de Gaye.
+Disable the rules for running _freeze_importlib and pgen when
+cross-compiling.  The output of these programs is normally saved with the
+source code anyway, and is still regenerated when doing a native build.
+Patch by Xavier de Gaye.
 
 ..
 
@@ -2006,7 +2005,7 @@ Adds validation of ucrtbase[d].dll version with warning for old versions.
 .. nonce: 102DA-
 .. section: Build
 
-Avoid error about nonexistant fileblocks.o file by using a lower-level check
+Avoid error about nonexistent fileblocks.o file by using a lower-level check
 for st_blocks in struct stat.
 
 ..

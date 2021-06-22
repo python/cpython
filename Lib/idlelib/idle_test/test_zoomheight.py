@@ -4,7 +4,7 @@
 from idlelib import zoomheight
 import unittest
 from test.support import requires
-from tkinter import Tk, Text
+from tkinter import Tk
 from idlelib.editor import EditorWindow
 
 

@@ -28,7 +28,10 @@ character for the same purpose in string literals; for example, to match
 a literal backslash, one might have to write ``'\\\\'`` as the pattern
 string, because the regular expression must be ``\\``, and each
 backslash must be expressed as ``\\`` inside a regular Python string
-literal.
+literal. Also, please note that any invalid escape sequences in Python's
+usage of the backslash in string literals now generate a :exc:`DeprecationWarning`
+and in the future this will become a :exc:`SyntaxError`. This behaviour
+will happen even if it is a valid escape sequence for a regular expression.
 
 The solution is to use Python's raw string notation for regular expression
 patterns; backslashes are not handled in any special way in a string literal
@@ -93,20 +96,20 @@ the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 The special characters are:
 
-.. index:: single: .; in regular expressions
+.. index:: single: . (dot); in regular expressions
 
 ``.``
    (Dot.)  In the default mode, this matches any character except a newline.  If
    the :const:`DOTALL` flag has been specified, this matches any character
    including a newline.
 
-.. index:: single: ^; in regular expressions
+.. index:: single: ^ (caret); in regular expressions
 
 ``^``
    (Caret.)  Matches the start of the string, and in :const:`MULTILINE` mode also
    matches immediately after each newline.
 
-.. index:: single: $; in regular expressions
+.. index:: single: $ (dollar); in regular expressions
 
 ``$``
    Matches the end of the string or just before the newline at the end of the
@@ -117,21 +120,21 @@ The special characters are:
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
 
-.. index:: single: *; in regular expressions
+.. index:: single: * (asterisk); in regular expressions
 
 ``*``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
    many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
    by any number of 'b's.
 
-.. index:: single: +; in regular expressions
+.. index:: single: + (plus); in regular expressions
 
 ``+``
    Causes the resulting RE to match 1 or more repetitions of the preceding RE.
    ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
    match just 'a'.
 
-.. index:: single: ?; in regular expressions
+.. index:: single: ? (question mark); in regular expressions
 
 ``?``
    Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
@@ -152,8 +155,7 @@ The special characters are:
    only ``'<a>'``.
 
 .. index::
-   single: {; in regular expressions
-   single: }; in regular expressions
+   single: {} (curly brackets); in regular expressions
 
 ``{m}``
    Specifies that exactly *m* copies of the previous RE should be matched; fewer
@@ -176,7 +178,7 @@ The special characters are:
    6-character string ``'aaaaaa'``, ``a{3,5}`` will match 5 ``'a'`` characters,
    while ``a{3,5}?`` will only match 3 characters.
 
-.. index:: single: \; in regular expressions
+.. index:: single: \ (backslash); in regular expressions
 
 ``\``
    Either escapes special characters (permitting you to match characters like
@@ -192,8 +194,7 @@ The special characters are:
    raw strings for all but the simplest expressions.
 
 .. index::
-   single: [; in regular expressions
-   single: ]; in regular expressions
+   single: [] (square brackets); in regular expressions
 
 ``[]``
    Used to indicate a set of characters.  In a set:
@@ -201,7 +202,7 @@ The special characters are:
    * Characters can be listed individually, e.g. ``[amk]`` will match ``'a'``,
      ``'m'``, or ``'k'``.
 
-   .. index:: single: -; in regular expressions
+   .. index:: single: - (minus); in regular expressions
 
    * Ranges of characters can be indicated by giving two characters and separating
      them by a ``'-'``, for example ``[a-z]`` will match any lowercase ASCII letter,
@@ -214,13 +215,13 @@ The special characters are:
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
-   .. index:: single: \; in regular expressions
+   .. index:: single: \ (backslash); in regular expressions
 
    * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
      inside a set, although the characters they match depends on whether
      :const:`ASCII` or :const:`LOCALE` mode is in force.
 
-   .. index:: single: ^; in regular expressions
+   .. index:: single: ^ (caret); in regular expressions
 
    * Characters that are not within a range can be matched by :dfn:`complementing`
      the set.  If the first character of the set is ``'^'``, all the characters
@@ -252,7 +253,7 @@ The special characters are:
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
 
-.. index:: single: |; in regular expressions
+.. index:: single: | (vertical bar); in regular expressions
 
 ``|``
    ``A|B``, where *A* and *B* can be arbitrary REs, creates a regular expression that
@@ -266,8 +267,7 @@ The special characters are:
    character class, as in ``[|]``.
 
 .. index::
-   single: (; in regular expressions
-   single: ); in regular expressions
+   single: () (parentheses); in regular expressions
 
 ``(...)``
    Matches whatever regular expression is inside the parentheses, and indicates the
@@ -371,6 +371,8 @@ The special characters are:
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
 
+.. index:: single: (?=; in regular expressions
+
 ``(?=...)``
    Matches if ``...`` matches next, but doesn't consume any of the string.  This is
    called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
@@ -433,7 +435,7 @@ If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
 character ``'$'``.
 
-.. index:: single: \; in regular expressions
+.. index:: single: \ (backslash); in regular expressions
 
 ``\number``
    Matches the contents of the group of the same number.  Groups are numbered
@@ -538,8 +540,8 @@ character ``'$'``.
    Matches any character which is not a word character. This is
    the opposite of ``\w``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^a-zA-Z0-9_]``.  If the :const:`LOCALE` flag is
-   used, matches characters considered alphanumeric in the current locale
-   and the underscore.
+   used, matches characters which are neither alphanumeric in the current locale
+   nor the underscore.
 
 .. index:: single: \Z; in regular expressions
 
@@ -571,7 +573,8 @@ accepted by the regular expression parser::
 only inside character classes.)
 
 ``'\u'``, ``'\U'``, and ``'\N'`` escape sequences are only recognized in Unicode
-patterns.  In bytes patterns they are errors.
+patterns.  In bytes patterns they are errors.  Unknown escapes of ASCII
+letters are reserved for future use and treated as errors.
 
 Octal escapes are included in a limited form.  If the first digit is a 0, or if
 there are three octal digits, it is considered an octal escape. Otherwise, it is
@@ -719,7 +722,7 @@ form.
 .. data:: X
           VERBOSE
 
-   .. index:: single: #; in regular expressions
+   .. index:: single: # (hash); in regular expressions
 
    This flag allows you to write regular expressions that look nicer and are
    more readable by allowing you to visually separate logical sections of the
@@ -848,7 +851,9 @@ form.
    *string* is returned unchanged.  *repl* can be a string or a function; if it is
    a string, any backslash escapes in it are processed.  That is, ``\n`` is
    converted to a single newline character, ``\r`` is converted to a carriage return, and
-   so forth.  Unknown escapes such as ``\&`` are left alone.  Backreferences, such
+   so forth.  Unknown escapes of ASCII letters are reserved for future use and
+   treated as errors.  Other unknown escapes such as ``\&`` are left alone.
+   Backreferences, such
    as ``\6``, are replaced with the substring matched by group 6 in the pattern.
    For example::
 
@@ -903,6 +908,7 @@ form.
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
 
+   .. versionchanged:: 3.7
       Empty matches for the pattern are replaced when adjacent to a previous
       non-empty match.
 
@@ -925,8 +931,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('python.exe'))
-      python\.exe
+      >>> print(re.escape('http://www.python.org'))
+      http://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
@@ -936,7 +942,7 @@ form.
       >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
       /|\-|\+|\*\*|\*
 
-   This functions must not be used for the replacement string in :func:`sub`
+   This function must not be used for the replacement string in :func:`sub`
    and :func:`subn`, only backslashes should be escaped.  For example::
 
       >>> digits_re = r'\d+'
@@ -949,7 +955,9 @@ form.
 
    .. versionchanged:: 3.7
       Only characters that can have special meaning in a regular expression
-      are escaped.
+      are escaped. As a result, ``'!'``, ``'"'``, ``'%'``, ``"'"``, ``','``,
+      ``'/'``, ``':'``, ``';'``, ``'<'``, ``'='``, ``'>'``, ``'@'``, and
+      ``"`"`` are no longer escaped.
 
 
 .. function:: purge()
@@ -1609,41 +1617,47 @@ The text categories are specified with regular expressions.  The technique is
 to combine those into a single master regular expression and to loop over
 successive matches::
 
-    import collections
+    from typing import NamedTuple
     import re
 
-    Token = collections.namedtuple('Token', ['typ', 'value', 'line', 'column'])
+    class Token(NamedTuple):
+        type: str
+        value: str
+        line: int
+        column: int
 
     def tokenize(code):
         keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
         token_specification = [
-            ('NUMBER',  r'\d+(\.\d*)?'),  # Integer or decimal number
-            ('ASSIGN',  r':='),           # Assignment operator
-            ('END',     r';'),            # Statement terminator
-            ('ID',      r'[A-Za-z]+'),    # Identifiers
-            ('OP',      r'[+\-*/]'),      # Arithmetic operators
-            ('NEWLINE', r'\n'),           # Line endings
-            ('SKIP',    r'[ \t]+'),       # Skip over spaces and tabs
-            ('MISMATCH',r'.'),            # Any other character
+            ('NUMBER',   r'\d+(\.\d*)?'),  # Integer or decimal number
+            ('ASSIGN',   r':='),           # Assignment operator
+            ('END',      r';'),            # Statement terminator
+            ('ID',       r'[A-Za-z]+'),    # Identifiers
+            ('OP',       r'[+\-*/]'),      # Arithmetic operators
+            ('NEWLINE',  r'\n'),           # Line endings
+            ('SKIP',     r'[ \t]+'),       # Skip over spaces and tabs
+            ('MISMATCH', r'.'),            # Any other character
         ]
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
         line_num = 1
         line_start = 0
         for mo in re.finditer(tok_regex, code):
             kind = mo.lastgroup
-            value = mo.group(kind)
-            if kind == 'NEWLINE':
+            value = mo.group()
+            column = mo.start() - line_start
+            if kind == 'NUMBER':
+                value = float(value) if '.' in value else int(value)
+            elif kind == 'ID' and value in keywords:
+                kind = value
+            elif kind == 'NEWLINE':
                 line_start = mo.end()
                 line_num += 1
+                continue
             elif kind == 'SKIP':
-                pass
+                continue
             elif kind == 'MISMATCH':
                 raise RuntimeError(f'{value!r} unexpected on line {line_num}')
-            else:
-                if kind == 'ID' and value in keywords:
-                    kind = value
-                column = mo.start() - line_start
-                yield Token(kind, value, line_num, column)
+            yield Token(kind, value, line_num, column)
 
     statements = '''
         IF quantity THEN
@@ -1657,25 +1671,25 @@ successive matches::
 
 The tokenizer produces the following output::
 
-    Token(typ='IF', value='IF', line=2, column=4)
-    Token(typ='ID', value='quantity', line=2, column=7)
-    Token(typ='THEN', value='THEN', line=2, column=16)
-    Token(typ='ID', value='total', line=3, column=8)
-    Token(typ='ASSIGN', value=':=', line=3, column=14)
-    Token(typ='ID', value='total', line=3, column=17)
-    Token(typ='OP', value='+', line=3, column=23)
-    Token(typ='ID', value='price', line=3, column=25)
-    Token(typ='OP', value='*', line=3, column=31)
-    Token(typ='ID', value='quantity', line=3, column=33)
-    Token(typ='END', value=';', line=3, column=41)
-    Token(typ='ID', value='tax', line=4, column=8)
-    Token(typ='ASSIGN', value=':=', line=4, column=12)
-    Token(typ='ID', value='price', line=4, column=15)
-    Token(typ='OP', value='*', line=4, column=21)
-    Token(typ='NUMBER', value='0.05', line=4, column=23)
-    Token(typ='END', value=';', line=4, column=27)
-    Token(typ='ENDIF', value='ENDIF', line=5, column=4)
-    Token(typ='END', value=';', line=5, column=9)
+    Token(type='IF', value='IF', line=2, column=4)
+    Token(type='ID', value='quantity', line=2, column=7)
+    Token(type='THEN', value='THEN', line=2, column=16)
+    Token(type='ID', value='total', line=3, column=8)
+    Token(type='ASSIGN', value=':=', line=3, column=14)
+    Token(type='ID', value='total', line=3, column=17)
+    Token(type='OP', value='+', line=3, column=23)
+    Token(type='ID', value='price', line=3, column=25)
+    Token(type='OP', value='*', line=3, column=31)
+    Token(type='ID', value='quantity', line=3, column=33)
+    Token(type='END', value=';', line=3, column=41)
+    Token(type='ID', value='tax', line=4, column=8)
+    Token(type='ASSIGN', value=':=', line=4, column=12)
+    Token(type='ID', value='price', line=4, column=15)
+    Token(type='OP', value='*', line=4, column=21)
+    Token(type='NUMBER', value=0.05, line=4, column=23)
+    Token(type='END', value=';', line=4, column=27)
+    Token(type='ENDIF', value='ENDIF', line=5, column=4)
+    Token(type='END', value=';', line=5, column=9)
 
 
 .. [Frie09] Friedl, Jeffrey. Mastering Regular Expressions. 3rd ed., O'Reilly

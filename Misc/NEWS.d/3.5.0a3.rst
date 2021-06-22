@@ -62,8 +62,8 @@ Fix the default __sizeof__ implementation for variable-sized objects.
 .. nonce: b5M04V
 .. section: Library
 
-The groupindex attribute of regular expression pattern object now is non-
-modifiable mapping.
+The groupindex attribute of regular expression pattern object now is
+non-modifiable mapping.
 
 ..
 

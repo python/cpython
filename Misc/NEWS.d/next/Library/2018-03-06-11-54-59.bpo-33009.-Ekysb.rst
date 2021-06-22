@@ -1,1 +1,0 @@
-Fix inspect.signature() for single-parameter partialmethods.

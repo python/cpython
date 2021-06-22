@@ -46,25 +46,889 @@ static PyMethodDef errno_methods[] = {
 
 /* Helper function doing the dictionary inserting */
 
-static void
-_inscode(PyObject *d, PyObject *de, const char *name, int code)
+static int
+_add_errcode(PyObject *module_dict, PyObject *error_dict, const char *name_str, int code_int)
 {
-    PyObject *u = PyUnicode_FromString(name);
-    PyObject *v = PyLong_FromLong((long) code);
-
-    /* Don't bother checking for errors; they'll be caught at the end
-     * of the module initialization function by the caller of
-     * initerrno().
-     */
-    if (u && v) {
-        /* insert in modules dict */
-        PyDict_SetItem(d, u, v);
-        /* insert in errorcode dict */
-        PyDict_SetItem(de, v, u);
+    PyObject *name = PyUnicode_FromString(name_str);
+    if (!name) {
+        return -1;
     }
-    Py_XDECREF(u);
-    Py_XDECREF(v);
+
+    PyObject *code = PyLong_FromLong(code_int);
+    if (!code) {
+        Py_DECREF(name);
+        return -1;
+    }
+
+    int ret = -1;
+    /* insert in modules dict */
+    if (PyDict_SetItem(module_dict, name, code) < 0) {
+        goto end;
+    }
+    /* insert in errorcode dict */
+    if (PyDict_SetItem(error_dict, code, name) < 0) {
+        goto end;
+    }
+    ret = 0;
+end:
+    Py_DECREF(name);
+    Py_DECREF(code);
+    return ret;
 }
+
+static int
+errno_exec(PyObject *module)
+{
+    PyObject *module_dict = PyModule_GetDict(module);
+    PyObject *error_dict = PyDict_New();
+    if (!module_dict || !error_dict) {
+        return -1;
+    }
+    if (PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
+        Py_DECREF(error_dict);
+        return -1;
+    }
+
+/* Macro so I don't have to edit each and every line below... */
+#define add_errcode(name, code, comment)                               \
+    do {                                                               \
+        if (_add_errcode(module_dict, error_dict, name, code) < 0) {   \
+            Py_DECREF(error_dict);                                     \
+            return -1;                                                 \
+        }                                                              \
+    } while (0);
+
+    /*
+     * The names and comments are borrowed from linux/include/errno.h,
+     * which should be pretty all-inclusive.  However, the Solaris specific
+     * names and comments are borrowed from sys/errno.h in Solaris.
+     * MacOSX specific names and comments are borrowed from sys/errno.h in
+     * MacOSX.
+     */
+
+#ifdef ENODEV
+    add_errcode("ENODEV", ENODEV, "No such device");
+#endif
+#ifdef ENOCSI
+    add_errcode("ENOCSI", ENOCSI, "No CSI structure available");
+#endif
+#ifdef EHOSTUNREACH
+    add_errcode("EHOSTUNREACH", EHOSTUNREACH, "No route to host");
+#else
+#ifdef WSAEHOSTUNREACH
+    add_errcode("EHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
+#endif
+#endif
+#ifdef ENOMSG
+    add_errcode("ENOMSG", ENOMSG, "No message of desired type");
+#endif
+#ifdef EUCLEAN
+    add_errcode("EUCLEAN", EUCLEAN, "Structure needs cleaning");
+#endif
+#ifdef EL2NSYNC
+    add_errcode("EL2NSYNC", EL2NSYNC, "Level 2 not synchronized");
+#endif
+#ifdef EL2HLT
+    add_errcode("EL2HLT", EL2HLT, "Level 2 halted");
+#endif
+#ifdef ENODATA
+    add_errcode("ENODATA", ENODATA, "No data available");
+#endif
+#ifdef ENOTBLK
+    add_errcode("ENOTBLK", ENOTBLK, "Block device required");
+#endif
+#ifdef ENOSYS
+    add_errcode("ENOSYS", ENOSYS, "Function not implemented");
+#endif
+#ifdef EPIPE
+    add_errcode("EPIPE", EPIPE, "Broken pipe");
+#endif
+#ifdef EINVAL
+    add_errcode("EINVAL", EINVAL, "Invalid argument");
+#else
+#ifdef WSAEINVAL
+    add_errcode("EINVAL", WSAEINVAL, "Invalid argument");
+#endif
+#endif
+#ifdef EOVERFLOW
+    add_errcode("EOVERFLOW", EOVERFLOW, "Value too large for defined data type");
+#endif
+#ifdef EADV
+    add_errcode("EADV", EADV, "Advertise error");
+#endif
+#ifdef EINTR
+    add_errcode("EINTR", EINTR, "Interrupted system call");
+#else
+#ifdef WSAEINTR
+    add_errcode("EINTR", WSAEINTR, "Interrupted system call");
+#endif
+#endif
+#ifdef EUSERS
+    add_errcode("EUSERS", EUSERS, "Too many users");
+#else
+#ifdef WSAEUSERS
+    add_errcode("EUSERS", WSAEUSERS, "Too many users");
+#endif
+#endif
+#ifdef ENOTEMPTY
+    add_errcode("ENOTEMPTY", ENOTEMPTY, "Directory not empty");
+#else
+#ifdef WSAENOTEMPTY
+    add_errcode("ENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
+#endif
+#endif
+#ifdef ENOBUFS
+    add_errcode("ENOBUFS", ENOBUFS, "No buffer space available");
+#else
+#ifdef WSAENOBUFS
+    add_errcode("ENOBUFS", WSAENOBUFS, "No buffer space available");
+#endif
+#endif
+#ifdef EPROTO
+    add_errcode("EPROTO", EPROTO, "Protocol error");
+#endif
+#ifdef EREMOTE
+    add_errcode("EREMOTE", EREMOTE, "Object is remote");
+#else
+#ifdef WSAEREMOTE
+    add_errcode("EREMOTE", WSAEREMOTE, "Object is remote");
+#endif
+#endif
+#ifdef ENAVAIL
+    add_errcode("ENAVAIL", ENAVAIL, "No XENIX semaphores available");
+#endif
+#ifdef ECHILD
+    add_errcode("ECHILD", ECHILD, "No child processes");
+#endif
+#ifdef ELOOP
+    add_errcode("ELOOP", ELOOP, "Too many symbolic links encountered");
+#else
+#ifdef WSAELOOP
+    add_errcode("ELOOP", WSAELOOP, "Too many symbolic links encountered");
+#endif
+#endif
+#ifdef EXDEV
+    add_errcode("EXDEV", EXDEV, "Cross-device link");
+#endif
+#ifdef E2BIG
+    add_errcode("E2BIG", E2BIG, "Arg list too long");
+#endif
+#ifdef ESRCH
+    add_errcode("ESRCH", ESRCH, "No such process");
+#endif
+#ifdef EMSGSIZE
+    add_errcode("EMSGSIZE", EMSGSIZE, "Message too long");
+#else
+#ifdef WSAEMSGSIZE
+    add_errcode("EMSGSIZE", WSAEMSGSIZE, "Message too long");
+#endif
+#endif
+#ifdef EAFNOSUPPORT
+    add_errcode("EAFNOSUPPORT", EAFNOSUPPORT, "Address family not supported by protocol");
+#else
+#ifdef WSAEAFNOSUPPORT
+    add_errcode("EAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
+#endif
+#endif
+#ifdef EBADR
+    add_errcode("EBADR", EBADR, "Invalid request descriptor");
+#endif
+#ifdef EHOSTDOWN
+    add_errcode("EHOSTDOWN", EHOSTDOWN, "Host is down");
+#else
+#ifdef WSAEHOSTDOWN
+    add_errcode("EHOSTDOWN", WSAEHOSTDOWN, "Host is down");
+#endif
+#endif
+#ifdef EPFNOSUPPORT
+    add_errcode("EPFNOSUPPORT", EPFNOSUPPORT, "Protocol family not supported");
+#else
+#ifdef WSAEPFNOSUPPORT
+    add_errcode("EPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
+#endif
+#endif
+#ifdef ENOPROTOOPT
+    add_errcode("ENOPROTOOPT", ENOPROTOOPT, "Protocol not available");
+#else
+#ifdef WSAENOPROTOOPT
+    add_errcode("ENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
+#endif
+#endif
+#ifdef EBUSY
+    add_errcode("EBUSY", EBUSY, "Device or resource busy");
+#endif
+#ifdef EWOULDBLOCK
+    add_errcode("EWOULDBLOCK", EWOULDBLOCK, "Operation would block");
+#else
+#ifdef WSAEWOULDBLOCK
+    add_errcode("EWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
+#endif
+#endif
+#ifdef EBADFD
+    add_errcode("EBADFD", EBADFD, "File descriptor in bad state");
+#endif
+#ifdef EDOTDOT
+    add_errcode("EDOTDOT", EDOTDOT, "RFS specific error");
+#endif
+#ifdef EISCONN
+    add_errcode("EISCONN", EISCONN, "Transport endpoint is already connected");
+#else
+#ifdef WSAEISCONN
+    add_errcode("EISCONN", WSAEISCONN, "Transport endpoint is already connected");
+#endif
+#endif
+#ifdef ENOANO
+    add_errcode("ENOANO", ENOANO, "No anode");
+#endif
+#ifdef ESHUTDOWN
+    add_errcode("ESHUTDOWN", ESHUTDOWN, "Cannot send after transport endpoint shutdown");
+#else
+#ifdef WSAESHUTDOWN
+    add_errcode("ESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
+#endif
+#endif
+#ifdef ECHRNG
+    add_errcode("ECHRNG", ECHRNG, "Channel number out of range");
+#endif
+#ifdef ELIBBAD
+    add_errcode("ELIBBAD", ELIBBAD, "Accessing a corrupted shared library");
+#endif
+#ifdef ENONET
+    add_errcode("ENONET", ENONET, "Machine is not on the network");
+#endif
+#ifdef EBADE
+    add_errcode("EBADE", EBADE, "Invalid exchange");
+#endif
+#ifdef EBADF
+    add_errcode("EBADF", EBADF, "Bad file number");
+#else
+#ifdef WSAEBADF
+    add_errcode("EBADF", WSAEBADF, "Bad file number");
+#endif
+#endif
+#ifdef EMULTIHOP
+    add_errcode("EMULTIHOP", EMULTIHOP, "Multihop attempted");
+#endif
+#ifdef EIO
+    add_errcode("EIO", EIO, "I/O error");
+#endif
+#ifdef EUNATCH
+    add_errcode("EUNATCH", EUNATCH, "Protocol driver not attached");
+#endif
+#ifdef EPROTOTYPE
+    add_errcode("EPROTOTYPE", EPROTOTYPE, "Protocol wrong type for socket");
+#else
+#ifdef WSAEPROTOTYPE
+    add_errcode("EPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
+#endif
+#endif
+#ifdef ENOSPC
+    add_errcode("ENOSPC", ENOSPC, "No space left on device");
+#endif
+#ifdef ENOEXEC
+    add_errcode("ENOEXEC", ENOEXEC, "Exec format error");
+#endif
+#ifdef EALREADY
+    add_errcode("EALREADY", EALREADY, "Operation already in progress");
+#else
+#ifdef WSAEALREADY
+    add_errcode("EALREADY", WSAEALREADY, "Operation already in progress");
+#endif
+#endif
+#ifdef ENETDOWN
+    add_errcode("ENETDOWN", ENETDOWN, "Network is down");
+#else
+#ifdef WSAENETDOWN
+    add_errcode("ENETDOWN", WSAENETDOWN, "Network is down");
+#endif
+#endif
+#ifdef ENOTNAM
+    add_errcode("ENOTNAM", ENOTNAM, "Not a XENIX named type file");
+#endif
+#ifdef EACCES
+    add_errcode("EACCES", EACCES, "Permission denied");
+#else
+#ifdef WSAEACCES
+    add_errcode("EACCES", WSAEACCES, "Permission denied");
+#endif
+#endif
+#ifdef ELNRNG
+    add_errcode("ELNRNG", ELNRNG, "Link number out of range");
+#endif
+#ifdef EILSEQ
+    add_errcode("EILSEQ", EILSEQ, "Illegal byte sequence");
+#endif
+#ifdef ENOTDIR
+    add_errcode("ENOTDIR", ENOTDIR, "Not a directory");
+#endif
+#ifdef ENOTUNIQ
+    add_errcode("ENOTUNIQ", ENOTUNIQ, "Name not unique on network");
+#endif
+#ifdef EPERM
+    add_errcode("EPERM", EPERM, "Operation not permitted");
+#endif
+#ifdef EDOM
+    add_errcode("EDOM", EDOM, "Math argument out of domain of func");
+#endif
+#ifdef EXFULL
+    add_errcode("EXFULL", EXFULL, "Exchange full");
+#endif
+#ifdef ECONNREFUSED
+    add_errcode("ECONNREFUSED", ECONNREFUSED, "Connection refused");
+#else
+#ifdef WSAECONNREFUSED
+    add_errcode("ECONNREFUSED", WSAECONNREFUSED, "Connection refused");
+#endif
+#endif
+#ifdef EISDIR
+    add_errcode("EISDIR", EISDIR, "Is a directory");
+#endif
+#ifdef EPROTONOSUPPORT
+    add_errcode("EPROTONOSUPPORT", EPROTONOSUPPORT, "Protocol not supported");
+#else
+#ifdef WSAEPROTONOSUPPORT
+    add_errcode("EPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
+#endif
+#endif
+#ifdef EROFS
+    add_errcode("EROFS", EROFS, "Read-only file system");
+#endif
+#ifdef EADDRNOTAVAIL
+    add_errcode("EADDRNOTAVAIL", EADDRNOTAVAIL, "Cannot assign requested address");
+#else
+#ifdef WSAEADDRNOTAVAIL
+    add_errcode("EADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
+#endif
+#endif
+#ifdef EIDRM
+    add_errcode("EIDRM", EIDRM, "Identifier removed");
+#endif
+#ifdef ECOMM
+    add_errcode("ECOMM", ECOMM, "Communication error on send");
+#endif
+#ifdef ESRMNT
+    add_errcode("ESRMNT", ESRMNT, "Srmount error");
+#endif
+#ifdef EREMOTEIO
+    add_errcode("EREMOTEIO", EREMOTEIO, "Remote I/O error");
+#endif
+#ifdef EL3RST
+    add_errcode("EL3RST", EL3RST, "Level 3 reset");
+#endif
+#ifdef EBADMSG
+    add_errcode("EBADMSG", EBADMSG, "Not a data message");
+#endif
+#ifdef ENFILE
+    add_errcode("ENFILE", ENFILE, "File table overflow");
+#endif
+#ifdef ELIBMAX
+    add_errcode("ELIBMAX", ELIBMAX, "Attempting to link in too many shared libraries");
+#endif
+#ifdef ESPIPE
+    add_errcode("ESPIPE", ESPIPE, "Illegal seek");
+#endif
+#ifdef ENOLINK
+    add_errcode("ENOLINK", ENOLINK, "Link has been severed");
+#endif
+#ifdef ENETRESET
+    add_errcode("ENETRESET", ENETRESET, "Network dropped connection because of reset");
+#else
+#ifdef WSAENETRESET
+    add_errcode("ENETRESET", WSAENETRESET, "Network dropped connection because of reset");
+#endif
+#endif
+#ifdef ETIMEDOUT
+    add_errcode("ETIMEDOUT", ETIMEDOUT, "Connection timed out");
+#else
+#ifdef WSAETIMEDOUT
+    add_errcode("ETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
+#endif
+#endif
+#ifdef ENOENT
+    add_errcode("ENOENT", ENOENT, "No such file or directory");
+#endif
+#ifdef EEXIST
+    add_errcode("EEXIST", EEXIST, "File exists");
+#endif
+#ifdef EDQUOT
+    add_errcode("EDQUOT", EDQUOT, "Quota exceeded");
+#else
+#ifdef WSAEDQUOT
+    add_errcode("EDQUOT", WSAEDQUOT, "Quota exceeded");
+#endif
+#endif
+#ifdef ENOSTR
+    add_errcode("ENOSTR", ENOSTR, "Device not a stream");
+#endif
+#ifdef EBADSLT
+    add_errcode("EBADSLT", EBADSLT, "Invalid slot");
+#endif
+#ifdef EBADRQC
+    add_errcode("EBADRQC", EBADRQC, "Invalid request code");
+#endif
+#ifdef ELIBACC
+    add_errcode("ELIBACC", ELIBACC, "Can not access a needed shared library");
+#endif
+#ifdef EFAULT
+    add_errcode("EFAULT", EFAULT, "Bad address");
+#else
+#ifdef WSAEFAULT
+    add_errcode("EFAULT", WSAEFAULT, "Bad address");
+#endif
+#endif
+#ifdef EFBIG
+    add_errcode("EFBIG", EFBIG, "File too large");
+#endif
+#ifdef EDEADLK
+    add_errcode("EDEADLK", EDEADLK, "Resource deadlock would occur");
+#endif
+#ifdef ENOTCONN
+    add_errcode("ENOTCONN", ENOTCONN, "Transport endpoint is not connected");
+#else
+#ifdef WSAENOTCONN
+    add_errcode("ENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
+#endif
+#endif
+#ifdef EDESTADDRREQ
+    add_errcode("EDESTADDRREQ", EDESTADDRREQ, "Destination address required");
+#else
+#ifdef WSAEDESTADDRREQ
+    add_errcode("EDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
+#endif
+#endif
+#ifdef ELIBSCN
+    add_errcode("ELIBSCN", ELIBSCN, ".lib section in a.out corrupted");
+#endif
+#ifdef ENOLCK
+    add_errcode("ENOLCK", ENOLCK, "No record locks available");
+#endif
+#ifdef EISNAM
+    add_errcode("EISNAM", EISNAM, "Is a named type file");
+#endif
+#ifdef ECONNABORTED
+    add_errcode("ECONNABORTED", ECONNABORTED, "Software caused connection abort");
+#else
+#ifdef WSAECONNABORTED
+    add_errcode("ECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
+#endif
+#endif
+#ifdef ENETUNREACH
+    add_errcode("ENETUNREACH", ENETUNREACH, "Network is unreachable");
+#else
+#ifdef WSAENETUNREACH
+    add_errcode("ENETUNREACH", WSAENETUNREACH, "Network is unreachable");
+#endif
+#endif
+#ifdef ESTALE
+    add_errcode("ESTALE", ESTALE, "Stale NFS file handle");
+#else
+#ifdef WSAESTALE
+    add_errcode("ESTALE", WSAESTALE, "Stale NFS file handle");
+#endif
+#endif
+#ifdef ENOSR
+    add_errcode("ENOSR", ENOSR, "Out of streams resources");
+#endif
+#ifdef ENOMEM
+    add_errcode("ENOMEM", ENOMEM, "Out of memory");
+#endif
+#ifdef ENOTSOCK
+    add_errcode("ENOTSOCK", ENOTSOCK, "Socket operation on non-socket");
+#else
+#ifdef WSAENOTSOCK
+    add_errcode("ENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
+#endif
+#endif
+#ifdef ESTRPIPE
+    add_errcode("ESTRPIPE", ESTRPIPE, "Streams pipe error");
+#endif
+#ifdef EMLINK
+    add_errcode("EMLINK", EMLINK, "Too many links");
+#endif
+#ifdef ERANGE
+    add_errcode("ERANGE", ERANGE, "Math result not representable");
+#endif
+#ifdef ELIBEXEC
+    add_errcode("ELIBEXEC", ELIBEXEC, "Cannot exec a shared library directly");
+#endif
+#ifdef EL3HLT
+    add_errcode("EL3HLT", EL3HLT, "Level 3 halted");
+#endif
+#ifdef ECONNRESET
+    add_errcode("ECONNRESET", ECONNRESET, "Connection reset by peer");
+#else
+#ifdef WSAECONNRESET
+    add_errcode("ECONNRESET", WSAECONNRESET, "Connection reset by peer");
+#endif
+#endif
+#ifdef EADDRINUSE
+    add_errcode("EADDRINUSE", EADDRINUSE, "Address already in use");
+#else
+#ifdef WSAEADDRINUSE
+    add_errcode("EADDRINUSE", WSAEADDRINUSE, "Address already in use");
+#endif
+#endif
+#ifdef EOPNOTSUPP
+    add_errcode("EOPNOTSUPP", EOPNOTSUPP, "Operation not supported on transport endpoint");
+#else
+#ifdef WSAEOPNOTSUPP
+    add_errcode("EOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
+#endif
+#endif
+#ifdef EREMCHG
+    add_errcode("EREMCHG", EREMCHG, "Remote address changed");
+#endif
+#ifdef EAGAIN
+    add_errcode("EAGAIN", EAGAIN, "Try again");
+#endif
+#ifdef ENAMETOOLONG
+    add_errcode("ENAMETOOLONG", ENAMETOOLONG, "File name too long");
+#else
+#ifdef WSAENAMETOOLONG
+    add_errcode("ENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
+#endif
+#endif
+#ifdef ENOTTY
+    add_errcode("ENOTTY", ENOTTY, "Not a typewriter");
+#endif
+#ifdef ERESTART
+    add_errcode("ERESTART", ERESTART, "Interrupted system call should be restarted");
+#endif
+#ifdef ESOCKTNOSUPPORT
+    add_errcode("ESOCKTNOSUPPORT", ESOCKTNOSUPPORT, "Socket type not supported");
+#else
+#ifdef WSAESOCKTNOSUPPORT
+    add_errcode("ESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
+#endif
+#endif
+#ifdef ETIME
+    add_errcode("ETIME", ETIME, "Timer expired");
+#endif
+#ifdef EBFONT
+    add_errcode("EBFONT", EBFONT, "Bad font file format");
+#endif
+#ifdef EDEADLOCK
+    add_errcode("EDEADLOCK", EDEADLOCK, "Error EDEADLOCK");
+#endif
+#ifdef ETOOMANYREFS
+    add_errcode("ETOOMANYREFS", ETOOMANYREFS, "Too many references: cannot splice");
+#else
+#ifdef WSAETOOMANYREFS
+    add_errcode("ETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
+#endif
+#endif
+#ifdef EMFILE
+    add_errcode("EMFILE", EMFILE, "Too many open files");
+#else
+#ifdef WSAEMFILE
+    add_errcode("EMFILE", WSAEMFILE, "Too many open files");
+#endif
+#endif
+#ifdef ETXTBSY
+    add_errcode("ETXTBSY", ETXTBSY, "Text file busy");
+#endif
+#ifdef EINPROGRESS
+    add_errcode("EINPROGRESS", EINPROGRESS, "Operation now in progress");
+#else
+#ifdef WSAEINPROGRESS
+    add_errcode("EINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
+#endif
+#endif
+#ifdef ENXIO
+    add_errcode("ENXIO", ENXIO, "No such device or address");
+#endif
+#ifdef ENOPKG
+    add_errcode("ENOPKG", ENOPKG, "Package not installed");
+#endif
+#ifdef WSASY
+    add_errcode("WSASY", WSASY, "Error WSASY");
+#endif
+#ifdef WSAEHOSTDOWN
+    add_errcode("WSAEHOSTDOWN", WSAEHOSTDOWN, "Host is down");
+#endif
+#ifdef WSAENETDOWN
+    add_errcode("WSAENETDOWN", WSAENETDOWN, "Network is down");
+#endif
+#ifdef WSAENOTSOCK
+    add_errcode("WSAENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
+#endif
+#ifdef WSAEHOSTUNREACH
+    add_errcode("WSAEHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
+#endif
+#ifdef WSAELOOP
+    add_errcode("WSAELOOP", WSAELOOP, "Too many symbolic links encountered");
+#endif
+#ifdef WSAEMFILE
+    add_errcode("WSAEMFILE", WSAEMFILE, "Too many open files");
+#endif
+#ifdef WSAESTALE
+    add_errcode("WSAESTALE", WSAESTALE, "Stale NFS file handle");
+#endif
+#ifdef WSAVERNOTSUPPORTED
+    add_errcode("WSAVERNOTSUPPORTED", WSAVERNOTSUPPORTED, "Error WSAVERNOTSUPPORTED");
+#endif
+#ifdef WSAENETUNREACH
+    add_errcode("WSAENETUNREACH", WSAENETUNREACH, "Network is unreachable");
+#endif
+#ifdef WSAEPROCLIM
+    add_errcode("WSAEPROCLIM", WSAEPROCLIM, "Error WSAEPROCLIM");
+#endif
+#ifdef WSAEFAULT
+    add_errcode("WSAEFAULT", WSAEFAULT, "Bad address");
+#endif
+#ifdef WSANOTINITIALISED
+    add_errcode("WSANOTINITIALISED", WSANOTINITIALISED, "Error WSANOTINITIALISED");
+#endif
+#ifdef WSAEUSERS
+    add_errcode("WSAEUSERS", WSAEUSERS, "Too many users");
+#endif
+#ifdef WSAMAKEASYNCREPL
+    add_errcode("WSAMAKEASYNCREPL", WSAMAKEASYNCREPL, "Error WSAMAKEASYNCREPL");
+#endif
+#ifdef WSAENOPROTOOPT
+    add_errcode("WSAENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
+#endif
+#ifdef WSAECONNABORTED
+    add_errcode("WSAECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
+#endif
+#ifdef WSAENAMETOOLONG
+    add_errcode("WSAENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
+#endif
+#ifdef WSAENOTEMPTY
+    add_errcode("WSAENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
+#endif
+#ifdef WSAESHUTDOWN
+    add_errcode("WSAESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
+#endif
+#ifdef WSAEAFNOSUPPORT
+    add_errcode("WSAEAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
+#endif
+#ifdef WSAETOOMANYREFS
+    add_errcode("WSAETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
+#endif
+#ifdef WSAEACCES
+    add_errcode("WSAEACCES", WSAEACCES, "Permission denied");
+#endif
+#ifdef WSATR
+    add_errcode("WSATR", WSATR, "Error WSATR");
+#endif
+#ifdef WSABASEERR
+    add_errcode("WSABASEERR", WSABASEERR, "Error WSABASEERR");
+#endif
+#ifdef WSADESCRIPTIO
+    add_errcode("WSADESCRIPTIO", WSADESCRIPTIO, "Error WSADESCRIPTIO");
+#endif
+#ifdef WSAEMSGSIZE
+    add_errcode("WSAEMSGSIZE", WSAEMSGSIZE, "Message too long");
+#endif
+#ifdef WSAEBADF
+    add_errcode("WSAEBADF", WSAEBADF, "Bad file number");
+#endif
+#ifdef WSAECONNRESET
+    add_errcode("WSAECONNRESET", WSAECONNRESET, "Connection reset by peer");
+#endif
+#ifdef WSAGETSELECTERRO
+    add_errcode("WSAGETSELECTERRO", WSAGETSELECTERRO, "Error WSAGETSELECTERRO");
+#endif
+#ifdef WSAETIMEDOUT
+    add_errcode("WSAETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
+#endif
+#ifdef WSAENOBUFS
+    add_errcode("WSAENOBUFS", WSAENOBUFS, "No buffer space available");
+#endif
+#ifdef WSAEDISCON
+    add_errcode("WSAEDISCON", WSAEDISCON, "Error WSAEDISCON");
+#endif
+#ifdef WSAEINTR
+    add_errcode("WSAEINTR", WSAEINTR, "Interrupted system call");
+#endif
+#ifdef WSAEPROTOTYPE
+    add_errcode("WSAEPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
+#endif
+#ifdef WSAHOS
+    add_errcode("WSAHOS", WSAHOS, "Error WSAHOS");
+#endif
+#ifdef WSAEADDRINUSE
+    add_errcode("WSAEADDRINUSE", WSAEADDRINUSE, "Address already in use");
+#endif
+#ifdef WSAEADDRNOTAVAIL
+    add_errcode("WSAEADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
+#endif
+#ifdef WSAEALREADY
+    add_errcode("WSAEALREADY", WSAEALREADY, "Operation already in progress");
+#endif
+#ifdef WSAEPROTONOSUPPORT
+    add_errcode("WSAEPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
+#endif
+#ifdef WSASYSNOTREADY
+    add_errcode("WSASYSNOTREADY", WSASYSNOTREADY, "Error WSASYSNOTREADY");
+#endif
+#ifdef WSAEWOULDBLOCK
+    add_errcode("WSAEWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
+#endif
+#ifdef WSAEPFNOSUPPORT
+    add_errcode("WSAEPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
+#endif
+#ifdef WSAEOPNOTSUPP
+    add_errcode("WSAEOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
+#endif
+#ifdef WSAEISCONN
+    add_errcode("WSAEISCONN", WSAEISCONN, "Transport endpoint is already connected");
+#endif
+#ifdef WSAEDQUOT
+    add_errcode("WSAEDQUOT", WSAEDQUOT, "Quota exceeded");
+#endif
+#ifdef WSAENOTCONN
+    add_errcode("WSAENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
+#endif
+#ifdef WSAEREMOTE
+    add_errcode("WSAEREMOTE", WSAEREMOTE, "Object is remote");
+#endif
+#ifdef WSAEINVAL
+    add_errcode("WSAEINVAL", WSAEINVAL, "Invalid argument");
+#endif
+#ifdef WSAEINPROGRESS
+    add_errcode("WSAEINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
+#endif
+#ifdef WSAGETSELECTEVEN
+    add_errcode("WSAGETSELECTEVEN", WSAGETSELECTEVEN, "Error WSAGETSELECTEVEN");
+#endif
+#ifdef WSAESOCKTNOSUPPORT
+    add_errcode("WSAESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
+#endif
+#ifdef WSAGETASYNCERRO
+    add_errcode("WSAGETASYNCERRO", WSAGETASYNCERRO, "Error WSAGETASYNCERRO");
+#endif
+#ifdef WSAMAKESELECTREPL
+    add_errcode("WSAMAKESELECTREPL", WSAMAKESELECTREPL, "Error WSAMAKESELECTREPL");
+#endif
+#ifdef WSAGETASYNCBUFLE
+    add_errcode("WSAGETASYNCBUFLE", WSAGETASYNCBUFLE, "Error WSAGETASYNCBUFLE");
+#endif
+#ifdef WSAEDESTADDRREQ
+    add_errcode("WSAEDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
+#endif
+#ifdef WSAECONNREFUSED
+    add_errcode("WSAECONNREFUSED", WSAECONNREFUSED, "Connection refused");
+#endif
+#ifdef WSAENETRESET
+    add_errcode("WSAENETRESET", WSAENETRESET, "Network dropped connection because of reset");
+#endif
+#ifdef WSAN
+    add_errcode("WSAN", WSAN, "Error WSAN");
+#endif
+#ifdef ENOMEDIUM
+    add_errcode("ENOMEDIUM", ENOMEDIUM, "No medium found");
+#endif
+#ifdef EMEDIUMTYPE
+    add_errcode("EMEDIUMTYPE", EMEDIUMTYPE, "Wrong medium type");
+#endif
+#ifdef ECANCELED
+    add_errcode("ECANCELED", ECANCELED, "Operation Canceled");
+#endif
+#ifdef ENOKEY
+    add_errcode("ENOKEY", ENOKEY, "Required key not available");
+#endif
+#ifdef EKEYEXPIRED
+    add_errcode("EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
+#endif
+#ifdef EKEYREVOKED
+    add_errcode("EKEYREVOKED", EKEYREVOKED, "Key has been revoked");
+#endif
+#ifdef EKEYREJECTED
+    add_errcode("EKEYREJECTED", EKEYREJECTED, "Key was rejected by service");
+#endif
+#ifdef EOWNERDEAD
+    add_errcode("EOWNERDEAD", EOWNERDEAD, "Owner died");
+#endif
+#ifdef ENOTRECOVERABLE
+    add_errcode("ENOTRECOVERABLE", ENOTRECOVERABLE, "State not recoverable");
+#endif
+#ifdef ERFKILL
+    add_errcode("ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
+#endif
+
+    /* Solaris-specific errnos */
+#ifdef ECANCELED
+    add_errcode("ECANCELED", ECANCELED, "Operation canceled");
+#endif
+#ifdef ENOTSUP
+    add_errcode("ENOTSUP", ENOTSUP, "Operation not supported");
+#endif
+#ifdef EOWNERDEAD
+    add_errcode("EOWNERDEAD", EOWNERDEAD, "Process died with the lock");
+#endif
+#ifdef ENOTRECOVERABLE
+    add_errcode("ENOTRECOVERABLE", ENOTRECOVERABLE, "Lock is not recoverable");
+#endif
+#ifdef ELOCKUNMAPPED
+    add_errcode("ELOCKUNMAPPED", ELOCKUNMAPPED, "Locked lock was unmapped");
+#endif
+#ifdef ENOTACTIVE
+    add_errcode("ENOTACTIVE", ENOTACTIVE, "Facility is not active");
+#endif
+
+    /* MacOSX specific errnos */
+#ifdef EAUTH
+    add_errcode("EAUTH", EAUTH, "Authentication error");
+#endif
+#ifdef EBADARCH
+    add_errcode("EBADARCH", EBADARCH, "Bad CPU type in executable");
+#endif
+#ifdef EBADEXEC
+    add_errcode("EBADEXEC", EBADEXEC, "Bad executable (or shared library)");
+#endif
+#ifdef EBADMACHO
+    add_errcode("EBADMACHO", EBADMACHO, "Malformed Mach-o file");
+#endif
+#ifdef EBADRPC
+    add_errcode("EBADRPC", EBADRPC, "RPC struct is bad");
+#endif
+#ifdef EDEVERR
+    add_errcode("EDEVERR", EDEVERR, "Device error");
+#endif
+#ifdef EFTYPE
+    add_errcode("EFTYPE", EFTYPE, "Inappropriate file type or format");
+#endif
+#ifdef ENEEDAUTH
+    add_errcode("ENEEDAUTH", ENEEDAUTH, "Need authenticator");
+#endif
+#ifdef ENOATTR
+    add_errcode("ENOATTR", ENOATTR, "Attribute not found");
+#endif
+#ifdef ENOPOLICY
+    add_errcode("ENOPOLICY", ENOPOLICY, "Policy not found");
+#endif
+#ifdef EPROCLIM
+    add_errcode("EPROCLIM", EPROCLIM, "Too many processes");
+#endif
+#ifdef EPROCUNAVAIL
+    add_errcode("EPROCUNAVAIL", EPROCUNAVAIL, "Bad procedure for program");
+#endif
+#ifdef EPROGMISMATCH
+    add_errcode("EPROGMISMATCH", EPROGMISMATCH, "Program version wrong");
+#endif
+#ifdef EPROGUNAVAIL
+    add_errcode("EPROGUNAVAIL", EPROGUNAVAIL, "RPC prog. not avail");
+#endif
+#ifdef EPWROFF
+    add_errcode("EPWROFF", EPWROFF, "Device power is off");
+#endif
+#ifdef ERPCMISMATCH
+    add_errcode("ERPCMISMATCH", ERPCMISMATCH, "RPC version wrong");
+#endif
+#ifdef ESHLIBVERS
+    add_errcode("ESHLIBVERS", ESHLIBVERS, "Shared library version mismatch");
+#endif
+
+    Py_DECREF(error_dict);
+    return 0;
+}
+
+static PyModuleDef_Slot errno_slots[] = {
+    {Py_mod_exec, errno_exec},
+    {0, NULL}
+};
 
 PyDoc_STRVAR(errno__doc__,
 "This module makes available standard errno system symbols.\n\
@@ -82,854 +946,15 @@ e.g. os.strerror(2) could return 'No such file or directory'.");
 
 static struct PyModuleDef errnomodule = {
     PyModuleDef_HEAD_INIT,
-    "errno",
-    errno__doc__,
-    -1,
-    errno_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_name = "errno",
+    .m_doc = errno__doc__,
+    .m_size = 0,
+    .m_methods = errno_methods,
+    .m_slots = errno_slots,
 };
 
 PyMODINIT_FUNC
 PyInit_errno(void)
 {
-    PyObject *m, *d, *de;
-    m = PyModule_Create(&errnomodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
-    de = PyDict_New();
-    if (!d || !de || PyDict_SetItemString(d, "errorcode", de) < 0)
-        return NULL;
-
-/* Macro so I don't have to edit each and every line below... */
-#define inscode(d, ds, de, name, code, comment) _inscode(d, de, name, code)
-
-    /*
-     * The names and comments are borrowed from linux/include/errno.h,
-     * which should be pretty all-inclusive.  However, the Solaris specific
-     * names and comments are borrowed from sys/errno.h in Solaris.
-     * MacOSX specific names and comments are borrowed from sys/errno.h in
-     * MacOSX.
-     */
-
-#ifdef ENODEV
-    inscode(d, ds, de, "ENODEV", ENODEV, "No such device");
-#endif
-#ifdef ENOCSI
-    inscode(d, ds, de, "ENOCSI", ENOCSI, "No CSI structure available");
-#endif
-#ifdef EHOSTUNREACH
-    inscode(d, ds, de, "EHOSTUNREACH", EHOSTUNREACH, "No route to host");
-#else
-#ifdef WSAEHOSTUNREACH
-    inscode(d, ds, de, "EHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
-#endif
-#endif
-#ifdef ENOMSG
-    inscode(d, ds, de, "ENOMSG", ENOMSG, "No message of desired type");
-#endif
-#ifdef EUCLEAN
-    inscode(d, ds, de, "EUCLEAN", EUCLEAN, "Structure needs cleaning");
-#endif
-#ifdef EL2NSYNC
-    inscode(d, ds, de, "EL2NSYNC", EL2NSYNC, "Level 2 not synchronized");
-#endif
-#ifdef EL2HLT
-    inscode(d, ds, de, "EL2HLT", EL2HLT, "Level 2 halted");
-#endif
-#ifdef ENODATA
-    inscode(d, ds, de, "ENODATA", ENODATA, "No data available");
-#endif
-#ifdef ENOTBLK
-    inscode(d, ds, de, "ENOTBLK", ENOTBLK, "Block device required");
-#endif
-#ifdef ENOSYS
-    inscode(d, ds, de, "ENOSYS", ENOSYS, "Function not implemented");
-#endif
-#ifdef EPIPE
-    inscode(d, ds, de, "EPIPE", EPIPE, "Broken pipe");
-#endif
-#ifdef EINVAL
-    inscode(d, ds, de, "EINVAL", EINVAL, "Invalid argument");
-#else
-#ifdef WSAEINVAL
-    inscode(d, ds, de, "EINVAL", WSAEINVAL, "Invalid argument");
-#endif
-#endif
-#ifdef EOVERFLOW
-    inscode(d, ds, de, "EOVERFLOW", EOVERFLOW, "Value too large for defined data type");
-#endif
-#ifdef EADV
-    inscode(d, ds, de, "EADV", EADV, "Advertise error");
-#endif
-#ifdef EINTR
-    inscode(d, ds, de, "EINTR", EINTR, "Interrupted system call");
-#else
-#ifdef WSAEINTR
-    inscode(d, ds, de, "EINTR", WSAEINTR, "Interrupted system call");
-#endif
-#endif
-#ifdef EUSERS
-    inscode(d, ds, de, "EUSERS", EUSERS, "Too many users");
-#else
-#ifdef WSAEUSERS
-    inscode(d, ds, de, "EUSERS", WSAEUSERS, "Too many users");
-#endif
-#endif
-#ifdef ENOTEMPTY
-    inscode(d, ds, de, "ENOTEMPTY", ENOTEMPTY, "Directory not empty");
-#else
-#ifdef WSAENOTEMPTY
-    inscode(d, ds, de, "ENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
-#endif
-#endif
-#ifdef ENOBUFS
-    inscode(d, ds, de, "ENOBUFS", ENOBUFS, "No buffer space available");
-#else
-#ifdef WSAENOBUFS
-    inscode(d, ds, de, "ENOBUFS", WSAENOBUFS, "No buffer space available");
-#endif
-#endif
-#ifdef EPROTO
-    inscode(d, ds, de, "EPROTO", EPROTO, "Protocol error");
-#endif
-#ifdef EREMOTE
-    inscode(d, ds, de, "EREMOTE", EREMOTE, "Object is remote");
-#else
-#ifdef WSAEREMOTE
-    inscode(d, ds, de, "EREMOTE", WSAEREMOTE, "Object is remote");
-#endif
-#endif
-#ifdef ENAVAIL
-    inscode(d, ds, de, "ENAVAIL", ENAVAIL, "No XENIX semaphores available");
-#endif
-#ifdef ECHILD
-    inscode(d, ds, de, "ECHILD", ECHILD, "No child processes");
-#endif
-#ifdef ELOOP
-    inscode(d, ds, de, "ELOOP", ELOOP, "Too many symbolic links encountered");
-#else
-#ifdef WSAELOOP
-    inscode(d, ds, de, "ELOOP", WSAELOOP, "Too many symbolic links encountered");
-#endif
-#endif
-#ifdef EXDEV
-    inscode(d, ds, de, "EXDEV", EXDEV, "Cross-device link");
-#endif
-#ifdef E2BIG
-    inscode(d, ds, de, "E2BIG", E2BIG, "Arg list too long");
-#endif
-#ifdef ESRCH
-    inscode(d, ds, de, "ESRCH", ESRCH, "No such process");
-#endif
-#ifdef EMSGSIZE
-    inscode(d, ds, de, "EMSGSIZE", EMSGSIZE, "Message too long");
-#else
-#ifdef WSAEMSGSIZE
-    inscode(d, ds, de, "EMSGSIZE", WSAEMSGSIZE, "Message too long");
-#endif
-#endif
-#ifdef EAFNOSUPPORT
-    inscode(d, ds, de, "EAFNOSUPPORT", EAFNOSUPPORT, "Address family not supported by protocol");
-#else
-#ifdef WSAEAFNOSUPPORT
-    inscode(d, ds, de, "EAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
-#endif
-#endif
-#ifdef EBADR
-    inscode(d, ds, de, "EBADR", EBADR, "Invalid request descriptor");
-#endif
-#ifdef EHOSTDOWN
-    inscode(d, ds, de, "EHOSTDOWN", EHOSTDOWN, "Host is down");
-#else
-#ifdef WSAEHOSTDOWN
-    inscode(d, ds, de, "EHOSTDOWN", WSAEHOSTDOWN, "Host is down");
-#endif
-#endif
-#ifdef EPFNOSUPPORT
-    inscode(d, ds, de, "EPFNOSUPPORT", EPFNOSUPPORT, "Protocol family not supported");
-#else
-#ifdef WSAEPFNOSUPPORT
-    inscode(d, ds, de, "EPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
-#endif
-#endif
-#ifdef ENOPROTOOPT
-    inscode(d, ds, de, "ENOPROTOOPT", ENOPROTOOPT, "Protocol not available");
-#else
-#ifdef WSAENOPROTOOPT
-    inscode(d, ds, de, "ENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
-#endif
-#endif
-#ifdef EBUSY
-    inscode(d, ds, de, "EBUSY", EBUSY, "Device or resource busy");
-#endif
-#ifdef EWOULDBLOCK
-    inscode(d, ds, de, "EWOULDBLOCK", EWOULDBLOCK, "Operation would block");
-#else
-#ifdef WSAEWOULDBLOCK
-    inscode(d, ds, de, "EWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
-#endif
-#endif
-#ifdef EBADFD
-    inscode(d, ds, de, "EBADFD", EBADFD, "File descriptor in bad state");
-#endif
-#ifdef EDOTDOT
-    inscode(d, ds, de, "EDOTDOT", EDOTDOT, "RFS specific error");
-#endif
-#ifdef EISCONN
-    inscode(d, ds, de, "EISCONN", EISCONN, "Transport endpoint is already connected");
-#else
-#ifdef WSAEISCONN
-    inscode(d, ds, de, "EISCONN", WSAEISCONN, "Transport endpoint is already connected");
-#endif
-#endif
-#ifdef ENOANO
-    inscode(d, ds, de, "ENOANO", ENOANO, "No anode");
-#endif
-#ifdef ESHUTDOWN
-    inscode(d, ds, de, "ESHUTDOWN", ESHUTDOWN, "Cannot send after transport endpoint shutdown");
-#else
-#ifdef WSAESHUTDOWN
-    inscode(d, ds, de, "ESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
-#endif
-#endif
-#ifdef ECHRNG
-    inscode(d, ds, de, "ECHRNG", ECHRNG, "Channel number out of range");
-#endif
-#ifdef ELIBBAD
-    inscode(d, ds, de, "ELIBBAD", ELIBBAD, "Accessing a corrupted shared library");
-#endif
-#ifdef ENONET
-    inscode(d, ds, de, "ENONET", ENONET, "Machine is not on the network");
-#endif
-#ifdef EBADE
-    inscode(d, ds, de, "EBADE", EBADE, "Invalid exchange");
-#endif
-#ifdef EBADF
-    inscode(d, ds, de, "EBADF", EBADF, "Bad file number");
-#else
-#ifdef WSAEBADF
-    inscode(d, ds, de, "EBADF", WSAEBADF, "Bad file number");
-#endif
-#endif
-#ifdef EMULTIHOP
-    inscode(d, ds, de, "EMULTIHOP", EMULTIHOP, "Multihop attempted");
-#endif
-#ifdef EIO
-    inscode(d, ds, de, "EIO", EIO, "I/O error");
-#endif
-#ifdef EUNATCH
-    inscode(d, ds, de, "EUNATCH", EUNATCH, "Protocol driver not attached");
-#endif
-#ifdef EPROTOTYPE
-    inscode(d, ds, de, "EPROTOTYPE", EPROTOTYPE, "Protocol wrong type for socket");
-#else
-#ifdef WSAEPROTOTYPE
-    inscode(d, ds, de, "EPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
-#endif
-#endif
-#ifdef ENOSPC
-    inscode(d, ds, de, "ENOSPC", ENOSPC, "No space left on device");
-#endif
-#ifdef ENOEXEC
-    inscode(d, ds, de, "ENOEXEC", ENOEXEC, "Exec format error");
-#endif
-#ifdef EALREADY
-    inscode(d, ds, de, "EALREADY", EALREADY, "Operation already in progress");
-#else
-#ifdef WSAEALREADY
-    inscode(d, ds, de, "EALREADY", WSAEALREADY, "Operation already in progress");
-#endif
-#endif
-#ifdef ENETDOWN
-    inscode(d, ds, de, "ENETDOWN", ENETDOWN, "Network is down");
-#else
-#ifdef WSAENETDOWN
-    inscode(d, ds, de, "ENETDOWN", WSAENETDOWN, "Network is down");
-#endif
-#endif
-#ifdef ENOTNAM
-    inscode(d, ds, de, "ENOTNAM", ENOTNAM, "Not a XENIX named type file");
-#endif
-#ifdef EACCES
-    inscode(d, ds, de, "EACCES", EACCES, "Permission denied");
-#else
-#ifdef WSAEACCES
-    inscode(d, ds, de, "EACCES", WSAEACCES, "Permission denied");
-#endif
-#endif
-#ifdef ELNRNG
-    inscode(d, ds, de, "ELNRNG", ELNRNG, "Link number out of range");
-#endif
-#ifdef EILSEQ
-    inscode(d, ds, de, "EILSEQ", EILSEQ, "Illegal byte sequence");
-#endif
-#ifdef ENOTDIR
-    inscode(d, ds, de, "ENOTDIR", ENOTDIR, "Not a directory");
-#endif
-#ifdef ENOTUNIQ
-    inscode(d, ds, de, "ENOTUNIQ", ENOTUNIQ, "Name not unique on network");
-#endif
-#ifdef EPERM
-    inscode(d, ds, de, "EPERM", EPERM, "Operation not permitted");
-#endif
-#ifdef EDOM
-    inscode(d, ds, de, "EDOM", EDOM, "Math argument out of domain of func");
-#endif
-#ifdef EXFULL
-    inscode(d, ds, de, "EXFULL", EXFULL, "Exchange full");
-#endif
-#ifdef ECONNREFUSED
-    inscode(d, ds, de, "ECONNREFUSED", ECONNREFUSED, "Connection refused");
-#else
-#ifdef WSAECONNREFUSED
-    inscode(d, ds, de, "ECONNREFUSED", WSAECONNREFUSED, "Connection refused");
-#endif
-#endif
-#ifdef EISDIR
-    inscode(d, ds, de, "EISDIR", EISDIR, "Is a directory");
-#endif
-#ifdef EPROTONOSUPPORT
-    inscode(d, ds, de, "EPROTONOSUPPORT", EPROTONOSUPPORT, "Protocol not supported");
-#else
-#ifdef WSAEPROTONOSUPPORT
-    inscode(d, ds, de, "EPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
-#endif
-#endif
-#ifdef EROFS
-    inscode(d, ds, de, "EROFS", EROFS, "Read-only file system");
-#endif
-#ifdef EADDRNOTAVAIL
-    inscode(d, ds, de, "EADDRNOTAVAIL", EADDRNOTAVAIL, "Cannot assign requested address");
-#else
-#ifdef WSAEADDRNOTAVAIL
-    inscode(d, ds, de, "EADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
-#endif
-#endif
-#ifdef EIDRM
-    inscode(d, ds, de, "EIDRM", EIDRM, "Identifier removed");
-#endif
-#ifdef ECOMM
-    inscode(d, ds, de, "ECOMM", ECOMM, "Communication error on send");
-#endif
-#ifdef ESRMNT
-    inscode(d, ds, de, "ESRMNT", ESRMNT, "Srmount error");
-#endif
-#ifdef EREMOTEIO
-    inscode(d, ds, de, "EREMOTEIO", EREMOTEIO, "Remote I/O error");
-#endif
-#ifdef EL3RST
-    inscode(d, ds, de, "EL3RST", EL3RST, "Level 3 reset");
-#endif
-#ifdef EBADMSG
-    inscode(d, ds, de, "EBADMSG", EBADMSG, "Not a data message");
-#endif
-#ifdef ENFILE
-    inscode(d, ds, de, "ENFILE", ENFILE, "File table overflow");
-#endif
-#ifdef ELIBMAX
-    inscode(d, ds, de, "ELIBMAX", ELIBMAX, "Attempting to link in too many shared libraries");
-#endif
-#ifdef ESPIPE
-    inscode(d, ds, de, "ESPIPE", ESPIPE, "Illegal seek");
-#endif
-#ifdef ENOLINK
-    inscode(d, ds, de, "ENOLINK", ENOLINK, "Link has been severed");
-#endif
-#ifdef ENETRESET
-    inscode(d, ds, de, "ENETRESET", ENETRESET, "Network dropped connection because of reset");
-#else
-#ifdef WSAENETRESET
-    inscode(d, ds, de, "ENETRESET", WSAENETRESET, "Network dropped connection because of reset");
-#endif
-#endif
-#ifdef ETIMEDOUT
-    inscode(d, ds, de, "ETIMEDOUT", ETIMEDOUT, "Connection timed out");
-#else
-#ifdef WSAETIMEDOUT
-    inscode(d, ds, de, "ETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
-#endif
-#endif
-#ifdef ENOENT
-    inscode(d, ds, de, "ENOENT", ENOENT, "No such file or directory");
-#endif
-#ifdef EEXIST
-    inscode(d, ds, de, "EEXIST", EEXIST, "File exists");
-#endif
-#ifdef EDQUOT
-    inscode(d, ds, de, "EDQUOT", EDQUOT, "Quota exceeded");
-#else
-#ifdef WSAEDQUOT
-    inscode(d, ds, de, "EDQUOT", WSAEDQUOT, "Quota exceeded");
-#endif
-#endif
-#ifdef ENOSTR
-    inscode(d, ds, de, "ENOSTR", ENOSTR, "Device not a stream");
-#endif
-#ifdef EBADSLT
-    inscode(d, ds, de, "EBADSLT", EBADSLT, "Invalid slot");
-#endif
-#ifdef EBADRQC
-    inscode(d, ds, de, "EBADRQC", EBADRQC, "Invalid request code");
-#endif
-#ifdef ELIBACC
-    inscode(d, ds, de, "ELIBACC", ELIBACC, "Can not access a needed shared library");
-#endif
-#ifdef EFAULT
-    inscode(d, ds, de, "EFAULT", EFAULT, "Bad address");
-#else
-#ifdef WSAEFAULT
-    inscode(d, ds, de, "EFAULT", WSAEFAULT, "Bad address");
-#endif
-#endif
-#ifdef EFBIG
-    inscode(d, ds, de, "EFBIG", EFBIG, "File too large");
-#endif
-#ifdef EDEADLK
-    inscode(d, ds, de, "EDEADLK", EDEADLK, "Resource deadlock would occur");
-#endif
-#ifdef ENOTCONN
-    inscode(d, ds, de, "ENOTCONN", ENOTCONN, "Transport endpoint is not connected");
-#else
-#ifdef WSAENOTCONN
-    inscode(d, ds, de, "ENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
-#endif
-#endif
-#ifdef EDESTADDRREQ
-    inscode(d, ds, de, "EDESTADDRREQ", EDESTADDRREQ, "Destination address required");
-#else
-#ifdef WSAEDESTADDRREQ
-    inscode(d, ds, de, "EDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
-#endif
-#endif
-#ifdef ELIBSCN
-    inscode(d, ds, de, "ELIBSCN", ELIBSCN, ".lib section in a.out corrupted");
-#endif
-#ifdef ENOLCK
-    inscode(d, ds, de, "ENOLCK", ENOLCK, "No record locks available");
-#endif
-#ifdef EISNAM
-    inscode(d, ds, de, "EISNAM", EISNAM, "Is a named type file");
-#endif
-#ifdef ECONNABORTED
-    inscode(d, ds, de, "ECONNABORTED", ECONNABORTED, "Software caused connection abort");
-#else
-#ifdef WSAECONNABORTED
-    inscode(d, ds, de, "ECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
-#endif
-#endif
-#ifdef ENETUNREACH
-    inscode(d, ds, de, "ENETUNREACH", ENETUNREACH, "Network is unreachable");
-#else
-#ifdef WSAENETUNREACH
-    inscode(d, ds, de, "ENETUNREACH", WSAENETUNREACH, "Network is unreachable");
-#endif
-#endif
-#ifdef ESTALE
-    inscode(d, ds, de, "ESTALE", ESTALE, "Stale NFS file handle");
-#else
-#ifdef WSAESTALE
-    inscode(d, ds, de, "ESTALE", WSAESTALE, "Stale NFS file handle");
-#endif
-#endif
-#ifdef ENOSR
-    inscode(d, ds, de, "ENOSR", ENOSR, "Out of streams resources");
-#endif
-#ifdef ENOMEM
-    inscode(d, ds, de, "ENOMEM", ENOMEM, "Out of memory");
-#endif
-#ifdef ENOTSOCK
-    inscode(d, ds, de, "ENOTSOCK", ENOTSOCK, "Socket operation on non-socket");
-#else
-#ifdef WSAENOTSOCK
-    inscode(d, ds, de, "ENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
-#endif
-#endif
-#ifdef ESTRPIPE
-    inscode(d, ds, de, "ESTRPIPE", ESTRPIPE, "Streams pipe error");
-#endif
-#ifdef EMLINK
-    inscode(d, ds, de, "EMLINK", EMLINK, "Too many links");
-#endif
-#ifdef ERANGE
-    inscode(d, ds, de, "ERANGE", ERANGE, "Math result not representable");
-#endif
-#ifdef ELIBEXEC
-    inscode(d, ds, de, "ELIBEXEC", ELIBEXEC, "Cannot exec a shared library directly");
-#endif
-#ifdef EL3HLT
-    inscode(d, ds, de, "EL3HLT", EL3HLT, "Level 3 halted");
-#endif
-#ifdef ECONNRESET
-    inscode(d, ds, de, "ECONNRESET", ECONNRESET, "Connection reset by peer");
-#else
-#ifdef WSAECONNRESET
-    inscode(d, ds, de, "ECONNRESET", WSAECONNRESET, "Connection reset by peer");
-#endif
-#endif
-#ifdef EADDRINUSE
-    inscode(d, ds, de, "EADDRINUSE", EADDRINUSE, "Address already in use");
-#else
-#ifdef WSAEADDRINUSE
-    inscode(d, ds, de, "EADDRINUSE", WSAEADDRINUSE, "Address already in use");
-#endif
-#endif
-#ifdef EOPNOTSUPP
-    inscode(d, ds, de, "EOPNOTSUPP", EOPNOTSUPP, "Operation not supported on transport endpoint");
-#else
-#ifdef WSAEOPNOTSUPP
-    inscode(d, ds, de, "EOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
-#endif
-#endif
-#ifdef EREMCHG
-    inscode(d, ds, de, "EREMCHG", EREMCHG, "Remote address changed");
-#endif
-#ifdef EAGAIN
-    inscode(d, ds, de, "EAGAIN", EAGAIN, "Try again");
-#endif
-#ifdef ENAMETOOLONG
-    inscode(d, ds, de, "ENAMETOOLONG", ENAMETOOLONG, "File name too long");
-#else
-#ifdef WSAENAMETOOLONG
-    inscode(d, ds, de, "ENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
-#endif
-#endif
-#ifdef ENOTTY
-    inscode(d, ds, de, "ENOTTY", ENOTTY, "Not a typewriter");
-#endif
-#ifdef ERESTART
-    inscode(d, ds, de, "ERESTART", ERESTART, "Interrupted system call should be restarted");
-#endif
-#ifdef ESOCKTNOSUPPORT
-    inscode(d, ds, de, "ESOCKTNOSUPPORT", ESOCKTNOSUPPORT, "Socket type not supported");
-#else
-#ifdef WSAESOCKTNOSUPPORT
-    inscode(d, ds, de, "ESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
-#endif
-#endif
-#ifdef ETIME
-    inscode(d, ds, de, "ETIME", ETIME, "Timer expired");
-#endif
-#ifdef EBFONT
-    inscode(d, ds, de, "EBFONT", EBFONT, "Bad font file format");
-#endif
-#ifdef EDEADLOCK
-    inscode(d, ds, de, "EDEADLOCK", EDEADLOCK, "Error EDEADLOCK");
-#endif
-#ifdef ETOOMANYREFS
-    inscode(d, ds, de, "ETOOMANYREFS", ETOOMANYREFS, "Too many references: cannot splice");
-#else
-#ifdef WSAETOOMANYREFS
-    inscode(d, ds, de, "ETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
-#endif
-#endif
-#ifdef EMFILE
-    inscode(d, ds, de, "EMFILE", EMFILE, "Too many open files");
-#else
-#ifdef WSAEMFILE
-    inscode(d, ds, de, "EMFILE", WSAEMFILE, "Too many open files");
-#endif
-#endif
-#ifdef ETXTBSY
-    inscode(d, ds, de, "ETXTBSY", ETXTBSY, "Text file busy");
-#endif
-#ifdef EINPROGRESS
-    inscode(d, ds, de, "EINPROGRESS", EINPROGRESS, "Operation now in progress");
-#else
-#ifdef WSAEINPROGRESS
-    inscode(d, ds, de, "EINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
-#endif
-#endif
-#ifdef ENXIO
-    inscode(d, ds, de, "ENXIO", ENXIO, "No such device or address");
-#endif
-#ifdef ENOPKG
-    inscode(d, ds, de, "ENOPKG", ENOPKG, "Package not installed");
-#endif
-#ifdef WSASY
-    inscode(d, ds, de, "WSASY", WSASY, "Error WSASY");
-#endif
-#ifdef WSAEHOSTDOWN
-    inscode(d, ds, de, "WSAEHOSTDOWN", WSAEHOSTDOWN, "Host is down");
-#endif
-#ifdef WSAENETDOWN
-    inscode(d, ds, de, "WSAENETDOWN", WSAENETDOWN, "Network is down");
-#endif
-#ifdef WSAENOTSOCK
-    inscode(d, ds, de, "WSAENOTSOCK", WSAENOTSOCK, "Socket operation on non-socket");
-#endif
-#ifdef WSAEHOSTUNREACH
-    inscode(d, ds, de, "WSAEHOSTUNREACH", WSAEHOSTUNREACH, "No route to host");
-#endif
-#ifdef WSAELOOP
-    inscode(d, ds, de, "WSAELOOP", WSAELOOP, "Too many symbolic links encountered");
-#endif
-#ifdef WSAEMFILE
-    inscode(d, ds, de, "WSAEMFILE", WSAEMFILE, "Too many open files");
-#endif
-#ifdef WSAESTALE
-    inscode(d, ds, de, "WSAESTALE", WSAESTALE, "Stale NFS file handle");
-#endif
-#ifdef WSAVERNOTSUPPORTED
-    inscode(d, ds, de, "WSAVERNOTSUPPORTED", WSAVERNOTSUPPORTED, "Error WSAVERNOTSUPPORTED");
-#endif
-#ifdef WSAENETUNREACH
-    inscode(d, ds, de, "WSAENETUNREACH", WSAENETUNREACH, "Network is unreachable");
-#endif
-#ifdef WSAEPROCLIM
-    inscode(d, ds, de, "WSAEPROCLIM", WSAEPROCLIM, "Error WSAEPROCLIM");
-#endif
-#ifdef WSAEFAULT
-    inscode(d, ds, de, "WSAEFAULT", WSAEFAULT, "Bad address");
-#endif
-#ifdef WSANOTINITIALISED
-    inscode(d, ds, de, "WSANOTINITIALISED", WSANOTINITIALISED, "Error WSANOTINITIALISED");
-#endif
-#ifdef WSAEUSERS
-    inscode(d, ds, de, "WSAEUSERS", WSAEUSERS, "Too many users");
-#endif
-#ifdef WSAMAKEASYNCREPL
-    inscode(d, ds, de, "WSAMAKEASYNCREPL", WSAMAKEASYNCREPL, "Error WSAMAKEASYNCREPL");
-#endif
-#ifdef WSAENOPROTOOPT
-    inscode(d, ds, de, "WSAENOPROTOOPT", WSAENOPROTOOPT, "Protocol not available");
-#endif
-#ifdef WSAECONNABORTED
-    inscode(d, ds, de, "WSAECONNABORTED", WSAECONNABORTED, "Software caused connection abort");
-#endif
-#ifdef WSAENAMETOOLONG
-    inscode(d, ds, de, "WSAENAMETOOLONG", WSAENAMETOOLONG, "File name too long");
-#endif
-#ifdef WSAENOTEMPTY
-    inscode(d, ds, de, "WSAENOTEMPTY", WSAENOTEMPTY, "Directory not empty");
-#endif
-#ifdef WSAESHUTDOWN
-    inscode(d, ds, de, "WSAESHUTDOWN", WSAESHUTDOWN, "Cannot send after transport endpoint shutdown");
-#endif
-#ifdef WSAEAFNOSUPPORT
-    inscode(d, ds, de, "WSAEAFNOSUPPORT", WSAEAFNOSUPPORT, "Address family not supported by protocol");
-#endif
-#ifdef WSAETOOMANYREFS
-    inscode(d, ds, de, "WSAETOOMANYREFS", WSAETOOMANYREFS, "Too many references: cannot splice");
-#endif
-#ifdef WSAEACCES
-    inscode(d, ds, de, "WSAEACCES", WSAEACCES, "Permission denied");
-#endif
-#ifdef WSATR
-    inscode(d, ds, de, "WSATR", WSATR, "Error WSATR");
-#endif
-#ifdef WSABASEERR
-    inscode(d, ds, de, "WSABASEERR", WSABASEERR, "Error WSABASEERR");
-#endif
-#ifdef WSADESCRIPTIO
-    inscode(d, ds, de, "WSADESCRIPTIO", WSADESCRIPTIO, "Error WSADESCRIPTIO");
-#endif
-#ifdef WSAEMSGSIZE
-    inscode(d, ds, de, "WSAEMSGSIZE", WSAEMSGSIZE, "Message too long");
-#endif
-#ifdef WSAEBADF
-    inscode(d, ds, de, "WSAEBADF", WSAEBADF, "Bad file number");
-#endif
-#ifdef WSAECONNRESET
-    inscode(d, ds, de, "WSAECONNRESET", WSAECONNRESET, "Connection reset by peer");
-#endif
-#ifdef WSAGETSELECTERRO
-    inscode(d, ds, de, "WSAGETSELECTERRO", WSAGETSELECTERRO, "Error WSAGETSELECTERRO");
-#endif
-#ifdef WSAETIMEDOUT
-    inscode(d, ds, de, "WSAETIMEDOUT", WSAETIMEDOUT, "Connection timed out");
-#endif
-#ifdef WSAENOBUFS
-    inscode(d, ds, de, "WSAENOBUFS", WSAENOBUFS, "No buffer space available");
-#endif
-#ifdef WSAEDISCON
-    inscode(d, ds, de, "WSAEDISCON", WSAEDISCON, "Error WSAEDISCON");
-#endif
-#ifdef WSAEINTR
-    inscode(d, ds, de, "WSAEINTR", WSAEINTR, "Interrupted system call");
-#endif
-#ifdef WSAEPROTOTYPE
-    inscode(d, ds, de, "WSAEPROTOTYPE", WSAEPROTOTYPE, "Protocol wrong type for socket");
-#endif
-#ifdef WSAHOS
-    inscode(d, ds, de, "WSAHOS", WSAHOS, "Error WSAHOS");
-#endif
-#ifdef WSAEADDRINUSE
-    inscode(d, ds, de, "WSAEADDRINUSE", WSAEADDRINUSE, "Address already in use");
-#endif
-#ifdef WSAEADDRNOTAVAIL
-    inscode(d, ds, de, "WSAEADDRNOTAVAIL", WSAEADDRNOTAVAIL, "Cannot assign requested address");
-#endif
-#ifdef WSAEALREADY
-    inscode(d, ds, de, "WSAEALREADY", WSAEALREADY, "Operation already in progress");
-#endif
-#ifdef WSAEPROTONOSUPPORT
-    inscode(d, ds, de, "WSAEPROTONOSUPPORT", WSAEPROTONOSUPPORT, "Protocol not supported");
-#endif
-#ifdef WSASYSNOTREADY
-    inscode(d, ds, de, "WSASYSNOTREADY", WSASYSNOTREADY, "Error WSASYSNOTREADY");
-#endif
-#ifdef WSAEWOULDBLOCK
-    inscode(d, ds, de, "WSAEWOULDBLOCK", WSAEWOULDBLOCK, "Operation would block");
-#endif
-#ifdef WSAEPFNOSUPPORT
-    inscode(d, ds, de, "WSAEPFNOSUPPORT", WSAEPFNOSUPPORT, "Protocol family not supported");
-#endif
-#ifdef WSAEOPNOTSUPP
-    inscode(d, ds, de, "WSAEOPNOTSUPP", WSAEOPNOTSUPP, "Operation not supported on transport endpoint");
-#endif
-#ifdef WSAEISCONN
-    inscode(d, ds, de, "WSAEISCONN", WSAEISCONN, "Transport endpoint is already connected");
-#endif
-#ifdef WSAEDQUOT
-    inscode(d, ds, de, "WSAEDQUOT", WSAEDQUOT, "Quota exceeded");
-#endif
-#ifdef WSAENOTCONN
-    inscode(d, ds, de, "WSAENOTCONN", WSAENOTCONN, "Transport endpoint is not connected");
-#endif
-#ifdef WSAEREMOTE
-    inscode(d, ds, de, "WSAEREMOTE", WSAEREMOTE, "Object is remote");
-#endif
-#ifdef WSAEINVAL
-    inscode(d, ds, de, "WSAEINVAL", WSAEINVAL, "Invalid argument");
-#endif
-#ifdef WSAEINPROGRESS
-    inscode(d, ds, de, "WSAEINPROGRESS", WSAEINPROGRESS, "Operation now in progress");
-#endif
-#ifdef WSAGETSELECTEVEN
-    inscode(d, ds, de, "WSAGETSELECTEVEN", WSAGETSELECTEVEN, "Error WSAGETSELECTEVEN");
-#endif
-#ifdef WSAESOCKTNOSUPPORT
-    inscode(d, ds, de, "WSAESOCKTNOSUPPORT", WSAESOCKTNOSUPPORT, "Socket type not supported");
-#endif
-#ifdef WSAGETASYNCERRO
-    inscode(d, ds, de, "WSAGETASYNCERRO", WSAGETASYNCERRO, "Error WSAGETASYNCERRO");
-#endif
-#ifdef WSAMAKESELECTREPL
-    inscode(d, ds, de, "WSAMAKESELECTREPL", WSAMAKESELECTREPL, "Error WSAMAKESELECTREPL");
-#endif
-#ifdef WSAGETASYNCBUFLE
-    inscode(d, ds, de, "WSAGETASYNCBUFLE", WSAGETASYNCBUFLE, "Error WSAGETASYNCBUFLE");
-#endif
-#ifdef WSAEDESTADDRREQ
-    inscode(d, ds, de, "WSAEDESTADDRREQ", WSAEDESTADDRREQ, "Destination address required");
-#endif
-#ifdef WSAECONNREFUSED
-    inscode(d, ds, de, "WSAECONNREFUSED", WSAECONNREFUSED, "Connection refused");
-#endif
-#ifdef WSAENETRESET
-    inscode(d, ds, de, "WSAENETRESET", WSAENETRESET, "Network dropped connection because of reset");
-#endif
-#ifdef WSAN
-    inscode(d, ds, de, "WSAN", WSAN, "Error WSAN");
-#endif
-#ifdef ENOMEDIUM
-    inscode(d, ds, de, "ENOMEDIUM", ENOMEDIUM, "No medium found");
-#endif
-#ifdef EMEDIUMTYPE
-    inscode(d, ds, de, "EMEDIUMTYPE", EMEDIUMTYPE, "Wrong medium type");
-#endif
-#ifdef ECANCELED
-    inscode(d, ds, de, "ECANCELED", ECANCELED, "Operation Canceled");
-#endif
-#ifdef ENOKEY
-    inscode(d, ds, de, "ENOKEY", ENOKEY, "Required key not available");
-#endif
-#ifdef EKEYEXPIRED
-    inscode(d, ds, de, "EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
-#endif
-#ifdef EKEYREVOKED
-    inscode(d, ds, de, "EKEYREVOKED", EKEYREVOKED, "Key has been revoked");
-#endif
-#ifdef EKEYREJECTED
-    inscode(d, ds, de, "EKEYREJECTED", EKEYREJECTED, "Key was rejected by service");
-#endif
-#ifdef EOWNERDEAD
-    inscode(d, ds, de, "EOWNERDEAD", EOWNERDEAD, "Owner died");
-#endif
-#ifdef ENOTRECOVERABLE
-    inscode(d, ds, de, "ENOTRECOVERABLE", ENOTRECOVERABLE, "State not recoverable");
-#endif
-#ifdef ERFKILL
-    inscode(d, ds, de, "ERFKILL", ERFKILL, "Operation not possible due to RF-kill");
-#endif
-
-    /* Solaris-specific errnos */
-#ifdef ECANCELED
-    inscode(d, ds, de, "ECANCELED", ECANCELED, "Operation canceled");
-#endif
-#ifdef ENOTSUP
-    inscode(d, ds, de, "ENOTSUP", ENOTSUP, "Operation not supported");
-#endif
-#ifdef EOWNERDEAD
-    inscode(d, ds, de, "EOWNERDEAD", EOWNERDEAD, "Process died with the lock");
-#endif
-#ifdef ENOTRECOVERABLE
-    inscode(d, ds, de, "ENOTRECOVERABLE", ENOTRECOVERABLE, "Lock is not recoverable");
-#endif
-#ifdef ELOCKUNMAPPED
-    inscode(d, ds, de, "ELOCKUNMAPPED", ELOCKUNMAPPED, "Locked lock was unmapped");
-#endif
-#ifdef ENOTACTIVE
-    inscode(d, ds, de, "ENOTACTIVE", ENOTACTIVE, "Facility is not active");
-#endif
-
-    /* MacOSX specific errnos */
-#ifdef EAUTH
-    inscode(d, ds, de, "EAUTH", EAUTH, "Authentication error");
-#endif
-#ifdef EBADARCH
-    inscode(d, ds, de, "EBADARCH", EBADARCH, "Bad CPU type in executable");
-#endif
-#ifdef EBADEXEC
-    inscode(d, ds, de, "EBADEXEC", EBADEXEC, "Bad executable (or shared library)");
-#endif
-#ifdef EBADMACHO
-    inscode(d, ds, de, "EBADMACHO", EBADMACHO, "Malformed Mach-o file");
-#endif
-#ifdef EBADRPC
-    inscode(d, ds, de, "EBADRPC", EBADRPC, "RPC struct is bad");
-#endif
-#ifdef EDEVERR
-    inscode(d, ds, de, "EDEVERR", EDEVERR, "Device error");
-#endif
-#ifdef EFTYPE
-    inscode(d, ds, de, "EFTYPE", EFTYPE, "Inappropriate file type or format");
-#endif
-#ifdef ENEEDAUTH
-    inscode(d, ds, de, "ENEEDAUTH", ENEEDAUTH, "Need authenticator");
-#endif
-#ifdef ENOATTR
-    inscode(d, ds, de, "ENOATTR", ENOATTR, "Attribute not found");
-#endif
-#ifdef ENOPOLICY
-    inscode(d, ds, de, "ENOPOLICY", ENOPOLICY, "Policy not found");
-#endif
-#ifdef EPROCLIM
-    inscode(d, ds, de, "EPROCLIM", EPROCLIM, "Too many processes");
-#endif
-#ifdef EPROCUNAVAIL
-    inscode(d, ds, de, "EPROCUNAVAIL", EPROCUNAVAIL, "Bad procedure for program");
-#endif
-#ifdef EPROGMISMATCH
-    inscode(d, ds, de, "EPROGMISMATCH", EPROGMISMATCH, "Program version wrong");
-#endif
-#ifdef EPROGUNAVAIL
-    inscode(d, ds, de, "EPROGUNAVAIL", EPROGUNAVAIL, "RPC prog. not avail");
-#endif
-#ifdef EPWROFF
-    inscode(d, ds, de, "EPWROFF", EPWROFF, "Device power is off");
-#endif
-#ifdef ERPCMISMATCH
-    inscode(d, ds, de, "ERPCMISMATCH", ERPCMISMATCH, "RPC version wrong");
-#endif
-#ifdef ESHLIBVERS
-    inscode(d, ds, de, "ESHLIBVERS", ESHLIBVERS, "Shared library version mismatch");
-#endif
-
-    Py_DECREF(de);
-    return m;
+    return PyModuleDef_Init(&errnomodule);
 }

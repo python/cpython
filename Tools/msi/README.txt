@@ -11,7 +11,7 @@ Tools/msi/buildrelease.bat script and environment variables:
 
     set PYTHON=<path to Python 2.7 or 3.4>
     set SPHINXBUILD=<path to sphinx-build.exe>
-    set PATH=<path to Mercurial (hg.exe)>;
+    set PATH=<path to Git (git.exe)>;
              <path to HTML Help Compiler (hhc.exe)>;%PATH%
 
     buildrelease.bat [-x86] [-x64] [-D] [-B]
@@ -106,7 +106,7 @@ Tools/msi/buildrelease.bat script:
 
     set PYTHON=<path to Python 2.7 or 3.4>
     set SPHINXBUILD=<path to sphinx-build.exe>
-    set PATH=<path to Mercurial (hg.exe)>;
+    set PATH=<path to Git (git.exe)>;
              <path to HTML Help Compiler (hhc.exe)>;%PATH%
 
     buildrelease.bat [-x86] [-x64] [-D] [-B]
@@ -131,7 +131,7 @@ installer. Official releases of Python must be signed.
 
 Ensure %PYTHON% and %SPHINXBUILD% are set when passing this option. You
 may also set %HTMLHELP% to the Html Help Compiler (hhc.exe), or put HHC
-on your PATH or in externals/. You will also need Mercurial (hg.exe) on
+on your PATH or in externals/. You will also need Git (git.exe) on
 your PATH.
 
 If WiX is not found on your system, it will be automatically downloaded
@@ -159,9 +159,7 @@ The following properties may be passed when building these projects.
 
   /p:BuildForRelease=(true|false)
     When true, adds extra verification to ensure a complete installer is
-    produced. For example, binutils is required when building for a release
-    to generate MinGW-compatible libraries, and the build will be aborted if
-    this fails. Defaults to false.
+    produced. Defaults to false.
 
   /p:ReleaseUri=(any URI)
     Used to generate unique IDs for the installers to allow side-by-side

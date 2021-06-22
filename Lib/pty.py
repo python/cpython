@@ -8,6 +8,7 @@
 
 from select import select
 import os
+import sys
 import tty
 
 __all__ = ["openpty","fork","spawn"]
@@ -151,6 +152,7 @@ def spawn(argv, master_read=_read, stdin_read=_read):
     """Create a spawned process."""
     if type(argv) == type(''):
         argv = (argv,)
+    sys.audit('pty.spawn', argv)
     pid, master_fd = fork()
     if pid == CHILD:
         os.execlp(argv[0], *argv)

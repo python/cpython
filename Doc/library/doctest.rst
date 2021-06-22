@@ -1,5 +1,3 @@
-:keepdoctest:
-
 :mod:`doctest` --- Test interactive Python examples
 ===================================================
 
@@ -485,7 +483,7 @@ Some details you should read once, but won't need to remember:
   to test a :exc:`SyntaxError` that omits the traceback header, you will need to
   manually add the traceback header line to your test example.
 
-.. index:: single: ^; caret
+.. index:: single: ^ (caret); marker
 
 * For some :exc:`SyntaxError`\ s, Python displays the character position of the
   syntax error, using a ``^`` marker::
@@ -695,9 +693,9 @@ useful unless you intend to extend :mod:`doctest` internals via subclassing:
 
 
 .. index::
-   single: #; in doctests
-   single: +; in doctests
-   single: -; in doctests
+   single: # (hash); in doctests
+   single: + (plus); in doctests
+   single: - (minus); in doctests
 .. _doctest-directives:
 
 Directives
@@ -1531,7 +1529,7 @@ OutputChecker objects
 
    A class used to check the whether the actual output from a doctest example
    matches the expected output.  :class:`OutputChecker` defines two methods:
-   :meth:`check_output`, which compares a given pair of outputs, and returns true
+   :meth:`check_output`, which compares a given pair of outputs, and returns ``True``
    if they match; and :meth:`output_difference`, which returns a string describing
    the differences between two outputs.
 

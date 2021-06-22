@@ -1,1 +1,0 @@
-Make Sphinx warnings as errors in the Docs Makefile.

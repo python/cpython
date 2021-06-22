@@ -8,7 +8,7 @@ from distutils.errors import *
 from distutils.spawn import spawn
 from distutils.file_util import move_file
 from distutils.dir_util import mkpath
-from distutils.dep_util import newer_pairwise, newer_group
+from distutils.dep_util import newer_group
 from distutils.util import split_quoted, execute
 from distutils import log
 
@@ -545,7 +545,7 @@ class CCompiler:
         'extra_preargs' and 'extra_postargs' are implementation- dependent.
         On platforms that have the notion of a command-line (e.g. Unix,
         DOS/Windows), they are most likely lists of strings: extra
-        command-line arguments to prepand/append to the compiler command
+        command-line arguments to prepend/append to the compiler command
         line.  On other platforms, consult the implementation class
         documentation.  In any event, they are intended as an escape hatch
         for those occasions when the abstract compiler framework doesn't
@@ -781,8 +781,9 @@ class CCompiler:
             for incl in includes:
                 f.write("""#include "%s"\n""" % incl)
             f.write("""\
-main (int argc, char **argv) {
+int main (int argc, char **argv) {
     %s();
+    return 0;
 }
 """ % funcname)
         finally:

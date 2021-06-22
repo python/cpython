@@ -1,3 +1,0 @@
-tracemalloc now tries to update the traceback when an object is reused from a
-"free list" (optimization for faster object creation, used by the builtin list
-type for example).

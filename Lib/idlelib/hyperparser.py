@@ -35,7 +35,7 @@ class HyperParser:
             return int(float(index))
         lno = index2line(text.index(index))
 
-        if not editwin.context_use_ps1:
+        if not editwin.prompt_last_line:
             for context in editwin.num_context_lines:
                 startat = max(lno - context, 1)
                 startatindex = repr(startat) + ".0"
@@ -224,7 +224,7 @@ class HyperParser:
         given index, which is empty if there is no real one.
         """
         if not self.is_in_code():
-            raise ValueError("get_expression should only be called"
+            raise ValueError("get_expression should only be called "
                              "if index is inside a code.")
 
         rawtext = self.rawtext

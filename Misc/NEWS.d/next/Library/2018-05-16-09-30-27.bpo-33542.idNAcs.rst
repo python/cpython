@@ -1,2 +1,0 @@
-Prevent ``uuid.get_node`` from using a DUID instead of a MAC on Windows.
-Patch by Zvi Effron

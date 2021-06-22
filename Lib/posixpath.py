@@ -2,9 +2,9 @@
 
 Instead of importing this module directly, import os and refer to
 this module as os.path.  The "os.path" name is an alias for this
-module on Posix systems; on other systems (e.g. Mac, Windows),
+module on Posix systems; on other systems (e.g. Windows),
 os.path provides the same operations in a manner specific to that
-platform, and is an alias to another module (e.g. macpath, ntpath).
+platform, and is an alias to another module (e.g. ntpath).
 
 Some of this can actually be useful on non-Posix systems too, e.g.
 for manipulation of the pathname component of URLs.
@@ -18,7 +18,7 @@ pardir = '..'
 extsep = '.'
 sep = '/'
 pathsep = ':'
-defpath = ':/bin:/usr/bin'
+defpath = '/bin:/usr/bin'
 altsep = None
 devnull = '/dev/null'
 
@@ -51,11 +51,7 @@ def _get_sep(path):
 
 def normcase(s):
     """Normalize case of pathname.  Has no effect under Posix"""
-    s = os.fspath(s)
-    if not isinstance(s, (bytes, str)):
-        raise TypeError("normcase() argument must be str or bytes, "
-                        "not '{}'".format(s.__class__.__name__))
-    return s
+    return os.fspath(s)
 
 
 # Return whether a path is absolute.
@@ -246,7 +242,12 @@ def expanduser(path):
     if i == 1:
         if 'HOME' not in os.environ:
             import pwd
-            userhome = pwd.getpwuid(os.getuid()).pw_dir
+            try:
+                userhome = pwd.getpwuid(os.getuid()).pw_dir
+            except KeyError:
+                # bpo-10496: if the current user identifier doesn't exist in the
+                # password database, return the path unchanged
+                return path
         else:
             userhome = os.environ['HOME']
     else:
@@ -257,8 +258,13 @@ def expanduser(path):
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
+            # bpo-10496: if the user name from the path doesn't exist in the
+            # password database, return the path unchanged
             return path
         userhome = pwent.pw_dir
+    # if no user home, return the path unchanged on VxWorks
+    if userhome is None and sys.platform == "vxworks":
+        return path
     if isinstance(path, bytes):
         userhome = os.fsencode(userhome)
         root = b'/'
@@ -381,16 +387,16 @@ def abspath(path):
 # Return a canonical path (i.e. the absolute location of a file on the
 # filesystem).
 
-def realpath(filename):
+def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, {})
+    path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
-def _joinrealpath(path, rest, seen):
+def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
         curdir = b'.'
@@ -419,7 +425,15 @@ def _joinrealpath(path, rest, seen):
                 path = pardir
             continue
         newpath = join(path, name)
-        if not islink(newpath):
+        try:
+            st = os.lstat(newpath)
+        except OSError:
+            if strict:
+                raise
+            is_link = False
+        else:
+            is_link = stat.S_ISLNK(st.st_mode)
+        if not is_link:
             path = newpath
             continue
         # Resolve the symbolic link
@@ -430,10 +444,14 @@ def _joinrealpath(path, rest, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            # Return already resolved part + rest of the path unchanged.
-            return join(newpath, rest), False
+            if strict:
+                # Raise OSError(errno.ELOOP)
+                os.stat(newpath)
+            else:
+                # Return already resolved part + rest of the path unchanged.
+                return join(newpath, rest), False
         seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), seen)
+        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
         if not ok:
             return join(path, rest), False
         seen[newpath] = path # resolved symlink

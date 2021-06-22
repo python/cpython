@@ -1,2 +1,0 @@
-Fix a crash in `os.utime()` in case of a bad ns argument. Patch by Oren
-Milman.

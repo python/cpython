@@ -1,2 +1,0 @@
-OrderedDict iterators are not exhausted during pickling anymore. Patch by
-Sergey Fedoseev.

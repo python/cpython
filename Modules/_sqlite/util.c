@@ -24,19 +24,14 @@
 #include "module.h"
 #include "connection.h"
 
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
+int
+pysqlite_step(sqlite3_stmt *statement)
 {
     int rc;
 
-    if (statement == NULL) {
-        /* this is a workaround for SQLite 3.5 and later. it now apparently
-         * returns NULL for "no-operation" statements */
-        rc = SQLITE_OK;
-    } else {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_step(statement);
-        Py_END_ALLOW_THREADS
-    }
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_step(statement);
+    Py_END_ALLOW_THREADS
 
     return rc;
 }
@@ -45,7 +40,8 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
  * Checks the SQLite error code and sets the appropriate DB-API exception.
  * Returns the error code (0 means no error occurred).
  */
-int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
+int
+_pysqlite_seterror(sqlite3 *db)
 {
     int errorcode = sqlite3_errcode(db);
 
@@ -102,22 +98,6 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 #else
 # define IS_LITTLE_ENDIAN 1
 #endif
-
-PyObject *
-_pysqlite_long_from_int64(sqlite_int64 value)
-{
-# if SIZEOF_LONG_LONG < 8
-    if (value > PY_LLONG_MAX || value < PY_LLONG_MIN) {
-        return _PyLong_FromByteArray(&value, sizeof(value),
-                                     IS_LITTLE_ENDIAN, 1 /* signed */);
-    }
-# endif
-# if SIZEOF_LONG < SIZEOF_LONG_LONG
-    if (value > LONG_MAX || value < LONG_MIN)
-        return PyLong_FromLongLong(value);
-# endif
-    return PyLong_FromLong(Py_SAFE_DOWNCAST(value, sqlite_int64, long));
-}
 
 sqlite_int64
 _pysqlite_long_as_int64(PyObject * py_val)

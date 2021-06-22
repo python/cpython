@@ -1,1 +1,0 @@
-Add documentation about the new command line interface of the gzip module.

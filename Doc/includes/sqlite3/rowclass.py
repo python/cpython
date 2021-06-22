@@ -10,3 +10,5 @@ for row in cur:
     assert row["name"] == row["nAmE"]
     assert row[1] == row["age"]
     assert row[1] == row["AgE"]
+
+con.close()

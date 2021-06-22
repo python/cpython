@@ -1,1 +1,0 @@
-Fixed mousewheel scrolling direction on macOS.

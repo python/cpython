@@ -1,2 +1,0 @@
-Add pure Python fallback for functools.reduce.
-Patch by Robert Wright.

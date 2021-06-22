@@ -1,0 +1,2 @@
+Fix a regression when identifying incorrect characters in syntax errors.
+Patch by Pablo Galindo

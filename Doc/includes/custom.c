@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 typedef struct {
@@ -34,6 +35,11 @@ PyInit_custom(void)
         return NULL;
 
     Py_INCREF(&CustomType);
-    PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
+    if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
+        Py_DECREF(&CustomType);
+        Py_DECREF(m);
+        return NULL;
+    }
+
     return m;
 }
