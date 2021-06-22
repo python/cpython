@@ -186,9 +186,9 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
-    Py_XINCREF(tstate->frame);
+    Py_XINCREF(tstate->pyframe);
     assert(f->f_back == NULL);
-    f->f_back = tstate->frame;
+    f->f_back = tstate->pyframe;
 
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
@@ -205,7 +205,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* Don't keep the reference to f_back any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
-    assert(f->f_back == tstate->frame);
+    assert(f->f_back == tstate->pyframe);
     Py_CLEAR(f->f_back);
 
     /* If the generator just returned (as opposed to yielding), signal
@@ -423,14 +423,14 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
             PyThreadState *tstate = _PyThreadState_GET();
-            PyFrameObject *f = tstate->frame;
+            PyFrameObject *f = tstate->pyframe;
 
             /* Since we are fast-tracking things by skipping the eval loop,
                we need to update the current frame so the stack trace
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            tstate->frame = gen->gi_frame;
+            tstate->pyframe = gen->gi_frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame->f_state;
@@ -438,7 +438,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             gen->gi_frame->f_state = state;
-            tstate->frame = f;
+            tstate->pyframe = f;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;

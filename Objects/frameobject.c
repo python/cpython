@@ -876,7 +876,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, _PyFrame *frame, int owns)
     if (f == NULL) {
         return NULL;
     }
-    f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
+    f->f_back = (PyFrameObject*)Py_XNewRef(tstate->pyframe);
     f->f_trace = NULL;
     f->f_frame->stackdepth = 0;
     f->f_trace_lines = 1;

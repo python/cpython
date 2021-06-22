@@ -1786,7 +1786,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      */
     _Py_atomic_store(&is_tripped, 0);
 
-    PyObject *frame = (PyObject *)tstate->frame;
+    PyObject *frame = (PyObject *)tstate->pyframe;
     if (!frame) {
         frame = Py_None;
     }

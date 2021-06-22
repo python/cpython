@@ -9,6 +9,7 @@ typedef struct _py_frame {
     PyObject *builtins;
     PyObject *locals;
     PyCodeObject *code;
+    PyFrameObject *frame_obj;
     int lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
     PyObject *stack[1];
@@ -25,6 +26,7 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
     frame->builtins = Py_NewRef(con->fc_builtins);
     frame->globals = Py_NewRef(con->fc_globals);
     frame->locals = Py_XNewRef(locals);
+    frame->frame_obj = NULL;
     frame->lasti = -1;
 }
 

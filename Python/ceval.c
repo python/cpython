@@ -1407,6 +1407,8 @@ PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    f->f_frame->frame_obj = f;
+    Py_INCREF(f);
 
 #if USE_COMPUTED_GOTOS
 /* Import the static jump table */
@@ -1450,7 +1452,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     tstate->cframe = &cframe;
 
     /* push frame */
-    tstate->frame = f;
+    tstate->pyframe = f;
     frame = f->f_frame;
     co = frame->code;
 
@@ -4404,8 +4406,9 @@ exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
-    tstate->frame = f->f_back;
-
+    tstate->pyframe = f->f_back;
+    frame->frame_obj = NULL;
+    Py_DECREF(f);
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
@@ -5635,13 +5638,13 @@ PyFrameObject *
 PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->frame;
+    return tstate->pyframe;
 }
 
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    PyFrameObject *frame = tstate->frame;
+    PyFrameObject *frame = tstate->pyframe;
     if (frame != NULL) {
         return frame->f_frame->builtins;
     }
@@ -5674,7 +5677,7 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->frame;
+    PyFrameObject *current_frame = tstate->pyframe;
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
@@ -5693,7 +5696,7 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->frame;
+    PyFrameObject *current_frame = tstate->pyframe;
     if (current_frame == NULL) {
         return NULL;
     }
@@ -5704,7 +5707,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->frame;
+    PyFrameObject *current_frame = tstate->pyframe;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
@@ -5754,7 +5757,7 @@ PyEval_GetFuncDesc(PyObject *func)
 #define C_TRACE(x, call) \
 if (use_tracing && tstate->c_profilefunc) { \
     if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
-        tstate, tstate->frame, \
+        tstate, tstate->pyframe, \
         PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
@@ -5764,13 +5767,13 @@ if (use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, \
+                    tstate, tstate->pyframe, \
                     PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate, tstate->frame, \
+                    tstate, tstate->pyframe, \
                     PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
