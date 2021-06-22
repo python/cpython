@@ -4921,13 +4921,29 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
 {
     assert(is_tstate_valid(tstate));
     assert(con->fc_defaults == NULL || PyTuple_CheckExact(con->fc_defaults));
-
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    _PyFrame *frame;
+    int owns = 0;
+    if (localsarray == NULL) {
+        int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
+        localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
+        if (localsarray == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
+            localsarray[i] = NULL;
+        }
+        owns = 1;
+    }
+    frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, con, locals);
     /* Create the frame */
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, con, locals, localsarray);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, owns);
     if (f == NULL) {
         return NULL;
     }
-    if (initialize_locals(tstate, con, f->f_localsptr, args, argcount, kwnames)) {
+    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
         Py_DECREF(f);
         return NULL;
     }
@@ -4935,9 +4951,17 @@ _PyEval_MakeFrameVector(PyThreadState *tstate,
 }
 
 static PyObject *
-make_coro(PyFrameConstructor *con, PyFrameObject *f)
+make_coro(PyThreadState *tstate, PyFrameConstructor *con,
+          PyObject *locals,
+          PyObject* const* args, size_t argcount,
+          PyObject *kwnames)
 {
     assert (((PyCodeObject *)con->fc_code)->co_flags & (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR));
+    PyFrameObject *f = _PyEval_MakeFrameVector(
+        tstate, con, locals, args, argcount, kwnames, NULL);
+    if (f == NULL) {
+        return NULL;
+    }
     PyObject *gen;
     int is_coro = ((PyCodeObject *)con->fc_code)->co_flags & CO_COROUTINE;
 
@@ -4974,26 +4998,19 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
     int is_coro = code->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     if (is_coro) {
-        localsarray = NULL;
+        return make_coro(tstate, con, locals, args, argcount, kwnames);
     }
-    else {
-        int size = code->co_nlocalsplus + code->co_stacksize +
-            FRAME_SPECIALS_SIZE;
-        localsarray = _PyThreadState_PushLocals(tstate, size);
-        if (localsarray == NULL) {
-            return NULL;
-        }
+    int size = code->co_nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
+    localsarray = _PyThreadState_PushLocals(tstate, size);
+    if (localsarray == NULL) {
+        return NULL;
     }
     PyFrameObject *f = _PyEval_MakeFrameVector(
         tstate, con, locals, args, argcount, kwnames, localsarray);
     if (f == NULL) {
-        if (!is_coro) {
-            _PyThreadState_PopLocals(tstate, localsarray);
-        }
+        _PyThreadState_PopLocals(tstate, localsarray);
         return NULL;
-    }
-    if (is_coro) {
-        return make_coro(con, f);
     }
     PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
     assert(f->f_frame->stackdepth == 0);
@@ -5003,7 +5020,6 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
        current Python frame (f), the associated C stack is still in use,
        so recursion_depth must be boosted for the duration.
     */
-    assert (!is_coro);
     assert(f->f_own_locals_memory == 0);
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);

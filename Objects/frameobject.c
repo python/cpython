@@ -789,33 +789,39 @@ PyTypeObject PyFrame_Type = {
 
 _Py_IDENTIFIER(__builtins__);
 
-static inline PyFrameObject*
-frame_alloc(PyCodeObject *code, PyObject **localsarray)
+static _PyFrame *
+allocate_heap_frame(PyFrameConstructor *con, PyObject *locals)
 {
-    int owns;
-    PyFrameObject *f;
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
+    PyObject **localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
     if (localsarray == NULL) {
-        int size = code->co_nlocalsplus+code->co_stacksize + FRAME_SPECIALS_SIZE;
-        localsarray = PyMem_Malloc(sizeof(PyObject *)*size);
-        if (localsarray == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
-            localsarray[i] = NULL;
-        }
-        owns = 1;
+        PyErr_NoMemory();
+        return NULL;
     }
-    else {
-        owns = 0;
+    for (Py_ssize_t i=0; i < code->co_nlocalsplus; i++) {
+        localsarray[i] = NULL;
     }
+    _PyFrame *frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, con, locals);
+    return frame;
+}
+
+static inline PyFrameObject*
+frame_alloc(_PyFrame *frame, int owns)
+{
+    PyFrameObject *f;
     struct _Py_frame_state *state = get_frame_state();
     if (state->free_list == NULL)
     {
         f = PyObject_GC_New(PyFrameObject, &PyFrame_Type);
         if (f == NULL) {
             if (owns) {
-                PyMem_Free(localsarray);
+                Py_XDECREF(frame->code);
+                Py_XDECREF(frame->builtins);
+                Py_XDECREF(frame->globals);
+                Py_XDECREF(frame->locals);
+                PyMem_Free(frame);
             }
             return NULL;
         }
@@ -831,7 +837,8 @@ frame_alloc(PyCodeObject *code, PyObject **localsarray)
         state->free_list = state->free_list->f_back;
         _Py_NewReference((PyObject *)f);
     }
-    f->f_localsptr = localsarray;
+    f->f_frame = frame;
+    f->f_localsptr = ((PyObject **)frame) - frame->code->co_nlocalsplus;
     f->f_own_locals_memory = owns;
     return f;
 }
@@ -863,27 +870,13 @@ _PyFrame_TakeLocals(PyFrameObject *f)
 }
 
 PyFrameObject* _Py_HOT_FUNCTION
-_PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *locals, PyObject **localsarray)
+_PyFrame_New_NoTrack(PyThreadState *tstate, _PyFrame *frame, int owns)
 {
-    assert(con != NULL);
-    assert(con->fc_globals != NULL);
-    assert(con->fc_builtins != NULL);
-    assert(con->fc_code != NULL);
-    assert(locals == NULL || PyMapping_Check(locals));
-    PyCodeObject *code = (PyCodeObject *)con->fc_code;
-
-    PyFrameObject *f = frame_alloc(code, localsarray);
+    PyFrameObject *f = frame_alloc(frame, owns);
     if (f == NULL) {
         return NULL;
     }
-    _PyFrame *frame = (_PyFrame *)(f->f_localsptr + code->co_nlocalsplus);
-    f->f_frame = frame;
     f->f_back = (PyFrameObject*)Py_XNewRef(tstate->frame);
-    frame->code = (PyCodeObject *)Py_NewRef(con->fc_code);
-    frame->builtins = Py_NewRef(con->fc_builtins);
-    frame->globals = Py_NewRef(con->fc_globals);
-    frame->locals = Py_XNewRef(locals);
-    frame->lasti = -1;
     f->f_trace = NULL;
     f->f_frame->stackdepth = 0;
     f->f_trace_lines = 1;
@@ -913,7 +906,11 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
         .fc_kwdefaults = NULL,
         .fc_closure = NULL
     };
-    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, &desc, locals, NULL);
+    _PyFrame *frame = allocate_heap_frame(&desc, locals);
+    if (frame == NULL) {
+        return NULL;
+    }
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, 1);
     if (f) {
         _PyObject_GC_TRACK(f);
     }
@@ -972,7 +969,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyObject *value = fast[i];
         if (f->f_state != FRAME_CLEARED) {
             if (kind & CO_FAST_FREE) {
-                // The cell was set by _PyEval_MakeFrameVector() from
+                // The cell was set when the frame was created from
                 // the function's closure.
                 assert(value != NULL && PyCell_Check(value));
                 value = PyCell_GET(value);
@@ -989,7 +986,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
                         value = PyCell_GET(value);
                     }
                     // (likely) Otherwise it it is an arg (kind & CO_FAST_LOCAL),
-                    // with the initial value set by _PyEval_MakeFrameVector()...
+                    // with the initial value set when the frame was created...
                     // (unlikely) ...or it was set to some initial value by
                     // an earlier call to PyFrame_LocalsToFast().
                 }
@@ -1066,7 +1063,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         PyObject *oldvalue = fast[i];
         PyObject *cell = NULL;
         if (kind == CO_FAST_FREE) {
-            // The cell was set by _PyEval_MakeFrameVector() from
+            // The cell was set when the frame was created from
             // the function's closure.
             assert(oldvalue != NULL && PyCell_Check(oldvalue));
             cell = oldvalue;

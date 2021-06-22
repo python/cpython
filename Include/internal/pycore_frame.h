@@ -18,6 +18,18 @@ typedef struct _py_frame {
 
 int _PyFrame_TakeLocals(PyFrameObject *f);
 
+static inline void
+_PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *locals)
+{
+    frame->code = (PyCodeObject *)Py_NewRef(con->fc_code);
+    frame->builtins = Py_NewRef(con->fc_builtins);
+    frame->globals = Py_NewRef(con->fc_globals);
+    frame->locals = Py_XNewRef(locals);
+    frame->lasti = -1;
+}
+
+
+
 #ifdef __cplusplus
 }
 #endif
