@@ -747,6 +747,15 @@ class TypesTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     issubclass(list, type_)
 
+    def test_or_type_operator_with_bad_module(self):
+        class TypeVar:
+            @property
+            def __module__(self):
+                1 / 0
+        # Crashes in Issue44483
+        with self.assertRaises(ZeroDivisionError):
+            str | TypeVar()
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 
