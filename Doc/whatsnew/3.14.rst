@@ -96,6 +96,13 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+decimal
+-------
+
+* Add alternative :class:`~decimal.Decimal` constructor
+  :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121798`.)
+
 os
 --
 
