@@ -49,7 +49,7 @@ varnames: ('x', 'y', 'a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 5
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -67,7 +67,7 @@ varnames: ('obj',)
 cellvars: ()
 freevars: ()
 nlocals: 1
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def optimize_away():
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 67
+flags: 3
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -103,7 +103,7 @@ varnames: ('a', 'b', 'k1')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -120,7 +120,7 @@ varnames: ('a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 """
