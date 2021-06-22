@@ -1,1 +1,1 @@
-The signature of :class:`collections.defaultdict` now shows that the ``default_factory`` parameter is position-only.
+Document that :class:`collections.defaultdict` parameter ``default_factory`` defaults to None and is positional-only.
