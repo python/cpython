@@ -127,7 +127,7 @@ Intermezzo: Errors and Exceptions
 
 An important convention throughout the Python interpreter is the following: when
 a function fails, it should set an exception condition and return an error value
-(usually -1 or a ``NULL`` pointer).  Exception information is stored in
+(usually ``-1`` or a ``NULL`` pointer).  Exception information is stored in
 three members of the interpreter's thread state.  These are ``NULL`` if
 there is no exception.  Otherwise they are the C equivalents of the members
 of the Python tuple returned by :meth:`sys.exc_info`.  These are the
