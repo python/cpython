@@ -228,9 +228,10 @@ class LZMAFile(_compression.BaseStream):
     def write(self, data):
         """Write a bytes object to the file.
 
-        Returns the number of uncompressed bytes written. Note that
-        due to buffering, the file on disk may not reflect the data
-        written until close() is called.
+        Returns the number of uncompressed bytes written, which is
+        always the length of data in bytes. Note that due to buffering,
+        the file on disk may not reflect the data written until close()
+        is called.
         """
         self._check_can_write()
         if isinstance(data, (bytes, bytearray)):

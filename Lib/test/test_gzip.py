@@ -594,10 +594,11 @@ class TestGzip(BaseTest):
 
     def test_issue44439(self):
         q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
 
         with gzip.GzipFile(fileobj=io.BytesIO(), mode='w') as f:
-            f.write(q)
-            self.assertEqual(f.tell(), len(q) * q.itemsize)
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
 
 
 class TestOpen(BaseTest):

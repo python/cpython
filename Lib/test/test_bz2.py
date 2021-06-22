@@ -623,10 +623,11 @@ class BZ2FileTest(BaseTest):
 
     def test_issue44439(self):
         q = array.array('Q', [1, 2, 3, 4, 5])
+        LENGTH = len(q) * q.itemsize
 
         with BZ2File(BytesIO(), 'w') as f:
-            f.write(q)
-            self.assertEqual(f.tell(), len(q) * q.itemsize)
+            self.assertEqual(f.write(q), LENGTH)
+            self.assertEqual(f.tell(), LENGTH)
 
 
 class BZ2CompressorTest(BaseTest):
