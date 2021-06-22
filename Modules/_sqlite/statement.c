@@ -56,8 +56,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_ssize_t size;
     const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
     if (sql_cstr == NULL) {
-        PyErr_Format(state->Warning,
-                     "SQL is of wrong type ('%s'). Must be string.",
+        PyObject *exc = connection->Warning;
+        PyErr_Format(exc, "SQL is of wrong type ('%s'). Must be string.",
                      Py_TYPE(sql)->tp_name);
         return NULL;
     }
@@ -87,8 +87,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     if (pysqlite_check_remaining_sql(tail)) {
-        PyErr_SetString(state->Warning,
-                        "You can only execute one statement at a time.");
+        PyObject *exc = connection->Warning;
+        PyErr_SetString(exc, "You can only execute one statement at a time.");
         goto error;
     }
 
