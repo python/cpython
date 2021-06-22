@@ -235,7 +235,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
 
-    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_specials->lasti*2,
+    return tb_create_raw((PyTracebackObject *)tb_next, frame, frame->f_frame->lasti*2,
                          PyFrame_GetLineNumber(frame));
 }
 

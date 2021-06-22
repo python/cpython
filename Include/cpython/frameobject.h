@@ -22,7 +22,7 @@ typedef signed char PyFrameState;
 struct _frame {
     PyObject_HEAD
     struct _frame *f_back;      /* previous frame, or NULL */
-    struct _py_frame_specials *f_specials; /* points to the specials */
+    struct _py_frame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;

@@ -888,8 +888,8 @@ class PyFrameObjectPtr(PyObjectPtr):
             yield (pyop_name, pyop_value)
 
     def _f_special(self, name, convert=PyObjectPtr.from_pyobject_ptr):
-        f_specials = self.field('f_specials')
-        return convert(f_specials[name])
+        f_frame = self.field('f_frame')
+        return convert(f_frame[name])
 
     def _f_globals(self):
         return self._f_special("globals")

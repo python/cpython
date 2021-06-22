@@ -80,7 +80,7 @@ _PyGen_Finalize(PyObject *self)
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL &&
         ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE &&
-        gen->gi_frame->f_specials->lasti == -1)
+        gen->gi_frame->f_frame->lasti == -1)
     {
         _PyErr_WarnUnawaitedCoroutine((PyObject *)gen);
     }
@@ -177,12 +177,12 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     }
 
     assert(_PyFrame_IsRunnable(f));
-    assert(f->f_specials->lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(gen->gi_code->co_code))[0] == GEN_START);
+    assert(f->f_frame->lasti >= 0 || ((unsigned char *)PyBytes_AS_STRING(gen->gi_code->co_code))[0] == GEN_START);
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
-    gen->gi_frame->f_specials->stack[gen->gi_frame->f_specials->stackdepth] = result;
-    gen->gi_frame->f_specials->stackdepth++;
+    gen->gi_frame->f_frame->stack[gen->gi_frame->f_frame->stackdepth] = result;
+    gen->gi_frame->f_frame->stackdepth++;
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -335,7 +335,7 @@ _PyGen_yf(PyGenObject *gen)
         PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
-        if (f->f_specials->lasti < 0) {
+        if (f->f_frame->lasti < 0) {
             /* Return immediately if the frame didn't start yet. YIELD_FROM
                always come after LOAD_CONST: a code object should not start
                with YIELD_FROM */
@@ -343,10 +343,10 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[(f->f_specials->lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[(f->f_frame->lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
-        assert(f->f_specials->stackdepth > 0);
-        yf = f->f_specials->stack[f->f_specials->stackdepth-1];
+        assert(f->f_frame->stackdepth > 0);
+        yf = f->f_frame->stack[f->f_frame->stackdepth-1];
         Py_INCREF(yf);
     }
 
@@ -460,14 +460,14 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (!ret) {
             PyObject *val;
             /* Pop subiterator from stack */
-            assert(gen->gi_frame->f_specials->stackdepth > 0);
-            gen->gi_frame->f_specials->stackdepth--;
-            ret = gen->gi_frame->f_specials->stack[gen->gi_frame->f_specials->stackdepth];
+            assert(gen->gi_frame->f_frame->stackdepth > 0);
+            gen->gi_frame->f_frame->stackdepth--;
+            ret = gen->gi_frame->f_frame->stack[gen->gi_frame->f_frame->stackdepth];
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */
-            assert(gen->gi_frame->f_specials->lasti >= 0);
-            gen->gi_frame->f_specials->lasti += 1;
+            assert(gen->gi_frame->f_frame->lasti >= 0);
+            gen->gi_frame->f_frame->lasti += 1;
             if (_PyGen_FetchStopIterationValue(&val) == 0) {
                 ret = gen_send(gen, val);
                 Py_DECREF(val);

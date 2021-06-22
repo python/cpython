@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-typedef struct _py_frame_specials {
+typedef struct _py_frame {
     PyObject *globals;
     PyObject *builtins;
     PyObject *locals;
@@ -12,9 +12,9 @@ typedef struct _py_frame_specials {
     int lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
     PyObject *stack[1];
-} _PyFrameSpecials;
+} _PyFrame;
 
-#define FRAME_SPECIALS_SIZE ((sizeof(_PyFrameSpecials)-1)/sizeof(PyObject *))
+#define FRAME_SPECIALS_SIZE ((sizeof(_PyFrame)-1)/sizeof(PyObject *))
 
 int _PyFrame_TakeLocals(PyFrameObject *f);
 
