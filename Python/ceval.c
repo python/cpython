@@ -1526,14 +1526,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     */
     assert(specials->lasti >= -1);
     next_instr = first_instr + specials->lasti + 1;
-    stack_pointer = specials->stack + f->f_stackdepth;
-    /* Set f->f_stackdepth to -1.
+    stack_pointer = specials->stack + specials->stackdepth;
+    /* Set stackdepth to -1.
      * Update when returning or calling trace function.
        Having f_stackdepth <= 0 ensures that invalid
        values are not visible to the cycle GC.
        We choose -1 rather than 0 to assist debugging.
      */
-    f->f_stackdepth = -1;
+    specials->stackdepth = -1;
     f->f_state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
@@ -1612,7 +1612,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             int err;
             /* see maybe_call_line_trace()
                for expository comments */
-            f->f_stackdepth = (int)(stack_pointer - specials->stack);
+            specials->stackdepth = (int)(stack_pointer - specials->stack);
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
@@ -1623,8 +1623,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
             /* Reload possibly changed frame fields */
             JUMPTO(specials->lasti);
-            stack_pointer = specials->stack+f->f_stackdepth;
-            f->f_stackdepth = -1;
+            stack_pointer = specials->stack+specials->stackdepth;
+            specials->stackdepth = -1;
             NEXTOPARG();
         }
     }
@@ -2248,7 +2248,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             retval = POP();
             assert(EMPTY());
             f->f_state = FRAME_RETURNED;
-            f->f_stackdepth = 0;
+            specials->stackdepth = 0;
             goto exiting;
         }
 
@@ -2436,7 +2436,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             assert(specials->lasti > 0);
             specials->lasti -= 1;
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = (int)(stack_pointer - specials->stack);
+            specials->stackdepth = (int)(stack_pointer - specials->stack);
             goto exiting;
         }
 
@@ -2453,7 +2453,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 retval = w;
             }
             f->f_state = FRAME_SUSPENDED;
-            f->f_stackdepth = (int)(stack_pointer - specials->stack);
+            specials->stackdepth = (int)(stack_pointer - specials->stack);
             goto exiting;
         }
 
@@ -4377,7 +4377,7 @@ exception_unwind:
         PyObject *o = POP();
         Py_XDECREF(o);
     }
-    f->f_stackdepth = 0;
+    specials->stackdepth = 0;
     f->f_state = FRAME_RAISED;
 exiting:
     if (cframe.use_tracing) {
@@ -4996,7 +4996,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
         return make_coro(con, f);
     }
     PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
-    assert(f->f_stackdepth == 0);
+    assert(f->f_specials->stackdepth == 0);
 
     /* decref'ing the frame can cause __del__ methods to get invoked,
        which can call back into Python.  While we're done with the

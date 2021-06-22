@@ -26,7 +26,6 @@ struct _frame {
     PyObject *f_trace;          /* Trace function */
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
-    int f_stackdepth;           /* Depth of value stack */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     PyFrameState f_state;       /* What state the frame is in */
     char f_trace_lines;         /* Emit per-line trace events? */

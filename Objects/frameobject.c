@@ -388,9 +388,9 @@ first_line_not_before(int *lines, int len, int line)
 static void
 frame_stack_pop(PyFrameObject *f)
 {
-    assert(f->f_stackdepth > 0);
-    f->f_stackdepth--;
-    PyObject *v = f->f_specials->stack[f->f_stackdepth];
+    assert(f->f_specials->stackdepth > 0);
+    f->f_specials->stackdepth--;
+    PyObject *v = f->f_specials->stack[f->f_specials->stackdepth];
     Py_DECREF(v);
 }
 
@@ -623,7 +623,7 @@ frame_dealloc(PyFrameObject *f)
             Py_CLEAR(f->f_localsptr[i]);
         }
         /* Free items on stack */
-        for (int i = 0; i < f->f_stackdepth; i++) {
+        for (int i = 0; i < f->f_specials->stackdepth; i++) {
             Py_XDECREF(f->f_specials->stack[i]);
         }
         if (f->f_own_locals_memory) {
@@ -632,7 +632,7 @@ frame_dealloc(PyFrameObject *f)
         }
         f->f_localsptr = NULL;
     }
-    f->f_stackdepth = 0;
+    f->f_specials->stackdepth = 0;
     Py_XDECREF(f->f_back);
     Py_CLEAR(f->f_trace);
     struct _Py_frame_state *state = get_frame_state();
@@ -669,7 +669,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
         Py_VISIT(f->f_localsptr[i]);
     }
     /* stack */
-    for (int i = 0; i < f->f_stackdepth; i++) {
+    for (int i = 0; i < f->f_specials->stackdepth; i++) {
         Py_VISIT(f->f_specials->stack[i]);
     }
     return 0;
@@ -693,10 +693,10 @@ frame_tp_clear(PyFrameObject *f)
     }
 
     /* stack */
-    for (int i = 0; i < f->f_stackdepth; i++) {
+    for (int i = 0; i < f->f_specials->stackdepth; i++) {
         Py_CLEAR(f->f_specials->stack[i]);
     }
-    f->f_stackdepth = 0;
+    f->f_specials->stackdepth = 0;
     return 0;
 }
 
@@ -840,7 +840,7 @@ int
 _PyFrame_TakeLocals(PyFrameObject *f)
 {
     assert(f->f_own_locals_memory == 0);
-    assert(f->f_stackdepth == 0);
+    assert(f->f_specials->stackdepth == 0);
     Py_ssize_t size = ((char*)f->f_specials->stack)-((char *)f->f_localsptr);
     PyObject **copy = PyMem_Malloc(size);
     if (copy == NULL) {
@@ -885,7 +885,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, PyFrameConstructor *con, PyObject *l
     specials->locals = Py_XNewRef(locals);
     specials->lasti = -1;
     f->f_trace = NULL;
-    f->f_stackdepth = 0;
+    f->f_specials->stackdepth = 0;
     f->f_trace_lines = 1;
     f->f_trace_opcodes = 0;
     f->f_gen = NULL;

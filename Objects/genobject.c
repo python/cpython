@@ -181,8 +181,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
-    gen->gi_frame->f_specials->stack[gen->gi_frame->f_stackdepth] = result;
-    gen->gi_frame->f_stackdepth++;
+    gen->gi_frame->f_specials->stack[gen->gi_frame->f_specials->stackdepth] = result;
+    gen->gi_frame->f_specials->stackdepth++;
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -345,8 +345,8 @@ _PyGen_yf(PyGenObject *gen)
 
         if (code[(f->f_specials->lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
-        assert(f->f_stackdepth > 0);
-        yf = f->f_specials->stack[f->f_stackdepth-1];
+        assert(f->f_specials->stackdepth > 0);
+        yf = f->f_specials->stack[f->f_specials->stackdepth-1];
         Py_INCREF(yf);
     }
 
@@ -460,9 +460,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (!ret) {
             PyObject *val;
             /* Pop subiterator from stack */
-            assert(gen->gi_frame->f_stackdepth > 0);
-            gen->gi_frame->f_stackdepth--;
-            ret = gen->gi_frame->f_specials->stack[gen->gi_frame->f_stackdepth];
+            assert(gen->gi_frame->f_specials->stackdepth > 0);
+            gen->gi_frame->f_specials->stackdepth--;
+            ret = gen->gi_frame->f_specials->stack[gen->gi_frame->f_specials->stackdepth];
             assert(ret == yf);
             Py_DECREF(ret);
             /* Termination repetition of YIELD_FROM */

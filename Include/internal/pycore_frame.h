@@ -9,7 +9,8 @@ typedef struct _py_frame_specials {
     PyObject *builtins;
     PyObject *locals;
     PyCodeObject *code;
-    int lasti;     /* Last instruction if called */
+    int lasti;       /* Last instruction if called */
+    int stackdepth;  /* Depth of value stack */
     PyObject *stack[1];
 } _PyFrameSpecials;
 
