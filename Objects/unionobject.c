@@ -284,6 +284,19 @@ is_new_type(PyObject *obj)
     return is_typing_module(obj);
 }
 
+// Emulates short-circuiting behavior of the ``||`` operator
+// while also checking negative values.
+#define CHECK_RES(obj, check) { \
+    int result = check(obj); \
+    if (result < 0) { \
+        goto fail; \
+    } \
+    else if (result > 0) { \
+        return 1; \
+    } \
+}
+
+// Returns 1 on true, 0 on false, and -1 on error.
 static int
 is_unionable(PyObject *obj)
 {
@@ -291,13 +304,17 @@ is_unionable(PyObject *obj)
         return 1;
     }
     PyTypeObject *type = Py_TYPE(obj);
+    CHECK_RES(obj, is_typevar);
+    CHECK_RES(obj, is_new_type);
+    CHECK_RES(obj, is_special_form);
     return (
-        is_typevar(obj) ||
-        is_new_type(obj) ||
-        is_special_form(obj) ||
+        // The following checks never fail.
         PyType_Check(obj) ||
         PyObject_TypeCheck(obj, &Py_GenericAliasType) ||
         type == &_Py_UnionType);
+
+fail:
+    return -1;
 }
 
 PyObject *
