@@ -495,7 +495,8 @@ class AuthorizerTests(unittest.TestCase):
 
     def test_clear_authorizer(self):
         self.con.set_authorizer(None)
-        self.con.execute("select 'cleared'")
+        self.con.execute("select * from t2")
+        self.con.execute("select c2 from t1")
 
 
 class AuthorizerRaiseExceptionTests(AuthorizerTests):
