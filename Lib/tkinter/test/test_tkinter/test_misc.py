@@ -1,3 +1,4 @@
+import functools
 import unittest
 import tkinter
 import enum
@@ -100,12 +101,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
         # Call with a callable class
         count = 0
-        timer1 = root.after(
-            0,
-            type("callback", (),
-                 {"__call__": staticmethod(callback)})(),
-            42,
-            11)
+        timer1 = root.after(0, functools.partial(callback, 42, 11))
         root.update()  # Process all pending events.
         self.assertEqual(count, 53)
 
