@@ -96,6 +96,13 @@ ast
 
   (Contributed by Bénédikt Tran in :gh:`121141`.)
 
+fractions
+---------
+
+* Add alternative :class:`~fractions.Fraction` constructor
+  :meth:`Fraction.from_number() <fractions.Fraction.from_number>`.
+  (Contributed by Serhiy Storchaka in :gh:`121797`.)
+
 os
 --
 

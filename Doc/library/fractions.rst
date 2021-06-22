@@ -157,6 +157,15 @@ another rational number, or from a string.
          instance.
 
 
+   .. classmethod:: from_number(number)
+
+      Alternative constructor which only accepts a numeric argument
+      (instances of :class:`numbers.Integral`, :class:`numbers.Rational`,
+      :class:`float` or :class:`decimal.Decimal`), but not strings.
+
+      .. versionadded:: 3.14
+
+
    .. method:: limit_denominator(max_denominator=1000000)
 
       Finds and returns the closest :class:`Fraction` to ``self`` that has

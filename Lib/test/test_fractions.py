@@ -559,6 +559,29 @@ class FractionTest(unittest.TestCase):
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
 
+    def testFromNumber(self, cls=F):
+        def check(arg, numerator, denominator):
+            f = cls.from_number(arg)
+            self.assertIs(type(f), cls)
+            self.assertEqual(f.numerator, numerator)
+            self.assertEqual(f.denominator, denominator)
+
+        check(10, 10, 1)
+        check(2.5, 5, 2)
+        check(Decimal('2.5'), 5, 2)
+        check(F(22, 7), 22, 7)
+        check(DummyFraction(22, 7), 22, 7)
+        check(Rat(22, 7), 22, 7)
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '5/2')
+        self.assertRaises(TypeError, cls.from_number, [])
+        self.assertRaises(OverflowError, cls.from_number, float('inf'))
+        self.assertRaises(OverflowError, cls.from_number, Decimal('inf'))
+
+    def testFromNumber_subclass(self):
+        self.testFromNumber(DummyFraction)
+
+
     def test_is_integer(self):
         self.assertTrue(F(1, 1).is_integer())
         self.assertTrue(F(-1, 1).is_integer())
