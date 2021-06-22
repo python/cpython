@@ -2282,7 +2282,18 @@ class ClassVarTests(BaseTestCase):
         class BadModule:
             pass
         BadModule.__module__ = 'bad' # Something not in sys.modules
+        self.assertNotIn('bad', sys.modules)
         self.assertEqual(get_type_hints(BadModule), {})
+
+    def test_annotated_bad_module(self):
+        # See https://bugs.python.org/issue44468
+        class BadBase:
+            foo: tuple
+        class BadType(BadBase):
+            bar: list
+        BadType.__module__ = BadBase.__module__ = 'bad'
+        self.assertNotIn('bad', sys.modules)
+        self.assertEqual(get_type_hints(BadType), {'foo': tuple, 'bar': list})
 
 class FinalTests(BaseTestCase):
 
