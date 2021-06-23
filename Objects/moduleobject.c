@@ -46,8 +46,7 @@ _PyModule_IsExtension(PyObject *obj)
 PyObject*
 PyModuleDef_Init(struct PyModuleDef* def)
 {
-    if (PyType_Ready(&PyModuleDef_Type) < 0)
-         return NULL;
+    assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
         max_module_number++;
         Py_SET_REFCNT(def, 1);
