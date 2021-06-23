@@ -1798,11 +1798,11 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    (i.e. all that are not cased) and lowercase characters only follow cased [4]_ ones.
    Return ``False`` otherwise.
-   
+
    Also see :meth:`title`.
-   
+
    .. note::
-   
+
       This method is different from the standard publishing definition
       of a title cased text fragment in which minor words would not be capitalized [6]_.
 
@@ -2158,7 +2158,7 @@ expression support in the :mod:`re` module).
         "They're Bill's Friends."
 
    .. note::
-   
+
       This method is different from the standard publishing definition
       of a title cased text fragment in which minor words would not be capitalized [6]_.
 
@@ -3249,7 +3249,7 @@ place, and instead produce new objects.
       False
 
    .. note::
-   
+
       This method is different from the standard publishing definition
       of a title cased text fragment in which minor words would not be capitalized [6]_.
 
@@ -3389,11 +3389,11 @@ place, and instead produce new objects.
 
       The bytearray version of this method does *not* operate in place - it
       always produces a new object, even if no changes were made.
-   
+
    .. note::
-   
+
       This method is different from the standard publishing definition
-      of a title cased text fragment in which minor words would not be capitalized [6]_. 
+      of a title cased text fragment in which minor words would not be capitalized [6]_.
 
 
 .. method:: bytes.upper()
@@ -5394,5 +5394,5 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
-   
+
 .. [6] https://en.wikipedia.org/wiki/Title_case
