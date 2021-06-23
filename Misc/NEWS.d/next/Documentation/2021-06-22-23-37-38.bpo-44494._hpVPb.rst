@@ -1,0 +1,1 @@
+Rewrite and significant expansion of ``Doc/library/__main__.rst``.
