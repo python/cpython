@@ -86,6 +86,13 @@ __all__ = [
     "SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy",
 ]
 
+warn(
+    'smtpd is deprecated and unmaintained.  Please see aiosmtpd '
+    '(http://aiosmtpd.readthedocs.io/) for the recommended replacement.',
+    DeprecationWarning,
+    stacklevel=2)
+
+
 program = sys.argv[0]
 __version__ = 'Python SMTP proxy version 0.3'
 
