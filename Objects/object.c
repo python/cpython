@@ -1018,9 +1018,6 @@ PyObject_HasAttr(PyObject *v, PyObject *name)
 int
 PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 {
-    PyTypeObject *tp = Py_TYPE(v);
-    int err;
-
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
@@ -1030,37 +1027,45 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     Py_INCREF(name);
 
     PyUnicode_InternInPlace(&name);
+
+    PyTypeObject *tp = Py_TYPE(v);
+    // PyType_Ready() must be called on static types to initialize tp_setattro
+    _PyObject_ASSERT((PyObject *)tp, tp->tp_flags & Py_TPFLAGS_READY);
+
     if (tp->tp_setattro != NULL) {
-        err = (*tp->tp_setattro)(v, name, value);
+        int err = (*tp->tp_setattro)(v, name, value);
         Py_DECREF(name);
         return err;
     }
+
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL) {
             Py_DECREF(name);
             return -1;
         }
-        err = (*tp->tp_setattr)(v, (char *)name_str, value);
+        int err = (*tp->tp_setattr)(v, (char *)name_str, value);
         Py_DECREF(name);
         return err;
     }
-    Py_DECREF(name);
-    _PyObject_ASSERT(name, Py_REFCNT(name) >= 1);
-    if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
+
+    if (tp->tp_getattr == NULL && tp->tp_getattro == NULL) {
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' object has no attributes "
                      "(%s .%U)",
                      tp->tp_name,
                      value==NULL ? "del" : "assign to",
                      name);
-    else
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' object has only read-only attributes "
                      "(%s .%U)",
                      tp->tp_name,
                      value==NULL ? "del" : "assign to",
                      name);
+    }
+    Py_DECREF(name);
     return -1;
 }
 
