@@ -730,9 +730,12 @@ Function to initialize Python:
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
 
-If ``PyImport_FrozenModules``, ``PyImport_AppendInittab()`` or
-``PyImport_ExtendInittab()`` are used, they must be set or called after Python
-preinitialization and before the Python initialization.
+If :c:func:`PyImport_FrozenModules`, :c:func:`PyImport_AppendInittab` or
+:c:func:`PyImport_ExtendInittab` are used, they must be set or called after
+Python preinitialization and before the Python initialization. If Python is
+initialized multiple times, :c:func:`PyImport_AppendInittab` or
+:c:func:`PyImport_ExtendInittab` must be called before each Python
+initialization.
 
 Example setting the program name::
 
