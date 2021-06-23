@@ -1,3 +1,10 @@
+
+### DEPRECATED - use asyncio instead
+
+### This module was removed from the stdlib in 3.11 and is kept in
+### test.support while there are still test that use it. Do not use
+### it in new tests.
+
 # -*- Mode: Python -*-
 #   Id: asyncore.py,v 2.51 2000/09/07 22:29:26 rushing Exp
 #   Author: Sam Rushing <rushing@nightmare.com>
