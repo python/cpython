@@ -372,13 +372,6 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
     init_code(co, con);
 
-    /* Check for any inner or outer closure references */
-    if (!co->co_ncellvars && !co->co_nfreevars) {
-        co->co_flags |= CO_NOFREE;
-    } else {
-        co->co_flags &= ~CO_NOFREE;
-    }
-
     return co;
 }
 
