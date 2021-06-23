@@ -628,7 +628,6 @@ Modules/signalmodule.c	-	signal_methods	-
 Modules/socketmodule.c	-	sock_methods	-
 Modules/socketmodule.c	-	socket_methods	-
 Modules/spwdmodule.c	-	spwd_methods	-
-Modules/_sqlite/cache.c	-	cache_methods	-
 Modules/_sqlite/connection.c	-	connection_methods	-
 Modules/_sqlite/cursor.c	-	cursor_methods	-
 Modules/_sqlite/module.c	-	module_methods	-
@@ -1098,8 +1097,6 @@ Modules/_sha3/sha3module.c	-	SHAKE256slots	-
 Modules/_sha3/sha3module.c	-	type_slots_obj	-
 Modules/sha512module.c	-	sha512_sha384_type_slots	-
 Modules/sha512module.c	-	sha512_sha512_type_slots	-
-Modules/_sqlite/cache.c	-	pysqlite_NodeType_slots	-
-Modules/_sqlite/cache.c	-	pysqlite_CacheType_slots	-
 Modules/_sqlite/connection.c	-	connection_slots	-
 Modules/_sqlite/cursor.c	-	cursor_slots	-
 Modules/_sqlite/prepare_protocol.c	-	type_slots	-
@@ -1148,8 +1145,6 @@ Modules/_sha3/sha3module.c	-	sha3_512_spec	-
 Modules/_sha3/sha3module.c	-	SHAKE128_spec	-
 Modules/_sha3/sha3module.c	-	SHAKE256_spec	-
 Modules/_sha3/sha3module.c	-	type_spec_obj	-
-Modules/_sqlite/cache.c	-	pysqlite_NodeType_spec	-
-Modules/_sqlite/cache.c	-	pysqlite_CacheType_spec	-
 Modules/_sqlite/connection.c	-	connection_spec	-
 Modules/_sqlite/cursor.c	-	cursor_spec	-
 Modules/_sqlite/prepare_protocol.c	-	type_spec	-
