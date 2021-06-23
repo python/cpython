@@ -208,6 +208,24 @@ class ConnectionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
 
+    def test_connection_exceptions(self):
+        exceptions = [
+            "DataError",
+            "DatabaseError",
+            "Error",
+            "IntegrityError",
+            "InterfaceError",
+            "NotSupportedError",
+            "OperationalError",
+            "ProgrammingError",
+            "Warning",
+        ]
+        for exc in exceptions:
+            with self.subTest(exc=exc):
+                self.assertTrue(hasattr(self.cx, exc))
+                self.assertIs(getattr(sqlite, exc), getattr(self.cx, exc))
+
+
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
