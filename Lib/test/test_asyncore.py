@@ -1,4 +1,3 @@
-import asyncore
 import unittest
 import select
 import os
@@ -10,6 +9,7 @@ import struct
 import threading
 
 from test import support
+from test.support import asyncore
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
@@ -253,7 +253,8 @@ class DispatcherTests(unittest.TestCase):
 
     def test_repr(self):
         d = asyncore.dispatcher()
-        self.assertEqual(repr(d), '<asyncore.dispatcher at %#x>' % id(d))
+        self.assertEqual(repr(d),
+                         '<test.support.asyncore.dispatcher at %#x>' % id(d))
 
     def test_log(self):
         d = asyncore.dispatcher()

@@ -2,8 +2,6 @@
 # does add tests for a few functions which have been determined to be more
 # portable than they had been thought to be.
 
-import asynchat
-import asyncore
 import codecs
 import contextlib
 import decimal
@@ -32,6 +30,8 @@ import unittest
 import uuid
 import warnings
 from test import support
+from test.support import asynchat
+from test.support import asyncore
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper

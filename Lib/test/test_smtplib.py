@@ -1,4 +1,3 @@
-import asyncore
 import base64
 import email.mime.text
 from email.message import EmailMessage
@@ -7,7 +6,6 @@ import email.utils
 import hashlib
 import hmac
 import socket
-import smtpd
 import smtplib
 import io
 import re
@@ -20,7 +18,9 @@ import threading
 
 import unittest
 from test import support, mock_socket
+from test.support import asyncore
 from test.support import hashlib_helper
+from test.support import smtpd
 from test.support import socket_helper
 from test.support import threading_helper
 from unittest.mock import Mock

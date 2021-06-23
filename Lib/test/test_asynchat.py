@@ -1,11 +1,11 @@
 # test asynchat
 
 from test import support
+from test.support import asynchat
+from test.support import asyncore
 from test.support import socket_helper
 from test.support import threading_helper
 
-import asynchat
-import asyncore
 import errno
 import socket
 import sys

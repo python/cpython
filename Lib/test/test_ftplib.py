@@ -4,8 +4,6 @@
 # environment
 
 import ftplib
-import asyncore
-import asynchat
 import socket
 import io
 import errno
@@ -19,6 +17,8 @@ except ImportError:
 
 from unittest import TestCase, skipUnless
 from test import support
+from test.support import asyncore
+from test.support import asynchat
 from test.support import threading_helper
 from test.support import socket_helper
 from test.support import warnings_helper

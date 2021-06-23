@@ -1,12 +1,12 @@
 import unittest
 import textwrap
 from test import support, mock_socket
+from test.support import asyncore
+from test.support import smtpd
 from test.support import socket_helper
 from test.support import warnings_helper
 import socket
 import io
-import smtpd
-import asyncore
 
 
 class DummyServer(smtpd.SMTPServer):

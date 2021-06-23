@@ -52,7 +52,7 @@ command will be accumulated (using your own 'collect_incoming_data'
 method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
-import asyncore
+from . import asyncore
 from collections import deque
 
 

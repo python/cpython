@@ -1,3 +1,11 @@
+
+### DEPRECATED - use asyncio instead
+
+### This module was removed from the stdlib in 3.11 and is kept in
+### test.support while there are still test that use it. Do not use
+### it in new tests.
+
+
 #! /usr/bin/env python3
 """An RFC 5321 smtp proxy with optional RFC 1870 and RFC 6531 extensions.
 
@@ -76,9 +84,10 @@ import errno
 import getopt
 import time
 import socket
-import asyncore
-import asynchat
 import collections
+
+from . import asyncore
+from . import asynchat
 from warnings import warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
 

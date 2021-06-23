@@ -4,8 +4,6 @@
 # a real test suite
 
 import poplib
-import asyncore
-import asynchat
 import socket
 import os
 import errno
@@ -13,6 +11,8 @@ import threading
 
 from unittest import TestCase, skipUnless
 from test import support as test_support
+from test.support import asyncore
+from test.support import asynchat
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
