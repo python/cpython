@@ -10,6 +10,7 @@ typedef struct _py_frame {
     PyObject *locals;
     PyCodeObject *code;
     PyFrameObject *frame_obj;
+    struct _py_frame *previous;
     int lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
     PyObject *stack[1];
@@ -30,7 +31,24 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
     frame->lasti = -1;
 }
 
+static inline void
+_PyFrame_ClearSpecials(_PyFrame *frame)
+{
+    Py_XDECREF(frame->locals);
+    Py_DECREF(frame->globals);
+    Py_DECREF(frame->builtins);
+    Py_DECREF(frame->code);
+}
 
+static inline PyObject**
+_PyFrame_GetLocalsArray(_PyFrame *frame)
+{
+    return ((PyObject **)frame) - frame->code->co_nlocalsplus;
+}
+
+/* Returns a borrowed reference */
+PyFrameObject *
+_PyFrame_GetFrameObject(_PyFrame *frame);
 
 #ifdef __cplusplus
 }

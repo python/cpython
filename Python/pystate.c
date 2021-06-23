@@ -636,6 +636,7 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->interp = interp;
 
     tstate->pyframe = NULL;
+    tstate->frame = NULL;
     tstate->recursion_depth = 0;
     tstate->recursion_headroom = 0;
     tstate->stackcheck_counter = 0;

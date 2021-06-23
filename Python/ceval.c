@@ -1407,8 +1407,6 @@ PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    f->f_frame->frame_obj = f;
-    Py_INCREF(f);
 
 #if USE_COMPUTED_GOTOS
 /* Import the static jump table */
@@ -4407,10 +4405,15 @@ exit_eval_frame:
         dtrace_function_return(f);
     _Py_LeaveRecursiveCall(tstate);
     tstate->pyframe = f->f_back;
-    frame->frame_obj = NULL;
-    Py_DECREF(f);
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
+
+
+//PyObject* _Py_HOT_FUNCTION
+//_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+//{
+//    return _PyEval_EvalNoFrame(tstate, f->f_frame, throwflag);
+//}
 
 static void
 format_missing(PyThreadState *tstate, const char *kind,
@@ -4990,62 +4993,97 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
     return gen;
 }
 
+static _PyFrame *
+_PyEvalFramePushAndInit(PyThreadState *tstate, PyFrameConstructor *con,
+                        PyObject *locals, PyObject* const* args,
+                        size_t argcount, PyObject *kwnames)
+{
+    PyCodeObject *code = (PyCodeObject *)con->fc_code;
+    int size = code->co_nlocalsplus + code->co_stacksize +
+        FRAME_SPECIALS_SIZE;
+    PyObject **localsarray = _PyThreadState_PushLocals(tstate, size);
+    if (localsarray == NULL) {
+        return NULL;
+    }
+    _PyFrame * frame = (_PyFrame *)(localsarray + code->co_nlocalsplus);
+    _PyFrame_InitializeSpecials(frame, con, locals);
+    if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
+        _PyFrame_ClearSpecials(frame);
+        for (int i = 0; i < code->co_nlocalsplus; i++) {
+            Py_XDECREF(localsarray[i]);
+        }
+        return NULL;
+    }
+    frame->previous = tstate->frame;
+    tstate->frame = frame;
+    return frame;
+}
+
+static int
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
+{
+    ++tstate->recursion_depth;
+    int err = 0;
+    PyCodeObject *code = frame->code;
+    PyObject **localsarray = ((PyObject **)frame)-code->co_nlocalsplus;
+    if (frame->frame_obj) {
+        PyFrameObject *f = frame->frame_obj;
+        frame->frame_obj = NULL;
+        if (Py_REFCNT(f) > 1) {
+            Py_DECREF(f);
+            _PyObject_GC_TRACK(f);
+            if (_PyFrame_TakeLocals(f)) {
+                err = -1;
+            }
+            goto exit;
+        }
+        Py_DECREF(f);
+    }
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        Py_XDECREF(localsarray[i]);
+    }
+    _PyFrame_ClearSpecials(frame);
+exit:
+    --tstate->recursion_depth;
+    tstate->frame = frame->previous;
+    _PyThreadState_PopLocals(tstate, localsarray);
+    return err;
+}
+
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFrameConstructor *con,
                PyObject *locals,
                PyObject* const* args, size_t argcount,
                PyObject *kwnames)
 {
-    PyObject **localsarray;
     PyCodeObject *code = (PyCodeObject *)con->fc_code;
     int is_coro = code->co_flags &
         (CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR);
     if (is_coro) {
         return make_coro(tstate, con, locals, args, argcount, kwnames);
     }
-    int size = code->co_nlocalsplus + code->co_stacksize +
-        FRAME_SPECIALS_SIZE;
-    localsarray = _PyThreadState_PushLocals(tstate, size);
-    if (localsarray == NULL) {
+    _PyFrame * frame = _PyEvalFramePushAndInit(
+        tstate, con, locals, args, argcount, kwnames);
+    if (frame == NULL) {
         return NULL;
     }
-    PyFrameObject *f = _PyEval_MakeFrameVector(
-        tstate, con, locals, args, argcount, kwnames, localsarray);
-    if (f == NULL) {
-        _PyThreadState_PopLocals(tstate, localsarray);
-        return NULL;
-    }
-    PyObject *retval = _PyEval_EvalFrame(tstate, f, 0);
-    assert(f->f_frame->stackdepth == 0);
-
-    /* decref'ing the frame can cause __del__ methods to get invoked,
-       which can call back into Python.  While we're done with the
-       current Python frame (f), the associated C stack is still in use,
-       so recursion_depth must be boosted for the duration.
-    */
-    assert(f->f_own_locals_memory == 0);
-    if (Py_REFCNT(f) > 1) {
-        Py_DECREF(f);
-        _PyObject_GC_TRACK(f);
-        if (_PyFrame_TakeLocals(f)) {
-            Py_CLEAR(retval);
+    PyObject *retval;
+    assert (tstate->interp->eval_frame != NULL); // {
+        /* Create the frame */
+        PyFrameObject *f = _PyFrame_New_NoTrack(tstate, frame, 0);
+        if (f == NULL) {
+            frame->frame_obj = NULL;
+            retval = NULL;
         }
-    }
-    else {
-        ++tstate->recursion_depth;
-        f->f_localsptr = NULL;
-        for (int i = 0; i < code->co_nlocalsplus; i++) {
-            Py_XDECREF(localsarray[i]);
+        else {
+            frame->frame_obj = f;
+            retval = _PyEval_EvalFrame(tstate, f, 0);
+            assert(frame->stackdepth == 0);
         }
-        _PyFrame *frame = f->f_frame;
-        Py_XDECREF(frame->locals);
-        Py_DECREF(frame->globals);
-        Py_DECREF(frame->builtins);
-        Py_DECREF(frame->code);
-        Py_DECREF(f);
-        --tstate->recursion_depth;
+    // }
+    if (_PyEvalFrameClearAndPop(tstate, frame)) {
+        Py_CLEAR(retval);
     }
-    _PyThreadState_PopLocals(tstate, localsarray);
     return retval;
 }
 

@@ -612,8 +612,8 @@ frame_dealloc(PyFrameObject *f)
     Py_TRASHCAN_SAFE_BEGIN(f)
     PyCodeObject *co = NULL;
 
-    /* Kill all local variables including specials. */
-    if (f->f_localsptr) {
+    /* Kill all local variables including specials, if we own them */
+    if (f->f_own_locals_memory) {
         /* Don't clear code object until the end */
         co = f->f_frame->code;
         Py_CLEAR(f->f_frame->globals);
@@ -626,11 +626,8 @@ frame_dealloc(PyFrameObject *f)
         for (int i = 0; i < f->f_frame->stackdepth; i++) {
             Py_XDECREF(f->f_frame->stack[i]);
         }
-        if (f->f_own_locals_memory) {
-            PyMem_Free(f->f_localsptr);
-            f->f_own_locals_memory = 0;
-        }
-        f->f_localsptr = NULL;
+        PyMem_Free(f->f_localsptr);
+        f->f_own_locals_memory = 0;
     }
     f->f_frame->stackdepth = 0;
     Py_XDECREF(f->f_back);
