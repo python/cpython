@@ -909,12 +909,19 @@ set_attribute_error_context(PyObject* v, PyObject* name)
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
-    PyTypeObject *tp = Py_TYPE(v);
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
                      Py_TYPE(name)->tp_name);
         return NULL;
+    }
+
+    // PyType_Ready() must be called on static types to initialize tp_getattro
+    PyTypeObject *tp = Py_TYPE(v);
+    if (!_PyType_IsReady(tp)) {
+        if (PyType_Ready(tp) < 0) {
+            return NULL;
+        }
     }
 
     PyObject* result = NULL;
@@ -951,6 +958,13 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
                      Py_TYPE(name)->tp_name);
         *result = NULL;
         return -1;
+    }
+
+    // PyType_Ready() must be called on static types to initialize tp_getattro
+    if (!_PyType_IsReady(tp)) {
+        if (PyType_Ready(tp) < 0) {
+            return 1;
+        }
     }
 
     if (tp->tp_getattro == PyObject_GenericGetAttr) {
