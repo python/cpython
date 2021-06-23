@@ -2365,13 +2365,6 @@ Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited.c	-	Xxo_Type	-
 Modules/_decimal/_decimal.c	-	DecimalTuple	-
 Modules/_decimal/_decimal.c	-	PyDecSignalDict_Type	-
-Modules/_sqlite/connection.c	-	pysqlite_ConnectionType	-
-Modules/_sqlite/statement.c	-	pysqlite_StatementType	-
-Modules/_sqlite/cache.c	-	pysqlite_NodeType	-
-Modules/_sqlite/cache.c	-	pysqlite_CacheType	-
-Modules/_sqlite/row.c	-	pysqlite_RowType	-
-Modules/_sqlite/prepare_protocol.c	-	pysqlite_PrepareProtocolType	-
-Modules/_sqlite/cursor.c	-	pysqlite_CursorType	-
 
 # exception types  []
 Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
