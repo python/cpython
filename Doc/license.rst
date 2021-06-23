@@ -386,7 +386,8 @@ Project, http://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`asynchat` and :mod:`asyncore` modules contain the following notice::
+The :mod:`test.support.asynchat` and :mod:`test.support.asyncore` modules
+contain the following notice::
 
    Copyright 1996 by Sam Rushing
 
