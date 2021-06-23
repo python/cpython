@@ -255,6 +255,9 @@ _PyImport_Fini2(void)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    // Reset PyImport_Inittab
+    PyImport_Inittab = _PyImport_Inittab;
+
     /* Free memory allocated by PyImport_ExtendInittab() */
     PyMem_RawFree(inittab_copy);
     inittab_copy = NULL;

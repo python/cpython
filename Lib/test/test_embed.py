@@ -30,6 +30,7 @@ API_PYTHON = 2
 # _PyCoreConfig_InitIsolatedConfig()
 API_ISOLATED = 3
 
+INIT_LOOPS = 16
 MAX_HASH_SEED = 4294967295
 
 
@@ -111,13 +112,13 @@ class EmbeddingTestsMixin:
         self.assertEqual(err, "")
 
         # The output from _testembed looks like this:
-        # --- Pass 0 ---
+        # --- Pass 1 ---
         # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
         # interp 1 <0x1d4f690>, thread state <0x1d35350>: id(modules) = 139650431165784
         # interp 2 <0x1d5a690>, thread state <0x1d99ed0>: id(modules) = 139650413140368
         # interp 3 <0x1d4f690>, thread state <0x1dc3340>: id(modules) = 139650412862200
         # interp 0 <0x1cf9330>, thread state <0x1cf9700>: id(modules) = 139650431942728
-        # --- Pass 1 ---
+        # --- Pass 2 ---
         # ...
 
         interp_pat = (r"^interp (\d+) <(0x[\dA-F]+)>, "
@@ -125,7 +126,7 @@ class EmbeddingTestsMixin:
                       r"id\(modules\) = ([\d]+)$")
         Interp = namedtuple("Interp", "id interp tstate modules")
 
-        numloops = 0
+        numloops = 1
         current_run = []
         for line in out.splitlines():
             if line == "--- Pass {} ---".format(numloops):
@@ -159,6 +160,8 @@ class EmbeddingTestsMixin:
 
 
 class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
+    maxDiff = 100 * 50
+
     def test_subinterps_main(self):
         for run in self.run_repeated_init_and_subinterpreters():
             main = run[0]
@@ -193,6 +196,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.assertNotEqual(sub.interp, main.interp)
                 self.assertNotEqual(sub.tstate, main.tstate)
                 self.assertNotEqual(sub.modules, main.modules)
+
+    def test_repeated_init_and_inittab(self):
+        out, err = self.run_embedded_interpreter("test_repeated_init_and_inittab")
+        self.assertEqual(err, "")
+
+        lines = [f"--- Pass {i} ---" for i in range(1, INIT_LOOPS+1)]
+        lines = "\n".join(lines) + "\n"
+        self.assertEqual(out, lines)
 
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
