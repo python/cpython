@@ -81,7 +81,7 @@ static int import_all_from(PyThreadState *, PyObject *, PyObject *);
 static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyThreadState *, PyObject *, PyObject *,
-                                      PyFrameObject *, const _Py_CODEUNIT *);
+                                      _PyFrame *, const _Py_CODEUNIT *);
 static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
@@ -1888,7 +1888,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                speedup on microbenchmarks. */
             if (PyUnicode_CheckExact(left) &&
                      PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, f, next_instr);
+                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
                 /* unicode_concatenate consumed the ref to left */
             }
             else {
@@ -2087,7 +2087,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             PyObject *left = TOP();
             PyObject *sum;
             if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
-                sum = unicode_concatenate(tstate, left, right, f, next_instr);
+                sum = unicode_concatenate(tstate, left, right, frame, next_instr);
                 /* unicode_concatenate consumed the ref to left */
             }
             else {
@@ -6322,7 +6322,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevop
 
 static PyObject *
 unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
-                    PyFrameObject *f, const _Py_CODEUNIT *next_instr)
+                    _PyFrame *frame, const _Py_CODEUNIT *next_instr)
 {
     PyObject *res;
     if (Py_REFCNT(v) == 2) {
@@ -6337,14 +6337,14 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         switch (opcode) {
         case STORE_FAST:
         {
-            PyObject **localsplus = f->f_localsptr;
+            PyObject **localsplus = _PyFrame_GetLocalsArray(frame);
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
             break;
         }
         case STORE_DEREF:
         {
-            PyObject *c = f->f_localsptr[oparg];
+            PyObject *c = _PyFrame_GetLocalsArray(frame)[oparg];
             if (PyCell_GET(c) ==  v) {
                 PyCell_SET(c, NULL);
                 Py_DECREF(v);
@@ -6353,9 +6353,9 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         }
         case STORE_NAME:
         {
-            PyObject *names = f->f_frame->code->co_names;
+            PyObject *names = frame->code->co_names;
             PyObject *name = GETITEM(names, oparg);
-            PyObject *locals = f->f_frame->locals;
+            PyObject *locals = frame->locals;
             if (locals && PyDict_CheckExact(locals)) {
                 PyObject *w = PyDict_GetItemWithError(locals, name);
                 if ((w == v && PyDict_DelItem(locals, name) != 0) ||
