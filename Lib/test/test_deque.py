@@ -129,7 +129,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(d.count(None), 16)
 
     def test_comparisons(self):
-        d = deque('xabc'); d.popleft()
+        d = deque('xabc')
+        d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:
             self.assertEqual(d==e, type(d)==type(e) and list(d)==list(e))
             self.assertEqual(d!=e, not(type(d)==type(e) and list(d)==list(e)))
@@ -529,8 +530,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(repr(d)[-20:], '7, 198, 199, [...]])')
 
     def test_init(self):
-        self.assertRaises(TypeError, deque, 'abc', 2, 3);
-        self.assertRaises(TypeError, deque, 1);
+        self.assertRaises(TypeError, deque, 'abc', 2, 3)
+        self.assertRaises(TypeError, deque, 1)
 
     def test_hash(self):
         self.assertRaises(TypeError, hash, deque('abc'))
