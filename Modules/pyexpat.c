@@ -1504,7 +1504,7 @@ static PyType_Spec _xml_parse_type_spec = {
     .name = "pyexpat.xmlparser",
     .basicsize = sizeof(xmlparseobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION),
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = _xml_parse_type_spec_slots,
 };
 

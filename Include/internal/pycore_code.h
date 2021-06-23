@@ -180,38 +180,33 @@ extern Py_ssize_t _Py_QuickenedCount;
  * "free" kind is mutually exclusive with both.
  */
 
-// For now _PyLocalsPlusKind and _PyLocalsPlusKinds are defined
-// in Include/cpython/code.h.
-/* Note that these all fit within _PyLocalsPlusKind, as do combinations. */
+// Note that these all fit within a byte, as do combinations.
 // Later, we will use the smaller numbers to differentiate the different
 // kinds of locals (e.g. pos-only arg, varkwargs, local-only).
 #define CO_FAST_LOCAL   0x20
 #define CO_FAST_CELL    0x40
 #define CO_FAST_FREE    0x80
 
-static inline int
-_PyCode_InitLocalsPlusKinds(int num, _PyLocalsPlusKinds *pkinds)
+typedef unsigned char _PyLocals_Kind;
+
+static inline _PyLocals_Kind
+_PyLocals_GetKind(PyObject *kinds, int i)
 {
-    if (num == 0) {
-        *pkinds = NULL;
-        return 0;
-    }
-    _PyLocalsPlusKinds kinds = PyMem_NEW(_PyLocalsPlusKind, num);
-    if (kinds == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    *pkinds = kinds;
-    return 0;
+    assert(PyBytes_Check(kinds));
+    assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
+    char *ptr = PyBytes_AS_STRING(kinds);
+    return (_PyLocals_Kind)(ptr[i]);
 }
 
 static inline void
-_PyCode_ClearLocalsPlusKinds(_PyLocalsPlusKinds kinds)
+_PyLocals_SetKind(PyObject *kinds, int i, _PyLocals_Kind kind)
 {
-    if (kinds != NULL) {
-        PyMem_Free(kinds);
-    }
+    assert(PyBytes_Check(kinds));
+    assert(0 <= i && i < PyBytes_GET_SIZE(kinds));
+    char *ptr = PyBytes_AS_STRING(kinds);
+    ptr[i] = (char) kind;
 }
+
 
 struct _PyCodeConstructor {
     /* metadata */
@@ -229,8 +224,8 @@ struct _PyCodeConstructor {
     PyObject *names;
 
     /* mapping frame offsets to information */
-    PyObject *localsplusnames;
-    _PyLocalsPlusKinds localspluskinds;
+    PyObject *localsplusnames;  // Tuple of strings
+    PyObject *localspluskinds;  // Bytes object, one byte per variable
 
     /* args (within varnames) */
     int argcount;
@@ -336,6 +331,7 @@ typedef struct _stats {
     uint64_t deferred;
     uint64_t miss;
     uint64_t deopt;
+    uint64_t unquickened;
 #if SPECIALIZATION_STATS_DETAILED
     PyObject *miss_types;
 #endif

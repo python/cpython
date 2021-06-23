@@ -26,9 +26,6 @@ typedef uint16_t _Py_CODEUNIT;
 typedef struct _PyOpcache _PyOpcache;
 
 
-typedef unsigned char _PyLocalsPlusKind;
-typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
-
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
@@ -75,7 +72,7 @@ struct PyCodeObject {
     int co_firstlineno;         /* first source line number */
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
-    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
+    PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -83,11 +80,11 @@ struct PyCodeObject {
 
     /* These fields are set with computed values on new code objects. */
 
-    int *co_cell2arg;           /* Maps cell vars which are arguments. */
     // redundant values (derived from co_localsplusnames and co_localspluskinds)
     int co_nlocalsplus;         /* number of local + cell + free variables */
     int co_nlocals;             /* number of local variables */
-    int co_ncellvars;           /* number of cell variables */
+    int co_nplaincellvars;      /* number of non-arg cell variables */
+    int co_ncellvars;           /* total number of cell variables */
     int co_nfreevars;           /* number of free variables */
     // lazily-computed values
     PyObject *co_varnames;      /* tuple of strings (local variable names) */
@@ -141,10 +138,6 @@ struct PyCodeObject {
 #define CO_FUTURE_BARRY_AS_BDFL  0x400000
 #define CO_FUTURE_GENERATOR_STOP  0x800000
 #define CO_FUTURE_ANNOTATIONS    0x1000000
-
-/* This value is found in the co_cell2arg array when the associated cell
-   variable does not correspond to an argument. */
-#define CO_CELL_NOT_AN_ARG (-1)
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
@@ -225,5 +218,4 @@ void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-
 

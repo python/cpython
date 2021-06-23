@@ -491,7 +491,8 @@ static PyType_Spec partial_type_spec = {
     .name = "functools.partial",
     .basicsize = sizeof(partialobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-             Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
+             Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL |
+             Py_TPFLAGS_IMMUTABLETYPE,
     .slots = partial_type_slots
 };
 
@@ -559,7 +560,7 @@ static PyType_Spec keyobject_type_spec = {
     .name = "functools.KeyWrapper",
     .basicsize = sizeof(keyobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-              Py_TPFLAGS_HAVE_GC),
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = keyobject_type_slots
 };
 
@@ -781,7 +782,8 @@ static PyType_Slot lru_list_elem_type_slots[] = {
 static PyType_Spec lru_list_elem_type_spec = {
     .name = "functools._lru_list_elem",
     .basicsize = sizeof(lru_list_elem),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+             Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_list_elem_type_slots
 };
 
@@ -1417,7 +1419,7 @@ static PyType_Spec lru_cache_type_spec = {
     .name = "functools._lru_cache_wrapper",
     .basicsize = sizeof(lru_cache_object),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-             Py_TPFLAGS_METHOD_DESCRIPTOR,
+             Py_TPFLAGS_METHOD_DESCRIPTOR | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = lru_cache_type_slots
 };
 
