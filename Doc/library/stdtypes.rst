@@ -1796,7 +1796,7 @@ expression support in the :mod:`re` module).
 
    Return ``True`` if the string is a titlecased string and there is at least one
    character, for example uppercase characters may only follow uncased characters
-   (i.e. all that are not cased) and lowercase characters only cased [4]_ ones.
+   (i.e. all that are not cased) and lowercase characters only follow cased [4]_ ones.
    Return ``False`` otherwise.
    
    Also see :meth:`title`.
