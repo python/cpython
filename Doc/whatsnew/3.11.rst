@@ -108,8 +108,14 @@ math
 
 Removed
 =======
-* :class:`smtpd.MailmanProxy` is now removed as it is unusable without
-  an external module, ``mailman``. (Contributed by Dong-hee Na in :issue:`35800`.)
+* :mod:`asynchat` and :mod:`asyncore` which were deprecated
+  since 3.6 are now removed. Use :mod:`asyncio` instead.
+
+* :mod:`smtpd` which is deprecated (and depends on :mod:`asynchat`)
+  is now removed. The `aiosmtpd <http://aiosmtpd.readthedocs.io/>`_
+  package is a recommended replacement. Alternatively, for legacy
+  projects you can copy :mod:`smtpd`, :mod:`asynchat` and
+  :mod:`asyncore` from the 3.10 branch and continue using them.
 
 
 Optimizations
