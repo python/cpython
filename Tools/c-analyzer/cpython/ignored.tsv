@@ -49,13 +49,6 @@ Modules/_io/_iomodule.h	-	_PyIO_str_write	-
 Modules/_io/_iomodule.h	-	_PyIO_empty_str	-
 Modules/_io/_iomodule.h	-	_PyIO_empty_bytes	-
 Modules/_multiprocessing/multiprocessing.h	-	_PyMp_SemLockType	-
-Modules/_sqlite/cache.h	-	pysqlite_NodeType	-
-Modules/_sqlite/cache.h	-	pysqlite_CacheType	-
-Modules/_sqlite/cursor.h	-	pysqlite_CursorType	-
-Modules/_sqlite/row.h	-	pysqlite_RowType	-
-Modules/_sqlite/prepare_protocol.h	-	pysqlite_PrepareProtocolType	-
-Modules/_sqlite/statement.h	-	pysqlite_StatementType	-
-Modules/_sqlite/connection.h	-	pysqlite_ConnectionType	-
 Modules/_sqlite/module.c	-	pysqlite_Error	-
 Modules/_sqlite/module.c	-	pysqlite_Warning	-
 Modules/_sqlite/module.c	-	pysqlite_InterfaceError	-
