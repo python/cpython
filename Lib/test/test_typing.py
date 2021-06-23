@@ -517,7 +517,7 @@ class LiteralTests(BaseTestCase):
 
     def test_illegal_parameters_do_not_raise_runtime_errors(self):
         # Type checkers should reject these types, but we do not
-        # raise errors at runtime to maintain maximium flexibility.
+        # raise errors at runtime to maintain maximum flexibility.
         Literal[int]
         Literal[3j + 2, ..., ()]
         Literal[{"foo": 3, "bar": 4}]
@@ -3998,6 +3998,7 @@ class IOTests(BaseTestCase):
 
     def test_io_submodule(self):
         with warnings.catch_warnings(record=True) as w:
+            warnings.filterwarnings("default", category=DeprecationWarning)
             from typing.io import IO, TextIO, BinaryIO, __all__, __name__
             self.assertIs(IO, typing.IO)
             self.assertIs(TextIO, typing.TextIO)
@@ -4052,6 +4053,7 @@ class RETests(BaseTestCase):
 
     def test_re_submodule(self):
         with warnings.catch_warnings(record=True) as w:
+            warnings.filterwarnings("default", category=DeprecationWarning)
             from typing.re import Match, Pattern, __all__, __name__
             self.assertIs(Match, typing.Match)
             self.assertIs(Pattern, typing.Pattern)

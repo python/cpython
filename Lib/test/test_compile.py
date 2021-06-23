@@ -895,6 +895,21 @@ if 1:
                               for (_, _, line) in func.__code__.co_lines() ]
                 self.assertEqual(lines, code_lines)
 
+    def test_line_number_genexp(self):
+
+        def return_genexp():
+            return (1
+                    for
+                    x
+                    in
+                    y)
+        genexp_lines = [None, 1, 3, 1]
+
+        genexp_code = return_genexp.__code__.co_consts[1]
+        code_lines = [None if line is None else line-return_genexp.__code__.co_firstlineno
+                      for (_, _, line) in genexp_code.co_lines() ]
+        self.assertEqual(genexp_lines, code_lines)
+
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
