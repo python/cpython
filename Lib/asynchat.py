@@ -48,6 +48,13 @@ you - by calling your self.found_terminator() method.
 import asyncore
 from collections import deque
 
+from warnings import warn
+warn(
+    'asynchat is deprecated.  The recommended replacement is asyncio',
+    DeprecationWarning,
+    stacklevel=2)
+
+
 
 class async_chat(asyncore.dispatcher):
     """This is an abstract class.  You must derive from this class, and add
