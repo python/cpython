@@ -42,13 +42,6 @@ module _sqlite3
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=81e330492d57488e]*/
 
 /* static objects at module-level */
-
-PyObject *pysqlite_OperationalError = NULL;
-PyObject *pysqlite_ProgrammingError = NULL;
-PyObject *pysqlite_IntegrityError = NULL;
-PyObject *pysqlite_DataError = NULL;
-PyObject *pysqlite_NotSupportedError = NULL;
-
 PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
@@ -137,7 +130,8 @@ pysqlite_enable_shared_cache_impl(PyObject *module, int do_enable)
     rc = sqlite3_enable_shared_cache(do_enable);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
+        pysqlite_state *state = pysqlite_get_state(module);
+        PyErr_SetString(state->OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -415,15 +409,14 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     /* DatabaseError subclasses */
     ADD_EXCEPTION(module, "InternalError", state->InternalError,
                   state->DatabaseError);
-    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError,
+    ADD_EXCEPTION(module, "OperationalError", state->OperationalError,
                   state->DatabaseError);
-    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError,
+    ADD_EXCEPTION(module, "ProgrammingError", state->ProgrammingError,
                   state->DatabaseError);
-    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError,
+    ADD_EXCEPTION(module, "IntegrityError", state->IntegrityError,
                   state->DatabaseError);
-    ADD_EXCEPTION(module, "DataError", pysqlite_DataError,
-                  state->DatabaseError);
-    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError,
+    ADD_EXCEPTION(module, "DataError", state->DataError, state->DatabaseError);
+    ADD_EXCEPTION(module, "NotSupportedError", state->NotSupportedError,
                   state->DatabaseError);
 
     /* Set integer constants */
