@@ -2,7 +2,7 @@
 ### DEPRECATED - use asyncio instead
 
 ### This module was removed from the stdlib in 3.11 and is kept in
-### test.support while there are still test that use it. Do not use
+### test.support while there are still tests that use it. Do not use
 ### it in new tests.
 
 # -*- Mode: Python; tab-width: 4 -*-
