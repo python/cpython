@@ -708,6 +708,63 @@ if 1:
         self.assertTrue(f1(0))
         self.assertTrue(f2(0.0))
 
+    @support.cpython_only
+    def test_pack_constant_call_arguments(self):
+
+        var = 5
+
+        def func_3(a, b, c):
+            return [a, b, c]
+
+        def func_6(a, b, c, d, e, f):
+            return [a, b, c, d, e, f]
+
+        def func_v(*args, **kwargs):
+            return list(args)
+
+        def get_func(func, arguments, ns=locals()):
+            source = f"lambda: {func.__name__}({arguments})"
+            return eval(source, ns)
+
+        for target_func, arguments in [
+            (func_3, "1, 2, 3"),
+            (func_6, "'python', 1.0, 2+0j, 3+4, (5, 6, 7), 8"),
+            (func_v, "1, 2, 3"),
+            (func_v, "1, 2, 3, 4"),
+            (func_v, "1, 2, 3, 4, 5"),
+            (func_v, "1, 2, 3, 4, 5, 6"),
+            (func_v, "1, 2, 3, 4, 5, 6, 7"),
+        ]:
+            with self.subTest(target_func=target_func.__name__, arguments=arguments):
+                func = get_func(target_func, arguments)
+                expected = eval("[" + arguments + "]")
+                assert func() == expected
+
+                opcodes = list(dis.get_instructions(func))
+                assert opcodes[1].opname == 'LOAD_CONST'
+                assert opcodes[1].argval == tuple(expected)
+                assert opcodes[2].opname == 'CALL_FUNCTION_EX'
+
+        for target_func, arguments in [
+            (func_v, ""),
+            (func_v, "1"),
+            (func_v, "1, 2"),
+            (func_v, "1, 2, 3, var"),
+            (func_v, "1, 2, 3, var, 4, 5"),
+            (func_v, "1, 2, 3, 4, 5, kw=var"),
+            (func_v, "1, 2, 3, kw=6"),
+            (func_v, "kw=var"),
+        ]:
+            with self.subTest(target_func=target_func.__name__, arguments=arguments):
+                func = get_func(target_func, arguments)
+                func()
+
+                opcodes = list(dis.get_instructions(func))
+                opnames = [opcode.opname for opcode in opcodes]
+                assert 'CALL_FUNCTION_EX' not in opnames
+                assert ('CALL_FUNCTION' in opnames) or ('CALL_FUNCTION_KW' in opnames)
+
+
     def test_path_like_objects(self):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")

@@ -81,6 +81,7 @@ asdl_ ## NAME ## _seq *_Py_asdl_ ## NAME ## _seq_new(Py_ssize_t size, PyArena *a
 #define asdl_seq_GET_UNTYPED(S, I) (S)->elements[(I)]
 #define asdl_seq_GET(S, I) (S)->typed_elements[(I)]
 #define asdl_seq_LEN(S) ((S) == NULL ? 0 : (S)->size)
+#define asdl_seq_RESIZE(S, N) (S)->size = (N)
 
 #ifdef Py_DEBUG
 #  define asdl_seq_SET(S, I, V) \

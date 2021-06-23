@@ -29,6 +29,7 @@ make_const(expr_ty node, PyObject *val, PyArena *arena)
 }
 
 #define COPY_NODE(TO, FROM) (memcpy((TO), (FROM), sizeof(struct _expr)))
+#define COPY_LOC(START, END) (START)->lineno, (START)->col_offset, (END)->end_lineno, (END)->end_col_offset
 
 static int
 has_starred(asdl_expr_seq *elts)
@@ -631,6 +632,63 @@ fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return 1;
 }
 
+/* bpo-44501: Pack call arguments into a constant tuple if they are
+ *            all constants. The limits are important since the optimization
+ *            shows significance after 3 or more elements, and we don't want
+ *            to create giant tuples. */
+
+#define AST_MIN_CALL_FOLD 3
+#define AST_MAX_CALL_FOLD 100
+
+static int
+fold_call(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
+{
+    assert(node->kind == Call_kind);
+
+    asdl_expr_seq *args = node->v.Call.args;
+    Py_ssize_t nargs = asdl_seq_LEN(args);
+    Py_ssize_t nkeywords = asdl_seq_LEN(node->v.Call.keywords);
+
+    if (nkeywords || !nargs) {
+        return 1;
+    }
+
+    if (nargs < AST_MIN_CALL_FOLD || nargs > AST_MAX_CALL_FOLD) {
+        return 1;
+    }
+
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        expr_ty elt = asdl_seq_GET(args, i);
+        if (elt->kind != Constant_kind) {
+            return 1;
+        }
+    }
+
+    PyObject *args_tuple = make_const_tuple(args);
+    if (!args_tuple || _PyArena_AddPyObject(arena, args_tuple) < 0) {
+        Py_XDECREF(args_tuple);
+        return 0;
+    }
+
+    assert(asdl_seq_LEN(args) >= 1);
+    expr_ty first_arg = asdl_seq_GET(args, 0);
+    expr_ty last_arg = asdl_seq_GET(args, nargs - 1);
+    expr_ty arg = _PyAST_Constant(args_tuple, /*kind=*/NULL,
+                                  COPY_LOC(first_arg, last_arg), arena);
+    if (!arg) {
+        return 0;
+    }
+
+    expr_ty starred = _PyAST_Starred(arg, Load, COPY_LOC(arg, arg), arena);
+    if (!starred) {
+        return 0;
+    }
+
+    asdl_seq_RESIZE(args, 1);
+    asdl_seq_SET(args, 0, starred);
+    return 1;
+}
+
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -788,6 +846,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.Call.func);
         CALL_SEQ(astfold_expr, expr, node_->v.Call.args);
         CALL_SEQ(astfold_keyword, keyword, node_->v.Call.keywords);
+        CALL(fold_call, expr_ty, node_);
         break;
     case FormattedValue_kind:
         CALL(astfold_expr, expr_ty, node_->v.FormattedValue.value);
