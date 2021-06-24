@@ -419,7 +419,8 @@ class TestEmailMessageBase:
                 From: robot@examp.com
 
                 this is a message body.
-                """)),
+                """),
+        ),
 
         'mixed_text_message_rfc822': (
             (None, None, 1),
@@ -444,8 +445,8 @@ class TestEmailMessageBase:
                 this is a message body.
 
                 --===--
-                """)),
-
+                """),
+        ),
          }
 
     def message_as_get_body(self, body_parts, attachments, parts, msg):
@@ -486,11 +487,15 @@ class TestEmailMessageBase:
         attachments = [allparts[n] for n in attachments]
         self.assertEqual(list(m.iter_attachments()), attachments)
 
+    def _is_multipart_msg(self, msg):
+        return 'Content-Type: multipart' in msg
+
     def message_as_iter_parts(self, body_parts, attachments, parts, msg):
         m = self._str_msg(msg)
         allparts = list(m.walk())
         parts = [allparts[n] for n in parts]
-        self.assertEqual(list(m.iter_parts()), parts)
+        x = (list(m.iter_parts()) if self._is_multipart_msg(msg) else [], parts)
+        self.assertEqual(*x)
 
     class _TestContentManager:
         def get_content(self, msg, *args, **kw):
@@ -499,6 +504,7 @@ class TestEmailMessageBase:
             self.msg = msg
             self.args = args
             self.kw = kw
+
 
     def test_get_content_with_cm(self):
         m = self._str_msg('')
@@ -922,6 +928,34 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'123456789 123456789 123456789 123456789 '
                          b'123456789-123456789\n 123456789 Hello '
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
+
+    def test_get_body_malformed(self):
+        """test for bpo-42892"""
+        msg = textwrap.dedent("""\
+            Message-ID: <674392CA.4347091@email.au>
+            Date: Wed, 08 Nov 2017 08:50:22 +0700
+            From: Foo Bar <email@email.au>
+            MIME-Version: 1.0
+            To: email@email.com <email@email.com>
+            Subject: Python Email
+            Content-Type: multipart/mixed;
+            boundary="------------879045806563892972123996"
+            X-Global-filter:Messagescannedforspamandviruses:passedalltests
+
+            This is a multi-part message in MIME format.
+            --------------879045806563892972123996
+            Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+            Content-Transfer-Encoding: 7bit
+
+            Your message is ready to be sent with the following file or link
+            attachments:
+            XU89 - 08.11.2017
+            """)
+        m = self._str_msg(msg)
+        # In bpo-42892, this would raise
+        # AttributeError: 'str' object has no attribute 'is_attachment'
+        m.get_body()
+
 
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
