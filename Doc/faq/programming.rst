@@ -1852,14 +1852,6 @@ bounded by the specified *maxsize*.  The disadvantage is that instances
 are kept alive until they age out of the cache or until the cache is
 cleared.
 
-To avoid keeping an instance alive, it can be wrapped a weak reference
-proxy.  That allows an instance to be freed prior aging out of the LRU
-cache.  That said, the weak reference technique is rarely needed.  It is
-only helpful when the instances hold large amounts of data and the
-normal aging-out process isn't fast enough.  And even though the
-instance is released early, the cache still keeps references to the
-other method arguments and to the result of the method call.
-
 This example shows the various techniques::
 
     class Weather:
@@ -1883,16 +1875,6 @@ This example shows the various techniques::
         def historic_rainfall(self, date, units='mm'):
             "Rainfall on a given date"
             # Depends on the station_id, date, and units.
-
-        def climate(self, category='average_temperature'):
-            "List of daily average temperatures for a full year"
-            return self._climate(weakref.proxy(self), category)
-
-        @staticmethod
-        @lru_cache(maxsize=10)
-        def _climate(self_proxy, category):
-            # Depends on a weak reference to the instance
-            # and on the category parameter.
 
 The above example assumes that the *station_id* never changes.  If the
 relevant instance attributes are mutable, the *cached_property* approach

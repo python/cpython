@@ -4,6 +4,7 @@
 import os
 import sys
 import textwrap
+import types
 
 from argparse import ArgumentParser
 from contextlib import contextmanager
@@ -100,21 +101,10 @@ def asdl_of(name, obj):
 class EmitVisitor(asdl.VisitorBase):
     """Visit that emits lines"""
 
-    def __init__(self, file):
+    def __init__(self, file, metadata = None):
         self.file = file
-        self.identifiers = set()
-        self.singletons = set()
-        self.types = set()
+        self._metadata = metadata
         super(EmitVisitor, self).__init__()
-
-    def emit_identifier(self, name):
-        self.identifiers.add(str(name))
-
-    def emit_singleton(self, name):
-        self.singletons.add(str(name))
-
-    def emit_type(self, name):
-        self.types.add(str(name))
 
     def emit(self, s, depth, reflow=True):
         # XXX reflow long lines?
@@ -126,6 +116,78 @@ class EmitVisitor(asdl.VisitorBase):
             if line:
                 line = (" " * TABSIZE * depth) + line
             self.file.write(line + "\n")
+
+    @property
+    def metadata(self):
+        if self._metadata is None:
+            raise ValueError(
+                "%s was expecting to be annnotated with metadata"
+                % type(self).__name__
+            )
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, value):
+        self._metadata = value
+
+class MetadataVisitor(asdl.VisitorBase):
+    ROOT_TYPE = "AST"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Metadata:
+        #    - simple_sums: Tracks the list of compound type
+        #                   names where all the constructors
+        #                   belonging to that type lack of any
+        #                   fields.
+        #    - identifiers: All identifiers used in the AST decclarations
+        #    - singletons:  List of all constructors that originates from
+        #                   simple sums.
+        #    - types:       List of all top level type names
+        #
+        self.metadata = types.SimpleNamespace(
+            simple_sums=set(),
+            identifiers=set(),
+            singletons=set(),
+            types={self.ROOT_TYPE},
+        )
+
+    def visitModule(self, mod):
+        for dfn in mod.dfns:
+            self.visit(dfn)
+
+    def visitType(self, type):
+        self.visit(type.value, type.name)
+
+    def visitSum(self, sum, name):
+        self.metadata.types.add(name)
+
+        simple_sum = is_simple(sum)
+        if simple_sum:
+            self.metadata.simple_sums.add(name)
+
+        for constructor in sum.types:
+            if simple_sum:
+                self.metadata.singletons.add(constructor.name)
+            self.visitConstructor(constructor)
+        self.visitFields(sum.attributes)
+
+    def visitConstructor(self, constructor):
+        self.metadata.types.add(constructor.name)
+        self.visitFields(constructor.fields)
+
+    def visitProduct(self, product, name):
+        self.metadata.types.add(name)
+        self.visitFields(product.attributes)
+        self.visitFields(product.fields)
+
+    def visitFields(self, fields):
+        for field in fields:
+            self.visitField(field)
+
+    def visitField(self, field):
+        self.metadata.identifiers.add(field.name)
 
 
 class TypeDefVisitor(EmitVisitor):
@@ -244,7 +306,7 @@ class StructVisitor(EmitVisitor):
         ctype = get_c_type(field.type)
         name = field.name
         if field.seq:
-            if field.type == 'cmpop':
+            if field.type in self.metadata.simple_sums:
                 self.emit("asdl_int_seq *%(name)s;" % locals(), depth)
             else:
                 _type = field.type
@@ -304,7 +366,7 @@ class PrototypeVisitor(EmitVisitor):
                 name = f.name
             # XXX should extend get_c_type() to handle this
             if f.seq:
-                if f.type == 'cmpop':
+                if f.type in self.metadata.simple_sums:
                     ctype = "asdl_int_seq *"
                 else:
                     ctype = f"asdl_{f.type}_seq *"
@@ -549,16 +611,11 @@ class Obj2ModVisitor(PickleVisitor):
             ctype = get_c_type(field.type)
             self.emit("%s %s;" % (ctype, field.name), depth)
 
-    def isSimpleSum(self, field):
-        # XXX can the members of this list be determined automatically?
-        return field.type in ('expr_context', 'boolop', 'operator',
-                              'unaryop', 'cmpop')
-
     def isNumeric(self, field):
         return get_c_type(field.type) in ("int", "bool")
 
     def isSimpleType(self, field):
-        return self.isSimpleSum(field) or self.isNumeric(field)
+        return field.type in self.metadata.simple_sums or self.isNumeric(field)
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
@@ -650,28 +707,20 @@ class SequenceConstructorVisitor(EmitVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit_type("%s_type" % name)
         self.emit("static PyObject* ast2obj_%s(struct ast_state *state, void*);" % name, 0)
         if prod.attributes:
-            for a in prod.attributes:
-                self.emit_identifier(a.name)
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
         if prod.fields:
-            for f in prod.fields:
-                self.emit_identifier(f.name)
             self.emit("static const char * const %s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
-        self.emit_type("%s_type" % name)
         if sum.attributes:
-            for a in sum.attributes:
-                self.emit_identifier(a.name)
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
@@ -679,16 +728,12 @@ class PyTypesDeclareVisitor(PickleVisitor):
         ptype = "void*"
         if is_simple(sum):
             ptype = get_c_type(name)
-            for t in sum.types:
-                self.emit_singleton("%s_singleton" % t.name)
         self.emit("static PyObject* ast2obj_%s(struct ast_state *state, %s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
         if cons.fields:
-            for t in cons.fields:
-                self.emit_identifier(t.name)
             self.emit("static const char * const %s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
@@ -1066,8 +1111,6 @@ static int add_ast_fields(struct ast_state *state)
                         (name, name, fields, len(prod.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
-        self.emit_type("AST_type")
-        self.emit_type("%s_type" % name)
         if prod.attributes:
             self.emit("if (!add_attributes(state, state->%s_type, %s_attributes, %d)) return 0;" %
                             (name, name, len(prod.attributes)), 1)
@@ -1080,7 +1123,6 @@ static int add_ast_fields(struct ast_state *state)
         self.emit('state->%s_type = make_type(state, "%s", state->AST_type, NULL, 0,' %
                   (name, name), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, sum), 2), 2, reflow=False)
-        self.emit_type("%s_type" % name)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         if sum.attributes:
             self.emit("if (!add_attributes(state, state->%s_type, %s_attributes, %d)) return 0;" %
@@ -1101,7 +1143,6 @@ static int add_ast_fields(struct ast_state *state)
                             (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(cons.name, cons), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
-        self.emit_type("%s_type" % cons.name)
         self.emit_defaults(cons.name, cons.fields, 1)
         if simple:
             self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
@@ -1282,18 +1323,23 @@ class ObjVisitor(PickleVisitor):
 
     def set(self, field, value, depth):
         if field.seq:
-            # XXX should really check for is_simple, but that requires a symbol table
-            if field.type == "cmpop":
+            if field.type in self.metadata.simple_sums:
                 # While the sequence elements are stored as void*,
-                # ast2obj_cmpop expects an enum
+                # simple sums expects an enum
                 self.emit("{", depth)
                 self.emit("Py_ssize_t i, n = asdl_seq_LEN(%s);" % value, depth+1)
                 self.emit("value = PyList_New(n);", depth+1)
                 self.emit("if (!value) goto failed;", depth+1)
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
-                self.emit("PyList_SET_ITEM(value, i, ast2obj_cmpop(state, (cmpop_ty)asdl_seq_GET(%s, i)));" % value,
-                          depth+2, reflow=False)
+                self.emit(
+                    "PyList_SET_ITEM(value, i, ast2obj_{0}(state, ({0}_ty)asdl_seq_GET({1}, i)));".format(
+                        field.type,
+                        value
+                    ),
+                    depth + 2,
+                    reflow=False,
+                )
                 self.emit("}", depth)
             else:
                 self.emit("value = ast2obj_list(state, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
@@ -1362,11 +1408,13 @@ int PyAST_Check(PyObject* obj)
 """
 
 class ChainOfVisitors:
-    def __init__(self, *visitors):
+    def __init__(self, *visitors, metadata = None):
         self.visitors = visitors
+        self.metadata = metadata
 
     def visit(self, object):
         for v in self.visitors:
+            v.metadata = self.metadata
             v.visit(object)
             v.emit("", 0)
 
@@ -1399,17 +1447,8 @@ def generate_ast_fini(module_state, f):
     """))
 
 
-def generate_module_def(mod, f, internal_h):
+def generate_module_def(mod, metadata, f, internal_h):
     # Gather all the data needed for ModuleSpec
-    visitor_list = set()
-    with open(os.devnull, "w") as devnull:
-        visitor = PyTypesDeclareVisitor(devnull)
-        visitor.visit(mod)
-        visitor_list.add(visitor)
-        visitor = PyTypesVisitor(devnull)
-        visitor.visit(mod)
-        visitor_list.add(visitor)
-
     state_strings = {
         "ast",
         "_fields",
@@ -1418,16 +1457,19 @@ def generate_module_def(mod, f, internal_h):
         "__dict__",
         "__module__",
         "_attributes",
+        *metadata.identifiers
     }
+
     module_state = state_strings.copy()
-    for visitor in visitor_list:
-        for identifier in visitor.identifiers:
-            module_state.add(identifier)
-            state_strings.add(identifier)
-        for singleton in visitor.singletons:
-            module_state.add(singleton)
-        for tp in visitor.types:
-            module_state.add(tp)
+    module_state.update(
+        "%s_singleton" % singleton
+        for singleton in metadata.singletons
+    )
+    module_state.update(
+        "%s_type" % type
+        for type in metadata.types
+    )
+
     state_strings = sorted(state_strings)
     module_state = sorted(module_state)
 
@@ -1468,7 +1510,7 @@ def generate_module_def(mod, f, internal_h):
     f.write('    return 1;\n')
     f.write('};\n\n')
 
-def write_header(mod, f):
+def write_header(mod, metadata, f):
     f.write(textwrap.dedent("""
         #ifndef Py_INTERNAL_AST_H
         #define Py_INTERNAL_AST_H
@@ -1483,12 +1525,19 @@ def write_header(mod, f):
         #include "pycore_asdl.h"
 
     """).lstrip())
-    c = ChainOfVisitors(TypeDefVisitor(f),
-                        SequenceDefVisitor(f),
-                        StructVisitor(f))
+
+    c = ChainOfVisitors(
+        TypeDefVisitor(f),
+        SequenceDefVisitor(f),
+        StructVisitor(f),
+        metadata=metadata
+    )
     c.visit(mod)
+
     f.write("// Note: these macros affect function definitions, not only call sites.\n")
-    PrototypeVisitor(f).visit(mod)
+    prototype_visitor = PrototypeVisitor(f, metadata=metadata)
+    prototype_visitor.visit(mod)
+
     f.write(textwrap.dedent("""
 
         PyObject* PyAST_mod2obj(mod_ty t);
@@ -1535,9 +1584,8 @@ def write_internal_h_footer(mod, f):
         #endif /* !Py_INTERNAL_AST_STATE_H */
     """), file=f)
 
-
-def write_source(mod, f, internal_h_file):
-    generate_module_def(mod, f, internal_h_file)
+def write_source(mod, metadata, f, internal_h_file):
+    generate_module_def(mod, metadata, f, internal_h_file)
 
     v = ChainOfVisitors(
         SequenceConstructorVisitor(f),
@@ -1549,6 +1597,7 @@ def write_source(mod, f, internal_h_file):
         Obj2ModVisitor(f),
         ASTModuleVisitor(f),
         PartingShots(f),
+        metadata=metadata
     )
     v.visit(mod)
 
@@ -1561,6 +1610,10 @@ def main(input_filename, c_filename, h_filename, internal_h_filename, dump_modul
     if not asdl.check(mod):
         sys.exit(1)
 
+    metadata_visitor = MetadataVisitor()
+    metadata_visitor.visit(mod)
+    metadata = metadata_visitor.metadata
+
     with c_filename.open("w") as c_file, \
          h_filename.open("w") as h_file, \
          internal_h_filename.open("w") as internal_h_file:
@@ -1569,8 +1622,8 @@ def main(input_filename, c_filename, h_filename, internal_h_filename, dump_modul
         internal_h_file.write(auto_gen_msg)
 
         write_internal_h_header(mod, internal_h_file)
-        write_source(mod, c_file, internal_h_file)
-        write_header(mod, h_file)
+        write_source(mod, metadata, c_file, internal_h_file)
+        write_header(mod, metadata, h_file)
         write_internal_h_footer(mod, internal_h_file)
 
     print(f"{c_filename}, {h_filename}, {internal_h_filename} regenerated.")

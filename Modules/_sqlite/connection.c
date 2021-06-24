@@ -79,40 +79,34 @@ new_statement_cache(pysqlite_Connection *self, int maxsize)
     return res;
 }
 
+/*[clinic input]
+_sqlite3.Connection.__init__ as pysqlite_connection_init
+
+    database as database_obj: object(converter='PyUnicode_FSConverter')
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: bool(accept={int}) = True
+    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
+    cached_statements: int = 128
+    uri: bool = False
+[clinic start generated code]*/
+
 static int
-pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
-                         PyObject *kwargs)
+pysqlite_connection_init_impl(pysqlite_Connection *self,
+                              PyObject *database_obj, double timeout,
+                              int detect_types, PyObject *isolation_level,
+                              int check_same_thread, PyObject *factory,
+                              int cached_statements, int uri)
+/*[clinic end generated code: output=dc19df1c0e2b7b77 input=aa1f21bf12fe907a]*/
 {
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-
-    const char* database;
-    PyObject* database_obj;
-    int detect_types = 0;
-    PyObject* isolation_level = NULL;
-    PyObject* factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements = 128;
-    int uri = 0;
-    double timeout = 5.0;
     int rc;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|diOiOip", kwlist,
-                                     PyUnicode_FSConverter, &database_obj, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return -1;
-    }
 
     if (PySys_Audit("sqlite3.connect", "O", database_obj) < 0) {
         return -1;
     }
 
-    database = PyBytes_AsString(database_obj);
+    const char *database = PyBytes_AsString(database_obj);
 
     self->initialized = 1;
 
@@ -134,7 +128,7 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
                          (uri ? SQLITE_OPEN_URI : 0), NULL);
     Py_END_ALLOW_THREADS
 
-    Py_DECREF(database_obj);
+    Py_DECREF(database_obj);  // needed bco. the AC FSConverter
 
     if (rc != SQLITE_OK) {
         _pysqlite_seterror(self->db);
@@ -188,14 +182,15 @@ pysqlite_connection_init(pysqlite_Connection *self, PyObject *args,
         return -1;
     }
 
-    self->Warning               = pysqlite_Warning;
-    self->Error                 = pysqlite_Error;
-    self->InterfaceError        = pysqlite_InterfaceError;
-    self->DatabaseError         = pysqlite_DatabaseError;
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    self->Warning               = state->Warning;
+    self->Error                 = state->Error;
+    self->InterfaceError        = state->InterfaceError;
+    self->DatabaseError         = state->DatabaseError;
     self->DataError             = pysqlite_DataError;
     self->OperationalError      = pysqlite_OperationalError;
     self->IntegrityError        = pysqlite_IntegrityError;
-    self->InternalError         = pysqlite_InternalError;
+    self->InternalError         = state->InternalError;
     self->ProgrammingError      = pysqlite_ProgrammingError;
     self->NotSupportedError     = pysqlite_NotSupportedError;
 
@@ -1056,20 +1051,24 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
                                         PyObject *authorizer_cb)
 /*[clinic end generated code: output=f18ba575d788b35c input=df079724c020d2f2]*/
 {
-    int rc;
-
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
     }
 
-    rc = sqlite3_set_authorizer(self->db, _authorizer_callback, (void*)authorizer_cb);
+    int rc;
+    if (authorizer_cb == Py_None) {
+        rc = sqlite3_set_authorizer(self->db, NULL, NULL);
+        Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
+    }
+    else {
+        Py_INCREF(authorizer_cb);
+        Py_XSETREF(self->function_pinboard_authorizer_cb, authorizer_cb);
+        rc = sqlite3_set_authorizer(self->db, _authorizer_callback, authorizer_cb);
+    }
     if (rc != SQLITE_OK) {
         PyErr_SetString(pysqlite_OperationalError, "Error setting authorizer callback");
         Py_XSETREF(self->function_pinboard_authorizer_cb, NULL);
         return NULL;
-    } else {
-        Py_INCREF(authorizer_cb);
-        Py_XSETREF(self->function_pinboard_authorizer_cb, authorizer_cb);
     }
     Py_RETURN_NONE;
 }

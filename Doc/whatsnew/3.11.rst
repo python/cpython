@@ -106,6 +106,14 @@ math
   Dickinson in :issue:`44339`.)
 
 
+sqlite3
+-------
+
+* You can now disable the authorizer by passing :const:`None` to
+  :meth:`~sqlite3.Connection.set_authorizer`.
+  (Contributed by Erlend E. Aasland in :issue:`44491`.)
+
+
 Removed
 =======
 * :class:`smtpd.MailmanProxy` is now removed as it is unusable without

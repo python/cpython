@@ -1451,7 +1451,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     /* push frame */
     tstate->frame = f;
     specials = f->f_valuestack - FRAME_SPECIALS_SIZE;
-    co = f->f_code;
+    co = (PyCodeObject *)specials[FRAME_SPECIALS_CODE_OFFSET];
 
     if (cframe.use_tracing) {
         if (tstate->c_tracefunc != NULL) {
@@ -2805,6 +2805,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(LOAD_GLOBAL): {
             PREDICTED(LOAD_GLOBAL);
+            STAT_INC(LOAD_GLOBAL, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
@@ -3273,6 +3274,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(LOAD_ATTR): {
             PREDICTED(LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *res = PyObject_GetAttr(owner, name);
@@ -3335,6 +3337,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(cache0->index < dict->ma_keys->dk_nentries);
@@ -5323,11 +5326,14 @@ static int
 prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 {
     printf("%s ", str);
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
     if (PyObject_Print(v, stdout, 0) != 0) {
         /* Don't know what else to do */
         _PyErr_Clear(tstate);
     }
     printf("\n");
+    PyErr_Restore(type, value, traceback);
     return 1;
 }
 #endif
@@ -5388,9 +5394,10 @@ call_trace_protected(Py_tracefunc func, PyObject *obj,
 static void
 initialize_trace_info(PyTraceInfo *trace_info, PyFrameObject *frame)
 {
-    if (trace_info->code != frame->f_code) {
-        trace_info->code = frame->f_code;
-        _PyCode_InitAddressRange(frame->f_code, &trace_info->bounds);
+    PyCodeObject *code = _PyFrame_GetCode(frame);
+    if (trace_info->code != code) {
+        trace_info->code = code;
+        _PyCode_InitAddressRange(code, &trace_info->bounds);
     }
 }
 
@@ -5405,7 +5412,7 @@ call_trace(Py_tracefunc func, PyObject *obj,
     tstate->tracing++;
     tstate->cframe->use_tracing = 0;
     if (frame->f_lasti < 0) {
-        frame->f_lineno = frame->f_code->co_firstlineno;
+        frame->f_lineno = _PyFrame_GetCode(frame)->co_firstlineno;
     }
     else {
         initialize_trace_info(&tstate->trace_info, frame);
@@ -5684,7 +5691,7 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
-        const int codeflags = current_frame->f_code->co_flags;
+        const int codeflags = _PyFrame_GetCode(current_frame)->co_flags;
         const int compilerflags = codeflags & PyCF_MASK;
         if (compilerflags) {
             result = 1;
@@ -6289,7 +6296,7 @@ unicode_concatenate(PyThreadState *tstate, PyObject *v, PyObject *w,
         }
         case STORE_NAME:
         {
-            PyObject *names = f->f_code->co_names;
+            PyObject *names = _PyFrame_GetCode(f)->co_names;
             PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_valuestack[
                 FRAME_SPECIALS_LOCALS_OFFSET-FRAME_SPECIALS_SIZE];
@@ -6376,7 +6383,7 @@ dtrace_function_entry(PyFrameObject *f)
     const char *funcname;
     int lineno;
 
-    PyCodeObject *code = f->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(f);
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
     lineno = PyFrame_GetLineNumber(f);
@@ -6391,7 +6398,7 @@ dtrace_function_return(PyFrameObject *f)
     const char *funcname;
     int lineno;
 
-    PyCodeObject *code = f->f_code;
+    PyCodeObject *code = _PyFrame_GetCode(f);
     filename = PyUnicode_AsUTF8(code->co_filename);
     funcname = PyUnicode_AsUTF8(code->co_name);
     lineno = PyFrame_GetLineNumber(f);
@@ -6418,10 +6425,10 @@ maybe_dtrace_line(PyFrameObject *frame,
     if (line != frame->f_lineno || frame->f_lasti < instr_prev) {
         if (line != -1) {
             frame->f_lineno = line;
-            co_filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
+            co_filename = PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_filename);
             if (!co_filename)
                 co_filename = "?";
-            co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
+            co_name = PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_name);
             if (!co_name)
                 co_name = "?";
             PyDTrace_LINE(co_filename, co_name, line);

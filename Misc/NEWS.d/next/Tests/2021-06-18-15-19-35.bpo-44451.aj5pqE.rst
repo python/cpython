@@ -1,0 +1,3 @@
+Reset ``DeprecationWarning`` filters in
+``test.test_importlib.test_metadata_api.APITests.test_entry_points_by_index``
+to avoid ``StopIteration`` error if ``DeprecationWarnings`` are ignored.

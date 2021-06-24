@@ -1557,6 +1557,13 @@ _PyPegen_seq_last_item(asdl_seq *seq)
     return asdl_seq_GET_UNTYPED(seq, len - 1);
 }
 
+void *
+_PyPegen_seq_first_item(asdl_seq *seq)
+{
+    return asdl_seq_GET_UNTYPED(seq, 0);
+}
+
+
 /* Creates a new name of the form <first_name>.<second_name> */
 expr_ty
 _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)

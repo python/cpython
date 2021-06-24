@@ -1205,41 +1205,47 @@ class CoroutineTest(unittest.TestCase):
             def __aenter__(self):
                 pass
 
-        body_executed = False
+        body_executed = None
         async def foo():
+            nonlocal body_executed
+            body_executed = False
             async with CM():
                 body_executed = True
 
         with self.assertRaisesRegex(AttributeError, '__aexit__'):
             run_async(foo())
-        self.assertFalse(body_executed)
+        self.assertIs(body_executed, False)
 
     def test_with_3(self):
         class CM:
             def __aexit__(self):
                 pass
 
-        body_executed = False
+        body_executed = None
         async def foo():
+            nonlocal body_executed
+            body_executed = False
             async with CM():
                 body_executed = True
 
         with self.assertRaisesRegex(AttributeError, '__aenter__'):
             run_async(foo())
-        self.assertFalse(body_executed)
+        self.assertIs(body_executed, False)
 
     def test_with_4(self):
         class CM:
             pass
 
-        body_executed = False
+        body_executed = None
         async def foo():
+            nonlocal body_executed
+            body_executed = False
             async with CM():
                 body_executed = True
 
         with self.assertRaisesRegex(AttributeError, '__aenter__'):
             run_async(foo())
-        self.assertFalse(body_executed)
+        self.assertIs(body_executed, False)
 
     def test_with_5(self):
         # While this test doesn't make a lot of sense,
