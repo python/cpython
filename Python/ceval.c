@@ -3507,7 +3507,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
         case TARGET(IMPORT_STAR): {
             PyObject *from = POP(), *locals;
             int err;
-            if (PyFrame_FastToLocalsWithError(fo) < 0) {
+            if (_PyFrame_FastToLocalsWithError(frame, 0) < 0) {
                 Py_DECREF(from);
                 goto error;
             }
@@ -3520,7 +3520,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
                 goto error;
             }
             err = import_all_from(tstate, locals, from);
-            PyFrame_LocalsToFast(fo, 0);
+            _PyFrame_LocalsToFast(frame, 0);
             Py_DECREF(from);
             if (err != 0)
                 goto error;

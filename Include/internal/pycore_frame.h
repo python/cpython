@@ -55,6 +55,12 @@ _PyFrame_GetFrameObject(_PyFrame *frame)
     return frame->frame_obj;
 }
 
+int
+_PyFrame_FastToLocalsWithError(_PyFrame *frame, int cleared);
+
+void
+_PyFrame_LocalsToFast(_PyFrame *frame, int clear);
+
 #ifdef __cplusplus
 }
 #endif

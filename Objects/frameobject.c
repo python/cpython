@@ -915,11 +915,11 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
 }
 
 static int
-_PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg)
+_PyFrame_OpAlreadyRan(_PyFrame *frame, int opcode, int oparg)
 {
     const _Py_CODEUNIT *code =
-        (const _Py_CODEUNIT *)PyBytes_AS_STRING(f->f_frame->code->co_code);
-    for (int i = 0; i < f->f_frame->lasti; i++) {
+        (const _Py_CODEUNIT *)PyBytes_AS_STRING(frame->code->co_code);
+    for (int i = 0; i < frame->lasti; i++) {
         if (_Py_OPCODE(code[i]) == opcode && _Py_OPARG(code[i]) == oparg) {
             return 1;
         }
@@ -928,25 +928,19 @@ _PyFrame_OpAlreadyRan(PyFrameObject *f, int opcode, int oparg)
 }
 
 int
-PyFrame_FastToLocalsWithError(PyFrameObject *f)
-{
+_PyFrame_FastToLocalsWithError(_PyFrame *frame, int cleared) {
     /* Merge fast locals into f->f_locals */
     PyObject *locals;
     PyObject **fast;
     PyCodeObject *co;
-
-    if (f == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    locals = f->f_frame->locals;
+    locals = frame->locals;
     if (locals == NULL) {
-        locals = f->f_frame->locals = PyDict_New();
+        locals = frame->locals = PyDict_New();
         if (locals == NULL)
             return -1;
     }
-    co = f->f_frame->code;
-    fast = f->f_localsptr;
+    co = frame->code;
+    fast = _PyFrame_GetLocalsArray(frame);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         _PyLocalsPlusKind kind = co->co_localspluskinds[i];
 
@@ -964,7 +958,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
-        if (f->f_state != FRAME_CLEARED) {
+        if (!cleared) {
             if (kind & CO_FAST_FREE) {
                 // The cell was set when the frame was created from
                 // the function's closure.
@@ -978,7 +972,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
                 // run yet.
                 if (value != NULL) {
                     if (PyCell_Check(value) &&
-                            _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
+                            _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
                         // (likely) MAKE_CELL must have executed already.
                         value = PyCell_GET(value);
                     }
@@ -1011,6 +1005,16 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
     return 0;
 }
 
+int
+PyFrame_FastToLocalsWithError(PyFrameObject *f)
+{
+    if (f == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    return _PyFrame_FastToLocalsWithError(f->f_frame, f->f_state == FRAME_CLEARED);
+}
+
 void
 PyFrame_FastToLocals(PyFrameObject *f)
 {
@@ -1024,21 +1028,18 @@ PyFrame_FastToLocals(PyFrameObject *f)
 }
 
 void
-PyFrame_LocalsToFast(PyFrameObject *f, int clear)
+_PyFrame_LocalsToFast(_PyFrame *frame, int clear)
 {
     /* Merge locals into fast locals */
     PyObject *locals;
     PyObject **fast;
     PyObject *error_type, *error_value, *error_traceback;
     PyCodeObject *co;
-    if (f == NULL || f->f_state == FRAME_CLEARED) {
-        return;
-    }
-    locals = f->f_frame->locals;
+    locals = frame->locals;
     if (locals == NULL)
         return;
-    fast = f->f_localsptr;
-    co = f->f_frame->code;
+    fast = _PyFrame_GetLocalsArray(frame);
+    co = frame->code;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -1068,7 +1069,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         else if (kind & CO_FAST_CELL && oldvalue != NULL) {
             /* Same test as in PyFrame_FastToLocals() above. */
             if (PyCell_Check(oldvalue) &&
-                    _PyFrame_OpAlreadyRan(f, MAKE_CELL, i)) {
+                    _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
                 // (likely) MAKE_CELL must have executed already.
                 cell = oldvalue;
             }
@@ -1090,6 +1091,15 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
         Py_XDECREF(value);
     }
     PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+void
+PyFrame_LocalsToFast(PyFrameObject *f, int clear)
+{
+    if (f == NULL || f->f_state == FRAME_CLEARED) {
+        return;
+    }
+    _PyFrame_LocalsToFast(f->f_frame, clear);
 }
 
 /* Clear out the free list */
