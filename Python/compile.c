@@ -4900,6 +4900,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     {
         goto error;
     }
+    SET_LOC(c, e);
 
     is_async_generator = c->u->u_ste->ste_coroutine;
 
@@ -5052,6 +5053,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 
 static int
 compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
+    c->u->u_lineno = -1;
     basicblock *exit;
     exit = compiler_new_block(c);
     if (exit == NULL)
@@ -5167,7 +5169,6 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
-    c->u->u_lineno = -1;
 
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
@@ -5264,7 +5265,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
-    c->u->u_lineno = -1;
 
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
@@ -7186,15 +7186,13 @@ merge_const_one(struct compiler *c, PyObject **obj)
 }
 
 // This is in codeobject.c.
-extern void _Py_set_localsplus_info(int, PyObject *, _PyLocalsPlusKind,
-                                   PyObject *, _PyLocalsPlusKinds);
+extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
+                                   PyObject *, PyObject *);
 
 static void
 compute_localsplus_info(struct compiler *c, int nlocalsplus,
-                        PyObject *names, _PyLocalsPlusKinds kinds)
+                        PyObject *names, PyObject *kinds)
 {
-    assert(PyTuple_GET_SIZE(names) == nlocalsplus);
-
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(c->u->u_varnames, &pos, &k, &v)) {
@@ -7202,7 +7200,7 @@ compute_localsplus_info(struct compiler *c, int nlocalsplus,
         assert(offset >= 0);
         assert(offset < nlocalsplus);
         // For now we do not distinguish arg kinds.
-        _PyLocalsPlusKind kind = CO_FAST_LOCAL;
+        _PyLocals_Kind kind = CO_FAST_LOCAL;
         if (PyDict_GetItem(c->u->u_cellvars, k) != NULL) {
             kind |= CO_FAST_CELL;
         }
@@ -7244,7 +7242,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     PyObject *names = NULL;
     PyObject *consts = NULL;
     PyObject *localsplusnames = NULL;
-    _PyLocalsPlusKinds localspluskinds = NULL;
+    PyObject *localspluskinds = NULL;
     PyObject *name = NULL;
 
     names = dict_keys_inorder(c->u->u_names, 0);
@@ -7280,7 +7278,8 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     if (localsplusnames == NULL) {
         goto error;
     }
-    if (_PyCode_InitLocalsPlusKinds(nlocalsplus, &localspluskinds) < 0) {
+    localspluskinds = PyBytes_FromStringAndSize(NULL, nlocalsplus);
+    if (localspluskinds == NULL) {
         goto error;
     }
     compute_localsplus_info(c, nlocalsplus, localsplusnames, localspluskinds);
@@ -7314,7 +7313,6 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     }
 
     if (!merge_const_one(c, &localsplusnames)) {
-        _PyCode_ClearLocalsPlusKinds(con.localspluskinds);
         goto error;
     }
     con.localsplusnames = localsplusnames;
@@ -7324,13 +7322,11 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
         goto error;
     }
 
-    localspluskinds = NULL;  // This keeps it from getting freed below.
-
  error:
     Py_XDECREF(names);
     Py_XDECREF(consts);
     Py_XDECREF(localsplusnames);
-    _PyCode_ClearLocalsPlusKinds(localspluskinds);
+    Py_XDECREF(localspluskinds);
     Py_XDECREF(name);
     return co;
 }

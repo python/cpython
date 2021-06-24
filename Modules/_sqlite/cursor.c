@@ -272,7 +272,8 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     PyObject* error_msg;
 
     if (self->reset) {
-        PyErr_SetString(pysqlite_InterfaceError, errmsg_fetch_across_rollback);
+        PyObject *exc = self->connection->InterfaceError;
+        PyErr_SetString(exc, errmsg_fetch_across_rollback);
         return NULL;
     }
 
@@ -822,7 +823,8 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
 
     if (self->reset) {
-        PyErr_SetString(pysqlite_InterfaceError, errmsg_fetch_across_rollback);
+        PyObject *exc = self->connection->InterfaceError;
+        PyErr_SetString(exc, errmsg_fetch_across_rollback);
         return NULL;
     }
 

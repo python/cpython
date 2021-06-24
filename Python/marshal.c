@@ -519,7 +519,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
         w_object(co->co_localsplusnames, p);
-        w_string(co->co_localspluskinds, co->co_nlocalsplus, p);
+        w_object(co->co_localspluskinds, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
@@ -1306,7 +1306,7 @@ r_object(RFILE *p)
             PyObject *consts = NULL;
             PyObject *names = NULL;
             PyObject *localsplusnames = NULL;
-            _PyLocalsPlusKinds localspluskinds = NULL;
+            PyObject *localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
@@ -1348,19 +1348,9 @@ r_object(RFILE *p)
             localsplusnames = r_object(p);
             if (localsplusnames == NULL)
                 goto code_error;
-
-            assert(PyTuple_GET_SIZE(localsplusnames) < INT_MAX);
-            int nlocalsplus = (int)PyTuple_GET_SIZE(localsplusnames);
-            if (nlocalsplus) {
-                if (_PyCode_InitLocalsPlusKinds(nlocalsplus,
-                                               &localspluskinds) < 0) {
-                    goto code_error;
-                }
-                for (int i = 0; i < nlocalsplus; i++) {
-                    localspluskinds[i] = r_byte(p);
-                }
-            }
-
+            localspluskinds = r_object(p);
+            if (localspluskinds == NULL)
+                goto code_error;
             filename = r_object(p);
             if (filename == NULL)
                 goto code_error;
@@ -1377,6 +1367,7 @@ r_object(RFILE *p)
             if (exceptiontable == NULL)
                 goto code_error;
 
+            Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(localsplusnames);
             if (PySys_Audit("code.__new__", "OOOiiiiii",
                             code, filename, name, argcount, posonlyargcount,
                             kwonlyargcount, nlocalsplus, stacksize,
@@ -1417,8 +1408,6 @@ r_object(RFILE *p)
                 goto code_error;
             }
 
-            localspluskinds = NULL;  // This keeps it from getting freed below.
-
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
@@ -1426,7 +1415,7 @@ r_object(RFILE *p)
             Py_XDECREF(consts);
             Py_XDECREF(names);
             Py_XDECREF(localsplusnames);
-            _PyCode_ClearLocalsPlusKinds(localspluskinds);
+            Py_XDECREF(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(linetable);

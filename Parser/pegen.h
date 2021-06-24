@@ -149,6 +149,9 @@ void *_PyPegen_dummy_name(Parser *p, ...);
 void * _PyPegen_seq_last_item(asdl_seq *seq);
 #define PyPegen_last_item(seq, type) ((type)_PyPegen_seq_last_item((asdl_seq*)seq))
 
+void * _PyPegen_seq_first_item(asdl_seq *seq);
+#define PyPegen_first_item(seq, type) ((type)_PyPegen_seq_first_item((asdl_seq*)seq))
+
 #define CURRENT_POS (-5)
 
 Py_LOCAL_INLINE(void *)

@@ -430,6 +430,11 @@ Connection Objects
       argument and the meaning of the second and third argument depending on the first
       one. All necessary constants are available in the :mod:`sqlite3` module.
 
+      Passing :const:`None` as *authorizer_callback* will disable the authorizer.
+
+      .. versionchanged:: 3.11
+         Added support for disabling the authorizer using :const:`None`.
+
 
    .. method:: set_progress_handler(handler, n)
 
