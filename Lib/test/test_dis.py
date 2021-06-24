@@ -719,7 +719,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        3
-Flags:             OPTIMIZED, NEWLOCALS, NOFREE
+Flags:             OPTIMIZED, NEWLOCALS
 Constants:
    {code_info_consts}
 Names:
@@ -800,7 +800,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
-Flags:             NOFREE
+Flags:             0x0
 Constants:
    0: 1
 Names:
@@ -814,7 +814,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
-Flags:             NOFREE
+Flags:             0x0
 Constants:
    0: 1
    1: None
@@ -829,7 +829,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  0
 Stack size:        2
-Flags:             NOFREE
+Flags:             0x0
 Constants:
    0: 0
    1: 1
@@ -851,7 +851,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  2
 Stack size:        10
-Flags:             OPTIMIZED, NEWLOCALS, NOFREE, COROUTINE
+Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
 Constants:
    0: None
    1: 1

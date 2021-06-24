@@ -51,12 +51,13 @@ typedef enum {
 pysqlite_Statement *
 pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
 {
+    pysqlite_state *state = pysqlite_get_state(NULL);
     assert(PyUnicode_Check(sql));
     Py_ssize_t size;
     const char *sql_cstr = PyUnicode_AsUTF8AndSize(sql, &size);
     if (sql_cstr == NULL) {
-        PyErr_Format(pysqlite_Warning,
-                     "SQL is of wrong type ('%s'). Must be string.",
+        PyObject *exc = connection->Warning;
+        PyErr_Format(exc, "SQL is of wrong type ('%s'). Must be string.",
                      Py_TYPE(sql)->tp_name);
         return NULL;
     }
@@ -86,8 +87,8 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     }
 
     if (pysqlite_check_remaining_sql(tail)) {
-        PyErr_SetString(pysqlite_Warning,
-                        "You can only execute one statement at a time.");
+        PyObject *exc = connection->Warning;
+        PyErr_SetString(exc, "You can only execute one statement at a time.");
         goto error;
     }
 
@@ -110,7 +111,6 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
         break;
     }
 
-    pysqlite_state *state = pysqlite_get_state(NULL);
     pysqlite_Statement *self = PyObject_GC_New(pysqlite_Statement,
                                                state->StatementType);
     if (self == NULL) {
@@ -288,7 +288,9 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
 
             if (rc != SQLITE_OK) {
                 if (!PyErr_Occurred()) {
-                    PyErr_Format(pysqlite_InterfaceError, "Error binding parameter %d - probably unsupported type.", i);
+                    PyErr_Format(state->InterfaceError,
+                                 "Error binding parameter %d - "
+                                 "probably unsupported type.", i);
                 }
                 return;
             }
@@ -342,7 +344,9 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
 
             if (rc != SQLITE_OK) {
                 if (!PyErr_Occurred()) {
-                    PyErr_Format(pysqlite_InterfaceError, "Error binding parameter :%s - probably unsupported type.", binding_name);
+                    PyErr_Format(state->InterfaceError,
+                                 "Error binding parameter :%s - "
+                                 "probably unsupported type.", binding_name);
                 }
                 return;
            }
