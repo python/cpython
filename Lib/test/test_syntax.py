@@ -1240,6 +1240,30 @@ Corner-cases that used to crash:
     ...     ...
     Traceback (most recent call last):
     SyntaxError: invalid pattern target
+
+    >>> match ...:
+    ...   case Foo(z=1, y=2, x):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case Foo(a, z=1, y=2, x):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case Foo(z=1, x, y=2):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
+
+    >>> match ...:
+    ...   case C(a=b, c, d=e, f, g=h, i, j=k, ...):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: positional patterns follow keyword patterns
 """
 
 import re
