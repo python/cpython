@@ -893,10 +893,12 @@ def quote_from_bytes(bs, safe='/'):
     not perform string-to-bytes encoding.  It always returns an ASCII string.
     quote_from_bytes(b'abc def\x3f') -> 'abc%20def%3f'
     """
-    if not isinstance(bs, (bytes, bytearray)):
-        raise TypeError("quote_from_bytes() expected bytes")
     if not bs:
         return ''
+
+    if not isinstance(bs, (bytes, bytearray)):
+        raise TypeError("quote_from_bytes() expected bytes")
+    
     if isinstance(safe, str):
         # Normalize 'safe' by converting to bytes and removing non-ASCII chars
         safe = safe.encode('ascii', 'ignore')
