@@ -433,7 +433,7 @@ Connection Objects
       Passing :const:`None` as *authorizer_callback* will disable the authorizer.
 
       .. versionchanged:: 3.11
-      Added support for disabling the authorizer using :const:`None`.
+         Added support for disabling the authorizer using :const:`None`.
 
 
    .. method:: set_progress_handler(handler, n)
