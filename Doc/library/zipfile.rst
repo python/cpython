@@ -79,7 +79,7 @@ The module defines the following items:
    :ref:`zipinfo-objects`.
 
 
-.. note::
+.. warning::
 
    A leading slash in the filename may lead to the archive being impossible to
    open in some zip programs on Windows systems.
@@ -412,7 +412,7 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
       
-   .. note::
+   .. warning::
 
       A leading slash in the filename may lead to the archive being impossible to
       open in some zip programs on Windows systems.
@@ -446,7 +446,7 @@ ZipFile Objects
       member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
 
-   .. note::
+   .. warning::
 
       A leading slash in the filename may lead to the archive being impossible to
       open in some zip programs on Windows systems.
