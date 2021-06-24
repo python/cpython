@@ -543,7 +543,10 @@ PyDoc_STRVAR(builtin_anext__doc__,
 "anext($module, aiterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"Return the next item from the async iterator.");
+"async anext(aiterator[, default])\n"
+"\n"
+"Return the next item from the async iterator.  If default is given and the async\n"
+"iterator is exhausted, it is returned instead of raising StopAsyncIteration.");
 
 #define BUILTIN_ANEXT_METHODDEF    \
     {"anext", (PyCFunction)(void(*)(void))builtin_anext, METH_FASTCALL, builtin_anext__doc__},
@@ -874,4 +877,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=da9ae459e9233259 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e1d8057298b5de61 input=a9049054013a1b77]*/

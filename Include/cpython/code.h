@@ -26,9 +26,6 @@ typedef uint16_t _Py_CODEUNIT;
 typedef struct _PyOpcache _PyOpcache;
 
 
-typedef unsigned char _PyLocalsPlusKind;
-typedef _PyLocalsPlusKind *_PyLocalsPlusKinds;
-
 /* Bytecode object */
 struct PyCodeObject {
     PyObject_HEAD
@@ -75,7 +72,7 @@ struct PyCodeObject {
     int co_firstlineno;         /* first source line number */
     PyObject *co_code;          /* instruction opcodes */
     PyObject *co_localsplusnames;  /* tuple mapping offsets to names */
-    _PyLocalsPlusKinds co_localspluskinds; /* array mapping to local kinds */
+    PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
@@ -115,12 +112,6 @@ struct PyCodeObject {
 #define CO_VARKEYWORDS  0x0008
 #define CO_NESTED       0x0010
 #define CO_GENERATOR    0x0020
-/* The CO_NOFREE flag is set if there are no free or cell variables.
-   This information is redundant, but it allows a single flag test
-   to determine whether there is any extra work to be done when the
-   call frame it setup.
-*/
-#define CO_NOFREE       0x0040
 
 /* The CO_COROUTINE flag is set for coroutine functions (defined with
    ``async def`` keywords) */
@@ -221,5 +212,4 @@ void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int 
 /** API for traversing the line number table. */
 int PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 int PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-
 

@@ -1184,10 +1184,10 @@ class HexFloatTestCase(unittest.TestCase):
 
 
     def test_from_hex(self):
-        MIN = self.MIN;
-        MAX = self.MAX;
-        TINY = self.TINY;
-        EPS = self.EPS;
+        MIN = self.MIN
+        MAX = self.MAX
+        TINY = self.TINY
+        EPS = self.EPS
 
         # two spellings of infinity, with optional signs; case-insensitive
         self.identical(fromHex('inf'), INF)

@@ -2805,6 +2805,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(LOAD_GLOBAL): {
             PREDICTED(LOAD_GLOBAL);
+            STAT_INC(LOAD_GLOBAL, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *v;
             if (PyDict_CheckExact(GLOBALS())
@@ -3273,6 +3274,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
         case TARGET(LOAD_ATTR): {
             PREDICTED(LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, unquickened);
             PyObject *name = GETITEM(names, oparg);
             PyObject *owner = TOP();
             PyObject *res = PyObject_GetAttr(owner, name);
@@ -3335,6 +3337,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             _PyLoadAttrCache *cache1 = &caches[-1].load_attr;
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != cache1->dk_version_or_hint, LOAD_ATTR);
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(cache0->index < dict->ma_keys->dk_nentries);
@@ -5323,11 +5326,14 @@ static int
 prtrace(PyThreadState *tstate, PyObject *v, const char *str)
 {
     printf("%s ", str);
+    PyObject *type, *value, *traceback;
+    PyErr_Fetch(&type, &value, &traceback);
     if (PyObject_Print(v, stdout, 0) != 0) {
         /* Don't know what else to do */
         _PyErr_Clear(tstate);
     }
     printf("\n");
+    PyErr_Restore(type, value, traceback);
     return 1;
 }
 #endif

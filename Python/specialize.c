@@ -47,6 +47,7 @@ print_stats(SpecializationStats *stats, const char *name)
     PRINT_STAT(name, deferred);
     PRINT_STAT(name, miss);
     PRINT_STAT(name, deopt);
+    PRINT_STAT(name, unquickened);
 #if SPECIALIZATION_STATS_DETAILED
     if (stats->miss_types == NULL) {
         return;
@@ -302,6 +303,8 @@ _Py_Quicken(PyCodeObject *code) {
     return 0;
 }
 
+
+
 static int
 specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name,
@@ -349,6 +352,68 @@ specialize_module_load_attr(
     return 0;
 }
 
+
+
+/* Attribute specialization */
+
+typedef enum {
+    OVERRIDING, /* Is an overriding descriptor, and will remain so. */
+    METHOD, /* Attribute has Py_TPFLAGS_METHOD_DESCRIPTOR set */
+    PROPERTY, /* Is a property */
+    OBJECT_SLOT, /* Is an object slot descriptor */
+    OTHER_SLOT, /* Is a slot descriptor of another type */
+    NON_OVERRIDING, /* Is another non-overriding descriptor, and is an instance of an immutable class*/
+    NON_DESCRIPTOR, /* Is not a descriptor, and is an instance of an immutable class */
+    MUTABLE,   /* Instance of a mutable class; might, or might not, be a descriptor */
+    ABSENT, /* Attribute is not present on the class */
+    DUNDER_CLASS, /* __class__ attribute */
+    GETATTRIBUTE_OVERRIDDEN /* __getattribute__ has been overridden */
+} DesciptorClassification;
+
+static DesciptorClassification
+analyze_descriptor(PyTypeObject *type, PyObject *name, PyObject **descr)
+{
+    if (type->tp_getattro != PyObject_GenericGetAttr) {
+        *descr = NULL;
+        return GETATTRIBUTE_OVERRIDDEN;
+    }
+    PyObject *descriptor = _PyType_Lookup(type, name);
+    *descr = descriptor;
+    if (descriptor == NULL) {
+        return ABSENT;
+    }
+    PyTypeObject *desc_cls = Py_TYPE(descriptor);
+    if (!(desc_cls->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+        return MUTABLE;
+    }
+    if (desc_cls->tp_descr_set) {
+        if (desc_cls == &PyMemberDescr_Type) {
+            PyMemberDescrObject *member = (PyMemberDescrObject *)descriptor;
+            struct PyMemberDef *dmem = member->d_member;
+            if (dmem->type == T_OBJECT_EX) {
+                return OBJECT_SLOT;
+            }
+            return OTHER_SLOT;
+        }
+        if (desc_cls == &PyProperty_Type) {
+            return PROPERTY;
+        }
+        if (PyUnicode_CompareWithASCIIString(name, "__class__") == 0) {
+            if (descriptor == _PyType_Lookup(&PyBaseObject_Type, name)) {
+                return DUNDER_CLASS;
+            }
+        }
+        return OVERRIDING;
+    }
+    if (desc_cls->tp_descr_get) {
+        if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
+            return METHOD;
+        }
+        return NON_OVERRIDING;
+    }
+    return NON_DESCRIPTOR;
+}
+
 int
 _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache)
 {
@@ -362,94 +427,134 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, Sp
         goto success;
     }
     PyTypeObject *type = Py_TYPE(owner);
-    if (type->tp_getattro != PyObject_GenericGetAttr) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "__getattribute__ overridden");
-        goto fail;
-    }
     if (type->tp_dict == NULL) {
         if (PyType_Ready(type) < 0) {
             return -1;
         }
     }
-    PyObject *descr = _PyType_Lookup(type, name);
-    if (descr != NULL) {
-        // We found an attribute with a data-like descriptor.
-        PyTypeObject *dtype = Py_TYPE(descr);
-        if (dtype != &PyMemberDescr_Type) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "not a member descriptor");
+    PyObject *descr;
+    DesciptorClassification kind = analyze_descriptor(type, name, &descr);
+    switch(kind) {
+        case OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "overriding descriptor");
             goto fail;
-        }
-        // It's a slot
-        PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
-        struct PyMemberDef *dmem = member->d_member;
-        if (dmem->type != T_OBJECT_EX) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "non-object slot");
+        case METHOD:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "method");
             goto fail;
-        }
-        Py_ssize_t offset = dmem->offset;
-        if (offset != (uint16_t)offset) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "offset out of range");
+        case PROPERTY:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "property");
             goto fail;
+        case OBJECT_SLOT:
+        {
+            PyMemberDescrObject *member = (PyMemberDescrObject *)descr;
+            struct PyMemberDef *dmem = member->d_member;
+            Py_ssize_t offset = dmem->offset;
+            if (offset != (uint16_t)offset) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "offset out of range");
+                goto fail;
+            }
+            assert(dmem->type == T_OBJECT_EX);
+            assert(offset > 0);
+            cache0->index = (uint16_t)offset;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
+            goto success;
         }
-        assert(offset > 0);
-        cache0->index = (uint16_t)offset;
-        cache1->tp_version = type->tp_version_tag;
-        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
-        goto success;
+        case DUNDER_CLASS:
+        {
+            Py_ssize_t offset = offsetof(PyObject, ob_type);
+            assert(offset == (uint16_t)offset);
+            cache0->index = (uint16_t)offset;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SLOT, _Py_OPARG(*instr));
+            goto success;
+        }
+        case OTHER_SLOT:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non-object slot");
+            goto fail;
+        case MUTABLE:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "mutable class attribute");
+            goto fail;
+        case GETATTRIBUTE_OVERRIDDEN:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "__getattribute__ overridden");
+            goto fail;
+        case NON_OVERRIDING:
+        case NON_DESCRIPTOR:
+        case ABSENT:
+            break;
     }
-    // No desciptor
-    if (type->tp_dictoffset <= 0) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no dict or negative offset");
+    assert(kind == NON_OVERRIDING || kind == NON_DESCRIPTOR || kind == ABSENT);
+    // No desciptor, or non overriding.
+    if (type->tp_dictoffset < 0) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "negative offset");
         goto fail;
     }
-    PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
-    if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no dict or not a dict");
-        goto fail;
-    }
-    // We found an instance with a __dict__.
-    PyDictObject *dict = (PyDictObject *)*dictptr;
-    if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
-        && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
-    ) {
-        // Keys are shared
-        assert(PyUnicode_CheckExact(name));
-        Py_hash_t hash = PyObject_Hash(name);
-        if (hash == -1) {
-            return -1;
-        }
-        PyObject *value;
-        Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
-        assert (index != DKIX_ERROR);
-        if (index != (uint16_t)index) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "index out of range");
+    if (type->tp_dictoffset > 0) {
+        PyObject **dictptr = (PyObject **) ((char *)owner + type->tp_dictoffset);
+        if (*dictptr == NULL || !PyDict_CheckExact(*dictptr)) {
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no dict or not a dict");
             goto fail;
         }
-        uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
-        if (keys_version == 0) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "no more key versions");
-            goto fail;
+        // We found an instance with a __dict__.
+        PyDictObject *dict = (PyDictObject *)*dictptr;
+        if ((type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+            && dict->ma_keys == ((PyHeapTypeObject*)type)->ht_cached_keys
+        ) {
+            // Keys are shared
+            assert(PyUnicode_CheckExact(name));
+            Py_hash_t hash = PyObject_Hash(name);
+            if (hash == -1) {
+                return -1;
+            }
+            PyObject *value;
+            Py_ssize_t index = _Py_dict_lookup(dict, name, hash, &value);
+            assert (index != DKIX_ERROR);
+            if (index != (uint16_t)index) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name,
+                                    index < 0 ? "attribute not in dict" : "index out of range");
+                goto fail;
+            }
+            uint32_t keys_version = _PyDictKeys_GetVersionForCurrentState(dict);
+            if (keys_version == 0) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no more key versions");
+                goto fail;
+            }
+            cache1->dk_version_or_hint = keys_version;
+            cache1->tp_version = type->tp_version_tag;
+            cache0->index = (uint16_t)index;
+            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
+            goto success;
         }
-        cache1->dk_version_or_hint = keys_version;
-        cache1->tp_version = type->tp_version_tag;
-        cache0->index = (uint16_t)index;
-        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_SPLIT_KEYS, _Py_OPARG(*instr));
-        goto success;
-    }
-    else {
-        PyObject *value = NULL;
-        Py_ssize_t hint =
-            _PyDict_GetItemHint(dict, name, -1, &value);
-        if (hint != (uint32_t)hint) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, Py_TYPE(owner), name, "hint out of range");
-            goto fail;
+        else {
+            PyObject *value = NULL;
+            Py_ssize_t hint =
+                _PyDict_GetItemHint(dict, name, -1, &value);
+            if (hint != (uint32_t)hint) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "hint out of range");
+                goto fail;
+            }
+            cache1->dk_version_or_hint = (uint32_t)hint;
+            cache1->tp_version = type->tp_version_tag;
+            *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
+            goto success;
         }
-        cache1->dk_version_or_hint = (uint32_t)hint;
-        cache1->tp_version = type->tp_version_tag;
-        *instr = _Py_MAKECODEUNIT(LOAD_ATTR_WITH_HINT, _Py_OPARG(*instr));
-        goto success;
     }
-
+    assert(type->tp_dictoffset == 0);
+    /* No attribute in instance dictionary */
+    switch(kind) {
+        case NON_OVERRIDING:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non-overriding descriptor");
+            goto fail;
+        case NON_DESCRIPTOR:
+            /* To do -- Optimize this case */
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "non descriptor");
+            goto fail;
+        case ABSENT:
+            SPECIALIZATION_FAIL(LOAD_ATTR, type, name, "no attribute");
+            goto fail;
+        default:
+            Py_UNREACHABLE();
+    }
 fail:
     STAT_INC(LOAD_ATTR, specialization_failure);
     assert(!PyErr_Occurred());
@@ -461,7 +566,6 @@ success:
     cache0->counter = saturating_start();
     return 0;
 }
-
 
 int
 _Py_Specialize_LoadGlobal(

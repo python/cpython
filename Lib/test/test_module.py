@@ -22,8 +22,8 @@ class ModuleTests(unittest.TestCase):
         # An uninitialized module has no __dict__ or __name__,
         # and __doc__ is None
         foo = ModuleType.__new__(ModuleType)
-        self.assertTrue(foo.__dict__ is None)
-        self.assertRaises(TypeError, dir, foo)
+        self.assertTrue(isinstance(foo.__dict__, dict))
+        self.assertEqual(dir(foo), [])
         try:
             s = foo.__name__
             self.fail("__name__ = %s" % repr(s))
@@ -318,15 +318,6 @@ a = A(destroyed)"""
                 del foo.__dict__['__annotations__']
 
     def test_annotations_getset_raises(self):
-        # module has no dict, all operations fail
-        foo = ModuleType.__new__(ModuleType)
-        with self.assertRaises(TypeError):
-            print(foo.__annotations__)
-        with self.assertRaises(TypeError):
-            foo.__annotations__ = {}
-        with self.assertRaises(TypeError):
-            del foo.__annotations__
-
         # double delete
         foo = ModuleType("foo")
         foo.__annotations__ = {}
