@@ -1474,7 +1474,7 @@ Deprecated
   this release, a deprecation warning is raised if the numeric literal is
   immediately followed by one of keywords :keyword:`and`, :keyword:`else`,
   :keyword:`for`, :keyword:`if`, :keyword:`in`, :keyword:`is` and :keyword:`or`.
-  If future releases it will be changed to syntax warning, and finally to
+  In future releases it will be changed to syntax warning, and finally to
   syntax error.
   (Contributed by Serhiy Storchaka in :issue:`43833`).
 
