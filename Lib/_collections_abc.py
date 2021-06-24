@@ -274,7 +274,7 @@ class Iterator(Iterable):
 
     @abstractmethod
     def __next__(self):
-        'Return the next item from the iterator. When exhausted, raise StopIteration'
+        """Return the next item from the iterator. When exhausted, raise StopIteration"""
         raise StopIteration
 
     def __iter__(self):
@@ -618,11 +618,11 @@ class Set(Collection):
 
     @classmethod
     def _from_iterable(cls, it):
-        '''Construct an instance of the class from any iterable input.
+        """Construct an instance of the class from any iterable input.
 
         Must override this method if the class constructor signature
         does not accept an iterable for an input.
-        '''
+        """
         return cls(it)
 
     def __and__(self, other):
@@ -633,7 +633,7 @@ class Set(Collection):
     __rand__ = __and__
 
     def isdisjoint(self, other):
-        'Return True if two sets have a null intersection.'
+        """Return True if two sets have a null intersection."""
         for value in other:
             if value in self:
                 return False
@@ -811,7 +811,7 @@ class Mapping(Collection):
         raise KeyError
 
     def get(self, key, default=None):
-        'D.get(k[,d]) -> D[k] if k in D else d.  d defaults to None.'
+        """D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None."""
         try:
             return self[key]
         except KeyError:
@@ -826,15 +826,15 @@ class Mapping(Collection):
             return True
 
     def keys(self):
-        "D.keys() -> a set-like object providing a view on D's keys"
+        """D.keys() -> a set-like object providing a view on D's keys"""
         return KeysView(self)
 
     def items(self):
-        "D.items() -> a set-like object providing a view on D's items"
+        """D.items() -> a set-like object providing a view on D's items"""
         return ItemsView(self)
 
     def values(self):
-        "D.values() -> an object providing a view on D's values"
+        """D.values() -> an object providing a view on D's values"""
         return ValuesView(self)
 
     def __eq__(self, other):
@@ -947,9 +947,9 @@ class MutableMapping(Mapping):
     __marker = object()
 
     def pop(self, key, default=__marker):
-        '''D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
+        """D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
           If key is not found, d is returned if given, otherwise KeyError is raised.
-        '''
+        """
         try:
             value = self[key]
         except KeyError:
@@ -961,9 +961,9 @@ class MutableMapping(Mapping):
             return value
 
     def popitem(self):
-        '''D.popitem() -> (k, v), remove and return some (key, value) pair
+        """D.popitem() -> (k, v), remove and return some (key, value) pair
            as a 2-tuple; but raise KeyError if D is empty.
-        '''
+        """
         try:
             key = next(iter(self))
         except StopIteration:
@@ -973,7 +973,7 @@ class MutableMapping(Mapping):
         return key, value
 
     def clear(self):
-        'D.clear() -> None.  Remove all items from D.'
+        """D.clear() -> None.  Remove all items from D."""
         try:
             while True:
                 self.popitem()
@@ -981,11 +981,11 @@ class MutableMapping(Mapping):
             pass
 
     def update(self, other=(), /, **kwds):
-        ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
+        """ D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
             If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
             If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
             In either case, this is followed by: for k, v in F.items(): D[k] = v
-        '''
+        """
         if isinstance(other, Mapping):
             for key in other:
                 self[key] = other[key]
@@ -999,7 +999,7 @@ class MutableMapping(Mapping):
             self[key] = value
 
     def setdefault(self, key, default=None):
-        'D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D'
+        """D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D"""
         try:
             return self[key]
         except KeyError:
@@ -1049,12 +1049,12 @@ class Sequence(Reversible, Collection):
             yield self[i]
 
     def index(self, value, start=0, stop=None):
-        '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
+        """S.index(value, [start, [stop]]) -> integer -- return first index of value.
            Raises ValueError if the value is not present.
 
            Supporting start and stop arguments is optional, but
            recommended.
-        '''
+        """
         if start is not None and start < 0:
             start = max(len(self) + start, 0)
         if stop is not None and stop < 0:
@@ -1072,7 +1072,7 @@ class Sequence(Reversible, Collection):
         raise ValueError
 
     def count(self, value):
-        'S.count(value) -> integer -- return number of occurrences of value'
+        """S.count(value) -> integer -- return number of occurrences of value"""
         return sum(1 for v in self if v is value or v == value)
 
 Sequence.register(tuple)
@@ -1112,15 +1112,15 @@ class MutableSequence(Sequence):
 
     @abstractmethod
     def insert(self, index, value):
-        'S.insert(index, value) -- insert value before index'
+        """S.insert(index, value) -- insert value before index"""
         raise IndexError
 
     def append(self, value):
-        'S.append(value) -- append value to the end of the sequence'
+        """S.append(value) -- append value to the end of the sequence"""
         self.insert(len(self), value)
 
     def clear(self):
-        'S.clear() -> None -- remove all items from S'
+        """S.clear() -> None -- remove all items from S"""
         try:
             while True:
                 self.pop()
@@ -1128,30 +1128,30 @@ class MutableSequence(Sequence):
             pass
 
     def reverse(self):
-        'S.reverse() -- reverse *IN PLACE*'
+        """S.reverse() -- reverse *IN PLACE*"""
         n = len(self)
         for i in range(n//2):
             self[i], self[n-i-1] = self[n-i-1], self[i]
 
     def extend(self, values):
-        'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        """S.extend(iterable) -- extend sequence by appending elements from the iterable"""
         if values is self:
             values = list(values)
         for v in values:
             self.append(v)
 
     def pop(self, index=-1):
-        '''S.pop([index]) -> item -- remove and return item at index (default last).
+        """S.pop([index]) -> item -- remove and return item at index (default last).
            Raise IndexError if list is empty or index is out of range.
-        '''
+        """
         v = self[index]
         del self[index]
         return v
 
     def remove(self, value):
-        '''S.remove(value) -- remove first occurrence of value.
+        """S.remove(value) -- remove first occurrence of value.
            Raise ValueError if the value is not present.
-        '''
+        """
         del self[self.index(value)]
 
     def __iadd__(self, values):
