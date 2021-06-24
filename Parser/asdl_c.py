@@ -103,20 +103,8 @@ class EmitVisitor(asdl.VisitorBase):
 
     def __init__(self, file, metadata = None):
         self.file = file
-        self.identifiers = set()
-        self.singletons = set()
-        self.types = set()
         self._metadata = metadata
         super(EmitVisitor, self).__init__()
-
-    def emit_identifier(self, name):
-        self.identifiers.add(str(name))
-
-    def emit_singleton(self, name):
-        self.singletons.add(str(name))
-
-    def emit_type(self, name):
-        self.types.add(str(name))
 
     def emit(self, s, depth, reflow=True):
         # XXX reflow long lines?
@@ -143,6 +131,8 @@ class EmitVisitor(asdl.VisitorBase):
         self._metadata = value
 
 class MetadataVisitor(asdl.VisitorBase):
+    ROOT_TYPE = "AST"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -151,8 +141,16 @@ class MetadataVisitor(asdl.VisitorBase):
         #                   names where all the constructors
         #                   belonging to that type lack of any
         #                   fields.
+        #    - identifiers: All identifiers used in the AST decclarations
+        #    - singletons:  List of all constructors that originates from
+        #                   simple sums.
+        #    - types:       List of all top level type names
+        #
         self.metadata = types.SimpleNamespace(
-            simple_sums=set()
+            simple_sums=set(),
+            identifiers=set(),
+            singletons=set(),
+            types={self.ROOT_TYPE},
         )
 
     def visitModule(self, mod):
@@ -163,8 +161,34 @@ class MetadataVisitor(asdl.VisitorBase):
         self.visit(type.value, type.name)
 
     def visitSum(self, sum, name):
-        if is_simple(sum):
+        self.metadata.types.add(name)
+
+        simple_sum = is_simple(sum)
+        if simple_sum:
             self.metadata.simple_sums.add(name)
+
+        for constructor in sum.types:
+            if simple_sum:
+                self.metadata.singletons.add(constructor.name)
+            self.visitConstructor(constructor)
+        self.visitFields(sum.attributes)
+
+    def visitConstructor(self, constructor):
+        self.metadata.types.add(constructor.name)
+        self.visitFields(constructor.fields)
+
+    def visitProduct(self, product, name):
+        self.metadata.types.add(name)
+        self.visitFields(product.attributes)
+        self.visitFields(product.fields)
+
+    def visitFields(self, fields):
+        for field in fields:
+            self.visitField(field)
+
+    def visitField(self, field):
+        self.metadata.identifiers.add(field.name)
+
 
 class TypeDefVisitor(EmitVisitor):
     def visitModule(self, mod):
@@ -683,28 +707,20 @@ class SequenceConstructorVisitor(EmitVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit_type("%s_type" % name)
         self.emit("static PyObject* ast2obj_%s(struct ast_state *state, void*);" % name, 0)
         if prod.attributes:
-            for a in prod.attributes:
-                self.emit_identifier(a.name)
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
         if prod.fields:
-            for f in prod.fields:
-                self.emit_identifier(f.name)
             self.emit("static const char * const %s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
-        self.emit_type("%s_type" % name)
         if sum.attributes:
-            for a in sum.attributes:
-                self.emit_identifier(a.name)
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
@@ -712,16 +728,12 @@ class PyTypesDeclareVisitor(PickleVisitor):
         ptype = "void*"
         if is_simple(sum):
             ptype = get_c_type(name)
-            for t in sum.types:
-                self.emit_singleton("%s_singleton" % t.name)
         self.emit("static PyObject* ast2obj_%s(struct ast_state *state, %s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
         if cons.fields:
-            for t in cons.fields:
-                self.emit_identifier(t.name)
             self.emit("static const char * const %s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
@@ -1099,8 +1111,6 @@ static int add_ast_fields(struct ast_state *state)
                         (name, name, fields, len(prod.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, prod), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
-        self.emit_type("AST_type")
-        self.emit_type("%s_type" % name)
         if prod.attributes:
             self.emit("if (!add_attributes(state, state->%s_type, %s_attributes, %d)) return 0;" %
                             (name, name, len(prod.attributes)), 1)
@@ -1113,7 +1123,6 @@ static int add_ast_fields(struct ast_state *state)
         self.emit('state->%s_type = make_type(state, "%s", state->AST_type, NULL, 0,' %
                   (name, name), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(name, sum), 2), 2, reflow=False)
-        self.emit_type("%s_type" % name)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         if sum.attributes:
             self.emit("if (!add_attributes(state, state->%s_type, %s_attributes, %d)) return 0;" %
@@ -1134,7 +1143,6 @@ static int add_ast_fields(struct ast_state *state)
                             (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit('%s);' % reflow_c_string(asdl_of(cons.name, cons), 2), 2, reflow=False)
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
-        self.emit_type("%s_type" % cons.name)
         self.emit_defaults(cons.name, cons.fields, 1)
         if simple:
             self.emit("state->%s_singleton = PyType_GenericNew((PyTypeObject *)"
@@ -1439,17 +1447,8 @@ def generate_ast_fini(module_state, f):
     """))
 
 
-def generate_module_def(mod, f, internal_h):
+def generate_module_def(mod, metadata, f, internal_h):
     # Gather all the data needed for ModuleSpec
-    visitor_list = set()
-    with open(os.devnull, "w") as devnull:
-        visitor = PyTypesDeclareVisitor(devnull)
-        visitor.visit(mod)
-        visitor_list.add(visitor)
-        visitor = PyTypesVisitor(devnull)
-        visitor.visit(mod)
-        visitor_list.add(visitor)
-
     state_strings = {
         "ast",
         "_fields",
@@ -1458,16 +1457,19 @@ def generate_module_def(mod, f, internal_h):
         "__dict__",
         "__module__",
         "_attributes",
+        *metadata.identifiers
     }
+
     module_state = state_strings.copy()
-    for visitor in visitor_list:
-        for identifier in visitor.identifiers:
-            module_state.add(identifier)
-            state_strings.add(identifier)
-        for singleton in visitor.singletons:
-            module_state.add(singleton)
-        for tp in visitor.types:
-            module_state.add(tp)
+    module_state.update(
+        "%s_singleton" % singleton
+        for singleton in metadata.singletons
+    )
+    module_state.update(
+        "%s_type" % type
+        for type in metadata.types
+    )
+
     state_strings = sorted(state_strings)
     module_state = sorted(module_state)
 
@@ -1583,7 +1585,7 @@ def write_internal_h_footer(mod, f):
     """), file=f)
 
 def write_source(mod, metadata, f, internal_h_file):
-    generate_module_def(mod, f, internal_h_file)
+    generate_module_def(mod, metadata, f, internal_h_file)
 
     v = ChainOfVisitors(
         SequenceConstructorVisitor(f),
