@@ -83,8 +83,6 @@ import errno
 import getopt
 import time
 import socket
-import asyncore
-import asynchat
 import collections
 from warnings import warn
 from email._header_value_parser import get_addr_spec, get_angle_addr
@@ -93,6 +91,19 @@ __all__ = [
     "SMTPChannel", "SMTPServer", "DebuggingServer", "PureProxy",
     "MailmanProxy",
 ]
+
+warn(
+    'The smtpd module is deprecated and unmaintained.  Please see aiosmtpd '
+    '(https://aiosmtpd.readthedocs.io/) for the recommended replacement.',
+    DeprecationWarning,
+    stacklevel=2)
+
+
+# These are imported after the above warning so that users get the correct
+# deprecation warning.
+import asyncore
+import asynchat
+
 
 program = sys.argv[0]
 __version__ = 'Python SMTP proxy version 0.3'
