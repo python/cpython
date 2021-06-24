@@ -493,8 +493,8 @@ class TestEmailMessageBase:
         m = self._str_msg(msg)
         allparts = list(m.walk())
         parts = [allparts[n] for n in parts]
-        x = (list(m.iter_parts()) if self._is_multipart_msg(msg) else [], parts)
-        self.assertEqual(*x)
+        iter_parts = list(m.iter_parts()) if self._is_multipart_msg(msg) else []
+        self.assertEqual(iter_parts, parts)
 
     class _TestContentManager:
         def get_content(self, msg, *args, **kw):
