@@ -2,8 +2,6 @@
 # does add tests for a few functions which have been determined to be more
 # portable than they had been thought to be.
 
-import asynchat
-import asyncore
 import codecs
 import contextlib
 import decimal
@@ -38,6 +36,11 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from platform import win32_is_iot
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asynchat
+    import asyncore
 
 try:
     import resource
