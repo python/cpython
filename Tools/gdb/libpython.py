@@ -1637,13 +1637,13 @@ class Frame(object):
 
     def get_pyop(self):
         try:
-            f = self._gdbframe.read_var('f')
+            f = self._gdbframe.read_var('fo')
             frame = PyFrameObjectPtr.from_pyobject_ptr(f)
             if not frame.is_optimized_out():
                 return frame
             # gdb is unable to get the "f" argument of PyEval_EvalFrameEx()
             # because it was "optimized out". Try to get "f" from the frame
-            # of the caller, PyEval_EvalCodeEx().
+            # of the caller, _PyEval_Vector().
             orig_frame = frame
             caller = self._gdbframe.older()
             if caller:

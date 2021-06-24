@@ -47,8 +47,13 @@ _PyFrame_GetLocalsArray(_PyFrame *frame)
 }
 
 /* Returns a borrowed reference */
-PyFrameObject *
-_PyFrame_GetFrameObject(_PyFrame *frame);
+static inline PyFrameObject *
+_PyFrame_GetFrameObject(_PyFrame *frame)
+{
+    /* Will need to handle lazy frames */
+    assert(frame->frame_obj != NULL);
+    return frame->frame_obj;
+}
 
 #ifdef __cplusplus
 }
