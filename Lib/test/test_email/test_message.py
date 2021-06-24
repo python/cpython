@@ -504,7 +504,6 @@ class TestEmailMessageBase:
             self.args = args
             self.kw = kw
 
-
     def test_get_content_with_cm(self):
         m = self._str_msg('')
         cm = self._TestContentManager()
