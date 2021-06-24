@@ -79,6 +79,12 @@ The module defines the following items:
    :ref:`zipinfo-objects`.
 
 
+.. note::
+
+   A leading slash in the filename may lead to the archive being impossible to
+   open in some zip programs on Windows systems.
+
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -405,6 +411,11 @@ ZipFile Objects
 
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
+      
+   .. note::
+
+      A leading slash in the filename may lead to the archive being impossible to
+      open in some zip programs on Windows systems.
 
    .. versionchanged:: 3.6
       Calling :meth:`write` on a ZipFile created with mode ``'r'`` or
@@ -434,6 +445,11 @@ ZipFile Objects
       the compression method used will be that specified in the *compress_type*
       member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
+
+   .. note::
+
+      A leading slash in the filename may lead to the archive being impossible to
+      open in some zip programs on Windows systems.
 
    .. versionchanged:: 3.2
       The *compress_type* argument.
