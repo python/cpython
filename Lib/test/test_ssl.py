@@ -21,7 +21,6 @@ import pprint
 import urllib.request
 import threading
 import traceback
-import asyncore
 import weakref
 import platform
 import sysconfig
@@ -30,6 +29,11 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    import asyncore
 
 ssl = import_helper.import_module("ssl")
 import _ssl
