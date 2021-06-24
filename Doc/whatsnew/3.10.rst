@@ -1797,10 +1797,10 @@ Changes in the C API
     ``PyNode_Compile`` can be replaced by calling :c:func:`Py_CompileString`.
 
   * There is no direct replacement for ``PyParser_SimpleParseFileFlags``.
-    To compile code from a `FILE*` argument, you will need to read
+    To compile code from a ``FILE *`` argument, you will need to read
     the file in C and pass the resulting buffer to :c:func:`Py_CompileString`.
 
-  * To compile a file given a `char *` filename, explicitly open the file, read
+  * To compile a file given a ``char *`` filename, explicitly open the file, read
     it and compile the result. One way to do this is using the :py:mod:`io`
     module with :c:func:`PyImport_ImportModule`, :c:func:`PyObject_CallMethod`,
     :c:func:`PyBytes_AsString` and :c:func:`Py_CompileString`,
