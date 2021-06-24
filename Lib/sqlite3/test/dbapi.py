@@ -652,6 +652,7 @@ class ThreadTests(unittest.TestCase):
             lambda: self.con.rollback(),
             lambda: self.con.close(),
             lambda: self.con.set_trace_callback(None),
+            lambda: self.con.set_authorizer(None),
             lambda: self.con.create_collation("foo", None),
         ]
         for fn in fns:
