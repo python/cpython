@@ -211,8 +211,11 @@ class ExceptionTests(unittest.TestCase):
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
         check('[file for str(file) in []\n])', 2, 2)
+        check('a = « hello » « world »', 1, 5)
         check('[\nfile\nfor str(file)\nin\n[]\n]', 3, 5)
         check('[file for\n str(file) in []]', 2, 2)
+        check("ages = {'Alice'=22, 'Bob'=23}", 1, 16)
+        check('match ...:\n    case {**rest, "key": value}:\n        ...', 2, 19)
 
         # Errors thrown by compile.c
         check('class foo:return 1', 1, 11)
@@ -242,6 +245,8 @@ class ExceptionTests(unittest.TestCase):
             """, 9, 24)
         check("pass\npass\npass\n(1+)\npass\npass\npass", 4, 4)
         check("(1+)", 1, 4)
+        check("[interesting\nfoo()\n", 1, 1)
+        check(b"\xef\xbb\xbf#coding: utf8\nprint('\xe6\x88\x91')\n", 0, -1)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)
@@ -2102,6 +2107,22 @@ class SyntaxErrorTests(unittest.TestCase):
                         sys.__excepthook__(*sys.exc_info())
                     the_exception = exc
 
+    def test_encodings(self):
+        source = (
+            '# -*- coding: cp437 -*-\n'
+            '"┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))\n'
+        )
+        try:
+            with open(TESTFN, 'w', encoding='cp437') as testfile:
+                testfile.write(source)
+            rc, out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+            err = err.decode('utf-8').splitlines()
+
+            self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
+            self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        finally:
+            unlink(TESTFN)
+
     def test_attributes_new_constructor(self):
         args = ("bad.py", 1, 2, "abcdefg", 1, 100)
         the_exception = SyntaxError("bad bad", args)
@@ -2139,18 +2160,23 @@ class SyntaxErrorTests(unittest.TestCase):
 
 class PEP626Tests(unittest.TestCase):
 
-    def lineno_after_raise(self, f, line):
+    def lineno_after_raise(self, f, *expected):
         try:
             f()
         except Exception as ex:
             t = ex.__traceback__
-            while t.tb_next:
-                t = t.tb_next
+        else:
+            self.fail("No exception raised")
+        lines = []
+        t = t.tb_next # Skip this function
+        while t:
             frame = t.tb_frame
-            if line is None:
-                self.assertEqual(frame.f_lineno, line)
-            else:
-                self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, line)
+            lines.append(
+                None if frame.f_lineno is None else
+                frame.f_lineno-frame.f_code.co_firstlineno
+            )
+            t = t.tb_next
+        self.assertEqual(tuple(lines), expected)
 
     def test_lineno_after_raise_simple(self):
         def simple():
@@ -2228,6 +2254,18 @@ class PEP626Tests(unittest.TestCase):
         self.lineno_after_raise(f, 1)
         f.__code__ = f.__code__.replace(co_linetable=b'\x04\x80\xff\x80')
         self.lineno_after_raise(f, None)
+
+    def test_lineno_after_raise_in_with_exit(self):
+        class ExitFails:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                raise ValueError
+
+        def after_with():
+            with ExitFails():
+                1/0
+        self.lineno_after_raise(after_with, 1, 1)
 
 if __name__ == '__main__':
     unittest.main()

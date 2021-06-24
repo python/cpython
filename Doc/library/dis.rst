@@ -1056,18 +1056,33 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
+.. opcode:: MAKE_CELL (i)
+
+   Creates a new cell in slot ``i``.  If that slot is empty then
+   that value is stored into the new cell.
+
+   .. versionadded:: 3.11
+
+
 .. opcode:: LOAD_CLOSURE (i)
 
-   Pushes a reference to the cell contained in slot *i* of the cell and free
-   variable storage.  The name of the variable is ``co_cellvars[i]`` if *i* is
-   less than the length of *co_cellvars*.  Otherwise it is ``co_freevars[i -
-   len(co_cellvars)]``.
+   Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
+   storage.  The name of the variable is ``co_fastlocalnames[i]``.
+
+   Note that ``LOAD_CLOSURE`` is effectively an alias for ``LOAD_FAST``.
+   It exists to keep bytecode a little more readable.
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_DEREF (i)
 
-   Loads the cell contained in slot *i* of the cell and free variable storage.
+   Loads the cell contained in slot ``i`` of the "fast locals" storage.
    Pushes a reference to the object the cell contains on the stack.
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: LOAD_CLASSDEREF (i)
@@ -1078,19 +1093,28 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
+
 
 .. opcode:: STORE_DEREF (i)
 
-   Stores TOS into the cell contained in slot *i* of the cell and free variable
+   Stores TOS into the cell contained in slot ``i`` of the "fast locals"
    storage.
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: DELETE_DEREF (i)
 
-   Empties the cell contained in slot *i* of the cell and free variable storage.
+   Empties the cell contained in slot ``i`` of the "fast locals" storage.
    Used by the :keyword:`del` statement.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.11
+      ``i`` is no longer offset by the length of ``co_varnames``.
 
 
 .. opcode:: RAISE_VARARGS (argc)
@@ -1175,6 +1199,18 @@ All of the following opcodes use their arguments.
 
    .. versionadded:: 3.7
 
+
+.. opcode:: CALL_METHOD_KW (argc)
+
+   Calls a method in a similar fashion as :opcode:`CALL_METHOD`, but also supports keyword arguments.
+   *argc* is the number of positional and keyword arguments.
+   This opcode is designed to be used with :opcode:`LOAD_METHOD`.  TOS is a
+   tuple of keyword argument names.  Argument values are below that.
+   Below them, the two items described in :opcode:`LOAD_METHOD` are on the
+   stack (either ``self`` and an unbound method object or ``NULL`` and an
+   arbitrary callable).  All of them are popped from the stack and the return value is pushed.
+
+   .. versionadded:: 3.11
 
 .. opcode:: MAKE_FUNCTION (flags)
 

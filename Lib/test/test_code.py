@@ -49,7 +49,7 @@ varnames: ('x', 'y', 'a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 5
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def attrs(obj):
@@ -67,7 +67,7 @@ varnames: ('obj',)
 cellvars: ()
 freevars: ()
 nlocals: 1
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def optimize_away():
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 67
+flags: 3
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -103,7 +103,7 @@ varnames: ('a', 'b', 'k1')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 >>> def posonly_args(a,b,/,c):
@@ -120,7 +120,7 @@ varnames: ('a', 'b', 'c')
 cellvars: ()
 freevars: ()
 nlocals: 3
-flags: 67
+flags: 3
 consts: ('None',)
 
 """
@@ -199,10 +199,6 @@ class CodeTest(unittest.TestCase):
         class_ref = function.__closure__[0].cell_contents
         self.assertIs(class_ref, List)
 
-        # Ensure the code correctly indicates it accesses a free variable
-        self.assertFalse(function.__code__.co_flags & inspect.CO_NOFREE,
-                         hex(function.__code__.co_flags))
-
         # Ensure the zero-arg super() call in the injected method works
         obj = List([1, 2, 3])
         self.assertEqual(obj[0], "Foreign getitem: 1")
@@ -240,6 +236,7 @@ class CodeTest(unittest.TestCase):
         # different co_name, co_varnames, co_consts
         def func2():
             y = 2
+            z = 3
             return y
         code2 = func2.__code__
 
@@ -247,14 +244,14 @@ class CodeTest(unittest.TestCase):
             ("co_argcount", 0),
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
-            ("co_nlocals", 0),
+            ("co_nlocals", 1),
             ("co_stacksize", 0),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
             ("co_consts", code2.co_consts),
             ("co_names", ("myname",)),
-            ("co_varnames", code2.co_varnames),
+            ("co_varnames", ('spam',)),
             ("co_freevars", ("freevar",)),
             ("co_cellvars", ("cellvar",)),
             ("co_filename", "newfilename"),
@@ -264,6 +261,47 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+
+        new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+
+    def test_nlocals_mismatch(self):
+        def func():
+            x = 1
+            return x
+        co = func.__code__
+        assert co.co_nlocals > 0;
+
+        # First we try the constructor.
+        CodeType = type(co)
+        for diff in (-1, 1):
+            with self.assertRaises(ValueError):
+                CodeType(co.co_argcount,
+                         co.co_posonlyargcount,
+                         co.co_kwonlyargcount,
+                         # This is the only change.
+                         co.co_nlocals + diff,
+                         co.co_stacksize,
+                         co.co_flags,
+                         co.co_code,
+                         co.co_consts,
+                         co.co_names,
+                         co.co_varnames,
+                         co.co_filename,
+                         co.co_name,
+                         co.co_firstlineno,
+                         co.co_lnotab,
+                         co.co_exceptiontable,
+                         co.co_freevars,
+                         co.co_cellvars,
+                         )
+        # Then we try the replace method.
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals - 1)
+        with self.assertRaises(ValueError):
+            co.replace(co_nlocals=co.co_nlocals + 1)
 
     def test_empty_linetable(self):
         def func():

@@ -3,6 +3,7 @@ import collections
 import pickle
 import re
 import sys
+import warnings
 from unittest import TestCase, main, skipUnless, skip
 from copy import copy, deepcopy
 
@@ -516,7 +517,7 @@ class LiteralTests(BaseTestCase):
 
     def test_illegal_parameters_do_not_raise_runtime_errors(self):
         # Type checkers should reject these types, but we do not
-        # raise errors at runtime to maintain maximium flexibility.
+        # raise errors at runtime to maintain maximum flexibility.
         Literal[int]
         Literal[3j + 2, ..., ()]
         Literal[{"foo": 3, "bar": 4}]
@@ -1422,6 +1423,14 @@ class ProtocolTests(BaseTestCase):
         class CustomContextManager(typing.ContextManager, Protocol):
             pass
 
+    def test_non_runtime_protocol_isinstance_check(self):
+        class P(Protocol):
+            x: int
+
+        with self.assertRaisesRegex(TypeError, "@runtime_checkable"):
+            isinstance(1, P)
+
+
 class GenericTests(BaseTestCase):
 
     def test_basics(self):
@@ -1968,7 +1977,7 @@ class GenericTests(BaseTestCase):
         T = TypeVar('T')
         things = [Any, Union[T, int], Callable[..., T], Tuple[Any, Any],
                   Optional[List[int]], typing.Mapping[int, str],
-                  typing.re.Match[bytes], typing.Iterable['whatever']]
+                  typing.Match[bytes], typing.Iterable['whatever']]
         for t in things:
             self.assertEqual(weakref.ref(t)(), t)
 
@@ -3988,12 +3997,15 @@ class IOTests(BaseTestCase):
         self.assertEqual(a.__parameters__, ())
 
     def test_io_submodule(self):
-        from typing.io import IO, TextIO, BinaryIO, __all__, __name__
-        self.assertIs(IO, typing.IO)
-        self.assertIs(TextIO, typing.TextIO)
-        self.assertIs(BinaryIO, typing.BinaryIO)
-        self.assertEqual(set(__all__), set(['IO', 'TextIO', 'BinaryIO']))
-        self.assertEqual(__name__, 'typing.io')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.filterwarnings("default", category=DeprecationWarning)
+            from typing.io import IO, TextIO, BinaryIO, __all__, __name__
+            self.assertIs(IO, typing.IO)
+            self.assertIs(TextIO, typing.TextIO)
+            self.assertIs(BinaryIO, typing.BinaryIO)
+            self.assertEqual(set(__all__), set(['IO', 'TextIO', 'BinaryIO']))
+            self.assertEqual(__name__, 'typing.io')
+            self.assertEqual(len(w), 1)
 
 
 class RETests(BaseTestCase):
@@ -4040,11 +4052,14 @@ class RETests(BaseTestCase):
         self.assertEqual(repr(Match[bytes]), 'typing.Match[bytes]')
 
     def test_re_submodule(self):
-        from typing.re import Match, Pattern, __all__, __name__
-        self.assertIs(Match, typing.Match)
-        self.assertIs(Pattern, typing.Pattern)
-        self.assertEqual(set(__all__), set(['Match', 'Pattern']))
-        self.assertEqual(__name__, 'typing.re')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.filterwarnings("default", category=DeprecationWarning)
+            from typing.re import Match, Pattern, __all__, __name__
+            self.assertIs(Match, typing.Match)
+            self.assertIs(Pattern, typing.Pattern)
+            self.assertEqual(set(__all__), set(['Match', 'Pattern']))
+            self.assertEqual(__name__, 'typing.re')
+            self.assertEqual(len(w), 1)
 
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError) as ex:
@@ -4350,6 +4365,31 @@ class ParamSpecTests(BaseTestCase):
         C1 = Callable[P, T]
         self.assertEqual(C1[int, str], Callable[[int], str])
         self.assertEqual(C1[[int, str, dict], float], Callable[[int, str, dict], float])
+
+    def test_no_paramspec_in__parameters__(self):
+        # ParamSpec should not be found in __parameters__
+        # of generics. Usages outside Callable, Concatenate
+        # and Generic are invalid.
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        self.assertNotIn(P, List[P].__parameters__)
+        self.assertIn(T, Tuple[T, P].__parameters__)
+
+        # Test for consistency with builtin generics.
+        self.assertNotIn(P, list[P].__parameters__)
+        self.assertIn(T, tuple[T, P].__parameters__)
+
+    def test_paramspec_in_nested_generics(self):
+        # Although ParamSpec should not be found in __parameters__ of most
+        # generics, they probably should be found when nested in
+        # a valid location.
+        T = TypeVar("T")
+        P = ParamSpec("P")
+        C1 = Callable[P, T]
+        G1 = List[C1]
+        G2 = list[C1]
+        self.assertEqual(G1.__parameters__, (P, T))
+        self.assertEqual(G2.__parameters__, (P, T))
 
 
 class ConcatenateTests(BaseTestCase):

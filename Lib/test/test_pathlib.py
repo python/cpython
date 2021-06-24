@@ -1799,6 +1799,16 @@ class _BasePathTest(object):
         # Non-strict
         self.assertEqual(r.resolve(strict=False), p / '3' / '4')
 
+    def test_resolve_nonexist_relative_issue38671(self):
+        p = self.cls('non', 'exist')
+
+        old_cwd = os.getcwd()
+        os.chdir(BASE)
+        try:
+            self.assertEqual(p.resolve(), self.cls(BASE, p))
+        finally:
+            os.chdir(old_cwd)
+
     def test_with(self):
         p = self.cls(BASE)
         it = p.iterdir()
@@ -1934,7 +1944,8 @@ class _BasePathTest(object):
         self.assertTrue(p.stat)
         # Linking to a str of a relative path.
         r = rel_join('fileAAA')
-        q.link_to(r)
+        with self.assertWarns(DeprecationWarning):
+            q.link_to(r)
         self.assertEqual(os.stat(r).st_size, size)
         self.assertTrue(q.stat)
 
