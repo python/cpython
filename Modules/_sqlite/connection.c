@@ -199,7 +199,7 @@ pysqlite_connection_init_impl(pysqlite_Connection *self,
 static void
 pysqlite_do_all_statements(pysqlite_Connection *self)
 {
-    // Reset all cached statements
+    // Reset all statements
     sqlite3_stmt *stmt = NULL;
     while ((stmt = sqlite3_next_stmt(self->db, stmt))) {
         if (sqlite3_stmt_busy(stmt)) {
