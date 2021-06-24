@@ -419,8 +419,7 @@ class TestEmailMessageBase:
                 From: robot@examp.com
 
                 this is a message body.
-                """),
-        ),
+                """)),
 
         'mixed_text_message_rfc822': (
             (None, None, 1),
@@ -445,8 +444,8 @@ class TestEmailMessageBase:
                 this is a message body.
 
                 --===--
-                """),
-        ),
+                """)),
+
          }
 
     def message_as_get_body(self, body_parts, attachments, parts, msg):
