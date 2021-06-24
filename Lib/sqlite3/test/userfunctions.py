@@ -522,6 +522,12 @@ class AuthorizerTests(unittest.TestCase):
             self.con.execute("select c2 from t1")
         self.assertIn('prohibited', str(cm.exception))
 
+    def test_clear_authorizer(self):
+        self.con.set_authorizer(None)
+        self.con.execute("select * from t2")
+        self.con.execute("select c2 from t1")
+
+
 class AuthorizerRaiseExceptionTests(AuthorizerTests):
     @staticmethod
     def authorizer_cb(action, arg1, arg2, dbname, source):
