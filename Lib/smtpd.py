@@ -88,7 +88,7 @@ __all__ = [
 
 warn(
     'The smtpd module is deprecated and unmaintained.  Please see aiosmtpd '
-    '(http://aiosmtpd.readthedocs.io/) for the recommended replacement.',
+    '(https://aiosmtpd.readthedocs.io/) for the recommended replacement.',
     DeprecationWarning,
     stacklevel=2)
 
