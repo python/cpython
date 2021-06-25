@@ -68,17 +68,14 @@ build applications which provide an interactive interpreter prompt.
 Overriding Console Output
 -------------------------
 
-To customize console output a user can replace :func:`sys.displayhook`
-and/or :func:`sys.excepthook`. Alternatively, users can override
-:meth:`InteractiveConsole.write` in a derived class.
+All output is printed to :data:`sys.stderr` by default.  A user can override 
+:meth:`InteractiveConsole.write` in a derived class to change that.  Alternatively, 
+it is possible to selectively redirect parts of the output:
 
-The destination of console output is controlled as follows:
-
-* The return value from successfully interpreted Python statements are printed
-  by calling :func:`sys.displayhook`. This is a side effect of
-  :func:`compile_command` passing ``'single'`` for *symbol*.
-* Exception tracebacks and syntax errors are written to :data:`sys.stderr` by 
-  default but can be redirected by setting :func:`sys.excepthook`.
+* The return values of successfully interpreted Python statements are printed 
+  with :func:`sys.displayhook`.
+* Exception tracebacks and syntax errors can be redirected by setting 
+  :func:`sys.excepthook`.
 
 Additionally, :class:`InteractiveConsole` will print banner information to
 :data:`sys.stderr` if *banner* was passed to the constructor.
