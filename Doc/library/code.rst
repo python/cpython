@@ -69,7 +69,7 @@ Overriding Console Output
 -------------------------
 
 To customize console output a user can replace :func:`sys.displayhook`
-and/or :func:`sys.excepthook`. Alternatively, users can override the
+and/or :func:`sys.excepthook`. Alternatively, users can override
 :meth:`InteractiveConsole.write` in a derived class.
 
 The destination of console output is controlled as follows:
