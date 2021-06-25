@@ -640,7 +640,6 @@ static inline PyObject *
 leaf_iterator(merge_node *node)
 {
     assert(is_leaf(node));
-    assert(PyIter_Check(node->right));
     return node->right;
 }
 

@@ -470,6 +470,20 @@ class TestErrorHandling:
         def nexterr_delayed():
             yield from range(10)
             raise ZeroDivisionError
+
+        def get_object_that_stops_iterating(length):
+            class StopsBeingIterable:
+                def __init__(self):
+                    self.state = length
+                def __iter__(self):
+                    return self
+                def __next__(self):
+                    self.state -= 1
+                    if self.state <= 0:
+                        del type(self).__next__
+                    return 42
+            return StopsBeingIterable()
+
         merge = self.module.merge
         for key in [None, lambda x:x]:
             for reverse in [False, True]:
@@ -493,6 +507,12 @@ class TestErrorHandling:
                     args = [nexterr_delayed() for _ in range(n)]
                     mo = merge(*args, key=key, reverse=reverse)
                     self.assertRaises(ZeroDivisionError, list, mo)
+                for n in range(1, 10):
+                    for length in [0, 1, 2, 3, 4, 5, 10, 100]:
+                        args = [get_object_that_stops_iterating(length)
+                                for _ in range(n)]
+                        mo = merge(*args, key=key, reverse=reverse)
+                        self.assertRaises(TypeError, list, mo)
 
         for reverse in [False, True]:
             # test error during key computation
