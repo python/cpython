@@ -411,7 +411,7 @@ ZipFile Objects
 
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
-      
+
    .. warning::
 
       A leading slash in the filename may lead to the archive being impossible to
