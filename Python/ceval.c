@@ -3745,32 +3745,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        case TARGET(COPY_DICT_WITHOUT_KEYS): {
-            // rest = dict(TOS1)
-            // for key in TOS:
-            //     del rest[key]
-            // SET_TOP(rest)
-            PyObject *keys = TOP();
-            PyObject *subject = SECOND();
-            PyObject *rest = PyDict_New();
-            if (rest == NULL || PyDict_Update(rest, subject)) {
-                Py_XDECREF(rest);
-                goto error;
-            }
-            // This may seem a bit inefficient, but keys is rarely big enough to
-            // actually impact runtime.
-            assert(PyTuple_CheckExact(keys));
-            for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(keys); i++) {
-                if (PyDict_DelItem(rest, PyTuple_GET_ITEM(keys, i))) {
-                    Py_DECREF(rest);
-                    goto error;
-                }
-            }
-            Py_DECREF(keys);
-            SET_TOP(rest);
-            DISPATCH();
-        }
-
         case TARGET(GET_ITER): {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iterable = TOP();

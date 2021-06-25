@@ -1231,8 +1231,6 @@ stack_effect(int opcode, int oparg, int jump)
         case DICT_MERGE:
         case DICT_UPDATE:
             return -1;
-        case COPY_DICT_WITHOUT_KEYS:
-            return 0;
         case MATCH_CLASS:
             return -1;
         case GET_LEN:
@@ -6115,7 +6113,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         return compiler_error(c, "too many sub-patterns in mapping pattern");
     }
     // Collect all of the keys into a tuple for MATCH_KEYS and
-    // COPY_DICT_WITHOUT_KEYS. They can either be dotted names or literals:
+    // **rest. They can either be dotted names or literals:
     for (Py_ssize_t i = 0; i < size; i++) {
         expr_ty key = asdl_seq_GET(keys, i);
         if (key == NULL) {
@@ -6137,32 +6135,43 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
+    ADDOP_I(c, UNPACK_SEQUENCE, size);
+    pc->on_top += size - 1;
     for (Py_ssize_t i = 0; i < size; i++) {
+        pc->on_top--;
         pattern_ty pattern = asdl_seq_GET(patterns, i);
-        if (WILDCARD_CHECK(pattern)) {
-            continue;
-        }
-        ADDOP(c, DUP_TOP);
-        ADDOP_LOAD_CONST_NEW(c, PyLong_FromSsize_t(i));
-        ADDOP(c, BINARY_SUBSCR);
         RETURN_IF_FALSE(compiler_pattern_subpattern(c, pattern, pc));
     }
-    // If we get this far, it's a match! We're done with the tuple of values,
-    // and whatever happens next should consume the tuple of keys underneath it:
+    // If we get this far, it's a match! Whatever happens next should consume
+    // the tuple of keys and the subject:
     pc->on_top -= 2;
-    ADDOP(c, POP_TOP);
     if (star_target) {
         // If we have a starred name, bind a dict of remaining items to it:
-        ADDOP(c, COPY_DICT_WITHOUT_KEYS);
+        // rest = dict(TOS1)
+        // for key in TOS:
+        //     del rest[key]
+        ADDOP_I(c, BUILD_MAP, 0);               // [subject, keys, empty]
+        ADDOP(c, ROT_THREE);                    // [empty, subject, keys]
+        ADDOP(c, ROT_TWO);                      // [empty, keys, subject]
+        ADDOP_I(c, DICT_UPDATE, 2);             // [copy, keys]
+        // This may seem a bit inefficient, but keys is rarely big enough to
+        // actually impact runtime:
+        ADDOP_I(c, UNPACK_SEQUENCE, size);      // [copy, keys...]
+        ADDOP_I(c, BUILD_TUPLE, size + 1);      // [(copy, keys...)]
+        // // The keys get reversed here, but that's okay:
+        ADDOP_I(c, UNPACK_SEQUENCE, size + 1);  // [keys..., copy]
+        while (size--) {
+            ADDOP(c, DUP_TOP);                  // [keys..., copy, copy]
+            ADDOP(c, ROT_THREE);                // [keys..., copy, key, copy]
+            ADDOP(c, ROT_TWO);                  // [keys..., copy, copy, key]
+            ADDOP(c, DELETE_SUBSCR);            // [keys..., copy]
+        }
         RETURN_IF_FALSE(pattern_helper_store_name(c, star_target, pc));
     }
     else {
-        // Otherwise, we don't care about this tuple of keys anymore:
-        ADDOP(c, POP_TOP);
+        ADDOP(c, POP_TOP);  // Tuple of keys.
+        ADDOP(c, POP_TOP);  // Subject.
     }
-    // Pop the subject:
-    pc->on_top--;
-    ADDOP(c, POP_TOP);
     return 1;
 }
 

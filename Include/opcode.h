@@ -34,7 +34,6 @@ extern "C" {
 #define MATCH_MAPPING            31
 #define MATCH_SEQUENCE           32
 #define MATCH_KEYS               33
-#define COPY_DICT_WITHOUT_KEYS   34
 #define PUSH_EXC_INFO            35
 #define POP_EXCEPT_AND_RERAISE   37
 #define WITH_EXCEPT_START        49
@@ -142,9 +141,9 @@ extern "C" {
 #define LOAD_ATTR_WITH_HINT      14
 #define LOAD_ATTR_SLOT           18
 #define LOAD_ATTR_MODULE         21
-#define LOAD_GLOBAL_ADAPTIVE     36
-#define LOAD_GLOBAL_MODULE       38
-#define LOAD_GLOBAL_BUILTIN      39
+#define LOAD_GLOBAL_ADAPTIVE     34
+#define LOAD_GLOBAL_MODULE       36
+#define LOAD_GLOBAL_BUILTIN      38
 #ifdef NEED_OPCODE_JUMP_TABLES
 static uint32_t _PyOpcode_RelativeJump[8] = {
     0U,

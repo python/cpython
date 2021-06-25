@@ -754,15 +754,6 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: COPY_DICT_WITHOUT_KEYS
-
-   TOS is a tuple of mapping keys, and TOS1 is the match subject.  Replace TOS
-   with a :class:`dict` formed from the items of TOS1, but without any of the
-   keys in TOS.
-
-   .. versionadded:: 3.10
-
-
 .. opcode:: GET_LEN
 
    Push ``len(TOS)`` onto the stack.
