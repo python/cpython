@@ -947,29 +947,36 @@ class SqliteOnConflictTests(unittest.TestCase):
 class MultiprocessTests(unittest.TestCase):
     CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
 
-    def setUp(self):
-        self.cx = sqlite.connect(TESTFN, timeout=self.CONNECTION_TIMEOUT)
-        self.cx.execute("create table t(t)")
-
     def tearDown(self):
-        self.cx.close()
         unlink(TESTFN)
 
-    def test_rollback_if_db_is_locked(self):
+    def test_ctx_mgr_rollback_if_commit_failed(self):
         # bpo-27334: ctx manager does not rollback if commit fails
         SCRIPT = f"""if 1:
             import sqlite3
-            input()  # wait for parent process to start
+            def wait():
+                print("started")
+                assert "database is locked" in input()
+
             cx = sqlite3.connect("{TESTFN}", timeout={self.CONNECTION_TIMEOUT})
+            cx.create_function("wait", 0, wait)
+            with cx:
+                cx.execute("create table t(t)")
             try:
-                with cx:
-                    cx.execute("insert into t values('test')")
-            except Exception as exc:
-                print(exc)
-            else:
-                print("no error in sub")
-            input()  # keep proc open till parent calls
-            cx.close()
+                cx.executescript('''
+                    -- start a transaction and wait for parent
+                    begin transaction;
+                    select * from t;
+                    select wait();  -- parent should release its db lock
+                    rollback;  -- release our db lock
+
+                    -- start a new transaction; would fail if parent holds lock
+                    begin transaction;
+                    select * from t;
+                    rollback;
+                ''')
+            finally:
+                cx.close()
         """
 
         # spawn child process
@@ -979,38 +986,32 @@ class MultiprocessTests(unittest.TestCase):
             bufsize=0,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
         )
         self.addCleanup(proc.communicate)
 
-        # create a UDF that waits for child
-        def wait():
-            print("go", file=proc.stdin)  # tell child to connect
-            self.assertIn("database is locked", proc.stdout.readline())
-        self.cx.create_function("wait", 0, wait)
+        # wait for child process to start
+        self.assertEqual("started", proc.stdout.readline().strip())
 
-        # execute two transactions; both will try to lock the db
-        self.cx.executescript("""
-            -- execute a transaction and wait for child
-            begin transaction;
-            select * from t;
-            select wait();
-            rollback;
-
-            -- start a new transaction; will fail if child holds lock
-            begin transaction;
-            select * from t;
-            rollback;
-        """)
+        cx = sqlite.connect(TESTFN, timeout=self.CONNECTION_TIMEOUT)
+        try:  # context manager should correctly release the db lock
+            with cx:
+                cx.execute("insert into t values('test')")
+        except sqlite.OperationalError as exc:
+            proc.stdin.write(str(exc))
+        else:
+            proc.stdin.write("no error")
+        finally:
+            cx.close()
 
         # terminate child process
         self.assertIsNone(proc.returncode)
         try:
-            proc.communicate(input="\n", timeout=SHORT_TIMEOUT)
+            proc.communicate(input="end", timeout=SHORT_TIMEOUT)
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.communicate()
             raise
+        self.assertEqual(proc.returncode, 0)
 
 
 def suite():
