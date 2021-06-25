@@ -785,10 +785,13 @@ iterations of the loop.
 
    TOS is a tuple of mapping keys, and TOS1 is the match subject.  If TOS1
    contains all of the keys in TOS, push a :class:`tuple` containing the
-   corresponding values, followed by ``True``. Otherwise, push ``None``,
-   followed by ``False``.
+   corresponding values. Otherwise, push ``None``.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Previously, this instruction also pushed a boolean value indicating
+      success (``True``) or failure (``False``).
 
 
 All of the following opcodes use their arguments.

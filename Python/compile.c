@@ -1236,9 +1236,8 @@ stack_effect(int opcode, int oparg, int jump)
         case GET_LEN:
         case MATCH_MAPPING:
         case MATCH_SEQUENCE:
-            return 1;
         case MATCH_KEYS:
-            return 2;
+            return 1;
         case ROT_N:
             return 0;
         default:
@@ -6130,6 +6129,9 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
+    ADDOP(c, DUP_TOP);
+    ADDOP_LOAD_CONST(c, Py_None);
+    ADDOP_I(c, IS_OP, 1);
     // There's now a tuple of keys and a tuple of values on top of the subject:
     pc->on_top += 2;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
