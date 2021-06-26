@@ -9,6 +9,7 @@ from contextlib import *  # Tests __all__
 from test import support
 from test.support import os_helper
 import weakref
+import gc
 
 
 class TestAbstractContextManager(unittest.TestCase):
@@ -228,6 +229,8 @@ def woohoo():
         def woohoo(a, b):
             a = weakref.ref(a)
             b = weakref.ref(b)
+            # Allow test to work with a non-refcounted GC
+            gc.collect(); gc.collect(); gc.collect()
             self.assertIsNone(a())
             self.assertIsNone(b())
             yield
