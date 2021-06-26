@@ -71,16 +71,20 @@ def reflow_lines(s, depth):
 def reflow_c_string(s, depth):
     return '"%s"' % s.replace('\n', '\\n"\n%s"' % (' ' * depth * TABSIZE))
 
-def is_simple(sum):
+def is_simple(sum_type):
     """Return True if a sum is a simple.
 
-    A sum is simple if its types have no fields, e.g.
+    A sum is simple if it's types have no fields and itself
+    doesn't have any attributes. Instances of these types are
+    cached at C level, and they act like singletons when propagating
+    parser generated nodes into Python level, e.g.
     unaryop = Invert | Not | UAdd | USub
     """
-    for t in sum.types:
-        if t.fields:
-            return False
-    return True
+
+    return not (
+        sum_type.attributes or
+        any(constructor.fields for constructor in sum_type.types)
+    )
 
 def asdl_of(name, obj):
     if isinstance(obj, asdl.Product) or isinstance(obj, asdl.Constructor):
