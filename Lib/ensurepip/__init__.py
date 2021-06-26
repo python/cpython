@@ -15,7 +15,7 @@ __all__ = ["version", "bootstrap"]
 
 _SETUPTOOLS_VERSION = "56.0.0"
 
-_PIP_VERSION = "21.1.1"
+_PIP_VERSION = "21.1.3"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION, "py3"),
