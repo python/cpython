@@ -512,7 +512,7 @@ class TestErrorHandling:
                         args = [get_object_that_stops_iterating(length)
                                 for _ in range(n)]
                         mo = merge(*args, key=key, reverse=reverse)
-                        self.assertRaises(TypeError, list, mo)
+                        self.assertRaises((TypeError, AttributeError), list, mo)
 
         for reverse in [False, True]:
             # test error during key computation
