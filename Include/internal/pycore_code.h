@@ -53,6 +53,14 @@ typedef struct {
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
+typedef struct {
+    union {
+        PyCFunction cfunc;
+        /* TODO: func_version field for Python function calls*/
+        uint64_t _; /* Just for alignment on 32-bit */
+    };
+} _PyCallFunctionCache;
+
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
@@ -68,6 +76,7 @@ typedef union {
     _PyAdaptiveEntry adaptive;
     _PyLoadAttrCache load_attr;
     _PyLoadGlobalCache load_global;
+    _PyCallFunctionCache call_function;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -319,10 +328,25 @@ cache_backoff(_PyAdaptiveEntry *entry) {
     entry->counter = BACKOFF;
 }
 
+/* Corresponds to various function pointers
+https://docs.python.org/3/c-api/structures.html#implementing-functions-and-methods
+*/
+typedef enum {
+    PYCFUNCTION = 1,
+    PYCFUNCTION_O = 2,
+    PYCFUNCTION_NOARGS = 3,
+    PYCFUNCTION_WITH_KEYWORDS = 4,
+    _PYCFUNCTION_FAST = 5,
+    _PYCFUNCTION_FAST_WITH_KEYWORDS = 6,
+    PYCMETHOD = 7, /* Isn't normally used in builtins. */
+} _BuiltinCallKinds;
+
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
+int _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
+    PyObject *builtins, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 #define SPECIALIZATION_STATS 0
 #define SPECIALIZATION_STATS_DETAILED 0

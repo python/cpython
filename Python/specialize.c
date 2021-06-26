@@ -158,12 +158,14 @@ get_cache_count(SpecializedCacheOrInstruction *quickened) {
 static uint8_t adaptive_opcodes[256] = {
     [LOAD_ATTR] = LOAD_ATTR_ADAPTIVE,
     [LOAD_GLOBAL] = LOAD_GLOBAL_ADAPTIVE,
+    [CALL_FUNCTION] = CALL_FUNCTION_ADAPTIVE,
 };
 
 /* The number of cache entries required for a "family" of instructions. */
 static uint8_t cache_requirements[256] = {
     [LOAD_ATTR] = 2, /* _PyAdaptiveEntry and _PyLoadAttrCache */
     [LOAD_GLOBAL] = 2, /* _PyAdaptiveEntry and _PyLoadGlobalCache */
+    [CALL_FUNCTION] = 2, /* _PyAdaptiveEntry and _PyCallFunctionCache */
 };
 
 /* Return the oparg for the cache_offset and instruction index.
@@ -629,6 +631,82 @@ fail:
     return 0;
 success:
     STAT_INC(LOAD_GLOBAL, specialization_success);
+    assert(!PyErr_Occurred());
+    cache0->counter = saturating_start();
+    return 0;
+}
+
+int
+_Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
+    PyObject *builtins, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+{
+    PyObject *callable = stack_pointer[-(original_oparg + 1)];
+    _PyAdaptiveEntry *cache0 = &cache->adaptive;
+    _PyCallFunctionCache *cache1 = &cache[-1].call_function;
+    if (!PyCallable_Check(callable)) {
+        goto fail;
+    }
+    if (!PyDict_CheckExact(builtins)) {
+        goto fail;
+    }
+    PyDictObject *builtins_dict = (PyDictObject *)builtins;
+    if (builtins_dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
+        goto fail;
+    }
+    /* Specialize C methods */
+    if (PyCFunction_CheckExact(callable)) {
+        PyCFunctionObject *meth = (PyCFunctionObject *)callable;
+        if (meth->m_ml == NULL) {
+            goto fail;
+        }
+        const char *name_ascii = meth->m_ml->ml_name;
+        /* Specialize builtins: check method actually exists in builtins */
+        PyObject *value = PyDict_GetItemString(builtins, name_ascii);
+        if (value == NULL ||
+            value != (PyObject *)meth) {
+            goto fail;
+        }
+        _BuiltinCallKinds kind = -1;
+        switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
+            METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
+            case METH_VARARGS:
+            case METH_VARARGS | METH_KEYWORDS:
+                kind = PYCFUNCTION_WITH_KEYWORDS;
+                break;
+            case METH_FASTCALL:
+                kind = _PYCFUNCTION_FAST;
+                break;
+            case METH_FASTCALL | METH_KEYWORDS:
+                kind = _PYCFUNCTION_FAST_WITH_KEYWORDS;
+                break;
+            case METH_NOARGS:
+                kind = PYCFUNCTION_NOARGS;
+                break;
+            case METH_O:
+                kind = PYCFUNCTION_O;
+                break;
+            case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
+                kind = PYCMETHOD;
+                break;
+            default:
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
+                goto fail;
+        }
+        assert(kind > 0);
+        PyCFunction cfunc = PyCFunction_GET_FUNCTION(meth);
+        assert(cfunc != NULL);
+        *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN, _Py_OPARG(*instr));
+        cache0->index = (uint16_t)kind;
+        cache1->cfunc = cfunc;
+        goto success;
+    }
+fail:
+    STAT_INC(CALL_FUNCTION, specialization_failure);
+    assert(!PyErr_Occurred());
+    cache_backoff(cache0);
+    return 0;
+success:
+    STAT_INC(CALL_FUNCTION, specialization_success);
     assert(!PyErr_Occurred());
     cache0->counter = saturating_start();
     return 0;

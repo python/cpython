@@ -55,6 +55,12 @@ Py_LOCAL_INLINE(PyObject *) call_function(
 static PyObject * do_call_core(
     PyThreadState *tstate, PyObject *func,
     PyObject *callargs, PyObject *kwdict, int use_tracing);
+Py_LOCAL_INLINE(PyObject *) call_function_builtin(
+    PyThreadState *tstate,
+    _PyAdaptiveEntry *cache0,
+    _PyCallFunctionCache *cache1,
+    PyObject ***pp_stack,
+    Py_ssize_t oparg, int use_tracing);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -4066,7 +4072,43 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             CHECK_EVAL_BREAKER();
             DISPATCH();
         }
+        case TARGET(CALL_FUNCTION_ADAPTIVE): {
+            SpecializedCacheEntry *cache = GET_CACHE();
+            if (cache->adaptive.counter == 0) {
+                PyObject *callable = PEEK(cache->adaptive.original_oparg + 1);
+                next_instr--;
+                if (_Py_Specialize_CallFunction(stack_pointer, cache->adaptive.original_oparg, BUILTINS(), next_instr, cache) < 0) {
+                    goto error;
+                }
+                DISPATCH();
+            }
+            else {
+                STAT_INC(CALL_FUNCTION, deferred);
+                cache->adaptive.counter--;
+                oparg = cache->adaptive.original_oparg;
+                JUMP_TO_INSTRUCTION(CALL_FUNCTION);
+            }
+        }
+        case TARGET(CALL_FUNCTION_BUILTIN): {
+            /* Builtin functions, WITHOUT keywords */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyCallFunctionCache *cache1 = &caches[-1].call_function;
+            PyObject *callable = PEEK(cache0->original_oparg + 1);
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
+            DEOPT_IF(PyCFunction_GET_FUNCTION(callable) != cache1->cfunc, CALL_FUNCTION);
 
+            PyObject **sp, *res;
+            sp = stack_pointer;
+            res = call_function_builtin(tstate, cache0, cache1, &sp,
+                cache0->original_oparg, cframe.use_tracing);
+            stack_pointer = sp;
+            PUSH(res);
+            DEOPT_IF(res == NULL, CALL_FUNCTION);
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+            DISPATCH();
+        }
         case TARGET(CALL_FUNCTION_KW): {
             PyObject **sp, *res, *names;
 
@@ -4297,6 +4339,7 @@ opname ## _miss: \
 
 MISS_WITH_CACHE(LOAD_ATTR)
 MISS_WITH_CACHE(LOAD_GLOBAL)
+MISS_WITH_CACHE(CALL_FUNCTION)
 
 error:
         /* Double-check exception status. */
@@ -5872,6 +5915,65 @@ do_call_core(PyThreadState *tstate,
     return PyObject_Call(func, callargs, kwdict);
 }
 
+/* Fast alternative for non-keyword calls to builtins. */
+Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
+call_function_builtin(PyThreadState *tstate,
+              _PyAdaptiveEntry *cache0,
+              _PyCallFunctionCache *cache1,
+              PyObject ***pp_stack,
+              Py_ssize_t oparg,
+              int use_tracing)
+{
+#define MAYBE_TRACE(cfunc) if (use_tracing) {C_TRACE(x, cfunc);} else {x = cfunc;}
+
+    PyObject **pfunc = (*pp_stack) - oparg - 1;
+    PyObject *x, *w;
+    PyObject **stack = (*pp_stack) - oparg;
+
+    PyObject *func = *pfunc; /* Only for tracing purposes */
+    PyObject *self = PyCFunction_GET_SELF(func);
+    PyCFunction cfunc = PyCFunction_GET_FUNCTION(func);
+
+    switch ((_BuiltinCallKinds)cache0->index) {
+        case PYCFUNCTION_NOARGS:
+        case PYCFUNCTION_O: {
+            MAYBE_TRACE(cfunc(self, *stack));
+            break;
+        }
+        case _PYCFUNCTION_FAST: {
+            MAYBE_TRACE(((_PyCFunctionFast)cfunc)(self, stack, oparg));
+            break;
+        }
+        case _PYCFUNCTION_FAST_WITH_KEYWORDS: {
+            MAYBE_TRACE(((_PyCFunctionFastWithKeywords)cfunc)(self, stack, oparg, 0));
+            break;
+        }
+        case PYCFUNCTION_WITH_KEYWORDS: {
+            PyObject *args = _PyTuple_FromArray(stack, oparg);
+            if (args == NULL) {
+                break;
+            }
+            MAYBE_TRACE(((PyCFunctionWithKeywords)cfunc)(self, args, NULL));
+            Py_DECREF(args);
+            break;
+        }
+        /* Bulitins shouldn't have these flags */
+        case PYCFUNCTION:
+        case PYCMETHOD:
+        default:
+            Py_UNREACHABLE();
+            break;
+    }
+    assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+    /* Clear the stack of the function object. */
+    while ((*pp_stack) > pfunc) {
+        w = EXT_POP(*pp_stack);
+        Py_DECREF(w);
+    }
+
+    return x;
+}
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
