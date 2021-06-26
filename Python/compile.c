@@ -6129,11 +6129,11 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
     }
     ADDOP_I(c, BUILD_TUPLE, size);
     ADDOP(c, MATCH_KEYS);
+    // There's now a tuple of keys and a tuple of values on top of the subject:
+    pc->on_top += 2;
     ADDOP(c, DUP_TOP);
     ADDOP_LOAD_CONST(c, Py_None);
     ADDOP_I(c, IS_OP, 1);
-    // There's now a tuple of keys and a tuple of values on top of the subject:
-    pc->on_top += 2;
     RETURN_IF_FALSE(jump_to_fail_pop(c, pc, POP_JUMP_IF_FALSE));
     // So far so good. Use that tuple of values on the stack to match
     // sub-patterns against:
@@ -6160,7 +6160,7 @@ compiler_pattern_mapping(struct compiler *c, pattern_ty p, pattern_context *pc)
         // actually impact runtime:
         ADDOP_I(c, UNPACK_SEQUENCE, size);      // [copy, keys...]
         ADDOP_I(c, BUILD_TUPLE, size + 1);      // [(copy, keys...)]
-        // // The keys get reversed here, but that's okay:
+        // The keys get reversed here, but that's okay:
         ADDOP_I(c, UNPACK_SEQUENCE, size + 1);  // [keys..., copy]
         while (size--) {
             ADDOP(c, DUP_TOP);                  // [keys..., copy, copy]
