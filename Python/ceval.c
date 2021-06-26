@@ -4103,7 +4103,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 cache0->original_oparg, cframe.use_tracing);
             stack_pointer = sp;
             PUSH(res);
-            DEOPT_IF(res == NULL, CALL_FUNCTION);
+            if (res == NULL) {
+                /* Not deopting because this doesn't mean our optimization was wrong.
+                   `res` can be NULL for valid reasons. Eg. getattr(x, 'invalid').
+                   In those cases an exception is set, so we must handle it.
+                */
+                goto error;
+            }
             record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
             DISPATCH();
