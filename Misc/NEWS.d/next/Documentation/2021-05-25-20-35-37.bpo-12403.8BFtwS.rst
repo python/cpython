@@ -1,1 +1,1 @@
-Update to documentation.
+Update documentation of :mod:`code` and :func:`compile` to explain how their outputs can be redirected.
