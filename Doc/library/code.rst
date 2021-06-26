@@ -69,8 +69,8 @@ Overriding Console Output
 -------------------------
 
 All output is printed to :data:`sys.stderr` by default.  A user can override 
-:meth:`InteractiveConsole.write` in a derived class to change that.  Alternatively, 
-it is possible to selectively redirect parts of the output:
+:meth:`InteractiveConsole.write` in a derived class to change that.  
+Alternatively, it is possible to selectively redirect parts of the output:
 
 * The return values of successfully interpreted Python statements are printed 
   with :func:`sys.displayhook`.
