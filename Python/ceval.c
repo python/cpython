@@ -4075,7 +4075,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         case TARGET(CALL_FUNCTION_ADAPTIVE): {
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
-                PyObject *callable = PEEK(cache->adaptive.original_oparg + 1);
                 next_instr--;
                 if (_Py_Specialize_CallFunction(stack_pointer, cache->adaptive.original_oparg, BUILTINS(), next_instr, cache) < 0) {
                     goto error;
@@ -5927,7 +5926,7 @@ call_function_builtin(PyThreadState *tstate,
 #define MAYBE_TRACE(cfunc) if (use_tracing) {C_TRACE(x, cfunc);} else {x = cfunc;}
 
     PyObject **pfunc = (*pp_stack) - oparg - 1;
-    PyObject *x, *w;
+    PyObject *x = NULL, *w;
     PyObject **stack = (*pp_stack) - oparg;
 
     PyObject *func = *pfunc; /* Only for tracing purposes */
@@ -5941,11 +5940,12 @@ call_function_builtin(PyThreadState *tstate,
             break;
         }
         case _PYCFUNCTION_FAST: {
-            MAYBE_TRACE(((_PyCFunctionFast)cfunc)(self, stack, oparg));
+            MAYBE_TRACE(((_PyCFunctionFast)(void(*)(void))cfunc)(self, stack, oparg));
             break;
         }
         case _PYCFUNCTION_FAST_WITH_KEYWORDS: {
-            MAYBE_TRACE(((_PyCFunctionFastWithKeywords)cfunc)(self, stack, oparg, 0));
+            MAYBE_TRACE(((_PyCFunctionFastWithKeywords)(void(*)(void))cfunc)(
+                self, stack, oparg, 0));
             break;
         }
         case PYCFUNCTION_WITH_KEYWORDS: {
@@ -5953,7 +5953,7 @@ call_function_builtin(PyThreadState *tstate,
             if (args == NULL) {
                 break;
             }
-            MAYBE_TRACE(((PyCFunctionWithKeywords)cfunc)(self, args, NULL));
+            MAYBE_TRACE(((PyCFunctionWithKeywords)(void(*)(void))cfunc)(self, args, NULL));
             Py_DECREF(args);
             break;
         }
