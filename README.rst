@@ -15,7 +15,7 @@ This is Python version 3.11.0 alpha 0
 
 .. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
    :alt: Python Discourse chat
-   :target: https://discuss.python.org/
+   :target: https://discuss.python.org
 
 
 Copyright (c) 2001-2021 Python Software Foundation.  All rights reserved.
@@ -31,7 +31,7 @@ General Information
 - Source code: https://github.com/python/cpython
 - Issue tracker: https://bugs.python.org
 - Documentation: https://docs.python.org
-- Developer's Guide: https://devguide.python.org/
+- Developer's Guide: https://devguide.python.org
 
 Contributing to CPython
 -----------------------
@@ -39,7 +39,7 @@ Contributing to CPython
 For more complete instructions on contributing to CPython development,
 see the `Developer Guide`_.
 
-.. _Developer Guide: https://devguide.python.org/
+.. _Developer Guide: https://devguide.python.org
 
 Using Python
 ------------
@@ -47,7 +47,7 @@ Using Python
 Installable Python kits, and information about using Python, are available at
 `python.org`_.
 
-.. _python.org: https://www.python.org/
+.. _python.org: https://www.python.org
 
 Build Instructions
 ------------------
@@ -192,7 +192,7 @@ If the failure persists and appears to be a problem with Python rather than
 your environment, you can `file a bug report <https://bugs.python.org>`_ and
 include relevant output from that command to show the issue.
 
-See `Running & Writing Tests <https://devguide.python.org/runtests/>`_
+See `Running & Writing Tests <https://devguide.python.org/runtests>`_
 for more on running tests.
 
 Installing multiple versions
@@ -222,7 +222,7 @@ Bug reports are welcome!  You can use the `issue tracker
 GitHub <https://github.com/python/cpython>`_.
 
 You can also follow development discussion on the `python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
+<https://mail.python.org/mailman/listinfo/python-dev>`_.
 
 
 Proposals for enhancement
@@ -232,9 +232,9 @@ If you have a proposal to change Python, you may want to send an email to the
 comp.lang.python or `python-ideas`_ mailing lists for initial feedback.  A
 Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
 All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`python.org/dev/peps/ <https://www.python.org/dev/peps/>`_.
+`python.org/dev/peps/ <https://www.python.org/dev/peps>`_.
 
-.. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
+.. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas
 
 
 Release Schedule
