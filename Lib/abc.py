@@ -28,11 +28,11 @@ def abstractmethod(funcobj):
 class abstractclassmethod(classmethod):
     """A decorator indicating abstract classmethods.
 
-    Deprecated, instead use `classmethod` on top of `abstractmethod`:
+    Deprecated, use 'classmethod' with 'abstractmethod' instead:
 
         @classmethod
         @abstractmethod
-        def your_function(cls):
+        def my_abstract_classmethod(cls, ...):
             ...
 
     """
@@ -51,7 +51,7 @@ class abstractstaticmethod(staticmethod):
 
         @staticmethod
         @abstractmethod
-        def your_function():
+        def my_abstract_staticmethod(...):
             ...
 
     """
@@ -70,7 +70,7 @@ class abstractproperty(property):
 
         @property
         @abstractmethod
-        def your_function(self):
+        def my_abstract_property(self):
             ...
 
     """
