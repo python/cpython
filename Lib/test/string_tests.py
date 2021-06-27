@@ -80,12 +80,14 @@ class BaseTest:
                 self.assertIsNot(obj, realresult)
 
     # check that obj.method(*args) raises exc
-    def checkraises(self, exc, obj, methodname, *args):
+    def checkraises(self, exc, obj, methodname, *args, expected_msg=None):
         obj = self.fixtype(obj)
         args = self.fixtype(args)
         with self.assertRaises(exc) as cm:
             getattr(obj, methodname)(*args)
         self.assertNotEqual(str(cm.exception), '')
+        if expected_msg is not None:
+            self.assertEqual(str(cm.exception), expected_msg)
 
     # call obj.method(*args) without any checks
     def checkcall(self, obj, methodname, *args):
@@ -1194,6 +1196,10 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('', 'abc', '__getitem__', slice(0, 0))
 
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
+
+        for idx_type in ('def', object()):
+            expected_msg = "string indices must be integers, not '{}'".format(type(idx_type).__name__)
+            self.checkraises(TypeError, 'abc', '__getitem__', idx_type, expected_msg=expected_msg)
 
     def test_slice(self):
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))
