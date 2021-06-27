@@ -963,12 +963,13 @@ class MultiprocessTests(unittest.TestCase):
             with cx:
                 cx.execute("create table t(t)")
             try:
+                # execute two transactions; both will try to lock the db
                 cx.executescript('''
                     -- start a transaction and wait for parent
                     begin transaction;
                     select * from t;
-                    select wait();  -- parent should release its db lock
-                    rollback;  -- release our db lock
+                    select wait();
+                    rollback;
 
                     -- start a new transaction; would fail if parent holds lock
                     begin transaction;
