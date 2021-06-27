@@ -30,6 +30,7 @@ class abstractclassmethod(classmethod):
 
     Deprecated, use 'classmethod' with 'abstractmethod' instead:
 
+    class C(ABC):
         @classmethod
         @abstractmethod
         def my_abstract_classmethod(cls, ...):
