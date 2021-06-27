@@ -30,11 +30,11 @@ class abstractclassmethod(classmethod):
 
     Deprecated, use 'classmethod' with 'abstractmethod' instead:
 
-    class C(ABC):
-        @classmethod
-        @abstractmethod
-        def my_abstract_classmethod(cls, ...):
-            ...
+        class C(ABC):
+            @classmethod
+            @abstractmethod
+            def my_abstract_classmethod(cls, ...):
+                ...
 
     """
 
@@ -50,10 +50,11 @@ class abstractstaticmethod(staticmethod):
 
     Deprecated, use 'staticmethod' with 'abstractmethod' instead:
 
-        @staticmethod
-        @abstractmethod
-        def my_abstract_staticmethod(...):
-            ...
+        class C(ABC):
+            @staticmethod
+            @abstractmethod
+            def my_abstract_staticmethod(...):
+                ...
 
     """
 
@@ -69,10 +70,11 @@ class abstractproperty(property):
 
     Deprecated, use 'property' with 'abstractmethod' instead:
 
-        @property
-        @abstractmethod
-        def my_abstract_property(self):
-            ...
+        class C(ABC):
+            @property
+            @abstractmethod
+            def my_abstract_property(self):
+                ...
 
     """
 
