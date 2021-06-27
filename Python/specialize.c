@@ -647,9 +647,6 @@ _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
     _PyCallFunctionCache *cache1 = &cache[-1].call_function;
-    if (!PyCallable_Check(callable)) {
-        goto fail;
-    }
     /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
         PyCFunctionObject *meth = (PyCFunctionObject *)callable;
