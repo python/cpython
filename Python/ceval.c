@@ -55,7 +55,7 @@ Py_LOCAL_INLINE(PyObject *) call_function(
 static PyObject * do_call_core(
     PyThreadState *tstate, PyObject *func,
     PyObject *callargs, PyObject *kwdict, int use_tracing);
-Py_LOCAL_INLINE(PyObject *) call_function_builtin(
+Py_LOCAL_INLINE(PyObject *) call_cfunction(
     PyThreadState *tstate,
     _PyAdaptiveEntry *cache0,
     _PyCallFunctionCache *cache1,
@@ -4076,7 +4076,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 next_instr--;
-                if (_Py_Specialize_CallFunction(stack_pointer, cache->adaptive.original_oparg, BUILTINS(), next_instr, cache) < 0) {
+                if (_Py_Specialize_CallFunction(stack_pointer, cache->adaptive.original_oparg, next_instr, cache) < 0) {
                     goto error;
                 }
                 DISPATCH();
@@ -4088,7 +4088,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 JUMP_TO_INSTRUCTION(CALL_FUNCTION);
             }
         }
-        case TARGET(CALL_FUNCTION_BUILTIN): {
+        case TARGET(CALL_CFUNCTION): {
             /* Builtin functions, WITHOUT keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
@@ -4099,7 +4099,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
             PyObject **sp, *res;
             sp = stack_pointer;
-            res = call_function_builtin(tstate, cache0, cache1, &sp,
+            res = call_cfunction(tstate, cache0, cache1, &sp,
                 cache0->original_oparg, cframe.use_tracing);
             stack_pointer = sp;
             PUSH(res);
@@ -5920,9 +5920,9 @@ do_call_core(PyThreadState *tstate,
     return PyObject_Call(func, callargs, kwdict);
 }
 
-/* Fast alternative for non-keyword calls to builtins. */
+/* Fast alternative for non-keyword calls to C functions. */
 Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_function_builtin(PyThreadState *tstate,
+call_cfunction(PyThreadState *tstate,
               _PyAdaptiveEntry *cache0,
               _PyCallFunctionCache *cache1,
               PyObject ***pp_stack,
@@ -5941,17 +5941,23 @@ call_function_builtin(PyThreadState *tstate,
 
     switch ((_BuiltinCallKinds)cache0->index) {
         case PYCFUNCTION_NOARGS:
-        case PYCFUNCTION_O: {
+        case PYCFUNCTION_O:
             MAYBE_TRACE(cfunc(self, *stack));
             break;
-        }
-        case _PYCFUNCTION_FAST: {
+        case _PYCFUNCTION_FAST:
             MAYBE_TRACE(((_PyCFunctionFast)(void(*)(void))cfunc)(self, stack, oparg));
             break;
-        }
-        case _PYCFUNCTION_FAST_WITH_KEYWORDS: {
+        case _PYCFUNCTION_FAST_WITH_KEYWORDS:
             MAYBE_TRACE(((_PyCFunctionFastWithKeywords)(void(*)(void))cfunc)(
                 self, stack, oparg, 0));
+            break;
+        case PYCFUNCTION: {
+            PyObject *args = _PyTuple_FromArray(stack, oparg);
+            if (args == NULL) {
+                break;
+            }
+            MAYBE_TRACE(cfunc(self, args));
+            Py_DECREF(args);
             break;
         }
         case PYCFUNCTION_WITH_KEYWORDS: {
@@ -5963,8 +5969,9 @@ call_function_builtin(PyThreadState *tstate,
             Py_DECREF(args);
             break;
         }
-        /* Bulitins shouldn't have these flags */
-        case PYCFUNCTION:
+        /* This flag only applies to PyMethodObject.
+           We're only optimizing for PyCfunctionObject
+        */
         case PYCMETHOD:
         default:
             Py_UNREACHABLE();

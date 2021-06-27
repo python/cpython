@@ -230,5 +230,5 @@ _specialized_instructions = [
     "LOAD_GLOBAL_MODULE",
     "LOAD_GLOBAL_BUILTIN",
     "CALL_FUNCTION_ADAPTIVE",
-    "CALL_FUNCTION_BUILTIN",
+    "CALL_CFUNCTION",
 ]

@@ -636,9 +636,13 @@ success:
     return 0;
 }
 
+/* TODO:
+    - Specialize calling C types like int() with CALL_CTYPE
+    - Specialize python function calls.
+*/
 int
 _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
-    PyObject *builtins, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
+    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
@@ -646,30 +650,19 @@ _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
     if (!PyCallable_Check(callable)) {
         goto fail;
     }
-    if (!PyDict_CheckExact(builtins)) {
-        goto fail;
-    }
-    PyDictObject *builtins_dict = (PyDictObject *)builtins;
-    if (builtins_dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-        goto fail;
-    }
-    /* Specialize C methods */
+    /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
         PyCFunctionObject *meth = (PyCFunctionObject *)callable;
         if (meth->m_ml == NULL) {
             goto fail;
         }
         const char *name_ascii = meth->m_ml->ml_name;
-        /* Specialize builtins: check method actually exists in builtins */
-        PyObject *value = PyDict_GetItemString(builtins, name_ascii);
-        if (value == NULL ||
-            value != (PyObject *)meth) {
-            goto fail;
-        }
         _BuiltinCallKinds kind = -1;
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
             case METH_VARARGS:
+                kind = PYCFUNCTION;
+                break;
             case METH_VARARGS | METH_KEYWORDS:
                 kind = PYCFUNCTION_WITH_KEYWORDS;
                 break;
@@ -685,17 +678,19 @@ _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
             case METH_O:
                 kind = PYCFUNCTION_O;
                 break;
+            /* This case should never happen with PyCFunctionObject -- only
+               PyMethodObject. See zlib.compressobj()'s methods for an example.
+            */
             case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-                kind = PYCMETHOD;
-                break;
+                // kind = PYCMETHOD;
             default:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
-                goto fail;
+                return -1;
         }
         assert(kind > 0);
         PyCFunction cfunc = PyCFunction_GET_FUNCTION(meth);
         assert(cfunc != NULL);
-        *instr = _Py_MAKECODEUNIT(CALL_FUNCTION_BUILTIN, _Py_OPARG(*instr));
+        *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION, _Py_OPARG(*instr));
         cache0->index = (uint16_t)kind;
         cache1->cfunc = cfunc;
         goto success;

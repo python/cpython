@@ -338,7 +338,7 @@ typedef enum {
     PYCFUNCTION_WITH_KEYWORDS = 4,
     _PYCFUNCTION_FAST = 5,
     _PYCFUNCTION_FAST_WITH_KEYWORDS = 6,
-    PYCMETHOD = 7, /* Isn't normally used in builtins. */
+    PYCMETHOD = 7,
 } _BuiltinCallKinds;
 
 /* Specialization functions */
@@ -346,7 +346,7 @@ typedef enum {
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
-    PyObject *builtins, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
 #define SPECIALIZATION_STATS 0
 #define SPECIALIZATION_STATS_DETAILED 0
