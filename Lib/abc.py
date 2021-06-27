@@ -47,7 +47,7 @@ class abstractclassmethod(classmethod):
 class abstractstaticmethod(staticmethod):
     """A decorator indicating abstract staticmethods.
 
-    Deprecated, instead use `staticmethod` on top of `abstractmethod`:
+    Deprecated, use 'staticmethod' with 'abstractmethod' instead:
 
         @staticmethod
         @abstractmethod
@@ -66,7 +66,7 @@ class abstractstaticmethod(staticmethod):
 class abstractproperty(property):
     """A decorator indicating abstract properties.
 
-    Deprecated, instead use `property` on top of `abstractmethod`:
+    Deprecated, use 'property' with 'abstractmethod' instead:
 
         @property
         @abstractmethod
