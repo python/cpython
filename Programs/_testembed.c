@@ -269,8 +269,6 @@ static void bpo20891_thread(void *lockp)
     PyGILState_Release(state);
 
     PyThread_release_lock(lock);
-
-    PyThread_exit_thread();
 }
 
 static int test_bpo20891(void)
