@@ -486,14 +486,14 @@ class TestEmailMessageBase:
         attachments = [allparts[n] for n in attachments]
         self.assertEqual(list(m.iter_attachments()), attachments)
 
-    def _is_multipart_msg(self, msg):
-        return 'Content-Type: multipart' in msg
-
     def message_as_iter_parts(self, body_parts, attachments, parts, msg):
+        def _is_multipart_msg(msg):
+            return 'Content-Type: multipart' in msg
+
         m = self._str_msg(msg)
         allparts = list(m.walk())
         parts = [allparts[n] for n in parts]
-        iter_parts = list(m.iter_parts()) if self._is_multipart_msg(msg) else []
+        iter_parts = list(m.iter_parts()) if _is_multipart_msg(msg) else []
         self.assertEqual(iter_parts, parts)
 
     class _TestContentManager:
