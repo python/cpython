@@ -682,7 +682,7 @@ _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
                 // kind = PYCMETHOD;
             default:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
-                return -1;
+                goto fail;
         }
         assert(kind > 0);
         PyCFunction cfunc = PyCFunction_GET_FUNCTION(meth);
