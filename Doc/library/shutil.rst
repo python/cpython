@@ -596,6 +596,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    .. audit-event:: shutil.make_archive base_name,format,root_dir,base_dir shutil.make_archive
 
    .. note::
+
       This function is not thread-safe.
 
    .. versionchanged:: 3.8
