@@ -1,0 +1,3 @@
+Specialize ``CALL_FUNCTION`` opcode with ``CALL_CFUNCTION``. This speeds up
+calls to ``PyCFunctionObject``. As a result, many builtin functions and
+C-extension functions should experience reduced call overhead.
