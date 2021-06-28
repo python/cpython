@@ -661,7 +661,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: create_server(address, *, family=AF_INET, backlog=None, reuse_port=False, dualstack_ipv6=False)
 
    Convenience function which creates a TCP socket bound to *address* (a 2-tuple
-   ``(host, port)``) and return the socket object.
+   ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
    *backlog* is the queue size passed to :meth:`socket.listen`; when ``0``
