@@ -131,18 +131,22 @@ Extension types can easily be made to support weak references; see
 
 .. function:: proxy(object[, callback])
 
+
    Return a proxy to *object* which uses a weak reference.  This supports use of
    the proxy in most contexts instead of requiring the explicit dereferencing used
    with weak reference objects.  The returned object will have a type of either
    ``ProxyType`` or ``CallableProxyType``, depending on whether *object* is
-   callable.  Proxy objects are not :term:`hashable` regardless of the referent; this
-   avoids a number of problems related to their fundamentally mutable nature, and
-   prevent their use as dictionary keys.  *callback* is the same as the parameter
-   of the same name to the :func:`ref` function.
+   callable.  Proxy objects are :term:`hashable` if the referent is hashable.
+   However, the fundamentally mutable nature of proxies means that their hashes
+   are not guaranteed to remain the same.  *callback* is the same as the
+   parameter of the same name to the :func:`ref` function.
 
    .. versionchanged:: 3.8
       Extended the operator support on proxy objects to include the matrix
       multiplication operators ``@`` and ``@=``.
+
+   .. versionchanged:: 3.9
+      Hashing proxy objects returns the hash of their referent.
 
 
 .. function:: getweakrefcount(object)

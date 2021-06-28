@@ -1,0 +1,2 @@
+Document that proxy objects return the has of their referent. This behavior
+was introduced in ``96074de573f82fc66a2bd73c36905141a3f1d5c1``.
