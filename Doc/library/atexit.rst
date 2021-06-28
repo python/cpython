@@ -17,8 +17,8 @@ at interpreter termination time they will be run in the order ``C``, ``B``,
 ``A``.  The functions registered via this module are not called when the
 program is killed by a signal not handled by Python, when a Python fatal
 internal error is detected, or when :func:`os._exit` is called.  Equality
-comparisons are used internally during registration and unregistration
-operations, so function references do not need to have matching identities.
+comparisons are used internally during unregistration operations, so function
+references do not need to have matching identities.
 
 .. versionchanged:: 3.7
     When used with C-API subinterpreters, registered functions
