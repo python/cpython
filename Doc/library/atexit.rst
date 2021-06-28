@@ -16,9 +16,8 @@ order in which they were registered; if you register ``A``, ``B``, and ``C``,
 at interpreter termination time they will be run in the order ``C``, ``B``,
 ``A``.  The functions registered via this module are not called when the
 program is killed by a signal not handled by Python, when a Python fatal
-internal error is detected, or when :func:`os._exit` is called.  Equality
-comparisons are used internally during unregistration operations, so function
-references do not need to have matching identities.
+internal error is detected, or when :func:`os._exit` is called.
+
 
 .. versionchanged:: 3.7
     When used with C-API subinterpreters, registered functions
@@ -48,11 +47,11 @@ references do not need to have matching identities.
 
 .. function:: unregister(func)
 
-   Remove *func* from the list of functions to be run at interpreter
-   shutdown.  After calling :func:`unregister`, *func* is guaranteed not to be
-   called when the interpreter shuts down, even if it was registered more than
-   once.  :func:`unregister` silently does nothing if *func* was not previously
-   registered.
+   Remove *func* from the list of functions to be run at interpreter shutdown.
+   :func:`unregister` silently does nothing if *func* was not previously
+   registered.  Equality comparisons (``==``) are used internally during
+   unregistration operations, so function references do not need to have
+   matching identities.
 
 
 .. seealso::
