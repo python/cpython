@@ -1,2 +1,0 @@
-Relax unnecessarily restrictive MACOSX_DEPLOYMENT_TARGET check when building
-extension modules for macOS. Patch by Joshua Root.

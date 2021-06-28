@@ -1,0 +1,557 @@
+.. bpo: 44022
+.. date: 2021-05-05-17-37-04
+.. nonce: bS3XJ9
+.. release date: 2021-06-28
+.. section: Security
+
+mod:`http.client` now avoids infinitely reading potential HTTP headers after
+a ``100 Continue`` status response from the server.
+
+..
+
+.. bpo: 44409
+.. date: 2021-06-13-23-12-18
+.. nonce: eW4LS-
+.. section: Core and Builtins
+
+Fix error location information for tokenizer errors raised on initialization
+of the tokenizer. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 43667
+.. date: 2021-05-27-17-34-29
+.. nonce: ND9jP3
+.. section: Core and Builtins
+
+Improve Unicode support in non-UTF locales on Oracle Solaris. This issue
+does not affect other Solaris systems.
+
+..
+
+.. bpo: 44168
+.. date: 2021-05-18-11-27-02
+.. nonce: mgB-rt
+.. section: Core and Builtins
+
+Fix error message in the parser involving keyword arguments with invalid
+expressions. Patch by Pablo Galindo
+
+..
+
+.. bpo: 44114
+.. date: 2021-05-12-14-26-16
+.. nonce: p-WfAE
+.. section: Core and Builtins
+
+Fix incorrect dictkeys_reversed and dictitems_reversed function signatures
+in C code, which broke webassembly builds.
+
+..
+
+.. bpo: 44070
+.. date: 2021-05-10-22-30-12
+.. nonce: 5bBtKx
+.. section: Core and Builtins
+
+No longer eagerly makes import filenames absolute, except for extension
+modules, which was introduced in 3.9.5.
+
+..
+
+.. bpo: 28146
+.. date: 2021-01-13-19-34-41
+.. nonce: AZBBkH
+.. section: Core and Builtins
+
+Fix a confusing error message in :func:`str.format`.
+
+..
+
+.. bpo: 11105
+.. date: 2020-06-02-13-21-14
+.. nonce: wceryW
+.. section: Core and Builtins
+
+When compiling :class:`ast.AST` objects with recursive references through
+:func:`compile`, the interpreter doesn't crash anymore instead it raises a
+:exc:`RecursionError`.
+
+..
+
+.. bpo: 44516
+.. date: 2021-06-26-12-27-14
+.. nonce: BVyX_y
+.. section: Library
+
+Update vendored pip to 21.1.3
+
+..
+
+.. bpo: 44482
+.. date: 2021-06-22-08-43-04
+.. nonce: U9GznK
+.. section: Library
+
+Fix very unlikely resource leak in :mod:`glob` in alternate Python
+implementations.
+
+..
+
+.. bpo: 44439
+.. date: 2021-06-17-15-01-51
+.. nonce: 1S7QhT
+.. section: Library
+
+Fix in :meth:`bz2.BZ2File.write` / :meth:`lzma.LZMAFile.write` methods, when
+the input data is an object that supports the buffer protocol, the file
+length may be wrong.
+
+..
+
+.. bpo: 44434
+.. date: 2021-06-16-16-52-14
+.. nonce: SQS4Pg
+.. section: Library
+
+_thread.start_new_thread() no longer calls PyThread_exit_thread() explicitly
+at the thread exit, the call was redundant. On Linux with the glibc,
+pthread_exit() aborts the whole process if dlopen() fails to open
+libgcc_s.so file (ex: EMFILE error). Patch by Victor Stinner.
+
+..
+
+.. bpo: 44422
+.. date: 2021-06-14-23-28-17
+.. nonce: BlWOgv
+.. section: Library
+
+The :func:`threading.enumerate` function now uses a reentrant lock to
+prevent a hang on reentrant call. Patch by Victor Stinner.
+
+..
+
+.. bpo: 44395
+.. date: 2021-06-12-10-08-14
+.. nonce: PcW6Sx
+.. section: Library
+
+Fix :meth:`~email.message.MIMEPart.as_string` to pass unixfrom properly.
+Patch by Dong-hee Na.
+
+..
+
+.. bpo: 44342
+.. date: 2021-06-10-21-04-14
+.. nonce: nNH5jA
+.. section: Library
+
+[Enum] Be more robust in searching for pickle support before making an enum
+class unpicklable.
+
+..
+
+.. bpo: 44356
+.. date: 2021-06-10-08-35-38
+.. nonce: 6oDFhO
+.. section: Library
+
+[Enum] Allow multiple data-type mixins if they are all the same.
+
+..
+
+.. bpo: 44254
+.. date: 2021-05-29-01-05-43
+.. nonce: f06xDm
+.. section: Library
+
+On Mac, give turtledemo button text a color that works on both light or dark
+background.  Programmers cannot control the latter.
+
+..
+
+.. bpo: 44145
+.. date: 2021-05-16-00-00-38
+.. nonce: ko5SJ7
+.. section: Library
+
+:mod:`hmac` computations were not releasing the GIL while calling the
+OpenSSL ``HMAC_Update`` C API (a new feature in 3.9).  This unintentionally
+prevented parallel computation as other :mod:`hashlib` algorithms support.
+
+..
+
+.. bpo: 37788
+.. date: 2021-05-13-19-07-28
+.. nonce: adeFcf
+.. section: Library
+
+Fix a reference leak when a Thread object is never joined.
+
+..
+
+.. bpo: 44061
+.. date: 2021-05-07-08-39-23
+.. nonce: MvElG6
+.. section: Library
+
+Fix regression in previous release when calling :func:`pkgutil.iter_modules`
+with a list of :class:`pathlib.Path` objects
+
+..
+
+.. bpo: 36515
+.. date: 2021-05-05-11-44-49
+.. nonce: uOSa3q
+.. section: Library
+
+The :mod:`hashlib` module no longer does unaligned memory accesses when
+compiled for ARM platforms.
+
+..
+
+.. bpo: 44018
+.. date: 2021-05-03-10-07-43
+.. nonce: VDyW8f
+.. section: Library
+
+random.seed() no longer mutates bytearray inputs.
+
+..
+
+.. bpo: 38352
+.. date: 2021-05-02-13-54-25
+.. nonce: N9MlhV
+.. section: Library
+
+Add ``IO``, ``BinaryIO``, ``TextIO``, ``Match``, and ``Pattern`` to
+``typing.__all__``. Patch by Jelle Zijlstra.
+
+..
+
+.. bpo: 43972
+.. date: 2021-04-30-16-58-24
+.. nonce: Y2r9lg
+.. section: Library
+
+When :class:`http.server.SimpleHTTPRequestHandler` sends a ``301 (Moved
+Permanently)`` for a directory path not ending with `/`, add a
+``Content-Length: 0`` header. This improves the behavior for certain
+clients.
+
+..
+
+.. bpo: 28528
+.. date: 2021-04-29-00-48-00
+.. nonce: JLAVWj
+.. section: Library
+
+Fix a bug in :mod:`pdb` where :meth:`~pdb.Pdb.checkline` raises
+:exc:`AttributeError` if it is called after :meth:`~pdb.Pdb.reset`.
+
+..
+
+.. bpo: 43776
+.. date: 2021-04-12-00-00-00
+.. nonce: p14y7a
+.. section: Library
+
+When :class:`subprocess.Popen` args are provided as a string or as
+:class:`pathlib.Path`, the Popen instance repr now shows the right thing.
+
+..
+
+.. bpo: 43666
+.. date: 2021-03-30-08-39-08
+.. nonce: m72tlH
+.. section: Library
+
+AIX: `Lib/_aix_support.get_platform()` may fail in an AIX WPAR. The fileset
+bos.rte appears to have a builddate in both LPAR and WPAR so this fileset is
+queried rather than bos.mp64. To prevent a similiar situation (no builddate
+in ODM) a value (9988) sufficient for completing a build is provided. Patch
+by M Felt.
+
+..
+
+.. bpo: 43650
+.. date: 2021-03-29-00-23-30
+.. nonce: v01tic
+.. section: Library
+
+Fix :exc:`MemoryError` in :func:`shutil.unpack_archive` which fails inside
+:func:`shutil._unpack_zipfile` on large files. Patch by Igor Bolshakov.
+
+..
+
+.. bpo: 43318
+.. date: 2021-02-25-08-32-06
+.. nonce: bZJw6V
+.. section: Library
+
+Fix a bug where :mod:`pdb` does not always echo cleared breakpoints.
+
+..
+
+.. bpo: 43295
+.. date: 2021-02-22-22-54-40
+.. nonce: h_ffu7
+.. section: Library
+
+:meth:`datetime.datetime.strptime` now raises ``ValueError`` instead of
+``IndexError`` when matching ``'z'`` with the ``%z`` format specifier.
+
+..
+
+.. bpo: 37022
+.. date: 2020-01-25-12-58-20
+.. nonce: FUZI25
+.. section: Library
+
+:mod:`pdb` now displays exceptions from ``repr()`` with its ``p`` and ``pp``
+commands.
+
+..
+
+.. bpo: 40620
+.. date: 2021-06-26-17-41-06
+.. nonce: PAYDrB
+.. section: Documentation
+
+Convert examples in tutorial controlflow.rst section 4.3 to be
+interpreter-demo style.
+
+..
+
+.. bpo: 13814
+.. date: 2021-06-21-15-46-32
+.. nonce: LDcslu
+.. section: Documentation
+
+In the Design FAQ, answer "Why don't generators support the with statement?"
+
+..
+
+.. bpo: 44392
+.. date: 2021-06-16-18-09-49
+.. nonce: 6RF1Sc
+.. section: Documentation
+
+Added a new section in the C API documentation for types used in type
+hinting.  Documented ``Py_GenericAlias`` and ``Py_GenericAliasType``.
+
+..
+
+.. bpo: 38291
+.. date: 2021-06-14-09-20-37
+.. nonce: VMYa_Q
+.. section: Documentation
+
+Mark ``typing.io`` and ``typing.re`` as deprecated since Python 3.8 in the
+documentation. They were never properly supported by type checkers.
+
+..
+
+.. bpo: 44322
+.. date: 2021-06-06-14-12-00
+.. nonce: K0PHfE
+.. section: Documentation
+
+Document that SyntaxError args have a details tuple and that details are
+adjusted for errors in f-string field replacement expressions.
+
+..
+
+.. bpo: 44195
+.. date: 2021-05-23-09-11-28
+.. nonce: 1bqkOs
+.. section: Documentation
+
+Corrected references to ``TraversableResources`` in docs. There is no
+``TraversableReader``.
+
+..
+
+.. bpo: 41963
+.. date: 2021-05-17-20-03-47
+.. nonce: eUz9_o
+.. section: Documentation
+
+Document that ``ConfigParser`` strips off comments when reading
+configuration files.
+
+..
+
+.. bpo: 44072
+.. date: 2021-05-08-09-48-05
+.. nonce: fb2x5I
+.. section: Documentation
+
+Correct where in the numeric ABC hierarchy ``**`` support is added, i.e., in
+numbers.Complex, not numbers.Integral.
+
+..
+
+.. bpo: 43558
+.. date: 2021-05-07-12-27-09
+.. nonce: UGhA8R
+.. section: Documentation
+
+Add the remark to :mod:`dataclasses` documentation that the :meth:`__init__`
+of any base class has to be called in :meth:`__post_init__`, along with a
+code example.
+
+..
+
+.. bpo: 41621
+.. date: 2020-08-24-13-35-04
+.. nonce: nqaw9G
+.. section: Documentation
+
+Document that :class:`collections.defaultdict` parameter ``default_factory``
+defaults to None and is positional-only.
+
+..
+
+.. bpo: 44287
+.. date: 2021-06-21-17-53-41
+.. nonce: YON57s
+.. section: Tests
+
+Fix asyncio test_popen() of test_windows_utils by using a longer timeout.
+Use military grade battle-tested :data:`test.support.SHORT_TIMEOUT` timeout
+rather than a hardcoded timeout of 10 seconds: it's 30 seconds by default,
+but it is made longer on slow buildbots. Patch by Victor Stinner.
+
+..
+
+.. bpo: 44363
+.. date: 2021-06-10-11-19-43
+.. nonce: -K9jD0
+.. section: Tests
+
+Account for address sanitizer in test_capi. test_capi now passes when run
+GCC address sanitizer.
+
+..
+
+.. bpo: 44381
+.. date: 2021-06-10-18-08-44
+.. nonce: Xpc1iX
+.. section: Build
+
+The Windows build now accepts :envvar:`EnableControlFlowGuard` set to
+``guard`` to enable CFG.
+
+..
+
+.. bpo: 41299
+.. date: 2021-06-06-16-36-13
+.. nonce: Rg-vb_
+.. section: Windows
+
+Fix 16ms jitter when using timeouts in :mod:`threading`, such as with
+:meth:`threading.Lock.acquire` or :meth:`threading.Condition.wait`.
+
+..
+
+.. bpo: 43568
+.. date: 2021-06-02-19-21-13
+.. nonce: viomLm
+.. section: macOS
+
+Relax unnecessarily restrictive MACOSX_DEPLOYMENT_TARGET check when building
+extension modules for macOS. Patch by Joshua Root.
+
+..
+
+.. bpo: 43109
+.. date: 2021-05-24-21-15-41
+.. nonce: npKJ9c
+.. section: macOS
+
+Allow --with-lto configure option to work with Apple-supplied Xcode or
+Command Line Tools.
+
+..
+
+.. bpo: 40128
+.. date: 2021-06-11-17-43-39
+.. nonce: 7vDN3U
+.. section: IDLE
+
+Mostly fix completions on macOS when not using tcl/tk 8.6.11 (as with 3.9).
+The added update_idletask call should be harmless and possibly helpful
+otherwise.
+
+..
+
+.. bpo: 33962
+.. date: 2021-06-10-00-50-02
+.. nonce: ikAUNg
+.. section: IDLE
+
+Move the indent space setting from the Font tab to the new Windows tab.
+Patch by Mark Roseman and Terry Jan Reedy.
+
+..
+
+.. bpo: 40468
+.. date: 2021-06-08-03-04-51
+.. nonce: tUCGUb
+.. section: IDLE
+
+Split the settings dialog General tab into Windows and Shell/ED tabs. Move
+help sources, which extend the Help menu, to the Extensions tab. Make space
+for new options and shorten the dialog. The latter makes the dialog better
+fit small screens.
+
+..
+
+.. bpo: 41611
+.. date: 2021-05-27-18-22-46
+.. nonce: jOKpfc
+.. section: IDLE
+
+Avoid uncaught exceptions in ``AutoCompleteWindow.winconfig_event()``.
+
+..
+
+.. bpo: 41611
+.. date: 2021-05-27-13-39-43
+.. nonce: liNQqj
+.. section: IDLE
+
+Fix IDLE sometimes freezing upon tab-completion on macOS.
+
+..
+
+.. bpo: 44074
+.. date: 2021-05-08-13-57-00
+.. nonce: F09kCK
+.. section: Tools/Demos
+
+Make patchcheck automatically detect the correct base branch name
+(previously it was hardcoded to 'master')
+
+..
+
+.. bpo: 44441
+.. date: 2021-06-23-12-12-04
+.. nonce: 3p14JB
+.. section: C API
+
+:c:func:`Py_RunMain` now resets :c:data:`PyImport_Inittab` to its initial
+value at exit. It must be possible to call :c:func:`PyImport_AppendInittab`
+or :c:func:`PyImport_ExtendInittab` at each Python initialization. Patch by
+Victor Stinner.
+
+..
+
+.. bpo: 42083
+.. date: 2021-05-04-15-13-31
+.. nonce: ekXnbR
+.. section: C API
+
+Fix crash in :c:func:`PyStructSequence_NewType` when passed ``NULL`` in the
+documentation string slot.

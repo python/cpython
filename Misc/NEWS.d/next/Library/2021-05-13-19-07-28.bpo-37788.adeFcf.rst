@@ -1,1 +1,0 @@
-Fix a reference leak when a Thread object is never joined.
