@@ -558,9 +558,7 @@ class different_locale:
 class LocaleTextCalendar(TextCalendar):
     """
     This class can be passed a locale name in the constructor and will return
-    month and weekday names in the specified locale. If this locale includes
-    an encoding all strings containing month and weekday names will be returned
-    as unicode.
+    month and weekday names in the specified locale.
     """
 
     def __init__(self, firstweekday=0, locale=None):
@@ -581,9 +579,7 @@ class LocaleTextCalendar(TextCalendar):
 class LocaleHTMLCalendar(HTMLCalendar):
     """
     This class can be passed a locale name in the constructor and will return
-    month and weekday names in the specified locale. If this locale includes
-    an encoding all strings containing month and weekday names will be returned
-    as unicode.
+    month and weekday names in the specified locale.
     """
     def __init__(self, firstweekday=0, locale=None):
         HTMLCalendar.__init__(self, firstweekday)
