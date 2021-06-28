@@ -1,1 +1,0 @@
-Audit hooks are now fired for frame.f_code, traceback.tb_frame, and generator code/frame attribute access.
