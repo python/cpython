@@ -1,0 +1,1 @@
+Fix typo in whatsnew/3.10.rst
