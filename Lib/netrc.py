@@ -23,9 +23,7 @@ class netrc:
     def __init__(self, file=None):
         default_netrc = file is None
         if file is None:
-            default_file_name = ".netrc"
-            if os.name == "nt":
-                default_file_name = "_netrc"
+            default_file_name = ".netrc" if os.name != 'nt' else '_netrc'
             file = os.path.join(os.path.expanduser("~"), default_file_name)
         self.hosts = {}
         self.macros = {}
