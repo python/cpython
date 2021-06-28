@@ -78,11 +78,8 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
-
-.. warning::
-
-   A leading slash in the filename may lead to the archive being impossible to
-   open in some zip programs on Windows systems.
+   Note that a leading slash in the filename may lead to the archive being impossible
+   to open in some zip programs on Windows systems.
 
 
 .. function:: is_zipfile(filename)
@@ -439,17 +436,15 @@ ZipFile Objects
    (if that is a :class:`ZipInfo` instance). Similarly, *compresslevel* will
    override the constructor if given.
 
+   Note that a leading slash in the filename may lead to the archive being impossible
+   to open in some zip programs on Windows systems.
+
    .. note::
 
       When passing a :class:`ZipInfo` instance as the *zinfo_or_arcname* parameter,
       the compression method used will be that specified in the *compress_type*
       member of the given :class:`ZipInfo` instance.  By default, the
       :class:`ZipInfo` constructor sets this member to :const:`ZIP_STORED`.
-
-   .. warning::
-
-      A leading slash in the filename may lead to the archive being impossible to
-      open in some zip programs on Windows systems.
 
    .. versionchanged:: 3.2
       The *compress_type* argument.
