@@ -1,0 +1,84 @@
+.. bpo: 44022
+.. date: 2021-05-05-17-37-04
+.. nonce: bS3XJ9
+.. release date: 2021-06-28
+.. section: Security
+
+mod:`http.client` now avoids infinitely reading potential HTTP headers after
+a ``100 Continue`` status response from the server.
+
+..
+
+.. bpo: 43882
+.. date: 2021-04-25-07-46-37
+.. nonce: Jpwx85
+.. section: Security
+
+The presence of newline or tab characters in parts of a URL could allow some
+forms of attacks.
+
+Following the controlling specification for URLs defined by WHATWG
+:func:`urllib.parse` now removes ASCII newlines and tabs from URLs,
+preventing such attacks.
+
+..
+
+.. bpo: 42988
+.. date: 2021-03-24-14-16-56
+.. nonce: P2aNco
+.. section: Security
+
+CVE-2021-3426: Remove the ``getfile`` feature of the :mod:`pydoc` module
+which could be abused to read arbitrary files on the disk (directory
+traversal vulnerability). Moreover, even source code of Python modules can
+contain sensitive data like passwords. Vulnerability reported by David
+Schwörer.
+
+..
+
+.. bpo: 43285
+.. date: 2021-03-13-03-48-14
+.. nonce: g-Hah3
+.. section: Security
+
+:mod:`ftplib` no longer trusts the IP address value returned from the server
+in response to the PASV command by default.  This prevents a malicious FTP
+server from using the response to probe IPv4 address and port combinations
+on the client network.
+
+Code that requires the former vulnerable behavior may set a
+``trust_server_pasv_ipv4_address`` attribute on their :class:`ftplib.FTP`
+instances to ``True`` to re-enable it.
+
+..
+
+.. bpo: 43075
+.. date: 2021-01-31-05-28-14
+.. nonce: DoAXqO
+.. section: Security
+
+Fix Regular Expression Denial of Service (ReDoS) vulnerability in
+:class:`urllib.request.AbstractBasicAuthHandler`.  The ReDoS-vulnerable
+regex has quadratic worst-case complexity and it allows cause a denial of
+service when identifying crafted invalid RFCs. This ReDoS issue is on the
+client side and needs remote attackers to control the HTTP server.
+
+..
+
+.. bpo: 43660
+.. date: 2021-03-29-19-50-34
+.. nonce: scTgag
+.. section: Core and Builtins
+
+Fix crash that happens when replacing ``sys.stderr`` with a callable that
+can remove the object while an exception is being printed. Patch by Pablo
+Galindo.
+
+..
+
+.. bpo: 41561
+.. date: 2021-03-18-10-34-42
+.. nonce: pDg4w-
+.. section: Tests
+
+Add workaround for Ubuntu's custom OpenSSL security level policy.
