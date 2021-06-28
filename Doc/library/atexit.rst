@@ -16,9 +16,35 @@ order in which they were registered; if you register ``A``, ``B``, and ``C``,
 at interpreter termination time they will be run in the order ``C``, ``B``,
 ``A``.
 
-**Note:** The functions registered via this module are not called when the
-program is killed by a signal not handled by Python, when a Python fatal
-internal error is detected, or when :func:`os._exit` is called.
+.. warning::
+
+   The functions registered via this module are not called when the
+   program is killed by a signal not handled by Python, when a Python fatal
+   internal error is detected, or when :func:`os._exit` is called.
+
+.. note::
+
+   Internal comparisons for registration and unregistration are done by
+   equality, not identity; meaning that you can register or unregister a method
+   even when the identity would not match. For example::
+
+       import atexit
+
+       class Saxophone:
+           def play():
+               ...
+
+       sax = Saxophone()
+       p1 = sax.play
+       p2 = sax.play
+       p1 is p2  # False; each bound method is a different object
+       p1 == p2  # True; this is how atexit compares functions internally
+
+   As a result, the code below works exactly as you expect because equality
+   comparisons are internally used::
+
+      atexit.register(sax.play)
+      atexit.unregister(sax.play)
 
 .. versionchanged:: 3.7
     When used with C-API subinterpreters, registered functions
@@ -111,3 +137,4 @@ Usage as a :term:`decorator`::
        print('You are now leaving the Python sector.')
 
 This only works with functions that can be called without arguments.
+
