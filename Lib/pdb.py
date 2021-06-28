@@ -1728,8 +1728,11 @@ def main():
             print("Running 'cont' or 'step' will restart the program")
             t = sys.exc_info()[2]
             pdb.interaction(None, t)
-            print("Post mortem debugger finished. The " + mainpyfile +
-                  " will be restarted")
+            if pdb._user_requested_quit:
+                break
+            else:
+                print("Post mortem debugger finished. The " + mainpyfile +
+                      " will be restarted")
 
 
 # When invoked as main program, invoke the debugger on a script
