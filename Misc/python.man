@@ -161,9 +161,9 @@ Further restrictions may be imposed to prevent the user from injecting
 malicious code.
 .TP
 .BI "\-m " module-name
-Searches
+Adds the current directory to the start of 
 .I sys.path
-for the named module and runs the corresponding
+ and runs the corresponding
 .I .py
 file as a script. This terminates the option list (following options
 are passed as arguments to the module).
