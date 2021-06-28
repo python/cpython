@@ -410,7 +410,7 @@ class Sniffer:
 
             for col in list(columnTypes.keys()):
 
-                for thisType in [int, float, complex]:
+                for thisType in [complex, float, int]:
                     try:
                         thisType(row[col])
                         break

@@ -1231,7 +1231,6 @@ class KeyOrderingTest(unittest.TestCase):
              OrderedDict([('fname', 'John'), ('lname', 'Cleese')]),
             ])
 
-
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {'__doc__', '__version__'}
@@ -1240,6 +1239,20 @@ class MiscTestCase(unittest.TestCase):
     def test_subclassable(self):
         # issue 44089
         class Foo(csv.Error): ...
+
+class TestSniffer(unittest.TestCase):
+    mixed = '''"time","forces"
+0,0
+0.5,0.9
+'''
+    mixed2 = '''"time","forces"
+0.5,0.9
+0,0
+'''
+    def test_issue43625(self):
+        sniffer = csv.Sniffer()
+        self.assertTrue(sniffer.has_header(self.mixed))
+        self.assertTrue(sniffer.has_header(self.mixed2))
 
 if __name__ == '__main__':
     unittest.main()
