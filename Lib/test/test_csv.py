@@ -1231,6 +1231,7 @@ class KeyOrderingTest(unittest.TestCase):
              OrderedDict([('fname', 'John'), ('lname', 'Cleese')]),
             ])
 
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {'__doc__', '__version__'}
