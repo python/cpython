@@ -75,6 +75,8 @@ struct PyCodeObject {
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
+    PyObject *co_qualname;      /* unicode (qualname, only for code objects created
+                                   by the compiler, otherwise NULL) */
     PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
 

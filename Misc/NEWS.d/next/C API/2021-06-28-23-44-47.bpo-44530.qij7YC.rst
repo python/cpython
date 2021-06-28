@@ -1,0 +1,5 @@
+Added the co_qualname to the PyCodeObject structure to propagate the
+qualified name from the compiler to code objects. Code objects that are
+created manually have this new field set to NULL.
+
+Patch by Gabriele N. Tornetta

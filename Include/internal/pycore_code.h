@@ -212,6 +212,7 @@ struct _PyCodeConstructor {
     /* metadata */
     PyObject *filename;
     PyObject *name;
+    PyObject *qualname;
     int flags;
 
     /* the code */

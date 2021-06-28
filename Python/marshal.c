@@ -1378,6 +1378,7 @@ r_object(RFILE *p)
             struct _PyCodeConstructor con = {
                 .filename = filename,
                 .name = name,
+                .qualname = NULL,
                 .flags = flags,
 
                 .code = code,

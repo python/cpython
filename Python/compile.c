@@ -7287,6 +7287,7 @@ makecode(struct compiler *c, struct assembler *a, PyObject *constslist,
     struct _PyCodeConstructor con = {
         .filename = c->c_filename,
         .name = c->u->u_name,
+        .qualname = c->u->u_qualname,
         .flags = flags,
 
         .code = a->a_bytecode,

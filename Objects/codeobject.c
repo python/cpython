@@ -296,6 +296,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_filename = con->filename;
     Py_INCREF(con->name);
     co->co_name = con->name;
+    if (con->qualname != NULL)
+        Py_INCREF(con->qualname);
+    co->co_qualname = con->qualname;
     co->co_flags = con->flags;
 
     Py_INCREF(con->code);
@@ -349,6 +352,9 @@ _PyCode_New(struct _PyCodeConstructor *con)
 {
     /* Ensure that strings are ready Unicode string */
     if (PyUnicode_READY(con->name) < 0) {
+        return NULL;
+    }
+    if (con->qualname != NULL && PyUnicode_READY(con->qualname) < 0) {
         return NULL;
     }
     if (PyUnicode_READY(con->filename) < 0) {
@@ -456,6 +462,7 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
     struct _PyCodeConstructor con = {
         .filename = filename,
         .name = name,
+        .qualname = NULL,
         .flags = flags,
 
         .code = code,
@@ -549,6 +556,7 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno)
     struct _PyCodeConstructor con = {
         .filename = filename_ob,
         .name = funcname_ob,
+        .qualname = NULL,
         .code = emptystring,
         .firstlineno = firstlineno,
         .linetable = emptystring,
@@ -1146,6 +1154,7 @@ code_dealloc(PyCodeObject *co)
     Py_XDECREF(co->co_cellvars);
     Py_XDECREF(co->co_filename);
     Py_XDECREF(co->co_name);
+    Py_XDECREF(co->co_qualname);
     Py_XDECREF(co->co_linetable);
     Py_XDECREF(co->co_exceptiontable);
     if (co->co_weakreflist != NULL)
