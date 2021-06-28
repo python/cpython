@@ -278,7 +278,7 @@ have been incorporated. Some of the most notable ones are as follows:
 
     .. code-block:: python
 
-        >>> try
+        >>> try:
         ...     x = 2
         ... something = 3
           File "<stdin>", line 3
