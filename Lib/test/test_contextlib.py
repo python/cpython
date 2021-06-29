@@ -491,7 +491,7 @@ class TestContextDecorator(unittest.TestCase):
             def __exit__(self, *exc):
                 pass
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
             with mycontext():
                 pass
 
@@ -503,7 +503,7 @@ class TestContextDecorator(unittest.TestCase):
             def __uxit__(self, *exc):
                 pass
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaisesRegex(TypeError, 'the context manager.*__exit__'):
             with mycontext():
                 pass
 
