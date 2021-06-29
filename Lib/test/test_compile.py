@@ -3,6 +3,7 @@ import math
 import os
 import unittest
 import sys
+import ast
 import _ast
 import tempfile
 import types
@@ -983,6 +984,119 @@ if 1:
                 self.assertNotEqual(instr.arg, 0)
             elif instr.opname in HANDLED_JUMPS:
                 self.assertNotEqual(instr.arg, (line + 1)*INSTR_SIZE)
+
+
+class TestSourcePositions(unittest.TestCase):
+    # Ensure that compiled code snippets have correct line and column numbers
+    # in `co_positions()`.
+
+    def check_positions_against_ast(self, snippet):
+        # Basic check that makes sure each line and column is at least present
+        # in one of the AST nodes of the source code.
+        code = compile(snippet, 'test_compile.py', 'exec')
+        ast_tree = compile(snippet, 'test_compile.py', 'exec', _ast.PyCF_ONLY_AST)
+        self.assertTrue(type(ast_tree) == _ast.Module)
+
+        # Use an AST visitor that notes all the offsets.
+        lines, end_lines, columns, end_columns = set(), set(), set(), set()
+        class SourceOffsetVisitor(ast.NodeVisitor):
+            def generic_visit(self, node):
+                super().generic_visit(node)
+                if not isinstance(node, ast.expr) and not isinstance(node, ast.stmt):
+                    return
+                lines.add(node.lineno)
+                end_lines.add(node.end_lineno)
+                columns.add(node.col_offset + 1)
+                end_columns.add(node.end_col_offset + 1)
+
+        SourceOffsetVisitor().visit(ast_tree)
+
+        # Check against the positions in the code object.
+        for (line, end_line, col, end_col) in code.co_positions():
+            # If the offset is not None (indicating missing data), ensure that
+            # it was part of one of the AST nodes.
+            if line is not None:
+                self.assertIn(line, lines)
+            if end_line is not None:
+                self.assertIn(end_line, end_lines)
+            if col is not None:
+                self.assertIn(col, columns)
+            if end_col is not None:
+                self.assertIn(end_col, end_columns)
+
+        return code, ast_tree
+
+    def assertOpcodeSourcePositionIs(self, code, opcode,
+            line, end_line, column, end_column):
+
+        for instr, position in zip(dis.Bytecode(code), code.co_positions()):
+            if instr.opname == opcode:
+                self.assertEqual(position[0], line)
+                self.assertEqual(position[1], end_line)
+                self.assertEqual(position[2], column)
+                self.assertEqual(position[3], end_column)
+                return
+
+        self.fail(f"Opcode {opcode} not found in code")
+
+    def test_simple_assignment(self):
+        snippet = "x = 1"
+        self.check_positions_against_ast(snippet)
+
+    def test_compiles_to_extended_op_arg(self):
+        # Make sure we still have valid positions when the code compiles to an
+        # EXTENDED_ARG by performing a loop which needs a JUMP_ABSOLUTE after
+        # a bunch of opcodes.
+        snippet = "x = x\n" * 10_000
+        snippet += ("while x != 0:\n"
+                    "  x -= 1\n"
+                    "while x != 0:\n"
+                    "  x +=  1\n"
+                   )
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+
+        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_SUBTRACT',
+            line=10_000 + 2, end_line=10_000 + 2,
+            column=3, end_column=9)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'INPLACE_ADD',
+            line=10_000 + 4, end_line=10_000 + 4,
+            column=3, end_column=10)
+
+    def test_multiline_expression(self):
+        snippet = """\
+f(
+    1, 2, 3, 4
+)
+"""
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+            line=1, end_line=3, column=1, end_column=2)
+
+    def test_very_long_line_end_offset(self):
+        # Make sure we get None for when the column offset is too large to
+        # store in a byte.
+        long_string = "a" * 1000
+        snippet = f"g('{long_string}')"
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+            line=1, end_line=1, column=None, end_column=None)
+
+    def test_complex_single_line_expression(self):
+        snippet = "a - b @ (c * x['key'] + 23)"
+
+        compiled_code, _ = self.check_positions_against_ast(snippet)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
+            line=1, end_line=1, column=14, end_column=22)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MULTIPLY',
+            line=1, end_line=1, column=10, end_column=22)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_ADD',
+            line=1, end_line=1, column=10, end_column=27)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_MATRIX_MULTIPLY',
+            line=1, end_line=1, column=5, end_column=28)
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBTRACT',
+            line=1, end_line=1, column=1, end_column=28)
 
 
 class TestExpressionStackSize(unittest.TestCase):
