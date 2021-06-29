@@ -1045,7 +1045,7 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
         self.assertFalse(sniffer.has_header(self.sample13))
 
     def test_has_header_strings(self):
-        # More to document existing (unexpected?) behavior than anything else.
+        "More to document existing (unexpected?) behavior than anything else."
         sniffer = csv.Sniffer()
         self.assertFalse(sniffer.has_header(self.sample10))
         self.assertFalse(sniffer.has_header(self.sample11))
