@@ -1242,18 +1242,47 @@ class MiscTestCase(unittest.TestCase):
         class Foo(csv.Error): ...
 
 class TestSniffer(unittest.TestCase):
-    mixed = '''"time","forces"
-0,0
-0.5,0.9
-'''
-    mixed2 = '''"time","forces"
-0.5,0.9
-0,0
-'''
+    mixed = dedent(""""time","forces"
+                        1,1.5
+                        0.5,5+0j
+                        0,0
+                        1+1j,6
+                        """)
+
+    mixed2 = dedent(""""time","forces"
+                        0,0
+                        1,2
+                        a,b
+                        """)
+
+    mixed3 = dedent(""""time","forces"
+                        0,0
+                        1,2
+                        a,b
+                        """)
+
+    sample10 = dedent("""
+                        abc,def
+                        ghijkl,mno
+                        ghi,jkl
+                        """)
+
+    sample11 = dedent("""
+                        abc,def
+                        ghijkl,mnop
+                        ghi,jkl
+                         """)
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.mixed))
-        self.assertTrue(sniffer.has_header(self.mixed2))
+        self.assertFalse(sniffer.has_header(self.mixed2))
+
+    def test_has_header_strings(self):
+        # More to document existing (unexpected?) behavior than anything else.
+        sniffer = csv.Sniffer()
+        self.assertFalse(sniffer.has_header(self.sample10))
+        self.assertFalse(sniffer.has_header(self.sample11))
 
 if __name__ == '__main__':
     unittest.main()
