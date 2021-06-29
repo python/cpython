@@ -29,8 +29,6 @@ class TestInteractiveConsole(unittest.TestCase):
         self.sysmod = stack.enter_context(prepatch)
         if sys.excepthook is sys.__excepthook__:
             self.sysmod.excepthook = self.sysmod.__excepthook__
-        if sys.displayhook is sys.__displayhook__:
-            self.sysmod.displayhook = self.sysmod.__displayhook__
         del self.sysmod.ps1
         del self.sysmod.ps2
 
@@ -73,14 +71,6 @@ class TestInteractiveConsole(unittest.TestCase):
                                     EOFError('Finished')]
         hook = mock.Mock()
         self.sysmod.excepthook = hook
-        self.console.interact()
-        self.assertTrue(hook.called)
-
-    def test_sysdisplayhook(self):
-        self.infunc.side_effect = ["raise ValueError('')",
-                                    EOFError('Finished')]
-        hook = mock.Mock()
-        self.sysmod.displayhook = hook
         self.console.interact()
         self.assertTrue(hook.called)
 
