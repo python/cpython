@@ -29,6 +29,15 @@ class InstallTestCase(support.TempdirManager,
                       support.LoggingSilencer,
                       unittest.TestCase):
 
+    def setUp(self):
+        super().setUp()
+        self._backup_config_vars = dict(sysconfig._config_vars)
+
+    def tearDown(self):
+        super().tearDown()
+        sysconfig._config_vars.clear()
+        sysconfig._config_vars.update(self._backup_config_vars)
+
     def test_home_installation_scheme(self):
         # This ensure two things:
         # - that --home generates the desired set of directory names

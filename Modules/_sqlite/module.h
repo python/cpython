@@ -27,6 +27,24 @@
 #include "Python.h"
 
 #define PYSQLITE_VERSION "2.6.0"
+#define MODULE_NAME "sqlite3"
+
+typedef struct {
+    PyObject *lru_cache;
+    PyTypeObject *ConnectionType;
+    PyTypeObject *CursorType;
+    PyTypeObject *PrepareProtocolType;
+    PyTypeObject *RowType;
+    PyTypeObject *StatementType;
+} pysqlite_state;
+
+extern pysqlite_state pysqlite_global_state;
+
+static inline pysqlite_state *
+pysqlite_get_state(PyObject *Py_UNUSED(module))
+{
+    return &pysqlite_global_state;
+}
 
 extern PyObject* pysqlite_Error;
 extern PyObject* pysqlite_Warning;

@@ -170,7 +170,9 @@ def addpackage(sitedir, name, known_paths):
     fullname = os.path.join(sitedir, name)
     _trace(f"Processing .pth file: {fullname!r}")
     try:
-        f = io.TextIOWrapper(io.open_code(fullname))
+        # locale encoding is not ideal especially on Windows. But we have used
+        # it for a long time. setuptools uses the locale encoding too.
+        f = io.TextIOWrapper(io.open_code(fullname), encoding="locale")
     except OSError:
         return
     with f:

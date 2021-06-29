@@ -126,7 +126,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     logger.info('set_wakeup_fd(-1) failed: %s', nexc)
 
             if exc.errno == errno.EINVAL:
-                raise RuntimeError(f'sig {sig} cannot be caught')
+                raise RuntimeError(f'sig {sig:d} cannot be caught')
             else:
                 raise
 
@@ -160,7 +160,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             signal.signal(sig, handler)
         except OSError as exc:
             if exc.errno == errno.EINVAL:
-                raise RuntimeError(f'sig {sig} cannot be caught')
+                raise RuntimeError(f'sig {sig:d} cannot be caught')
             else:
                 raise
 

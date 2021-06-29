@@ -1,0 +1,4 @@
+:mod:`sqlite3` now utilizes :meth:`functools.lru_cache` to implement the
+connection statement cache. As a small optimisation, the default
+statement cache size has been increased from 100 to 128.
+Patch by Erlend E. Aasland.

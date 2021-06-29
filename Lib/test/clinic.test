@@ -1659,9 +1659,9 @@ PyDoc_STRVAR(test_str_converter__doc__,
 static PyObject *
 test_str_converter_impl(PyObject *module, const char *a, const char *b,
                         const char *c, const char *d, const char *e,
-                        const char *f, Py_ssize_clean_t f_length,
-                        const char *g, Py_ssize_clean_t g_length,
-                        const char *h, Py_ssize_clean_t h_length);
+                        const char *f, Py_ssize_t f_length, const char *g,
+                        Py_ssize_t g_length, const char *h,
+                        Py_ssize_t h_length);
 
 static PyObject *
 test_str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1673,11 +1673,11 @@ test_str_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *d = "cef";
     const char *e = "gh";
     const char *f = "ij";
-    Py_ssize_clean_t f_length;
+    Py_ssize_t f_length;
     const char *g = "kl";
-    Py_ssize_clean_t g_length;
+    Py_ssize_t g_length;
     const char *h = "mn";
-    Py_ssize_clean_t h_length;
+    Py_ssize_t h_length;
 
     if (!_PyArg_ParseStack(args, nargs, "|sssyzy#s#z#:test_str_converter",
         &a, &b, &c, &d, &e, &f, &f_length, &g, &g_length, &h, &h_length)) {
@@ -1692,10 +1692,10 @@ exit:
 static PyObject *
 test_str_converter_impl(PyObject *module, const char *a, const char *b,
                         const char *c, const char *d, const char *e,
-                        const char *f, Py_ssize_clean_t f_length,
-                        const char *g, Py_ssize_clean_t g_length,
-                        const char *h, Py_ssize_clean_t h_length)
-/*[clinic end generated code: output=ad868ad94a488e32 input=8afe9da8185cd38c]*/
+                        const char *f, Py_ssize_t f_length, const char *g,
+                        Py_ssize_t g_length, const char *h,
+                        Py_ssize_t h_length)
+/*[clinic end generated code: output=5def009caa2fd1ac input=8afe9da8185cd38c]*/
 
 
 /*[clinic input]
@@ -1720,8 +1720,8 @@ PyDoc_STRVAR(test_str_converter_encoding__doc__,
 
 static PyObject *
 test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
-                                 char *d, Py_ssize_clean_t d_length, char *e,
-                                 Py_ssize_clean_t e_length);
+                                 char *d, Py_ssize_t d_length, char *e,
+                                 Py_ssize_t e_length);
 
 static PyObject *
 test_str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1731,9 +1731,9 @@ test_str_converter_encoding(PyObject *module, PyObject *const *args, Py_ssize_t 
     char *b = NULL;
     char *c = NULL;
     char *d = NULL;
-    Py_ssize_clean_t d_length;
+    Py_ssize_t d_length;
     char *e = NULL;
-    Py_ssize_clean_t e_length;
+    Py_ssize_t e_length;
 
     if (!_PyArg_ParseStack(args, nargs, "esesetes#et#:test_str_converter_encoding",
         "idna", &a, "idna", &b, "idna", &c, "idna", &d, &d_length, "idna", &e, &e_length)) {
@@ -1768,9 +1768,9 @@ exit:
 
 static PyObject *
 test_str_converter_encoding_impl(PyObject *module, char *a, char *b, char *c,
-                                 char *d, Py_ssize_clean_t d_length, char *e,
-                                 Py_ssize_clean_t e_length)
-/*[clinic end generated code: output=f579dd9e795a364e input=eb4c38e1f898f402]*/
+                                 char *d, Py_ssize_t d_length, char *e,
+                                 Py_ssize_t e_length)
+/*[clinic end generated code: output=5cae635c092334cb input=eb4c38e1f898f402]*/
 
 
 /*[clinic input]
@@ -1796,10 +1796,8 @@ PyDoc_STRVAR(test_Py_UNICODE_converter__doc__,
 static PyObject *
 test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
                                const Py_UNICODE *b, const Py_UNICODE *c,
-                               const Py_UNICODE *d,
-                               Py_ssize_clean_t d_length,
-                               const Py_UNICODE *e,
-                               Py_ssize_clean_t e_length);
+                               const Py_UNICODE *d, Py_ssize_t d_length,
+                               const Py_UNICODE *e, Py_ssize_t e_length);
 
 static PyObject *
 test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1809,9 +1807,9 @@ test_Py_UNICODE_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     const Py_UNICODE *b;
     const Py_UNICODE *c;
     const Py_UNICODE *d;
-    Py_ssize_clean_t d_length;
+    Py_ssize_t d_length;
     const Py_UNICODE *e;
-    Py_ssize_clean_t e_length;
+    Py_ssize_t e_length;
 
     if (!_PyArg_ParseStack(args, nargs, "O&O&O&u#Z#:test_Py_UNICODE_converter",
         _PyUnicode_WideCharString_Converter, &a, _PyUnicode_WideCharString_Converter, &b, _PyUnicode_WideCharString_Opt_Converter, &c, &d, &d_length, &e, &e_length)) {
@@ -1839,11 +1837,9 @@ exit:
 static PyObject *
 test_Py_UNICODE_converter_impl(PyObject *module, const Py_UNICODE *a,
                                const Py_UNICODE *b, const Py_UNICODE *c,
-                               const Py_UNICODE *d,
-                               Py_ssize_clean_t d_length,
-                               const Py_UNICODE *e,
-                               Py_ssize_clean_t e_length)
-/*[clinic end generated code: output=ef45e982fedf0b3d input=064a3b68ad7f04b0]*/
+                               const Py_UNICODE *d, Py_ssize_t d_length,
+                               const Py_UNICODE *e, Py_ssize_t e_length)
+/*[clinic end generated code: output=65d6607da302afd0 input=064a3b68ad7f04b0]*/
 
 
 /*[clinic input]

@@ -259,7 +259,7 @@ with a custom completer, a different set of word delimiters should be set.
    These indexes are the *start* and *end* arguments passed to the
    :c:data:`rl_attempted_completion_function` callback of the
    underlying library.  The values may be different in the same
-   input editing scenario based on the underlying C readline implemtation.
+   input editing scenario based on the underlying C readline implementation.
    Ex: libedit is known to behave differently than libreadline.
 
 

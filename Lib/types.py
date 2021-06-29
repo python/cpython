@@ -158,7 +158,7 @@ class DynamicClassAttribute:
     attributes on the class with the same name.  (Enum used this between Python
     versions 3.4 - 3.9 .)
 
-    Subclass from this to use a different method of accessing virtual atributes
+    Subclass from this to use a different method of accessing virtual attributes
     and still be treated properly by the inspect module. (Enum uses this since
     Python 3.10 .)
 

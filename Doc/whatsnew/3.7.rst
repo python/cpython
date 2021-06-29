@@ -1588,8 +1588,8 @@ The initialization of the default warnings filters has changed as follows:
        for the new ``-X dev`` mode)
      * any implicit filters defined directly by the warnings machinery
 
-* in CPython debug builds, all warnings are now displayed by default (the
-  implicit filter list is empty)
+* in :ref:`CPython debug builds <debug-build>`, all warnings are now displayed
+  by default (the implicit filter list is empty)
 
 (Contributed by Nick Coghlan and Victor Stinner in :issue:`20361`,
 :issue:`32043`, and :issue:`32230`.)
