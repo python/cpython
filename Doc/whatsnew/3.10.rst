@@ -1699,10 +1699,6 @@ Removed
   (Contributed by Yurii Karabas, Andrew Svetlov, Yury Selivanov and Kyle Stanley
   in :issue:`42392`.)
 
-* Prohibited passing non-:class:`concurrent.futures.ThreadPoolExecutor`
-  executors to :meth:`loop.set_default_executor` following a deprecation in
-  Python 3.8.
-  (Contributed by Illia Volochii in :issue:`43234`.)
 
 Porting to Python 3.10
 ======================
