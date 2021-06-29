@@ -748,6 +748,7 @@ _PyWeakref_ProxyType = {
     &proxy_as_number,                   /* tp_as_number */
     &proxy_as_sequence,                 /* tp_as_sequence */
     &proxy_as_mapping,                  /* tp_as_mapping */
+// Notice that tp_hash is intentionally omitted as proxies are "mutable" (when the reference dies).
     0,                                  /* tp_hash */
     0,                                  /* tp_call */
     proxy_str,                          /* tp_str */
