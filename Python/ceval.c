@@ -82,7 +82,6 @@ static void format_exc_check_arg(PyThreadState *, PyObject *, const char *, PyOb
 static void format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyThreadState *, PyObject *, PyObject *,
                                       PyFrameObject *, const _Py_CODEUNIT *);
-static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
 static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
@@ -3844,13 +3843,26 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             _Py_IDENTIFIER(__aenter__);
             _Py_IDENTIFIER(__aexit__);
             PyObject *mgr = TOP();
-            PyObject *enter = special_lookup(tstate, mgr, &PyId___aenter__);
             PyObject *res;
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &PyId___aenter__);
             if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
                 goto error;
             }
-            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__);
+            PyObject *exit = _PyObject_LookupSpecial(mgr, &PyId___aexit__);
             if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
                 Py_DECREF(enter);
                 goto error;
             }
@@ -3869,13 +3881,26 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             _Py_IDENTIFIER(__enter__);
             _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
-            PyObject *enter = special_lookup(tstate, mgr, &PyId___enter__);
             PyObject *res;
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &PyId___enter__);
             if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
                 goto error;
             }
-            PyObject *exit = special_lookup(tstate, mgr, &PyId___exit__);
+            PyObject *exit = _PyObject_LookupSpecial(mgr, &PyId___exit__);
             if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "context manager protocol "
+                                  "(missed __exit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
                 Py_DECREF(enter);
                 goto error;
             }
@@ -5106,19 +5131,6 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
     }
 fail:
     Py_DECREF(defaults);
-    return res;
-}
-
-
-static PyObject *
-special_lookup(PyThreadState *tstate, PyObject *o, _Py_Identifier *id)
-{
-    PyObject *res;
-    res = _PyObject_LookupSpecial(o, id);
-    if (res == NULL && !_PyErr_Occurred(tstate)) {
-        _PyErr_SetObject(tstate, PyExc_AttributeError, _PyUnicode_FromId(id));
-        return NULL;
-    }
     return res;
 }
 
