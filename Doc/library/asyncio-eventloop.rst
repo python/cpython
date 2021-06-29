@@ -1135,8 +1135,8 @@ Executing code in thread or process pools
    *executor* must be an instance of
    :class:`~concurrent.futures.ThreadPoolExecutor`.
 
-   .. deprecated-removed:: 3.8 3.10
-      Accepting an ``executor`` that is not an instance of
+   .. versionchanged:: 3.11
+      *executor* must be an instance of
       :class:`~concurrent.futures.ThreadPoolExecutor`.
 
 
