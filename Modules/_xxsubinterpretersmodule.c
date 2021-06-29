@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "frameobject.h"
+#include "pycore_frame.h"
 #include "interpreteridobject.h"
 
 
@@ -1839,7 +1840,7 @@ _is_running(PyInterpreterState *interp)
         return 0;
     }
 
-    int executing = _PyFrame_IsExecuting(frame);
+    int executing = _PyFrame_IsExecuting(frame->f_frame);
     Py_DECREF(frame);
 
     return executing;

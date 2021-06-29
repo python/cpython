@@ -430,7 +430,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
      * In addition, jumps are forbidden when not tracing,
      * as this is a debugging feature.
      */
-    switch(f->f_state) {
+    switch(f->f_frame->f_state) {
         case FRAME_CREATED:
             PyErr_Format(PyExc_ValueError,
                      "can't jump from the 'call' trace event of a new frame");
@@ -538,7 +538,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         return -1;
     }
     /* Unwind block stack. */
-    if (f->f_state == FRAME_SUSPENDED) {
+    if (f->f_frame->f_state == FRAME_SUSPENDED) {
         /* Account for value popped by yield */
         start_stack = pop_value(start_stack);
     }
@@ -680,7 +680,7 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
-    f->f_state = FRAME_CLEARED;
+    f->f_frame->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
     PyCodeObject *co = f->f_frame->code;
@@ -700,7 +700,7 @@ frame_tp_clear(PyFrameObject *f)
 static PyObject *
 frame_clear(PyFrameObject *f, PyObject *Py_UNUSED(ignored))
 {
-    if (_PyFrame_IsExecuting(f)) {
+    if (_PyFrame_IsExecuting(f->f_frame)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot clear an executing frame");
         return NULL;
@@ -880,7 +880,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, _PyFrame *frame, int owns)
     f->f_trace_opcodes = 0;
     f->f_gen = NULL;
     f->f_lineno = 0;
-    f->f_state = FRAME_CREATED;
+    f->f_frame->f_state = FRAME_CREATED;
     return f;
 }
 
@@ -1012,7 +1012,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    return _PyFrame_FastToLocalsWithError(f->f_frame, f->f_state == FRAME_CLEARED);
+    return _PyFrame_FastToLocalsWithError(f->f_frame, f->f_frame->f_state == FRAME_CLEARED);
 }
 
 void
@@ -1096,7 +1096,7 @@ _PyFrame_LocalsToFast(_PyFrame *frame, int clear)
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    if (f == NULL || f->f_state == FRAME_CLEARED) {
+    if (f == NULL || f->f_frame->f_state == FRAME_CLEARED) {
         return;
     }
     _PyFrame_LocalsToFast(f->f_frame, clear);

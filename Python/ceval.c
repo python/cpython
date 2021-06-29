@@ -1534,7 +1534,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
        We choose -1 rather than 0 to assist debugging.
      */
     frame->stackdepth = -1;
-    fo->f_state = FRAME_EXECUTING;
+    frame->f_state = FRAME_EXECUTING;
 
 #ifdef LLTRACE
     {
@@ -2247,7 +2247,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
         case TARGET(RETURN_VALUE): {
             retval = POP();
             assert(EMPTY());
-            fo->f_state = FRAME_RETURNED;
+            frame->f_state = FRAME_RETURNED;
             frame->stackdepth = 0;
             goto exiting;
         }
@@ -2435,7 +2435,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
             /* and repeat... */
             assert(frame->lasti > 0);
             frame->lasti -= 1;
-            fo->f_state = FRAME_SUSPENDED;
+            frame->f_state = FRAME_SUSPENDED;
             frame->stackdepth = (int)(stack_pointer - frame->stack);
             goto exiting;
         }
@@ -2452,7 +2452,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
                 }
                 retval = w;
             }
-            fo->f_state = FRAME_SUSPENDED;
+            frame->f_state = FRAME_SUSPENDED;
             frame->stackdepth = (int)(stack_pointer - frame->stack);
             goto exiting;
         }
@@ -4315,14 +4315,14 @@ error:
 
         if (tstate->c_tracefunc != NULL) {
             /* Make sure state is set to FRAME_EXECUTING for tracing */
-            assert(fo->f_state == FRAME_EXECUTING);
-            fo->f_state = FRAME_UNWINDING;
+            assert(frame->f_state == FRAME_EXECUTING);
+            frame->f_state = FRAME_UNWINDING;
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
                            tstate, frame);
         }
 
 exception_unwind:
-        fo->f_state = FRAME_UNWINDING;
+        frame->f_state = FRAME_UNWINDING;
         /* We can't use frame->lasti here, as RERAISE may have set it */
         int offset = INSTR_OFFSET()-1;
         int level, handler, lasti;
@@ -4363,7 +4363,7 @@ exception_unwind:
         PUSH(exc);
         JUMPTO(handler);
         /* Resume normal execution */
-        fo->f_state = FRAME_EXECUTING;
+        frame->f_state = FRAME_EXECUTING;
         frame->lasti = handler;
         NEXTOPARG();
         goto dispatch_opcode;
@@ -4378,7 +4378,7 @@ exception_unwind:
         Py_XDECREF(o);
     }
     frame->stackdepth = 0;
-    fo->f_state = FRAME_RAISED;
+    frame->f_state = FRAME_RAISED;
 exiting:
     if (cframe.use_tracing) {
         if (tstate->c_tracefunc) {

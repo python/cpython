@@ -4,6 +4,21 @@
 extern "C" {
 #endif
 
+/* These values are chosen so that the inline functions below all
+ * compare f_state to zero.
+ */
+enum _framestate {
+    FRAME_CREATED = -2,
+    FRAME_SUSPENDED = -1,
+    FRAME_EXECUTING = 0,
+    FRAME_RETURNED = 1,
+    FRAME_UNWINDING = 2,
+    FRAME_RAISED = 3,
+    FRAME_CLEARED = 4
+};
+
+typedef signed char PyFrameState;
+
 typedef struct _py_frame {
     PyObject *globals;
     PyObject *builtins;
@@ -13,8 +28,21 @@ typedef struct _py_frame {
     struct _py_frame *previous;
     int lasti;       /* Last instruction if called */
     int stackdepth;  /* Depth of value stack */
+    PyFrameState f_state;       /* What state the frame is in */
     PyObject *stack[1];
 } _PyFrame;
+
+static inline int _PyFrame_IsRunnable(_PyFrame *f) {
+    return f->f_state < FRAME_EXECUTING;
+}
+
+static inline int _PyFrame_IsExecuting(_PyFrame *f) {
+    return f->f_state == FRAME_EXECUTING;
+}
+
+static inline int _PyFrameHasCompleted(_PyFrame *f) {
+    return f->f_state > FRAME_EXECUTING;
+}
 
 #define FRAME_SPECIALS_SIZE ((sizeof(_PyFrame)-1)/sizeof(PyObject *))
 
