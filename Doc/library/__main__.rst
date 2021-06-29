@@ -126,7 +126,10 @@ might make sense to allow the teacher to search for students or parents using
 Note that there is no reason to use the ``if __name__ == '__main__'`` statement
 in ``__main__.py`` itself. There is no reason for any other file to import
 something from ``__main__.py``, and therefore, ``__name__`` will always be
-``'__main__'``; in most cases it would be a redundant statement.
+``'__main__'``; in most cases it would be a redundant statement. There are
+exceptions to this norm, though. For example, if you have explicitly identified
+``__main__`` as a console script entry point in :file:`setup.py`. See section
+:ref:`entry-points`.
 
 For a very popular example of a package using ``__main__.py`` in our standard
 library, see :mod:`venv`, and its' invocation via ``python3 -m
