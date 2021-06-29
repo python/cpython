@@ -18,7 +18,7 @@ users interact with them as well as how they interact with each other. See
 
 
 ``__name__ == '__main__'``
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 ``'__main__'`` is the name of the environment where top-level code is run.
 "Top-level code" means when a Python module is initialized from an interactive
@@ -39,9 +39,39 @@ an import statement::
         # Execute when the module is not initialized from an import statement.
         ...
 
+Design Patterns
+^^^^^^^^^^^^^^^
+
+Putting as few statements as possible in the block below ``if __name___ ==
+'__main__'`` can improve the clarity of your code. Most often, a function named
+``main`` encapuslates the program's "main" behavior, creating this pattern::
+
+    # echo.py
+
+    import sys
+
+    def main(phrase: str):
+       "Print the string to standard output"
+       print(phrase)
+
+    if __name__ == '__main__':
+        main(' '.join(sys.argv))
+
+This has the added benefit of the ``main`` function itself being importable
+elsewhere::
+
+    # elsewhere.py
+
+    import sys
+
+    from echo import main as echo_main
+
+    def echo_platform():
+       echo_main(sys.platform)
+
 
 ``__main__.py`` in Python Packages
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------
 
 If you are not familiar with Python packages, see section :ref:`tut-packages`.
 Most commonly, the ``__main__.py`` file is used to provide a command line
