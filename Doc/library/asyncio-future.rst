@@ -57,11 +57,19 @@ Future Functions
    .. versionchanged:: 3.5.1
       The function accepts any :term:`awaitable` object.
 
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *obj* is not a Future-like object
+      and *loop* is not specified and there is no running event loop.
+
 
 .. function:: wrap_future(future, *, loop=None)
 
    Wrap a :class:`concurrent.futures.Future` object in a
    :class:`asyncio.Future` object.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *future* is not a Future-like object
+      and *loop* is not specified and there is no running event loop.
 
 
 Future Object
@@ -89,6 +97,10 @@ Future Object
 
    .. versionchanged:: 3.7
       Added support for the :mod:`contextvars` module.
+
+   .. deprecated:: 3.10
+      Deprecation warning is emitted if *loop* is not specified
+      and there is no running event loop.
 
    .. method:: result()
 

@@ -2013,7 +2013,7 @@ SyntaxError: 'yield' outside function
 >>> def f(): (yield bar) = y
 Traceback (most recent call last):
   ...
-SyntaxError: cannot assign to yield expression
+SyntaxError: cannot assign to yield expression here. Maybe you meant '==' instead of '='?
 
 >>> def f(): (yield bar) += y
 Traceback (most recent call last):

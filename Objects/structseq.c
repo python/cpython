@@ -11,10 +11,12 @@
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "structmember.h"         // PyMemberDef
+#include "pycore_structseq.h"     // PyStructSequence_InitType()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
 static const char unnamed_fields_key[] = "n_unnamed_fields";
+static const char match_args_key[] = "__match_args__";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
@@ -24,7 +26,7 @@ _Py_IDENTIFIER(n_sequence_fields);
 _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);
 
-static ssize_t
+static Py_ssize_t
 get_type_attr_as_size(PyTypeObject *tp, _Py_Identifier *id)
 {
     PyObject *name = _PyUnicode_FromId(id);
@@ -399,7 +401,40 @@ initialize_structseq_dict(PyStructSequence_Desc *desc, PyObject* dict,
     SET_DICT_FROM_SIZE(visible_length_key, desc->n_in_sequence);
     SET_DICT_FROM_SIZE(real_length_key, n_members);
     SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
+
+    // Prepare and set __match_args__
+    Py_ssize_t i, k;
+    PyObject* keys = PyTuple_New(desc->n_in_sequence);
+    if (keys == NULL) {
+        return -1;
+    }
+
+    for (i = k = 0; i < desc->n_in_sequence; ++i) {
+        if (desc->fields[i].name == PyStructSequence_UnnamedField) {
+            continue;
+        }
+        PyObject* new_member = PyUnicode_FromString(desc->fields[i].name);
+        if (new_member == NULL) {
+            goto error;
+        }
+        PyTuple_SET_ITEM(keys, k, new_member);
+        k++;
+    }
+
+    if (_PyTuple_Resize(&keys, k) == -1) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(dict, match_args_key, keys) < 0) {
+        goto error;
+    }
+
+    Py_DECREF(keys);
     return 0;
+
+error:
+    Py_DECREF(keys);
+    return -1;
 }
 
 static void
@@ -425,8 +460,10 @@ initialize_members(PyStructSequence_Desc *desc, PyMemberDef* members,
     members[k].name = NULL;
 }
 
+
 int
-PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
+_PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc,
+                           unsigned long tp_flags)
 {
     PyMemberDef *members;
     Py_ssize_t n_members, n_unnamed_members;
@@ -454,7 +491,7 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     type->tp_base = &PyTuple_Type;
     type->tp_methods = structseq_methods;
     type->tp_new = structseq_new;
-    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC;
+    type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     type->tp_traverse = (traverseproc) structseq_traverse;
 
     n_members = count_members(desc, &n_unnamed_members);
@@ -480,6 +517,12 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     }
 
     return 0;
+}
+
+int
+PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
+{
+    return _PyStructSequence_InitType(type, desc, 0);
 }
 
 void
@@ -545,7 +588,8 @@ int _PyStructSequence_Init(void)
     if (_PyUnicode_FromId(&PyId_n_sequence_fields) == NULL
         || _PyUnicode_FromId(&PyId_n_fields) == NULL
         || _PyUnicode_FromId(&PyId_n_unnamed_fields) == NULL)
+    {
         return -1;
-
+    }
     return 0;
 }

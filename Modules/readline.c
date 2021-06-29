@@ -156,6 +156,26 @@ decode(const char *s)
 }
 
 
+/*
+Explicitly disable bracketed paste in the interactive interpreter, even if it's
+set in the inputrc, is enabled by default (eg GNU Readline 8.1), or a user calls
+readline.read_init_file(). The Python REPL has not implemented bracketed
+paste support. Also, bracketed mode writes the "\x1b[?2004h" escape sequence
+into stdout which causes test failures in applications that don't support it.
+It can still be explicitly enabled by calling readline.parse_and_bind("set
+enable-bracketed-paste on"). See bpo-42819 for more details.
+
+This should be removed if bracketed paste mode is implemented (bpo-39820).
+*/
+
+static void
+disable_bracketed_paste(void)
+{
+    if (!using_libedit_emulation) {
+        rl_variable_bind ("enable-bracketed-paste", "off");
+    }
+}
+
 /* Exported function to send one line to readline's init file parser */
 
 /*[clinic input]
@@ -217,6 +237,7 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
         errno = rl_read_init_file(NULL);
     if (errno)
         return PyErr_SetFromErrno(PyExc_OSError);
+    disable_bracketed_paste();
     Py_RETURN_NONE;
 }
 
@@ -1266,6 +1287,8 @@ setup_readline(readlinestate *mod_state)
         rl_read_init_file(NULL);
     else
         rl_initialize();
+
+    disable_bracketed_paste();
 
     RESTORE_LOCALE(saved_locale)
     return 0;

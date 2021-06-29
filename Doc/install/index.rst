@@ -1071,8 +1071,7 @@ normal libraries do.
 .. [#] This also means you could replace all existing COFF-libraries with OMF-libraries
    of the same name.
 
-.. [#] Check https://www.sourceware.org/cygwin/ and http://www.mingw.org/ for more
-   information
+.. [#] Check https://www.sourceware.org/cygwin/ for more information
 
 .. [#] Then you have no POSIX emulation available, but you also don't need
    :file:`cygwin1.dll`.

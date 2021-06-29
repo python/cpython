@@ -2,7 +2,7 @@
 import os
 import unittest
 import unittest.mock as mock
-from urllib.request import HTTPError
+from urllib.error import HTTPError
 
 from test.support import run_unittest
 
