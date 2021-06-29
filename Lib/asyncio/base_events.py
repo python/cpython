@@ -814,9 +814,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def set_default_executor(self, executor):
         if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
-            raise RuntimeError(
-                'Using the default executor that is not an instance of '
-                'ThreadPoolExecutor is prohibited')
+            raise TypeError('executor must be ThreadPoolExecutor instance')
         self._default_executor = executor
 
     def _getaddrinfo_debug(self, host, port, family, type, proto, flags):
