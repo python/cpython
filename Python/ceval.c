@@ -60,7 +60,7 @@ Py_LOCAL_INLINE(PyObject *) call_cfunction(
     _PyAdaptiveEntry *cache0,
     _PyCallFunctionCache *cache1,
     PyObject ***pp_stack,
-    Py_ssize_t oparg, int use_tracing);
+    Py_ssize_t oparg);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -4099,8 +4099,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 
             PyObject **sp, *res;
             sp = stack_pointer;
-            res = call_cfunction(tstate, cache0, cache1, &sp,
-                cache0->original_oparg, cframe.use_tracing);
+            assert(cframe.use_tracing == 0);
+            res = call_cfunction(tstate, cache0, cache1, &sp, cache0->original_oparg);
             stack_pointer = sp;
             PUSH(res);
             if (res == NULL) {
@@ -5926,37 +5926,34 @@ call_cfunction(PyThreadState *tstate,
               _PyAdaptiveEntry *cache0,
               _PyCallFunctionCache *cache1,
               PyObject ***pp_stack,
-              Py_ssize_t oparg,
-              int use_tracing)
+              Py_ssize_t oparg)
 {
-#define MAYBE_TRACE(cfunc) if (use_tracing) {C_TRACE(x, cfunc);} else {x = cfunc;}
 
     PyObject **pfunc = (*pp_stack) - oparg - 1;
     PyObject *x = NULL, *w;
     PyObject **stack = (*pp_stack) - oparg;
 
-    PyObject *func = *pfunc; /* Only for tracing purposes */
-    PyObject *self = PyCFunction_GET_SELF(func);
-    PyCFunction cfunc = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(*pfunc);
+    PyCFunction cfunc = PyCFunction_GET_FUNCTION(*pfunc);
 
     switch ((_BuiltinCallKinds)cache0->index) {
         case PYCFUNCTION_NOARGS:
         case PYCFUNCTION_O:
-            MAYBE_TRACE(cfunc(self, *stack));
+            x = cfunc(self, *stack);
             break;
         case _PYCFUNCTION_FAST:
-            MAYBE_TRACE(((_PyCFunctionFast)(void(*)(void))cfunc)(self, stack, oparg));
+            x = ((_PyCFunctionFast)(void(*)(void))cfunc)(self, stack, oparg);
             break;
         case _PYCFUNCTION_FAST_WITH_KEYWORDS:
-            MAYBE_TRACE(((_PyCFunctionFastWithKeywords)(void(*)(void))cfunc)(
-                self, stack, oparg, 0));
+            x = ((_PyCFunctionFastWithKeywords)(void(*)(void))cfunc)(
+                self, stack, oparg, 0);
             break;
         case PYCFUNCTION: {
             PyObject *args = _PyTuple_FromArray(stack, oparg);
             if (args == NULL) {
                 break;
             }
-            MAYBE_TRACE(cfunc(self, args));
+            x = cfunc(self, args);
             Py_DECREF(args);
             break;
         }
@@ -5965,7 +5962,7 @@ call_cfunction(PyThreadState *tstate,
             if (args == NULL) {
                 break;
             }
-            MAYBE_TRACE(((PyCFunctionWithKeywords)(void(*)(void))cfunc)(self, args, NULL));
+            x = ((PyCFunctionWithKeywords)(void(*)(void))cfunc)(self, args, NULL);
             Py_DECREF(args);
             break;
         }

@@ -54,11 +54,7 @@ typedef struct {
 } _PyLoadGlobalCache;
 
 typedef struct {
-    union {
-        PyCFunction cfunc;
-        /* TODO: func_version field for Python function calls*/
-        uint64_t _; /* Just for alignment on 32-bit */
-    };
+    PyCFunction cfunc;
 } _PyCallFunctionCache;
 
 /* Add specialized versions of entries to this union.
