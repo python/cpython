@@ -478,8 +478,7 @@ _PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc,
 
     /* PyTypeObject has already been initialized */
     if (Py_REFCNT(type) != 0) {
-        PyErr_BadInternalCall();
-        return -1;
+        return 0;
     }
 
     type->tp_name = desc->name;
