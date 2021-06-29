@@ -61,10 +61,11 @@ directly from the command line using the :option:`-m` flag. For example::
 
     python3 -m bandclass
 
-This command will cause ``__main__.py`` to run. How you utilize this
-mechanism will depend on the nature of the package you are writing, but
-in this hypothetical case, it might make sense to allow the teacher to search
-for students or parents using :mod:`argparse`::
+This command will cause ``__main__.py`` to run. For more details about the
+:option:`-m` flag, see :mod:`runpy`. How you utilize this mechanism will depend
+on the nature of the package you are writing, but in this hypothetical case, it
+might make sense to allow the teacher to search for students or parents using
+:mod:`argparse`::
 
     # bandclass/__main__.py
 
