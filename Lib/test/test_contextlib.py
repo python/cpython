@@ -661,6 +661,25 @@ class TestBaseExitStack:
             result.append(2)
         self.assertEqual(result, [1, 2, 3, 4])
 
+    def test_enter_context_errors(self):
+        class LacksEnterAndExit:
+            pass
+        class LacksEnter:
+            def __exit__(self, *exc_info):
+                pass
+        class LacksExit:
+            def __enter__(self):
+                pass
+
+        with self.exit_stack() as stack:
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksEnterAndExit())
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksEnter())
+            with self.assertRaisesRegex(TypeError, 'the context manager'):
+                stack.enter_context(LacksExit())
+            self.assertFalse(stack._exit_callbacks)
+
     def test_close(self):
         result = []
         with self.exit_stack() as stack:
@@ -886,9 +905,11 @@ class TestBaseExitStack:
     def test_instance_bypass(self):
         class Example(object): pass
         cm = Example()
+        cm.__enter__ = object()
         cm.__exit__ = object()
         stack = self.exit_stack()
-        self.assertRaises(AttributeError, stack.enter_context, cm)
+        with self.assertRaisesRegex(TypeError, 'the context manager'):
+            stack.enter_context(cm)
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1][1], cm)
 
