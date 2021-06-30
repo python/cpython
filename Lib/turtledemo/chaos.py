@@ -55,5 +55,6 @@ def main():
     return "Done!"
 
 if __name__ == "__main__":
-    print(main())
+    msg = main()
+    print(msg)
     mainloop()
