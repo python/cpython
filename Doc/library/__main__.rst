@@ -12,9 +12,9 @@ is part of two quite different constructs:
 1. The ``__name__ == '__main__'`` statement
 2. The ``__main__.py`` file in Python packages
 
-Each of these mechanisms are related to Python :ref:`tut-modules`; both how
+Each of these mechanisms are related to Python modules; both how
 users interact with them as well as how they interact with each other. See
-:ref:`tut-modules` for details.
+section :ref:`tut-modules`.
 
 
 ``__name__ == '__main__'``
@@ -22,13 +22,14 @@ users interact with them as well as how they interact with each other. See
 
 ``'__main__'`` is the name of the environment where top-level code is run.
 "Top-level code" means when a Python module is initialized from an interactive
-prompt, from standard input, from a file argument, from a :option:`-c` argument
-or from a :option:`-m` argument, but **not** when it is initialized from an
-import statement.  In any of these situations, the module's ``__name__`` is set
-equal to ``'__main__'``.  The only other context in which Python code is run is
-when it is imported through an import statement. In that case, ``__name__`` is
-set equal to the module's name; usually the name of the file without the
-``.py`` extension.
+prompt, from standard input, from a file argument, from a :option:`-c`
+argument, or from a :option:`-m` argument, but **not** when it is initialized
+from an import statement.  In any of these situations, the module's
+``__name__`` is set equal to ``'__main__'``.
+
+The only other context in which Python code is run is when it is imported
+through an import statement. In that case, ``__name__`` is set equal to the
+module's name: usually the name of the file without the ``.py`` extension.
 
 As a result, a module can discover whether or not it is running in the
 top-level environment by checking its own ``__name__``, which allows a common
@@ -43,8 +44,8 @@ Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
 Putting as few statements as possible in the block below ``if __name___ ==
-'__main__'`` can improve the clarity of your code. Most often, a function named
-*main* encapsulates the program's primary behavior, creating this pattern::
+'__main__'`` can improve code clarity. Most often, a function named *main*
+encapsulates the program's primary behavior, creating this pattern::
 
     # echo.py
 
@@ -57,7 +58,7 @@ Putting as few statements as possible in the block below ``if __name___ ==
        print(phrase)
 
     def main():
-        "Echo the string to standard output"
+        "Echo the sys.argv to standard output"
         echo(shlex.join(sys.argv))
 
     if __name__ == '__main__':
