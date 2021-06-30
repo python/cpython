@@ -4278,6 +4278,23 @@ check_index(struct compiler *c, expr_ty e, expr_ty s)
     }
 }
 
+static int
+is_import_originated(struct compiler *c, expr_ty e)
+{
+    /* Check whether the global scope has an import named
+     e, if it is a Name object. For not traversing all the
+     scope stack every time this function is called, it will
+     only check the global scope to determine whether something
+     is imported or not. */
+
+    if (e->kind != Name_kind) {
+        return 0;
+    }
+
+    long flags = _PyST_GetSymbol(c->c_st->st_top, e->v.Name.id);
+    return flags & DEF_IMPORT;
+}
+
 // Return 1 if the method call was optimized, -1 if not, and 0 on error.
 static int
 maybe_optimize_method_call(struct compiler *c, expr_ty e)
@@ -4291,6 +4308,12 @@ maybe_optimize_method_call(struct compiler *c, expr_ty e)
     if (meth->kind != Attribute_kind || meth->v.Attribute.ctx != Load) {
         return -1;
     }
+
+    /* Check that the base object is not something that is imported */
+    if (is_import_originated(c, meth->v.Attribute.value)) {
+        return -1;
+    }
+
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
