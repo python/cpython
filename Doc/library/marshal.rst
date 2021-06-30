@@ -76,12 +76,17 @@ The module defines these functions:
    format), raise :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  The
    file must be a readable :term:`binary file`.
 
-   .. audit-event:: marshal.loads bytes marshal.load
+   .. audit-event:: marshal.load "" marshal.load
 
    .. note::
 
       If an object containing an unsupported type was marshalled with :func:`dump`,
       :func:`load` will substitute ``None`` for the unmarshallable type.
+
+   .. versionchanged:: 3.10
+
+      This call used to raise a ``code.__new__`` audit event for each code object. Now
+      it raises a single ``marshal.load`` event for the entire load operation.
 
 
 .. function:: dumps(value[, version])
@@ -103,6 +108,11 @@ The module defines these functions:
    input are ignored.
 
    .. audit-event:: marshal.loads bytes marshal.load
+
+   .. versionchanged:: 3.10
+
+      This call used to raise a ``code.__new__`` audit event for each code object. Now
+      it raises a single ``marshal.loads`` event for the entire load operation.
 
 
 In addition, the following constants are defined:
