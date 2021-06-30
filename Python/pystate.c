@@ -1135,6 +1135,9 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
+    if (tstate->frame == NULL) {
+        return NULL;
+    }
     PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->frame);
     Py_XINCREF(frame);
     return frame;
