@@ -14,7 +14,7 @@ A family of instructions has the following fundamental properties:
   it executes the non-adaptive instruction.
 * It has at least one specialized form of the instruction that is tailored 
   for a particular value or set of values at runtime.
-* All members of the family have access to same number of cache entries.
+* All members of the family have access to the same number of cache entries.
   Individual family members do not need to use all of the entries.
 
 The current implementation also requires the following,
@@ -28,6 +28,18 @@ although these are not fundamental and may change:
   instruction.
 * The adaptive instruction should end in `_ADAPTIVE`.
 * Specialized forms should have names describing their specialization.
+
+## Example family
+
+The `LOAD_GLOBAL` instruction (in Python/ceval.c) already has an adaptive
+family that serves as a relatively simple example.
+
+The `LOAD_GLOBAL_ADAPTIVE` instruction performs adaptive specialization,
+calling `_Py_Specialize_LoadGlobal()` when the counter reaches zero.
+
+There are two specialized instructions in the family, `LOAD_GLOBAL_MODULE`
+which is specialized for global variables in the module, and
+`LOAD_GLOBAL_BUILTIN` which is specialized for builtin variables.
 
 ## Performance analysis
 
@@ -67,7 +79,7 @@ requiring judgement and experimentation to design the family of instructions.
 ### Gathering data
 
 Before choosing how to specialize an instruction, it is important to gather
-some data. What are the pattern of usage of the base instruction?
+some data. What are the patterns of usage of the base instruction?
 Data can best be gathered by instrumenting the interpreter. Since a 
 specialization function and adaptive instruction are going to be required,
 instrumentation can most easily be added in the specialization function.
