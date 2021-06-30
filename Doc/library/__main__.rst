@@ -48,26 +48,32 @@ Putting as few statements as possible in the block below ``if __name___ ==
 
     # echo.py
 
+    import shlex
     import sys
 
-    def main(phrase: str):
-        "Print the string to standard output"
-        print(phrase)
+    def echo(phrase: str):
+       # you can imagine that this dummy wrapper around print might be
+       # different and truly worth re-using in a real program.
+       print(phrase)
+
+    def main():
+        "Echo the string to standard output"
+        echo(shlex.join(sys.argv))
 
     if __name__ == '__main__':
-        main(' '.join(sys.argv))
+        main()
 
-This has the added benefit of the *main* function itself being importable
-elsewhere::
+This has the added benefit of the *echo* function itself being isolated and
+importable elsewhere::
 
     # elsewhere.py
 
     import sys
 
-    from echo import main as echo_main
+    from echo import echo
 
     def echo_platform():
-        echo_main(sys.platform)
+        echo(sys.platform)
 
 The spirit of this design is inherited from the C programming language, where
 the function whose name is *main* is the entry-point of a program.  In C,
