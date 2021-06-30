@@ -84,7 +84,7 @@ _PyFrame_GetFrameObject(_PyFrame *frame)
 }
 
 int
-_PyFrame_FastToLocalsWithError(_PyFrame *frame, int cleared);
+_PyFrame_FastToLocalsWithError(_PyFrame *frame);
 
 void
 _PyFrame_LocalsToFast(_PyFrame *frame, int clear);

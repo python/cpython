@@ -186,9 +186,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
-    Py_XINCREF(tstate->pyframe);
     assert(f->f_back == NULL);
-    f->f_back = tstate->pyframe;
+    f->f_frame->previous = tstate->frame;
 
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
@@ -202,11 +201,12 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
 
+    tstate->frame = f->f_frame->previous;
     /* Don't keep the reference to f_back any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
-    assert(f->f_back == tstate->pyframe);
-    Py_CLEAR(f->f_back);
+    f->f_frame->previous = NULL;
+    assert(f->f_back == NULL);
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
@@ -423,14 +423,14 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
             PyThreadState *tstate = _PyThreadState_GET();
-            PyFrameObject *f = tstate->pyframe;
+            _PyFrame *f = tstate->frame;
 
             /* Since we are fast-tracking things by skipping the eval loop,
                we need to update the current frame so the stack trace
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            tstate->pyframe = gen->gi_frame;
+            tstate->frame = gen->gi_frame->f_frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame->f_frame->f_state;
@@ -438,7 +438,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             gen->gi_frame->f_frame->f_state = state;
-            tstate->pyframe = f;
+            tstate->frame = f;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
@@ -1153,11 +1153,11 @@ PyTypeObject _PyCoroWrapper_Type = {
 static PyObject *
 compute_cr_origin(int origin_depth)
 {
-    PyFrameObject *frame = PyEval_GetFrame();
+    _PyFrame *frame = _PyEval_GetFrame();
     /* First count how many frames we have */
     int frame_count = 0;
     for (; frame && frame_count < origin_depth; ++frame_count) {
-        frame = frame->f_back;
+        frame = frame->previous;
     }
 
     /* Now collect them */
@@ -1165,12 +1165,12 @@ compute_cr_origin(int origin_depth)
     if (cr_origin == NULL) {
         return NULL;
     }
-    frame = PyEval_GetFrame();
+    frame = _PyEval_GetFrame();
     for (int i = 0; i < frame_count; ++i) {
-        PyCodeObject *code = PyFrame_GetCode(frame);
+        PyCodeObject *code = frame->code;
         PyObject *frameinfo = Py_BuildValue("OiO",
                                             code->co_filename,
-                                            PyFrame_GetLineNumber(frame),
+                                            PyCode_Addr2Line(frame->code, frame->lasti*2),
                                             code->co_name);
         Py_DECREF(code);
         if (!frameinfo) {
@@ -1178,7 +1178,7 @@ compute_cr_origin(int origin_depth)
             return NULL;
         }
         PyTuple_SET_ITEM(cr_origin, i, frameinfo);
-        frame = frame->f_back;
+        frame = frame->previous;
     }
 
     return cr_origin;

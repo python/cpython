@@ -1450,8 +1450,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
     tstate->cframe = &cframe;
 
     /* push frame */
-    tstate->pyframe = fo;
     frame = fo->f_frame;
+    tstate->frame = frame;
     co = frame->code;
 
     if (cframe.use_tracing) {
@@ -3507,7 +3507,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *fo, int throwflag
         case TARGET(IMPORT_STAR): {
             PyObject *from = POP(), *locals;
             int err;
-            if (_PyFrame_FastToLocalsWithError(frame, 0) < 0) {
+            if (_PyFrame_FastToLocalsWithError(frame) < 0) {
                 Py_DECREF(from);
                 goto error;
             }
@@ -4404,7 +4404,7 @@ exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(frame);
     _Py_LeaveRecursiveCall(tstate);
-    tstate->pyframe = fo->f_back;
+    tstate->frame = frame->previous;
     return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
@@ -4967,9 +4967,7 @@ make_coro(PyThreadState *tstate, PyFrameConstructor *con,
     PyObject *gen;
     int is_coro = ((PyCodeObject *)con->fc_code)->co_flags & CO_COROUTINE;
 
-    /* Don't need to keep the reference to f_back, it will be set
-        * when the generator is resumed. */
-    Py_CLEAR(f->f_back);
+    assert(f->f_back == NULL);
 
     /* Create a new generator that owns the ready to run frame
         * and return that as the value. */
@@ -5676,19 +5674,29 @@ _PyEval_GetAsyncGenFinalizer(void)
     return tstate->async_gen_finalizer;
 }
 
+_PyFrame *
+_PyEval_GetFrame(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return tstate->frame;
+}
+
 PyFrameObject *
 PyEval_GetFrame(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return tstate->pyframe;
+    if (tstate->frame == NULL) {
+        return NULL;
+    }
+    return _PyFrame_GetFrameObject(tstate->frame);
 }
 
 PyObject *
 _PyEval_GetBuiltins(PyThreadState *tstate)
 {
-    PyFrameObject *frame = tstate->pyframe;
+    _PyFrame *frame = tstate->frame;
     if (frame != NULL) {
-        return frame->f_frame->builtins;
+        return frame->builtins;
     }
     return tstate->interp->builtins;
 }
@@ -5719,17 +5727,17 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->pyframe;
+     _PyFrame *current_frame = tstate->frame;
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
     }
 
-    if (PyFrame_FastToLocalsWithError(current_frame) < 0) {
+    if (_PyFrame_FastToLocalsWithError(current_frame) < 0) {
         return NULL;
     }
 
-    PyObject *locals = current_frame->f_frame->locals;
+    PyObject *locals = current_frame->locals;
     assert(locals != NULL);
     return locals;
 }
@@ -5738,22 +5746,22 @@ PyObject *
 PyEval_GetGlobals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->pyframe;
+    _PyFrame *current_frame = tstate->frame;
     if (current_frame == NULL) {
         return NULL;
     }
-    return current_frame->f_frame->globals;
+    return current_frame->globals;
 }
 
 int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyFrameObject *current_frame = tstate->pyframe;
+    _PyFrame *current_frame = tstate->frame;
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
-        const int codeflags = current_frame->f_frame->code->co_flags;
+        const int codeflags = current_frame->code->co_flags;
         const int compilerflags = codeflags & PyCF_MASK;
         if (compilerflags) {
             result = 1;

@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"
+#include "pycore_frame.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"        // _PyType_InitCache()
 #include "pycore_pyerrors.h"
@@ -635,7 +636,7 @@ new_threadstate(PyInterpreterState *interp, int init)
 
     tstate->interp = interp;
 
-    tstate->pyframe = NULL;
+    tstate->frame = NULL;
     tstate->frame = NULL;
     tstate->recursion_depth = 0;
     tstate->recursion_headroom = 0;
@@ -861,7 +862,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->pyframe != NULL) {
+    if (verbose && tstate->frame != NULL) {
         /* bpo-20526: After the main thread calls
            _PyRuntimeState_SetFinalizing() in Py_FinalizeEx(), threads must
            exit when trying to take the GIL. If a thread exit in the middle of
@@ -1134,7 +1135,7 @@ PyFrameObject*
 PyThreadState_GetFrame(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    PyFrameObject *frame = tstate->pyframe;
+    PyFrameObject *frame = _PyFrame_GetFrameObject(tstate->frame);
     Py_XINCREF(frame);
     return frame;
 }
@@ -1255,7 +1256,7 @@ _PyThread_CurrentFrames(void)
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
         PyThreadState *t;
         for (t = i->tstate_head; t != NULL; t = t->next) {
-            PyFrameObject *frame = t->pyframe;
+            _PyFrame *frame = t->frame;
             if (frame == NULL) {
                 continue;
             }
@@ -1263,7 +1264,7 @@ _PyThread_CurrentFrames(void)
             if (id == NULL) {
                 goto fail;
             }
-            int stat = PyDict_SetItem(result, id, (PyObject *)frame);
+            int stat = PyDict_SetItem(result, id, (PyObject *)_PyFrame_GetFrameObject(frame));
             Py_DECREF(id);
             if (stat < 0) {
                 goto fail;

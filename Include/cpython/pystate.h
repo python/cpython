@@ -78,7 +78,6 @@ struct _ts {
     PyInterpreterState *interp;
 
     /* Borrowed reference to the current frame (it can be NULL) */
-    PyFrameObject *pyframe;
     struct _py_frame *frame;
     int recursion_depth;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */

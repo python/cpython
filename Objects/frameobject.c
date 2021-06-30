@@ -14,7 +14,6 @@
 #define OFF(x) offsetof(PyFrameObject, x)
 
 static PyMemberDef frame_memberlist[] = {
-    {"f_back",          T_OBJECT,       OFF(f_back),      READONLY},
     {"f_trace_lines",   T_BOOL,         OFF(f_trace_lines), 0},
     {"f_trace_opcodes", T_BOOL,         OFF(f_trace_opcodes), 0},
     {NULL}      /* Sentinel */
@@ -100,6 +99,15 @@ frame_getcode(PyFrameObject *f, void *closure)
         return NULL;
     }
     return (PyObject *)PyFrame_GetCode(f);
+}
+
+static PyObject *
+frame_getback(PyFrameObject *f, void *closure)
+{
+    PyObject *res = (PyObject *)PyFrame_GetBack(f);
+    if (res == NULL) {
+        Py_RETURN_NONE;
+    }
 }
 
 /* Given the index of the effective opcode,
@@ -579,6 +587,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 
 
 static PyGetSetDef frame_getsetlist[] = {
+    {"f_back",          (getter)frame_getback, NULL, NULL},
     {"f_locals",        (getter)frame_getlocals, NULL, NULL},
     {"f_lineno",        (getter)frame_getlineno,
                     (setter)frame_setlineno, NULL},
@@ -847,6 +856,9 @@ _PyFrame_TakeLocals(PyFrameObject *f)
     assert(f->f_frame->stackdepth == 0);
     Py_ssize_t size = ((char*)f->f_frame->stack)-((char *)f->f_localsptr);
     PyObject **copy = PyMem_Malloc(size);
+    if (f->f_frame->previous != NULL) {
+        f->f_back = (PyFrameObject *)Py_NewRef(f->f_frame->previous->frame_obj);
+    }
     if (copy == NULL) {
         for (int i = 0; i < f->f_frame->code->co_nlocalsplus; i++) {
             PyObject *o = f->f_localsptr[i];
@@ -873,7 +885,7 @@ _PyFrame_New_NoTrack(PyThreadState *tstate, _PyFrame *frame, int owns)
     if (f == NULL) {
         return NULL;
     }
-    f->f_back = (PyFrameObject*)Py_XNewRef(tstate->pyframe);
+    f->f_back = NULL;
     f->f_trace = NULL;
     f->f_frame->stackdepth = 0;
     f->f_trace_lines = 1;
@@ -928,7 +940,7 @@ _PyFrame_OpAlreadyRan(_PyFrame *frame, int opcode, int oparg)
 }
 
 int
-_PyFrame_FastToLocalsWithError(_PyFrame *frame, int cleared) {
+_PyFrame_FastToLocalsWithError(_PyFrame *frame) {
     /* Merge fast locals into f->f_locals */
     PyObject *locals;
     PyObject **fast;
@@ -958,7 +970,7 @@ _PyFrame_FastToLocalsWithError(_PyFrame *frame, int cleared) {
 
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = fast[i];
-        if (!cleared) {
+        if (frame->f_state != FRAME_CLEARED) {
             if (kind & CO_FAST_FREE) {
                 // The cell was set when the frame was created from
                 // the function's closure.
@@ -1012,7 +1024,7 @@ PyFrame_FastToLocalsWithError(PyFrameObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    return _PyFrame_FastToLocalsWithError(f->f_frame, f->f_frame->f_state == FRAME_CLEARED);
+    return _PyFrame_FastToLocalsWithError(f->f_frame);
 }
 
 void
@@ -1153,6 +1165,9 @@ PyFrame_GetBack(PyFrameObject *frame)
 {
     assert(frame != NULL);
     PyFrameObject *back = frame->f_back;
+    if (back == NULL && frame->f_frame->previous != NULL) {
+        back = frame->f_frame->previous->frame_obj;
+    }
     Py_XINCREF(back);
     return back;
 }

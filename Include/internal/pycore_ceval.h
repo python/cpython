@@ -107,6 +107,7 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 
 #define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
 
+struct _py_frame *_PyEval_GetFrame(void);
 
 #ifdef __cplusplus
 }
