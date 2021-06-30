@@ -596,14 +596,18 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
     char buf[BUFSIZ];
     WFILE wf;
+    if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
+        return; /* caller must check PyErr_Occurred() */
+    }
     memset(&wf, 0, sizeof(wf));
     wf.fp = fp;
     wf.ptr = wf.buf = buf;
     wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
-    if (w_init_refs(&wf, version))
-        return; /* caller mush check PyErr_Occurred() */
+    if (w_init_refs(&wf, version)) {
+        return; /* caller must check PyErr_Occurred() */
+    }
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
@@ -1368,12 +1372,6 @@ r_object(RFILE *p)
                 goto code_error;
 
             Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(localsplusnames);
-            if (PySys_Audit("code.__new__", "OOOiiiiii",
-                            code, filename, name, argcount, posonlyargcount,
-                            kwonlyargcount, nlocalsplus, stacksize,
-                            flags) < 0) {
-                goto code_error;
-            }
 
             struct _PyCodeConstructor con = {
                 .filename = filename,
@@ -1459,6 +1457,15 @@ read_object(RFILE *p)
     if (PyErr_Occurred()) {
         fprintf(stderr, "XXX readobject called with exception set\n");
         return NULL;
+    }
+    if (p->ptr && p->end) {
+        if (PySys_Audit("marshal.loads", "y#", p->ptr, (Py_ssize_t)(p->end - p->ptr)) < 0) {
+            return NULL;
+        }
+    } else if (p->fp || p->readable) {
+        if (PySys_Audit("marshal.load", NULL) < 0) {
+            return NULL;
+        }
     }
     v = r_object(p);
     if (v == NULL && !PyErr_Occurred())
@@ -1556,7 +1563,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     rf.refs = PyList_New(0);
     if (rf.refs == NULL)
         return NULL;
-    result = r_object(&rf);
+    result = read_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
@@ -1577,7 +1584,7 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     rf.refs = PyList_New(0);
     if (rf.refs == NULL)
         return NULL;
-    result = r_object(&rf);
+    result = read_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
@@ -1589,6 +1596,9 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 {
     WFILE wf;
 
+    if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
+        return NULL;
+    }
     memset(&wf, 0, sizeof(wf));
     wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
     if (wf.str == NULL)

@@ -54,6 +54,11 @@ class AuditTest(unittest.TestCase):
     def test_block_add_hook_baseexception(self):
         self.do_test("test_block_add_hook_baseexception")
 
+    def test_marshal(self):
+        import_helper.import_module("marshal")
+
+        self.do_test("test_marshal")
+
     def test_pickle(self):
         import_helper.import_module("pickle")
 
