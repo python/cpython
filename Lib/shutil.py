@@ -54,9 +54,12 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "register_archive_format", "unregister_archive_format",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
-           "ignore_patterns", "chown", "which", "get_terminal_size",
+           "ignore_patterns", "which", "get_terminal_size",
            "SameFileError"]
            # disk_usage is added later, if available on the platform
+
+if not _WINDOWS:
+    __all__.append("chown")
 
 class Error(OSError):
     pass
