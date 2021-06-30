@@ -148,13 +148,37 @@ might make sense to allow the teacher to search for students or parents using
         print('Result not found')
         sys.exit(args.print_help())
 
-Note that there is no reason to use the ``if __name__ == '__main__'`` statement
-in ``__main__.py`` itself. There is no reason for any other file to import
-something from ``__main__.py``, and therefore, ``__name__`` will always be
-``'__main__'``; in most cases it would be a redundant statement. There are
-exceptions to this norm, though. For example, if you have explicitly identified
-``__main__`` as a console script entry point in :file:`setup.py`. See section
-:ref:`entry-points`.
+
+
+Idiomatic Usage
+^^^^^^^^^^^^^^^
+
+.. should the first paragraph of this section be removed entirely? I see that
+   this suggestion conflicts with setuptools's docs, where they do use
+   if __name__ == '__main__' in __main__.py files
+
+      (https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html)
+
+   However, I still think that the suggestion makes sense at face value. This
+   is my reasoning:
+
+   > It seems to me that it is almost always redundant, except in the case of
+   > console scripts where `__name__` would be `package.__main__`. Even then,
+   > wouldn't you **not** want your code to be under a `__name__ == '__main__'`
+   > block in that case? If it were, the code you'd want to run wouldn't run when
+   > invoked as a console script. To me, this seems like another reason to tell
+   > users _not_ to guard code in `__main__.py` under an `if __name__ ==
+   > '__main__'` block. `__main__.py` should always run from top-to-bottom; is
+   > that not the case?
+
+
+Note that it may not be necessary to use the ``if __name__ == '__main__'``
+statement in ``__main__.py`` itself. There is no reason for any other file to
+import something from ``__main__.py``. ``__main__.py`` will normally always be
+executed as the main program; therefore, ``__name__`` will always be
+``'__main__'``. There are exceptions to this norm, though. For example, if you
+have explicitly identified ``__main__`` as a console script entry point in
+:file:`setup.py`. See section :ref:`entry-points`.
 
 For a very popular example of a package using ``__main__.py`` in our standard
 library, see :mod:`venv`, and its' invocation via ``python3 -m
