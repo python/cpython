@@ -11,6 +11,7 @@
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '17.0' or '$(VisualStudioVersion)' == '17.0')">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '16.0' or '$(VisualStudioVersion)' == '16.0')">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
