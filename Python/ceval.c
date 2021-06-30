@@ -55,12 +55,6 @@ Py_LOCAL_INLINE(PyObject *) call_function(
 static PyObject * do_call_core(
     PyThreadState *tstate, PyObject *func,
     PyObject *callargs, PyObject *kwdict, int use_tracing);
-Py_LOCAL_INLINE(PyObject *) call_cfunction(
-    PyThreadState *tstate,
-    _PyAdaptiveEntry *cache0,
-    _PyCallFunctionCache *cache1,
-    PyObject ***pp_stack,
-    Py_ssize_t oparg);
 
 #ifdef LLTRACE
 static int lltrace;
@@ -4076,7 +4070,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             SpecializedCacheEntry *cache = GET_CACHE();
             if (cache->adaptive.counter == 0) {
                 next_instr--;
-                if (_Py_Specialize_CallFunction(stack_pointer, cache->adaptive.original_oparg, next_instr, cache) < 0) {
+                if (_Py_Specialize_CallFunction(BUILTINS(), stack_pointer,
+                    cache->adaptive.original_oparg, next_instr, cache) < 0) {
                     goto error;
                 }
                 DISPATCH();
@@ -4088,20 +4083,29 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
                 JUMP_TO_INSTRUCTION(CALL_FUNCTION);
             }
         }
-        case TARGET(CALL_CFUNCTION): {
-            /* Builtin functions, WITHOUT keywords */
+        case TARGET(CALL_CFUNCTION_FAST): {
+            /* Builtin METH_FASTCALL functions, without keywords */
             SpecializedCacheEntry *caches = GET_CACHE();
             _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
-            _PyCallFunctionCache *cache1 = &caches[-1].call_function;
-            PyObject *callable = PEEK(cache0->original_oparg + 1);
-            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL_FUNCTION);
-            DEOPT_IF(PyCFunction_GET_FUNCTION(callable) != cache1->cfunc, CALL_FUNCTION);
+            _PyCallCFunctionCache *cache1 = &caches[-1].call_function;
+            PyObject **callable = &PEEK(cache0->original_oparg + 1);
+            DEOPT_IF(!PyCFunction_CheckExact(*callable), CALL_FUNCTION);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(*callable);
+            DEOPT_IF(cfunc != cache1->cfunc, CALL_FUNCTION);
 
-            PyObject **sp, *res;
-            sp = stack_pointer;
             assert(cframe.use_tracing == 0);
-            res = call_cfunction(tstate, cache0, cache1, &sp, cache0->original_oparg);
-            stack_pointer = sp;
+            // res = func(self, args, nargs)
+            PyObject *res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(*callable),
+                stack_pointer - cache0->original_oparg,
+                cache0->original_oparg);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            while (stack_pointer > callable) {
+                PyObject *x = EXT_POP(stack_pointer);
+                Py_DECREF(x);
+            }
             PUSH(res);
             if (res == NULL) {
                 /* Not deopting because this doesn't mean our optimization was wrong.
@@ -4113,6 +4117,36 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             record_cache_hit(cache0);
             STAT_INC(CALL_FUNCTION, hit);
             DISPATCH();
+        }
+        case TARGET(CALL_CFUNCTION_O): {
+            /* Builtin METH_O functions */
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyAdaptiveEntry *cache0 = &caches[0].adaptive;
+            _PyCallCFunctionCache *cache1 = &caches[-1].call_function;
+            PyObject **callable = &PEEK(cache0->original_oparg + 1);
+            DEOPT_IF(!PyCFunction_CheckExact(*callable), CALL_FUNCTION);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(*callable);
+            DEOPT_IF(cfunc != cache1->cfunc, CALL_FUNCTION);
+
+            assert(cframe.use_tracing == 0);
+            // res = func(self, arg)
+            PyObject *res = cfunc(
+                PyCFunction_GET_SELF(*callable),
+                *(stack_pointer - cache0->original_oparg));
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Clear the stack of the function object. */
+            while (stack_pointer > callable) {
+                PyObject *x = EXT_POP(stack_pointer);
+                Py_DECREF(x);
+            }
+            PUSH(res);
+            if (res == NULL) {
+                goto error;
+            }
+            record_cache_hit(cache0);
+            STAT_INC(CALL_FUNCTION, hit);
+            DISPATCH();        
         }
         case TARGET(CALL_FUNCTION_KW): {
             PyObject **sp, *res, *names;
@@ -5920,70 +5954,6 @@ do_call_core(PyThreadState *tstate,
     return PyObject_Call(func, callargs, kwdict);
 }
 
-/* Fast alternative for non-keyword calls to C functions. */
-Py_LOCAL_INLINE(PyObject *) _Py_HOT_FUNCTION
-call_cfunction(PyThreadState *tstate,
-              _PyAdaptiveEntry *cache0,
-              _PyCallFunctionCache *cache1,
-              PyObject ***pp_stack,
-              Py_ssize_t oparg)
-{
-
-    PyObject **pfunc = (*pp_stack) - oparg - 1;
-    PyObject *x = NULL, *w;
-    PyObject **stack = (*pp_stack) - oparg;
-
-    PyObject *self = PyCFunction_GET_SELF(*pfunc);
-    PyCFunction cfunc = PyCFunction_GET_FUNCTION(*pfunc);
-
-    switch ((_BuiltinCallKinds)cache0->index) {
-        case PYCFUNCTION_NOARGS:
-        case PYCFUNCTION_O:
-            x = cfunc(self, *stack);
-            break;
-        case _PYCFUNCTION_FAST:
-            x = ((_PyCFunctionFast)(void(*)(void))cfunc)(self, stack, oparg);
-            break;
-        case _PYCFUNCTION_FAST_WITH_KEYWORDS:
-            x = ((_PyCFunctionFastWithKeywords)(void(*)(void))cfunc)(
-                self, stack, oparg, 0);
-            break;
-        case PYCFUNCTION: {
-            PyObject *args = _PyTuple_FromArray(stack, oparg);
-            if (args == NULL) {
-                break;
-            }
-            x = cfunc(self, args);
-            Py_DECREF(args);
-            break;
-        }
-        case PYCFUNCTION_WITH_KEYWORDS: {
-            PyObject *args = _PyTuple_FromArray(stack, oparg);
-            if (args == NULL) {
-                break;
-            }
-            x = ((PyCFunctionWithKeywords)(void(*)(void))cfunc)(self, args, NULL);
-            Py_DECREF(args);
-            break;
-        }
-        /* This flag only applies to PyMethodObject.
-           We're only optimizing for PyCfunctionObject
-        */
-        case PYCMETHOD:
-        default:
-            Py_UNREACHABLE();
-            break;
-    }
-    assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
-    /* Clear the stack of the function object. */
-    while ((*pp_stack) > pfunc) {
-        w = EXT_POP(*pp_stack);
-        Py_DECREF(w);
-    }
-
-    return x;
-}
 /* Extract a slice index from a PyLong or an object with the
    nb_index slot defined, and store in *pi.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,

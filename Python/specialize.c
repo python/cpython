@@ -74,6 +74,7 @@ _Py_PrintSpecializationStats(void)
     printf("Specialization stats:\n");
     print_stats(&_specialization_stats[LOAD_ATTR], "load_attr");
     print_stats(&_specialization_stats[LOAD_GLOBAL], "load_global");
+    print_stats(&_specialization_stats[CALL_FUNCTION], "call_function");
 }
 
 #if SPECIALIZATION_STATS_DETAILED
@@ -641,57 +642,96 @@ success:
     - Specialize python function calls.
 */
 int
-_Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
+_Py_Specialize_CallFunction(PyObject *builtins,
+    PyObject **stack_pointer, uint8_t original_oparg,
     _Py_CODEUNIT *instr, SpecializedCacheEntry *cache)
 {
     PyObject *callable = stack_pointer[-(original_oparg + 1)];
     _PyAdaptiveEntry *cache0 = &cache->adaptive;
-    _PyCallFunctionCache *cache1 = &cache[-1].call_function;
+    _PyCallCFunctionCache *cache1 = &cache[-1].call_function;
+    PyTypeObject *type = Py_TYPE(callable);
     /* Specialize C functions */
     if (PyCFunction_CheckExact(callable)) {
         PyCFunctionObject *meth = (PyCFunctionObject *)callable;
         if (meth->m_ml == NULL) {
             goto fail;
         }
+        PyCFunction cfunc = PyCFunction_GET_FUNCTION(meth);
+        assert(cfunc != NULL);
         const char *name_ascii = meth->m_ml->ml_name;
-        _BuiltinCallKinds kind = -1;
+        /* Don't optimize anything that isn't FASTCALL, has keywords, has varargs, or
+           has no args. Microbenchmarks show they don't benefit much to be worth a 
+           specialized instruction.
+        */
         switch (PyCFunction_GET_FLAGS(meth) & (METH_VARARGS | METH_FASTCALL |
             METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD)) {
-            case METH_VARARGS:
-                kind = PYCFUNCTION;
-                break;
-            case METH_VARARGS | METH_KEYWORDS:
-                kind = PYCFUNCTION_WITH_KEYWORDS;
-                break;
             case METH_FASTCALL:
-                kind = _PYCFUNCTION_FAST;
-                break;
-            case METH_FASTCALL | METH_KEYWORDS:
-                kind = _PYCFUNCTION_FAST_WITH_KEYWORDS;
-                break;
-            case METH_NOARGS:
-                kind = PYCFUNCTION_NOARGS;
-                break;
+                // _PYCFUNCTION_FAST;
+                *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_FAST, _Py_OPARG(*instr));
+                cache1->cfunc = cfunc;
+                goto success;
             case METH_O:
-                kind = PYCFUNCTION_O;
-                break;
+                // PYCFUNCTION_O;
+                *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_O, _Py_OPARG(*instr));
+                cache1->cfunc = cfunc;
+                goto success;
+            case METH_VARARGS:
+                // PYCFUNCTION
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION");
+                goto fail;
+            case METH_VARARGS | METH_KEYWORDS:
+                // PYCFUNCTION_WITH_KEYWORDS
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, 
+                    "PYCFUNCTION_WITH_KEYWORDS");
+                goto fail;
+            case METH_FASTCALL | METH_KEYWORDS:
+                // _PYCFUNCTION_FAST_WITH_KEYWORDS;
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, 
+                    "_PYCFUNCTION_FAST_WITH_KEYWORDS");
+                goto fail;
+            case METH_NOARGS:
+                // PYCFUNCTION_NOARGS;
+                SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION_NOARGS");
+                goto fail;
             /* This case should never happen with PyCFunctionObject -- only
                PyMethodObject. See zlib.compressobj()'s methods for an example.
             */
             case METH_METHOD | METH_FASTCALL | METH_KEYWORDS:
-                // kind = PYCMETHOD;
+                // PYCMETHOD
             default:
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bad call flags");
                 goto fail;
         }
-        assert(kind > 0);
-        PyCFunction cfunc = PyCFunction_GET_FUNCTION(meth);
-        assert(cfunc != NULL);
-        *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION, _Py_OPARG(*instr));
-        cache0->index = (uint16_t)kind;
-        cache1->cfunc = cfunc;
-        goto success;
     }
+    /* These will be implemented in the future. Collecting stats for now. */
+#if SPECIALIZATION_STATS
+    if (PyFunction_Check(callable)) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python function");
+        goto fail;
+    }
+    if (PyInstanceMethod_Check(callable)) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "new style bound method");
+        goto fail;
+    }
+    if (PyMethod_Check(callable)) {
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "bound method");
+        goto fail;
+    }
+    if (PyType_Check(callable)) {
+        if ((PyObject_HasAttrString(callable, "__dict__") ||
+            PyObject_HasAttrString(callable, "__slots__")) &&
+            PyObject_TypeCheck(callable, &PyType_Type) &&
+            !PyType_CheckExact(callable)) {
+            SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python class");
+        }
+        if (PyDict_GetItemString(builtins, ((PyTypeObject *)callable)->tp_name)) {
+            SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "__builtins__ type init");
+        }
+        goto fail;
+    }
+    /* So far this catches things like weakref.weakref */
+    SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "???");
+#endif
 fail:
     STAT_INC(CALL_FUNCTION, specialization_failure);
     assert(!PyErr_Occurred());

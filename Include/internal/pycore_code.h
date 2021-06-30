@@ -55,7 +55,7 @@ typedef struct {
 
 typedef struct {
     PyCFunction cfunc;
-} _PyCallFunctionCache;
+} _PyCallCFunctionCache;
 
 /* Add specialized versions of entries to this union.
  *
@@ -72,7 +72,7 @@ typedef union {
     _PyAdaptiveEntry adaptive;
     _PyLoadAttrCache load_attr;
     _PyLoadGlobalCache load_global;
-    _PyCallFunctionCache call_function;
+    _PyCallCFunctionCache call_function;
 } SpecializedCacheEntry;
 
 #define INSTRUCTIONS_PER_ENTRY (sizeof(SpecializedCacheEntry)/sizeof(_Py_CODEUNIT))
@@ -324,28 +324,15 @@ cache_backoff(_PyAdaptiveEntry *entry) {
     entry->counter = BACKOFF;
 }
 
-/* Corresponds to various function pointers
-https://docs.python.org/3/c-api/structures.html#implementing-functions-and-methods
-*/
-typedef enum {
-    PYCFUNCTION = 1,
-    PYCFUNCTION_O = 2,
-    PYCFUNCTION_NOARGS = 3,
-    PYCFUNCTION_WITH_KEYWORDS = 4,
-    _PYCFUNCTION_FAST = 5,
-    _PYCFUNCTION_FAST_WITH_KEYWORDS = 6,
-    PYCMETHOD = 7,
-} _BuiltinCallKinds;
-
 /* Specialization functions */
 
 int _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
 int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNIT *instr, PyObject *name, SpecializedCacheEntry *cache);
-int _Py_Specialize_CallFunction(PyObject **stack_pointer, uint8_t original_oparg,
-    _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
+int _Py_Specialize_CallFunction(PyObject *builtins, PyObject **stack_pointer,
+    uint8_t original_oparg, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
-#define SPECIALIZATION_STATS 0
-#define SPECIALIZATION_STATS_DETAILED 0
+#define SPECIALIZATION_STATS 1
+#define SPECIALIZATION_STATS_DETAILED 1
 
 #if SPECIALIZATION_STATS
 
