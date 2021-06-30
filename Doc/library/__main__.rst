@@ -102,9 +102,9 @@ your function will return some value acceptable as an input to
 :func:`sys.exit`; typically, an integer or ``None`` (which is implicitly returned
 if your function does not have a return statement).
 
-By proactively folloiwng this convention ourselves, our module will have the
+By proactively following this convention ourselves, our module will have the
 same behavior when run directly (``python3 echo.py``) as it will have if we
-later pacakge it as an console script entrypoint in a pip-installable package.
+later package it as an console script entry-point in a pip-installable package.
 We can revise the :file:`echo.py` example from earlier to follow this
 convention::
 
