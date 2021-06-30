@@ -153,7 +153,8 @@ might make sense to allow the teacher to search for students or parents using
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
-.. should the first paragraph of this section be removed entirely? I see that
+..
+   should the first paragraph of this section be removed entirely? I see that
    this suggestion conflicts with setuptools's docs, where they do use
    if __name__ == '__main__' in __main__.py files
 
@@ -162,14 +163,14 @@ Idiomatic Usage
    However, I still think that the suggestion makes sense at face value. This
    is my reasoning:
 
-   > It seems to me that it is almost always redundant, except in the case of
-   > console scripts where `__name__` would be `package.__main__`. Even then,
-   > wouldn't you **not** want your code to be under a `__name__ == '__main__'`
-   > block in that case? If it were, the code you'd want to run wouldn't run when
-   > invoked as a console script. To me, this seems like another reason to tell
-   > users _not_ to guard code in `__main__.py` under an `if __name__ ==
-   > '__main__'` block. `__main__.py` should always run from top-to-bottom; is
-   > that not the case?
+      It seems to me that it is almost always redundant, except in the case of
+      console scripts where __name__ would be package.__main__. Even then,
+      wouldn't you **not** want your code to be under a __name__ ==
+      '__main__' block in that case? If it were, the code you'd want to run
+      wouldn't run when invoked as a console script. To me, this seems like
+      another reason to tell users _not_ to guard code in __main__.py under
+      an if __name__ == '__main__' block. __main__.py should always run
+      from top-to-bottom; is that not the case?
 
 
 Note that it may not be necessary to use the ``if __name__ == '__main__'``
