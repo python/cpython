@@ -10,7 +10,7 @@ In Python, ``__main__`` is not a single mechanism in the language, but in fact
 is part of two quite different constructs:
 
 1. The ``__name__ == '__main__'`` statement
-2. The ``__main__.py`` file in a Python packages
+2. The ``__main__.py`` file in Python packages
 
 Each of these mechanisms are related to Python :ref:`tut-modules`; both how
 users interact with them as well as how they interact with each other. See
@@ -39,25 +39,25 @@ an import statement::
         # Execute when the module is not initialized from an import statement.
         ...
 
-Design Patterns
+Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
 Putting as few statements as possible in the block below ``if __name___ ==
 '__main__'`` can improve the clarity of your code. Most often, a function named
-``main`` encapuslates the program's "main" behavior, creating this pattern::
+*main* encapsulates the program's primary behavior, creating this pattern::
 
     # echo.py
 
     import sys
 
     def main(phrase: str):
-       "Print the string to standard output"
-       print(phrase)
+        "Print the string to standard output"
+        print(phrase)
 
     if __name__ == '__main__':
         main(' '.join(sys.argv))
 
-This has the added benefit of the ``main`` function itself being importable
+This has the added benefit of the *main* function itself being importable
 elsewhere::
 
     # elsewhere.py
