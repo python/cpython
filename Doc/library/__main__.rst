@@ -2,7 +2,7 @@
 ==============================================================================
 
 .. module:: __main__
-   :synopsis: CLIs, import-time behavior, and ``__name__ == '__main__'``
+   :synopsis: Command line interfaces, import-time behavior, and ``__name__ == '__main__'``
 
 --------------
 
@@ -208,5 +208,5 @@ have explicitly identified ``__main__`` as a console script entry point in
 :file:`setup.py`. See section :ref:`entry-points`.
 
 For a very popular example of a package using ``__main__.py`` in our standard
-library, see :mod:`venv`, and its' invocation via ``python3 -m
+library, see :mod:`venv`, and its invocation via ``python3 -m
 venv [directory]``.
