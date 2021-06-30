@@ -66,6 +66,8 @@ The module defines these functions:
    The *version* argument indicates the data format that ``dump`` should use
    (see below).
 
+   .. audit-event:: marshal.dumps value,version marshal.dump
+
 
 .. function:: load(file)
 
@@ -73,6 +75,8 @@ The module defines these functions:
    (e.g. because the data has a different Python version's incompatible marshal
    format), raise :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  The
    file must be a readable :term:`binary file`.
+
+   .. audit-event:: marshal.loads bytes marshal.load
 
    .. note::
 
@@ -89,12 +93,16 @@ The module defines these functions:
    The *version* argument indicates the data format that ``dumps`` should use
    (see below).
 
+   .. audit-event:: marshal.dumps value,version marshal.dump
+
 
 .. function:: loads(bytes)
 
    Convert the :term:`bytes-like object` to a value.  If no valid value is found, raise
    :exc:`EOFError`, :exc:`ValueError` or :exc:`TypeError`.  Extra bytes in the
    input are ignored.
+
+   .. audit-event:: marshal.loads bytes marshal.load
 
 
 In addition, the following constants are defined:
