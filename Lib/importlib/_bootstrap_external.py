@@ -360,6 +360,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a1 3455 (add MAKE_CELL bpo-43693)
 #     Python 3.11a1 3456 (interleave cell args bpo-43693)
 #     Python 3.11a1 3457 (Change localsplus to a bytes object bpo-43693)
+#     Python 3.11a1 3458 (imported objects now don't use LOAD_METHOD/CALL_METHOD)
 
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no

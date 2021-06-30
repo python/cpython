@@ -6,6 +6,7 @@ import sys
 import _ast
 import tempfile
 import types
+import textwrap
 from test import support
 from test.support import script_helper
 from test.support.os_helper import FakePath
@@ -790,6 +791,41 @@ if 1:
                 self.assertEqual(2, len(opcodes))
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
+
+    def test_imported_load_method(self):
+        sources = [
+            """\
+            import os
+            def foo():
+                return os.uname()
+            """,
+            """\
+            import os as operating_system
+            def foo():
+                return operating_system.uname()
+            """,
+            """\
+            from os import path
+            def foo(x):
+                return path.join(x)
+            """,
+            """\
+            from os import path as os_path
+            def foo(x):
+                return os_path.join(x)
+            """
+        ]
+        for source in sources:
+            namespace = {}
+            exec(textwrap.dedent(source), namespace)
+            func = namespace['foo']
+            with self.subTest(func=func.__name__):
+                opcodes = list(dis.get_instructions(func))
+                instructions = [opcode.opname for opcode in opcodes]
+                self.assertNotIn('LOAD_METHOD', instructions)
+                self.assertNotIn('CALL_METHOD', instructions)
+                self.assertIn('LOAD_ATTR', instructions)
+                self.assertIn('CALL_FUNCTION', instructions)
 
     def test_lineno_procedure_call(self):
         def call():
