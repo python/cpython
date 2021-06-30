@@ -1298,8 +1298,8 @@ if not _WINDOWS:
     def chown(path, user=None, group=None):
         """Change owner user and group of the given path.
 
-        user and group can be the uid/gid or the user/group names, and in that case,
-        they are converted to their respective uid/gid.
+        user and group can be the uid/gid or the user/group names, and in that
+        case, they are converted to their respective uid/gid.
         """
         sys.audit('shutil.chown', path, user, group)
 
