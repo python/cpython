@@ -1371,8 +1371,6 @@ r_object(RFILE *p)
             if (exceptiontable == NULL)
                 goto code_error;
 
-            Py_ssize_t nlocalsplus = PyTuple_GET_SIZE(localsplusnames);
-
             struct _PyCodeConstructor con = {
                 .filename = filename,
                 .name = name,
