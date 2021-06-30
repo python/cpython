@@ -75,30 +75,49 @@ importable elsewhere::
     def echo_platform():
         echo(sys.platform)
 
-The spirit of this design is inherited from the C programming language, where
-the function whose name is *main* is the entry-point of a program.  In C,
-*main* also returns an integer, which becomes the exit code of the process.
-Zero typically indicates successful termination, and other codes indicate some
-type of failure.  :func:`sys.exit` provides the API for exiting with an
-explicit exit code.  A popular convention in Python is for *main* functions to
-also return an integer which is then passed directly into :func:`sys.exit`,
-making it the exit code of the process::
 
-    # first_char.py
+Packaging Considerations (``console_scripts``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    import sys
+For detailed documentation on Python packaging, see
+`setuptools. <https://setuptools.readthedocs.io/en/latest/>`__
 
-    def main(argv: list[str]) -> int:
-        try:
-            print(f'The first character is: {argv[1][0]}')
-            return 0
-        except IndexError:
-            print('ERROR: first character could not be found. '
-                  'Did you pass an argument?')
-            return 1
+*main* functions are often used to create command line tools by specifying them
+as entry points for console scripts.  When this is done, pip inserts the
+function call into a template that looks like this::
+
+   #!/path/to/python3
+   # -*- coding: utf-8 -*-
+   import re
+   import sys
+   from package.__main__ import main
+   if __name__ == '__main__':
+       sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+       sys.exit(main())
+
+Notice the **last line.** The call to *main* is wrapped in :func:`sys.exit`.
+When *main* is the entry point of a console_script, the expectation is that
+your function will return some value acceptable as an input to
+:func:`sys.exit`; typically, an integer or ``None`` (which is implicitly returned
+if your function does not have a return statement).
+
+By proactively folloiwng this convention ourselves, our module will have the
+same behavior when run directly (``python3 echo.py``) as it will have if we
+later pacakge it as an console script entrypoint in a pip-installable package.
+We can revise the :file:`echo.py` example from earlier to follow this
+convention::
+
+    # echo.py
+    ...
+
+    def main() -> int:  # now, main returns an integer
+        "Echo the string to standard output"
+        echo(shlex.join(sys.argv))
+        return 0
 
     if __name__ == '__main__':
-        sys.exit(main(sys.argv))
+        # now, the integer returned from main is passed through to sys.exit
+        sys.exit(main())
 
 
 ``__main__.py`` in Python Packages
