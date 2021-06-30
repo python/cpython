@@ -2608,10 +2608,12 @@ class PublicAPITests(unittest.TestCase):
                       'get_archive_formats', 'register_archive_format',
                       'unregister_archive_format', 'get_unpack_formats',
                       'register_unpack_format', 'unregister_unpack_format',
-                      'unpack_archive', 'ignore_patterns', 'chown', 'which',
+                      'unpack_archive', 'ignore_patterns', 'which',
                       'get_terminal_size', 'SameFileError']
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
+        if os.name == 'nt':
+            target_api.append('chown')
         self.assertEqual(set(shutil.__all__), set(target_api))
 
 
