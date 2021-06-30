@@ -44,9 +44,8 @@ The :mod:`pprint` module defines one class:
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.
    
-   *stream* (default ``sys.stdout``) is where the output will appear. 
-   The only method used on the stream object is the file protocol's
-   :meth:`write` method.
+   *stream* (default ``sys.stdout``) is a :term:`file-like object` to
+   which the output will be written by calling its :meth:`write` method.
    
    Other values configure the manner in which nesting of complex data
    structures is displayed.
@@ -63,10 +62,11 @@ The :mod:`pprint` module defines one class:
    line in the output. If a structure cannot be formatted within the width
    constraint, a best effort will be made.
    
-   *compact* impacts the way that sequences (list, tuple, etc) are formatted.
-   If *compact* is false (the default) then each item of a sequence will
-   be formatted on a separate line.  If *compact* is true, as many items
-   as will fit within the *width* will be formatted on each output line.
+   *compact* impacts the way that long sequences (lists, tuples, sets, etc)
+   are formatted. If *compact* is false (the default) then each item of a
+   sequence will be formatted on a separate line.  If *compact* is true, as
+   many items as will fit within the *width* will be formatted on each output
+   line.
    
    If *sort_dicts* is true (the default), dictionaries will be formatted with
    their keys sorted, otherwise they will display in insertion order.
