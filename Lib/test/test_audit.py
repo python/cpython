@@ -52,7 +52,7 @@ class AuditTest(unittest.TestCase):
         self.do_test("test_block_add_hook_baseexception")
 
     def test_marshal(self):
-        import_helper.import_module("marshal")
+        support.import_module("marshal")
 
         self.do_test("test_marshal")
 
