@@ -38,6 +38,8 @@ def test_jpeg(h, f):
     """JPEG data in JFIF or Exif format"""
     if h[6:10] in (b'JFIF', b'Exif'):
         return 'jpeg'
+    elif h[:4]==b'\xff\xd8\xff\xdb'
+        return 'jpeg'
 
 tests.append(test_jpeg)
 
