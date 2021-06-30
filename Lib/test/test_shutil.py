@@ -2612,7 +2612,7 @@ class PublicAPITests(unittest.TestCase):
                       'get_terminal_size', 'SameFileError']
         if hasattr(os, 'statvfs') or os.name == 'nt':
             target_api.append('disk_usage')
-        if os.name == 'nt':
+        if os.name != 'nt':
             target_api.append('chown')
         self.assertEqual(set(shutil.__all__), set(target_api))
 
