@@ -75,6 +75,18 @@ New Features
 Other Language Changes
 ======================
 
+A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+:meth:`contextlib.ExitStack.enter_context` and
+:meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do not
+support the :term:`context manager` or :term:`asynchronous context manager`
+protocols correspondingly.
+(Contributed by Serhiy Storchaka in :issue:`44471`.)
+
+* A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+  :keyword:`with` and :keyword:`async with` statements for objects which do not
+  support the :term:`context manager` or :term:`asynchronous context manager`
+  protocols correspondingly.
+  (Contributed by Serhiy Storchaka in :issue:`12022`.)
 
 
 New Modules
@@ -104,6 +116,14 @@ math
   ``math.pow(0.0, -math.inf)`` and ``math.pow(-0.0, -math.inf)`` now return
   ``inf``. Previously they raised :exc:`ValueError`. (Contributed by Mark
   Dickinson in :issue:`44339`.)
+
+
+sqlite3
+-------
+
+* You can now disable the authorizer by passing :const:`None` to
+  :meth:`~sqlite3.Connection.set_authorizer`.
+  (Contributed by Erlend E. Aasland in :issue:`44491`.)
 
 
 Removed

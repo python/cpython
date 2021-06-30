@@ -5053,6 +5053,7 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 
 static int
 compiler_with_except_finish(struct compiler *c, basicblock * cleanup) {
+    c->u->u_lineno = -1;
     basicblock *exit;
     exit = compiler_new_block(c);
     if (exit == NULL)
@@ -5168,7 +5169,6 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
-    c->u->u_lineno = -1;
 
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
@@ -5265,7 +5265,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     /* For exceptional outcome: */
     compiler_use_next_block(c, final);
-    c->u->u_lineno = -1;
 
     ADDOP_JUMP(c, SETUP_CLEANUP, cleanup);
     ADDOP(c, PUSH_EXC_INFO);
