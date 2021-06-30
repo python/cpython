@@ -67,7 +67,32 @@ elsewhere::
     from echo import main as echo_main
 
     def echo_platform():
-       echo_main(sys.platform)
+        echo_main(sys.platform)
+
+The spirit of this design is inherited from the C programming language, where
+the function whose name is *main* is the entry-point of a program.  In C,
+*main* also returns an integer, which becomes the exit code of the process.
+Zero typically indicates successful termination, and other codes indicate some
+type of failure.  :func:`sys.exit` provides the API for exiting with an
+explicit exit code.  A popular convention in Python is for *main* functions to
+also return an integer which is then passed directly into :func:`sys.exit`,
+making it the exit code of the process::
+
+    # first_char.py
+
+    import sys
+
+    def main(argv: list[str]) -> int:
+        try:
+            print(f'The first character is: {argv[1][0]}')
+            return 0
+        except IndexError:
+            print('ERROR: first character could not be found. '
+                  'Did you pass an argument?')
+            return 1
+
+    if __name__ == '__main__':
+        sys.exit(main(sys.argv))
 
 
 ``__main__.py`` in Python Packages
