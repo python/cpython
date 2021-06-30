@@ -331,8 +331,8 @@ int _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins, _Py_CODEUNI
 int _Py_Specialize_CallFunction(PyObject *builtins, PyObject **stack_pointer,
     uint8_t original_oparg, _Py_CODEUNIT *instr, SpecializedCacheEntry *cache);
 
-#define SPECIALIZATION_STATS 1
-#define SPECIALIZATION_STATS_DETAILED 1
+#define SPECIALIZATION_STATS 0
+#define SPECIALIZATION_STATS_DETAILED 0
 
 #if SPECIALIZATION_STATS
 
