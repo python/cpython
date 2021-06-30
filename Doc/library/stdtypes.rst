@@ -2130,8 +2130,8 @@ expression support in the :mod:`re` module).
 
 .. method:: str.title()
 
-   Return a titlecased version of the string where words start with an uppercase
-   character and the remaining characters are lowercase.
+   Return a titlecased version of the string where words start with a titlecase
+   character (see :meth:`str.capitalize`) and the remaining characters are lowercase.
 
    For example::
 
