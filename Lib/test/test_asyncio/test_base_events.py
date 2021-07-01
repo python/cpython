@@ -224,14 +224,14 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
 
-    def test_set_default_executor_deprecation_warnings(self):
+    def test_set_default_executor_error(self):
         executor = mock.Mock()
 
-        with self.assertWarns(DeprecationWarning):
+        msg = 'executor must be ThreadPoolExecutor instance'
+        with self.assertRaisesRegex(TypeError, msg):
             self.loop.set_default_executor(executor)
 
-        # Avoid cleaning up the executor mock
-        self.loop._default_executor = None
+        self.assertIsNone(self.loop._default_executor)
 
     def test_call_soon(self):
         def cb():
