@@ -466,7 +466,7 @@ static PyMappingMethods union_as_mapping = {
 };
 
 static PyObject *
-union_parameters(PyObject *self, void *unused)
+union_parameters(PyObject *self, void *Py_UNUSED(unused))
 {
     unionobject *alias = (unionobject *)self;
     if (alias->parameters == NULL) {
