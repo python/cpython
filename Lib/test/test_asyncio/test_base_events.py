@@ -1884,10 +1884,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             MyProto, sock, None, None, mock.ANY, mock.ANY)
 
     def test_call_coroutine(self):
-        with self.assertWarns(DeprecationWarning):
-            @asyncio.coroutine
-            def simple_coroutine():
-                pass
+        async def simple_coroutine():
+            pass
 
         self.loop.set_debug(True)
         coro_func = simple_coroutine
