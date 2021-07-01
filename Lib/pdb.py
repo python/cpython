@@ -1730,9 +1730,8 @@ def main():
             pdb.interaction(None, t)
             if pdb._user_requested_quit:
                 break
-            else:
-                print("Post mortem debugger finished. The " + mainpyfile +
-                      " will be restarted")
+            print("Post mortem debugger finished. The " + mainpyfile +
+                  " will be restarted")
 
 
 # When invoked as main program, invoke the debugger on a script
