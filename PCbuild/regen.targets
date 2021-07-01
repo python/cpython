@@ -99,7 +99,8 @@
     <_LicenseOutputs Include="$(OutDir)LICENSE.txt" />
   </ItemGroup>
 
-  <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)">
+  <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)"
+          Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">
     <Message Text="Regenerate @(_TestFrozenOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
     <Exec Command="$(PythonExe) Programs\freeze_test_frozenmain.py Programs/test_frozenmain.h"
           WorkingDirectory="$(PySourcePath)" />
