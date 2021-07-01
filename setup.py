@@ -64,8 +64,8 @@ DISABLED_MODULE_LIST = []
 LIST_MODULE_NAMES = False
 
 
+logging.basicConfig(format='%(message)s', level=logging.INFO)
 log = logging.getLogger('setup')
-log.setLevel(logging.INFO)
 
 
 def get_platform():
