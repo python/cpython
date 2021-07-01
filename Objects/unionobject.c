@@ -450,7 +450,7 @@ union_getitem(PyObject *self, PyObject *item)
         }
     }
 
-    PyObject *newargs = _Py_apply_parameters(self, alias->args, alias->parameters, item);
+    PyObject *newargs = _Py_subs_parameters(self, alias->args, alias->parameters, item);
     if (newargs == NULL) {
         return NULL;
     }
