@@ -669,7 +669,7 @@ class TypesTests(unittest.TestCase):
     def test_union_parameter_chaining(self):
         T = typing.TypeVar("T")
 
-        assert (float | list[T])[int] == float | list[int]
+        self.assertEqual((float | list[T])[int], float | list[int])
 
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
