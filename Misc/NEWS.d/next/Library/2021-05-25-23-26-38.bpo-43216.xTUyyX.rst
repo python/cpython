@@ -1,0 +1,6 @@
+Remove the :func:`@asyncio.coroutine <asyncio.coroutine>` :term:`decorator`
+enabling legacy generator-based coroutines to be compatible with async/await
+code; remove :class:`asyncio.coroutines.CoroWrapper` used for wrapping
+legacy coroutine objects in the debug mode. The decorator has been deprecated
+since Python 3.8 and the removal was initially scheduled for Python 3.10.
+Patch by Illia Volochii.

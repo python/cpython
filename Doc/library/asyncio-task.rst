@@ -148,9 +148,6 @@ other coroutines::
    * a *coroutine object*: an object returned by calling a
      *coroutine function*.
 
-asyncio also supports legacy :ref:`generator-based
-<asyncio_generator_based_coro>` coroutines.
-
 
 .. rubric:: Tasks
 
@@ -1042,60 +1039,3 @@ Task Object
       in the :func:`repr` output of a task object.
 
       .. versionadded:: 3.8
-
-
-.. _asyncio_generator_based_coro:
-
-Generator-based Coroutines
-==========================
-
-.. note::
-
-   Support for generator-based coroutines is **deprecated** and
-   is scheduled for removal in Python 3.10.
-
-Generator-based coroutines predate async/await syntax.  They are
-Python generators that use ``yield from`` expressions to await
-on Futures and other coroutines.
-
-Generator-based coroutines should be decorated with
-:func:`@asyncio.coroutine <asyncio.coroutine>`, although this is not
-enforced.
-
-
-.. decorator:: coroutine
-
-    Decorator to mark generator-based coroutines.
-
-    This decorator enables legacy generator-based coroutines to be
-    compatible with async/await code::
-
-        @asyncio.coroutine
-        def old_style_coroutine():
-            yield from asyncio.sleep(1)
-
-        async def main():
-            await old_style_coroutine()
-
-    This decorator should not be used for :keyword:`async def`
-    coroutines.
-
-    .. deprecated-removed:: 3.8 3.10
-
-       Use :keyword:`async def` instead.
-
-.. function:: iscoroutine(obj)
-
-   Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
-
-   This method is different from :func:`inspect.iscoroutine` because
-   it returns ``True`` for generator-based coroutines.
-
-.. function:: iscoroutinefunction(func)
-
-   Return ``True`` if *func* is a :ref:`coroutine function
-   <coroutine>`.
-
-   This method is different from :func:`inspect.iscoroutinefunction`
-   because it returns ``True`` for generator-based coroutine functions
-   decorated with :func:`@coroutine <coroutine>`.
