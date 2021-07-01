@@ -65,6 +65,7 @@ LIST_MODULE_NAMES = False
 
 
 log = logging.getLogger('setup')
+log.setLevel(logging.INFO)
 
 
 def get_platform():
