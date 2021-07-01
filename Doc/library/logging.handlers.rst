@@ -676,7 +676,7 @@ supports sending logging messages to a remote or local Unix syslog.
       +--------------------------+---------------+
       | ``notice``               | LOG_NOTICE    |
       +--------------------------+---------------+
-      | ``warn`` or ``warning``  | LOG_WARNING   |
+      | ``warning``              | LOG_WARNING   |
       +--------------------------+---------------+
 
       **Facilities**
@@ -724,6 +724,10 @@ supports sending logging messages to a remote or local Unix syslog.
       +---------------+---------------+
       | ``local7``    | LOG_LOCAL7    |
       +---------------+---------------+
+
+   .. versionchanged:: 3.11
+
+      The deprecated keyword ``"WARN"`` was removed. Use ``"WARNING"`` instead.
 
    .. method:: mapPriority(levelname)
 

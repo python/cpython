@@ -254,9 +254,11 @@ is the module's name in the Python package namespace.
       Logs a message with level :const:`WARNING` on this logger. The arguments are
       interpreted as for :meth:`debug`.
 
-      .. note:: There is an obsolete method ``warn`` which is functionally
-         identical to ``warning``. As ``warn`` is deprecated, please do not use
-         it - use ``warning`` instead.
+      .. versionchanged:: 3.11
+
+      The deprecated ``logging.warn`` method, a duplicate of this method,
+      was removed. Use this method instead.
+
 
    .. method:: Logger.error(msg, *args, **kwargs)
 
@@ -1039,9 +1041,10 @@ functions.
    Logs a message with level :const:`WARNING` on the root logger. The arguments
    are interpreted as for :func:`debug`.
 
-   .. note:: There is an obsolete function ``warn`` which is functionally
-      identical to ``warning``. As ``warn`` is deprecated, please do not use
-      it - use ``warning`` instead.
+   .. versionchanged:: 3.11
+
+   The deprecated ``logging.warn`` function, a duplicate of this function, was
+   removed. Use this function instead.
 
 
 .. function:: error(msg, *args, **kwargs)

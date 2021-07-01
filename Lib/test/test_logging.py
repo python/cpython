@@ -4235,7 +4235,7 @@ class ModuleLevelMiscTest(BaseTest):
 
         self.assertRaises(TypeError, logging.disable, _NotAnIntOrString())
 
-        logging.disable("WARN")
+        logging.disable("WARNING")
 
         # test the default value introduced in 3.7
         # (Issue #28524)

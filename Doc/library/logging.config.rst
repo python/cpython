@@ -763,7 +763,7 @@ for the handler class. If not provided, it defaults to ``{}``.
 
    [handler_hand04]
    class=handlers.DatagramHandler
-   level=WARN
+   level=WARNING
    formatter=form04
    args=('localhost', handlers.DEFAULT_UDP_LOGGING_PORT)
 
@@ -781,7 +781,7 @@ for the handler class. If not provided, it defaults to ``{}``.
 
    [handler_hand07]
    class=handlers.SMTPHandler
-   level=WARN
+   level=WARNING
    formatter=form07
    args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
    kwargs={'timeout': 10.0}

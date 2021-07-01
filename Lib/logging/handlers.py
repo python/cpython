@@ -773,7 +773,6 @@ class SysLogHandler(logging.Handler):
         "info":     LOG_INFO,
         "notice":   LOG_NOTICE,
         "panic":    LOG_EMERG,      #  DEPRECATED
-        "warn":     LOG_WARNING,    #  DEPRECATED
         "warning":  LOG_WARNING,
         }
 

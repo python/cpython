@@ -1,0 +1,2 @@
+From the :mod:`logging` module, remove depricated :func:`logging.warn`,
+:meth:`logging.Logger.warn`, and :meth:`logger.LoggerAdapter.warn`.
