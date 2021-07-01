@@ -1,0 +1,2 @@
+The project demo(test2to3) that demonstrates how a distutils package is
+removed. Patch by Dong-hee Na
