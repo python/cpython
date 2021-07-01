@@ -88,6 +88,15 @@
                                  $(PySourcePath)Programs\test_frozenmain.py;
                                  @(_OpcodeOutputs)" />
     <_TestFrozenOutputs Include="$(PySourcePath)Programs\test_frozenmain.h" />
+    <_LicenseSources Include="$(PySourcePath)LICENSE;
+                              $(PySourcePath)PC\crtlicense.txt;
+                              $(bz2Dir)LICENSE;
+                              $(opensslOutDir)LICENSE;
+                              $(libffiDir)LICENSE;" />
+    <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
+                              $(tcltkDir)tklicense.terms;
+                              $(tcltkDir)tixlicense.terms" Condition="$(IncludeTkinter)" />
+    <_LicenseOutputs Include="$(OutDir)LICENSE.txt" />
   </ItemGroup>
 
   <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)">
@@ -96,7 +105,18 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
-  <Target Name="PostBuildRegen" DependsOnTargets="_RegenTestFrozenmain">
+  <Target Name="_RegenLicense" Inputs="@(_LicenseSources)" Outputs="@(_LicenseOutputs)">
+    <Message Text="Regenerate @(_LicenseOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
+    <ItemGroup>
+      <_Text Include="@(_LicenseFiles)">
+        <Content Condition="Exists(%(FullPath))">$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+      </_Text>
+    </ItemGroup>
+
+    <WriteLinesToFile File="@(_LicenseOutputs)" Overwrite="true" Lines="@(_Text->'%(Content)')" />
+  </Target>
+
+  <Target Name="PostBuildRegen" DependsOnTargets="_RegenTestFrozenmain;_RegenLicense">
     <Message Text="Other generated files are up to date" Importance="high" />
   </Target>
 </Project>
