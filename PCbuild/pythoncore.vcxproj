@@ -520,6 +520,7 @@
     <Import Project="regen.targets" />
   </ImportGroup>
   <Target Name="_TriggerRegen" BeforeTargets="PrepareForBuild" DependsOnTargets="Regen" />
+  <Target Name="_TriggerPostRegen" AfterTargets="Build" DependsOnTargets="PostBuildRegen" />
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>
