@@ -8,6 +8,7 @@
 typedef struct {
     PyObject_HEAD
     PyObject *args;
+    PyObject *parameters;
 } unionobject;
 
 static void
@@ -18,6 +19,7 @@ unionobject_dealloc(PyObject *self)
     _PyObject_GC_UNTRACK(self);
 
     Py_XDECREF(alias->args);
+    Py_XDECREF(alias->parameters);
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -435,6 +437,53 @@ static PyMethodDef union_methods[] = {
         {"__subclasscheck__", union_subclasscheck, METH_O},
         {0}};
 
+
+static PyObject *
+union_getitem(PyObject *self, PyObject *item)
+{
+    unionobject *alias = (unionobject *)self;
+    // do a lookup for __parameters__ so it gets populated (if not already)
+    if (alias->parameters == NULL) {
+        alias->parameters = _Py_make_parameters(alias->args);
+        if (alias->parameters == NULL) {
+            return NULL;
+        }
+    }
+
+    PyObject *newargs = _Py_apply_parameters(self, alias->args, alias->parameters, item);
+    if (newargs == NULL) {
+        return NULL;
+    }
+
+    PyObject *res = _Py_Union(newargs);
+
+    Py_DECREF(newargs);
+    return res;
+}
+
+static PyMappingMethods union_as_mapping = {
+    .mp_subscript = union_getitem,
+};
+
+static PyObject *
+union_parameters(PyObject *self, void *unused)
+{
+    unionobject *alias = (unionobject *)self;
+    if (alias->parameters == NULL) {
+        alias->parameters = _Py_make_parameters(alias->args);
+        if (alias->parameters == NULL) {
+            return NULL;
+        }
+    }
+    Py_INCREF(alias->parameters);
+    return alias->parameters;
+}
+
+static PyGetSetDef union_properties[] = {
+    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.Union.", NULL},
+    {0}
+};
+
 static PyNumberMethods union_as_number = {
         .nb_or = _Py_union_type_or, // Add __or__ function
 };
@@ -456,8 +505,10 @@ PyTypeObject _Py_UnionType = {
     .tp_members = union_members,
     .tp_methods = union_methods,
     .tp_richcompare = union_richcompare,
+    .tp_as_mapping = &union_as_mapping,
     .tp_as_number = &union_as_number,
     .tp_repr = union_repr,
+    .tp_getset = union_properties,
 };
 
 PyObject *
@@ -489,6 +540,7 @@ _Py_Union(PyObject *args)
         return NULL;
     }
 
+    result->parameters = NULL;
     result->args = dedup_and_flatten_args(args);
     if (result->args == NULL) {
         PyObject_GC_Del(result);

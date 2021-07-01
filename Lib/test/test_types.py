@@ -666,6 +666,11 @@ class TypesTests(unittest.TestCase):
         assert TV | str == typing.Union[TV, str]
         assert str | TV == typing.Union[str, TV]
 
+    def test_union_parameter_chaining(self):
+        T = typing.TypeVar("T")
+
+        assert (float | list[T])[int] == float | list[int]
+
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
         ForwardAfter = T | 'Forward'

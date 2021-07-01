@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+PyAPI_FUNC(PyObject *) _Py_apply_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _Py_make_parameters(PyObject *);
 PyAPI_FUNC(PyObject *) Py_GenericAlias(PyObject *, PyObject *);
 PyAPI_DATA(PyTypeObject) Py_GenericAliasType;
 
