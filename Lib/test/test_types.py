@@ -670,8 +670,9 @@ class TypesTests(unittest.TestCase):
         T = typing.TypeVar("T")
 
         self.assertEqual((float | list[T])[int], float | list[int])
-self.assertEqual(list[int | list[T]].__parameters__, (T,))
-self.assertEqual(list[int | list[T]][str], list[int | list[str]])
+        self.assertEqual(list[int | list[T]].__parameters__, (T,))
+        self.assertEqual(list[int | list[T]][str], list[int | list[str]])
+
     def test_or_type_operator_with_forward(self):
         T = typing.TypeVar('T')
         ForwardAfter = T | 'Forward'
