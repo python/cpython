@@ -295,7 +295,7 @@ subs_tvars(PyObject *obj, PyObject *params, PyObject **argitems)
 }
 
 PyObject *
-_Py_apply_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObject *item)
+_Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObject *item)
 {
     Py_ssize_t nparams = PyTuple_GET_SIZE(parameters);
     if (nparams == 0) {
@@ -361,7 +361,7 @@ ga_getitem(PyObject *self, PyObject *item)
         }
     }
 
-    PyObject *newargs = _Py_apply_parameters(self, alias->args, alias->parameters, item);
+    PyObject *newargs = _Py_subs_parameters(self, alias->args, alias->parameters, item);
     if (newargs == NULL) {
         return NULL;
     }
