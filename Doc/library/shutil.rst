@@ -293,8 +293,8 @@ Directory and files operations
       Will create all those intermediary folders, even if *dirs_exist_ok* is
       false.
 
-      However, this would cause a :exc:`FileExistsError`, because it represents
-      an attempt to overwrite ``neighbor/cat.png``::
+      However, the following will cause a :exc:`FileExistsError`, because it
+      represents an attempt to overwrite ``neighbor/cat.png``::
 
          shutil.copytree('source', 'neighbor')
 
