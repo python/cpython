@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _Py_apply_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) _Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _Py_make_parameters(PyObject *);
 #endif
 
