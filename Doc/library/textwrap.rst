@@ -99,10 +99,11 @@ functions should be good enough; otherwise, you should use an instance of
    * :attr:`.break_on_hyphens`
    * :attr:`.max_lines`
 
-   Note that :class:`TextWrapper` has some additional options which have **no
-   effect** when passed to :func:`shorten` (:attr:`.tabsize`,
-   :attr:`.expand_tabs`, :attr:`.drop_whitespace`, and
-   :attr:`.replace_whitespace`).
+
+   Note that the whitespace is collapsed before the text is passed to the
+   :class:`TextWrapper` :meth:`fill` function, so changing the value of
+   :attr:`.tabsize`, :attr:`.expand_tabs`, :attr:`.drop_whitespace`, and
+   :attr:`.replace_whitespace` will have no effect.
 
    .. versionadded:: 3.4
 
