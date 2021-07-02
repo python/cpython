@@ -28,7 +28,6 @@
 #include "pythread.h"
 #include "structmember.h"
 
-#include "cache.h"
 #include "module.h"
 
 #include "sqlite3.h"
@@ -41,13 +40,6 @@ typedef struct
     /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
      * bitwise combination thereof makes sense */
     int detect_types;
-
-    /* the timeout value in seconds for database locks */
-    double timeout;
-
-    /* for internal use in the timeout handler: when did the timeout handler
-     * first get called with count=0? */
-    double timeout_started;
 
     /* None for autocommit, otherwise a PyUnicode with the isolation level */
     PyObject* isolation_level;
@@ -64,7 +56,7 @@ typedef struct
     /* thread identification of the thread the connection was created in */
     unsigned long thread_ident;
 
-    pysqlite_Cache* statement_cache;
+    PyObject *statement_cache;
 
     /* Lists of weak references to statements and cursors used within this connection */
     PyObject* statements;
@@ -93,7 +85,7 @@ typedef struct
     /* a dictionary of registered collation name => collation callable mappings */
     PyObject* collations;
 
-    /* Exception objects */
+    /* Exception objects: borrowed refs. */
     PyObject* Warning;
     PyObject* Error;
     PyObject* InterfaceError;
@@ -105,10 +97,6 @@ typedef struct
     PyObject* ProgrammingError;
     PyObject* NotSupportedError;
 } pysqlite_Connection;
-
-extern PyTypeObject *pysqlite_ConnectionType;
-
-PyObject* _pysqlite_connection_begin(pysqlite_Connection* self);
 
 int pysqlite_connection_register_cursor(pysqlite_Connection* connection, PyObject* cursor);
 int pysqlite_check_thread(pysqlite_Connection* self);

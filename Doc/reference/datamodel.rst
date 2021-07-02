@@ -2714,7 +2714,7 @@ are awaitable.
 .. note::
 
    The :term:`generator iterator` objects returned from generators
-   decorated with :func:`types.coroutine` or :func:`asyncio.coroutine`
+   decorated with :func:`types.coroutine`
    are also awaitable, but they do not implement :meth:`__await__`.
 
 .. method:: object.__await__(self)

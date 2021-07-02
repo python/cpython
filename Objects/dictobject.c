@@ -117,7 +117,7 @@ converting the dict to the combined table.
 #include "pycore_object.h"   // _PyObject_GC_TRACK()
 #include "pycore_pyerrors.h" // _PyErr_Fetch()
 #include "pycore_pystate.h"  // _PyThreadState_GET()
-#include "dict-common.h"
+#include "pycore_dict.h"
 #include "stringlib/eq.h"    // unicode_eq()
 
 /*[clinic input]
@@ -284,24 +284,6 @@ _PyDict_DebugMallocStats(FILE *out)
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
 }
-
-#define DK_LOG_SIZE(dk)  ((dk)->dk_log2_size)
-#if SIZEOF_VOID_P > 4
-#define DK_SIZE(dk)      (((int64_t)1)<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : DK_LOG_SIZE(dk) <= 31 ?   \
-                4 : sizeof(int64_t))
-#else
-#define DK_SIZE(dk)      (1<<DK_LOG_SIZE(dk))
-#define DK_IXSIZE(dk)                     \
-    (DK_LOG_SIZE(dk) <= 7 ?               \
-        1 : DK_LOG_SIZE(dk) <= 15 ?       \
-            2 : sizeof(int32_t))
-#endif
-#define DK_ENTRIES(dk) \
-    ((PyDictKeyEntry*)(&((int8_t*)((dk)->dk_indices))[DK_SIZE(dk) * DK_IXSIZE(dk)]))
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
 #define IS_POWER_OF_2(x) (((x) & (x-1)) == 0)
@@ -1544,10 +1526,10 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     assert(hashpos >= 0);
 
     mp->ma_used--;
+    mp->ma_keys->dk_version = 0;
     mp->ma_version_tag = DICT_NEXT_VERSION();
     ep = &DK_ENTRIES(mp->ma_keys)[ix];
     dictkeys_set_index(mp->ma_keys, hashpos, DKIX_DUMMY);
-    mp->ma_keys->dk_version = 0;
     old_key = ep->me_key;
     ep->me_key = NULL;
     ep->me_value = NULL;
@@ -3342,19 +3324,16 @@ static PyNumberMethods dict_as_number = {
 static PyObject *
 dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *self;
-    PyDictObject *d;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    // dict subclasses must implement the GC protocol
+    assert(_PyType_IS_GC(type));
 
-    assert(type != NULL && type->tp_alloc != NULL);
-    self = type->tp_alloc(type, 0);
-    if (self == NULL)
+    PyObject *self = type->tp_alloc(type, 0);
+    if (self == NULL) {
         return NULL;
-    d = (PyDictObject *)self;
-
-    /* The object has been implicitly tracked by tp_alloc */
-    if (type == &PyDict_Type) {
-        _PyObject_GC_UNTRACK(d);
     }
+    PyDictObject *d = (PyDictObject *)self;
 
     d->ma_used = 0;
     d->ma_version_tag = DICT_NEXT_VERSION();
@@ -3362,6 +3341,17 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = empty_values;
     ASSERT_CONSISTENT(d);
+
+    if (type != &PyDict_Type) {
+        // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
+        if (!_PyObject_GC_IS_TRACKED(d)) {
+            _PyObject_GC_TRACK(d);
+        }
+    }
+    else {
+        // _PyType_AllocNoTrack() does not track the created object
+        assert(!_PyObject_GC_IS_TRACKED(d));
+    }
     return self;
 }
 
@@ -3459,7 +3449,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
     dict_init,                                  /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
+    _PyType_AllocNoTrack,                       /* tp_alloc */
     dict_new,                                   /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = dict_vectorcall,

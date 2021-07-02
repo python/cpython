@@ -6,6 +6,7 @@ import sys
 import _ast
 import tempfile
 import types
+import textwrap
 from test import support
 from test.support import script_helper
 from test.support.os_helper import FakePath
@@ -162,7 +163,7 @@ if 1:
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
                     "080000000000000", "000000000000009", "000000000000008",
                     "0b42", "0BADCAFE", "0o123456789", "0b1.1", "0o4.2",
-                    "0b101j2", "0o153j2", "0b100e1", "0o777e1", "0777",
+                    "0b101j", "0o153j", "0b100e1", "0o777e1", "0777",
                     "000777", "000000000000007"]:
             self.assertRaises(SyntaxError, eval, arg)
 
@@ -791,6 +792,41 @@ if 1:
                 self.assertIn('LOAD_', opcodes[0].opname)
                 self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_imported_load_method(self):
+        sources = [
+            """\
+            import os
+            def foo():
+                return os.uname()
+            """,
+            """\
+            import os as operating_system
+            def foo():
+                return operating_system.uname()
+            """,
+            """\
+            from os import path
+            def foo(x):
+                return path.join(x)
+            """,
+            """\
+            from os import path as os_path
+            def foo(x):
+                return os_path.join(x)
+            """
+        ]
+        for source in sources:
+            namespace = {}
+            exec(textwrap.dedent(source), namespace)
+            func = namespace['foo']
+            with self.subTest(func=func.__name__):
+                opcodes = list(dis.get_instructions(func))
+                instructions = [opcode.opname for opcode in opcodes]
+                self.assertNotIn('LOAD_METHOD', instructions)
+                self.assertNotIn('CALL_METHOD', instructions)
+                self.assertIn('LOAD_ATTR', instructions)
+                self.assertIn('CALL_FUNCTION', instructions)
+
     def test_lineno_procedure_call(self):
         def call():
             (
@@ -894,6 +930,21 @@ if 1:
                 code_lines = [ line-func.__code__.co_firstlineno
                               for (_, _, line) in func.__code__.co_lines() ]
                 self.assertEqual(lines, code_lines)
+
+    def test_line_number_genexp(self):
+
+        def return_genexp():
+            return (1
+                    for
+                    x
+                    in
+                    y)
+        genexp_lines = [None, 1, 3, 1]
+
+        genexp_code = return_genexp.__code__.co_consts[1]
+        code_lines = [None if line is None else line-return_genexp.__code__.co_firstlineno
+                      for (_, _, line) in genexp_code.co_lines() ]
+        self.assertEqual(genexp_lines, code_lines)
 
 
     def test_big_dict_literal(self):

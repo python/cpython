@@ -2,6 +2,107 @@
 preserve
 [clinic start generated code]*/
 
+static int
+pysqlite_connection_init_impl(pysqlite_Connection *self,
+                              PyObject *database_obj, double timeout,
+                              int detect_types, PyObject *isolation_level,
+                              int check_same_thread, PyObject *factory,
+                              int cached_statements, int uri);
+
+static int
+pysqlite_connection_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    static const char * const _keywords[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", "uri", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "Connection", 0};
+    PyObject *argsbuf[8];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
+    PyObject *database_obj;
+    double timeout = 5.0;
+    int detect_types = 0;
+    PyObject *isolation_level = NULL;
+    int check_same_thread = 1;
+    PyObject *factory = (PyObject*)clinic_state()->ConnectionType;
+    int cached_statements = 128;
+    int uri = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 8, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(fastargs[0], &database_obj)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[1]) {
+        if (PyFloat_CheckExact(fastargs[1])) {
+            timeout = PyFloat_AS_DOUBLE(fastargs[1]);
+        }
+        else
+        {
+            timeout = PyFloat_AsDouble(fastargs[1]);
+            if (timeout == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[2]) {
+        detect_types = _PyLong_AsInt(fastargs[2]);
+        if (detect_types == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[3]) {
+        isolation_level = fastargs[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[4]) {
+        check_same_thread = _PyLong_AsInt(fastargs[4]);
+        if (check_same_thread == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[5]) {
+        factory = fastargs[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[6]) {
+        cached_statements = _PyLong_AsInt(fastargs[6]);
+        if (cached_statements == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    uri = PyObject_IsTrue(fastargs[7]);
+    if (uri < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = pysqlite_connection_init_impl((pysqlite_Connection *)self, database_obj, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(pysqlite_connection_cursor__doc__,
 "cursor($self, /, factory=<unrepresentable>)\n"
 "--\n"
@@ -552,8 +653,8 @@ pysqlite_connection_backup(pysqlite_Connection *self, PyObject *const *args, Py_
     if (!args) {
         goto exit;
     }
-    if (!PyObject_TypeCheck(args[0], pysqlite_ConnectionType)) {
-        _PyArg_BadArgument("backup", "argument 'target'", (pysqlite_ConnectionType)->tp_name, args[0]);
+    if (!PyObject_TypeCheck(args[0], clinic_state()->ConnectionType)) {
+        _PyArg_BadArgument("backup", "argument 'target'", (clinic_state()->ConnectionType)->tp_name, args[0]);
         goto exit;
     }
     target = (pysqlite_Connection *)args[0];
@@ -710,4 +811,4 @@ exit:
 #ifndef PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
     #define PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF
 #endif /* !defined(PYSQLITE_CONNECTION_LOAD_EXTENSION_METHODDEF) */
-/*[clinic end generated code: output=c1bf09db3bcd0105 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c350732a2758c8c1 input=a9049054013a1b77]*/

@@ -259,7 +259,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         for code in (HTTPStatus.NO_CONTENT, HTTPStatus.NOT_MODIFIED,
                      HTTPStatus.PROCESSING, HTTPStatus.RESET_CONTENT,
                      HTTPStatus.SWITCHING_PROTOCOLS):
-            self.con.request('SEND_ERROR', '/{:d}'.format(code))
+            self.con.request('SEND_ERROR', '/{}'.format(code))
             res = self.con.getresponse()
             self.assertEqual(code, res.status)
             self.assertEqual(None, res.getheader('Content-Length'))
@@ -276,7 +276,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
         for code in (HTTPStatus.OK, HTTPStatus.NO_CONTENT,
                      HTTPStatus.NOT_MODIFIED, HTTPStatus.RESET_CONTENT,
                      HTTPStatus.SWITCHING_PROTOCOLS):
-            self.con.request('HEAD', '/{:d}'.format(code))
+            self.con.request('HEAD', '/{}'.format(code))
             res = self.con.getresponse()
             self.assertEqual(code, res.status)
             if code == HTTPStatus.OK:

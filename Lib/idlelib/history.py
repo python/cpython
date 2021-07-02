@@ -29,7 +29,7 @@ class History:
         text.bind("<<history-next>>", self.history_next)
 
     def history_next(self, event):
-        "Fetch later statement; start with ealiest if cyclic."
+        "Fetch later statement; start with earliest if cyclic."
         self.fetch(reverse=False)
         return "break"
 

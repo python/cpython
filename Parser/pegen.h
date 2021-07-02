@@ -149,6 +149,9 @@ void *_PyPegen_dummy_name(Parser *p, ...);
 void * _PyPegen_seq_last_item(asdl_seq *seq);
 #define PyPegen_last_item(seq, type) ((type)_PyPegen_seq_last_item((asdl_seq*)seq))
 
+void * _PyPegen_seq_first_item(asdl_seq *seq);
+#define PyPegen_first_item(seq, type) ((type)_PyPegen_seq_first_item((asdl_seq*)seq))
+
 #define CURRENT_POS (-5)
 
 Py_LOCAL_INLINE(void *)
@@ -202,7 +205,7 @@ CHECK_CALL_NULL_ALLOWED(Parser *p, void *result)
 #define CHECK(type, result) ((type) CHECK_CALL(p, result))
 #define CHECK_NULL_ALLOWED(type, result) ((type) CHECK_CALL_NULL_ALLOWED(p, result))
 
-PyObject *_PyPegen_new_type_comment(Parser *, char *);
+PyObject *_PyPegen_new_type_comment(Parser *, const char *);
 
 Py_LOCAL_INLINE(PyObject *)
 NEW_TYPE_COMMENT(Parser *p, Token *tc)
@@ -210,7 +213,7 @@ NEW_TYPE_COMMENT(Parser *p, Token *tc)
     if (tc == NULL) {
         return NULL;
     }
-    char *bytes = PyBytes_AsString(tc->bytes);
+    const char *bytes = PyBytes_AsString(tc->bytes);
     if (bytes == NULL) {
         goto error;
     }
@@ -242,7 +245,7 @@ INVALID_VERSION_CHECK(Parser *p, int version, char *msg, void *node)
 #define CHECK_VERSION(type, version, msg, node) ((type) INVALID_VERSION_CHECK(p, version, msg, node))
 
 arg_ty _PyPegen_add_type_comment_to_arg(Parser *, arg_ty, Token *);
-PyObject *_PyPegen_new_identifier(Parser *, char *);
+PyObject *_PyPegen_new_identifier(Parser *, const char *);
 Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,

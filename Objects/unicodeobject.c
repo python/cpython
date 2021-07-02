@@ -658,7 +658,7 @@ unicode_result_ready(PyObject *unicode)
     if (length == 1) {
         int kind = PyUnicode_KIND(unicode);
         if (kind == PyUnicode_1BYTE_KIND) {
-            Py_UCS1 *data = PyUnicode_1BYTE_DATA(unicode);
+            const Py_UCS1 *data = PyUnicode_1BYTE_DATA(unicode);
             Py_UCS1 ch = data[0];
             struct _Py_unicode_state *state = get_unicode_state();
             PyObject *latin1_char = state->latin1[ch];
@@ -14279,7 +14279,8 @@ unicode_subscript(PyObject* self, PyObject* item)
         assert(_PyUnicode_CheckConsistency(result, 1));
         return result;
     } else {
-        PyErr_SetString(PyExc_TypeError, "string indices must be integers");
+        PyErr_Format(PyExc_TypeError, "string indices must be integers, not '%.200s'",
+                     Py_TYPE(item)->tp_name);
         return NULL;
     }
 }

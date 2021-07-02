@@ -681,19 +681,23 @@ Constants
 
    .. deprecated:: 3.10
 
+      TLS clients and servers require different default settings for secure
+      communication. The generic TLS protocol constant is deprecated in
+      favor of :data:`PROTOCOL_TLS_CLIENT` and :data:`PROTOCOL_TLS_SERVER`.
+
 .. data:: PROTOCOL_TLS_CLIENT
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
-   but only support client-side :class:`SSLSocket` connections. The protocol
-   enables :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` by
-   default.
+   Auto-negotiate the highest protocol version that both the client and
+   server support, and configure the context client-side connections. The
+   protocol enables :data:`CERT_REQUIRED` and
+   :attr:`~SSLContext.check_hostname` by default.
 
    .. versionadded:: 3.6
 
 .. data:: PROTOCOL_TLS_SERVER
 
-   Auto-negotiate the highest protocol version like :data:`PROTOCOL_TLS`,
-   but only support server-side :class:`SSLSocket` connections.
+   Auto-negotiate the highest protocol version that both the client and
+   server support, and configure the context server-side connections.
 
    .. versionadded:: 3.6
 

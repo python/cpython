@@ -518,9 +518,8 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         w_object(co->co_code, p);
         w_object(co->co_consts, p);
         w_object(co->co_names, p);
-        w_object(co->co_varnames, p);
-        w_object(co->co_freevars, p);
-        w_object(co->co_cellvars, p);
+        w_object(co->co_localsplusnames, p);
+        w_object(co->co_localspluskinds, p);
         w_object(co->co_filename, p);
         w_object(co->co_name, p);
         w_long(co->co_firstlineno, p);
@@ -597,14 +596,18 @@ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
     char buf[BUFSIZ];
     WFILE wf;
+    if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
+        return; /* caller must check PyErr_Occurred() */
+    }
     memset(&wf, 0, sizeof(wf));
     wf.fp = fp;
     wf.ptr = wf.buf = buf;
     wf.end = wf.ptr + sizeof(buf);
     wf.error = WFERR_OK;
     wf.version = version;
-    if (w_init_refs(&wf, version))
-        return; /* caller mush check PyErr_Occurred() */
+    if (w_init_refs(&wf, version)) {
+        return; /* caller must check PyErr_Occurred() */
+    }
     w_object(x, &wf);
     w_clear_refs(&wf);
     w_flush(&wf);
@@ -1306,9 +1309,8 @@ r_object(RFILE *p)
             PyObject *code = NULL;
             PyObject *consts = NULL;
             PyObject *names = NULL;
-            PyObject *varnames = NULL;
-            PyObject *freevars = NULL;
-            PyObject *cellvars = NULL;
+            PyObject *localsplusnames = NULL;
+            PyObject *localspluskinds = NULL;
             PyObject *filename = NULL;
             PyObject *name = NULL;
             int firstlineno;
@@ -1347,15 +1349,11 @@ r_object(RFILE *p)
             names = r_object(p);
             if (names == NULL)
                 goto code_error;
-            varnames = r_object(p);
-            if (varnames == NULL)
+            localsplusnames = r_object(p);
+            if (localsplusnames == NULL)
                 goto code_error;
-            Py_ssize_t nlocals = PyTuple_GET_SIZE(varnames);
-            freevars = r_object(p);
-            if (freevars == NULL)
-                goto code_error;
-            cellvars = r_object(p);
-            if (cellvars == NULL)
+            localspluskinds = r_object(p);
+            if (localspluskinds == NULL)
                 goto code_error;
             filename = r_object(p);
             if (filename == NULL)
@@ -1373,12 +1371,6 @@ r_object(RFILE *p)
             if (exceptiontable == NULL)
                 goto code_error;
 
-            if (PySys_Audit("code.__new__", "OOOiiiiii",
-                            code, filename, name, argcount, posonlyargcount,
-                            kwonlyargcount, nlocals, stacksize, flags) < 0) {
-                goto code_error;
-            }
-
             struct _PyCodeConstructor con = {
                 .filename = filename,
                 .name = name,
@@ -1391,9 +1383,8 @@ r_object(RFILE *p)
                 .consts = consts,
                 .names = names,
 
-                .varnames = varnames,
-                .cellvars = cellvars,
-                .freevars = freevars,
+                .localsplusnames = localsplusnames,
+                .localspluskinds = localspluskinds,
 
                 .argcount = argcount,
                 .posonlyargcount = posonlyargcount,
@@ -1403,22 +1394,24 @@ r_object(RFILE *p)
 
                 .exceptiontable = exceptiontable,
             };
+
             if (_PyCode_Validate(&con) < 0) {
                 goto code_error;
             }
+
             v = (PyObject *)_PyCode_New(&con);
             if (v == NULL) {
                 goto code_error;
             }
+
             v = r_ref_insert(v, idx, flag, p);
 
           code_error:
             Py_XDECREF(code);
             Py_XDECREF(consts);
             Py_XDECREF(names);
-            Py_XDECREF(varnames);
-            Py_XDECREF(freevars);
-            Py_XDECREF(cellvars);
+            Py_XDECREF(localsplusnames);
+            Py_XDECREF(localspluskinds);
             Py_XDECREF(filename);
             Py_XDECREF(name);
             Py_XDECREF(linetable);
@@ -1462,6 +1455,15 @@ read_object(RFILE *p)
     if (PyErr_Occurred()) {
         fprintf(stderr, "XXX readobject called with exception set\n");
         return NULL;
+    }
+    if (p->ptr && p->end) {
+        if (PySys_Audit("marshal.loads", "y#", p->ptr, (Py_ssize_t)(p->end - p->ptr)) < 0) {
+            return NULL;
+        }
+    } else if (p->fp || p->readable) {
+        if (PySys_Audit("marshal.load", NULL) < 0) {
+            return NULL;
+        }
     }
     v = r_object(p);
     if (v == NULL && !PyErr_Occurred())
@@ -1559,7 +1561,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
     rf.refs = PyList_New(0);
     if (rf.refs == NULL)
         return NULL;
-    result = r_object(&rf);
+    result = read_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
@@ -1580,7 +1582,7 @@ PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
     rf.refs = PyList_New(0);
     if (rf.refs == NULL)
         return NULL;
-    result = r_object(&rf);
+    result = read_object(&rf);
     Py_DECREF(rf.refs);
     if (rf.buf != NULL)
         PyMem_Free(rf.buf);
@@ -1592,6 +1594,9 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 {
     WFILE wf;
 
+    if (PySys_Audit("marshal.dumps", "Oi", x, version) < 0) {
+        return NULL;
+    }
     memset(&wf, 0, sizeof(wf));
     wf.str = PyBytes_FromStringAndSize((char *)NULL, 50);
     if (wf.str == NULL)

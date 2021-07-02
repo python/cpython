@@ -373,4 +373,41 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a272b22f63ea002e input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(code__varname_from_oparg__doc__,
+"_varname_from_oparg($self, /, oparg)\n"
+"--\n"
+"\n"
+"(internal-only) Return the local variable name for the given oparg.\n"
+"\n"
+"WARNING: this method is for internal use only and may change or go away.");
+
+#define CODE__VARNAME_FROM_OPARG_METHODDEF    \
+    {"_varname_from_oparg", (PyCFunction)(void(*)(void))code__varname_from_oparg, METH_FASTCALL|METH_KEYWORDS, code__varname_from_oparg__doc__},
+
+static PyObject *
+code__varname_from_oparg_impl(PyCodeObject *self, int oparg);
+
+static PyObject *
+code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"oparg", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "_varname_from_oparg", 0};
+    PyObject *argsbuf[1];
+    int oparg;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    oparg = _PyLong_AsInt(args[0]);
+    if (oparg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = code__varname_from_oparg_impl(self, oparg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=ba4c5487e0364ce8 input=a9049054013a1b77]*/

@@ -24,7 +24,6 @@
 #include "connection.h"
 #include "statement.h"
 #include "cursor.h"
-#include "cache.h"
 #include "prepare_protocol.h"
 #include "microprotocols.h"
 #include "row.h"
@@ -33,7 +32,10 @@
 #error "SQLite 3.7.15 or higher required"
 #endif
 
+#define clinic_state() (pysqlite_get_state(NULL))
 #include "clinic/module.c.h"
+#undef clinic_state
+
 /*[clinic input]
 module _sqlite3
 [clinic start generated code]*/
@@ -41,11 +43,6 @@ module _sqlite3
 
 /* static objects at module-level */
 
-PyObject *pysqlite_Error = NULL;
-PyObject *pysqlite_Warning = NULL;
-PyObject *pysqlite_InterfaceError = NULL;
-PyObject *pysqlite_DatabaseError = NULL;
-PyObject *pysqlite_InternalError = NULL;
 PyObject *pysqlite_OperationalError = NULL;
 PyObject *pysqlite_ProgrammingError = NULL;
 PyObject *pysqlite_IntegrityError = NULL;
@@ -56,49 +53,51 @@ PyObject* _pysqlite_converters = NULL;
 int _pysqlite_enable_callback_tracebacks = 0;
 int pysqlite_BaseTypeAdapted = 0;
 
-static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
-        kwargs)
+pysqlite_state pysqlite_global_state;
+
+// NOTE: This must equal sqlite3.Connection.__init__ argument spec!
+/*[clinic input]
+_sqlite3.connect as pysqlite_connect
+
+    database: object(converter='PyUnicode_FSConverter')
+    timeout: double = 5.0
+    detect_types: int = 0
+    isolation_level: object = NULL
+    check_same_thread: bool(accept={int}) = True
+    factory: object(c_default='(PyObject*)clinic_state()->ConnectionType') = ConnectionType
+    cached_statements: int = 128
+    uri: bool = False
+
+Opens a connection to the SQLite database file database.
+
+You can use ":memory:" to open a database connection to a database that resides
+in RAM instead of on disk.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_connect_impl(PyObject *module, PyObject *database, double timeout,
+                      int detect_types, PyObject *isolation_level,
+                      int check_same_thread, PyObject *factory,
+                      int cached_statements, int uri)
+/*[clinic end generated code: output=450ac9078b4868bb input=ea6355ba55a78e12]*/
 {
-    /* Python seems to have no way of extracting a single keyword-arg at
-     * C-level, so this code is redundant with the one in connection_init in
-     * connection.c and must always be copied from there ... */
-
-    static char *kwlist[] = {
-        "database", "timeout", "detect_types", "isolation_level",
-        "check_same_thread", "factory", "cached_statements", "uri",
-        NULL
-    };
-    PyObject* database;
-    int detect_types = 0;
-    PyObject* isolation_level;
-    PyObject* factory = NULL;
-    int check_same_thread = 1;
-    int cached_statements;
-    int uri = 0;
-    double timeout = 5.0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|diOiOip", kwlist,
-                                     &database, &timeout, &detect_types,
-                                     &isolation_level, &check_same_thread,
-                                     &factory, &cached_statements, &uri))
-    {
-        return NULL;
+    if (isolation_level == NULL) {
+        isolation_level = PyUnicode_FromString("");
+        if (isolation_level == NULL) {
+            return NULL;
+        }
     }
-
-    if (factory == NULL) {
-        factory = (PyObject*)pysqlite_ConnectionType;
+    else {
+        Py_INCREF(isolation_level);
     }
-
-    return PyObject_Call(factory, args, kwargs);
+    PyObject *res = PyObject_CallFunction(factory, "OdiOiOii", database,
+                                          timeout, detect_types,
+                                          isolation_level, check_same_thread,
+                                          factory, cached_statements, uri);
+    Py_DECREF(database);  // needed bco. the AC FSConverter
+    Py_DECREF(isolation_level);
+    return res;
 }
-
-PyDoc_STRVAR(module_connect_doc,
-"connect(database[, timeout, detect_types, isolation_level,\n\
-        check_same_thread, factory, cached_statements, uri])\n\
-\n\
-Opens a connection to the SQLite database file *database*. You can use\n\
-\":memory:\" to open a database connection to a database that resides in\n\
-RAM instead of on disk.");
 
 /*[clinic input]
 _sqlite3.complete_statement as pysqlite_complete_statement
@@ -169,9 +168,12 @@ pysqlite_register_adapter_impl(PyObject *module, PyTypeObject *type,
         pysqlite_BaseTypeAdapted = 1;
     }
 
-    rc = pysqlite_microprotocols_add(type, (PyObject*)pysqlite_PrepareProtocolType, caster);
-    if (rc == -1)
+    pysqlite_state *state = pysqlite_get_state(NULL);
+    PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+    rc = pysqlite_microprotocols_add(type, protocol, caster);
+    if (rc == -1) {
         return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -233,7 +235,7 @@ pysqlite_enable_callback_trace_impl(PyObject *module, int enable)
 _sqlite3.adapt as pysqlite_adapt
 
     obj: object
-    proto: object(c_default='(PyObject*)pysqlite_PrepareProtocolType') = PrepareProtocolType
+    proto: object(c_default='(PyObject *)clinic_state()->PrepareProtocolType') = PrepareProtocolType
     alt: object = NULL
     /
 
@@ -243,7 +245,7 @@ Adapt given object to given protocol. Non-standard.
 static PyObject *
 pysqlite_adapt_impl(PyObject *module, PyObject *obj, PyObject *proto,
                     PyObject *alt)
-/*[clinic end generated code: output=0c3927c5fcd23dd9 input=a58ab77fb5ae22dd]*/
+/*[clinic end generated code: output=0c3927c5fcd23dd9 input=c8995aeb25d0e542]*/
 {
     return pysqlite_microprotocols_adapt(obj, proto, alt);
 }
@@ -261,11 +263,27 @@ static int converters_init(PyObject* module)
     return res;
 }
 
+static int
+load_functools_lru_cache(PyObject *module)
+{
+    PyObject *functools = PyImport_ImportModule("functools");
+    if (functools == NULL) {
+        return -1;
+    }
+
+    pysqlite_state *state = pysqlite_get_state(module);
+    state->lru_cache = PyObject_GetAttrString(functools, "lru_cache");
+    Py_DECREF(functools);
+    if (state->lru_cache == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)(void(*)(void))module_connect,
-     METH_VARARGS | METH_KEYWORDS, module_connect_doc},
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
+    PYSQLITE_CONNECT_METHODDEF
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
@@ -334,7 +352,7 @@ static struct PyModuleDef _sqlite3module = {
 
 #define ADD_TYPE(module, type)                 \
 do {                                           \
-    if (PyModule_AddType(module, &type) < 0) { \
+    if (PyModule_AddType(module, type) < 0) {  \
         goto error;                            \
     }                                          \
 } while (0)
@@ -368,38 +386,45 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     module = PyModule_Create(&_sqlite3module);
+    pysqlite_state *state = pysqlite_get_state(module);
 
     if (!module ||
         (pysqlite_row_setup_types(module) < 0) ||
         (pysqlite_cursor_setup_types(module) < 0) ||
         (pysqlite_connection_setup_types(module) < 0) ||
-        (pysqlite_cache_setup_types(module) < 0) ||
         (pysqlite_statement_setup_types(module) < 0) ||
         (pysqlite_prepare_protocol_setup_types(module) < 0)
        ) {
         goto error;
     }
 
-    ADD_TYPE(module, *pysqlite_ConnectionType);
-    ADD_TYPE(module, *pysqlite_CursorType);
-    ADD_TYPE(module, *pysqlite_PrepareProtocolType);
-    ADD_TYPE(module, *pysqlite_RowType);
+    ADD_TYPE(module, state->ConnectionType);
+    ADD_TYPE(module, state->CursorType);
+    ADD_TYPE(module, state->PrepareProtocolType);
+    ADD_TYPE(module, state->RowType);
 
     /*** Create DB-API Exception hierarchy */
-    ADD_EXCEPTION(module, "Error", pysqlite_Error, PyExc_Exception);
-    ADD_EXCEPTION(module, "Warning", pysqlite_Warning, PyExc_Exception);
+    ADD_EXCEPTION(module, "Error", state->Error, PyExc_Exception);
+    ADD_EXCEPTION(module, "Warning", state->Warning, PyExc_Exception);
 
     /* Error subclasses */
-    ADD_EXCEPTION(module, "InterfaceError", pysqlite_InterfaceError, pysqlite_Error);
-    ADD_EXCEPTION(module, "DatabaseError", pysqlite_DatabaseError, pysqlite_Error);
+    ADD_EXCEPTION(module, "InterfaceError", state->InterfaceError,
+                  state->Error);
+    ADD_EXCEPTION(module, "DatabaseError", state->DatabaseError, state->Error);
 
-    /* pysqlite_DatabaseError subclasses */
-    ADD_EXCEPTION(module, "InternalError", pysqlite_InternalError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "DataError", pysqlite_DataError, pysqlite_DatabaseError);
-    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError, pysqlite_DatabaseError);
+    /* DatabaseError subclasses */
+    ADD_EXCEPTION(module, "InternalError", state->InternalError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "OperationalError", pysqlite_OperationalError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "ProgrammingError", pysqlite_ProgrammingError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "IntegrityError", pysqlite_IntegrityError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "DataError", pysqlite_DataError,
+                  state->DatabaseError);
+    ADD_EXCEPTION(module, "NotSupportedError", pysqlite_NotSupportedError,
+                  state->DatabaseError);
 
     /* Set integer constants */
     if (add_integer_constants(module) < 0) {
@@ -421,6 +446,10 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
 
     /* initialize the default converters */
     if (converters_init(module) < 0) {
+        goto error;
+    }
+
+    if (load_functools_lru_cache(module) < 0) {
         goto error;
     }
 

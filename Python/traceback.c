@@ -4,6 +4,7 @@
 #include "Python.h"
 
 #include "code.h"
+#include "pycore_interp.h"        // PyInterpreterState.gc
 #include "frameobject.h"          // PyFrame_GetBack()
 #include "structmember.h"         // PyMemberDef
 #include "osdefs.h"               // SEP
@@ -914,6 +915,9 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             break;
         }
         write_thread_id(fd, tstate, tstate == current_tstate);
+        if (tstate == current_tstate && tstate->interp->gc.collecting) {
+            PUTS(fd, "  Garbage-collecting\n");
+        }
         dump_traceback(fd, tstate, 0);
         tstate = PyThreadState_Next(tstate);
         nthreads++;

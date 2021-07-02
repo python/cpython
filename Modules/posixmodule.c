@@ -23,6 +23,10 @@
 #  include <pathcch.h>
 #endif
 
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#define EX_OK EXIT_SUCCESS
+#endif
+
 #ifdef __VXWORKS__
 #  include "pycore_bitutils.h"    // _Py_popcount32()
 #endif

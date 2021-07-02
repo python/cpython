@@ -932,7 +932,7 @@ The :mod:`test.support` module defines the following functions:
 
    Assert that type *tp* cannot be instantiated using *args* and *kwds*.
 
-   .. versionadded:: 3.11
+   .. versionadded:: 3.10
 
 
 The :mod:`test.support` module defines the following classes:

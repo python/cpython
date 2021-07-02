@@ -267,8 +267,9 @@ Functions and classes provided:
 .. function:: suppress(*exceptions)
 
    Return a context manager that suppresses any of the specified exceptions
-   if they occur in the body of a with statement and then resumes execution
-   with the first statement following the end of the with statement.
+   if they occur in the body of a :keyword:`!with` statement and then
+   resumes execution with the first statement following the end of the
+   :keyword:`!with` statement.
 
    As with any other mechanism that completely suppresses exceptions, this
    context manager should be used only to cover very specific errors where
@@ -514,6 +515,10 @@ Functions and classes provided:
       These context managers may suppress exceptions just as they normally
       would if used directly as part of a :keyword:`with` statement.
 
+      .. versionchanged:: 3.11
+         Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
+         is not a context manager.
+
    .. method:: push(exit)
 
       Adds a context manager's :meth:`__exit__` method to the callback stack.
@@ -583,6 +588,10 @@ Functions and classes provided:
 
       Similar to :meth:`enter_context` but expects an asynchronous context
       manager.
+
+      .. versionchanged:: 3.11
+         Raises :exc:`TypeError` instead of :exc:`AttributeError` if *cm*
+         is not an asynchronous context manager.
 
    .. method:: push_async_exit(exit)
 

@@ -11,6 +11,7 @@
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '17.0' or '$(VisualStudioVersion)' == '17.0')">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '16.0' or '$(VisualStudioVersion)' == '16.0')">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
@@ -108,9 +109,18 @@
 
     <!-- The minimum allowed SDK version to use for building -->
     <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) != '' and $([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
   </PropertyGroup>
-  
+
+  <Target Name="_CheckWindowsSDKFound" BeforeTargets="_CheckWindowsSDKInstalled" Condition="$(_RegistryVersion) == ''">
+    <PropertyGroup>
+      <_Message>Failed to locate a Windows SDK installation.</_Message>
+      <_Message>$(_Message) If the build fails, please use the Visual Studio Installer to install the Windows SDK.</_Message>
+      <_Message>$(_Message) (Ignore the version number specified in the error message and select the latest.)</_Message>
+    </PropertyGroup>
+    <Warning Text="$(_Message)" />
+  </Target>
+
   <PropertyGroup Condition="$(WindowsTargetPlatformVersion) == ''">
     <WindowsTargetPlatformVersion>$(DefaultWindowsSDKVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -175,7 +185,7 @@
     <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'b'">11</ReleaseLevelNumber>
     <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'rc'">12</ReleaseLevelNumber>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <PythonVersionNumber>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</PythonVersionNumber>
     <PythonVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)$(ReleaseLevelName)</PythonVersion>
