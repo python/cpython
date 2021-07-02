@@ -1544,7 +1544,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _runmodule(self, target: 'ModuleTarget'):
         self._wait_for_mainpyfile = True
         self._user_requested_quit = False
-        mod_name, mod_spec, code = target.module_details
+        mod_name, mod_spec, code = target.details
         self.mainpyfile = self.canonic(code.co_filename)
         import __main__
         __main__.__dict__.clear()
@@ -1691,12 +1691,10 @@ class ModuleTarget(str):
     def check(self):
         pass
 
-    @property
-    def module_details(self):
-        if not hasattr(self, '_details'):
-            import runpy
-            self._details = runpy._get_module_details(self)
-        return self._details
+    @functools.cached_property
+    def details(self):
+        import runpy
+        return runpy._get_module_details(self)
 
 
 def main():
