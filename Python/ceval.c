@@ -5033,12 +5033,14 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
         }
         assert(f->f_own_locals_memory == 0);
         Py_DECREF(f);
+        assert(_PyObject_IsFreed((PyObject *)f) || Py_REFCNT(f) == 0);
     }
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         Py_XDECREF(localsarray[i]);
     }
     _PyFrame_ClearSpecials(frame);
 exit:
+    assert(frame->frame_obj == NULL);
     --tstate->recursion_depth;
     tstate->frame = frame->previous;
     _PyThreadState_PopLocals(tstate, localsarray);
