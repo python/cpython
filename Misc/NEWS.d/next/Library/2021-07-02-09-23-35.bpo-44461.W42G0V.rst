@@ -1,4 +1,5 @@
 In Pdb, refactor handling of module and script targets, now modeling each
 with a class encapsulating the behavior for each and opening up the
 opportunity to "check" for the viability of a module target prior to
-attempting to run it.
+attempting to run it. Subtly tweak the internal logic to accommodate the
+refactor.
