@@ -108,6 +108,7 @@ frame_getback(PyFrameObject *f, void *closure)
     if (res == NULL) {
         Py_RETURN_NONE;
     }
+    return res;
 }
 
 /* Given the index of the effective opcode,
@@ -623,23 +624,26 @@ frame_dealloc(PyFrameObject *f)
 
     /* Kill all local variables including specials, if we own them */
     if (f->f_own_locals_memory) {
+        f->f_own_locals_memory = 0;
+        _PyFrame *frame = f->f_frame;
         /* Don't clear code object until the end */
-        co = f->f_frame->code;
-        Py_CLEAR(f->f_frame->globals);
-        Py_CLEAR(f->f_frame->builtins);
-        Py_CLEAR(f->f_frame->locals);
+        co = frame->code;
+        frame->code = NULL;
+        Py_CLEAR(frame->globals);
+        Py_CLEAR(frame->builtins);
+        Py_CLEAR(frame->locals);
         for (int i = 0; i < co->co_nlocalsplus; i++) {
             Py_CLEAR(f->f_localsptr[i]);
         }
-        /* Free items on stack */
-        for (int i = 0; i < f->f_frame->stackdepth; i++) {
-            Py_XDECREF(f->f_frame->stack[i]);
+        /* stack */
+        for (int i = 0; i < frame->stackdepth; i++) {
+            Py_CLEAR(frame->stack[i]);
         }
+        frame->stackdepth = 0;
         PyMem_Free(f->f_localsptr);
-        f->f_own_locals_memory = 0;
     }
     f->f_frame->stackdepth = 0;
-    Py_XDECREF(f->f_back);
+    Py_CLEAR(f->f_back);
     Py_CLEAR(f->f_trace);
     struct _Py_frame_state *state = get_frame_state();
 #ifdef Py_DEBUG
@@ -664,11 +668,9 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->f_back);
     Py_VISIT(f->f_trace);
-    Py_VISIT(f->f_frame->globals);
-    Py_VISIT(f->f_frame->builtins);
-    Py_VISIT(f->f_frame->locals);
-    Py_VISIT(f->f_frame->code);
-
+    if (f->f_own_locals_memory == 0) {
+        return 0;
+    }
     /* locals */
     PyCodeObject *co = f->f_frame->code;
     for (int i = 0; i < co->co_nlocalsplus; i++) {
@@ -678,6 +680,11 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
     for (int i = 0; i < f->f_frame->stackdepth; i++) {
         Py_VISIT(f->f_frame->stack[i]);
     }
+
+    Py_VISIT(f->f_frame->globals);
+    Py_VISIT(f->f_frame->builtins);
+    Py_VISIT(f->f_frame->locals);
+    Py_VISIT(f->f_frame->code);
     return 0;
 }
 
@@ -689,6 +696,7 @@ frame_tp_clear(PyFrameObject *f)
      * frame may also point to this frame, believe itself to still be
      * active, and try cleaning up this frame again.
      */
+    assert(f->f_own_locals_memory);
     f->f_frame->f_state = FRAME_CLEARED;
 
     Py_CLEAR(f->f_trace);
@@ -854,10 +862,12 @@ _PyFrame_TakeLocals(PyFrameObject *f)
 {
     assert(f->f_own_locals_memory == 0);
     assert(f->f_frame->stackdepth == 0);
+    assert(f->f_frame->frame_obj == NULL);
     Py_ssize_t size = ((char*)f->f_frame->stack)-((char *)f->f_localsptr);
     PyObject **copy = PyMem_Malloc(size);
+    assert(f->f_back == NULL);
     if (f->f_frame->previous != NULL) {
-        f->f_back = (PyFrameObject *)Py_NewRef(f->f_frame->previous->frame_obj);
+        f->f_back = (PyFrameObject *)Py_NewRef(_PyFrame_GetFrameObject(f->f_frame->previous));
     }
     if (copy == NULL) {
         for (int i = 0; i < f->f_frame->code->co_nlocalsplus; i++) {

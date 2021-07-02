@@ -181,8 +181,8 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
     /* Push arg onto the frame's value stack */
     result = arg ? arg : Py_None;
     Py_INCREF(result);
-    gen->gi_frame->f_frame->stack[gen->gi_frame->f_frame->stackdepth] = result;
-    gen->gi_frame->f_frame->stackdepth++;
+    f->f_frame->stack[f->f_frame->stackdepth] = result;
+    f->f_frame->stackdepth++;
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
@@ -197,11 +197,16 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult,
         _PyErr_ChainStackItem(NULL);
     }
 
+    assert(f->f_frame->frame_obj == NULL);
+    Py_INCREF(f);
+    f->f_frame->frame_obj = f;
     result = _PyEval_EvalFrame(tstate, f, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
+    f->f_frame->frame_obj = NULL;
+    Py_DECREF(f);
 
-    tstate->frame = f->f_frame->previous;
+    assert(tstate->frame == f->f_frame->previous);
     /* Don't keep the reference to f_back any longer than necessary.  It
      * may keep a chain of frames alive or it could create a reference
      * cycle. */
@@ -329,13 +334,13 @@ PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
     PyObject *yf = NULL;
-    PyFrameObject *f = gen->gi_frame;
 
-    if (f) {
+    if (gen->gi_frame) {
+        _PyFrame *frame = gen->gi_frame->f_frame;
         PyObject *bytecode = gen->gi_code->co_code;
         unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
 
-        if (f->f_frame->lasti < 0) {
+        if (frame->lasti < 0) {
             /* Return immediately if the frame didn't start yet. YIELD_FROM
                always come after LOAD_CONST: a code object should not start
                with YIELD_FROM */
@@ -343,10 +348,10 @@ _PyGen_yf(PyGenObject *gen)
             return NULL;
         }
 
-        if (code[(f->f_frame->lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
+        if (code[(frame->lasti+1)*sizeof(_Py_CODEUNIT)] != YIELD_FROM)
             return NULL;
-        assert(f->f_frame->stackdepth > 0);
-        yf = f->f_frame->stack[f->f_frame->stackdepth-1];
+        assert(frame->stackdepth > 0);
+        yf = frame->stack[frame->stackdepth-1];
         Py_INCREF(yf);
     }
 
@@ -423,22 +428,30 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
         if (PyGen_CheckExact(yf) || PyCoro_CheckExact(yf)) {
             /* `yf` is a generator or a coroutine. */
             PyThreadState *tstate = _PyThreadState_GET();
-            _PyFrame *f = tstate->frame;
+            _PyFrame *frame = gen->gi_frame->f_frame;
+
 
             /* Since we are fast-tracking things by skipping the eval loop,
                we need to update the current frame so the stack trace
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            tstate->frame = gen->gi_frame->f_frame;
+            frame->previous = tstate->frame;
+            tstate->frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame->f_frame->f_state;
             gen->gi_frame->f_frame->f_state = FRAME_EXECUTING;
+            assert(frame->frame_obj == NULL);
+            Py_INCREF(gen->gi_frame);
+            frame->frame_obj = gen->gi_frame;
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
+            frame->frame_obj = NULL;
+            Py_DECREF(gen->gi_frame);
             gen->gi_frame->f_frame->f_state = state;
-            tstate->frame = f;
+            tstate->frame = frame->previous;
+            frame->previous = NULL;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
             PyObject *meth;
@@ -1172,7 +1185,6 @@ compute_cr_origin(int origin_depth)
                                             code->co_filename,
                                             PyCode_Addr2Line(frame->code, frame->lasti*2),
                                             code->co_name);
-        Py_DECREF(code);
         if (!frameinfo) {
             Py_DECREF(cr_origin);
             return NULL;

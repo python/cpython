@@ -4944,7 +4944,7 @@ make_coro_frame(PyThreadState *tstate,
     if (f == NULL) {
         return NULL;
     }
-    frame->frame_obj = f;
+    assert(frame->frame_obj == NULL);
     if (initialize_locals(tstate, con, localsarray, args, argcount, kwnames)) {
         Py_DECREF(f);
         return NULL;
@@ -5031,6 +5031,7 @@ _PyEvalFrameClearAndPop(PyThreadState *tstate, _PyFrame * frame)
             }
             goto exit;
         }
+        assert(f->f_own_locals_memory == 0);
         Py_DECREF(f);
     }
     for (int i = 0; i < code->co_nlocalsplus; i++) {
