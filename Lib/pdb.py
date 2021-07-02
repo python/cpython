@@ -129,6 +129,35 @@ class _rstr(str):
         return self
 
 
+class ScriptTarget(str):
+    def __new__(cls, val):
+        # Mutate self to be the "real path".
+        res = super().__new__(cls, os.path.realpath(val))
+
+        # Store the original path for error reporting.
+        res.orig = val
+
+        return res
+
+    def check(self):
+        if not os.path.exists(self):
+            print('Error:', self.orig, 'does not exist')
+            sys.exit(1)
+
+        # Replace pdb's dir with script's dir in front of module search path.
+        sys.path[0] = os.path.dirname(self)
+
+
+class ModuleTarget(str):
+    def check(self):
+        pass
+
+    @functools.cached_property
+    def details(self):
+        import runpy
+        return runpy._get_module_details(self)
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -1535,13 +1564,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _run(self, target):
-        if isinstance(target, ModuleTarget):
-            return self._runmodule(target)
-        elif isinstance(target, ScriptTarget):
-            return self._runscript(target)
-
-    def _runmodule(self, target: 'ModuleTarget'):
+    @functools.singledispatchmethod
+    def _run(self, target: 'ModuleTarget'):
         self._wait_for_mainpyfile = True
         self._user_requested_quit = False
         mod_name, mod_spec, code = target.details
@@ -1558,7 +1582,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         })
         self.run(code)
 
-    def _runscript(self, filename: 'ScriptTarget'):
+    @_run.register
+    def _(self, filename: 'ScriptTarget'):
         # The script has to run in __main__ namespace (or imports from
         # __main__ will break).
         #
@@ -1670,35 +1695,6 @@ and in the current directory, if they exist.  Commands supplied with
 To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
-
-
-class ScriptTarget(str):
-    def __new__(cls, val):
-        # Mutate self to be the "real path".
-        res = super().__new__(cls, os.path.realpath(val))
-
-        # Store the original path for error reporting.
-        res.orig = val
-
-        return res
-
-    def check(self):
-        if not os.path.exists(self):
-            print('Error:', self.orig, 'does not exist')
-            sys.exit(1)
-
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(self)
-
-
-class ModuleTarget(str):
-    def check(self):
-        pass
-
-    @functools.cached_property
-    def details(self):
-        import runpy
-        return runpy._get_module_details(self)
 
 
 def main():
