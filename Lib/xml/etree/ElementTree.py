@@ -1248,10 +1248,16 @@ def iterparse(source, events=None, parser=None):
             if close_source:
                 source.close()
 
+    gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator(source).__next__
+        __next__ = gen.__next__
+        def close(self):
+            if close_source:
+                source.close()
+            gen.close()
 
         def __del__(self):
+            # TODO: Emit a ResourceWarning if it was not explicitly closed.
             if close_source:
                 source.close()
 
