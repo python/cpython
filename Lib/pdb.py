@@ -1534,11 +1534,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _runmodule(self, module_name):
+    def _run(self, target):
+        if isinstance(target, ModuleTarget):
+            return self._runmodule(target)
+        elif isinstance(target, ScriptTarget):
+            return self._runscript(target)
+
+    def _runmodule(self, target: 'ModuleTarget'):
         self._wait_for_mainpyfile = True
         self._user_requested_quit = False
-        import runpy
-        mod_name, mod_spec, code = runpy._get_module_details(module_name)
+        mod_name, mod_spec, code = target.module_details
         self.mainpyfile = self.canonic(code.co_filename)
         import __main__
         __main__.__dict__.clear()
@@ -1552,7 +1557,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         })
         self.run(code)
 
-    def _runscript(self, filename):
+    def _runscript(self, filename: 'ScriptTarget'):
         # The script has to run in __main__ namespace (or imports from
         # __main__ will break).
         #
@@ -1665,6 +1670,34 @@ To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
 
+
+class ScriptTarget(str):
+    def __new__(cls, val):
+        res = super().__new__(cls, os.path.realpath(val))
+        res.orig = val
+        return res
+
+    def check(self):
+        if not os.path.exists(self):
+            print('Error:', self.orig, 'does not exist')
+            sys.exit(1)
+
+        # Replace pdb's dir with script's dir in front of module search path.
+        sys.path[0] = os.path.dirname(self)
+
+
+class ModuleTarget(str):
+    def check(self):
+        pass
+
+    @property
+    def module_details(self):
+        if not hasattr(self, '_details'):
+            import runpy
+            self._details = runpy._get_module_details(self)
+        return self._details
+
+
 def main():
     import getopt
 
@@ -1674,28 +1707,19 @@ def main():
         print(_usage)
         sys.exit(2)
 
-    commands = []
-    run_as_module = False
-    for opt, optarg in opts:
-        if opt in ['-h', '--help']:
-            print(_usage)
-            sys.exit()
-        elif opt in ['-c', '--command']:
-            commands.append(optarg)
-        elif opt in ['-m']:
-            run_as_module = True
+    if any(opt in ['-h', '--help'] for opt, optarg in opts):
+        print(_usage)
+        sys.exit()
 
-    mainpyfile = args[0]     # Get script filename
-    if not run_as_module and not os.path.exists(mainpyfile):
-        print('Error:', mainpyfile, 'does not exist')
-        sys.exit(1)
+    commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
+
+    module_indicated = any(opt in ['-m'] for opt, optarg in opts)
+    cls = ModuleTarget if module_indicated else ScriptTarget
+    target = cls(args[0])
+
+    target.check()
 
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
-
-    if not run_as_module:
-        mainpyfile = os.path.realpath(mainpyfile)
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -1705,15 +1729,12 @@ def main():
     pdb.rcLines.extend(commands)
     while True:
         try:
-            if run_as_module:
-                pdb._runmodule(mainpyfile)
-            else:
-                pdb._runscript(mainpyfile)
+            pdb._run(target)
             if pdb._user_requested_quit:
                 break
             print("The program finished and will be restarted")
         except Restart:
-            print("Restarting", mainpyfile, "with arguments:")
+            print("Restarting", target, "with arguments:")
             print("\t" + " ".join(sys.argv[1:]))
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
@@ -1728,7 +1749,7 @@ def main():
             print("Running 'cont' or 'step' will restart the program")
             t = sys.exc_info()[2]
             pdb.interaction(None, t)
-            print("Post mortem debugger finished. The " + mainpyfile +
+            print("Post mortem debugger finished. The " + target +
                   " will be restarted")
 
 
