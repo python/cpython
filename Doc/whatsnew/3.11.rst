@@ -214,7 +214,7 @@ Porting to Python 3.11
 * Types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set can now implement
   the :pep:`590` vectorcall protocol.  Previously, this was only available for
   :ref:`static types <static-types>`.
-  (Contributed by Erlend E.  Aasland in :issue:`43908`)
+  (Contributed by Erlend E. Aasland in :issue:`43908`)
 
 Deprecated
 ----------
