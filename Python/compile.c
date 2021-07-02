@@ -40,7 +40,7 @@
 #define DEFAULT_BLOCKS 8
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
-#define DEFAULT_CNOTAB_SIZE 0
+#define DEFAULT_CNOTAB_SIZE 32
 
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
@@ -6587,6 +6587,7 @@ struct assembler {
     PyObject* a_cnotab;    /* bytes containing cnotab */
     int a_lnotab_off;      /* offset into lnotab */
     int a_enotab_off;      /* offset into enotab */
+    int a_cnotab_off;      /* offset into cnotab */
     PyObject *a_except_table;  /* bytes containing exception table */
     int a_except_table_off;    /* offset into exception table */
     int a_prevlineno;     /* lineno of last emitted line in line table */
@@ -6696,6 +6697,7 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     a->a_lnotab = NULL;
     a->a_enotab = NULL;
     a->a_cnotab = NULL;
+    a->a_cnotab_off = 0;
     a->a_except_table = NULL;
     a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
     if (a->a_bytecode == NULL) {
@@ -7106,14 +7108,16 @@ static int
 assemble_cnotab(struct assembler* a, struct instr* i, int instr_size)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_cnotab);
-    // TODO: Allocate more memory than just what we immediately need
-    //       like a_lnotab does.
-    if (_PyBytes_Resize(&a->a_cnotab, len + (instr_size * 2)) < 0) {
-        return 0;
+    int difference = instr_size * 2;
+    if (a->a_cnotab_off + difference >= len) {
+        if (_PyBytes_Resize(&a->a_cnotab, difference + (len * 2)) < 0) {
+            return 0;
+        }
     }
 
     unsigned char* cnotab = (unsigned char*)PyBytes_AS_STRING(a->a_cnotab);
-    cnotab += len;
+    cnotab += a->a_cnotab_off;
+    a->a_cnotab_off += difference;
 
     for (int j = 0; j < instr_size; j++) {
         if (i->i_col_offset > 255 || i->i_end_col_offset > 255) {
@@ -7853,6 +7857,9 @@ assemble(struct compiler *c, int addNone)
         goto error;
     }
     if (!merge_const_one(c, &a.a_enotab)) {
+        goto error;
+    }
+    if (_PyBytes_Resize(&a.a_cnotab, a.a_cnotab_off) < 0) {
         goto error;
     }
     if (_PyBytes_Resize(&a.a_bytecode, a.a_offset * sizeof(_Py_CODEUNIT)) < 0) {
