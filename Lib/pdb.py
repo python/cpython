@@ -1674,8 +1674,12 @@ To let the script run up to a given line X in the debugged file, use
 
 class ScriptTarget(str):
     def __new__(cls, val):
+        # Mutate self to be the "real path".
         res = super().__new__(cls, os.path.realpath(val))
+
+        # Store the original path for error reporting.
         res.orig = val
+
         return res
 
     def check(self):
