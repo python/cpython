@@ -1818,7 +1818,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
             PyErr_WriteUnraisable(Py_None);
             continue;
         }
-        PyObject * f = frame == NULL ? Py_None : _PyFrame_GetFrameObject(frame);
+        PyObject * f = frame == NULL ? Py_None : (PyObject *)_PyFrame_GetFrameObject(frame);
         PyObject *arglist = Py_BuildValue("(iO)", i, f);
         PyObject *result;
         if (arglist) {

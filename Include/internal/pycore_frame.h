@@ -62,6 +62,7 @@ _PyFrame_InitializeSpecials(_PyFrame *frame, PyFrameConstructor *con, PyObject *
 static inline void
 _PyFrame_ClearSpecials(_PyFrame *frame)
 {
+    assert(frame->frame_obj == NULL);
     Py_XDECREF(frame->locals);
     Py_DECREF(frame->globals);
     Py_DECREF(frame->builtins);
