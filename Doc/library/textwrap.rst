@@ -42,9 +42,6 @@ functions should be good enough; otherwise, you should use an instance of
    * :attr:`.tabsize`
    * :attr:`.max_lines`
 
-   Note that :func:`wrap` accepts exactly the same keyword arguments as
-   :func:`fill`.
-
 
 .. function:: fill(text, width=70, initial_indent="", \
                    subsequent_indent="", expand_tabs=True, \
@@ -71,9 +68,6 @@ functions should be good enough; otherwise, you should use an instance of
    * :attr:`.break_on_hyphens`
    * :attr:`.tabsize`
    * :attr:`.max_lines`
-
-   Note that :func:`fill` accepts exactly the same keyword arguments as
-   :func:`wrap`.
 
 
 .. function:: shorten(text, width, initial_indent="", \
