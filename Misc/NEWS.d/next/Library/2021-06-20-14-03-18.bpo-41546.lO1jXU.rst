@@ -1,1 +1,1 @@
-Make :mod:`pprint` (like the builtin ``print``) not write to ``stdout`` when it is ``None``.
+Make :mod:`pprint` (like the builtin ``print``) not attempt to write to ``stdout`` when it is ``None``.
