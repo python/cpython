@@ -80,6 +80,7 @@ import pprint
 import signal
 import inspect
 import tokenize
+import functools
 import traceback
 import linecache
 
