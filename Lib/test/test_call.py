@@ -563,7 +563,7 @@ class TestPEP590(unittest.TestCase):
         self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
 
-        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
+        # Mutable heap types should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
@@ -574,7 +574,7 @@ class TestPEP590(unittest.TestCase):
         self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
         self.assertTrue(_testcapi.MethodDescriptor2.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
 
-        # Heap type should not inherit Py_TPFLAGS_HAVE_VECTORCALL
+        # Mutable heap types should not inherit Py_TPFLAGS_HAVE_VECTORCALL
         class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
             pass
         self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_HAVE_VECTORCALL)
