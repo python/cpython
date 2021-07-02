@@ -543,7 +543,6 @@ These can be used as types in annotations and do not support ``[]``.
           raise RuntimeError('no way')
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
 
 .. data:: TypeAlias
 
@@ -1450,7 +1449,6 @@ Corresponding to types in :mod:`collections`
    A generic version of :class:`collections.ChainMap`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
       :class:`collections.ChainMap` now supports ``[]``. See :pep:`585` and
@@ -1461,7 +1459,6 @@ Corresponding to types in :mod:`collections`
    A generic version of :class:`collections.Counter`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
       :class:`collections.Counter` now supports ``[]``. See :pep:`585` and
@@ -1472,7 +1469,6 @@ Corresponding to types in :mod:`collections`
    A generic version of :class:`collections.deque`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
       :class:`collections.deque` now supports ``[]``. See :pep:`585` and
@@ -1816,7 +1812,6 @@ Context manager types
    A generic version of :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
       :class:`contextlib.AbstractContextManager` now supports ``[]``. See
@@ -1827,7 +1822,6 @@ Context manager types
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9
       :class:`contextlib.AbstractAsyncContextManager` now supports ``[]``. See
