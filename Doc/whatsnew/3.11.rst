@@ -211,10 +211,9 @@ Porting to Python 3.11
   (:c:member:`PyTypeObject.tp_traverse`).
   (Contributed by Victor Stinner in :issue:`44263`.)
 
-* The :const:`Py_TPFLAGS_HAVE_VECTORCALL` and
-  :const:`Py_TPFLAGS_METHOD_DESCRIPTOR` flags can now be inherited if the
-  target type has the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set.  Previously,
-  only :ref:`static types <static-types>` could inherit these flags.
+* Types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag set can now implement
+  the :pep:`590` vectorcall protocol.  Previously, this was only available for
+  :ref:`static types <static-types>`.
   (Contributed by Erlend E.  Aasland in :issue:`43908`)
 
 Deprecated
