@@ -1690,6 +1690,14 @@ def main():
         print('Error:', mainpyfile, 'does not exist')
         sys.exit(1)
 
+    if run_as_module:
+        import runpy
+        try:
+            runpy._get_module_details(mainpyfile)
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
     sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
 
     if not run_as_module:
@@ -1728,8 +1736,6 @@ def main():
             print("Running 'cont' or 'step' will restart the program")
             t = sys.exc_info()[2]
             pdb.interaction(None, t)
-            if pdb._user_requested_quit:
-                break
             print("Post mortem debugger finished. The " + mainpyfile +
                   " will be restarted")
 

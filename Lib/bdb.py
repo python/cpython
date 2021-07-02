@@ -33,7 +33,6 @@ class Bdb:
         self.breaks = {}
         self.fncache = {}
         self.frame_returning = None
-        self.botframe = None
 
         self._load_breaks()
 
