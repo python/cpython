@@ -657,20 +657,14 @@ fold_call(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         return 1;
     }
 
-    for (Py_ssize_t i = 0; i < nargs; i++) {
-        expr_ty elt = asdl_seq_GET(args, i);
-        if (elt->kind != Constant_kind) {
-            return 1;
-        }
-    }
-
+    /* If any of the args isn't a constant, the make_const_tuple
+     * will return NULL without setting an exceptions */
     PyObject *args_tuple = make_const_tuple(args);
     if (!args_tuple || _PyArena_AddPyObject(arena, args_tuple) < 0) {
         Py_XDECREF(args_tuple);
-        return 0;
+        return PyErr_Occurred() ? 0 : 1;
     }
 
-    assert(asdl_seq_LEN(args) >= 1);
     expr_ty first_arg = asdl_seq_GET(args, 0);
     expr_ty last_arg = asdl_seq_GET(args, nargs - 1);
     expr_ty arg = _PyAST_Constant(args_tuple, /*kind=*/NULL,

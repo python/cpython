@@ -1127,7 +1127,7 @@ f(
 )
 """
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'CALL_FUNCTION_EX',
             line=1, end_line=3, column=1, end_column=2)
 
     def test_very_long_line_end_offset(self):
