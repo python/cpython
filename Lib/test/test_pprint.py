@@ -249,9 +249,6 @@ class QueryTestCase(unittest.TestCase):
                              .replace('\n', ' '), native)
             self.assertEqual(pprint.pformat(simple, underscore_numbers=True), native)
             self.assertEqual(pprint.saferepr(simple), native)
-            with contextlib.redirect_stdout(None):
-                # smoke test - there is no output to check
-                pprint.pprint(simple)
 
     def test_container_repr_override_called(self):
         N = 1000
