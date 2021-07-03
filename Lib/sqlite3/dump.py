@@ -72,6 +72,8 @@ def _iterdump(connection):
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
 
+    # Yield statements concerning the sqlite_sequence table at the end of the transaction: (bpo-34828)
     for row in sqlite_sequence:
         yield("{0};".format(row))
+
     yield('COMMIT;')

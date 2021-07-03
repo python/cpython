@@ -1,7 +1,8 @@
 # Author: Paul Kippes <kippesp@gmail.com>
 
-import unittest
 import sqlite3 as sqlite
+import unittest
+
 
 class DumpTests(unittest.TestCase):
     def setUp(self):
@@ -70,6 +71,7 @@ class DumpTests(unittest.TestCase):
         [self.cu.execute(s) for s in expected_sqls]
         i = self.cx.iterdump()
         actual_sqls = [s for s in i]
+        # the NULL value should now be automatically be set to 1
         expected_sqls[3] = expected_sqls[3].replace("NULL", "1")
         expected_sqls = ['BEGIN TRANSACTION;'] + expected_sqls + \
                         ['DELETE FROM "sqlite_sequence";'] + \
@@ -100,7 +102,6 @@ class DumpTests(unittest.TestCase):
         [old_db.append("""INSERT INTO "tags2" VALUES(NULL,'test{0}',0);""".format(i)) for i in range(1, 5)]
         old_db.append("COMMIT;")
         [self.cu.execute(s) for s in old_db]
-        i = self.cx.iterdump()
         cx2 = sqlite.connect(":memory:")
         query = "".join(line for line in self.cx.iterdump())
         cx2.executescript(query)
@@ -131,6 +132,7 @@ class DumpTests(unittest.TestCase):
         got = list(self.cx.iterdump())
         self.assertEqual(expected, got)
 
+
 def suite():
     tests = [
         DumpTests,
@@ -139,9 +141,11 @@ def suite():
         [unittest.TestLoader().loadTestsFromTestCase(t) for t in tests]
     )
 
+
 def test():
     runner = unittest.TextTestRunner()
     runner.run(suite())
+
 
 if __name__ == "__main__":
     test()
