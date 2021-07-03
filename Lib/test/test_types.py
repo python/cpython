@@ -770,8 +770,8 @@ class TypesTests(unittest.TestCase):
             del T
             del U
         gc.collect()
-        leeway = 64
-        self.assertLessEqual(sys.gettotalrefcount(), before + leeway,
+        leeway = 15
+        self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
                              msg='Check for union reference leak.')
 
     def test_ellipsis_type(self):
