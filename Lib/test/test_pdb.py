@@ -1785,7 +1785,7 @@ def bœr():
                 '(Pdb) ',
             ])
         check('\\', 'No escaped character')
-        check('\"', 'No closing quotation')
+        check('"', 'No closing quotation')
 
     def test_issue42384(self):
         '''When running `python foo.py` sys.path[0] is an absolute path. `python -m pdb foo.py` should behave the same'''
