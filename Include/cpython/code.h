@@ -75,8 +75,13 @@ struct PyCodeObject {
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte per variable) */
     PyObject *co_filename;      /* unicode (where it was loaded from) */
     PyObject *co_name;          /* unicode (name, for reference) */
-    PyObject *co_linetable;     /* string (encoding addr<->lineno mapping) See
+    PyObject *co_linetable;     /* bytes (encoding addr<->lineno mapping) See
                                    Objects/lnotab_notes.txt for details. */
+    PyObject *co_endlinetable;  /* bytes object that holds end lineno for
+                                   instructions separated across different
+                                   lines */
+    PyObject *co_columntable;   /* bytes object that holds start/end column
+                                   offset each instruction */
 
     /* These fields are set with computed values on new code objects. */
 
@@ -149,12 +154,14 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *, PyObject *);
+        PyObject *, PyObject *, int, PyObject *, PyObject *,
+        PyObject *, PyObject *);
 
 PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
         int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
-        PyObject *, PyObject *, int, PyObject *, PyObject *);
+        PyObject *, PyObject *, int, PyObject *, PyObject *,
+        PyObject *, PyObject *);
         /* same as struct above */
 
 /* Creates a new empty code object with the specified source location. */
@@ -165,6 +172,15 @@ PyCode_NewEmpty(const char *filename, const char *funcname, int firstlineno);
    in this code object.  If you just need the line number of a frame,
    use PyFrame_GetLineNumber() instead. */
 PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
+
+PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, int *);
+
+/* Return the ending source code line number from a bytecode index. */
+PyAPI_FUNC(int) _PyCode_Addr2EndLine(PyCodeObject *, int);
+/* Return the starting source code column offset from a bytecode index. */
+PyAPI_FUNC(int) _PyCode_Addr2Offset(PyCodeObject *, int);
+/* Return the ending source code column offset from a bytecode index. */
+PyAPI_FUNC(int) _PyCode_Addr2EndOffset(PyCodeObject *, int);
 
 /* for internal use only */
 struct _opaque {
@@ -203,8 +219,9 @@ PyAPI_FUNC(int) _PyCode_GetExtra(PyObject *code, Py_ssize_t index,
 PyAPI_FUNC(int) _PyCode_SetExtra(PyObject *code, Py_ssize_t index,
                                  void *extra);
 
-/** API for initializing the line number table. */
+/** API for initializing the line number tables. */
 int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+int _PyCode_InitEndAddressRange(PyCodeObject* co, PyCodeAddressRange* bounds);
 
 /** Out of process API for initializing the line number table. */
 void PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range);

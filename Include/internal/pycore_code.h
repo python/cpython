@@ -218,6 +218,8 @@ struct _PyCodeConstructor {
     PyObject *code;
     int firstlineno;
     PyObject *linetable;
+    PyObject *endlinetable;
+    PyObject *columntable;
 
     /* used by the code */
     PyObject *consts;
