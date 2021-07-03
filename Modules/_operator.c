@@ -512,7 +512,7 @@ Return the number of items in a which are, or which equal, b.
 
 static Py_ssize_t
 _operator_countOf_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=9e1623197daf3382 input=0c3a2656add252db]*/
+/*[clinic end generated code: output=9e1623197daf3382 input=93ea57f170f3f0bb]*/
 {
     return PySequence_Count(a, b);
 }
