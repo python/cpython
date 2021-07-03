@@ -1,2 +1,2 @@
-Match the docstring and python implementation of :func:countOf to the behaviour 
+Match the docstring and python implementation of :func:countOf to the behaviour
 of its c implementation.
