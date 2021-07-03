@@ -671,21 +671,17 @@ _Py_Specialize_CallFunction(PyObject *builtins,
                 *instr = _Py_MAKECODEUNIT(CALL_CFUNCTION_O, _Py_OPARG(*instr));
                 goto success;
             case METH_VARARGS:
-                // PYCFUNCTION
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION");
                 goto fail;
             case METH_VARARGS | METH_KEYWORDS:
-                // PYCFUNCTION_WITH_KEYWORDS
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, 
                     "PYCFUNCTION_WITH_KEYWORDS");
                 goto fail;
             case METH_FASTCALL | METH_KEYWORDS:
-                // _PYCFUNCTION_FAST_WITH_KEYWORDS;
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, 
                     "_PYCFUNCTION_FAST_WITH_KEYWORDS");
                 goto fail;
             case METH_NOARGS:
-                // PYCFUNCTION_NOARGS;
                 SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "PYCFUNCTION_NOARGS");
                 goto fail;
             /* This case should never happen with PyCFunctionObject -- only

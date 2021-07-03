@@ -53,7 +53,6 @@ typedef struct {
     uint32_t builtin_keys_version;
 } _PyLoadGlobalCache;
 
-
 /* Add specialized versions of entries to this union.
  *
  * Do not break the invariant: sizeof(SpecializedCacheEntry) == 8
