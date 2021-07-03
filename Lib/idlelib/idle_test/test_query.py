@@ -136,6 +136,36 @@ class ModuleNameTest(unittest.TestCase):
         dialog = self.Dummy_ModuleName('idlelib')
         self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
         self.assertEqual(dialog.entry_error['text'], '')
+        dialog = self.Dummy_ModuleName('os.path')
+        self.assertTrue(dialog.entry_ok().endswith('path.py'))
+        self.assertEqual(dialog.entry_error['text'], '')
+
+
+class GotoTest(unittest.TestCase):
+    "Test Goto subclass of Query."
+
+    class Dummy_ModuleName:
+        entry_ok = query.Goto.entry_ok  # Function being tested.
+        def __init__(self, dummy_entry):
+            self.entry = Var(value=dummy_entry)
+            self.entry_error = {'text': ''}
+        def showerror(self, message):
+            self.entry_error['text'] = message
+
+    def test_bogus_goto(self):
+        dialog = self.Dummy_ModuleName('a')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('not a base 10 integer', dialog.entry_error['text'])
+
+    def test_bad_goto(self):
+        dialog = self.Dummy_ModuleName('0')
+        self.assertEqual(dialog.entry_ok(), None)
+        self.assertIn('not a positive integer', dialog.entry_error['text'])
+
+    def test_good_goto(self):
+        dialog = self.Dummy_ModuleName('1')
+        self.assertEqual(dialog.entry_ok(), 1)
+        self.assertEqual(dialog.entry_error['text'], '')
 
 
 # 3 HelpSource test classes each test one method.
@@ -360,6 +390,22 @@ class ModulenameGuiTest(unittest.TestCase):
         self.assertEqual(dialog.entry.get(), 'idlelib')
         dialog.button_ok.invoke()
         self.assertTrue(dialog.result.endswith('__init__.py'))
+        root.destroy()
+
+
+class GotoGuiTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+    def test_click_module_name(self):
+        root = Tk()
+        root.withdraw()
+        dialog =  query.Goto(root, 'T', 't', _utest=True)
+        dialog.entry.insert(0, '22')
+        dialog.button_ok.invoke()
+        self.assertEqual(dialog.result, 22)
         root.destroy()
 
 

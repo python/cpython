@@ -20,7 +20,7 @@ PyAPI_FUNC(PyObject *) PyCell_Get(PyObject *);
 PyAPI_FUNC(int) PyCell_Set(PyObject *, PyObject *);
 
 #define PyCell_GET(op) (((PyCellObject *)(op))->ob_ref)
-#define PyCell_SET(op, v) (((PyCellObject *)(op))->ob_ref = v)
+#define PyCell_SET(op, v) ((void)(((PyCellObject *)(op))->ob_ref = v))
 
 #ifdef __cplusplus
 }

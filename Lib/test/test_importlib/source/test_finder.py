@@ -9,7 +9,7 @@ import py_compile
 import stat
 import sys
 import tempfile
-from test.support import make_legacy_pyc
+from test.support.import_helper import make_legacy_pyc
 import unittest
 import warnings
 
@@ -127,7 +127,7 @@ class FinderTests(abc.FinderTests):
         # The empty string from sys.path means to search in the cwd.
         finder = self.machinery.FileFinder('', (self.machinery.SourceFileLoader,
             self.machinery.SOURCE_SUFFIXES))
-        with open('mod.py', 'w') as file:
+        with open('mod.py', 'w', encoding='utf-8') as file:
             file.write("# test file for importlib")
         try:
             loader = self._find(finder, 'mod', loader_only=True)

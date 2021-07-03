@@ -102,7 +102,7 @@ import re
 import sys
 import traceback
 import unittest
-from io import StringIO
+from io import StringIO, IncrementalNewlineDecoder
 from collections import namedtuple
 
 TestResults = namedtuple('TestResults', 'failed attempted')
@@ -211,17 +211,25 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
+def _newline_convert(data):
+    # The IO module provides a handy decoder for universal newline conversion
+    return IncrementalNewlineDecoder(None, True).decode(data, True)
+
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
         filename = _module_relative_path(package, filename)
-        if getattr(package, '__loader__', None) is not None:
-            if hasattr(package.__loader__, 'get_data'):
-                file_contents = package.__loader__.get_data(filename)
-                file_contents = file_contents.decode(encoding)
-                # get_data() opens files as 'rb', so one must do the equivalent
-                # conversion as universal newlines would do.
-                return file_contents.replace(os.linesep, '\n'), filename
+        if (loader := getattr(package, '__loader__', None)) is None:
+            try:
+                loader = package.__spec__.loader
+            except AttributeError:
+                pass
+        if hasattr(loader, 'get_data'):
+            file_contents = loader.get_data(filename)
+            file_contents = file_contents.decode(encoding)
+            # get_data() opens files as 'rb', so one must do the equivalent
+            # conversion as universal newlines would do.
+            return _newline_convert(file_contents), filename
     with open(filename, encoding=encoding) as f:
         return f.read(), filename
 
@@ -965,6 +973,17 @@ class DocTestFinder:
         else:
             raise ValueError("object must be a class or function")
 
+    def _is_routine(self, obj):
+        """
+        Safely unwrap objects and determine if they are functions.
+        """
+        maybe_routine = obj
+        try:
+            maybe_routine = inspect.unwrap(maybe_routine)
+        except ValueError:
+            pass
+        return inspect.isroutine(maybe_routine)
+
     def _find(self, tests, obj, name, module, source_lines, globs, seen):
         """
         Find tests for the given object and any contained objects, and
@@ -987,9 +1006,9 @@ class DocTestFinder:
         if inspect.ismodule(obj) and self._recurse:
             for valname, val in obj.__dict__.items():
                 valname = '%s.%s' % (name, valname)
+
                 # Recurse to functions & classes.
-                if ((inspect.isroutine(inspect.unwrap(val))
-                     or inspect.isclass(val)) and
+                if ((self._is_routine(val) or inspect.isclass(val)) and
                     self._from_module(module, val)):
                     self._find(tests, val, valname, module, source_lines,
                                globs, seen)

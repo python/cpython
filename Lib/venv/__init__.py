@@ -243,7 +243,7 @@ class EnvBuilder:
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
-            for suffix in ('python', 'python3'):
+            for suffix in ('python', 'python3', f'python3.{sys.version_info[1]}'):
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
                     # Issue 18807: make copies if
@@ -267,8 +267,9 @@ class EnvBuilder:
                         os.path.normcase(f).startswith(('python', 'vcruntime'))
                     ]
             else:
-                suffixes = ['python.exe', 'python_d.exe', 'pythonw.exe',
-                            'pythonw_d.exe']
+                suffixes = {'python.exe', 'python_d.exe', 'pythonw.exe', 'pythonw_d.exe'}
+                base_exe = os.path.basename(context.env_exe)
+                suffixes.add(base_exe)
 
             for suffix in suffixes:
                 src = os.path.join(dirname, suffix)

@@ -1,1 +1,0 @@
-Add audit events to command execution functions in os and pty modules.

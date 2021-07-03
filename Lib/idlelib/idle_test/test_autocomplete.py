@@ -195,7 +195,7 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertFalse(acp.open_completions(ac.TAB))
         self.text.delete('1.0', 'end')
 
-    class dummy_acw():
+    class dummy_acw:
         __init__ = Func()
         show_window = Func(result=False)
         hide_window = Func()
@@ -227,7 +227,7 @@ class AutoCompleteTest(unittest.TestCase):
         acp = self.autocomplete
         small, large = acp.fetch_completions(
                 '', ac.ATTRS)
-        if __main__.__file__ != ac.__file__:
+        if hasattr(__main__, '__file__') and __main__.__file__ != ac.__file__:
             self.assertNotIn('AutoComplete', small)  # See issue 36405.
 
         # Test attributes
@@ -240,8 +240,11 @@ class AutoCompleteTest(unittest.TestCase):
         with patch.dict('__main__.__dict__', {'__all__': ['a', 'b']}):
             s, b = acp.fetch_completions('', ac.ATTRS)
             self.assertEqual(s, ['a', 'b'])
-            self.assertIn('__name__', b)    # From __main__.__dict__
-            self.assertIn('sum', b)         # From __main__.__builtins__.__dict__
+            self.assertIn('__name__', b)  # From __main__.__dict__.
+            self.assertIn('sum', b)       # From __main__.__builtins__.__dict__.
+            self.assertIn('nonlocal', b)  # From keyword.kwlist.
+            pos = b.index('False')        # Test False not included twice.
+            self.assertNotEqual(b[pos+1], 'False')
 
         # Test attributes with name entity.
         mock = Mock()

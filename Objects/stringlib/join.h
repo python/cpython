@@ -7,8 +7,8 @@
 Py_LOCAL_INLINE(PyObject *)
 STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 {
-    char *sepstr = STRINGLIB_STR(sep);
-    const Py_ssize_t seplen = STRINGLIB_LEN(sep);
+    const char *sepstr = STRINGLIB_STR(sep);
+    Py_ssize_t seplen = STRINGLIB_LEN(sep);
     PyObject *res = NULL;
     char *p;
     Py_ssize_t seqlen = 0;
@@ -155,7 +155,7 @@ done:
     for (i = 0; i < nbufs; i++)
         PyBuffer_Release(&buffers[i]);
     if (buffers != static_buffers)
-        PyMem_FREE(buffers);
+        PyMem_Free(buffers);
     return res;
 }
 

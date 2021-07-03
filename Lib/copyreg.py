@@ -48,6 +48,7 @@ def _reconstructor(cls, base, state):
     return obj
 
 _HEAPTYPE = 1<<9
+_new_type = type(int.__new__)
 
 # Python code for object.__reduce_ex__ for protocols 0 and 1
 
@@ -56,6 +57,9 @@ def _reduce_ex(self, proto):
     cls = self.__class__
     for base in cls.__mro__:
         if hasattr(base, '__flags__') and not base.__flags__ & _HEAPTYPE:
+            break
+        new = base.__new__
+        if isinstance(new, _new_type) and new.__self__ is base:
             break
     else:
         base = object # not really reachable

@@ -1357,6 +1357,9 @@ In addition to the three supplied contexts, new contexts can be created with the
       The rounding mode of the context is used. Results are always correctly-rounded
       in the Python version.
 
+      ``Decimal(0) ** Decimal(0)`` results in ``InvalidOperation``, and if ``InvalidOperation``
+      is not trapped, then results in ``Decimal('NaN')``.
+
       .. versionchanged:: 3.3
          The C module computes :meth:`power` in terms of the correctly-rounded
          :meth:`exp` and :meth:`ln` functions. The result is well-defined but
@@ -1475,9 +1478,19 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_THREADS
 
-   The default value is ``True``. If Python is compiled without threads, the
-   C version automatically disables the expensive thread local context
-   machinery. In this case, the value is ``False``.
+   The value is ``True``.  Deprecated, because Python now always has threads.
+
+.. deprecated:: 3.9
+
+.. data:: HAVE_CONTEXTVAR
+
+   The default value is ``True``. If Python is :option:`configured using
+   the --without-decimal-contextvar option <--without-decimal-contextvar>`,
+   the C version uses a thread-local rather than a coroutine-local context and the value
+   is ``False``.  This is slightly faster in some nested context scenarios.
+
+.. versionadded:: 3.9 backported to 3.7 and 3.8.
+
 
 Rounding modes
 --------------
@@ -2155,8 +2168,8 @@ RAM and expect 10 simultaneous operands using a maximum of 500MB each::
 
    >>> import sys
    >>>
-   >>> # Maximum number of digits for a single operand using 500MB in 8 byte words
-   >>> # with 19 (9 for the 32-bit version) digits per word:
+   >>> # Maximum number of digits for a single operand using 500MB in 8-byte words
+   >>> # with 19 digits per word (4-byte and 9 digits for the 32-bit build):
    >>> maxdigits = 19 * ((500 * 1024**2) // 8)
    >>>
    >>> # Check that this works:
@@ -2184,4 +2197,3 @@ are expected to be exact.
 .. [#]
     .. versionchanged:: 3.9
        This approach now works for all exact results except for non-integer powers.
-       Also backported to 3.7 and 3.8.

@@ -1913,7 +1913,11 @@ def foo():
 """
         self.check(b, a)
 
+    def test_single_import(self):
+        b = "from urllib import getproxies"
+        a = "from urllib.request import getproxies"
 
+        self.check(b, a)
 
     def test_import_module_usage(self):
         for old, changes in self.modules.items():

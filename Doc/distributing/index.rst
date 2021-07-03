@@ -128,6 +128,7 @@ involved in creating and publishing a project:
 * `Project structure`_
 * `Building and packaging the project`_
 * `Uploading the project to the Python Packaging Index`_
+* `The .pypirc file`_
 
 .. _Project structure: \
     https://packaging.python.org/tutorials/distributing-packages/
@@ -135,6 +136,8 @@ involved in creating and publishing a project:
    https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
 .. _Uploading the project to the Python Packaging Index: \
    https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+.. _The .pypirc file: \
+   https://packaging.python.org/specifications/pypirc/
 
 
 How do I...?

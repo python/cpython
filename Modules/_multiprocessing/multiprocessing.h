@@ -88,6 +88,6 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
  */
 
 extern PyTypeObject _PyMp_SemLockType;
-extern PyObject *_PyMp_sem_unlink(PyObject *ignore, PyObject *args);
+extern PyObject *_PyMp_sem_unlink(const char *name);
 
 #endif /* MULTIPROCESSING_H */

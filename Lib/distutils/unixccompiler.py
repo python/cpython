@@ -288,9 +288,9 @@ class UnixCCompiler(CCompiler):
             # vs
             #   /usr/lib/libedit.dylib
             cflags = sysconfig.get_config_var('CFLAGS')
-            m = re.search(r'-isysroot\s+(\S+)', cflags)
+            m = re.search(r'-isysroot\s*(\S+)', cflags)
             if m is None:
-                sysroot = '/'
+                sysroot = _osx_support._default_sysroot(sysconfig.get_config_var('CC'))
             else:
                 sysroot = m.group(1)
 

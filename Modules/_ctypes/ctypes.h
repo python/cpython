@@ -343,10 +343,6 @@ extern PyObject *PyExc_ArgError;
 extern char *_ctypes_conversion_encoding;
 extern char *_ctypes_conversion_errors;
 
-#if defined(HAVE_WCHAR_H)
-#  define CTYPES_UNICODE
-#endif
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
@@ -364,6 +360,14 @@ PyObject *_ctypes_get_errobj(int **pspace);
 
 #ifdef MS_WIN32
 extern PyObject *ComError;
+#endif
+
+#if USING_MALLOC_CLOSURE_DOT_C
+void Py_ffi_closure_free(void *p);
+void *Py_ffi_closure_alloc(size_t size, void** codeloc);
+#else
+#define Py_ffi_closure_free ffi_closure_free
+#define Py_ffi_closure_alloc ffi_closure_alloc
 #endif
 
 /*

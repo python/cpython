@@ -2,36 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-PyDoc_STRVAR(math_gcd__doc__,
-"gcd($module, x, y, /)\n"
-"--\n"
-"\n"
-"greatest common divisor of x and y");
-
-#define MATH_GCD_METHODDEF    \
-    {"gcd", (PyCFunction)(void(*)(void))math_gcd, METH_FASTCALL, math_gcd__doc__},
-
-static PyObject *
-math_gcd_impl(PyObject *module, PyObject *a, PyObject *b);
-
-static PyObject *
-math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *a;
-    PyObject *b;
-
-    if (!_PyArg_CheckPositional("gcd", nargs, 2, 2)) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    return_value = math_gcd_impl(module, a, b);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -84,36 +54,6 @@ PyDoc_STRVAR(math_factorial__doc__,
 
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
-
-PyDoc_STRVAR(math_lcm__doc__,
-"lcm($module, x, y, /)\n"
-"--\n"
-"\n"
-"least common multiple of x and y");
-
-#define MATH_LCM_METHODDEF    \
-    {"lcm", (PyCFunction)(void(*)(void))math_lcm, METH_FASTCALL, math_lcm__doc__},
-
-static PyObject *
-math_lcm_impl(PyObject *module, PyObject *a, PyObject *b);
-
-static PyObject *
-math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *a;
-    PyObject *b;
-
-    if (!_PyArg_CheckPositional("lcm", nargs, 2, 2)) {
-        goto exit;
-    }
-    a = args[0];
-    b = args[1];
-    return_value = math_lcm_impl(module, a, b);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(math_trunc__doc__,
 "trunc($module, x, /)\n"
@@ -925,4 +865,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f8daa185c043a7b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1eae2b3ef19568fa input=a9049054013a1b77]*/

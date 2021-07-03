@@ -33,9 +33,12 @@ import unittest
 import numbers
 import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
-                          requires_IEEE_754, requires_docstrings)
-from test.support import (import_fresh_module, TestFailed,
+                          requires_IEEE_754, requires_docstrings,
+                          requires_legacy_unicode_capi)
+from test.support import (TestFailed,
                           run_with_locale, cpython_only)
+from test.support.import_helper import import_fresh_module
+from test.support import warnings_helper
 import random
 import inspect
 import threading
@@ -286,7 +289,7 @@ class IBMTestCases(unittest.TestCase):
         global skip_expected
         if skip_expected:
             raise unittest.SkipTest
-        with open(file) as f:
+        with open(file, encoding="utf-8") as f:
             for line in f:
                 line = line.replace('\r\n', '').replace('\n', '')
                 #print line
@@ -581,6 +584,8 @@ class ExplicitConstructionTest(unittest.TestCase):
             self.assertRaises(InvalidOperation, Decimal, "1_2_\u00003")
 
     @cpython_only
+    @requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
         Decimal = self.decimal.Decimal
@@ -1809,13 +1814,7 @@ class UsabilityTest(unittest.TestCase):
 
         # check that hash(d) == hash(int(d)) for integral values
         for value in test_values:
-            self.assertEqual(hashit(value), hashit(int(value)))
-
-        #the same hash that to an int
-        self.assertEqual(hashit(Decimal(23)), hashit(23))
-        self.assertRaises(TypeError, hash, Decimal('sNaN'))
-        self.assertTrue(hashit(Decimal('Inf')))
-        self.assertTrue(hashit(Decimal('-Inf')))
+            self.assertEqual(hashit(value), hash(int(value)))
 
         # check that the hashes of a Decimal float match when they
         # represent exactly the same values
@@ -1824,7 +1823,7 @@ class UsabilityTest(unittest.TestCase):
         for s in test_strings:
             f = float(s)
             d = Decimal(s)
-            self.assertEqual(hashit(f), hashit(d))
+            self.assertEqual(hashit(d), hash(f))
 
         with localcontext() as c:
             # check that the value of the hash doesn't depend on the
@@ -1844,6 +1843,19 @@ class UsabilityTest(unittest.TestCase):
             c.prec = 10000
             x = 1100 ** 1248
             self.assertEqual(hashit(Decimal(x)), hashit(x))
+
+    def test_hash_method_nan(self):
+        Decimal = self.decimal.Decimal
+        self.assertRaises(TypeError, hash, Decimal('sNaN'))
+        value = Decimal('NaN')
+        self.assertEqual(hash(value), object.__hash__(value))
+        class H:
+            def __hash__(self):
+                return 42
+        class D(Decimal, H):
+            pass
+        value = D('NaN')
+        self.assertEqual(hash(value), object.__hash__(value))
 
     def test_min_and_max_methods(self):
         Decimal = self.decimal.Decimal
@@ -2816,6 +2828,8 @@ class ContextAPItests(unittest.TestCase):
                                               Overflow])
 
     @cpython_only
+    @requires_legacy_unicode_capi
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_from_legacy_strings(self):
         import _testcapi
         c = self.decimal.Context()
@@ -5201,6 +5215,7 @@ class CWhitebox(unittest.TestCase):
         DefaultContext = C.DefaultContext
 
         InvalidOperation = C.InvalidOperation
+        FloatOperation = C.FloatOperation
         DivisionByZero = C.DivisionByZero
         Overflow = C.Overflow
         Subnormal = C.Subnormal
@@ -5274,6 +5289,7 @@ class CWhitebox(unittest.TestCase):
           Underflow: C.DecUnderflow,
           Overflow: C.DecOverflow,
           DivisionByZero: C.DecDivisionByZero,
+          FloatOperation: C.DecFloatOperation,
           InvalidOperation: C.DecIEEEInvalidOperation
         }
         IntCond = [
@@ -5476,6 +5492,9 @@ class CWhitebox(unittest.TestCase):
             self.assertEqual(Decimal.from_float(cls(101.1)),
                              Decimal.from_float(101.1))
 
+    # Issue 41540:
+    @unittest.skipIf(sys.platform.startswith("aix"),
+                     "AIX: default ulimit: test is flaky because of extreme over-allocation")
     def test_maxcontext_exact_arith(self):
 
         # Make sure that exact operations do not raise MemoryError due

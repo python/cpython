@@ -33,23 +33,13 @@ audioop_getsample(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("getsample", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[2]);
+        PyObject *iobj = _PyNumber_Index(args[2]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -99,11 +89,6 @@ audioop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("max", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -146,11 +131,6 @@ audioop_minmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("minmax", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -197,11 +177,6 @@ audioop_avg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("avg", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -244,11 +219,6 @@ audioop_rms(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("rms", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -400,14 +370,9 @@ audioop_findmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("findmax", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     {
         Py_ssize_t ival = -1;
-        PyObject *iobj = PyNumber_Index(args[1]);
+        PyObject *iobj = _PyNumber_Index(args[1]);
         if (iobj != NULL) {
             ival = PyLong_AsSsize_t(iobj);
             Py_DECREF(iobj);
@@ -457,11 +422,6 @@ audioop_avgpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("avgpp", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -504,11 +464,6 @@ audioop_maxpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("maxpp", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -555,11 +510,6 @@ audioop_cross(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("cross", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -604,11 +554,6 @@ audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("mul", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -666,11 +611,6 @@ audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("tomono", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -738,11 +678,6 @@ audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("tostereo", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -818,11 +753,6 @@ audioop_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("add", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[2]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -872,18 +802,8 @@ audioop_bias(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("bias", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     bias = _PyLong_AsInt(args[2]);
@@ -930,11 +850,6 @@ audioop_reverse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("reverse", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -977,11 +892,6 @@ audioop_byteswap(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("byteswap", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1030,18 +940,8 @@ audioop_lin2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("lin2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     newwidth = _PyLong_AsInt(args[2]);
@@ -1097,36 +997,16 @@ audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("ratecv", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[2])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     nchannels = _PyLong_AsInt(args[2]);
     if (nchannels == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (PyFloat_Check(args[3])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     inrate = _PyLong_AsInt(args[3]);
     if (inrate == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (PyFloat_Check(args[4])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     outrate = _PyLong_AsInt(args[4]);
@@ -1137,22 +1017,12 @@ audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 7) {
         goto skip_optional;
     }
-    if (PyFloat_Check(args[6])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     weightA = _PyLong_AsInt(args[6]);
     if (weightA == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 8) {
         goto skip_optional;
-    }
-    if (PyFloat_Check(args[7])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
     }
     weightB = _PyLong_AsInt(args[7]);
     if (weightB == -1 && PyErr_Occurred()) {
@@ -1199,11 +1069,6 @@ audioop_lin2ulaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("lin2ulaw", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1246,11 +1111,6 @@ audioop_ulaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("ulaw2lin", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1297,11 +1157,6 @@ audioop_lin2alaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("lin2alaw", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1344,11 +1199,6 @@ audioop_alaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("alaw2lin", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1395,11 +1245,6 @@ audioop_lin2adpcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
         _PyArg_BadArgument("lin2adpcm", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
         goto exit;
     }
     width = _PyLong_AsInt(args[1]);
@@ -1449,11 +1294,6 @@ audioop_adpcm2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("adpcm2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
-    if (PyFloat_Check(args[1])) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
-        goto exit;
-    }
     width = _PyLong_AsInt(args[1]);
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
@@ -1469,4 +1309,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6b4f2c597f295abc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=840f8c315ebd4946 input=a9049054013a1b77]*/

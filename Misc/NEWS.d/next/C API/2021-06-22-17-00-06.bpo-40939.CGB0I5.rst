@@ -1,0 +1,1 @@
+Removed documentation for the removed ``PyParser_*`` C API.

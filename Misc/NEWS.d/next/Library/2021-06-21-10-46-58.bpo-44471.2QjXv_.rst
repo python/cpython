@@ -1,0 +1,5 @@
+A :exc:`TypeError` is now raised instead of an :exc:`AttributeError` in
+:meth:`contextlib.ExitStack.enter_context` and
+:meth:`contextlib.AsyncExitStack.enter_async_context` for objects which do
+not support the :term:`context manager` or :term:`asynchronous context
+manager` protocols correspondingly.

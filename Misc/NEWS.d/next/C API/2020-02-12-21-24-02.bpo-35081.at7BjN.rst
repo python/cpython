@@ -1,5 +1,0 @@
-Move the ``dtoa.h`` header file to the internal C API as ``pycore_dtoa.h``:
-it only contains private functions (prefixed by ``_Py``). The :mod:`math` and
-:mod:`cmath` modules must now be compiled with the ``Py_BUILD_CORE`` macro
-defined.
-

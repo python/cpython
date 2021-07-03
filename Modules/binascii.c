@@ -66,6 +66,12 @@ typedef struct binascii_state {
     PyObject *Incomplete;
 } binascii_state;
 
+static inline binascii_state *
+get_binascii_state(PyObject *module)
+{
+    return (binascii_state *)PyModule_GetState(module);
+}
+
 /*
 ** hqx lookup table, ascii->binary.
 */
@@ -306,7 +312,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
             ** '`' as zero instead of space.
             */
             if ( this_ch < ' ' || this_ch > (' ' + 64)) {
-                state = PyModule_GetState(module);
+                state = get_binascii_state(module);
                 if (state == NULL) {
                     return NULL;
                 }
@@ -338,7 +344,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
         /* Extra '`' may be written as padding in some cases */
         if ( this_ch != ' ' && this_ch != ' '+64 &&
              this_ch != '\n' && this_ch != '\r' ) {
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -379,7 +385,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     bin_len = data->len;
     if ( bin_len > 45 ) {
         /* The 45 is a limit that appears in all uuencode's */
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -499,9 +505,9 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
     }
 
     if (quad_pos != 0) {
-        binascii_state *state = PyModule_GetState(module);
+        binascii_state *state = get_binascii_state(module);
         if (state == NULL) {
-            /* error already set, from PyModule_GetState */
+            /* error already set, from get_binascii_state */
         } else if (quad_pos == 1) {
             /*
             ** There is exactly one extra valid, non-padding, base64 character.
@@ -556,7 +562,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     assert(bin_len >= 0);
 
     if ( bin_len > BASE64_MAXBIN ) {
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -651,7 +657,7 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
         if ( this_ch == SKIP )
             continue;
         if ( this_ch == FAIL ) {
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -676,7 +682,7 @@ binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
     }
 
     if ( leftbits && !done ) {
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -872,7 +878,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
 #define INBYTE(b)                                                       \
     do {                                                                \
          if ( --in_len < 0 ) {                                          \
-           state = PyModule_GetState(module);           \
+           state = get_binascii_state(module);                          \
            if (state == NULL) {                                         \
                return NULL;                                             \
            }                                                            \
@@ -898,7 +904,7 @@ binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
             /* Note Error, not Incomplete (which is at the end
             ** of the string only). This is a programmer error.
             */
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -1229,7 +1235,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
      * raise an exception.
      */
     if (arglen % 2) {
-        state = PyModule_GetState(module);
+        state = get_binascii_state(module);
         if (state == NULL) {
             return NULL;
         }
@@ -1246,7 +1252,7 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
         unsigned int bot = _PyLong_DigitValue[Py_CHARMASK(argbuf[i+1])];
         if (top >= 16 || bot >= 16) {
-            state = PyModule_GetState(module);
+            state = get_binascii_state(module);
             if (state == NULL) {
                 return NULL;
             }
@@ -1305,15 +1311,12 @@ binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
     datalen = data->len;
 
     /* We allocate the output same size as input, this is overkill.
-     * The previous implementation used calloc() so we'll zero out the
-     * memory here too, since PyMem_Malloc() does not guarantee that.
      */
-    odata = (unsigned char *) PyMem_Malloc(datalen);
+    odata = (unsigned char *) PyMem_Calloc(1, datalen);
     if (odata == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(odata, 0, datalen);
 
     in = out = 0;
     while (in < datalen) {
@@ -1493,15 +1496,12 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
     }
 
     /* We allocate the output same size as input, this is overkill.
-     * The previous implementation used calloc() so we'll zero out the
-     * memory here too, since PyMem_Malloc() does not guarantee that.
      */
-    odata = (unsigned char *) PyMem_Malloc(odatalen);
+    odata = (unsigned char *) PyMem_Calloc(1, odatalen);
     if (odata == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    memset(odata, 0, odatalen);
 
     in = out = linelen = 0;
     while (in < datalen) {
@@ -1606,9 +1606,9 @@ static struct PyMethodDef binascii_module_methods[] = {
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 static int
-binascii_exec(PyObject *m) {
+binascii_exec(PyObject *module) {
     int result;
-    binascii_state *state = PyModule_GetState(m);
+    binascii_state *state = PyModule_GetState(module);
     if (state == NULL) {
         return -1;
     }
@@ -1617,8 +1617,10 @@ binascii_exec(PyObject *m) {
     if (state->Error == NULL) {
         return -1;
     }
-    result = PyModule_AddObject(m, "Error", state->Error);
+    Py_INCREF(state->Error);
+    result = PyModule_AddObject(module, "Error", state->Error);
     if (result == -1) {
+        Py_DECREF(state->Error);
         return -1;
     }
 
@@ -1626,8 +1628,10 @@ binascii_exec(PyObject *m) {
     if (state->Incomplete == NULL) {
         return -1;
     }
-    result = PyModule_AddObject(m, "Incomplete", state->Incomplete);
+    Py_INCREF(state->Incomplete);
+    result = PyModule_AddObject(module, "Incomplete", state->Incomplete);
     if (result == -1) {
+        Py_DECREF(state->Incomplete);
         return -1;
     }
 
@@ -1639,6 +1643,30 @@ static PyModuleDef_Slot binascii_slots[] = {
     {0, NULL}
 };
 
+static int
+binascii_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    binascii_state *state = get_binascii_state(module);
+    Py_VISIT(state->Error);
+    Py_VISIT(state->Incomplete);
+    return 0;
+}
+
+static int
+binascii_clear(PyObject *module)
+{
+    binascii_state *state = get_binascii_state(module);
+    Py_CLEAR(state->Error);
+    Py_CLEAR(state->Incomplete);
+    return 0;
+}
+
+static void
+binascii_free(void *module)
+{
+    binascii_clear((PyObject *)module);
+}
+
 static struct PyModuleDef binasciimodule = {
     PyModuleDef_HEAD_INIT,
     "binascii",
@@ -1646,9 +1674,9 @@ static struct PyModuleDef binasciimodule = {
     sizeof(binascii_state),
     binascii_module_methods,
     binascii_slots,
-    NULL,
-    NULL,
-    NULL
+    binascii_traverse,
+    binascii_clear,
+    binascii_free
 };
 
 PyMODINIT_FUNC

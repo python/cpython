@@ -3011,65 +3011,35 @@ private:
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2012 or later");
                 return;
             } else if (IsWindowsVersionOrGreater(6, 1, 1)) {
-                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
-                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2 without KB2533623");
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533623 update is required to continue.");
-                    /* The "MissingSP1" error also specifies updates are required */
-                    LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
-                } else {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows Server 2008 R2 or later");
-                    return;
-                }
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Detected Windows Server 2008 R2");
             } else if (IsWindowsVersionOrGreater(6, 1, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008 R2");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K8R2MissingSP1)", &pLocString);
-            } else if (IsWindowsVersionOrGreater(6, 0, 2)) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Server 2008 SP2 or later");
-                return;
             } else if (IsWindowsVersionOrGreater(6, 0, 0)) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2008");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K8MissingSP2)", &pLocString);
             } else {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Server 2003 or earlier");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2008 SP2 or later is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWS2K3OrEarlier)", &pLocString);
             }
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Server 2012 or later is required to continue installation");
         } else {
-            if (IsWindows8OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 8 or later");
+            if (IsWindows10OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 10 or later");
                 return;
-            } else if (IsWindows7SP1OrGreater()) {
-                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
-                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 SP1 without KB2533623");
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533623 update is required to continue.");
-                    /* The "MissingSP1" error also specifies updates are required */
-                    LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
-                } else {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
-                    return;
-                }
+            } else if (IsWindows8Point1OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 8.1");
+                return;
+            } else if (IsWindows8OrGreater()) {
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 8");
             } else if (IsWindows7OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
-            } else if (IsWindowsVistaSP2OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Vista SP2");
-                return;
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7");
             } else if (IsWindowsVistaOrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista RTM or SP1");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureVistaMissingSP2)", &pLocString);
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista");
             } else { 
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Vista SP2 or later is required to continue installation");
-                LocGetString(_wixLoc, L"#(loc.FailureXPOrEarlier)", &pLocString);
             }
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows 8.1 or later is required to continue installation");
         }
 
+        LocGetString(_wixLoc, L"#(loc.FailureOldOS)", &pLocString);
         if (pLocString && pLocString->wzText) {
             BalFormatString(pLocString->wzText, &_failedMessage);
         }

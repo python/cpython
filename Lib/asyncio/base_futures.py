@@ -1,6 +1,7 @@
 __all__ = ()
 
 import reprlib
+from _thread import get_ident
 
 from . import format_helpers
 
@@ -41,6 +42,16 @@ def _format_callbacks(cb):
     return f'cb=[{cb}]'
 
 
+# bpo-42183: _repr_running is needed for repr protection
+# when a Future or Task result contains itself directly or indirectly.
+# The logic is borrowed from @reprlib.recursive_repr decorator.
+# Unfortunately, the direct decorator usage is impossible because of
+# AttributeError: '_asyncio.Task' object has no attribute '__module__' error.
+#
+# After fixing this thing we can return to the decorator based approach.
+_repr_running = set()
+
+
 def _future_repr_info(future):
     # (Future) -> str
     """helper function for Future.__repr__"""
@@ -49,9 +60,17 @@ def _future_repr_info(future):
         if future._exception is not None:
             info.append(f'exception={future._exception!r}')
         else:
-            # use reprlib to limit the length of the output, especially
-            # for very long strings
-            result = reprlib.repr(future._result)
+            key = id(future), get_ident()
+            if key in _repr_running:
+                result = '...'
+            else:
+                _repr_running.add(key)
+                try:
+                    # use reprlib to limit the length of the output, especially
+                    # for very long strings
+                    result = reprlib.repr(future._result)
+                finally:
+                    _repr_running.discard(key)
             info.append(f'result={result}')
     if future._callbacks:
         info.append(_format_callbacks(future._callbacks))
