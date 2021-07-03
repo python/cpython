@@ -715,7 +715,7 @@ _Py_Specialize_CallFunction(PyObject *builtins,
             !PyType_CheckExact(callable)) {
             SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python class");
         }
-        if (PyDict_GetItemString(builtins, ((PyTypeObject *)callable)->tp_name)) {
+        if (PyMapping_HasKeyString(builtins, ((PyTypeObject *)callable)->tp_name)) {
             SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "__builtins__ type init");
         }
         goto fail;
