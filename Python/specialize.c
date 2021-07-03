@@ -655,7 +655,6 @@ _Py_Specialize_CallFunction(PyObject *builtins,
         if (PyCFunction_GET_FUNCTION(callable) == NULL) {
             goto fail;
         }
-        const char *name_ascii = meth->m_ml->ml_name;
         /* Don't optimize anything that isn't FASTCALL, has keywords, has varargs, or
            has no args. Microbenchmarks show they don't benefit much to be worth a 
            specialized instruction.
@@ -714,10 +713,13 @@ _Py_Specialize_CallFunction(PyObject *builtins,
             PyObject_TypeCheck(callable, &PyType_Type) &&
             !PyType_CheckExact(callable)) {
             SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "python class");
+            goto fail;
         }
         if (PyMapping_HasKeyString(builtins, ((PyTypeObject *)callable)->tp_name)) {
             SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "__builtins__ type init");
+            goto fail;
         }
+        SPECIALIZATION_FAIL(CALL_FUNCTION, type, callable, "C class");
         goto fail;
     }
     /* So far this catches things like weakref.weakref */
