@@ -4133,10 +4133,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O, CALL_FUNCTION);
 
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), POP());
+            PyObject *arg = POP();
+            PyObject *res = cfunc(PyCFunction_GET_SELF(callable), arg);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
             /* Clear the stack of the function object. */
+            Py_DECREF(arg);
             Py_DECREF(callable);
             SET_TOP(res);
             record_cache_hit(cache0);
