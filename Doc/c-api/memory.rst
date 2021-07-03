@@ -488,7 +488,7 @@ Customize Memory Allocators
 Debug hooks on the Python memory allocators
 ===========================================
 
-When :ref:`Python is built is debug mode <debug-build>`, the
+When :ref:`Python is built in debug mode <debug-build>`, the
 :c:func:`PyMem_SetupDebugHooks` function is called at the :ref:`Python
 preinitialization <c-preinit>` to setup debug hooks on Python memory allocators
 to detect memory errors.
